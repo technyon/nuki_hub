@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "Network.h"
 #include "Nuki.h"
+#include <FreeRTOS.h>
 
 
 #define ESP32
@@ -8,6 +9,15 @@
 Network network;
 Nuki nuki("door", 0);
 
+void networkTask(void *pvParameters)
+{
+    network.update();
+}
+
+void setupTasks()
+{
+    xTaskCreate(networkTask, "ntw", 1024, NULL, 1, NULL);
+}
 
 void setup()
 {
@@ -27,10 +37,10 @@ void setup()
 
     Serial.println("Connected to the WiFi network");
      */
+    setupTasks();
 }
 
 void loop()
 {
-    network.update();
 //    nuki.update();
 }
