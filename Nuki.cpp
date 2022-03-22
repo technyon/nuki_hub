@@ -1,4 +1,5 @@
 #include "Nuki.h"
+#include <FreeRTOS.h>
 
 Nuki::Nuki(const std::string& name, uint32_t id)
 : _nukiBle(name, id)
@@ -30,6 +31,8 @@ void Nuki::update()
             // addKeypadEntry();
         }
     }
+
+    vTaskDelay( 1000 / portTICK_PERIOD_MS);
 
     _nukiBle.updateKeyTurnerState();
 }

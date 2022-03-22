@@ -14,9 +14,15 @@ void networkTask(void *pvParameters)
     network.update();
 }
 
+void nukiTask(void *pvParameters)
+{
+//    nuki.update();
+}
+
 void setupTasks()
 {
     xTaskCreate(networkTask, "ntw", 1024, NULL, 1, NULL);
+    xTaskCreate(nukiTask, "nuki", 1024, NULL, 1, NULL);
 }
 
 void setup()
