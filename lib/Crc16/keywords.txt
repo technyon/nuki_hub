@@ -1,0 +1,22 @@
+#######################################
+# Syntax Coloring Map For CRC16
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+Crc16	KEYWORD1
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+clearCrc	KEYWORD2
+updateCrc	KEYWORD2
+getCrc	KEYWORD2
+fastCrc	KEYWORD2
+XModemCrc	KEYWORD2
+Mcrf4XX	KEYWORD2
+Modbus	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
