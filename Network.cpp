@@ -49,7 +49,7 @@ void Network::initialize()
 }
 
 
-void Network::reconnect()
+bool Network::reconnect()
 {
     while (!_mqttClient.connected()) {
         Serial.print("Attempting MQTT connection...");
@@ -73,9 +73,19 @@ void Network::reconnect()
 
 void Network::update()
 {
+    if(!WiFi.isConnected())
+    {
+        Serial.println(F("WiFi not connected"));
+        vTaskDelay( 1000 / portTICK_PERIOD_MS);
+    }
+
     if(!_mqttClient.connected())
     {
-        reconnect();
+        bool success = reconnect();
+        if(!success)
+        {
+            return;
+        }
     }
 
     unsigned long ts = millis();
@@ -92,4 +102,6 @@ void Network::update()
     }
 
     _mqttClient.loop();
+
+    vTaskDelay( 100 / portTICK_PERIOD_MS);
 }

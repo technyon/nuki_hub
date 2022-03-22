@@ -11,7 +11,10 @@ Nuki nuki("door", 0);
 
 void networkTask(void *pvParameters)
 {
-    network.update();
+    while(true)
+    {
+        network.update();
+    }
 }
 
 void nukiTask(void *pvParameters)
@@ -21,32 +24,16 @@ void nukiTask(void *pvParameters)
 
 void setupTasks()
 {
-    xTaskCreate(networkTask, "ntw", 1024, NULL, 1, NULL);
-    xTaskCreate(nukiTask, "nuki", 1024, NULL, 1, NULL);
+    xTaskCreate(networkTask, "ntw", 2048, NULL, 1, NULL);
+//    xTaskCreate(nukiTask, "nuki", 1024, NULL, 1, NULL);
 }
 
 void setup()
 {
     network.initialize();
 //    nuki.initialize();
-
-    /*
-    Serial.begin(115200);
-
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(500);
-        Serial.println("Connecting to WiFi..");
-    }
-
-    Serial.println("Connected to the WiFi network");
-     */
     setupTasks();
 }
 
 void loop()
-{
-//    nuki.update();
-}
+{}

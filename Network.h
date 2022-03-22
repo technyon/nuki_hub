@@ -12,7 +12,7 @@ public:
     void update();
 
 private:
-    void reconnect();
+    bool reconnect();
 
     PubSubClient _mqttClient;
     WiFiClient _wifiClient;
