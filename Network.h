@@ -12,6 +12,9 @@ public:
     void update();
 
 private:
+    static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
+    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
+
     bool reconnect();
 
     PubSubClient _mqttClient;

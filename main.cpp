@@ -19,7 +19,10 @@ void networkTask(void *pvParameters)
 
 void nukiTask(void *pvParameters)
 {
-//    nuki.update();
+    while(true)
+    {
+        nuki.update();
+    }
 }
 
 void setupTasks()

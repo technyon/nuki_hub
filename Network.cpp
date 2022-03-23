@@ -3,10 +3,12 @@
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
 
+Network* nwInst;
+
 Network::Network()
 : _mqttClient(_wifiClient)
 {
-
+    nwInst = this;
 }
 
 void Network::initialize()
@@ -24,15 +26,7 @@ void Network::initialize()
     // these are stored by the esp library
     //wm.resetSettings();
 
-    // Automatically connect using saved credentials,
-    // if connection fails, it starts an access point with the specified name ( "AutoConnectAP"),
-    // if empty will auto generate SSID, if password is blank it will be anonymous AP (wm.autoConnect())
-    // then goes into a blocking loop awaiting configuration and will return success result
-
-    bool res;
-    // res = wm.autoConnect(); // auto generated AP name from chipid
-    // res = wm.autoConnect("AutoConnectAP"); // anonymous ap
-    res = wm.autoConnect("AutoConnectAP","password"); // password protected ap
+    bool res = wm.autoConnect(); // password protected ap
 
     if(!res) {
         Serial.println("Failed to connect");
@@ -45,6 +39,7 @@ void Network::initialize()
     }
 
     _mqttClient.setServer("192.168.0.100", 1883);
+    _mqttClient.setCallback(Network::onMqttDataReceivedCallback);
     _mqttClient.publish("nuki/test", "OK");
 }
 
@@ -56,10 +51,9 @@ bool Network::reconnect()
         // Attempt to connect
         if (_mqttClient.connect("arduinoClient")) {
             Serial.println("connected");
-            // Once connected, publish an announcement...
-            _mqttClient.publish("outTopic","hello world");
+
             // ... and resubscribe
-            _mqttClient.subscribe("inTopic");
+            _mqttClient.subscribe("nuki/cmd");
         } else {
             Serial.print("failed, rc=");
             Serial.print(_mqttClient.state());
@@ -104,4 +98,27 @@ void Network::update()
     _mqttClient.loop();
 
     vTaskDelay( 100 / portTICK_PERIOD_MS);
+}
+
+void Network::onMqttDataReceivedCallback(char *topic, byte *payload, unsigned int length)
+{
+    nwInst->onMqttDataReceived(topic, payload, length);
+}
+
+void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
+{
+    char value[50];
+    size_t l = min(length, sizeof(value)-1);
+
+    for(int i=0; i<l; i++)
+    {
+        value[i] = payload[i];
+    }
+
+    value[l] = 0;
+
+    if(strcmp(topic, "nuki/cmd") == 0)
+    {
+        Serial.println(value);
+    }
 }
