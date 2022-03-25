@@ -2,19 +2,21 @@
 
 #include "NukiBle.h"
 #include "NukiConstants.h"
+#include "Network.h"
 
 class Nuki
 {
 public:
-    Nuki(const std::string& name, uint32_t id);
+    Nuki(const std::string& name, uint32_t id, Network* network);
 
     void initialize();
     void update();
 
 private:
     NukiBle _nukiBle;
-    bool _paired = false;
+    Network* _network;
 
     KeyTurnerState _keyTurnerState;
 
+    bool _paired = false;
 };

@@ -6,14 +6,14 @@
 
 #define ESP32
 
-Network network;
-Nuki nuki("Main Door", 2020001);
+Network* network;
+Nuki* nuki;
 
 void networkTask(void *pvParameters)
 {
     while(true)
     {
-        network.update();
+        network->update();
     }
 }
 
@@ -21,7 +21,7 @@ void nukiTask(void *pvParameters)
 {
     while(true)
     {
-        nuki.update();
+        nuki->update();
     }
 }
 
@@ -33,8 +33,11 @@ void setupTasks()
 
 void setup()
 {
-    network.initialize();
-    nuki.initialize();
+    network = new Network();
+    nuki = new Nuki("Main Door", 2020001, network);
+
+    network->initialize();
+    nuki->initialize();
     setupTasks();
 }
 

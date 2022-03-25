@@ -1,8 +1,9 @@
 #include "Nuki.h"
 #include <FreeRTOS.h>
 
-Nuki::Nuki(const std::string& name, uint32_t id)
-: _nukiBle(name, id)
+Nuki::Nuki(const std::string& name, uint32_t id, Network* network)
+: _nukiBle(name, id),
+  _network(network)
 {
 
 }
