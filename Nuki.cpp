@@ -11,6 +11,8 @@ Nuki::Nuki(const std::string& name, uint32_t id, Network* network)
 
     memset(&_lastKeyTurnerState, sizeof(KeyTurnerState), 0);
     memset(&_keyTurnerState, sizeof(KeyTurnerState), 0);
+    memset(&_lastBatteryReport, sizeof(KeyTurnerState), 0);
+    memset(&_batteryReport, sizeof(KeyTurnerState), 0);
 
     network->setLockActionReceived(nukiInst->onLockActionReceived);
 }
@@ -34,9 +36,37 @@ void Nuki::update()
             vTaskDelay( 200 / portTICK_PERIOD_MS);
             return;
         }
+
+        vTaskDelay( 100 / portTICK_PERIOD_MS);
+
+
+//        Config config;
+//        uint8_t  res = _nukiBle.requestConfig(&config, false);
+//        Serial.print("Result: ");
+//        Serial.println(res);
+//        Serial.print("Time: ");
+//        Serial.print(config.currentTimeHour);
+//        Serial.print(":");
+//        Serial.println(config.currentTimeMinute);
     }
 
     vTaskDelay( 100 / portTICK_PERIOD_MS);
+
+    unsigned long ts = millis();
+
+    updateKeyTurnerState();
+    if(_lastBatteryReportTs == 0 || _lastBatteryReportTs + 600000 < ts)
+    {
+        _lastBatteryReportTs = ts;
+        updateBatteryState();
+    }
+
+    vTaskDelay( 60000 / portTICK_PERIOD_MS);
+}
+
+
+void Nuki::updateKeyTurnerState()
+{
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);
 
     char str[20];
@@ -50,9 +80,23 @@ void Nuki::update()
     }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
-
-    vTaskDelay( 20000 / portTICK_PERIOD_MS);
 }
+
+
+void Nuki::updateBatteryState()
+{
+    _nukiBle.requestBatteryReport(&_batteryReport);
+
+    Serial.print("Voltage: "); Serial.println(_batteryReport.batteryVoltage);
+    Serial.print("Drain: "); Serial.println(_batteryReport.batteryDrain);
+    Serial.print("Resistance: "); Serial.println(_batteryReport.batteryResistance);
+    Serial.print("Max Current: "); Serial.println(_batteryReport.maxTurnCurrent);
+    Serial.print("Crit. State: "); Serial.println(_batteryReport.criticalBatteryState);
+    Serial.print("Lock Dist: "); Serial.println(_batteryReport.lockDistance);
+
+    _network->publishBatteryVoltage((float)_batteryReport.batteryVoltage / (float)1000);
+}
+
 
 void Nuki::lockstateToString(const LockState state, char* str)
 {
@@ -116,7 +160,7 @@ void Nuki::onLockActionReceived(const char *value)
     Serial.println((int)action);
     if(action != (LockAction)0xff)
     {
-//        nukiInst->_nukiBle.lockAction(action, 0, 0);
+        nukiInst->_nukiBle.lockAction(action, 0, 0);
         vTaskDelay( 5000 / portTICK_PERIOD_MS);
     }
 }

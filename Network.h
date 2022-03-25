@@ -13,6 +13,7 @@ public:
     void update();
 
     void publishKeyTurnerState(const char* state);
+    void publishBatteryVoltage(const float& value);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
 

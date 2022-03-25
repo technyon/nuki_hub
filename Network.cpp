@@ -54,7 +54,7 @@ bool Network::reconnect()
             Serial.println("connected");
 
             // ... and resubscribe
-            _mqttClient.subscribe(mqtt_topc_lockstate_setpoint);
+            _mqttClient.subscribe(mqtt_topc_lockstate_action);
         } else {
             Serial.print("failed, rc=");
             Serial.print(_mqttClient.state());
@@ -118,7 +118,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
 
     value[l] = 0;
 
-    if(strcmp(topic, mqtt_topc_lockstate_setpoint) == 0)
+    if(strcmp(topic, mqtt_topc_lockstate_action) == 0)
     {
         if(strcmp(value, "") == 0) return;
 
@@ -128,7 +128,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
         {
             _lockActionReceivedCallback(value);
         }
-        _mqttClient.publish(mqtt_topc_lockstate_setpoint, "");
+        _mqttClient.publish(mqtt_topc_lockstate_action, "");
     }
 }
 
@@ -140,4 +140,11 @@ void Network::publishKeyTurnerState(const char* state)
 void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
+}
+
+void Network::publishBatteryVoltage(const float &value)
+{
+    char str[30];
+    dtostrf(value, 0, 2, str);
+    _mqttClient.publish(mqtt_topc_voltage, str);
 }

@@ -14,6 +14,10 @@ public:
 
 private:
     static void onLockActionReceived(const char* value);
+
+    void updateKeyTurnerState();
+    void updateBatteryState();
+
     void lockstateToString(const LockState state, char* str); // char array at least 14 characters
     LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
@@ -23,5 +27,9 @@ private:
     KeyTurnerState _lastKeyTurnerState;
     KeyTurnerState _keyTurnerState;
 
+    BatteryReport _batteryReport;
+    BatteryReport _lastBatteryReport;
+
     bool _paired = false;
+    unsigned long _lastBatteryReportTs = 0;
 };
