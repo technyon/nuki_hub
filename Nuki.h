@@ -15,4 +15,6 @@ private:
     NukiBle _nukiBle;
     bool _paired = false;
 
+    KeyTurnerState _keyTurnerState;
+
 };

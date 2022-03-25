@@ -15,24 +15,22 @@ void Nuki::initialize()
 void Nuki::update()
 {
     if (!_paired) {
+        Serial.println(F("Nuki start pairing"));
+
         if (_nukiBle.pairNuki()) {
-            Serial.println("Nuki paired");
+            Serial.println(F("Nuki paired"));
             _paired = true;
-
-            _nukiBle.updateKeyTurnerState();
-            // nukiBle.requestConfig(false);
-            // nukiBle.requestConfig(true);
-            // nukiBle.requestBatteryReport();
-            _nukiBle.requestKeyPadCodes(0, 2);
-            // nukiBle.requestLogEntries(0, 10, 0, true);
-
-            //execute action
-            // nukiBle.lockAction(LockAction::lock, 0, 0);
-            // addKeypadEntry();
+        }
+        else
+        {
+            return;
         }
     }
 
-    vTaskDelay( 1000 / portTICK_PERIOD_MS);
+    vTaskDelay( 100 / portTICK_PERIOD_MS);
+    _nukiBle.requestKeyTurnerState(&_keyTurnerState);
+    Serial.print(F("Nuki lock state: "));
+    Serial.println((int)_keyTurnerState.lockState);
 
-    _nukiBle.updateKeyTurnerState();
+    vTaskDelay( 20000 / portTICK_PERIOD_MS);
 }
