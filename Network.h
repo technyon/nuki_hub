@@ -2,6 +2,7 @@
 
 #include <PubSubClient.h>
 #include <WiFiClient.h>
+#include "NukiConstants.h"
 
 class Network
 {
@@ -10,6 +11,8 @@ public:
 
     void initialize();
     void update();
+
+    void publishKeyTurnerState(const KeyTurnerState& state);
 
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
@@ -20,6 +23,5 @@ private:
     PubSubClient _mqttClient;
     WiFiClient _wifiClient;
 
-    uint32_t _count = 0;
     unsigned long _publishTs = 0;
 };

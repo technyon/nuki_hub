@@ -19,6 +19,7 @@ file(GLOB SRCFILES
 #        "Lib/FreeRTOS/src/*.cpp"
         Network.cpp
         Nuki.cpp
+        MqttTopics.h
         lib/ESP32_BLE_Arduino-1.0.1/src/*.cpp
         lib/ESP32_BLE_Arduino-1.0.1/src/*.h
         lib/WiFiManager/WiFiManager.cpp

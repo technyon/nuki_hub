@@ -16,6 +16,7 @@ private:
     NukiBle _nukiBle;
     Network* _network;
 
+    KeyTurnerState _lastKeyTurnerState;
     KeyTurnerState _keyTurnerState;
 
     bool _paired = false;

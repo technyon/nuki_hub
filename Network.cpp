@@ -2,6 +2,7 @@
 #include "WiFi.h"
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
+#include "MqttTopics.h"
 
 Network* nwInst;
 
@@ -82,18 +83,18 @@ void Network::update()
         }
     }
 
-    unsigned long ts = millis();
-    if(_publishTs < ts)
-    {
-        _publishTs = ts + 1000;
-
-        ++_count;
-
-        char cstr[16];
-        itoa(_count, cstr, 10);
-
-        _mqttClient.publish("nuki/counter", cstr);
-    }
+//    unsigned long ts = millis();
+//    if(_publishTs < ts)
+//    {
+//        _publishTs = ts + 1000;
+//
+//        ++_count;
+//
+//        char cstr[16];
+//        itoa(_count, cstr, 10);
+//
+//        _mqttClient.publish("nuki/counter", cstr);
+//    }
 
     _mqttClient.loop();
 
@@ -121,4 +122,11 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     {
         Serial.println(value);
     }
+}
+
+void Network::publishKeyTurnerState(const KeyTurnerState &state)
+{
+    char cstr[10];
+    itoa((int)state.lockState, cstr, 10);
+    _mqttClient.publish(mqtt_topc_lockstate, cstr);
 }
