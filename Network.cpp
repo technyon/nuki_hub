@@ -124,9 +124,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     }
 }
 
-void Network::publishKeyTurnerState(const KeyTurnerState &state)
+void Network::publishKeyTurnerState(const char* state)
 {
-    char cstr[10];
-    itoa((int)state.lockState, cstr, 10);
-    _mqttClient.publish(mqtt_topc_lockstate, cstr);
+    _mqttClient.publish(mqtt_topc_lockstate, state);
 }

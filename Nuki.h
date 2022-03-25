@@ -13,6 +13,8 @@ public:
     void update();
 
 private:
+    void stateToString(LockState state, char* str); // char array at least 14 characters
+
     NukiBle _nukiBle;
     Network* _network;
 

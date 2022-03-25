@@ -12,7 +12,7 @@ public:
     void initialize();
     void update();
 
-    void publishKeyTurnerState(const KeyTurnerState& state);
+    void publishKeyTurnerState(const char* state);
 
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
