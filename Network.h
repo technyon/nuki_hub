@@ -14,6 +14,8 @@ public:
 
     void publishKeyTurnerState(const char* state);
 
+    void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
+
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
@@ -23,5 +25,5 @@ private:
     PubSubClient _mqttClient;
     WiFiClient _wifiClient;
 
-    unsigned long _publishTs = 0;
+    void (*_lockActionReceivedCallback)(const char* value) = NULL;
 };

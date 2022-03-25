@@ -1,12 +1,18 @@
 #include "Nuki.h"
 #include <FreeRTOS.h>
 
+Nuki* nukiInst;
+
 Nuki::Nuki(const std::string& name, uint32_t id, Network* network)
 : _nukiBle(name, id),
   _network(network)
 {
+    nukiInst = this;
+
     memset(&_lastKeyTurnerState, sizeof(KeyTurnerState), 0);
     memset(&_keyTurnerState, sizeof(KeyTurnerState), 0);
+
+    network->setLockActionReceived(nukiInst->onLockActionReceived);
 }
 
 void Nuki::initialize()
@@ -34,7 +40,7 @@ void Nuki::update()
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);
 
     char str[20];
-    stateToString(_keyTurnerState.lockState, str);
+    lockstateToString(_keyTurnerState.lockState, str);
     Serial.print(F("Nuki lock state: "));
     Serial.println(str);
 
@@ -48,7 +54,7 @@ void Nuki::update()
     vTaskDelay( 20000 / portTICK_PERIOD_MS);
 }
 
-void Nuki::stateToString(LockState state, char* str)
+void Nuki::lockstateToString(const LockState state, char* str)
 {
     switch(state)
     {
@@ -85,5 +91,32 @@ void Nuki::stateToString(LockState state, char* str)
         default:
             strcpy(str, "undefined");
             break;
+    }
+}
+
+LockAction Nuki::lockActionToEnum(const char *str)
+{
+    if(strcmp(str, "unlock") == 0) return LockAction::unlock;
+    else if(strcmp(str, "lock") == 0) return LockAction::lock;
+    else if(strcmp(str, "unlatch") == 0) return LockAction::unlatch;
+    else if(strcmp(str, "lockNgo") == 0) return LockAction::lockNgo;
+    else if(strcmp(str, "lockNgoUnlatch") == 0) return LockAction::lockNgoUnlatch;
+    else if(strcmp(str, "fullLock") == 0) return LockAction::fullLock;
+    else if(strcmp(str, "fobAction2") == 0) return LockAction::fobAction2;
+    else if(strcmp(str, "fobAction1") == 0) return LockAction::fobAction1;
+    else if(strcmp(str, "fobAction3") == 0) return LockAction::fobAction3;
+    return (LockAction)0xff;
+}
+
+
+void Nuki::onLockActionReceived(const char *value)
+{
+    LockAction action =  nukiInst->lockActionToEnum(value);
+    Serial.print("Action: ");
+    Serial.println((int)action);
+    if(action != (LockAction)0xff)
+    {
+//        nukiInst->_nukiBle.lockAction(action, 0, 0);
+        vTaskDelay( 5000 / portTICK_PERIOD_MS);
     }
 }

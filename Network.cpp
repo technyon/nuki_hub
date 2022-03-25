@@ -54,7 +54,7 @@ bool Network::reconnect()
             Serial.println("connected");
 
             // ... and resubscribe
-            _mqttClient.subscribe("nuki/cmd");
+            _mqttClient.subscribe(mqtt_topc_lockstate_setpoint);
         } else {
             Serial.print("failed, rc=");
             Serial.print(_mqttClient.state());
@@ -118,13 +118,26 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
 
     value[l] = 0;
 
-    if(strcmp(topic, "nuki/cmd") == 0)
+    if(strcmp(topic, mqtt_topc_lockstate_setpoint) == 0)
     {
+        if(strcmp(value, "") == 0) return;
+
+        Serial.print("lockstate setpoint received: ");
         Serial.println(value);
+        if(_lockActionReceivedCallback != NULL)
+        {
+            _lockActionReceivedCallback(value);
+        }
+        _mqttClient.publish(mqtt_topc_lockstate_setpoint, "");
     }
 }
 
 void Network::publishKeyTurnerState(const char* state)
 {
     _mqttClient.publish(mqtt_topc_lockstate, state);
+}
+
+void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
+{
+    _lockActionReceivedCallback = lockActionReceivedCallback;
 }

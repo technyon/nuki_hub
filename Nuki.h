@@ -13,7 +13,9 @@ public:
     void update();
 
 private:
-    void stateToString(LockState state, char* str); // char array at least 14 characters
+    static void onLockActionReceived(const char* value);
+    void lockstateToString(const LockState state, char* str); // char array at least 14 characters
+    LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     NukiBle _nukiBle;
     Network* _network;
