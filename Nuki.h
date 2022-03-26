@@ -31,7 +31,7 @@ private:
     BatteryReport _lastBatteryReport;
 
     bool _paired = false;
-    unsigned long _lastLockStateUpdateTs = 0;
-    unsigned long _lastBatteryReportTs = 0;
+    unsigned long _nextLockStateUpdateTs = 0;
+    unsigned long _nextBatteryReportTs = 0;
     LockAction _nextLockAction = (LockAction)0xff;
 };
