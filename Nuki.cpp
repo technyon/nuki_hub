@@ -36,32 +36,26 @@ void Nuki::update()
             vTaskDelay( 200 / portTICK_PERIOD_MS);
             return;
         }
-
-        vTaskDelay( 100 / portTICK_PERIOD_MS);
-
-
-//        Config config;
-//        uint8_t  res = _nukiBle.requestConfig(&config, false);
-//        Serial.print("Result: ");
-//        Serial.println(res);
-//        Serial.print("Time: ");
-//        Serial.print(config.currentTimeHour);
-//        Serial.print(":");
-//        Serial.println(config.currentTimeMinute);
     }
 
-    vTaskDelay( 100 / portTICK_PERIOD_MS);
+    vTaskDelay( 200 / portTICK_PERIOD_MS);
 
     unsigned long ts = millis();
 
-    updateKeyTurnerState();
+    if(_lastLockStateUpdateTs == 0 || _lastLockStateUpdateTs + 60000 < ts)
+    {
+        _lastLockStateUpdateTs = ts;
+        updateKeyTurnerState();
+    }
     if(_lastBatteryReportTs == 0 || _lastBatteryReportTs + 600000 < ts)
     {
         _lastBatteryReportTs = ts;
         updateBatteryState();
     }
-
-    vTaskDelay( 60000 / portTICK_PERIOD_MS);
+    if(_nextLockAction != (LockAction)0xff)
+    {
+         _nukiBle.lockAction(_nextLockAction, 0, 0);
+    }
 }
 
 
@@ -155,12 +149,7 @@ LockAction Nuki::lockActionToEnum(const char *str)
 
 void Nuki::onLockActionReceived(const char *value)
 {
-    LockAction action =  nukiInst->lockActionToEnum(value);
+    nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
     Serial.print("Action: ");
-    Serial.println((int)action);
-    if(action != (LockAction)0xff)
-    {
-        nukiInst->_nukiBle.lockAction(action, 0, 0);
-        vTaskDelay( 5000 / portTICK_PERIOD_MS);
-    }
+    Serial.println((int)nukiInst->_nextLockAction);
 }
