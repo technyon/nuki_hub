@@ -50,7 +50,7 @@ bool Network::reconnect()
     while (!_mqttClient.connected()) {
         Serial.println("Attempting MQTT connection");
         // Attempt to connect
-        if (_mqttClient.connect("arduinoClient")) {
+        if (_mqttClient.connect("nukiHub")) {
             Serial.println("MQTT connected");
 
             // ... and resubscribe
@@ -58,6 +58,7 @@ bool Network::reconnect()
         } else {
             Serial.print("MQTT connect failed, rc=");
             Serial.println(_mqttClient.state());
+            vTaskDelay( 5000 / portTICK_PERIOD_MS);
         }
     }
 }
@@ -76,7 +77,6 @@ void Network::update()
         bool success = reconnect();
         if(!success)
         {
-            vTaskDelay( 5000 / portTICK_PERIOD_MS);
             return;
         }
     }
