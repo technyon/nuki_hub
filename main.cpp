@@ -2,7 +2,7 @@
 #include "Network.h"
 #include "Nuki.h"
 #include <FreeRTOS.h>
-
+//#include "garbage.h"
 
 #define ESP32
 
@@ -28,7 +28,7 @@ void nukiTask(void *pvParameters)
 void setupTasks()
 {
     xTaskCreate(networkTask, "ntw", 2048, NULL, 1, NULL);
-    xTaskCreate(nukiTask, "nuki", 4096, NULL, 1, NULL);
+    xTaskCreate(nukiTask, "nuki", 16384, NULL, 1, NULL);
 }
 
 void setup()
@@ -39,6 +39,8 @@ void setup()
     network->initialize();
     nuki->initialize();
     setupTasks();
+
+//    Serial.println(byte_array_dec[0]);
 }
 
 void loop()

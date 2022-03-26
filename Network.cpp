@@ -48,19 +48,16 @@ void Network::initialize()
 bool Network::reconnect()
 {
     while (!_mqttClient.connected()) {
-        Serial.print("Attempting MQTT connection...");
+        Serial.println("Attempting MQTT connection");
         // Attempt to connect
         if (_mqttClient.connect("arduinoClient")) {
-            Serial.println("connected");
+            Serial.println("MQTT connected");
 
             // ... and resubscribe
             _mqttClient.subscribe(mqtt_topc_lockstate_action);
         } else {
-            Serial.print("failed, rc=");
-            Serial.print(_mqttClient.state());
-            Serial.println(" try again in 5 seconds");
-            // Wait 5 seconds before retrying
-            delay(5000);
+            Serial.print("MQTT connect failed, rc=");
+            Serial.println(_mqttClient.state());
         }
     }
 }
@@ -79,22 +76,10 @@ void Network::update()
         bool success = reconnect();
         if(!success)
         {
+            vTaskDelay( 5000 / portTICK_PERIOD_MS);
             return;
         }
     }
-
-//    unsigned long ts = millis();
-//    if(_publishTs < ts)
-//    {
-//        _publishTs = ts + 1000;
-//
-//        ++_count;
-//
-//        char cstr[16];
-//        itoa(_count, cstr, 10);
-//
-//        _mqttClient.publish("nuki/counter", cstr);
-//    }
 
     _mqttClient.loop();
 

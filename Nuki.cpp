@@ -44,19 +44,19 @@ void Nuki::update()
 
     if(_nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
     {
-        _nextLockStateUpdateTs = ts + 60000;
+        _nextLockStateUpdateTs = ts + 5000;
         updateKeyTurnerState();
     }
     if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
     {
-        _nextBatteryReportTs = ts + 60000 * 30;
+        _nextBatteryReportTs = ts + 60000 * 5;
         updateBatteryState();
     }
     if(_nextLockAction != (LockAction)0xff)
     {
          _nukiBle.lockAction(_nextLockAction, 0, 0);
          _nextLockAction = (LockAction)0xff;
-        _nextLockStateUpdateTs = ts + 11000;
+//        _nextLockStateUpdateTs = ts + 11000;
     }
 }
 
