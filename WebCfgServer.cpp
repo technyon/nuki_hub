@@ -61,10 +61,19 @@ void WebCfgServer::update()
                 TokenType lastTokenType = getParameterType(lastToken);
                 TokenType tokenType = getParameterType(token);
 
-                if(lastTokenType == TokenType::MQTT_SERVER && tokenType == TokenType::NONE)
+                if(lastTokenType == TokenType::MqttServer && tokenType == TokenType::None)
                 {
-                    configChanged = true;
                     _preferences->putString(preference_mqtt_broker, token);
+                    configChanged = true;
+                }
+                else if(lastTokenType == TokenType::QueryIntervalLockstate && tokenType == TokenType::None)
+                {
+                    _preferences->putInt(preference_query_interval_lockstate, String(token).toInt());
+                    configChanged = true;
+                }
+                else if(lastTokenType == TokenType::QueryIntervalBattery && tokenType == TokenType::None)
+                {
+                    _preferences->putInt(preference_query_interval_battery, String(token).toInt());
                     configChanged = true;
                 }
             }
@@ -104,25 +113,13 @@ void WebCfgServer::serveHtml(WiFiClient &client)
     client.print(_preferences->getString(preference_mqtt_broker));
     client.println("\" NAME=\"MQTTSERVER\" SIZE=\"25\" MAXLENGTH=\"40\"><BR>");
 
-//    client.print("DNS Server: <INPUT TYPE=TEXT VALUE=\"");
-//    client.print(_configuration->dnsServerAddress);
-//    client.println("\" NAME=\"DNSSERVER\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
-//
-//    client.print("Gateway: <INPUT TYPE=TEXT VALUE=\"");
-//    client.print(_configuration->gatewayAddress);
-//    client.println("\" NAME=\"GATEWAY\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
-//
-//    client.print("IP Address: <INPUT TYPE=TEXT VALUE=\"");
-//    client.print(_configuration->ipAddress);
-//    client.println("\" NAME=\"IPADDRESS\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
-//
-//    client.print("Subnet mask: <INPUT TYPE=TEXT VALUE=\"");
-//    client.print(_configuration->subnetMask);
-//    client.println("\" NAME=\"SUBNET\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
-//
-//    client.print("MQTT publish interval (ms): <INPUT TYPE=TEXT VALUE=\"");
-//    client.print(_configuration->mqttPublishInterval);
-//    client.println("\" NAME=\"INTERVAL\" SIZE=\"25\" MAXLENGTH=\"6\"><BR>");
+    client.print("Query interval lock state (seconds): <INPUT TYPE=TEXT VALUE=\"");
+    client.print(_preferences->getInt(preference_query_interval_lockstate));
+    client.println("\" NAME=\"LSTINT\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
+
+    client.print("Query interval battery (seconds): <INPUT TYPE=TEXT VALUE=\"");
+    client.print(_preferences->getInt(preference_query_interval_battery));
+    client.println("\" NAME=\"BATINT\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
 
     client.println("<INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
 
@@ -132,17 +129,22 @@ void WebCfgServer::serveHtml(WiFiClient &client)
 
     client.println("</BODY>");
     client.println("</HTML>");
-
-
-
 }
 
 TokenType WebCfgServer::getParameterType(char *&token)
 {
     if (strcmp(token, "MQTTSERVER") == 0)
     {
-        return TokenType::MQTT_SERVER;
+        return TokenType::MqttServer;
+    }
+    if (strcmp(token, "LSTINT") == 0)
+    {
+        return TokenType::QueryIntervalLockstate;
+    }
+    if (strcmp(token, "BATINT") == 0)
+    {
+        return TokenType::QueryIntervalBattery;
     }
 
-    return TokenType::NONE;
+    return TokenType::None;
 }

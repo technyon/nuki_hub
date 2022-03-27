@@ -7,7 +7,7 @@
 class Nuki
 {
 public:
-    Nuki(const std::string& name, uint32_t id, Network* network);
+    Nuki(const std::string& name, uint32_t id, Network* network, Preferences* preferences);
 
     void initialize();
     void update();
@@ -23,6 +23,9 @@ private:
 
     NukiBle _nukiBle;
     Network* _network;
+    Preferences* _preferences;
+    int _intervalLockstate = 0; // seconds
+    int _intervalBattery = 0; // seconds
 
     KeyTurnerState _lastKeyTurnerState;
     KeyTurnerState _keyTurnerState;

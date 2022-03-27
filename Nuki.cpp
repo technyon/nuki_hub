@@ -1,11 +1,13 @@
 #include "Nuki.h"
 #include <FreeRTOS.h>
+#include "PreferencesKeys.h"
 
 Nuki* nukiInst;
 
-Nuki::Nuki(const std::string& name, uint32_t id, Network* network)
+Nuki::Nuki(const std::string& name, uint32_t id, Network* network, Preferences* preferences)
 : _nukiBle(name, id),
-  _network(network)
+  _network(network),
+  _preferences(preferences)
 {
     nukiInst = this;
 
@@ -20,6 +22,25 @@ Nuki::Nuki(const std::string& name, uint32_t id, Network* network)
 void Nuki::initialize()
 {
     _nukiBle.initialize();
+
+    _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
+    _intervalBattery = _preferences->getInt(preference_query_interval_battery);
+
+    if(_intervalLockstate == 0)
+    {
+        _intervalLockstate = 30;
+        _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
+    }
+    if(_intervalBattery == 0)
+    {
+        _intervalBattery = 60 * 30;
+        _preferences->putInt(preference_query_interval_battery, _intervalBattery);
+    }
+
+    Serial.print(F("Lock state interval: "));
+    Serial.print(_intervalLockstate);
+    Serial.print(F("| Battery interval: "));
+    Serial.println(_intervalBattery);
 }
 
 void Nuki::update()
@@ -44,22 +65,20 @@ void Nuki::update()
 
     if(_nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
     {
-        _nextLockStateUpdateTs = ts + 5000;
+        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
     }
     if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
     {
-        _nextBatteryReportTs = ts + 60000 * 5;
+        _nextBatteryReportTs = ts + _intervalBattery * 1000;
         updateBatteryState();
     }
     if(_nextLockAction != (LockAction)0xff)
     {
          _nukiBle.lockAction(_nextLockAction, 0, 0);
          _nextLockAction = (LockAction)0xff;
-//        _nextLockStateUpdateTs = ts + 11000;
     }
 }
-
 
 void Nuki::updateKeyTurnerState()
 {
@@ -67,12 +86,12 @@ void Nuki::updateKeyTurnerState()
 
     char str[20];
     lockstateToString(_keyTurnerState.lockState, str);
-    Serial.print(F("Nuki lock state: "));
-    Serial.println(str);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
         _network->publishKeyTurnerState(str);
+        Serial.print(F("Nuki lock state: "));
+        Serial.println(str);
     }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
@@ -83,12 +102,12 @@ void Nuki::updateBatteryState()
 {
     _nukiBle.requestBatteryReport(&_batteryReport);
 
-    Serial.print("Voltage: "); Serial.println(_batteryReport.batteryVoltage);
-    Serial.print("Drain: "); Serial.println(_batteryReport.batteryDrain);
-    Serial.print("Resistance: "); Serial.println(_batteryReport.batteryResistance);
-    Serial.print("Max Current: "); Serial.println(_batteryReport.maxTurnCurrent);
-    Serial.print("Crit. State: "); Serial.println(_batteryReport.criticalBatteryState);
-    Serial.print("Lock Dist: "); Serial.println(_batteryReport.lockDistance);
+    Serial.print(F("Voltage: ")); Serial.println(_batteryReport.batteryVoltage);
+    Serial.print(F("Drain: ")); Serial.println(_batteryReport.batteryDrain);
+    Serial.print(F("Resistance: ")); Serial.println(_batteryReport.batteryResistance);
+    Serial.print(F("Max Current: ")); Serial.println(_batteryReport.maxTurnCurrent);
+    Serial.print(F("Crit. State: ")); Serial.println(_batteryReport.criticalBatteryState);
+    Serial.print(F("Lock Dist: ")); Serial.println(_batteryReport.lockDistance);
 
     _network->publishBatteryVoltage((float)_batteryReport.batteryVoltage / (float)1000);
 }
@@ -152,6 +171,6 @@ LockAction Nuki::lockActionToEnum(const char *str)
 void Nuki::onLockActionReceived(const char *value)
 {
     nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
-    Serial.print("Action: ");
+    Serial.print(F("Action: "));
     Serial.println((int)nukiInst->_nextLockAction);
 }

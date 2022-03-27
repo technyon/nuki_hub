@@ -5,8 +5,10 @@
 
 enum class TokenType
 {
-    NONE,
-    MQTT_SERVER,
+    None,
+    MqttServer,
+    QueryIntervalLockstate,
+    QueryIntervalBattery,
 };
 
 class WebCfgServer
@@ -21,6 +23,7 @@ public:
 
 private:
     void serveHtml(WiFiClient& client);
+
     TokenType getParameterType(char*& token);
 
     WiFiServer _wifiServer;

@@ -44,7 +44,7 @@ void Network::initialize()
     const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
     strcpy(_mqttBrokerAddr, brokerAddr);
 
-    Serial.print("MQTT Broker: ");
+    Serial.print(F("MQTT Broker: "));
     Serial.println(_mqttBrokerAddr);
     _mqttClient.setServer(_mqttBrokerAddr, 1883);
     _mqttClient.setCallback(Network::onMqttDataReceivedCallback);
@@ -116,7 +116,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     {
         if(strcmp(value, "") == 0) return;
 
-        Serial.print("lockstate setpoint received: ");
+        Serial.print(F("Lockstate action received: "));
         Serial.println(value);
         if(_lockActionReceivedCallback != NULL)
         {
