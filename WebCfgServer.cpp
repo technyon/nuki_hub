@@ -66,6 +66,11 @@ void WebCfgServer::update()
                     _preferences->putString(preference_mqtt_broker, token);
                     configChanged = true;
                 }
+                else if(lastTokenType == TokenType::MqttPort && tokenType == TokenType::None)
+                {
+                    _preferences->putInt(preference_mqtt_broker_port, String(token).toInt());
+                    configChanged = true;
+                }
                 else if(lastTokenType == TokenType::QueryIntervalLockstate && tokenType == TokenType::None)
                 {
                     _preferences->putInt(preference_query_interval_lockstate, String(token).toInt());
@@ -109,9 +114,13 @@ void WebCfgServer::serveHtml(WiFiClient &client)
 
     client.println("<FORM ACTION=method=get >");
 
-    client.print("MQTT Server: <INPUT TYPE=TEXT VALUE=\"");
+    client.print("MQTT Broker: <INPUT TYPE=TEXT VALUE=\"");
     client.print(_preferences->getString(preference_mqtt_broker));
     client.println("\" NAME=\"MQTTSERVER\" SIZE=\"25\" MAXLENGTH=\"40\"><BR>");
+
+    client.print("MQTT Broker port: <INPUT TYPE=TEXT VALUE=\"");
+    client.print(_preferences->getInt(preference_mqtt_broker_port));
+    client.println("\" NAME=\"MQTTPORT\" SIZE=\"25\" MAXLENGTH=\"40\"><BR>");
 
     client.print("Query interval lock state (seconds): <INPUT TYPE=TEXT VALUE=\"");
     client.print(_preferences->getInt(preference_query_interval_lockstate));
@@ -144,6 +153,10 @@ TokenType WebCfgServer::getParameterType(char *&token)
     if (strcmp(token, "BATINT") == 0)
     {
         return TokenType::QueryIntervalBattery;
+    }
+    if (strcmp(token, "MQTTPORT") == 0)
+    {
+        return TokenType::MqttPort;
     }
 
     return TokenType::None;

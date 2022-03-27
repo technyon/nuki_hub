@@ -7,6 +7,7 @@ enum class TokenType
 {
     None,
     MqttServer,
+    MqttPort,
     QueryIntervalLockstate,
     QueryIntervalBattery,
 };

@@ -44,9 +44,18 @@ void Network::initialize()
     const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
     strcpy(_mqttBrokerAddr, brokerAddr);
 
+    int port = _preferences->getInt(preference_mqtt_broker_port);
+    if(port == 0)
+    {
+        port = 1883;
+        _preferences->putInt(preference_mqtt_broker_port, port);
+    }
+
     Serial.print(F("MQTT Broker: "));
-    Serial.println(_mqttBrokerAddr);
-    _mqttClient.setServer(_mqttBrokerAddr, 1883);
+    Serial.print(_mqttBrokerAddr);
+    Serial.print(F(":"));
+    Serial.println(port);
+    _mqttClient.setServer(_mqttBrokerAddr, port);
     _mqttClient.setCallback(Network::onMqttDataReceivedCallback);
 }
 
@@ -58,14 +67,14 @@ bool Network::reconnect()
         Serial.println("Attempting MQTT connection");
         // Attempt to connect
         if (_mqttClient.connect("nukiHub")) {
-            Serial.println("MQTT connected");
+            Serial.println(F("MQTT connected"));
 
             // ... and resubscribe
             _mqttClient.subscribe(mqtt_topc_lockstate_action);
         }
         else
         {
-            Serial.print("MQTT connect failed, rc=");
+            Serial.print(F("MQTT connect failed, rc="));
             Serial.println(_mqttClient.state());
             _nextReconnect = millis() + 5000;
         }
