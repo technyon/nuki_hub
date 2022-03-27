@@ -13,8 +13,8 @@ Nuki::Nuki(const std::string& name, uint32_t id, Network* network, Preferences* 
 
     memset(&_lastKeyTurnerState, sizeof(KeyTurnerState), 0);
     memset(&_keyTurnerState, sizeof(KeyTurnerState), 0);
-    memset(&_lastBatteryReport, sizeof(KeyTurnerState), 0);
-    memset(&_batteryReport, sizeof(KeyTurnerState), 0);
+    memset(&_lastBatteryReport, sizeof(BatteryReport), 0);
+    memset(&_batteryReport, sizeof(BatteryReport), 0);
 
     network->setLockActionReceived(nukiInst->onLockActionReceived);
 }
