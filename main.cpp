@@ -1,18 +1,22 @@
 #include "Arduino.h"
 #include "Network.h"
 #include "Nuki.h"
+#include "WebCfgServer.h"
 #include <FreeRTOS.h>
 
 #define ESP32
 
 Network* network;
+WebCfgServer* webCfgServer;
 Nuki* nuki;
+Preferences* preferences;
 
 void networkTask(void *pvParameters)
 {
     while(true)
     {
         network->update();
+        webCfgServer->update();
     }
 }
 
@@ -32,10 +36,15 @@ void setupTasks()
 
 void setup()
 {
+    preferences = new Preferences();
+    preferences->begin("nukihub", false);
     network = new Network();
+    webCfgServer = new WebCfgServer();
     nuki = new Nuki("Main Door", 2020001, network);
 
     network->initialize();
+    webCfgServer->initialize();
+
     nuki->initialize();
     setupTasks();
 
