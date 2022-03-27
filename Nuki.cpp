@@ -172,7 +172,7 @@ void Nuki::triggerToString(const NukiTrigger trigger, char *str)
             strcpy(str, "button");
             break;
         case NukiTrigger::manual:
-            strcpy(str, "autoLock");
+            strcpy(str, "manual");
             break;
         case NukiTrigger::system:
             strcpy(str, "system");
