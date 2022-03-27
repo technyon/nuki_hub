@@ -1,8 +1,10 @@
 #include "WebCfgServer.h"
 #include <WiFiClient.h>
+#include "PreferencesKeys.h"
 
-WebCfgServer::WebCfgServer()
-: _wifiServer(80)
+WebCfgServer::WebCfgServer(Preferences* preferences)
+: _wifiServer(80),
+  _preferences(preferences)
 {}
 
 
@@ -13,6 +15,8 @@ void WebCfgServer::initialize()
 
 void WebCfgServer::update()
 {
+    bool configChanged = false;
+
     // Create a client connections
     WiFiClient client = _wifiServer.available();
 
@@ -60,21 +64,25 @@ void WebCfgServer::update()
                 if(lastTokenType == TokenType::MQTT_SERVER && tokenType == TokenType::NONE)
                 {
                     configChanged = true;
-                    Serial.print("### ");
-                    Serial.println(token);
-//                    strcpy(_configuration->mqttServerAddress, token);
+                    _preferences->putString(preference_mqtt_broker, token);
+                    configChanged = true;
                 }
             }
             lastToken = token;
             token = strtok(NULL, "?=&");
         }
-//
-//        if(configChanged)
-//        {
-//            _configuration->writeEeprom();
-//            _enabled = false;
-//        }
+
+        if(configChanged)
+        {
+            _enabled = false;
+            _preferences->end();
+            Serial.println(F("Restarting"));
+            vTaskDelay( 200 / portTICK_PERIOD_MS);
+            ESP.restart();
+        }
     }
+
+    vTaskDelay(200 / portTICK_PERIOD_MS);
 
 }
 
@@ -93,7 +101,7 @@ void WebCfgServer::serveHtml(WiFiClient &client)
     client.println("<FORM ACTION=method=get >");
 
     client.print("MQTT Server: <INPUT TYPE=TEXT VALUE=\"");
-    client.print("");
+    client.print(_preferences->getString(preference_mqtt_broker));
     client.println("\" NAME=\"MQTTSERVER\" SIZE=\"25\" MAXLENGTH=\"40\"><BR>");
 
 //    client.print("DNS Server: <INPUT TYPE=TEXT VALUE=\"");

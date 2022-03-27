@@ -2,12 +2,14 @@
 
 #include <PubSubClient.h>
 #include <WiFiClient.h>
+#include <Preferences.h>
 #include "NukiConstants.h"
 
 class Network
 {
 public:
-    Network();
+    explicit Network(Preferences* preferences);
+    virtual ~Network() = default;
 
     void initialize();
     void update();
@@ -25,6 +27,10 @@ private:
 
     PubSubClient _mqttClient;
     WiFiClient _wifiClient;
+    Preferences* _preferences;
+
+    unsigned long _nextReconnect = 0;
+    char _mqttBrokerAddr[100] = {0};
 
     void (*_lockActionReceivedCallback)(const char* value) = NULL;
 };

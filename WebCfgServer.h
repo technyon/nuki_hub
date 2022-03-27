@@ -1,6 +1,7 @@
 #pragma once
 
 #include <WiFiServer.h>
+#include <Preferences.h>
 
 enum class TokenType
 {
@@ -11,7 +12,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer();
+    WebCfgServer(Preferences* preferences);
     ~WebCfgServer() = default;
 
     void initialize();
@@ -23,6 +24,7 @@ private:
     TokenType getParameterType(char*& token);
 
     WiFiServer _wifiServer;
+    Preferences* _preferences;
 
     bool _enabled = true;
 };

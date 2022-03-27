@@ -3,11 +3,13 @@
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
 #include "MqttTopics.h"
+#include "PreferencesKeys.h"
 
 Network* nwInst;
 
-Network::Network()
-: _mqttClient(_wifiClient)
+Network::Network(Preferences* preferences)
+: _mqttClient(_wifiClient),
+  _preferences(preferences)
 {
     nwInst = this;
 }
@@ -39,15 +41,20 @@ void Network::initialize()
         Serial.println("connected...yeey :)");
     }
 
-    _mqttClient.setServer("192.168.0.100", 1883);
+    const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
+    strcpy(_mqttBrokerAddr, brokerAddr);
+
+    Serial.print("MQTT Broker: ");
+    Serial.println(_mqttBrokerAddr);
+    _mqttClient.setServer(_mqttBrokerAddr, 1883);
     _mqttClient.setCallback(Network::onMqttDataReceivedCallback);
-    _mqttClient.publish("nuki/test", "OK");
 }
 
 
 bool Network::reconnect()
 {
-    while (!_mqttClient.connected()) {
+    while (!_mqttClient.connected() && millis() > _nextReconnect)
+    {
         Serial.println("Attempting MQTT connection");
         // Attempt to connect
         if (_mqttClient.connect("nukiHub")) {
@@ -55,10 +62,12 @@ bool Network::reconnect()
 
             // ... and resubscribe
             _mqttClient.subscribe(mqtt_topc_lockstate_action);
-        } else {
+        }
+        else
+        {
             Serial.print("MQTT connect failed, rc=");
             Serial.println(_mqttClient.state());
-            vTaskDelay( 5000 / portTICK_PERIOD_MS);
+            _nextReconnect = millis() + 5000;
         }
     }
 }
