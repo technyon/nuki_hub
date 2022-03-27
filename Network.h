@@ -14,7 +14,7 @@ public:
     void initialize();
     void update();
 
-    void publishKeyTurnerState(const char* state);
+    void publishKeyTurnerState(const char* state, const char* trigger, const char* completionStatus);
     void publishBatteryReport(const BatteryReport& batteryReport);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));

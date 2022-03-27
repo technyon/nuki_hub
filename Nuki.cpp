@@ -84,14 +84,18 @@ void Nuki::updateKeyTurnerState()
 {
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);
 
-    char str[20];
-    lockstateToString(_keyTurnerState.lockState, str);
+    char lockStateStr[20];
+    lockstateToString(_keyTurnerState.lockState, lockStateStr);
+    char triggerStr[20];
+    triggerToString(_keyTurnerState.trigger, triggerStr);
+    char completionStatusStr[20];
+    completionStatusToString(_keyTurnerState.lastLockActionCompletionStatus, completionStatusStr);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
-        _network->publishKeyTurnerState(str);
+        _network->publishKeyTurnerState(lockStateStr, triggerStr, completionStatusStr);
         Serial.print(F("Nuki lock state: "));
-        Serial.println(str);
+        Serial.println(lockStateStr);
     }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
@@ -150,6 +154,79 @@ void Nuki::lockstateToString(const LockState state, char* str)
         default:
             strcpy(str, "undefined");
             break;
+    }
+}
+
+
+void Nuki::triggerToString(const NukiTrigger trigger, char *str)
+{
+    switch(trigger)
+    {
+        case NukiTrigger::autoLock:
+            strcpy(str, "autoLock");
+            break;
+        case NukiTrigger::automatic:
+            strcpy(str, "automatic");
+            break;
+        case NukiTrigger::button:
+            strcpy(str, "button");
+            break;
+        case NukiTrigger::manual:
+            strcpy(str, "autoLock");
+            break;
+        case NukiTrigger::system:
+            strcpy(str, "system");
+            break;
+        default:
+            strcpy(str, "undefined");
+            break;
+    }
+}
+
+void Nuki::completionStatusToString(const CompletionStatus status, char *str)
+{
+    switch (status)
+    {
+        case CompletionStatus::success:
+            strcpy(str, "success");
+            break;
+        case CompletionStatus::busy:
+            strcpy(str, "busy");
+            break;
+        case CompletionStatus::canceled:
+            strcpy(str, "canceled");
+            break;
+        case CompletionStatus::clutchFailure:
+            strcpy(str, "clutchFailure");
+            break;
+        case CompletionStatus::incompleteFailure:
+            strcpy(str, "incompleteFailure");
+            break;
+        case CompletionStatus::invalidCode:
+            strcpy(str, "invalidCode");
+            break;
+        case CompletionStatus::lowMotorVoltage:
+            strcpy(str, "lowMotorVoltage");
+            break;
+        case CompletionStatus::motorBlocked:
+            strcpy(str, "motorBlocked");
+            break;
+        case CompletionStatus::motorPowerFailure:
+            strcpy(str, "motorPowerFailure");
+            break;
+        case CompletionStatus::otherError:
+            strcpy(str, "otherError");
+            break;
+        case CompletionStatus::tooRecent:
+            strcpy(str, "tooRecent");
+            break;
+        case CompletionStatus::unknown:
+            strcpy(str, "unknown");
+            break;
+        default:
+            strcpy(str, "undefined");
+            break;
+
     }
 }
 

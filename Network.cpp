@@ -135,9 +135,11 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     }
 }
 
-void Network::publishKeyTurnerState(const char* state)
+void Network::publishKeyTurnerState(const char* state, const char* trigger, const char* completionStatus)
 {
-    _mqttClient.publish(mqtt_topic_lockstate, state);
+    _mqttClient.publish(mqtt_topic_lockstate_state, state);
+    _mqttClient.publish(mqtt_topic_lockstate_trigger, trigger);
+    _mqttClient.publish(mqtt_topic_lockstate_completionStatus, completionStatus);
 }
 
 void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
@@ -148,8 +150,8 @@ void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const cha
 void Network::publishBatteryReport(const BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
-    publishFloat(mqtt_topic_battery_drain, (float)batteryReport.batteryDrain / 1000.0); // milliwatt seconds
-    publishInt(mqtt_topic_battery_max_turn_current, batteryReport.maxTurnCurrent);
+    publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
+    publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
 }
 
 void Network::publishFloat(const char* topic, const float value, const uint8_t precision)

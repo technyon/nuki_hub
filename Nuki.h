@@ -21,6 +21,9 @@ private:
     void lockstateToString(const LockState state, char* str); // char array at least 14 characters
     LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
+    void triggerToString(const NukiTrigger trigger, char* str); // char arry at least 10 characters
+    void completionStatusToString(const CompletionStatus status, char* str); // char arry at least 18 characters
+
     NukiBle _nukiBle;
     Network* _network;
     Preferences* _preferences;
