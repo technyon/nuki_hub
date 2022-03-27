@@ -2,8 +2,10 @@
 #include <WiFiClient.h>
 #include "PreferencesKeys.h"
 
-WebCfgServer::WebCfgServer(Preferences* preferences)
+WebCfgServer::WebCfgServer(Nuki* nuki, Network* network, Preferences* preferences)
 : _wifiServer(80),
+  _nuki(nuki),
+  _network(network),
   _preferences(preferences)
 {}
 
@@ -112,6 +114,16 @@ void WebCfgServer::serveHtml(WiFiClient &client)
     client.println("</HEAD>");
     client.println("<BODY>");
 
+
+    client.println("<br><br><h3>");
+    client.print("Paired: ");
+    client.println(_nuki->isPaired() ? "Yes" : "No");
+    client.println("</h3>");
+    client.println("<h3>");
+    client.print("MQTT Connected: ");
+    client.println(_network->isMqttConnected() ? "Yes" : "No");
+    client.println("</h3><br><br>");
+
     client.println("<FORM ACTION=method=get >");
 
     client.print("MQTT Broker: <INPUT TYPE=TEXT VALUE=\"");
@@ -130,7 +142,7 @@ void WebCfgServer::serveHtml(WiFiClient &client)
     client.print(_preferences->getInt(preference_query_interval_battery));
     client.println("\" NAME=\"BATINT\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
 
-    client.println("<INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+    client.println("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
 
     client.println("</FORM>");
 

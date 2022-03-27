@@ -68,6 +68,7 @@ bool Network::reconnect()
         // Attempt to connect
         if (_mqttClient.connect("nukiHub")) {
             Serial.println(F("MQTT connected"));
+            _mqttConnected = true;
 
             // ... and resubscribe
             _mqttClient.subscribe(mqtt_topic_lockstate_action);
@@ -76,11 +77,12 @@ bool Network::reconnect()
         {
             Serial.print(F("MQTT connect failed, rc="));
             Serial.println(_mqttClient.state());
+            _mqttConnected = false;
             _nextReconnect = millis() + 5000;
         }
     }
+    return _mqttConnected;
 }
-
 
 void Network::update()
 {
@@ -166,4 +168,9 @@ void Network::publishInt(const char *topic, const int value)
     char str[30];
     itoa(value, str, 10);
     _mqttClient.publish(topic, str);
+}
+
+bool Network::isMqttConnected()
+{
+    return _mqttConnected;
 }

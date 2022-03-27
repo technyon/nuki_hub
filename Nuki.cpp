@@ -251,3 +251,8 @@ void Nuki::onLockActionReceived(const char *value)
     Serial.print(F("Action: "));
     Serial.println((int)nukiInst->_nextLockAction);
 }
+
+const bool Nuki::isPaired()
+{
+    return _paired;
+}

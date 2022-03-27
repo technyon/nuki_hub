@@ -12,6 +12,8 @@ public:
     void initialize();
     void update();
 
+    const bool isPaired();
+
 private:
     static void onLockActionReceived(const char* value);
 

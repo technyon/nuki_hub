@@ -39,8 +39,8 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     network = new Network(preferences);
-    webCfgServer = new WebCfgServer(preferences);
     nuki = new Nuki("Main Door", 2020001, network, preferences);
+    webCfgServer = new WebCfgServer(nuki, network, preferences);
 
     network->initialize();
     webCfgServer->initialize();

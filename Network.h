@@ -14,6 +14,8 @@ public:
     void initialize();
     void update();
 
+    bool isMqttConnected();
+
     void publishKeyTurnerState(const char* state, const char* trigger, const char* completionStatus);
     void publishBatteryReport(const BatteryReport& batteryReport);
 
@@ -31,6 +33,8 @@ private:
     PubSubClient _mqttClient;
     WiFiClient _wifiClient;
     Preferences* _preferences;
+
+    bool _mqttConnected = false;
 
     unsigned long _nextReconnect = 0;
     char _mqttBrokerAddr[100] = {0};
