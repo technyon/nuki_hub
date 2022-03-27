@@ -70,7 +70,7 @@ bool Network::reconnect()
             Serial.println(F("MQTT connected"));
 
             // ... and resubscribe
-            _mqttClient.subscribe(mqtt_topc_lockstate_action);
+            _mqttClient.subscribe(mqtt_topic_lockstate_action);
         }
         else
         {
@@ -121,7 +121,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
 
     value[l] = 0;
 
-    if(strcmp(topic, mqtt_topc_lockstate_action) == 0)
+    if(strcmp(topic, mqtt_topic_lockstate_action) == 0)
     {
         if(strcmp(value, "") == 0) return;
 
@@ -131,13 +131,13 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
         {
             _lockActionReceivedCallback(value);
         }
-        _mqttClient.publish(mqtt_topc_lockstate_action, "");
+        _mqttClient.publish(mqtt_topic_lockstate_action, "");
     }
 }
 
 void Network::publishKeyTurnerState(const char* state)
 {
-    _mqttClient.publish(mqtt_topc_lockstate, state);
+    _mqttClient.publish(mqtt_topic_lockstate, state);
 }
 
 void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
@@ -145,9 +145,23 @@ void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const cha
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }
 
-void Network::publishBatteryVoltage(const float &value)
+void Network::publishBatteryReport(const BatteryReport& batteryReport)
+{
+    publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
+    publishFloat(mqtt_topic_battery_drain, (float)batteryReport.batteryDrain / 1000.0); // milliwatt seconds
+    publishInt(mqtt_topic_battery_max_turn_current, batteryReport.maxTurnCurrent);
+}
+
+void Network::publishFloat(const char* topic, const float value, const uint8_t precision)
 {
     char str[30];
-    dtostrf(value, 0, 2, str);
-    _mqttClient.publish(mqtt_topc_voltage, str);
+    dtostrf(value, 0, precision, str);
+    _mqttClient.publish(topic, str);
+}
+
+void Network::publishInt(const char *topic, const int value)
+{
+    char str[30];
+    itoa(value, str, 10);
+    _mqttClient.publish(topic, str);
 }

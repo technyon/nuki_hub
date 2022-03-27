@@ -109,7 +109,7 @@ void Nuki::updateBatteryState()
     Serial.print(F("Crit. State: ")); Serial.println(_batteryReport.criticalBatteryState);
     Serial.print(F("Lock Dist: ")); Serial.println(_batteryReport.lockDistance);
 
-    _network->publishBatteryVoltage((float)_batteryReport.batteryVoltage / (float)1000);
+    _network->publishBatteryReport(_batteryReport);
 }
 
 

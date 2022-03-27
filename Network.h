@@ -15,13 +15,16 @@ public:
     void update();
 
     void publishKeyTurnerState(const char* state);
-    void publishBatteryVoltage(const float& value);
+    void publishBatteryReport(const BatteryReport& batteryReport);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
 
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
+
+    void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
+    void publishInt(const char* topic, const int value);
 
     bool reconnect();
 
