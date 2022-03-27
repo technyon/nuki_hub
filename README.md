@@ -17,3 +17,11 @@ Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should
 - nuki/lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
 - nuki/state/actions: (to be renamed to action). Allows to execute lock actions. After executing the action, the value is reset to an empty string. Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
 - battery/voltage: Reports the current battery voltage in Volts.
+
+# Disclaimer
+
+This is a third party software for NUKI smart door locks. This project or any of it's authors aren't associated with Nuki Home Solutions GmbH. Please refer for official products and offical support to their website:
+
+https://nuki.io/
+
+For further license details, check the included LICENSE file.
