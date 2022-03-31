@@ -161,6 +161,13 @@ void Network::publishBatteryReport(const BatteryReport& batteryReport)
     publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
 }
 
+void Network::publishCriticalBattery(uint8_t level, bool isCritical, bool isCharging)
+{
+    publishInt(mqtt_topic_battery_level, level); // milliwatt seconds
+    publishBool(mqtt_topic_battery_critical, isCritical);
+    publishBool(mqtt_topic_battery_charging, isCharging);
+}
+
 void Network::publishFloat(const char* topic, const float value, const uint8_t precision)
 {
     char str[30];
@@ -172,6 +179,13 @@ void Network::publishInt(const char *topic, const int value)
 {
     char str[30];
     itoa(value, str, 10);
+    _mqttClient.publish(topic, str);
+}
+
+void Network::publishBool(const char *topic, const bool value)
+{
+    char str[2] = {0};
+    str[0] = value ? '1' : '0';
     _mqttClient.publish(topic, str);
 }
 

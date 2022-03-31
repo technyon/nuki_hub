@@ -1,5 +1,8 @@
 #pragma once
 
+#define mqtt_topic_battery_level "nuki/battery/level"
+#define mqtt_topic_battery_critical "nuki/battery/critical"
+#define mqtt_topic_battery_charging "nuki/battery/charging"
 #define mqtt_topic_battery_voltage "nuki/battery/voltage"
 #define mqtt_topic_battery_drain "nuki/battery/drain"
 #define mqtt_topic_battery_max_turn_current "nuki/battery/maxTurnCurrent"

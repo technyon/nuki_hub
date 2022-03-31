@@ -19,6 +19,7 @@ public:
     void publishKeyTurnerState(const char* state, const char* trigger, const char* completionStatus);
     void publishDoorSensorState(const char* state);
     void publishBatteryReport(const BatteryReport& batteryReport);
+    void publishCriticalBattery(uint8_t level, bool isCritical, bool isCharging);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
 
@@ -28,6 +29,7 @@ private:
 
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value);
+    void publishBool(const char* topic, const bool value);
 
     bool reconnect();
 

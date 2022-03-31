@@ -109,6 +109,14 @@ void Nuki::updateKeyTurnerState()
         _network->publishDoorSensorState(doorSensorStateStr);
     }
 
+    if(_keyTurnerState.criticalBatteryState != _lastKeyTurnerState.criticalBatteryState)
+    {
+        uint8_t level = (_keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
+        bool critical = (_keyTurnerState.criticalBatteryState & 0b00000001) > 0;
+        bool charging = (_keyTurnerState.criticalBatteryState & 0b00000010) > 0;
+        _network->publishCriticalBattery(level, critical, charging);
+    }
+
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
 }
 
