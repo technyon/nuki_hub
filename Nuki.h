@@ -4,7 +4,7 @@
 #include "NukiConstants.h"
 #include "Network.h"
 
-class Nuki
+class Nuki : public NukiSmartlockEventHandler
 {
 public:
     Nuki(const std::string& name, uint32_t id, Network* network, Preferences* preferences);
@@ -13,6 +13,8 @@ public:
     void update();
 
     const bool isPaired();
+
+    void notify(NukiEventType eventType) override;
 
 private:
     static void onLockActionReceived(const char* value);
@@ -39,6 +41,7 @@ private:
     BatteryReport _lastBatteryReport;
 
     bool _paired = false;
+    bool _statusUpdated = false;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     LockAction _nextLockAction = (LockAction)0xff;

@@ -29,6 +29,7 @@ file(GLOB SRCFILES
         lib/nuki_ble/src/NukiBle.cpp
         lib/nuki_ble/src/NukiConstants.h
         lib/nuki_ble/src/NukiUtills.h
+        lib/nuki_ble/src/BleScanner.cpp
         include_directories(Lib/PubSubClient)
         lib/pubsubclient/src/PubSubClient.cpp
 )

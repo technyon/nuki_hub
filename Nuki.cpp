@@ -37,6 +37,8 @@ void Nuki::initialize()
         _preferences->putInt(preference_query_interval_battery, _intervalBattery);
     }
 
+    _nukiBle.setEventHandler(this);
+
     Serial.print(F("Lock state interval: "));
     Serial.print(_intervalLockstate);
     Serial.print(F("| Battery interval: "));
@@ -63,8 +65,9 @@ void Nuki::update()
 
     unsigned long ts = millis();
 
-    if(_nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
+    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
     {
+        _statusUpdated = false;
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
     }
@@ -78,6 +81,7 @@ void Nuki::update()
          _nukiBle.lockAction(_nextLockAction, 0, 0);
          _nextLockAction = (LockAction)0xff;
     }
+    _nukiBle.update();
 }
 
 void Nuki::updateKeyTurnerState()
@@ -94,9 +98,9 @@ void Nuki::updateKeyTurnerState()
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
         _network->publishKeyTurnerState(lockStateStr, triggerStr, completionStatusStr);
-        Serial.print(F("Nuki lock state: "));
-        Serial.println(lockStateStr);
     }
+    Serial.print(F("Nuki lock state: "));
+    Serial.println(lockStateStr);
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
 }
@@ -244,7 +248,6 @@ LockAction Nuki::lockActionToEnum(const char *str)
     return (LockAction)0xff;
 }
 
-
 void Nuki::onLockActionReceived(const char *value)
 {
     nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
@@ -255,4 +258,13 @@ void Nuki::onLockActionReceived(const char *value)
 const bool Nuki::isPaired()
 {
     return _paired;
+}
+
+void Nuki::notify(NukiEventType eventType)
+{
+    if(eventType == NukiEventType::KeyTurnerStatusUpdated)
+    {
+//        Serial.println("SUP2");
+        _statusUpdated = true;
+    }
 }
