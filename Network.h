@@ -17,6 +17,7 @@ public:
     bool isMqttConnected();
 
     void publishKeyTurnerState(const char* state, const char* trigger, const char* completionStatus);
+    void publishDoorSensorState(const char* state);
     void publishBatteryReport(const BatteryReport& batteryReport);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));

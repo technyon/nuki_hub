@@ -144,6 +144,11 @@ void Network::publishKeyTurnerState(const char* state, const char* trigger, cons
     _mqttClient.publish(mqtt_topic_lockstate_completionStatus, completionStatus);
 }
 
+void Network::publishDoorSensorState(const char *state)
+{
+    _mqttClient.publish(mqtt_topic_door_sensor_state_action, state);
+}
+
 void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;

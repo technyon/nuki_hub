@@ -88,19 +88,26 @@ void Nuki::updateKeyTurnerState()
 {
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);
 
-    char lockStateStr[20];
-    lockstateToString(_keyTurnerState.lockState, lockStateStr);
-    char triggerStr[20];
-    triggerToString(_keyTurnerState.trigger, triggerStr);
-    char completionStatusStr[20];
-    completionStatusToString(_keyTurnerState.lastLockActionCompletionStatus, completionStatusStr);
-
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
+        char lockStateStr[20];
+        lockstateToString(_keyTurnerState.lockState, lockStateStr);
+        char triggerStr[20];
+        triggerToString(_keyTurnerState.trigger, triggerStr);
+        char completionStatusStr[20];
+        completionStatusToString(_keyTurnerState.lastLockActionCompletionStatus, completionStatusStr);
+
         _network->publishKeyTurnerState(lockStateStr, triggerStr, completionStatusStr);
+        Serial.print(F("Nuki lock state: "));
+        Serial.println(lockStateStr);
     }
-    Serial.print(F("Nuki lock state: "));
-    Serial.println(lockStateStr);
+
+    if(_keyTurnerState.doorSensorState != _lastKeyTurnerState.doorSensorState)
+    {
+        char doorSensorStateStr[20];
+        doorSensorStateToString(_keyTurnerState.doorSensorState, doorSensorStateStr);
+        _network->publishDoorSensorState(doorSensorStateStr);
+    }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
 }
@@ -231,6 +238,34 @@ void Nuki::completionStatusToString(const CompletionStatus status, char *str)
             strcpy(str, "undefined");
             break;
 
+    }
+}
+
+void Nuki::doorSensorStateToString(const DoorSensorState state, char *str)
+{
+    switch(state)
+    {
+        case DoorSensorState::unavailable:
+            strcpy(str, "unavailable");
+            break;
+        case DoorSensorState::deactivated:
+            strcpy(str, "deactivated");
+            break;
+        case DoorSensorState::doorClosed:
+            strcpy(str, "doorClosed");
+            break;
+        case DoorSensorState::doorOpened:
+            strcpy(str, "doorOpened");
+            break;
+        case DoorSensorState::doorStateUnknown:
+            strcpy(str, "doorStateUnknown");
+            break;
+        case DoorSensorState::calibrating:
+            strcpy(str, "calibrating");
+            break;
+        default:
+            strcpy(str, "undefined");
+            break;
     }
 }
 

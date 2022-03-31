@@ -27,6 +27,7 @@ private:
 
     void triggerToString(const NukiTrigger trigger, char* str); // char arry at least 10 characters
     void completionStatusToString(const CompletionStatus status, char* str); // char arry at least 18 characters
+    void doorSensorStateToString(const DoorSensorState state, char* str); // char arry at least 17 characters
 
     NukiBle _nukiBle;
     Network* _network;
