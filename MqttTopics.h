@@ -11,4 +11,4 @@
 #define mqtt_topic_lockstate_trigger "nuki/lock/trigger"
 #define mqtt_topic_lockstate_completionStatus "nuki/lock/completionStatus"
 #define mqtt_topic_lockstate_action "nuki/lock/action"
-#define mqtt_topic_door_sensor_state_action "nuki/lock/doorSensorState"
+#define mqtt_topic_door_sensor_state "nuki/lock/doorSensorState"

@@ -11,8 +11,8 @@ Nuki::Nuki(const std::string& name, uint32_t id, Network* network, Preferences* 
 {
     nukiInst = this;
 
-    memset(&_lastKeyTurnerState, sizeof(KeyTurnerState), 0);
     memset(&_keyTurnerState, sizeof(KeyTurnerState), 0);
+    memset(&_lastKeyTurnerState, sizeof(KeyTurnerState), 0);
     memset(&_lastBatteryReport, sizeof(BatteryReport), 0);
     memset(&_batteryReport, sizeof(BatteryReport), 0);
 
@@ -88,44 +88,23 @@ void Nuki::update()
              _nextLockStateUpdateTs = ts + 10 * 1000;
          }
     }
+
+    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
 }
 
 void Nuki::updateKeyTurnerState()
 {
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);
+    _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
         char lockStateStr[20];
-        lockstateToString(_keyTurnerState.lockState, lockStateStr);
-        char triggerStr[20];
-        triggerToString(_keyTurnerState.trigger, triggerStr);
-        char completionStatusStr[20];
-        completionStatusToString(_keyTurnerState.lastLockActionCompletionStatus, completionStatusStr);
-
-        _network->publishKeyTurnerState(lockStateStr, triggerStr, completionStatusStr);
+        nukiLockstateToString(_keyTurnerState.lockState, lockStateStr);
         Serial.print(F("Nuki lock state: "));
         Serial.println(lockStateStr);
     }
-
-    if(_keyTurnerState.doorSensorState != _lastKeyTurnerState.doorSensorState)
-    {
-        char doorSensorStateStr[20];
-        doorSensorStateToString(_keyTurnerState.doorSensorState, doorSensorStateStr);
-        _network->publishDoorSensorState(doorSensorStateStr);
-    }
-
-    if(_keyTurnerState.criticalBatteryState != _lastKeyTurnerState.criticalBatteryState)
-    {
-        uint8_t level = (_keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
-        bool critical = (_keyTurnerState.criticalBatteryState & 0b00000001) > 0;
-        bool charging = (_keyTurnerState.criticalBatteryState & 0b00000010) > 0;
-        _network->publishCriticalBattery(level, critical, charging);
-    }
-
-    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
 }
-
 
 void Nuki::updateBatteryState()
 {
@@ -139,148 +118,6 @@ void Nuki::updateBatteryState()
     Serial.print(F("Lock Dist: ")); Serial.println(_batteryReport.lockDistance);
 
     _network->publishBatteryReport(_batteryReport);
-}
-
-
-void Nuki::lockstateToString(const LockState state, char* str)
-{
-    switch(state)
-    {
-        case LockState::uncalibrated:
-            strcpy(str, "uncalibrated");
-            break;
-        case LockState::locked:
-            strcpy(str, "locked");
-            break;
-        case LockState::locking:
-            strcpy(str, "locking");
-            break;
-        case LockState::unlocked:
-            strcpy(str, "unlocked");
-            break;
-        case LockState::unlatched:
-            strcpy(str, "unlatched");
-            break;
-        case LockState::unlockedLnga:
-            strcpy(str, "unlockedLnga");
-            break;
-        case LockState::unlatching:
-            strcpy(str, "unlatching");
-            break;
-        case LockState::calibration:
-            strcpy(str, "calibration");
-            break;
-        case LockState::bootRun:
-            strcpy(str, "bootRun");
-            break;
-        case LockState::motorBlocked:
-            strcpy(str, "motorBlocked");
-            break;
-        default:
-            strcpy(str, "undefined");
-            break;
-    }
-}
-
-
-void Nuki::triggerToString(const NukiTrigger trigger, char *str)
-{
-    switch(trigger)
-    {
-        case NukiTrigger::autoLock:
-            strcpy(str, "autoLock");
-            break;
-        case NukiTrigger::automatic:
-            strcpy(str, "automatic");
-            break;
-        case NukiTrigger::button:
-            strcpy(str, "button");
-            break;
-        case NukiTrigger::manual:
-            strcpy(str, "manual");
-            break;
-        case NukiTrigger::system:
-            strcpy(str, "system");
-            break;
-        default:
-            strcpy(str, "undefined");
-            break;
-    }
-}
-
-void Nuki::completionStatusToString(const CompletionStatus status, char *str)
-{
-    switch (status)
-    {
-        case CompletionStatus::success:
-            strcpy(str, "success");
-            break;
-        case CompletionStatus::busy:
-            strcpy(str, "busy");
-            break;
-        case CompletionStatus::canceled:
-            strcpy(str, "canceled");
-            break;
-        case CompletionStatus::clutchFailure:
-            strcpy(str, "clutchFailure");
-            break;
-        case CompletionStatus::incompleteFailure:
-            strcpy(str, "incompleteFailure");
-            break;
-        case CompletionStatus::invalidCode:
-            strcpy(str, "invalidCode");
-            break;
-        case CompletionStatus::lowMotorVoltage:
-            strcpy(str, "lowMotorVoltage");
-            break;
-        case CompletionStatus::motorBlocked:
-            strcpy(str, "motorBlocked");
-            break;
-        case CompletionStatus::motorPowerFailure:
-            strcpy(str, "motorPowerFailure");
-            break;
-        case CompletionStatus::otherError:
-            strcpy(str, "otherError");
-            break;
-        case CompletionStatus::tooRecent:
-            strcpy(str, "tooRecent");
-            break;
-        case CompletionStatus::unknown:
-            strcpy(str, "unknown");
-            break;
-        default:
-            strcpy(str, "undefined");
-            break;
-
-    }
-}
-
-void Nuki::doorSensorStateToString(const DoorSensorState state, char *str)
-{
-    switch(state)
-    {
-        case DoorSensorState::unavailable:
-            strcpy(str, "unavailable");
-            break;
-        case DoorSensorState::deactivated:
-            strcpy(str, "deactivated");
-            break;
-        case DoorSensorState::doorClosed:
-            strcpy(str, "doorClosed");
-            break;
-        case DoorSensorState::doorOpened:
-            strcpy(str, "doorOpened");
-            break;
-        case DoorSensorState::doorStateUnknown:
-            strcpy(str, "doorStateUnknown");
-            break;
-        case DoorSensorState::calibrating:
-            strcpy(str, "calibrating");
-            break;
-        default:
-            strcpy(str, "undefined");
-            break;
-    }
 }
 
 LockAction Nuki::lockActionToEnum(const char *str)
@@ -300,8 +137,6 @@ LockAction Nuki::lockActionToEnum(const char *str)
 void Nuki::onLockActionReceived(const char *value)
 {
     nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
-    Serial.print(F("Action: "));
-    Serial.println((int)nukiInst->_nextLockAction);
 }
 
 const bool Nuki::isPaired()

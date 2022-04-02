@@ -137,21 +137,47 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     }
 }
 
-void Network::publishKeyTurnerState(const char* state, const char* trigger, const char* completionStatus)
+void Network::publishKeyTurnerState(const KeyTurnerState& keyTurnerState, const KeyTurnerState& lastKeyTurnerState)
 {
-    _mqttClient.publish(mqtt_topic_lockstate_state, state);
-    _mqttClient.publish(mqtt_topic_lockstate_trigger, trigger);
-    _mqttClient.publish(mqtt_topic_lockstate_completionStatus, completionStatus);
-}
+    char str[50];
 
-void Network::publishDoorSensorState(const char *state)
-{
-    _mqttClient.publish(mqtt_topic_door_sensor_state_action, state);
-}
+    if(keyTurnerState.lockState != lastKeyTurnerState.lockState)
+    {
+        memset(&str, 0, sizeof(str));
+        nukiLockstateToString(keyTurnerState.lockState, str);
+        _mqttClient.publish(mqtt_topic_lockstate_state, str);
+    }
 
-void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
-{
-    _lockActionReceivedCallback = lockActionReceivedCallback;
+    if(keyTurnerState.trigger != lastKeyTurnerState.trigger)
+    {
+        memset(&str, 0, sizeof(str));
+        nukiTriggerToString(keyTurnerState.trigger, str);
+        _mqttClient.publish(mqtt_topic_lockstate_trigger, str);
+    }
+
+    if(keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
+    {
+        memset(&str, 0, sizeof(str));
+        nukiCompletionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
+        _mqttClient.publish(mqtt_topic_lockstate_completionStatus, str);
+    }
+
+    if(keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
+    {
+        memset(&str, 0, sizeof(str));
+        nukiDoorSensorStateToString(keyTurnerState.doorSensorState, str);
+        _mqttClient.publish(mqtt_topic_door_sensor_state, str);
+    }
+
+    if(keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
+    {
+        uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
+        bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
+        bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
+        publishInt(mqtt_topic_battery_level, level); // percent
+        publishBool(mqtt_topic_battery_critical, critical);
+        publishBool(mqtt_topic_battery_charging, charging);
+    }
 }
 
 void Network::publishBatteryReport(const BatteryReport& batteryReport)
@@ -161,11 +187,9 @@ void Network::publishBatteryReport(const BatteryReport& batteryReport)
     publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
 }
 
-void Network::publishCriticalBattery(uint8_t level, bool isCritical, bool isCharging)
+void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
 {
-    publishInt(mqtt_topic_battery_level, level); // milliwatt seconds
-    publishBool(mqtt_topic_battery_critical, isCritical);
-    publishBool(mqtt_topic_battery_charging, isCharging);
+    _lockActionReceivedCallback = lockActionReceivedCallback;
 }
 
 void Network::publishFloat(const char* topic, const float value, const uint8_t precision)

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "NukiBle.h"
-#include "NukiConstants.h"
 #include "Network.h"
 
 class Nuki : public NukiSmartlockEventHandler
@@ -22,12 +21,7 @@ private:
     void updateKeyTurnerState();
     void updateBatteryState();
 
-    void lockstateToString(const LockState state, char* str); // char array at least 14 characters
     LockAction lockActionToEnum(const char* str); // char array at least 14 characters
-
-    void triggerToString(const NukiTrigger trigger, char* str); // char arry at least 10 characters
-    void completionStatusToString(const CompletionStatus status, char* str); // char arry at least 18 characters
-    void doorSensorStateToString(const DoorSensorState state, char* str); // char arry at least 17 characters
 
     NukiBle _nukiBle;
     BleScanner _bleScanner;
