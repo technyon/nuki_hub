@@ -1,25 +1,25 @@
-#include "Nuki.h"
+#include "NukiWrapper.h"
 #include <FreeRTOS.h>
 #include "PreferencesKeys.h"
 
-Nuki* nukiInst;
+NukiWrapper* nukiInst;
 
-Nuki::Nuki(const std::string& name, uint32_t id, Network* network, Preferences* preferences)
+NukiWrapper::NukiWrapper(const std::string& name, uint32_t id, Network* network, Preferences* preferences)
 : _nukiBle(name, id),
   _network(network),
   _preferences(preferences)
 {
     nukiInst = this;
 
-    memset(&_keyTurnerState, sizeof(KeyTurnerState), 0);
-    memset(&_lastKeyTurnerState, sizeof(KeyTurnerState), 0);
-    memset(&_lastBatteryReport, sizeof(BatteryReport), 0);
-    memset(&_batteryReport, sizeof(BatteryReport), 0);
+    memset(&_keyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
+    memset(&_lastKeyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
+    memset(&_lastBatteryReport, sizeof(Nuki::BatteryReport), 0);
+    memset(&_batteryReport, sizeof(Nuki::BatteryReport), 0);
 
     network->setLockActionReceived(nukiInst->onLockActionReceived);
 }
 
-void Nuki::initialize()
+void NukiWrapper::initialize()
 {
     _bleScanner.initialize();
     _nukiBle.initialize();
@@ -43,11 +43,11 @@ void Nuki::initialize()
 
     Serial.print(F("Lock state interval: "));
     Serial.print(_intervalLockstate);
-    Serial.print(F("| Battery interval: "));
+    Serial.print(F(" | Battery interval: "));
     Serial.println(_intervalBattery);
 }
 
-void Nuki::update()
+void NukiWrapper::update()
 {
     if (!_paired) {
         Serial.println(F("Nuki start pairing"));
@@ -79,20 +79,20 @@ void Nuki::update()
         _nextBatteryReportTs = ts + _intervalBattery * 1000;
         updateBatteryState();
     }
-    if(_nextLockAction != (LockAction)0xff)
+    if(_nextLockAction != (Nuki::LockAction)0xff)
     {
          _nukiBle.lockAction(_nextLockAction, 0, 0);
-         _nextLockAction = (LockAction)0xff;
+         _nextLockAction = (Nuki::LockAction)0xff;
          if(_intervalLockstate > 10 * 1000)
          {
              _nextLockStateUpdateTs = ts + 10 * 1000;
          }
     }
 
-    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(KeyTurnerState));
+    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(Nuki::KeyTurnerState));
 }
 
-void Nuki::updateKeyTurnerState()
+void NukiWrapper::updateKeyTurnerState()
 {
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
@@ -106,7 +106,7 @@ void Nuki::updateKeyTurnerState()
     }
 }
 
-void Nuki::updateBatteryState()
+void NukiWrapper::updateBatteryState()
 {
     _nukiBle.requestBatteryReport(&_batteryReport);
 
@@ -122,33 +122,33 @@ void Nuki::updateBatteryState()
     _network->publishBatteryReport(_batteryReport);
 }
 
-LockAction Nuki::lockActionToEnum(const char *str)
+Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {
-    if(strcmp(str, "unlock") == 0) return LockAction::unlock;
-    else if(strcmp(str, "lock") == 0) return LockAction::lock;
-    else if(strcmp(str, "unlatch") == 0) return LockAction::unlatch;
-    else if(strcmp(str, "lockNgo") == 0) return LockAction::lockNgo;
-    else if(strcmp(str, "lockNgoUnlatch") == 0) return LockAction::lockNgoUnlatch;
-    else if(strcmp(str, "fullLock") == 0) return LockAction::fullLock;
-    else if(strcmp(str, "fobAction2") == 0) return LockAction::fobAction2;
-    else if(strcmp(str, "fobAction1") == 0) return LockAction::fobAction1;
-    else if(strcmp(str, "fobAction3") == 0) return LockAction::fobAction3;
-    return (LockAction)0xff;
+    if(strcmp(str, "unlock") == 0) return Nuki::LockAction::Unlock;
+    else if(strcmp(str, "lock") == 0) return Nuki::LockAction::Lock;
+    else if(strcmp(str, "unlatch") == 0) return Nuki::LockAction::Unlatch;
+    else if(strcmp(str, "lockNgo") == 0) return Nuki::LockAction::LockNgo;
+    else if(strcmp(str, "lockNgoUnlatch") == 0) return Nuki::LockAction::LockNgoUnlatch;
+    else if(strcmp(str, "fullLock") == 0) return Nuki::LockAction::FullLock;
+    else if(strcmp(str, "fobAction2") == 0) return Nuki::LockAction::FobAction2;
+    else if(strcmp(str, "fobAction1") == 0) return Nuki::LockAction::FobAction1;
+    else if(strcmp(str, "fobAction3") == 0) return Nuki::LockAction::FobAction3;
+    return (Nuki::LockAction)0xff;
 }
 
-void Nuki::onLockActionReceived(const char *value)
+void NukiWrapper::onLockActionReceived(const char *value)
 {
     nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
 }
 
-const bool Nuki::isPaired()
+const bool NukiWrapper::isPaired()
 {
     return _paired;
 }
 
-void Nuki::notify(NukiEventType eventType)
+void NukiWrapper::notify(Nuki::EventType eventType)
 {
-    if(eventType == NukiEventType::KeyTurnerStatusUpdated)
+    if(eventType == Nuki::EventType::KeyTurnerStatusUpdated)
     {
         _statusUpdated = true;
     }

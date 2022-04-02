@@ -127,7 +127,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     {
         if(strcmp(value, "") == 0) return;
 
-        Serial.print(F("Lockstate action received: "));
+        Serial.print(F("Lock action received: "));
         Serial.println(value);
         if(_lockActionReceivedCallback != NULL)
         {
@@ -137,7 +137,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     }
 }
 
-void Network::publishKeyTurnerState(const KeyTurnerState& keyTurnerState, const KeyTurnerState& lastKeyTurnerState)
+void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState)
 {
     char str[50];
 
@@ -180,7 +180,7 @@ void Network::publishKeyTurnerState(const KeyTurnerState& keyTurnerState, const 
     }
 }
 
-void Network::publishBatteryReport(const BatteryReport& batteryReport)
+void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds

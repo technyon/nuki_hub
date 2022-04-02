@@ -2,7 +2,7 @@
 #include <WiFiClient.h>
 #include "PreferencesKeys.h"
 
-WebCfgServer::WebCfgServer(Nuki* nuki, Network* network, Preferences* preferences)
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* preferences)
 : _wifiServer(80),
   _nuki(nuki),
   _network(network),

@@ -16,8 +16,8 @@ public:
 
     bool isMqttConnected();
 
-    void publishKeyTurnerState(const KeyTurnerState& keyTurnerState, const KeyTurnerState& lastKeyTurnerState);
-    void publishBatteryReport(const BatteryReport& batteryReport);
+    void publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState);
+    void publishBatteryReport(const Nuki::BatteryReport& batteryReport);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
 

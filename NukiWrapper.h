@@ -3,18 +3,19 @@
 #include "NukiBle.h"
 #include "Network.h"
 #include "NukiConstants.h"
+#include "NukiDataTypes.h"
 
-class Nuki : public NukiSmartlockEventHandler
+class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    Nuki(const std::string& name, uint32_t id, Network* network, Preferences* preferences);
+    NukiWrapper(const std::string& name, uint32_t id, Network* network, Preferences* preferences);
 
     void initialize();
     void update();
 
     const bool isPaired();
 
-    void notify(NukiEventType eventType) override;
+    void notify(Nuki::EventType eventType) override;
 
 private:
     static void onLockActionReceived(const char* value);
@@ -22,24 +23,24 @@ private:
     void updateKeyTurnerState();
     void updateBatteryState();
 
-    LockAction lockActionToEnum(const char* str); // char array at least 14 characters
+    Nuki::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
-    NukiBle _nukiBle;
+    Nuki::NukiBle _nukiBle;
     BleScanner _bleScanner;
     Network* _network;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
 
-    KeyTurnerState _lastKeyTurnerState;
-    KeyTurnerState _keyTurnerState;
+    Nuki::KeyTurnerState _lastKeyTurnerState;
+    Nuki::KeyTurnerState _keyTurnerState;
 
-    BatteryReport _batteryReport;
-    BatteryReport _lastBatteryReport;
+    Nuki::BatteryReport _batteryReport;
+    Nuki::BatteryReport _lastBatteryReport;
 
     bool _paired = false;
     bool _statusUpdated = false;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
-    LockAction _nextLockAction = (LockAction)0xff;
+    Nuki::LockAction _nextLockAction = (Nuki::LockAction)0xff;
 };

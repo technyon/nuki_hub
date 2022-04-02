@@ -2,7 +2,7 @@
 
 #include <WiFiServer.h>
 #include <Preferences.h>
-#include "Nuki.h"
+#include "NukiWrapper.h"
 #include "Network.h"
 
 enum class TokenType
@@ -17,7 +17,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer(Nuki* nuki, Network* network, Preferences* preferences);
+    WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* preferences);
     ~WebCfgServer() = default;
 
     void initialize();
@@ -30,7 +30,7 @@ private:
     TokenType getParameterType(char*& token);
 
     WiFiServer _wifiServer;
-    Nuki* _nuki;
+    NukiWrapper* _nuki;
     Network* _network;
     Preferences* _preferences;
 
