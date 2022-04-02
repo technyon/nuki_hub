@@ -2,6 +2,7 @@
 
 #include "NukiBle.h"
 #include "Network.h"
+#include "NukiConstants.h"
 
 class Nuki : public NukiSmartlockEventHandler
 {

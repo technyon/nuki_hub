@@ -148,7 +148,6 @@ void Nuki::notify(NukiEventType eventType)
 {
     if(eventType == NukiEventType::KeyTurnerStatusUpdated)
     {
-//        Serial.println("SUP2");
         _statusUpdated = true;
     }
 }
