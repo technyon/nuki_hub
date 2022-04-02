@@ -100,7 +100,7 @@ void NukiWrapper::updateKeyTurnerState()
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
         char lockStateStr[20];
-        nukiLockstateToString(_keyTurnerState.lockState, lockStateStr);
+        lockstateToString(_keyTurnerState.lockState, lockStateStr);
         Serial.print(F("Nuki lock state: "));
         Serial.println(lockStateStr);
     }

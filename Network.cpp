@@ -144,28 +144,28 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
     if(keyTurnerState.lockState != lastKeyTurnerState.lockState)
     {
         memset(&str, 0, sizeof(str));
-        nukiLockstateToString(keyTurnerState.lockState, str);
+        lockstateToString(keyTurnerState.lockState, str);
         _mqttClient.publish(mqtt_topic_lockstate_state, str);
     }
 
     if(keyTurnerState.trigger != lastKeyTurnerState.trigger)
     {
         memset(&str, 0, sizeof(str));
-        nukiTriggerToString(keyTurnerState.trigger, str);
+        triggerToString(keyTurnerState.trigger, str);
         _mqttClient.publish(mqtt_topic_lockstate_trigger, str);
     }
 
     if(keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));
-        nukiCompletionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
+        completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
         _mqttClient.publish(mqtt_topic_lockstate_completionStatus, str);
     }
 
     if(keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
     {
         memset(&str, 0, sizeof(str));
-        nukiDoorSensorStateToString(keyTurnerState.doorSensorState, str);
+        doorSensorStateToString(keyTurnerState.doorSensorState, str);
         _mqttClient.publish(mqtt_topic_door_sensor_state, str);
     }
 
