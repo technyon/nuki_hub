@@ -10,6 +10,7 @@ enum class TokenType
     None,
     MqttServer,
     MqttPort,
+    MqttPath,
     QueryIntervalLockstate,
     QueryIntervalBattery,
 };

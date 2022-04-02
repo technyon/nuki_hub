@@ -73,6 +73,11 @@ void WebCfgServer::update()
                     _preferences->putInt(preference_mqtt_broker_port, String(token).toInt());
                     configChanged = true;
                 }
+                else if(lastTokenType == TokenType::MqttPath && tokenType == TokenType::None)
+                {
+                    _preferences->putString(preference_mqtt_path, token);
+                    configChanged = true;
+                }
                 else if(lastTokenType == TokenType::QueryIntervalLockstate && tokenType == TokenType::None)
                 {
                     _preferences->putInt(preference_query_interval_lockstate, String(token).toInt());
@@ -134,6 +139,10 @@ void WebCfgServer::serveHtml(WiFiClient &client)
     client.print(_preferences->getInt(preference_mqtt_broker_port));
     client.println("\" NAME=\"MQTTPORT\" SIZE=\"25\" MAXLENGTH=\"40\"><BR>");
 
+    client.print("MQTT Path: <INPUT TYPE=TEXT VALUE=\"");
+    client.print(_preferences->getString(preference_mqtt_path));
+    client.println("\" NAME=\"MQTTPATH\" SIZE=\"25\" MAXLENGTH=\"40\"><BR>");
+
     client.print("Query interval lock state (seconds): <INPUT TYPE=TEXT VALUE=\"");
     client.print(_preferences->getInt(preference_query_interval_lockstate));
     client.println("\" NAME=\"LSTINT\" SIZE=\"25\" MAXLENGTH=\"16\"><BR>");
@@ -169,6 +178,10 @@ TokenType WebCfgServer::getParameterType(char *&token)
     if (strcmp(token, "MQTTPORT") == 0)
     {
         return TokenType::MqttPort;
+    }
+    if (strcmp(token, "MQTTPATH") == 0)
+    {
+        return TokenType::MqttPath;
     }
 
     return TokenType::None;

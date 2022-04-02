@@ -48,6 +48,21 @@ void Network::initialize()
         _preferences->putInt(preference_mqtt_broker_port, port);
     }
 
+    String mqttPath = _preferences->getString(preference_mqtt_path);
+    if(mqttPath.length() > 0)
+    {
+        size_t len = mqttPath.length();
+        for(int i=0; i < len; i++)
+        {
+            _mqttPath[i] = mqttPath.charAt(i);
+        }
+    }
+    else
+    {
+        strcpy(_mqttPath, "nuki");
+        _preferences->putString(preference_mqtt_path, _mqttPath);
+    }
+
     Serial.print(F("MQTT Broker: "));
     Serial.print(_mqttBrokerAddr);
     Serial.print(F(":"));
@@ -67,8 +82,10 @@ bool Network::reconnect()
             Serial.println(F("MQTT connected"));
             _mqttConnected = true;
 
+            char path[200] = {0};
+            buildMqttPath(mqtt_topic_lockstate_action, path);
             // ... and resubscribe
-            _mqttClient.subscribe(mqtt_topic_lockstate_action);
+            _mqttClient.subscribe(path);
         }
         else
         {
@@ -120,7 +137,10 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
 
     value[l] = 0;
 
-    if(strcmp(topic, mqtt_topic_lockstate_action) == 0)
+    char path[200] = {0};
+    buildMqttPath(mqtt_topic_lockstate_action, path);
+
+    if(strcmp(topic, path) == 0)
     {
         if(strcmp(value, "") == 0) return;
 
@@ -130,7 +150,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
         {
             _lockActionReceivedCallback(value);
         }
-        _mqttClient.publish(mqtt_topic_lockstate_action, "");
+        publishString(mqtt_topic_lockstate_action, "");
     }
 }
 
@@ -142,28 +162,28 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
     {
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
-        _mqttClient.publish(mqtt_topic_lockstate_state, str);
+        publishString(mqtt_topic_lockstate_state, str);
     }
 
     if(keyTurnerState.trigger != lastKeyTurnerState.trigger)
     {
         memset(&str, 0, sizeof(str));
         triggerToString(keyTurnerState.trigger, str);
-        _mqttClient.publish(mqtt_topic_lockstate_trigger, str);
+        publishString(mqtt_topic_lockstate_trigger, str);
     }
 
     if(keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));
         completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
-        _mqttClient.publish(mqtt_topic_lockstate_completionStatus, str);
+        publishString(mqtt_topic_lockstate_completionStatus, str);
     }
 
     if(keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
     {
         memset(&str, 0, sizeof(str));
         doorSensorStateToString(keyTurnerState.doorSensorState, str);
-        _mqttClient.publish(mqtt_topic_door_sensor_state, str);
+        publishString(mqtt_topic_door_sensor_state, str);
     }
 
     if(keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
@@ -183,8 +203,6 @@ void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
     publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
     publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
-
-
 }
 
 void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
@@ -196,24 +214,61 @@ void Network::publishFloat(const char* topic, const float value, const uint8_t p
 {
     char str[30];
     dtostrf(value, 0, precision, str);
-    _mqttClient.publish(topic, str);
+    char path[200] = {0};
+    buildMqttPath(topic, path);
+    _mqttClient.publish(path, str);
 }
 
 void Network::publishInt(const char *topic, const int value)
 {
+
     char str[30];
     itoa(value, str, 10);
-    _mqttClient.publish(topic, str);
+    char path[200] = {0};
+    buildMqttPath(topic, path);
+    _mqttClient.publish(path, str);
 }
 
 void Network::publishBool(const char *topic, const bool value)
 {
     char str[2] = {0};
     str[0] = value ? '1' : '0';
-    _mqttClient.publish(topic, str);
+    char path[200] = {0};
+    buildMqttPath(topic, path);
+    _mqttClient.publish(path, str);
 }
+
+void Network::publishString(const char *topic, const char *value)
+{
+    char path[200] = {0};
+    buildMqttPath(topic, path);
+    _mqttClient.publish(path, value);
+}
+
 
 bool Network::isMqttConnected()
 {
     return _mqttConnected;
+}
+
+void Network::buildMqttPath(const char* path, char* outPath)
+{
+    int offset = 0;
+    for(const char& c : _mqttPath)
+    {
+        if(c == 0x00)
+        {
+            break;
+        }
+        outPath[offset] = c;
+        ++offset;
+    }
+    int i=0;
+    while(outPath[i] != 0x00)
+    {
+        outPath[offset] = path[i];
+        ++i;
+        ++offset;
+    }
+    outPath[i+1] = 0x00;
 }

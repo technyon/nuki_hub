@@ -28,6 +28,9 @@ private:
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value);
     void publishBool(const char* topic, const bool value);
+    void publishString(const char* topic, const char* value);
+
+    void buildMqttPath(const char* path, char* outPath);
 
     bool reconnect();
 
@@ -39,6 +42,7 @@ private:
 
     unsigned long _nextReconnect = 0;
     char _mqttBrokerAddr[100] = {0};
+    char _mqttPath[100] = {0};
 
     void (*_lockActionReceivedCallback)(const char* value) = NULL;
 };
