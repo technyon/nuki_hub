@@ -21,7 +21,9 @@ Nuki::Nuki(const std::string& name, uint32_t id, Network* network, Preferences* 
 
 void Nuki::initialize()
 {
+    _bleScanner.initialize();
     _nukiBle.initialize();
+    _nukiBle.registerBleScanner(&_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
@@ -61,7 +63,8 @@ void Nuki::update()
         }
     }
 
-    vTaskDelay( 200 / portTICK_PERIOD_MS);
+    vTaskDelay( 20 / portTICK_PERIOD_MS);
+    _bleScanner.update();
 
     unsigned long ts = millis();
 
@@ -81,7 +84,6 @@ void Nuki::update()
          _nukiBle.lockAction(_nextLockAction, 0, 0);
          _nextLockAction = (LockAction)0xff;
     }
-    _nukiBle.update();
 }
 
 void Nuki::updateKeyTurnerState()

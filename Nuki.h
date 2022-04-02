@@ -30,6 +30,7 @@ private:
     void doorSensorStateToString(const DoorSensorState state, char* str); // char arry at least 17 characters
 
     NukiBle _nukiBle;
+    BleScanner _bleScanner;
     Network* _network;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
