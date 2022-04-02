@@ -110,12 +110,14 @@ void Nuki::updateBatteryState()
 {
     _nukiBle.requestBatteryReport(&_batteryReport);
 
+    /*
     Serial.print(F("Voltage: ")); Serial.println(_batteryReport.batteryVoltage);
     Serial.print(F("Drain: ")); Serial.println(_batteryReport.batteryDrain);
     Serial.print(F("Resistance: ")); Serial.println(_batteryReport.batteryResistance);
     Serial.print(F("Max Current: ")); Serial.println(_batteryReport.maxTurnCurrent);
     Serial.print(F("Crit. State: ")); Serial.println(_batteryReport.criticalBatteryState);
     Serial.print(F("Lock Dist: ")); Serial.println(_batteryReport.lockDistance);
+    */
 
     _network->publishBatteryReport(_batteryReport);
 }

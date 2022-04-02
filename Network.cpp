@@ -186,6 +186,8 @@ void Network::publishBatteryReport(const BatteryReport& batteryReport)
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
     publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
     publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
+
+
 }
 
 void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
