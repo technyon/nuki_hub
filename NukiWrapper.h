@@ -42,5 +42,6 @@ private:
     bool _statusUpdated = false;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
+    unsigned long _nextPairTs = 0;
     Nuki::LockAction _nextLockAction = (Nuki::LockAction)0xff;
 };

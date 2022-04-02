@@ -39,7 +39,7 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     network = new Network(preferences);
-    nuki = new NukiWrapper("Main Door", 2020001, network, preferences);
+    nuki = new NukiWrapper("ESP", 2020001, network, preferences);
     webCfgServer = new WebCfgServer(nuki, network, preferences);
 
     network->initialize();
