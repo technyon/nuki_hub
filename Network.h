@@ -46,5 +46,7 @@ private:
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
 
+    bool _firstTunerStatePublish = true;
+
     void (*_lockActionReceivedCallback)(const char* value) = NULL;
 };

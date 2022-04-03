@@ -29,13 +29,13 @@ void Network::initialize()
     bool res = wm.autoConnect(); // password protected ap
 
     if(!res) {
-        Serial.println("Failed to connect");
+        Serial.println(F("Failed to connect"));
         return;
         // ESP.restart();
     }
     else {
         //if you get here you have connected to the WiFi
-        Serial.println("connected...yeey :)");
+        Serial.println(F("connected...yeey :)"));
     }
 
     const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
@@ -96,25 +96,25 @@ bool Network::reconnect()
 {
     while (!_mqttClient.connected() && millis() > _nextReconnect)
     {
-        Serial.println("Attempting MQTT connection");
+        Serial.println(F("Attempting MQTT connection"));
         bool success = false;
 
         if(strlen(_mqttUser) == 0)
         {
-            Serial.println("MQTT: Connecting without credentials");
-            success = _mqttClient.connect("nukiHub");
+            Serial.println(F("MQTT: Connecting without credentials"));
+            success = _mqttClient.connect("nukiHubx");
         }
         else
         {
-            Serial.print("MQTT: Connecting with user: "); Serial.println(_mqttUser);
-            success = _mqttClient.connect("nukiHub", _mqttUser, _mqttPass);
+            Serial.print(F("MQTT: Connecting with user: ")); Serial.println(_mqttUser);
+            success = _mqttClient.connect("nukiHubx", _mqttUser, _mqttPass);
         }
 
 
         if (success) {
             Serial.println(F("MQTT connected"));
             _mqttConnected = true;
-
+            delay(200);
             char path[200] = {0};
             buildMqttPath(mqtt_topic_lockstate_action, path);
             // ... and resubscribe
@@ -191,35 +191,35 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
 {
     char str[50];
 
-    if(keyTurnerState.lockState != lastKeyTurnerState.lockState)
+    if(_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState)
     {
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
         publishString(mqtt_topic_lockstate_state, str);
     }
 
-    if(keyTurnerState.trigger != lastKeyTurnerState.trigger)
+    if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
     {
         memset(&str, 0, sizeof(str));
         triggerToString(keyTurnerState.trigger, str);
         publishString(mqtt_topic_lockstate_trigger, str);
     }
 
-    if(keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
+    if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));
         completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
         publishString(mqtt_topic_lockstate_completionStatus, str);
     }
 
-    if(keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
+    if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
     {
         memset(&str, 0, sizeof(str));
         doorSensorStateToString(keyTurnerState.doorSensorState, str);
         publishString(mqtt_topic_door_sensor_state, str);
     }
 
-    if(keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
+    if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
     {
         uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
         bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
@@ -228,6 +228,8 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
         publishBool(mqtt_topic_battery_critical, critical);
         publishBool(mqtt_topic_battery_charging, charging);
     }
+
+    _firstTunerStatePublish = false;
 }
 
 void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
