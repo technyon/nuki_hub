@@ -27,6 +27,8 @@ public:
 
 private:
     void serveHtml(WiFiClient& client);
+    void printInputField(WiFiClient& client, const char* token, const char* description, const char* value, size_t maxLength);
+    void printInputField(WiFiClient& client, const char* token, const char* description, const int value, size_t maxLength);
 
     TokenType getParameterType(char*& token);
 
