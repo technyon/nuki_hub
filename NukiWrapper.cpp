@@ -30,7 +30,7 @@ void NukiWrapper::initialize()
 
     if(_intervalLockstate == 0)
     {
-        _intervalLockstate = 30;
+        _intervalLockstate = 60 * 5;
         _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
     }
     if(_intervalBattery == 0)
