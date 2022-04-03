@@ -41,8 +41,10 @@ private:
     bool _mqttConnected = false;
 
     unsigned long _nextReconnect = 0;
-    char _mqttBrokerAddr[100] = {0};
-    char _mqttPath[100] = {0};
+    char _mqttBrokerAddr[101] = {0};
+    char _mqttPath[181] = {0};
+    char _mqttUser[31] = {0};
+    char _mqttPass[31] = {0};
 
     void (*_lockActionReceivedCallback)(const char* value) = NULL;
 };

@@ -63,6 +63,26 @@ void Network::initialize()
         _preferences->putString(preference_mqtt_path, _mqttPath);
     }
 
+    String mqttUser = _preferences->getString(preference_mqtt_user);
+    if(mqttUser.length() > 0)
+    {
+        size_t len = mqttUser.length();
+        for(int i=0; i < len; i++)
+        {
+            _mqttUser[i] = mqttUser.charAt(i);
+        }
+    }
+
+    String mqttPass = _preferences->getString(preference_mqtt_password);
+    if(mqttPass.length() > 0)
+    {
+        size_t len = mqttPass.length();
+        for(int i=0; i < len; i++)
+        {
+            _mqttPass[i] = mqttPass.charAt(i);
+        }
+    }
+
     Serial.print(F("MQTT Broker: "));
     Serial.print(_mqttBrokerAddr);
     Serial.print(F(":"));
@@ -77,8 +97,21 @@ bool Network::reconnect()
     while (!_mqttClient.connected() && millis() > _nextReconnect)
     {
         Serial.println("Attempting MQTT connection");
-        // Attempt to connect
-        if (_mqttClient.connect("nukiHub")) {
+        bool success = false;
+
+        if(strlen(_mqttUser) == 0)
+        {
+            Serial.println("MQTT: Connecting without credentials");
+            success = _mqttClient.connect("nukiHub");
+        }
+        else
+        {
+            Serial.print("MQTT: Connecting with user: "); Serial.println(_mqttUser);
+            success = _mqttClient.connect("nukiHub", _mqttUser, _mqttPass);
+        }
+
+
+        if (success) {
             Serial.println(F("MQTT connected"));
             _mqttConnected = true;
 

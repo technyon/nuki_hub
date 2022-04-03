@@ -17,6 +17,8 @@ void WebCfgServer::initialize()
 
 void WebCfgServer::update()
 {
+    if(!_enabled) return;
+
     bool configChanged = false;
 
     // Create a client connections
@@ -25,7 +27,8 @@ void WebCfgServer::update()
     if (client)
     {
         int index = 0;
-        char message[200];
+        char message[500];
+
 
         while (client.connected())
         {
@@ -56,6 +59,7 @@ void WebCfgServer::update()
         char *lastToken = NULL;
 
         bool configChanged = false;
+        bool clearCredentials = false;
         while (token != NULL)
         {
             if(lastToken != NULL)
@@ -72,6 +76,28 @@ void WebCfgServer::update()
                 {
                     _preferences->putInt(preference_mqtt_broker_port, String(token).toInt());
                     configChanged = true;
+                }
+                else if(lastTokenType == TokenType::MqttUser && tokenType == TokenType::None)
+                {
+                    char* c = "%23";
+                    if(strcmp(token, c) == 0)
+                    {
+                        clearCredentials = true;
+                    }
+                    else
+                    {
+                        _preferences->putString(preference_mqtt_user, token);
+                        configChanged = true;
+                    }
+                }
+                else if(lastTokenType == TokenType::MqttPass && tokenType == TokenType::None)
+                {
+                    char* c = "*";
+                    if(strcmp(token, c) != 0)
+                    {
+                        _preferences->putString(preference_mqtt_password, token);
+                        configChanged = true;
+                    }
                 }
                 else if(lastTokenType == TokenType::MqttPath && tokenType == TokenType::None)
                 {
@@ -91,6 +117,13 @@ void WebCfgServer::update()
             }
             lastToken = token;
             token = strtok(NULL, "?=&");
+        }
+
+        if(clearCredentials)
+        {
+            _preferences->putString(preference_mqtt_user, "");
+            _preferences->putString(preference_mqtt_password, "");
+            configChanged = true;
         }
 
         if(configChanged)
@@ -133,6 +166,8 @@ void WebCfgServer::serveHtml(WiFiClient &client)
 
     printInputField(client, "MQTTSERVER", "MQTT Broker:", _preferences->getString(preference_mqtt_broker).c_str(), 100);
     printInputField(client, "MQTTPORT", "MQTT Broker port:", _preferences->getInt(preference_mqtt_broker_port), 5);
+    printInputField(client, "MQTTUSER", "MQTT User (# to clear):", _preferences->getString(preference_mqtt_user).c_str(), 30);
+    printInputField(client, "MQTTPASS", "MQTT Password:", "*", 30);
     printInputField(client, "MQTTPATH", "MQTT Path:", _preferences->getString(preference_mqtt_path).c_str(), 180);
     printInputField(client, "LSTINT", "Query interval lock state (seconds):", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(client, "BATINT", "Query interval battery (seconds):", _preferences->getInt(preference_query_interval_battery), 10);
@@ -164,6 +199,14 @@ TokenType WebCfgServer::getParameterType(char *&token)
     if (strcmp(token, "MQTTPORT") == 0)
     {
         return TokenType::MqttPort;
+    }
+    if (strcmp(token, "MQTTUSER") == 0)
+    {
+        return TokenType::MqttUser;
+    }
+    if (strcmp(token, "MQTTPASS") == 0)
+    {
+        return TokenType::MqttPass;
     }
     if (strcmp(token, "MQTTPATH") == 0)
     {
