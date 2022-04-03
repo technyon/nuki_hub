@@ -164,13 +164,15 @@ void WebCfgServer::serveHtml(WiFiClient &client)
 
     client.println("<FORM ACTION=method=get >");
 
-    printInputField(client, "MQTTSERVER", "MQTT Broker:", _preferences->getString(preference_mqtt_broker).c_str(), 100);
-    printInputField(client, "MQTTPORT", "MQTT Broker port:", _preferences->getInt(preference_mqtt_broker_port), 5);
-    printInputField(client, "MQTTUSER", "MQTT User (# to clear):", _preferences->getString(preference_mqtt_user).c_str(), 30);
-    printInputField(client, "MQTTPASS", "MQTT Password:", "*", 30);
-    printInputField(client, "MQTTPATH", "MQTT Path:", _preferences->getString(preference_mqtt_path).c_str(), 180);
-    printInputField(client, "LSTINT", "Query interval lock state (seconds):", _preferences->getInt(preference_query_interval_lockstate), 10);
-    printInputField(client, "BATINT", "Query interval battery (seconds):", _preferences->getInt(preference_query_interval_battery), 10);
+    client.println("<table>");
+    printInputField(client, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
+    printInputField(client, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
+    printInputField(client, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
+    printInputField(client, "MQTTPASS", "MQTT Password", "*", 30);
+    printInputField(client, "MQTTPATH", "MQTT Path", _preferences->getString(preference_mqtt_path).c_str(), 180);
+    printInputField(client, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
+    printInputField(client, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    client.println("</table>");
 
     client.println("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
 
@@ -226,14 +228,20 @@ void WebCfgServer::printInputField(WiFiClient &client,
 
     itoa(maxLength, maxLengthStr, 10);
 
+    client.println("<tr>");
+    client.print("<td>");
     client.print(description);
+    client.print("</td>");
+    client.print("<td>");
     client.print(" <INPUT TYPE=TEXT VALUE=\"");
     client.print(value);
     client.print("\" NAME=\"");
     client.print(token);
     client.print("\" SIZE=\"25\" MAXLENGTH=\"");
     client.print(maxLengthStr);
-    client.println("\"><BR>");
+    client.println("\">");
+    client.print("</td>");
+    client.println("</tr>");
 }
 
 void WebCfgServer::printInputField(WiFiClient &client,
