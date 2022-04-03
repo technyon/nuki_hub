@@ -153,17 +153,16 @@ void WebCfgServer::serveHtml(WiFiClient &client)
     client.println("<BODY>");
 
 
-    client.println("<br><br><h3>");
-    client.print("Paired: ");
-    client.println(_nuki->isPaired() ? "Yes" : "No");
-    client.println("</h3>");
-    client.println("<h3>");
-    client.print("MQTT Connected: ");
-    client.println(_network->isMqttConnected() ? "Yes" : "No");
-    client.println("</h3><br><br>");
+    client.println("<br><br>");
+    client.println("<h3>Info</h3>");
+    client.println("<table>");
+    printParameter(client, "Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+    printParameter(client, "MQTT Connected", _network->isMqttConnected() ? "&nbsp;Yes" : "&nbsp;No");
+    client.println("</table><br><br>");
 
     client.println("<FORM ACTION=method=get >");
 
+    client.println("<h3>Configuration</h3>");
     client.println("<table>");
     printInputField(client, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
     printInputField(client, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
@@ -253,4 +252,17 @@ void WebCfgServer::printInputField(WiFiClient &client,
     char valueStr[20];
     itoa(value, valueStr, 10);
     printInputField(client, token, description, valueStr, maxLength);
+}
+
+void WebCfgServer::printParameter(WiFiClient &client, const char *description, const char *value)
+{
+    client.println("<tr>");
+    client.print("<td>");
+    client.print(description);
+    client.print("</td>");
+    client.print("<td>");
+    client.print(value);
+    client.print("</td>");
+    client.println("</tr>");
+
 }

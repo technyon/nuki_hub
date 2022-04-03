@@ -32,6 +32,9 @@ private:
     void printInputField(WiFiClient& client, const char* token, const char* description, const char* value, size_t maxLength);
     void printInputField(WiFiClient& client, const char* token, const char* description, const int value, size_t maxLength);
 
+    void printParameter(WiFiClient& client, const char* description, const char* value);
+
+
     TokenType getParameterType(char*& token);
 
     WiFiServer _wifiServer;
