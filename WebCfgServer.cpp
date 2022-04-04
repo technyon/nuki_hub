@@ -48,14 +48,27 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
             return server.requestAuthentication();
         }
-        processArgs();
-        server.send(200, "text/plain", "Configuration saved ... restarting.");
+        bool configChanged = processArgs();
+        if(configChanged)
+        {
+            String response = "";
+            buildConfirmHtml(response);
+            server.send(200, "text/html", response);
+            Serial.println(F("Restarting"));
+            unsigned long timeout = millis() + 1000;
+            while(millis() < timeout)
+            {
+                server.handleClient();
+                delay(10);
+            }
+            ESP.restart();
+        }
     });
 
     server.begin();
 }
 
-void WebCfgServer::processArgs()
+bool WebCfgServer::processArgs()
 {
     bool configChanged = false;
     bool clearMqttCredentials = false;
@@ -153,10 +166,9 @@ void WebCfgServer::processArgs()
     {
         _enabled = false;
         _preferences->end();
-        Serial.println(F("Restarting"));
-        vTaskDelay( 200 / portTICK_PERIOD_MS);
-        ESP.restart();
     }
+
+    return configChanged;
 }
 
 void WebCfgServer::update()
@@ -240,6 +252,20 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("</HTML>\n");
 }
 
+void WebCfgServer::buildConfirmHtml(String &response)
+{
+    response.concat("<HTML>\n");
+    response.concat("<HEAD>\n");
+    response.concat("<TITLE>NUKI Hub</TITLE>\n");
+    response.concat("<meta http-equiv=\"Refresh\" content=\"5; url=/\" />");
+    response.concat("\n</HEAD>\n");
+    response.concat("<BODY>\n");
+
+    response.concat("Configuration saved ... restarting.\n");
+
+    response.concat("</BODY>\n");
+    response.concat("</HTML>\n");
+}
 
 void WebCfgServer::printInputField(String& response,
                                    const char *token,
