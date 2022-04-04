@@ -8,6 +8,8 @@
 #define preference_mqtt_path "mqttpath"
 #define preference_query_interval_lockstate "lockStInterval"
 #define preference_query_interval_battery "batInterval"
+#define preference_cred_user "crdusr"
+#define preference_cred_password "crdpass"
 
 
 

@@ -7,23 +7,47 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* pre
   _nuki(nuki),
   _network(network),
   _preferences(preferences)
-{}
+{
+    String str = _preferences->getString(preference_cred_user);
+
+    if(str.length() > 0)
+    {
+        _hasCredentials = true;
+        const char *user = str.c_str();
+        memcpy(&_credUser, user, str.length());
+
+        str = _preferences->getString(preference_cred_password);
+        const char *pass = str.c_str();
+        memcpy(&_credPassword, pass, str.length());
+
+//        Serial.print("##### user: "); Serial.println(_credUser);
+//        Serial.print("##### pass: "); Serial.println(_credPassword);
+    }
+}
 
 
 void WebCfgServer::initialize()
 {
     server.on("/", [&]() {
-//        if (!server.authenticate(www_username, www_password)) {
-//            return server.requestAuthentication();
-//        }
+        if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
+            return server.requestAuthentication();
+        }
         String response = "";
-        serveHtml(response);
+        buildHtml(response);
+        server.send(200, "text/html", response);
+    });
+    server.on("/cred", [&]() {
+        if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
+            return server.requestAuthentication();
+        }
+        String response = "";
+        buildCredHtml(response);
         server.send(200, "text/html", response);
     });
     server.on("/method=get", [&]() {
-//        if (!server.authenticate(www_username, www_password)) {
-//            return server.requestAuthentication();
-//        }
+        if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
+            return server.requestAuthentication();
+        }
         processArgs();
         server.send(200, "text/plain", "Configuration saved ... restarting.");
     });
@@ -34,6 +58,7 @@ void WebCfgServer::initialize()
 void WebCfgServer::processArgs()
 {
     bool configChanged = false;
+    bool clearMqttCredentials = false;
     bool clearCredentials = false;
 
     int count = server.args();
@@ -60,7 +85,7 @@ void WebCfgServer::processArgs()
         {
             if(value == "#")
             {
-                clearCredentials = true;
+                clearMqttCredentials = true;
             }
             else
             {
@@ -91,12 +116,36 @@ void WebCfgServer::processArgs()
             _preferences->putInt(preference_query_interval_battery, value.toInt());
             configChanged = true;
         }
+        else if(key == "CREDUSER")
+        {
+            if(value == "#")
+            {
+                clearCredentials = true;
+            }
+            else
+            {
+                _preferences->putString(preference_cred_user, value);
+                configChanged = true;
+            }
+        }
+        else if(key == "CREDPASS")
+        {
+            _preferences->putString(preference_cred_password, value);
+            configChanged = true;
+        }
+    }
+
+    if(clearMqttCredentials)
+    {
+        _preferences->putString(preference_mqtt_user, "");
+        _preferences->putString(preference_mqtt_password, "");
+        configChanged = true;
     }
 
     if(clearCredentials)
     {
-        _preferences->putString(preference_mqtt_user, "");
-        _preferences->putString(preference_mqtt_password, "");
+        _preferences->putString(preference_cred_user, "");
+        _preferences->putString(preference_cred_password, "");
         configChanged = true;
     }
 
@@ -118,7 +167,7 @@ void WebCfgServer::update()
     vTaskDelay(200 / portTICK_PERIOD_MS);
 }
 
-void WebCfgServer::serveHtml(String& response)
+void WebCfgServer::buildHtml(String& response)
 {
     response.concat("<HTML>\n");
     response.concat("<HEAD>\n");
@@ -155,6 +204,34 @@ void WebCfgServer::serveHtml(String& response)
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
 }
+
+
+void WebCfgServer::buildCredHtml(String &response)
+{
+    response.concat("<HTML>\n");
+    response.concat("<HEAD>\n");
+    response.concat("<TITLE>NUKI Hub</TITLE>\n");
+    response.concat("</HEAD>\n");
+    response.concat("<BODY>\n");
+
+    response.concat("<FORM ACTION=method=get >");
+
+    response.concat("<h3>Credentials</h3>");
+    response.concat("<table>");
+    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 20);
+    printInputField(response, "CREDPASS", "Password", "*", 30);
+    response.concat("</table>");
+
+    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+
+    response.concat("</FORM>");
+
+    response.concat("<BR>");
+//
+    response.concat("</BODY>\n");
+    response.concat("</HTML>\n");
+}
+
 
 void WebCfgServer::printInputField(String& response,
                                    const char *token,

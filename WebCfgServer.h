@@ -29,7 +29,8 @@ public:
 
 private:
     void processArgs();
-    void serveHtml(String& response);
+    void buildHtml(String& response);
+    void buildCredHtml(String& response);
     void printInputField(String& response, const char* token, const char* description, const char* value, size_t maxLength);
     void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
 
@@ -39,6 +40,10 @@ private:
     NukiWrapper* _nuki;
     Network* _network;
     Preferences* _preferences;
+
+    bool _hasCredentials = false;
+    char _credUser[20] = {0};
+    char _credPassword[20] = {0};
 
     bool _enabled = true;
 };
