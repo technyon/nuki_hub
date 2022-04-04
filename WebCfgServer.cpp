@@ -197,10 +197,18 @@ void WebCfgServer::buildHtml(String& response)
 
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
 
-    response.concat("</FORM>");
+    response.concat("</FORM><BR><BR>");
 
-    response.concat("<BR>");
-//
+    response.concat("<h3>Credentials</h3>");
+
+
+    response.concat("<form method=\"get\" action=\"/cred\">");
+    response.concat("<button type=\"submit\">Edit</button>");
+    response.concat("</form>");
+
+
+
+            //
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
 }
