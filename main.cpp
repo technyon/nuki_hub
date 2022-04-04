@@ -31,8 +31,8 @@ void nukiTask(void *pvParameters)
 
 void setupTasks()
 {
-    xTaskCreate(networkTask, "ntw", 8192, NULL, 1, NULL);
-    xTaskCreate(nukiTask, "nuki", 16384, NULL, 1, NULL);
+    xTaskCreate(networkTask, "ntw", 16384, NULL, 1, NULL);
+    xTaskCreate(nukiTask, "nuki", 8192, NULL, 1, NULL);
 }
 
 uint32_t getRandomId()

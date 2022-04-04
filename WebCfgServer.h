@@ -1,7 +1,7 @@
 #pragma once
 
-#include <WiFiServer.h>
 #include <Preferences.h>
+#include <WebServer.h>
 #include "NukiWrapper.h"
 #include "Network.h"
 
@@ -28,16 +28,14 @@ public:
 
 
 private:
-    void serveHtml(WiFiClient& client);
-    void printInputField(WiFiClient& client, const char* token, const char* description, const char* value, size_t maxLength);
-    void printInputField(WiFiClient& client, const char* token, const char* description, const int value, size_t maxLength);
+    void processArgs();
+    void serveHtml(String& response);
+    void printInputField(String& response, const char* token, const char* description, const char* value, size_t maxLength);
+    void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
 
-    void printParameter(WiFiClient& client, const char* description, const char* value);
+    void printParameter(String& response, const char* description, const char* value);
 
-
-    TokenType getParameterType(char*& token);
-
-    WiFiServer _wifiServer;
+    WebServer server;
     NukiWrapper* _nuki;
     Network* _network;
     Preferences* _preferences;
