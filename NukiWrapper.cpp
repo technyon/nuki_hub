@@ -22,6 +22,7 @@ NukiWrapper::NukiWrapper(const std::string& name, uint32_t id, Network* network,
 void NukiWrapper::initialize()
 {
     _bleScanner.initialize();
+    _bleScanner.setScanDuration(30);
     _nukiBle.initialize();
     _nukiBle.registerBleScanner(&_bleScanner);
 
