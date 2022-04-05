@@ -13,3 +13,5 @@
 #define mqtt_topic_lockstate_completionStatus "/lock/completionStatus"
 #define mqtt_topic_door_sensor_state "/lock/doorSensorState"
 #define mqtt_topic_lockstate_action "/lock/action"
+
+#define mqtt_topic_presence "/presence/devices"

@@ -2,6 +2,7 @@
 
 #include "BleScanner.h"
 #include "BleInterfaces.h"
+#include "Network.h"
 
 struct PdDevice
 {
@@ -10,10 +11,12 @@ struct PdDevice
     unsigned long timestamp;
 };
 
+#define presence_detection_buffer_size 4096
+
 class PresenceDetection : public BLEScannerSubscriber
 {
 public:
-    PresenceDetection(BleScanner* bleScanner);
+    PresenceDetection(BleScanner* bleScanner, Network* network);
     virtual ~PresenceDetection();
 
     void initialize();
@@ -22,7 +25,14 @@ public:
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) override;
 
 private:
+    void buildCsv(const PdDevice& device);
+
     BleScanner* _bleScanner;
+    Network* _network;
+    char* _csv = {0};
     std::map<long long, PdDevice> _devices;
     uint _timeout = 20000;
+    int _csvIndex = 0;
+
+
 };

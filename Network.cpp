@@ -148,6 +148,12 @@ void Network::update()
         }
     }
 
+    if(_presenceCsv != nullptr)
+    {
+        publishString(mqtt_topic_presence, _presenceCsv);
+        _presenceCsv = nullptr;
+    }
+
     _mqttClient.loop();
 
     vTaskDelay( 100 / portTICK_PERIOD_MS);
@@ -238,6 +244,11 @@ void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
     publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
     publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
+}
+
+void Network::publishPresenceDetection(char *csv)
+{
+    _presenceCsv = csv;
 }
 
 void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))

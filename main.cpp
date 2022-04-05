@@ -41,7 +41,7 @@ void presenceDetectionTask(void *pvParameters)
 
 void setupTasks()
 {
-    xTaskCreate(networkTask, "ntw", 16384, NULL, 1, NULL);
+    xTaskCreate(networkTask, "ntw", 32768, NULL, 1, NULL);
     xTaskCreate(nukiTask, "nuki", 8192, NULL, 1, NULL);
     xTaskCreate(presenceDetectionTask, "prdet", 1024, NULL, 1, NULL);
 }
@@ -79,7 +79,7 @@ void setup()
     webCfgServer->initialize();
     nuki->initialize();
 
-    presenceDetection = new PresenceDetection(nuki->bleScanner());
+    presenceDetection = new PresenceDetection(nuki->bleScanner(), network);
     presenceDetection->initialize();
 
     setupTasks();

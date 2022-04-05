@@ -1,13 +1,21 @@
 #include "PresenceDetection.h"
 
-PresenceDetection::PresenceDetection(BleScanner *bleScanner)
-: _bleScanner(bleScanner)
-{}
+PresenceDetection::PresenceDetection(BleScanner *bleScanner, Network* network)
+: _bleScanner(bleScanner),
+  _network(network)
+{
+    _csv = new char[presence_detection_buffer_size];
+}
 
 PresenceDetection::~PresenceDetection()
 {
     _bleScanner->unsubscribe(this);
     _bleScanner = nullptr;
+
+    _network = nullptr;
+
+    delete _csv;
+    _csv = nullptr;
 }
 
 void PresenceDetection::initialize()
@@ -17,23 +25,58 @@ void PresenceDetection::initialize()
 
 void PresenceDetection::update()
 {
-    vTaskDelay( 10000 / portTICK_PERIOD_MS);
+    vTaskDelay( 5000 / portTICK_PERIOD_MS);
 
+    if(_devices.size() == 0) return;
+
+    memset(_csv, 0, presence_detection_buffer_size);
+    _csvIndex = 0;
     long ts = millis();
     for(auto it : _devices)
     {
         if(ts - 20000 < it.second.timestamp)
         {
-            // TODO: publish to mqtt
+            buildCsv(it.second);
+        }
+
+        // Prevent csv buffer overflow
+        if(_csvIndex > presence_detection_buffer_size - (sizeof(it.second.name) + sizeof(it.second.address) + 3))
+        {
+            break;
         }
     }
+
+    _network->publishPresenceDetection(_csv);
 }
+
+
+void PresenceDetection::buildCsv(const PdDevice &device)
+{
+    for(int i = 0; i < 17; i++)
+    {
+        _csv[_csvIndex] = device.address[i];
+        ++_csvIndex;
+    }
+    _csv[_csvIndex] = ';';
+    ++_csvIndex;
+
+    int i=0;
+    while(device.name[i] != 0x00 && i < 30)
+    {
+        _csv[_csvIndex] = device.name[i];
+        ++_csvIndex;
+        ++i;
+    }
+    _csv[_csvIndex] = '\n';
+    _csvIndex++;
+}
+
 
 void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 {
     std::string addressStr = device->getAddress().toString();
     char addrArrComp[13] = {0};
-//    aa:bb:cc:dd:ee:ff
+
     addrArrComp[0] = addressStr.at(0);
     addrArrComp[1] = addressStr.at(1);
     addrArrComp[2] = addressStr.at(3);

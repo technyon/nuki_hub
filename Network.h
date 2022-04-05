@@ -18,6 +18,7 @@ public:
 
     void publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState);
     void publishBatteryReport(const Nuki::BatteryReport& batteryReport);
+    void publishPresenceDetection(char* csv);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
 
@@ -45,6 +46,8 @@ private:
     char _mqttPath[181] = {0};
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
+
+    char* _presenceCsv = nullptr;
 
     bool _firstTunerStatePublish = true;
 
