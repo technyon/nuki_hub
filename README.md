@@ -28,6 +28,8 @@ Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should
 - nuki/battery/drain: The drain of the last lock action in Milliwattseconds (mWs)
 - nuki/battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A)
 
+- presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
+
 # Disclaimer
 
 This is a third party software for NUKI smart door locks. This project or any of it's authors aren't associated with Nuki Home Solutions GmbH. Please refer for official products and offical support to their website:
