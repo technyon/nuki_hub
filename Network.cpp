@@ -148,7 +148,7 @@ void Network::update()
         }
     }
 
-    if(_presenceCsv != nullptr)
+    if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
     {
         publishString(mqtt_topic_presence, _presenceCsv);
         _presenceCsv = nullptr;

@@ -46,6 +46,8 @@ void PresenceDetection::update()
         }
     }
 
+    _csv[_csvIndex-1] = 0x00;
+
     _network->publishPresenceDetection(_csv);
 }
 
