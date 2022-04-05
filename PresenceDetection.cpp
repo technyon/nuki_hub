@@ -1,10 +1,22 @@
 #include "PresenceDetection.h"
+#include "PreferencesKeys.h"
 
-PresenceDetection::PresenceDetection(BleScanner *bleScanner, Network* network)
-: _bleScanner(bleScanner),
+PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner *bleScanner, Network* network)
+: _preferences(preferences),
+  _bleScanner(bleScanner),
   _network(network)
 {
     _csv = new char[presence_detection_buffer_size];
+
+    _timeout = _preferences->getInt(preference_presence_detection_timeout) * 1000;
+    if(_timeout == 0)
+    {
+        _timeout = 60000;
+        _preferences->putInt(preference_presence_detection_timeout, 60);
+    }
+
+    Serial.print(F("Presence detection timeout (ms): "));
+    Serial.println(_timeout);
 }
 
 PresenceDetection::~PresenceDetection()
@@ -25,8 +37,9 @@ void PresenceDetection::initialize()
 
 void PresenceDetection::update()
 {
-    vTaskDelay( 5000 / portTICK_PERIOD_MS);
+    vTaskDelay( 10000 / portTICK_PERIOD_MS);
 
+    if(_timeout < 0) return;
     if(_devices.size() == 0) return;
 
     memset(_csv, 0, presence_detection_buffer_size);
@@ -34,7 +47,7 @@ void PresenceDetection::update()
     long ts = millis();
     for(auto it : _devices)
     {
-        if(ts - 20000 < it.second.timestamp)
+        if(ts - _timeout < it.second.timestamp)
         {
             buildCsv(it.second);
         }

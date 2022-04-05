@@ -10,6 +10,7 @@
 #define preference_query_interval_battery "batInterval"
 #define preference_cred_user "crdusr"
 #define preference_cred_password "crdpass"
+#define preference_presence_detection_timeout "prdtimeout"
 
 
 

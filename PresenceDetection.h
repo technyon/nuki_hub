@@ -16,7 +16,7 @@ struct PdDevice
 class PresenceDetection : public BLEScannerSubscriber
 {
 public:
-    PresenceDetection(BleScanner* bleScanner, Network* network);
+    PresenceDetection(Preferences* preferences, BleScanner* bleScanner, Network* network);
     virtual ~PresenceDetection();
 
     void initialize();
@@ -27,12 +27,11 @@ public:
 private:
     void buildCsv(const PdDevice& device);
 
+    Preferences* _preferences;
     BleScanner* _bleScanner;
     Network* _network;
     char* _csv = {0};
     std::map<long long, PdDevice> _devices;
-    uint _timeout = 20000;
+    int _timeout = 20000;
     int _csvIndex = 0;
-
-
 };

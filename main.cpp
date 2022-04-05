@@ -79,7 +79,7 @@ void setup()
     webCfgServer->initialize();
     nuki->initialize();
 
-    presenceDetection = new PresenceDetection(nuki->bleScanner(), network);
+    presenceDetection = new PresenceDetection(preferences, nuki->bleScanner(), network);
     presenceDetection->initialize();
 
     setupTasks();

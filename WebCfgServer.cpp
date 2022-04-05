@@ -129,6 +129,11 @@ bool WebCfgServer::processArgs()
             _preferences->putInt(preference_query_interval_battery, value.toInt());
             configChanged = true;
         }
+        else if(key == "PRDTMO")
+        {
+            _preferences->putInt(preference_presence_detection_timeout, value.toInt());
+            configChanged = true;
+        }
         else if(key == "CREDUSER")
         {
             if(value == "#")
@@ -205,6 +210,7 @@ void WebCfgServer::buildHtml(String& response)
     printInputField(response, "MQTTPATH", "MQTT Path", _preferences->getString(preference_mqtt_path).c_str(), 180);
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    printInputField(response, "PRDTMO", "Presence detection timeout (seconds, -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     response.concat("</table>");
 
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
@@ -218,9 +224,6 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
-
-
-            //
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
 }
