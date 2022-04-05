@@ -21,6 +21,7 @@ file(GLOB SRCFILES
         NukiWrapper.cpp
         MqttTopics.h
         WebCfgServer.cpp
+        PresenceDetection.cpp
         PreferencesKeys.h
         lib/ESP32_BLE_Arduino-1.0.1/src/*.cpp
         lib/ESP32_BLE_Arduino-1.0.1/src/*.h

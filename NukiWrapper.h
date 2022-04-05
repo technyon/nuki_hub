@@ -9,11 +9,14 @@ class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
     NukiWrapper(const std::string& name, uint32_t id, Network* network, Preferences* preferences);
+    virtual ~NukiWrapper();
 
     void initialize();
     void update();
 
     const bool isPaired();
+
+    BleScanner* bleScanner();
 
     void notify(Nuki::EventType eventType) override;
 
@@ -26,7 +29,7 @@ private:
     Nuki::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     Nuki::NukiBle _nukiBle;
-    BleScanner _bleScanner;
+    BleScanner* _bleScanner;
     Network* _network;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds

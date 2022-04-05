@@ -19,12 +19,21 @@ NukiWrapper::NukiWrapper(const std::string& name, uint32_t id, Network* network,
     network->setLockActionReceived(nukiInst->onLockActionReceived);
 }
 
+
+NukiWrapper::~NukiWrapper()
+{
+    delete _bleScanner;
+    _bleScanner = nullptr;
+}
+
+
 void NukiWrapper::initialize()
 {
-    _bleScanner.initialize();
-    _bleScanner.setScanDuration(30);
+    _bleScanner = new BleScanner();
+    _bleScanner->initialize();
+    _bleScanner->setScanDuration(30);
     _nukiBle.initialize();
-    _nukiBle.registerBleScanner(&_bleScanner);
+    _nukiBle.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
@@ -53,7 +62,7 @@ void NukiWrapper::update()
     if (!_paired) {
         Serial.println(F("Nuki start pairing"));
 
-        _bleScanner.update();
+        _bleScanner->update();
         vTaskDelay( 5000 / portTICK_PERIOD_MS);
         if (_nukiBle.pairNuki()) {
             Serial.println(F("Nuki paired"));
@@ -67,7 +76,7 @@ void NukiWrapper::update()
     }
 
     vTaskDelay( 20 / portTICK_PERIOD_MS);
-    _bleScanner.update();
+    _bleScanner->update();
 
     unsigned long ts = millis();
 
@@ -147,6 +156,11 @@ void NukiWrapper::onLockActionReceived(const char *value)
 const bool NukiWrapper::isPaired()
 {
     return _paired;
+}
+
+BleScanner *NukiWrapper::bleScanner()
+{
+    return _bleScanner;
 }
 
 void NukiWrapper::notify(Nuki::EventType eventType)

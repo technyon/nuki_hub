@@ -4,12 +4,14 @@
 #include "WebCfgServer.h"
 #include <FreeRTOS.h>
 #include "PreferencesKeys.h"
+#include "PresenceDetection.h"
 
 #define ESP32
 
 Network* network;
 WebCfgServer* webCfgServer;
 NukiWrapper* nuki;
+PresenceDetection* presenceDetection;
 Preferences* preferences;
 
 void networkTask(void *pvParameters)
@@ -29,10 +31,19 @@ void nukiTask(void *pvParameters)
     }
 }
 
+void presenceDetectionTask(void *pvParameters)
+{
+    while(true)
+    {
+        presenceDetection->update();
+    }
+}
+
 void setupTasks()
 {
     xTaskCreate(networkTask, "ntw", 16384, NULL, 1, NULL);
     xTaskCreate(nukiTask, "nuki", 8192, NULL, 1, NULL);
+    xTaskCreate(presenceDetectionTask, "prdet", 1024, NULL, 1, NULL);
 }
 
 uint32_t getRandomId()
@@ -66,8 +77,11 @@ void setup()
     nuki = new NukiWrapper("ESP", deviceId, network, preferences);
     webCfgServer = new WebCfgServer(nuki, network, preferences);
     webCfgServer->initialize();
-
     nuki->initialize();
+
+    presenceDetection = new PresenceDetection(nuki->bleScanner());
+    presenceDetection->initialize();
+
     setupTasks();
 }
 
