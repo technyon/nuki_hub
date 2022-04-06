@@ -74,7 +74,7 @@ void setup()
         preferences->putUInt(preference_deviceId, deviceId);
     }
 
-    nuki = new NukiWrapper("ESP", deviceId, network, preferences);
+    nuki = new NukiWrapper("NukiHub", deviceId, network, preferences);
     webCfgServer = new WebCfgServer(nuki, network, preferences);
     webCfgServer->initialize();
     nuki->initialize();

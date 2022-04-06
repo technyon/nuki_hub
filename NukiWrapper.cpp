@@ -4,8 +4,9 @@
 
 NukiWrapper* nukiInst;
 
-NukiWrapper::NukiWrapper(const std::string& name, uint32_t id, Network* network, Preferences* preferences)
-: _nukiBle(name, id),
+NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences)
+: _deviceName(deviceName),
+  _nukiBle(deviceName, id),
   _network(network),
   _preferences(preferences)
 {
@@ -30,7 +31,7 @@ NukiWrapper::~NukiWrapper()
 void NukiWrapper::initialize()
 {
     _bleScanner = new BleScanner();
-    _bleScanner->initialize();
+    _bleScanner->initialize(_deviceName);
     _bleScanner->setScanDuration(10);
     _nukiBle.initialize();
     _nukiBle.registerBleScanner(_bleScanner);

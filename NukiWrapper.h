@@ -8,7 +8,7 @@
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& name, uint32_t id, Network* network, Preferences* preferences);
+    NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences);
     virtual ~NukiWrapper();
 
     void initialize();
@@ -28,6 +28,7 @@ private:
 
     Nuki::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
+    std::string _deviceName;
     Nuki::NukiBle _nukiBle;
     BleScanner* _bleScanner;
     Network* _network;
