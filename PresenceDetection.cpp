@@ -53,7 +53,7 @@ void PresenceDetection::update()
         }
 
         // Prevent csv buffer overflow
-        if(_csvIndex > presence_detection_buffer_size - (sizeof(it.second.name) + sizeof(it.second.address) + 3))
+        if(_csvIndex > presence_detection_buffer_size - (sizeof(it.second.name) + sizeof(it.second.address) + 10))
         {
             break;
         }
@@ -82,6 +82,24 @@ void PresenceDetection::buildCsv(const PdDevice &device)
         ++_csvIndex;
         ++i;
     }
+
+    _csv[_csvIndex] = ';';
+    ++_csvIndex;
+
+    if(device.hasRssi)
+    {
+        char rssiStr[20] = {0};
+        itoa(device.rssi, rssiStr, 10);
+
+        int i=0;
+        while(rssiStr[i] != 0x00 && i < 20)
+        {
+            _csv[_csvIndex] = rssiStr[i];
+            ++_csvIndex;
+            ++i;
+        }
+    }
+
     _csv[_csvIndex] = '\n';
     _csvIndex++;
 }
@@ -136,16 +154,32 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 
             _devices[addr] = pdDevice;
         }
+
+        if(device->haveRSSI())
+        {
+            pdDevice.hasRssi = true;
+            pdDevice.rssi = device->getRSSI();
+        }
     }
     else
     {
         it->second.timestamp = millis();
+        if(device->haveRSSI())
+        {
+            it->second.hasRssi = true;
+            it->second.rssi = device->getRSSI();
+        }
     }
 
 //    if(device->haveName())
 //    {
 //        Serial.print(" | ");
 //        Serial.print(device->getName().c_str());
+//        if(device->haveRSSI())
+//        {
+//            Serial.print(" | ");
+//            Serial.print(device->getRSSI());
+//        }
 //    }
 //    Serial.println();
 

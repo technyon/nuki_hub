@@ -31,7 +31,7 @@ void NukiWrapper::initialize()
 {
     _bleScanner = new BleScanner();
     _bleScanner->initialize();
-    _bleScanner->setScanDuration(30);
+    _bleScanner->setScanDuration(10);
     _nukiBle.initialize();
     _nukiBle.registerBleScanner(_bleScanner);
 

@@ -8,7 +8,9 @@ struct PdDevice
 {
     char address[18] = {0};
     char name[30] = {0};
-    unsigned long timestamp;
+    unsigned long timestamp = 0;
+    int rssi = 0;
+    bool hasRssi = false;
 };
 
 #define presence_detection_buffer_size 4096
