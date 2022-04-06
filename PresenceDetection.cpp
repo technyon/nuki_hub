@@ -37,7 +37,7 @@ void PresenceDetection::initialize()
 
 void PresenceDetection::update()
 {
-    vTaskDelay( 10000 / portTICK_PERIOD_MS);
+    vTaskDelay( 5000 / portTICK_PERIOD_MS);
 
     if(_timeout < 0) return;
     if(_devices.size() == 0) return;
