@@ -14,19 +14,19 @@ Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should
 
 ## MQTT Interface
 
-- nuki/lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
-- nuki/lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
-- nuki/lock/completionStatus: Status of the last action: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
-- nuki/lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-- nuki/lock/action: (to be renamed to action). Allows to execute lock actions. After executing the action, the value is reset to an empty string. Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
+- lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
+- lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
+- lock/completionStatus: Status of the last action: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
+- lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
+- lock/action: (to be renamed to action). Allows to execute lock actions. After executing the action, the value is reset to an empty string. Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
 
 - battery/voltage: Reports the current battery voltage in Volts.
-- nuki/battery/level: Battery level in percent
-- nuki/battery/critical: 1 if battery level is critical, otherwise 0
-- nuki/battery/charging: 1 if charging, otherwise 0
-- nuki/battery/voltage: Current Battery voltage (V)
-- nuki/battery/drain: The drain of the last lock action in Milliwattseconds (mWs)
-- nuki/battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A)
+- battery/level: Battery level in percent
+- battery/critical: 1 if battery level is critical, otherwise 0
+- battery/charging: 1 if charging, otherwise 0
+- battery/voltage: Current Battery voltage (V)
+- battery/drain: The drain of the last lock action in Milliwattseconds (mWs)
+- battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A)
 
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
 
