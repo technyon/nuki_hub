@@ -39,11 +39,28 @@ void presenceDetectionTask(void *pvParameters)
     }
 }
 
+void checkMillisTask(void *pvParameters)
+{
+    while(true)
+    {
+        vTaskDelay( 60000 / portTICK_PERIOD_MS);
+        // millis() is about to overflow. Restart device to prevent problems with overflow
+        if(millis() > (2^32) - 5 * 60000)
+        {
+            Serial.println(F("millis() is about to overflow. Restarting device."));
+            vTaskDelay( 2000 / portTICK_PERIOD_MS);
+            ESP.restart();
+        }
+    }
+}
+
+
 void setupTasks()
 {
     xTaskCreate(networkTask, "ntw", 32768, NULL, 1, NULL);
     xTaskCreate(nukiTask, "nuki", 8192, NULL, 1, NULL);
     xTaskCreate(presenceDetectionTask, "prdet", 1024, NULL, 1, NULL);
+    xTaskCreate(checkMillisTask, "mlchk", 512, NULL, 1, NULL);
 }
 
 uint32_t getRandomId()
