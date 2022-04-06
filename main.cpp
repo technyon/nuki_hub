@@ -57,9 +57,11 @@ void checkMillisTask(void *pvParameters)
 
 void setupTasks()
 {
-    xTaskCreate(networkTask, "ntw", 32768, NULL, 1, NULL);
-    xTaskCreate(nukiTask, "nuki", 8192, NULL, 1, NULL);
-    xTaskCreate(presenceDetectionTask, "prdet", 1024, NULL, 1, NULL);
+    // configMAX_PRIORITIES is 25
+
+    xTaskCreate(networkTask, "ntw", 32768, NULL, 3, NULL);
+    xTaskCreate(nukiTask, "nuki", 8192, NULL, 2, NULL);
+    xTaskCreate(presenceDetectionTask, "prdet", 1024, NULL, 5, NULL);
     xTaskCreate(checkMillisTask, "mlchk", 512, NULL, 1, NULL);
 }
 
