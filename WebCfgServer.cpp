@@ -1,6 +1,7 @@
 #include "WebCfgServer.h"
 #include <WiFiClient.h>
 #include "PreferencesKeys.h"
+#include "Version.h"
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* preferences)
 : server(80),
@@ -191,12 +192,15 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<TITLE>NUKI Hub</TITLE>\n");
     response.concat("</HEAD>\n");
     response.concat("<BODY>\n");
-    response.concat("<br><br><h3>Info</h3>\n");
+    response.concat("<br><h3>Info</h3>\n");
 
+    String version = "&nbsp;";
+    version.concat(nuki_hub_version);
 
     response.concat("<table>");
     printParameter(response, "Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
     printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "&nbsp;Yes" : "&nbsp;No");
+    printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
 
     response.concat("<FORM ACTION=method=get >");
