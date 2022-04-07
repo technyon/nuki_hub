@@ -12,10 +12,11 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* ne
 {
     nukiInst = this;
 
-    memset(&_keyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
     memset(&_lastKeyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
     memset(&_lastBatteryReport, sizeof(Nuki::BatteryReport), 0);
     memset(&_batteryReport, sizeof(Nuki::BatteryReport), 0);
+    memset(&_keyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
+    _keyTurnerState.lockState = Nuki::LockState::Undefined;
 
     network->setLockActionReceived(nukiInst->onLockActionReceived);
 }
@@ -152,6 +153,11 @@ Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
 void NukiWrapper::onLockActionReceived(const char *value)
 {
     nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
+}
+
+const Nuki::KeyTurnerState &NukiWrapper::keyTurnerState()
+{
+    return _keyTurnerState;
 }
 
 const bool NukiWrapper::isPaired()

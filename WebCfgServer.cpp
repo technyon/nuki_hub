@@ -197,9 +197,15 @@ void WebCfgServer::buildHtml(String& response)
     String version = "&nbsp;";
     version.concat(nuki_hub_version);
 
+    char lockstateArr[20];
+    Nuki::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
+    String lockState = "&nbsp;";
+    lockState.concat(lockstateArr);
+
     response.concat("<table>");
     printParameter(response, "Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
     printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "&nbsp;Yes" : "&nbsp;No");
+    printParameter(response, "Lock state", lockState.c_str());
     printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
 

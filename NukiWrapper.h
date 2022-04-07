@@ -14,6 +14,7 @@ public:
     void initialize();
     void update();
 
+    const Nuki::KeyTurnerState& keyTurnerState();
     const bool isPaired();
 
     BleScanner* bleScanner();
