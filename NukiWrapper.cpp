@@ -97,7 +97,7 @@ void NukiWrapper::update()
     {
          _nukiBle.lockAction(_nextLockAction, 0, 0);
          _nextLockAction = (Nuki::LockAction)0xff;
-         if(_intervalLockstate > 10 * 1000)
+         if(_intervalLockstate > 10)
          {
              _nextLockStateUpdateTs = ts + 10 * 1000;
          }
