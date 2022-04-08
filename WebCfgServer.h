@@ -32,7 +32,7 @@ private:
     void buildHtml(String& response);
     void buildCredHtml(String& response);
     void buildConfirmHtml(String& response);
-    void printInputField(String& response, const char* token, const char* description, const char* value, size_t maxLength);
+    void printInputField(String& response, const char* token, const char* description, const char* value, const size_t maxLength, const bool isPassword = false);
     void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
 
     void printParameter(String& response, const char* description, const char* value);

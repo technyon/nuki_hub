@@ -216,7 +216,7 @@ void WebCfgServer::buildHtml(String& response)
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
     printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
     printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
-    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30);
+    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
     printInputField(response, "MQTTPATH", "MQTT Path", _preferences->getString(preference_mqtt_path).c_str(), 180);
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
@@ -252,7 +252,7 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
     printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 20);
-    printInputField(response, "CREDPASS", "Password", "*", 30);
+    printInputField(response, "CREDPASS", "Password", "*", 30, true);
     response.concat("</table>");
 
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
@@ -284,7 +284,8 @@ void WebCfgServer::printInputField(String& response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
-                                   size_t maxLength)
+                                   const size_t maxLength,
+                                   const bool isPassword)
 {
     char maxLengthStr[20];
 
@@ -295,7 +296,9 @@ void WebCfgServer::printInputField(String& response,
     response.concat(description);
     response.concat("</td>");
     response.concat("<td>");
-    response.concat(" <INPUT TYPE=TEXT VALUE=\"");
+    response.concat(" <INPUT TYPE=");
+    response.concat(isPassword ? "PASSWORD" : "TEXT");
+    response.concat(" VALUE=\"");
     response.concat(value);
     response.concat("\" NAME=\"");
     response.concat(token);
