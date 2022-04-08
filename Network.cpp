@@ -29,13 +29,13 @@ void Network::initialize()
     bool res = wm.autoConnect(); // password protected ap
 
     if(!res) {
-        Serial.println(F("Failed to connect"));
-        return;
-        // ESP.restart();
+        Serial.println(F("Failed to connect. Wait for ESP restart."));
+        delay(10000);
+        ESP.restart();
     }
     else {
-        //if you get here you have connected to the WiFi
-        Serial.println(F("connected...yeey :)"));
+        Serial.print(F("WiFi connected."));
+        Serial.println(WiFi.localIP().toString());
     }
 
     const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
