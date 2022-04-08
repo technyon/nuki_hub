@@ -26,7 +26,18 @@ void Network::initialize()
     // these are stored by the esp library
     //wm.resetSettings();
 
-    bool res = wm.autoConnect(); // password protected ap
+    bool res = false;
+
+    if(_cookie.isSet())
+    {
+        Serial.println(F("Opening WiFi configuration portal."));
+        res = wm.startConfigPortal();
+        _cookie.clear();
+    }
+    else
+    {
+        res = wm.autoConnect(); // password protected ap
+    }
 
     if(!res) {
         Serial.println(F("Failed to connect. Wait for ESP restart."));
@@ -317,4 +328,11 @@ void Network::buildMqttPath(const char* path, char* outPath)
         ++offset;
     }
     outPath[i+1] = 0x00;
+}
+
+void Network::restartAndConfigureWifi()
+{
+    _cookie.set();
+    delay(200);
+    ESP.restart();
 }

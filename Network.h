@@ -4,6 +4,7 @@
 #include <WiFiClient.h>
 #include <Preferences.h>
 #include "NukiConstants.h"
+#include "SpiffsCookie.h"
 
 class Network
 {
@@ -22,6 +23,8 @@ public:
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
 
+    void restartAndConfigureWifi();
+
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
@@ -38,6 +41,7 @@ private:
     PubSubClient _mqttClient;
     WiFiClient _wifiClient;
     Preferences* _preferences;
+    SpiffsCookie _cookie;
 
     bool _mqttConnected = false;
 

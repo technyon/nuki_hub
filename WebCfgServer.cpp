@@ -152,6 +152,13 @@ bool WebCfgServer::processArgs()
             _preferences->putString(preference_cred_password, value);
             configChanged = true;
         }
+        else if(key == "WIFICONF")
+        {
+            if(value == _preferences->getString(preference_cred_password))
+            {
+                _network->restartAndConfigureWifi();
+            }
+        }
     }
 
     if(clearMqttCredentials)
@@ -233,6 +240,17 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<form method=\"get\" action=\"/cred\">");
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
+
+    response.concat("<FORM ACTION=method=get >");
+
+    response.concat("<BR><BR><h3>Wifi</h3>");
+    response.concat("<table>");
+    printInputField(response, "WIFICONF", "Type password to confirm", "", 20, true);
+    response.concat("</table>");
+
+    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Restart and configure WiFi\">");
+
+    response.concat("</FORM><BR><BR>");
 
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
