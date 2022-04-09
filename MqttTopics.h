@@ -17,5 +17,7 @@
 #define mqtt_topic_config_button_enabled "/configuration/buttonEnabled"
 #define mqtt_topic_config_led_enabled "/configuration/ledEnabled"
 #define mqtt_topic_config_led_brightness "/configuration/ledBrightness"
+#define mqtt_topic_config_auto_unlock "/configuration/autoUnlock"
+#define mqtt_topic_config_auto_lock "/configuration/autoLock"
 
 #define mqtt_topic_presence "/presence/devices"

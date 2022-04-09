@@ -152,7 +152,9 @@ void NukiWrapper::updateBatteryState()
 void NukiWrapper::updateConfig()
 {
     readConfig();
+    readAdvancedConfig();
     _network->publishConfig(_nukiConfig);
+    _network->publishAdvancedConfig(_nukiAdvancedConfig);
 }
 
 Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
@@ -203,6 +205,27 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
         _nukiBle.setLedBrightness(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
+    else if(strcmp(topic, mqtt_topic_config_auto_unlock) == 0)
+    {
+        bool newValue = !(atoi(value) > 0);
+        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoUnLockDisabled == newValue) return;
+        _nukiBle.disableAutoUnlock(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
+    else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
+    {
+        bool newValue = atoi(value) > 0;
+        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
+        _nukiBle.enableAutoLock(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
+    else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
+    {
+        bool newValue = atoi(value) > 0;
+        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
+        _nukiBle.enableAutoLock(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
 }
 
 const Nuki::KeyTurnerState &NukiWrapper::keyTurnerState()
@@ -230,6 +253,16 @@ void NukiWrapper::notify(Nuki::EventType eventType)
 
 void NukiWrapper::readConfig()
 {
+    Serial.print(F("Reading config. Result: "));
     Nuki::CmdResult result = _nukiBle.requestConfig(&_nukiConfig);
     _nukiConfigValid = result == Nuki::CmdResult::Success;
+    Serial.println(result);
+}
+
+void NukiWrapper::readAdvancedConfig()
+{
+    Serial.print(F("Reading advanced config. Result: "));
+    Nuki::CmdResult result = _nukiBle.requestAdvancedConfig(&_nukiAdvancedConfig);
+    _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
+    Serial.println(result);
 }

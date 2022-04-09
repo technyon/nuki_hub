@@ -21,6 +21,7 @@ public:
     void publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState);
     void publishBatteryReport(const Nuki::BatteryReport& batteryReport);
     void publishConfig(const Nuki::Config& config);
+    void publishAdvancedConfig(const Nuki::AdvancedConfig& config);
     void publishPresenceDetection(char* csv);
 
     void setLockActionReceivedCallback(void (*lockActionReceivedCallback)(const char* value));

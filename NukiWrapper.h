@@ -33,6 +33,7 @@ private:
     void updateConfig();
 
     void readConfig();
+    void readAdvancedConfig();
 
     Nuki::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
@@ -52,7 +53,9 @@ private:
     Nuki::BatteryReport _lastBatteryReport;
 
     Nuki::Config _nukiConfig = {0};
+    Nuki::AdvancedConfig _nukiAdvancedConfig = {0};
     bool _nukiConfigValid = false;
+    bool _nukiAdvancedConfigValid = false;
 
     bool _paired = false;
     bool _statusUpdated = false;

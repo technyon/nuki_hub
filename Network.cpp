@@ -13,10 +13,12 @@ Network::Network(Preferences* preferences)
 {
     nwInst = this;
 
-    _configTopics.reserve(3);
+    _configTopics.reserve(5);
     _configTopics.push_back(mqtt_topic_config_button_enabled);
     _configTopics.push_back(mqtt_topic_config_led_enabled);
     _configTopics.push_back(mqtt_topic_config_led_brightness);
+    _configTopics.push_back(mqtt_topic_config_auto_unlock);
+    _configTopics.push_back(mqtt_topic_config_auto_lock);
 }
 
 void Network::initialize()
@@ -275,6 +277,12 @@ void Network::publishConfig(const Nuki::Config &config)
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
+}
+
+void Network::publishAdvancedConfig(const Nuki::AdvancedConfig &config)
+{
+    publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
+    publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
 
 void Network::publishPresenceDetection(char *csv)
