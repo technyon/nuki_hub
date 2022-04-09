@@ -1,6 +1,7 @@
 #include "NukiWrapper.h"
 #include <FreeRTOS.h>
 #include "PreferencesKeys.h"
+#include "MqttTopics.h"
 
 NukiWrapper* nukiInst;
 
@@ -18,7 +19,8 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* ne
     memset(&_keyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
     _keyTurnerState.lockState = Nuki::LockState::Undefined;
 
-    network->setLockActionReceived(nukiInst->onLockActionReceived);
+    network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
+    network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
 }
 
 
@@ -112,6 +114,11 @@ void NukiWrapper::update()
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(Nuki::KeyTurnerState));
 }
 
+void NukiWrapper::setPin(const uint16_t pin)
+{
+        _nukiBle.saveSecurityPincode(pin);
+}
+
 void NukiWrapper::updateKeyTurnerState()
 {
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);
@@ -162,9 +169,40 @@ Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
     return (Nuki::LockAction)0xff;
 }
 
-void NukiWrapper::onLockActionReceived(const char *value)
+void NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
     nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
+}
+
+void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
+{
+    nukiInst->onConfigUpdateReceived(topic, value);
+}
+
+
+void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
+{
+    if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
+    {
+        bool newValue = atoi(value) > 0;
+        if(!_nukiConfigValid || _nukiConfig.buttonEnabled == newValue) return;
+        _nukiBle.enableButton(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
+    if(strcmp(topic, mqtt_topic_config_led_enabled) == 0)
+    {
+        bool newValue = atoi(value) > 0;
+        if(!_nukiConfigValid || _nukiConfig.ledEnabled == newValue) return;
+        _nukiBle.enableLedFlash(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
+    else if(strcmp(topic, mqtt_topic_config_led_brightness) == 0)
+    {
+        int newValue = atoi(value);
+        if(!_nukiConfigValid || _nukiConfig.ledBrightness == newValue) return;
+        _nukiBle.setLedBrightness(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
 }
 
 const Nuki::KeyTurnerState &NukiWrapper::keyTurnerState()
@@ -192,8 +230,6 @@ void NukiWrapper::notify(Nuki::EventType eventType)
 
 void NukiWrapper::readConfig()
 {
-    Serial.print(F("Reading config. Result: "));
     Nuki::CmdResult result = _nukiBle.requestConfig(&_nukiConfig);
     _nukiConfigValid = result == Nuki::CmdResult::Success;
-    Serial.println(result);
 }

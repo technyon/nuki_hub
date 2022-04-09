@@ -14,6 +14,8 @@ public:
     void initialize();
     void update();
 
+    void setPin(const uint16_t pin);
+
     const Nuki::KeyTurnerState& keyTurnerState();
     const bool isPaired();
 
@@ -22,7 +24,9 @@ public:
     void notify(Nuki::EventType eventType) override;
 
 private:
-    static void onLockActionReceived(const char* value);
+    static void onLockActionReceivedCallback(const char* value);
+    static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
+    void onConfigUpdateReceived(const char* topic, const char* value);
 
     void updateKeyTurnerState();
     void updateBatteryState();

@@ -3,6 +3,7 @@
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include <Preferences.h>
+#include <vector>
 #include "NukiConstants.h"
 #include "SpiffsCookie.h"
 
@@ -22,7 +23,8 @@ public:
     void publishConfig(const Nuki::Config& config);
     void publishPresenceDetection(char* csv);
 
-    void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
+    void setLockActionReceivedCallback(void (*lockActionReceivedCallback)(const char* value));
+    void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
 
     void restartAndConfigureWifi();
 
@@ -56,7 +58,10 @@ private:
 
     char* _presenceCsv = nullptr;
 
+    std::vector<char*> _configTopics;
+
     bool _firstTunerStatePublish = true;
 
-    void (*_lockActionReceivedCallback)(const char* value) = NULL;
+    void (*_lockActionReceivedCallback)(const char* value) = nullptr;
+    void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
 };

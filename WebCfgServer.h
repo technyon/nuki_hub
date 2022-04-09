@@ -28,7 +28,7 @@ public:
 
 
 private:
-    bool processArgs();
+    bool processArgs(String& message);
     void buildHtml(String& response);
     void buildCredHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
@@ -40,7 +40,7 @@ private:
 
     void printParameter(String& response, const char* description, const char* value);
 
-    void waitAndProcess(const uint32_t duration);
+    void waitAndProcess(const bool blocking, const uint32_t duration);
 
     WebServer server;
     NukiWrapper* _nuki;

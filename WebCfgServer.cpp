@@ -57,30 +57,38 @@ void WebCfgServer::initialize()
         String response = "";
         buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
         server.send(200, "text/html", response);
-        waitAndProcess(2000);
+        waitAndProcess(true, 2000);
         _network->restartAndConfigureWifi();
     });
     server.on("/method=get", [&]() {
         if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
             return server.requestAuthentication();
         }
-        bool configChanged = processArgs();
-        if(configChanged)
+        String message = "";
+        bool restartEsp = processArgs(message);
+        if(restartEsp)
         {
             String response = "";
-            buildConfirmHtml(response, "Configuration saved ... restarting.");
+            buildConfirmHtml(response, message);
             server.send(200, "text/html", response);
             Serial.println(F("Restarting"));
 
-            waitAndProcess(1000);
+            waitAndProcess(true, 1000);
             ESP.restart();
+        }
+        else
+        {
+            String response = "";
+            buildConfirmHtml(response, message, 3);
+            server.send(200, "text/html", response);
+            waitAndProcess(false, 1000);
         }
     });
 
     server.begin();
 }
 
-bool WebCfgServer::processArgs()
+bool WebCfgServer::processArgs(String& message)
 {
     bool configChanged = false;
     bool clearMqttCredentials = false;
@@ -159,6 +167,19 @@ bool WebCfgServer::processArgs()
             _preferences->putString(preference_cred_password, value);
             configChanged = true;
         }
+        else if(key == "NUKIPIN")
+        {
+            if(value == "#")
+            {
+                message = "PIN cleared";
+                _nuki->setPin(0xffff);
+            }
+            else
+            {
+                message = "PIN saved";
+                _nuki->setPin(value.toInt());
+            }
+        }
     }
 
     if(clearMqttCredentials)
@@ -177,6 +198,7 @@ bool WebCfgServer::processArgs()
 
     if(configChanged)
     {
+        message = "Configuration saved ... restarting.";
         _enabled = false;
         _preferences->end();
     }
@@ -250,15 +272,20 @@ void WebCfgServer::buildCredHtml(String &response)
     buildHtmlHeader(response);
 
     response.concat("<FORM ACTION=method=get >");
-
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
     printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 20);
     printInputField(response, "CREDPASS", "Password", "*", 30, true);
     response.concat("</table>");
-
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+    response.concat("</FORM>");
 
+    response.concat("<br><br><FORM ACTION=method=get >");
+    response.concat("<h3>NUKI Pin Code</h3>");
+    response.concat("<table>");
+    printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, true);
+    response.concat("</table>");
+    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
 
     response.concat("</BODY>\n");
@@ -361,12 +388,19 @@ void WebCfgServer::printParameter(String& response, const char *description, con
 
 }
 
-void WebCfgServer::waitAndProcess(const uint32_t duration)
+void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
 {
     unsigned long timeout = millis() + duration;
     while(millis() < timeout)
     {
         server.handleClient();
-        delay(10);
+        if(blocking)
+        {
+            delay(10);
+        }
+        else
+        {
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+        }
     }
 }

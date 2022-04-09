@@ -12,6 +12,11 @@ Network::Network(Preferences* preferences)
   _preferences(preferences)
 {
     nwInst = this;
+
+    _configTopics.reserve(3);
+    _configTopics.push_back(mqtt_topic_config_button_enabled);
+    _configTopics.push_back(mqtt_topic_config_led_enabled);
+    _configTopics.push_back(mqtt_topic_config_led_brightness);
 }
 
 void Network::initialize()
@@ -129,9 +134,11 @@ bool Network::reconnect()
             _mqttConnected = true;
             delay(200);
             subscribe(mqtt_topic_lockstate_action);
-            subscribe(mqtt_topic_config_button_enabled);
-            subscribe(mqtt_topic_config_led_enabled);
-            subscribe(mqtt_topic_config_led_brightness);
+
+            for(auto topic : _configTopics)
+            {
+                subscribe(topic);
+            }
         }
         else
         {
@@ -196,6 +203,17 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
             _lockActionReceivedCallback(value);
         }
         publishString(mqtt_topic_lockstate_action, "");
+    }
+
+    for(auto configTopic : _configTopics)
+    {
+        if(comparePrefixedPath(topic, configTopic))
+        {
+            if(_configUpdateReceivedCallback != nullptr)
+            {
+                _configUpdateReceivedCallback(configTopic, value);
+            }
+        }
     }
 }
 
@@ -264,9 +282,14 @@ void Network::publishPresenceDetection(char *csv)
     _presenceCsv = csv;
 }
 
-void Network::setLockActionReceived(void (*lockActionReceivedCallback)(const char *))
+void Network::setLockActionReceivedCallback(void (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
+}
+
+void Network::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
+{
+    _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
 
 void Network::publishFloat(const char* topic, const float value, const uint8_t precision)
