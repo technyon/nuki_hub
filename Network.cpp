@@ -128,10 +128,10 @@ bool Network::reconnect()
             Serial.println(F("MQTT connected"));
             _mqttConnected = true;
             delay(200);
-            char path[200] = {0};
-            buildMqttPath(mqtt_topic_lockstate_action, path);
-            // ... and resubscribe
-            _mqttClient.subscribe(path);
+            subscribe(mqtt_topic_lockstate_action);
+            subscribe(mqtt_topic_config_button_enabled);
+            subscribe(mqtt_topic_config_led_enabled);
+            subscribe(mqtt_topic_config_led_brightness);
         }
         else
         {
@@ -177,7 +177,7 @@ void Network::onMqttDataReceivedCallback(char *topic, byte *payload, unsigned in
 
 void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
 {
-    char value[50];
+    char value[50] = {0};
     size_t l = min(length, sizeof(value)-1);
 
     for(int i=0; i<l; i++)
@@ -185,12 +185,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
         value[i] = payload[i];
     }
 
-    value[l] = 0;
-
-    char path[200] = {0};
-    buildMqttPath(mqtt_topic_lockstate_action, path);
-
-    if(strcmp(topic, path) == 0)
+    if(comparePrefixedPath(topic, mqtt_topic_lockstate_action))
     {
         if(strcmp(value, "") == 0) return;
 
@@ -255,6 +250,13 @@ void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
     publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
     publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
+}
+
+void Network::publishConfig(const Nuki::Config &config)
+{
+    publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
+    publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
+    publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
 }
 
 void Network::publishPresenceDetection(char *csv)
@@ -330,9 +332,23 @@ void Network::buildMqttPath(const char* path, char* outPath)
     outPath[i+1] = 0x00;
 }
 
+void Network::subscribe(const char *path)
+{
+    char prefixedPath[500];
+    buildMqttPath(path, prefixedPath);
+    _mqttClient.subscribe(prefixedPath);
+}
+
 void Network::restartAndConfigureWifi()
 {
     _cookie.set();
     delay(200);
     ESP.restart();
+}
+
+bool Network::comparePrefixedPath(const char *fullPath, const char *subPath)
+{
+    char prefixedPath[500];
+    buildMqttPath(subPath, prefixedPath);
+    return strcmp(fullPath, prefixedPath) == 0;
 }

@@ -19,6 +19,7 @@ public:
 
     void publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState);
     void publishBatteryReport(const Nuki::BatteryReport& batteryReport);
+    void publishConfig(const Nuki::Config& config);
     void publishPresenceDetection(char* csv);
 
     void setLockActionReceived(void (*lockActionReceivedCallback)(const char* value));
@@ -28,6 +29,7 @@ public:
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
+    bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value);
@@ -35,6 +37,7 @@ private:
     void publishString(const char* topic, const char* value);
 
     void buildMqttPath(const char* path, char* outPath);
+    void subscribe(const char* path);
 
     bool reconnect();
 

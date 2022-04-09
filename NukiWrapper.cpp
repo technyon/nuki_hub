@@ -93,6 +93,12 @@ void NukiWrapper::update()
         _nextBatteryReportTs = ts + _intervalBattery * 1000;
         updateBatteryState();
     }
+    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs)
+    {
+        _nextConfigUpdateTs = ts + _intervalConfig * 1000;
+        updateConfig();
+    }
+
     if(_nextLockAction != (Nuki::LockAction)0xff)
     {
          _nukiBle.lockAction(_nextLockAction, 0, 0);
@@ -136,6 +142,12 @@ void NukiWrapper::updateBatteryState()
     _network->publishBatteryReport(_batteryReport);
 }
 
+void NukiWrapper::updateConfig()
+{
+    readConfig();
+    _network->publishConfig(_nukiConfig);
+}
+
 Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {
     if(strcmp(str, "unlock") == 0) return Nuki::LockAction::Unlock;
@@ -176,4 +188,12 @@ void NukiWrapper::notify(Nuki::EventType eventType)
     {
         _statusUpdated = true;
     }
+}
+
+void NukiWrapper::readConfig()
+{
+    Serial.print(F("Reading config. Result: "));
+    Nuki::CmdResult result = _nukiBle.requestConfig(&_nukiConfig);
+    _nukiConfigValid = result == Nuki::CmdResult::Success;
+    Serial.println(result);
 }

@@ -14,4 +14,8 @@
 #define mqtt_topic_door_sensor_state "/lock/doorSensorState"
 #define mqtt_topic_lockstate_action "/lock/action"
 
+#define mqtt_topic_config_button_enabled "/configuration/buttonEnabled"
+#define mqtt_topic_config_led_enabled "/configuration/ledEnabled"
+#define mqtt_topic_config_led_brightness "/configuration/ledBrightness"
+
 #define mqtt_topic_presence "/presence/devices"
