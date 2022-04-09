@@ -20,9 +20,6 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* pre
         str = _preferences->getString(preference_cred_password);
         const char *pass = str.c_str();
         memcpy(&_credPassword, pass, str.length());
-
-//        Serial.print("##### user: "); Serial.println(_credUser);
-//        Serial.print("##### pass: "); Serial.println(_credPassword);
     }
 }
 
@@ -45,6 +42,24 @@ void WebCfgServer::initialize()
         buildCredHtml(response);
         server.send(200, "text/html", response);
     });
+    server.on("/wifi", [&]() {
+        if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
+            return server.requestAuthentication();
+        }
+        String response = "";
+        buildConfigureWifiHtml(response);
+        server.send(200, "text/html", response);
+    });
+    server.on("/wifimanager", [&]() {
+        if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
+            return server.requestAuthentication();
+        }
+        String response = "";
+        buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
+        server.send(200, "text/html", response);
+        waitAndProcess(1000);
+        _network->restartAndConfigureWifi();
+    });
     server.on("/method=get", [&]() {
         if (_hasCredentials && !server.authenticate(_credUser, _credPassword)) {
             return server.requestAuthentication();
@@ -53,15 +68,11 @@ void WebCfgServer::initialize()
         if(configChanged)
         {
             String response = "";
-            buildConfirmHtml(response);
+            buildConfirmHtml(response, "Configuration saved ... restarting.");
             server.send(200, "text/html", response);
             Serial.println(F("Restarting"));
-            unsigned long timeout = millis() + 1000;
-            while(millis() < timeout)
-            {
-                server.handleClient();
-                delay(10);
-            }
+
+            waitAndProcess(1000);
             ESP.restart();
         }
     });
@@ -80,10 +91,6 @@ bool WebCfgServer::processArgs()
     {
         String key = server.argName(index);
         String value = server.arg(index);
-
-//        Serial.print(key);
-//        Serial.print(" = ");
-//        Serial.println(value);
 
         if(key == "MQTTSERVER")
         {
@@ -152,13 +159,6 @@ bool WebCfgServer::processArgs()
             _preferences->putString(preference_cred_password, value);
             configChanged = true;
         }
-        else if(key == "WIFICONF")
-        {
-            if(value == _preferences->getString(preference_cred_password))
-            {
-                _network->restartAndConfigureWifi();
-            }
-        }
     }
 
     if(clearMqttCredentials)
@@ -189,16 +189,12 @@ void WebCfgServer::update()
     if(!_enabled) return;
 
     server.handleClient();
-    vTaskDelay(200 / portTICK_PERIOD_MS);
 }
 
 void WebCfgServer::buildHtml(String& response)
 {
-    response.concat("<HTML>\n");
-    response.concat("<HEAD>\n");
-    response.concat("<TITLE>NUKI Hub</TITLE>\n");
-    response.concat("</HEAD>\n");
-    response.concat("<BODY>\n");
+    buildHtmlHeader(response);
+
     response.concat("<br><h3>Info</h3>\n");
 
     String version = "&nbsp;";
@@ -235,22 +231,14 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("</FORM><BR><BR>");
 
     response.concat("<h3>Credentials</h3>");
-
-
     response.concat("<form method=\"get\" action=\"/cred\">");
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
-    response.concat("<FORM ACTION=method=get >");
-
-    response.concat("<BR><BR><h3>Wifi</h3>");
-    response.concat("<table>");
-    printInputField(response, "WIFICONF", "Type password to confirm", "", 20, true);
-    response.concat("</table>");
-
-    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Restart and configure WiFi\">");
-
-    response.concat("</FORM><BR><BR>");
+    response.concat("<br><br><h3>WiFi</h3>");
+    response.concat("<form method=\"get\" action=\"/wifi\">");
+    response.concat("<button type=\"submit\">Restart and configure wifi</button>");
+    response.concat("</form>");
 
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
@@ -259,11 +247,7 @@ void WebCfgServer::buildHtml(String& response)
 
 void WebCfgServer::buildCredHtml(String &response)
 {
-    response.concat("<HTML>\n");
-    response.concat("<HEAD>\n");
-    response.concat("<TITLE>NUKI Hub</TITLE>\n");
-    response.concat("</HEAD>\n");
-    response.concat("<BODY>\n");
+    buildHtmlHeader(response);
 
     response.concat("<FORM ACTION=method=get >");
 
@@ -277,25 +261,51 @@ void WebCfgServer::buildCredHtml(String &response)
 
     response.concat("</FORM>");
 
-    response.concat("<BR>");
-//
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
 }
 
-void WebCfgServer::buildConfirmHtml(String &response)
+void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
+{
+    String delay(redirectDelay);
+
+    response.concat("<HTML>\n");
+    response.concat("<HEAD>\n");
+    response.concat("<TITLE>NUKI Hub</TITLE>\n");
+    response.concat("<meta http-equiv=\"Refresh\" content=\"");
+    response.concat(redirectDelay);
+    response.concat("; url=/\" />");
+    response.concat("\n</HEAD>\n");
+    response.concat("<BODY>\n");
+    response.concat(message);
+
+    response.concat("</BODY>\n");
+    response.concat("</HTML>\n");
+}
+
+
+void WebCfgServer::buildConfigureWifiHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<h3>WiFi</h3>");
+    response.concat("Click confirm to restart ESP into WiFi configuration mode. After restart, connect to ESP access point to reconfigure WiFI.<br><br>");
+    response.concat("<form method=\"get\" action=\"/wifimanager\">");
+    response.concat("<button type=\"submit\">Confirm</button>");
+    response.concat("</form>");
+
+    response.concat("</BODY>\n");
+    response.concat("</HTML>\n");
+}
+
+
+void WebCfgServer::buildHtmlHeader(String &response)
 {
     response.concat("<HTML>\n");
     response.concat("<HEAD>\n");
     response.concat("<TITLE>NUKI Hub</TITLE>\n");
-    response.concat("<meta http-equiv=\"Refresh\" content=\"5; url=/\" />");
-    response.concat("\n</HEAD>\n");
+    response.concat("</HEAD>\n");
     response.concat("<BODY>\n");
-
-    response.concat("Configuration saved ... restarting.\n");
-
-    response.concat("</BODY>\n");
-    response.concat("</HTML>\n");
 }
 
 void WebCfgServer::printInputField(String& response,
@@ -322,7 +332,7 @@ void WebCfgServer::printInputField(String& response,
     response.concat(token);
     response.concat("\" SIZE=\"25\" MAXLENGTH=\"");
     response.concat(maxLengthStr);
-    response.concat("\">");
+    response.concat("\\\">");
     response.concat("</td>");
     response.concat("</tr>");
 }
@@ -349,4 +359,14 @@ void WebCfgServer::printParameter(String& response, const char *description, con
     response.concat("</td>");
     response.concat("</tr>");
 
+}
+
+void WebCfgServer::waitAndProcess(const uint32_t duration)
+{
+    unsigned long timeout = millis() + duration;
+    while(millis() < timeout)
+    {
+        server.handleClient();
+        delay(10);
+    }
 }

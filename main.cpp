@@ -20,6 +20,7 @@ void networkTask(void *pvParameters)
     {
         network->update();
         webCfgServer->update();
+        vTaskDelay(200 / portTICK_PERIOD_MS);
     }
 }
 

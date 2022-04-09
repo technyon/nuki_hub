@@ -22,17 +22,19 @@ void Network::initialize()
     //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wm;
 
-    // reset settings - wipe stored credentials for testing
-    // these are stored by the esp library
-    //wm.resetSettings();
+    std::vector<const char *> wm_menu;
+    wm_menu.push_back("wifi");
+    wm_menu.push_back("exit");
+    wm.setShowInfoUpdate(false);
+    wm.setMenu(wm_menu);
 
     bool res = false;
 
     if(_cookie.isSet())
     {
         Serial.println(F("Opening WiFi configuration portal."));
-        res = wm.startConfigPortal();
         _cookie.clear();
+        res = wm.startConfigPortal();
     }
     else
     {
@@ -166,8 +168,6 @@ void Network::update()
     }
 
     _mqttClient.loop();
-
-    vTaskDelay( 100 / portTICK_PERIOD_MS);
 }
 
 void Network::onMqttDataReceivedCallback(char *topic, byte *payload, unsigned int length)
