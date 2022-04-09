@@ -57,7 +57,7 @@ void WebCfgServer::initialize()
         String response = "";
         buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
         server.send(200, "text/html", response);
-        waitAndProcess(1000);
+        waitAndProcess(2000);
         _network->restartAndConfigureWifi();
     });
     server.on("/method=get", [&]() {
