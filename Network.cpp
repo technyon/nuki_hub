@@ -23,6 +23,13 @@ Network::Network(Preferences* preferences)
 
 void Network::initialize()
 {
+    String hostname = _preferences->getString(preference_hostname);
+    if(hostname == "")
+    {
+        hostname = "nukihub";
+        _preferences->putString(preference_hostname, hostname);
+    }
+
     WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
     // it is a good practice to make sure your code sets wifi mode how you want it.
 
@@ -34,6 +41,7 @@ void Network::initialize()
     wm_menu.push_back("exit");
     wm.setShowInfoUpdate(false);
     wm.setMenu(wm_menu);
+    wm.setHostname(hostname);
 
     bool res = false;
 
@@ -57,6 +65,9 @@ void Network::initialize()
         Serial.print(F("WiFi connected."));
         Serial.println(WiFi.localIP().toString());
     }
+
+    Serial.print(F("Host name: "));
+    Serial.println(hostname);
 
     const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
     strcpy(_mqttBrokerAddr, brokerAddr);
@@ -107,6 +118,7 @@ void Network::initialize()
     Serial.print(_mqttBrokerAddr);
     Serial.print(F(":"));
     Serial.println(port);
+
     _mqttClient.setServer(_mqttBrokerAddr, port);
     _mqttClient.setCallback(Network::onMqttDataReceivedCallback);
 }
@@ -122,12 +134,12 @@ bool Network::reconnect()
         if(strlen(_mqttUser) == 0)
         {
             Serial.println(F("MQTT: Connecting without credentials"));
-            success = _mqttClient.connect("nukiHub");
+            success = _mqttClient.connect(_preferences->getString(preference_hostname).c_str());
         }
         else
         {
             Serial.print(F("MQTT: Connecting with user: ")); Serial.println(_mqttUser);
-            success = _mqttClient.connect("nukiHub", _mqttUser, _mqttPass);
+            success = _mqttClient.connect(_preferences->getString(preference_hostname).c_str(), _mqttUser, _mqttPass);
         }
 
 

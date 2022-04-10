@@ -6,6 +6,7 @@
 #define preference_mqtt_user "mqttuser"
 #define preference_mqtt_password "mqttpass"
 #define preference_mqtt_path "mqttpath"
+#define preference_hostname "hostname"
 #define preference_query_interval_lockstate "lockStInterval"
 #define preference_query_interval_battery "batInterval"
 #define preference_cred_user "crdusr"
