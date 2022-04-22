@@ -8,11 +8,12 @@
 #define mqtt_topic_battery_max_turn_current "/battery/maxTurnCurrent"
 #define mqtt_topic_battery_lock_distance "/battery/lockDistance"
 
-#define mqtt_topic_lockstate_state "/lock/state"
-#define mqtt_topic_lockstate_trigger "/lock/trigger"
-#define mqtt_topic_lockstate_completionStatus "/lock/completionStatus"
+#define mqtt_topic_lock_state "/lock/state"
+#define mqtt_topic_lock_trigger "/lock/trigger"
+#define mqtt_topic_lock_completionStatus "/lock/completionStatus"
+#define mqtt_topic_lock_action_command_result "/lock/commandResult"
 #define mqtt_topic_door_sensor_state "/lock/doorSensorState"
-#define mqtt_topic_lockstate_action "/lock/action"
+#define mqtt_topic_lock_action "/lock/action"
 
 #define mqtt_topic_config_button_enabled "/configuration/buttonEnabled"
 #define mqtt_topic_config_led_enabled "/configuration/ledEnabled"

@@ -147,7 +147,7 @@ bool Network::reconnect()
             Serial.println(F("MQTT connected"));
             _mqttConnected = true;
             delay(200);
-            subscribe(mqtt_topic_lockstate_action);
+            subscribe(mqtt_topic_lock_action);
 
             for(auto topic : _configTopics)
             {
@@ -206,7 +206,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
         value[i] = payload[i];
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_lockstate_action))
+    if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
         if(strcmp(value, "") == 0) return;
 
@@ -216,7 +216,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
         {
             _lockActionReceivedCallback(value);
         }
-        publishString(mqtt_topic_lockstate_action, "");
+        publishString(mqtt_topic_lock_action, "");
     }
 
     for(auto configTopic : _configTopics)
@@ -239,21 +239,21 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
     {
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
-        publishString(mqtt_topic_lockstate_state, str);
+        publishString(mqtt_topic_lock_state, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
     {
         memset(&str, 0, sizeof(str));
         triggerToString(keyTurnerState.trigger, str);
-        publishString(mqtt_topic_lockstate_trigger, str);
+        publishString(mqtt_topic_lock_trigger, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));
         completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
-        publishString(mqtt_topic_lockstate_completionStatus, str);
+        publishString(mqtt_topic_lock_completionStatus, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
@@ -274,6 +274,11 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
     }
 
     _firstTunerStatePublish = false;
+}
+
+void Network::publishCommandResult(const char *resultStr)
+{
+    publishString(mqtt_topic_lock_action_command_result, resultStr);
 }
 
 void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)

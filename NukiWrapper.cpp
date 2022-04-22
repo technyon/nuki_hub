@@ -108,6 +108,8 @@ void NukiWrapper::update()
          char resultStr[15] = {0};
          Nuki::cmdResultToString(cmdResult, resultStr);
 
+         _network->publishCommandResult(resultStr);
+
          Serial.print(F("Lock action result: "));
          Serial.println(resultStr);
 

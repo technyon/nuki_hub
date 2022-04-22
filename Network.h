@@ -19,6 +19,7 @@ public:
     bool isMqttConnected();
 
     void publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState);
+    void publishCommandResult(const char* resultStr);
     void publishBatteryReport(const Nuki::BatteryReport& batteryReport);
     void publishConfig(const Nuki::Config& config);
     void publishAdvancedConfig(const Nuki::AdvancedConfig& config);
