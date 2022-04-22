@@ -18,7 +18,7 @@ Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
 - lock/completionStatus: Status of the last action: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-- lock/action: (to be renamed to action). Allows to execute lock actions. After executing the action, the value is reset to an empty string. Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
+- lock/action: Allows to execute lock actions. After executing the action, the value is reset to an empty string. Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
 
 - battery/voltage: Reports the current battery voltage in Volts.
 - battery/level: Battery level in percent
