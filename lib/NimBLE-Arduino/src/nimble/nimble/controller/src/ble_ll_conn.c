@@ -3037,7 +3037,7 @@ ble_ll_init_rx_isr_end(uint8_t *rxbuf, uint8_t crcok,
 
     /* Get connection state machine to use if connection to be established */
     connsm = g_ble_ll_conn_create_sm;
-    /* This could happen if connection initialize was cancelled while isr end was
+    /* This could happen if connection init was cancelled while isr end was
      * already pending
      */
     if (!connsm) {

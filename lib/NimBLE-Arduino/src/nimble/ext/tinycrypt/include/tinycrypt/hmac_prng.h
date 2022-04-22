@@ -107,7 +107,7 @@ typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
  *              nonce. TinyCrypts requires instead a non-null personalization
  *              (which is easily computed) and indirectly requires an entropy
  *              seed (since the reseed function is mandatorily called after
- *              initialize)
+ *              init)
  *  @param prng IN/OUT -- the PRNG state to initialize
  *  @param personalization IN -- personalization string
  *  @param plen IN -- personalization length in bytes

@@ -93,11 +93,11 @@ int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key,
 		    unsigned int key_size);
 
 /**
- * @brief HMAC initialize procedure
+ * @brief HMAC init procedure
  * Initializes ctx to begin the next HMAC operation
  * @return returns TC_CRYPTO_SUCCESS (1)
  *         returns TC_CRYPTO_FAIL (0) if: ctx == NULL or key == NULL
- * @param ctx IN/OUT -- struct tc_hmac_state_struct buffer to initialize
+ * @param ctx IN/OUT -- struct tc_hmac_state_struct buffer to init
  */
 int tc_hmac_init(TCHmacState_t ctx);
 

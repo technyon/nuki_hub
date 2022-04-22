@@ -50,7 +50,7 @@ static const uint8_t ble_sm_lgcy_init_ioa[5 /*resp*/ ][5 /*init*/ ] =
 /* This is the responder passkey action action depending on the io
  * capabilities of both parties
  */
-static const uint8_t ble_sm_lgcy_resp_ioa[5 /*resp*/ ][5 /*initialize*/ ] =
+static const uint8_t ble_sm_lgcy_resp_ioa[5 /*resp*/ ][5 /*init*/ ] =
 {
     {IOACT_NONE,    IOACT_NONE,   IOACT_DISP,  IOACT_NONE, IOACT_DISP},
     {IOACT_NONE,    IOACT_NONE,   IOACT_DISP,  IOACT_NONE, IOACT_DISP},

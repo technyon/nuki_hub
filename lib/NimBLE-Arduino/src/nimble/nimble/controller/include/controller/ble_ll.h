@@ -379,7 +379,7 @@ struct ble_dev_addr
  *      -> AdvA         (6 bytes)
  *      -> LLData       (22 bytes)
  *          -> Access address (4 bytes)
- *          -> CRC initialize (3 bytes)
+ *          -> CRC init (3 bytes)
  *          -> WinSize (1 byte)
  *          -> WinOffset (2 bytes)
  *          -> Interval (2 bytes)

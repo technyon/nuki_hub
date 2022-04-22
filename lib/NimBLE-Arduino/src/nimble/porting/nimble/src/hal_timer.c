@@ -437,7 +437,7 @@ nrf52_timer5_irq_handler(void)
 #endif
 
 /**
- * hal timer initialize
+ * hal timer init
  *
  * Initialize platform specific timer items
  *
@@ -457,7 +457,7 @@ hal_timer_init(int timer_num, void *cfg)
 
     NRF52_HAL_TIMER_RESOLVE(timer_num, bsptimer);
 
-    /* If timer is enabled do not allow initialize */
+    /* If timer is enabled do not allow init */
     if (bsptimer->tmr_enabled) {
         rc = EINVAL;
         goto err;

@@ -3942,12 +3942,12 @@ ble_ll_scan_reset(void)
     os_mempool_clear(&ext_scan_aux_pool);
 #endif
 
-    /* Call the common initialize function again */
+    /* Call the common init function again */
     ble_ll_scan_common_init();
 }
 
 /**
- * ble ll scan initialize
+ * ble ll scan init
  *
  * Initialize a scanner. Must be called before scanning can be started.
  * Expected to be called with a un-initialized scanning state machine.

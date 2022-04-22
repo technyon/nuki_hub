@@ -451,7 +451,7 @@ struct bt_mesh_model_cb {
 	 */
 	int (*const settings_commit)(struct bt_mesh_model *model);
 
-	/** @brief Model initialize callback.
+	/** @brief Model init callback.
 	 *
 	 * Called on every model instance during mesh initialization.
 	 *

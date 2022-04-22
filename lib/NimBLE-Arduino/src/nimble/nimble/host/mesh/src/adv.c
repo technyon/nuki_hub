@@ -317,7 +317,7 @@ void bt_mesh_adv_init(void)
 	int rc;
 
 	/* Advertising should only be initialized once. Calling
-	 * os_task initialize the second time will result in an assert. */
+	 * os_task init the second time will result in an assert. */
 	if (adv_initialized) {
 		return;
 	}

@@ -42,7 +42,7 @@ esp_err_t esp_nimble_hci_init(void);
  * transport buffers to be exchanged between NimBLE host and ESP controller.
  * It also registers required host callbacks with the controller.
  *
- * Below is the sequence of APIs to be called to initialize/enable NimBLE host and ESP controller:
+ * Below is the sequence of APIs to be called to init/enable NimBLE host and ESP controller:
  *
  * @code{c}
  * void ble_host_task(void *param)

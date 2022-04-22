@@ -70,7 +70,7 @@ static const uint8_t ble_sm_sc_init_ioa[5 /*resp*/ ][5 /*init*/ ] =
  */
 static const uint8_t ble_sm_sc_resp_ioa[5 /*resp*/ ][5 /*init*/ ] =
 {
-      /* initialize */
+      /* init */
 /*r*/ {IOACT_NONE,    IOACT_NONE,   IOACT_DISP,  IOACT_NONE, IOACT_DISP},
 /*e*/ {IOACT_NONE,    IOACT_NUMCMP, IOACT_DISP,  IOACT_NONE, IOACT_NUMCMP},
 /*s*/ {IOACT_INPUT,   IOACT_INPUT,  IOACT_INPUT, IOACT_NONE, IOACT_INPUT},

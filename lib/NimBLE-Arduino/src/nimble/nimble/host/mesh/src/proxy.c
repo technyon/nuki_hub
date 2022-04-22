@@ -1422,7 +1422,7 @@ dummy_access_cb(uint16_t conn_handle, uint16_t attr_handle,
 	/*
 	 * We should never never enter this callback - it's attached to notify-only
 	 * characteristic which are notified directly from mbuf. And we can't pass
-	 * NULL as access_cb because gatts will assert on initialize...
+	 * NULL as access_cb because gatts will assert on init...
 	 */
 	BLE_HS_DBG_ASSERT(0);
 	return 0;

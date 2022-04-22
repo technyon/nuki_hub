@@ -46,13 +46,13 @@
 #define ESP_IO_CAP_NONE                     3   /*!< NoInputNoOutput */     /* relate to BTM_IO_CAP_NONE in stack/btm_api.h */
 #define ESP_IO_CAP_KBDISP                   4   /*!< Keyboard display */    /* relate to BTM_IO_CAP_KBDISP in stack/btm_api.h */
 
-/// Used to exchange the encryption key in the initialize key & response key
+/// Used to exchange the encryption key in the init key & response key
 #define ESP_BLE_ENC_KEY_MASK    (1 << 0)            /* relate to BTM_BLE_ENC_KEY_MASK in stack/btm_api.h */
-/// Used to exchange the IRK key in the initialize key & response key
+/// Used to exchange the IRK key in the init key & response key
 #define ESP_BLE_ID_KEY_MASK     (1 << 1)            /* relate to BTM_BLE_ID_KEY_MASK in stack/btm_api.h */
-/// Used to exchange the CSRK key in the initialize key & response key
+/// Used to exchange the CSRK key in the init key & response key
 #define ESP_BLE_CSR_KEY_MASK    (1 << 2)            /* relate to BTM_BLE_CSR_KEY_MASK in stack/btm_api.h */
-/// Used to exchange the link key(this key just used in the BLE & BR/EDR coexist mode) in the initialize key & response key
+/// Used to exchange the link key(this key just used in the BLE & BR/EDR coexist mode) in the init key & response key
 #define ESP_BLE_LINK_KEY_MASK   (1 << 3)            /* relate to BTM_BLE_LINK_KEY_MASK in stack/btm_api.h */
 
 typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit pattern */

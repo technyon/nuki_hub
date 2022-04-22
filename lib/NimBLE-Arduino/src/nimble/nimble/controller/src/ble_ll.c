@@ -1425,7 +1425,7 @@ ble_ll_reset(void)
     /* Reset connection module */
     ble_ll_conn_module_reset();
 
-    /* All this does is re-initialize the event masks so call the hci initialize */
+    /* All this does is re-initialize the event masks so call the hci init */
     ble_ll_hci_init();
 
     /* Reset scheduler */

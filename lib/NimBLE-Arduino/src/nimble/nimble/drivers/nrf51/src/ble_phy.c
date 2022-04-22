@@ -835,7 +835,7 @@ ble_phy_isr(void)
 }
 
 /**
- * ble phy initialize
+ * ble phy init
  *
  * Initialize the PHY.
  *

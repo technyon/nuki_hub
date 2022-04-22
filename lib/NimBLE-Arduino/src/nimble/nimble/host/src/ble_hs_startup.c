@@ -37,7 +37,7 @@ ble_hs_startup_read_sup_f_tx(void)
         return rc;
     }
 
-    /* for now we don't use it outside of initialize sequence so check this here
+    /* for now we don't use it outside of init sequence so check this here
      * LE Supported (Controller) byte 4, bit 6
      */
     if (!(rsp.features & 0x0000006000000000)) {

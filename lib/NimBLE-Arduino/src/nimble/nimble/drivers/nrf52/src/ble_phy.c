@@ -1381,7 +1381,7 @@ ble_phy_dbg_time_setup(void)
 }
 
 /**
- * ble phy initialize
+ * ble phy init
  *
  * Initialize the PHY.
  *

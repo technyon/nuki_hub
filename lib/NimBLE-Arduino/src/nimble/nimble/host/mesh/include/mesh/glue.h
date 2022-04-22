@@ -243,7 +243,7 @@ static inline struct os_mbuf * NET_BUF_SIMPLE(uint16_t size)
 static inline void net_buf_simple_init(struct os_mbuf *buf,
                                        size_t reserve_head)
 {
-    /* This is called in Zephyr after initialize.
+    /* This is called in Zephyr after init.
      * Note in Mynewt case we don't care abour reserved head*/
     buf->om_data = &buf->om_databuf[buf->om_pkthdr_len] + reserve_head;
     buf->om_len = 0;
