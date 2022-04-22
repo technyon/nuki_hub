@@ -103,7 +103,14 @@ void NukiWrapper::update()
 
     if(_nextLockAction != (Nuki::LockAction)0xff)
     {
-         _nukiBle.lockAction(_nextLockAction, 0, 0);
+         Nuki::CmdResult cmdResult = _nukiBle.lockAction(_nextLockAction, 0, 0);
+
+         char resultStr[15] = {0};
+         Nuki::cmdResultToString(cmdResult, resultStr);
+
+         Serial.print(F("Lock action result: "));
+         Serial.println(resultStr);
+
          _nextLockAction = (Nuki::LockAction)0xff;
          if(_intervalLockstate > 10)
          {

@@ -31,7 +31,7 @@ file(GLOB SRCFILES
         lib/Crc16/Crc16.h
         lib/nuki_ble/src/NukiBle.cpp
         lib/nuki_ble/src/NukiConstants.h
-        lib/nuki_ble/src/NukiDataTypes.cpp
+        lib/nuki_ble/src/NukiDataTypes.h
         lib/nuki_ble/src/NukiUtils.cpp
         lib/nuki_ble/src/BleScanner.cpp
         lib/pubsubclient/src/PubSubClient.cpp
