@@ -2,6 +2,18 @@
 
 The NUKI Hub software acts as a bridge between a NUKI Lock and a smart home system. Via MQTT, the state can be queried and commands can be executed
 
+## Installation
+
+Flash the firmware to an ESP32. The easiest way to install is to use the web installer:<br>
+https://technyon.github.io/nuki_hub/
+<br>(Needs a web serial compatible browser like Chrome/Opera/Edge).
+
+As an alternative, download a release:<br>
+https://github.com/technyon/nuki_hub/releases
+<br>Read the included readme.txt for installation instructions for either Espressif Flash Download Tools or esptool.
+
+
+
 ## Setup
 
 The firmware uses the Wifi Manager to configure the WiFi network. Power up the ESP32, a new Access Point should appear. Connect to this access point and in a browser navigate to "192.168.4.1". Use the web interface configure your Wifi network.
