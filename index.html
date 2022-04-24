@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<title>NUKI Hub web installer</title>
+<html>
+
+
+<body>
+<h1>NUKI Hub</h1>
+
+<div id="main" style="display: none;">
+
+    <br>
+    <script
+            type="module"
+            src="https://unpkg.com/esp-web-tools@8.0.1/dist/web/install-button.js?module">
+    </script>
+    <esp-web-install-button id="installButton" manifest="webflash/manifest.json"></esp-web-install-button>
+    <br><br><br><br>
+    Note: If flashing doesn't work, press and hold the "BOOT" switch, then click "Install".
+</div>
+<div id="notSupported" style="display: none;">
+    Your browser does not support the Web Serial API. Try Chrome
+</div>
+
+
+<script>
+    if(navigator.serial){
+        document.getElementById("notSupported").style.display = 'none';
+        document.getElementById("main").style.display = 'block';
+    } else {
+        document.getElementById("notSupported").style.display = 'block';
+        document.getElementById("main").style.display = 'none';
+    }
+</script>
+
+</body>
+
+</html>
