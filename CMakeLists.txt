@@ -17,7 +17,11 @@ include_directories(${PROJECT_NAME}
 file(GLOB SRCFILES
 #        "Lib/FreeRTOS/src/*.c"
 #        "Lib/FreeRTOS/src/*.cpp"
+        Pins.h
         Network.cpp
+        networkDevices/NetworkDevice.h
+        networkDevices/WifiDevice.cpp
+        networkDevices/W5500Device.cpp
         NukiWrapper.cpp
         MqttTopics.h
         WebCfgServer.cpp
@@ -59,6 +63,7 @@ target_link_arduino_libraries(${PROJECT_NAME}
         DNSServer
         Preferences
         SPIFFS
+        Ethernet
 #        esp32
 #        Wire
 #        FS

@@ -1,5 +1,4 @@
 #include "WebCfgServer.h"
-#include <WiFiClient.h>
 #include "PreferencesKeys.h"
 #include "Version.h"
 

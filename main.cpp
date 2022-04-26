@@ -1,4 +1,5 @@
 #include "Arduino.h"
+#include "Pins.h"
 #include "NukiWrapper.h"
 #include "Network.h"
 #include "WebCfgServer.h"
@@ -80,11 +81,16 @@ uint32_t getRandomId()
 
 void setup()
 {
+    pinMode(NETWORK_SELECT, INPUT_PULLUP);
+
     Serial.begin(115200);
+
+    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
+//    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
-    network = new Network(preferences);
+    network = new Network(networkDevice, preferences);
     network->initialize();
 
     uint32_t deviceId = preferences->getUInt(preference_deviceId);
