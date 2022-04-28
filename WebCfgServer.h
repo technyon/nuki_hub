@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Preferences.h>
-#include <WebServer.h>
+#include <EthernetWebServer.h>
 #include "NukiWrapper.h"
 #include "Network.h"
 
@@ -42,7 +42,7 @@ private:
 
     void waitAndProcess(const bool blocking, const uint32_t duration);
 
-    WebServer server;
+    EthernetWebServer server;
     NukiWrapper* _nuki;
     Network* _network;
     Preferences* _preferences;

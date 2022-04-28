@@ -85,8 +85,8 @@ void setup()
 
     Serial.begin(115200);
 
-    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
-//    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+//    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
+    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);

@@ -11,12 +11,11 @@ include_directories(${PROJECT_NAME}
         lib/nuki_ble/src
         lib/ESP32_BLE_Arduino-1.0.1/src
         lib/WiFiManager
-        lib/pubsubclient/src/
+        lib/pubsubclient/src
+        lib/EthernetWebServer/src
 )
 
 file(GLOB SRCFILES
-#        "Lib/FreeRTOS/src/*.c"
-#        "Lib/FreeRTOS/src/*.cpp"
         Pins.h
         Network.cpp
         networkDevices/NetworkDevice.h
@@ -45,6 +44,8 @@ file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c
         lib/NimBLE-Arduino/src/*.cpp
         lib/NimBLE-Arduino/src/*.h
+        lib/EthernetWebServer/src/*.cpp
+        lib/EthernetWebServer/src/*.h
 )
 
 add_executable(${PROJECT_NAME}
