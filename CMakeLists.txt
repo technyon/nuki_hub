@@ -28,6 +28,8 @@ file(GLOB SRCFILES
         PreferencesKeys.h
         SpiffsCookie.cpp
         Version.h
+        webserver/AbstractWebServer.h
+        webserver/EthWebServer.cpp
         lib/ESP32_BLE_Arduino-1.0.1/src/*.cpp
         lib/ESP32_BLE_Arduino-1.0.1/src/*.h
         lib/WiFiManager/WiFiManager.cpp
@@ -52,7 +54,7 @@ add_executable(${PROJECT_NAME}
         main.cpp
         ${SRCFILES}
         ${SRCFILESREC}
-)
+        webserver/EthWebServer.cpp webserver/EthWebServer.h)
 
 # Arduino.h is included in hello_world.cpp, so link with Arduino core
 target_link_arduino_libraries(${PROJECT_NAME}

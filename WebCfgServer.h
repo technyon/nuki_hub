@@ -4,6 +4,7 @@
 #include <EthernetWebServer.h>
 #include "NukiWrapper.h"
 #include "Network.h"
+#include "webserver/AbstractWebServer.h"
 
 enum class TokenType
 {
@@ -42,7 +43,7 @@ private:
 
     void waitAndProcess(const bool blocking, const uint32_t duration);
 
-    EthernetWebServer server;
+    AbstractWebServer* _server;
     NukiWrapper* _nuki;
     Network* _network;
     Preferences* _preferences;
