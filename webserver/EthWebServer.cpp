@@ -17,9 +17,14 @@ bool EthWebServer::authenticate(const char *username, const char *password)
     return _server.authenticate(username, password);
 }
 
-void EthWebServer::requestAuthentication(HTTPAuthMethod mode, const char *realm, const String &authFailMsg)
+void EthWebServer::requestAuthentication(int mode, const char *realm, const String &authFailMsg)
 {
-    return _server.requestAuthentication(mode, realm, authFailMsg);
+    return _server.requestAuthentication((HTTPAuthMethod)mode, realm, authFailMsg);
+}
+
+void EthWebServer::requestAuthentication()
+{
+    return requestAuthentication(HTTPAuthMethod::BASIC_AUTH, "*", "Authentication failed");
 }
 
 void EthWebServer::send(int code, const char *content_type, const String &content)
@@ -30,11 +35,6 @@ void EthWebServer::send(int code, const char *content_type, const String &conten
 void EthWebServer::on(const Uri &uri, EthernetWebServer::THandlerFunction handler)
 {
     _server.on(uri, handler);
-}
-
-void EthWebServer::requestAuthentication()
-{
-
 }
 
 int EthWebServer::args()
