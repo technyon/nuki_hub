@@ -230,7 +230,7 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
 {
     char str[50];
 
-    if(_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState)
+    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != Nuki::LockState::Undefined)
     {
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
