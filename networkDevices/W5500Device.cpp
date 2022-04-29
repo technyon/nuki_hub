@@ -1,9 +1,27 @@
 #include "W5500Device.h"
 #include "../Pins.h"
+#include "../PreferencesKeys.h"
 
-W5500Device::W5500Device(const String &hostname)
-: NetworkDevice(hostname)
+W5500Device::W5500Device(const String &hostname, Preferences* preferences)
+: NetworkDevice(hostname),
+  _preferences(preferences)
 {
+    initializeMacAddress(_mac);
+
+    Serial.print("MAC Adress: ");
+    for(int i=0; i < 6; i++)
+    {
+        if(_mac[i] < 10)
+        {
+            Serial.print(F("0"));
+        }
+        Serial.print(_mac[i], 16);
+        if(i < 5)
+        {
+            Serial.print(F(":"));
+        }
+    }
+    Serial.println();
 }
 
 W5500Device::~W5500Device()
@@ -29,9 +47,7 @@ void W5500Device::initialize()
         Serial.println();
         dhcpRetryCnt++;
 
-        byte mac[] = {0xB0,0xCD,0xAE,0x0F,0xDE,0x10};
-
-        if (Ethernet.begin(mac, 1000, 1000) == 0)
+        if (Ethernet.begin(_mac, 1000, 1000) == 0)
         {
             Serial.println(F("Failed to configure Ethernet using DHCP"));
             // Check for Ethernet hardware present
@@ -53,7 +69,7 @@ void W5500Device::initialize()
             subnet.fromString("255.255.255.0");
 
             // try to congifure using IP address instead of DHCP:
-            Ethernet.begin(mac, ip);
+            Ethernet.begin(_mac, ip);
             Ethernet.setSubnetMask(subnet);
 
             delay(2000);
@@ -92,4 +108,31 @@ PubSubClient *W5500Device::mqttClient()
 bool W5500Device::isConnected()
 {
     return _ethClient->connected();
+}
+
+void W5500Device::initializeMacAddress(byte *mac)
+{
+    memset(mac, 0, 6);
+
+    mac[0] = 0x00;  // wiznet prefix
+    mac[1] = 0x08;  // wiznet prefix
+    mac[2] = 0xDC;  // wiznet prefix
+
+    if(_preferences->getBool(preference_has_mac_saved))
+    {
+        mac[3] = _preferences->getChar(preference_has_mac_byte_0);
+        mac[4] = _preferences->getChar(preference_has_mac_byte_1);
+        mac[5] = _preferences->getChar(preference_has_mac_byte_2);
+    }
+    else
+    {
+        mac[3] = random(0,255);
+        mac[4] = random(0,255);
+        mac[5] = random(0,255);
+
+        _preferences->putChar(preference_has_mac_byte_0, mac[3]);
+        _preferences->putChar(preference_has_mac_byte_1, mac[4]);
+        _preferences->putChar(preference_has_mac_byte_2, mac[5]);
+        _preferences->putBool(preference_has_mac_saved, true);
+    }
 }

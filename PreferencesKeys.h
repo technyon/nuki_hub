@@ -12,6 +12,10 @@
 #define preference_cred_user "crdusr"
 #define preference_cred_password "crdpass"
 #define preference_presence_detection_timeout "prdtimeout"
+#define preference_has_mac_saved "hasmac"
+#define preference_has_mac_byte_0 "macb0"
+#define preference_has_mac_byte_1 "macb1"
+#define preference_has_mac_byte_2 "macb2"
 
 
 

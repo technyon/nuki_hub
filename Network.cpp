@@ -39,7 +39,7 @@ void Network::setupDevice(const NetworkDeviceType hardware)
     {
         case NetworkDeviceType::W5500:
             Serial.println(F("Network device: W5500"));
-            _device = new W5500Device(_hostname);
+            _device = new W5500Device(_hostname, _preferences);
             break;
         case NetworkDeviceType::WiFi:
             Serial.println(F("Network device: Builtin WiFi"));
