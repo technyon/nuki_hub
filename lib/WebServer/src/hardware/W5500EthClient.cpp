@@ -28,7 +28,7 @@ size_t W5500EthClient::write(const char *buffer, size_t size)
 
 IPAddress W5500EthClient::localIP()
 {
-    return IPAddress(0,0,0,0);
+    return Ethernet.localIP();
 }
 
 void W5500EthClient::stop()
