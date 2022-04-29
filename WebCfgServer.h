@@ -20,7 +20,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* preferences);
+    WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethServer, Preferences* preferences);
     ~WebCfgServer() = default;
 
     void initialize();

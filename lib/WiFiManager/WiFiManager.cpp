@@ -11,7 +11,7 @@
  */
 
 #include "WiFiManager.h"
-#include "WifiEthServer.h"
+#include "hardware/WifiEthServer.h"
 
 #if defined(ESP8266) || defined(ESP32)
 

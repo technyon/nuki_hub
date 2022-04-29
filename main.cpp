@@ -6,14 +6,17 @@
 #include <FreeRTOS.h>
 #include "PreferencesKeys.h"
 #include "PresenceDetection.h"
+#include "hardware/W5500EthServer.h"
+#include "hardware/WifiEthServer.h"
 
 #define ESP32
 
-Network* network;
-WebCfgServer* webCfgServer;
-NukiWrapper* nuki;
-PresenceDetection* presenceDetection;
-Preferences* preferences;
+Network* network = nullptr;
+WebCfgServer* webCfgServer = nullptr;
+NukiWrapper* nuki = nullptr;
+PresenceDetection* presenceDetection = nullptr;
+Preferences* preferences = nullptr;
+EthServer* ethServer = nullptr;
 
 void networkTask(void *pvParameters)
 {
@@ -79,14 +82,30 @@ uint32_t getRandomId()
     return deviceId;
 }
 
+void initEthServer(const NetworkDeviceType device)
+{
+    switch (device)
+    {
+        case NetworkDeviceType::W5500:
+            ethServer = new W5500EthServer(80);
+            break;
+        case NetworkDeviceType::WiFi:
+            ethServer = new WifiEthServer(80);
+            break;
+        default:
+            ethServer = new WifiEthServer(80);
+            break;
+    }
+}
+
 void setup()
 {
     pinMode(NETWORK_SELECT, INPUT_PULLUP);
 
     Serial.begin(115200);
 
-    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
-//    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+//    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
+    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
@@ -100,8 +119,10 @@ void setup()
         preferences->putUInt(preference_deviceId, deviceId);
     }
 
+    initEthServer(networkDevice);
+
     nuki = new NukiWrapper("NukiHub", deviceId, network, preferences);
-    webCfgServer = new WebCfgServer(nuki, network, preferences);
+    webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences);
     webCfgServer->initialize();
     nuki->initialize();
 

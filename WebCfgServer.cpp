@@ -1,10 +1,10 @@
 #include "WebCfgServer.h"
 #include "PreferencesKeys.h"
 #include "Version.h"
-#include "WifiEthServer.h"
+#include "hardware/WifiEthServer.h"
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* preferences)
-: _server(new WifiEthServer(80)),
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethServer, Preferences* preferences)
+: _server(ethServer),
   _nuki(nuki),
   _network(network),
   _preferences(preferences)
