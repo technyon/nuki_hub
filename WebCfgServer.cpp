@@ -3,11 +3,12 @@
 #include "Version.h"
 #include "hardware/WifiEthServer.h"
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethServer, Preferences* preferences)
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
   _nuki(nuki),
   _network(network),
-  _preferences(preferences)
+  _preferences(preferences),
+  _allowRestartToPortal(allowRestartToPortal)
 {
     String str = _preferences->getString(preference_cred_user);
 
@@ -54,11 +55,14 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
-        _server.send(200, "text/html", response);
-        waitAndProcess(true, 2000);
-        _network->restartAndConfigureWifi();
+        if(_allowRestartToPortal)
+        {
+            String response = "";
+            buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
+            _server.send(200, "text/html", response);
+            waitAndProcess(true, 2000);
+            _network->restartAndConfigureWifi();
+        }
     });
     _server.on("/method=get", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -263,9 +267,12 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
-    response.concat("<br><br><h3>WiFi</h3>");
-    response.concat("<form method=\"get\" action=\"/wifi\">");
-    response.concat("<button type=\"submit\">Restart and configure wifi</button>");
+    if(_allowRestartToPortal)
+    {
+        response.concat("<br><br><h3>WiFi</h3>");
+        response.concat("<form method=\"get\" action=\"/wifi\">");
+        response.concat("<button type=\"submit\">Restart and configure wifi</button>");
+    }
     response.concat("</form>");
 
     response.concat("</BODY>\n");

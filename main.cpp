@@ -122,7 +122,7 @@ void setup()
     initEthServer(networkDevice);
 
     nuki = new NukiWrapper("NukiHub", deviceId, network, preferences);
-    webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences);
+    webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
     nuki->initialize();
 
