@@ -11,6 +11,7 @@
  */
 
 #include "WiFiManager.h"
+#include "WifiEthServer.h"
 
 #if defined(ESP8266) || defined(ESP32)
 
@@ -586,7 +587,7 @@ void WiFiManager::setupHTTPServer(){
     #endif
   }
 
-  server.reset(new WM_WebServer(_httpPort));
+  server.reset(new WM_WebServer(new WifiEthServer(80)));
   // This is not the safest way to reset the webserver, it can cause crashes on callbacks initilized before this and since its a shared pointer...
 
   if ( _webservercallback != NULL) {
@@ -2290,7 +2291,7 @@ boolean WiFiManager::captivePortal() {
   
   if(!_enableCaptivePortal) return false; // skip redirections, @todo maybe allow redirection even when no cp ? might be useful
   
-  String serverLoc =  toStringIp(server->client().localIP());
+  String serverLoc =  toStringIp(server->client()->localIP());
   if(_httpPort != 80) serverLoc += ":" + (String)_httpPort; // add port if not default
   bool doredirect = serverLoc != server->hostHeader(); // redirect if hostheader not server ip, prevent redirect loops
   // doredirect = !isIp(server->hostHeader()) // old check
@@ -2301,7 +2302,7 @@ boolean WiFiManager::captivePortal() {
     #endif
     server->sendHeader(F("Location"), (String)F("http://") + serverLoc, true); // @HTTPHEAD send redirect
     server->send ( 302, FPSTR(HTTP_HEAD_CT2), ""); // Empty content inhibits Content-length header so we have to close the socket ourselves.
-    server->client().stop(); // Stop is needed because we sent no content length
+    server->client()->stop(); // Stop is needed because we sent no content length
     return true;
   }
   return false;

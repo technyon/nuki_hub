@@ -1,10 +1,10 @@
 #include "WebCfgServer.h"
 #include "PreferencesKeys.h"
 #include "Version.h"
-#include "webserver/EthWebServer.h"
+#include "WifiEthServer.h"
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* preferences)
-: _server(new EthWebServer(80)),
+: _server(new WifiEthServer(80)),
   _nuki(nuki),
   _network(network),
   _preferences(preferences)
@@ -26,43 +26,43 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* pre
 
 void WebCfgServer::initialize()
 {
-    _server->on("/", [&]() {
-        if (_hasCredentials && !_server->authenticate(_credUser, _credPassword)) {
-            return _server->requestAuthentication();
+    _server.on("/", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
         }
         String response = "";
         buildHtml(response);
-        _server->send(200, "text/html", response);
+        _server.send(200, "text/html", response);
     });
-    _server->on("/cred", [&]() {
-        if (_hasCredentials && !_server->authenticate(_credUser, _credPassword)) {
-            return _server->requestAuthentication();
+    _server.on("/cred", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
         }
         String response = "";
         buildCredHtml(response);
-        _server->send(200, "text/html", response);
+        _server.send(200, "text/html", response);
     });
-    _server->on("/wifi", [&]() {
-        if (_hasCredentials && !_server->authenticate(_credUser, _credPassword)) {
-            return _server->requestAuthentication();
+    _server.on("/wifi", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
         }
         String response = "";
         buildConfigureWifiHtml(response);
-        _server->send(200, "text/html", response);
+        _server.send(200, "text/html", response);
     });
-    _server->on("/wifimanager", [&]() {
-        if (_hasCredentials && !_server->authenticate(_credUser, _credPassword)) {
-            return _server->requestAuthentication();
+    _server.on("/wifimanager", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
         }
         String response = "";
         buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
-        _server->send(200, "text/html", response);
+        _server.send(200, "text/html", response);
         waitAndProcess(true, 2000);
         _network->restartAndConfigureWifi();
     });
-    _server->on("/method=get", [&]() {
-        if (_hasCredentials && !_server->authenticate(_credUser, _credPassword)) {
-            return _server->requestAuthentication();
+    _server.on("/method=get", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
         }
         String message = "";
         bool restartEsp = processArgs(message);
@@ -70,7 +70,7 @@ void WebCfgServer::initialize()
         {
             String response = "";
             buildConfirmHtml(response, message);
-            _server->send(200, "text/html", response);
+            _server.send(200, "text/html", response);
             Serial.println(F("Restarting"));
 
             waitAndProcess(true, 1000);
@@ -80,12 +80,12 @@ void WebCfgServer::initialize()
         {
             String response = "";
             buildConfirmHtml(response, message, 3);
-            _server->send(200, "text/html", response);
+            _server.send(200, "text/html", response);
             waitAndProcess(false, 1000);
         }
     });
 
-    _server->begin();
+    _server.begin();
 }
 
 bool WebCfgServer::processArgs(String& message)
@@ -94,11 +94,11 @@ bool WebCfgServer::processArgs(String& message)
     bool clearMqttCredentials = false;
     bool clearCredentials = false;
 
-    int count = _server->args();
+    int count = _server.args();
     for(int index = 0; index < count; index++)
     {
-        String key = _server->argName(index);
-        String value = _server->arg(index);
+        String key = _server.argName(index);
+        String value = _server.arg(index);
 
         if(key == "MQTTSERVER")
         {
@@ -215,7 +215,7 @@ void WebCfgServer::update()
 {
     if(!_enabled) return;
 
-    _server->handleClient();
+    _server.handleClient();
 }
 
 void WebCfgServer::buildHtml(String& response)
@@ -399,7 +399,7 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
     unsigned long timeout = millis() + duration;
     while(millis() < timeout)
     {
-        _server->handleClient();
+        _server.handleClient();
         if(blocking)
         {
             delay(10);

@@ -4,6 +4,11 @@ set(ARDUINO_BOARD "ESP32 Dev Module [esp32.esp32]")
 
 project(nuki_hub CXX)
 
+# ARDUHAL_LOG_LEVEL_NONE, define ARDUHAL_LOG_LEVEL_ERROR, define ARDUHAL_LOG_LEVEL_WARN, define ARDUHAL_LOG_LEVEL_INFO,
+# define ARDUHAL_LOG_LEVEL_DEBUG, define ARDUHAL_LOG_LEVEL_VERBOSE
+
+set(LOG_LEVEL ARDUHAL_LOG_LEVEL_NONE)
+
 include_directories(${PROJECT_NAME}
         PRIVATE
         lib/Crc16
@@ -12,10 +17,12 @@ include_directories(${PROJECT_NAME}
         lib/ESP32_BLE_Arduino-1.0.1/src
         lib/WiFiManager
         lib/pubsubclient/src
-        lib/EthernetWebServer/src
+        lib/WebServer/src
 )
 
 file(GLOB SRCFILES
+#        "Lib/FreeRTOS/src/*.c"
+#        "Lib/FreeRTOS/src/*.cpp"
         Pins.h
         Network.cpp
         networkDevices/NetworkDevice.h
@@ -28,9 +35,6 @@ file(GLOB SRCFILES
         PreferencesKeys.h
         SpiffsCookie.cpp
         Version.h
-        webserver/AbstractWebServer.h
-        webserver/EthWebServer.cpp
-        webserver/WifiWebServer.cpp
         lib/ESP32_BLE_Arduino-1.0.1/src/*.cpp
         lib/ESP32_BLE_Arduino-1.0.1/src/*.h
         lib/WiFiManager/WiFiManager.cpp
@@ -47,8 +51,8 @@ file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c
         lib/NimBLE-Arduino/src/*.cpp
         lib/NimBLE-Arduino/src/*.h
-        lib/EthernetWebServer/src/*.cpp
-        lib/EthernetWebServer/src/*.h
+        lib/WebServer/src/*.cpp
+        lib/WebServer/src/*.h
 )
 
 add_executable(${PROJECT_NAME}
@@ -57,13 +61,19 @@ add_executable(${PROJECT_NAME}
         ${SRCFILESREC}
 )
 
-# Arduino.h is included in hello_world.cpp, so link with Arduino core
+target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+        ARDUHAL_LOG_LEVEL=${LOG_LEVEL}
+        CORE_DEBUG_LEVEL=${LOG_LEVEL}
+        CONFIG_NIMBLE_CPP_LOG_LEVEL=0
+        )
+
 target_link_arduino_libraries(${PROJECT_NAME}
     PRIVATE
         core
         WiFi
         Update
-        WebServer
+#        WebServer
         DNSServer
         Preferences
         SPIFFS

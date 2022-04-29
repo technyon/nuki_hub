@@ -1,10 +1,9 @@
 #pragma once
 
 #include <Preferences.h>
-#include <EthernetWebServer.h>
+#include <WebServer.h>
 #include "NukiWrapper.h"
 #include "Network.h"
-#include "webserver/AbstractWebServer.h"
 
 enum class TokenType
 {
@@ -43,7 +42,7 @@ private:
 
     void waitAndProcess(const bool blocking, const uint32_t duration);
 
-    AbstractWebServer* _server;
+    WebServer _server;
     NukiWrapper* _nuki;
     Network* _network;
     Preferences* _preferences;

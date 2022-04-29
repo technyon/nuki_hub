@@ -1,4 +1,5 @@
 #include "Network.h"
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
