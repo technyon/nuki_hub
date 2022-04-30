@@ -63,6 +63,8 @@ bool WifiDevice::isConnected()
 
 bool WifiDevice::reconnect()
 {
+    vTaskDelay( 1000 / portTICK_PERIOD_MS);
+
     return isConnected();
 }
 
