@@ -20,7 +20,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer(NukiWrapper* nuki, Network* network, Preferences* preferences);
+    WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
     ~WebCfgServer() = default;
 
     void initialize();
@@ -42,7 +42,7 @@ private:
 
     void waitAndProcess(const bool blocking, const uint32_t duration);
 
-    WebServer server;
+    WebServer _server;
     NukiWrapper* _nuki;
     Network* _network;
     Preferences* _preferences;
@@ -50,6 +50,7 @@ private:
     bool _hasCredentials = false;
     char _credUser[20] = {0};
     char _credPassword[20] = {0};
+    bool _allowRestartToPortal = false;
 
     bool _enabled = true;
 };

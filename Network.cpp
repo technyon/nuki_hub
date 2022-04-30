@@ -1,17 +1,20 @@
 #include "Network.h"
-#include "WiFi.h"
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
+#include "Pins.h"
 
 Network* nwInst;
 
-Network::Network(Preferences* preferences)
-: _mqttClient(_wifiClient),
-  _preferences(preferences)
+Network::Network(const NetworkDeviceType networkDevice, Preferences* preferences)
+: _preferences(preferences),
+  _networkDeviceType(networkDevice)
 {
     nwInst = this;
+
+    _hostname = _preferences->getString(preference_hostname);
+    setupDevice(networkDevice);
 
     _configTopics.reserve(5);
     _configTopics.push_back(mqtt_topic_config_button_enabled);
@@ -21,53 +24,46 @@ Network::Network(Preferences* preferences)
     _configTopics.push_back(mqtt_topic_config_auto_lock);
 }
 
+Network::~Network()
+{
+    if(_device != nullptr)
+    {
+        delete _device;
+        _device = nullptr;
+    }
+}
+
+void Network::setupDevice(const NetworkDeviceType hardware)
+{
+    switch(hardware)
+    {
+        case NetworkDeviceType::W5500:
+            Serial.println(F("Network device: W5500"));
+            _device = new W5500Device(_hostname, _preferences);
+            break;
+        case NetworkDeviceType::WiFi:
+            Serial.println(F("Network device: Builtin WiFi"));
+            _device = new WifiDevice(_hostname);
+            break;
+        default:
+            Serial.println(F("Unknown network device type, defaulting to WiFi"));
+            _device = new WifiDevice(_hostname);
+            break;
+    }
+}
+
 void Network::initialize()
 {
-    String hostname = _preferences->getString(preference_hostname);
-    if(hostname == "")
+    if(_hostname == "")
     {
-        hostname = "nukihub";
-        _preferences->putString(preference_hostname, hostname);
+        _hostname = "nukihub";
+        _preferences->putString(preference_hostname, _hostname);
     }
 
-    WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
-    // it is a good practice to make sure your code sets wifi mode how you want it.
-
-    //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
-    WiFiManager wm;
-
-    std::vector<const char *> wm_menu;
-    wm_menu.push_back("wifi");
-    wm_menu.push_back("exit");
-    wm.setShowInfoUpdate(false);
-    wm.setMenu(wm_menu);
-    wm.setHostname(hostname);
-
-    bool res = false;
-
-    if(_cookie.isSet())
-    {
-        Serial.println(F("Opening WiFi configuration portal."));
-        _cookie.clear();
-        res = wm.startConfigPortal();
-    }
-    else
-    {
-        res = wm.autoConnect(); // password protected ap
-    }
-
-    if(!res) {
-        Serial.println(F("Failed to connect. Wait for ESP restart."));
-        delay(10000);
-        ESP.restart();
-    }
-    else {
-        Serial.print(F("WiFi connected."));
-        Serial.println(WiFi.localIP().toString());
-    }
+    _device->initialize();
 
     Serial.print(F("Host name: "));
-    Serial.println(hostname);
+    Serial.println(_hostname);
 
     const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
     strcpy(_mqttBrokerAddr, brokerAddr);
@@ -119,14 +115,15 @@ void Network::initialize()
     Serial.print(F(":"));
     Serial.println(port);
 
-    _mqttClient.setServer(_mqttBrokerAddr, port);
-    _mqttClient.setCallback(Network::onMqttDataReceivedCallback);
+    _device->mqttClient()->setServer(_mqttBrokerAddr, port);
+    _device->mqttClient()->setCallback(Network::onMqttDataReceivedCallback);
 }
-
 
 bool Network::reconnect()
 {
-    while (!_mqttClient.connected() && millis() > _nextReconnect)
+    _mqttConnected = false;
+
+    while (!_device->mqttClient()->connected() && millis() > _nextReconnect)
     {
         Serial.println(F("Attempting MQTT connection"));
         bool success = false;
@@ -134,19 +131,19 @@ bool Network::reconnect()
         if(strlen(_mqttUser) == 0)
         {
             Serial.println(F("MQTT: Connecting without credentials"));
-            success = _mqttClient.connect(_preferences->getString(preference_hostname).c_str());
+            success = _device->mqttClient()->connect(_preferences->getString(preference_hostname).c_str());
         }
         else
         {
             Serial.print(F("MQTT: Connecting with user: ")); Serial.println(_mqttUser);
-            success = _mqttClient.connect(_preferences->getString(preference_hostname).c_str(), _mqttUser, _mqttPass);
+            success = _device->mqttClient()->connect(_preferences->getString(preference_hostname).c_str(), _mqttUser, _mqttPass);
         }
 
-
-        if (success) {
+        if (success)
+        {
             Serial.println(F("MQTT connected"));
             _mqttConnected = true;
-            delay(200);
+            delay(100);
             subscribe(mqtt_topic_lock_action);
 
             for(auto topic : _configTopics)
@@ -157,7 +154,7 @@ bool Network::reconnect()
         else
         {
             Serial.print(F("MQTT connect failed, rc="));
-            Serial.println(_mqttClient.state());
+            Serial.println(_device->mqttClient()->state());
             _mqttConnected = false;
             _nextReconnect = millis() + 5000;
         }
@@ -167,13 +164,26 @@ bool Network::reconnect()
 
 void Network::update()
 {
-    if(!WiFi.isConnected())
+    long ts = millis();
+
+    if((ts - _lastMaintain) > 1000)
     {
-        Serial.println(F("WiFi not connected"));
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
+        _device->update();
+
+        if(!_device->isConnected())
+        {
+            Serial.println(F("Network not connected. Trying reconnect."));
+            bool success = _device->reconnect();
+            Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
+        }
     }
 
-    if(!_mqttClient.connected())
+    if(!_device->isConnected())
+    {
+        return;
+    }
+
+    if(!_device->mqttClient()->connected())
     {
         bool success = reconnect();
         if(!success)
@@ -188,7 +198,7 @@ void Network::update()
         _presenceCsv = nullptr;
     }
 
-    _mqttClient.loop();
+    _device->mqttClient()->loop();
 }
 
 void Network::onMqttDataReceivedCallback(char *topic, byte *payload, unsigned int length)
@@ -235,7 +245,7 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
 {
     char str[50];
 
-    if(_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState)
+    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != Nuki::LockState::Undefined)
     {
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
@@ -323,7 +333,7 @@ void Network::publishFloat(const char* topic, const float value, const uint8_t p
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _mqttClient.publish(path, str);
+    _device->mqttClient()->publish(path, str);
 }
 
 void Network::publishInt(const char *topic, const int value)
@@ -333,7 +343,7 @@ void Network::publishInt(const char *topic, const int value)
     itoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _mqttClient.publish(path, str);
+    _device->mqttClient()->publish(path, str);
 }
 
 void Network::publishBool(const char *topic, const bool value)
@@ -342,14 +352,14 @@ void Network::publishBool(const char *topic, const bool value)
     str[0] = value ? '1' : '0';
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _mqttClient.publish(path, str);
+    _device->mqttClient()->publish(path, str);
 }
 
 void Network::publishString(const char *topic, const char *value)
 {
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _mqttClient.publish(path, value);
+    _device->mqttClient()->publish(path, value);
 }
 
 
@@ -384,14 +394,12 @@ void Network::subscribe(const char *path)
 {
     char prefixedPath[500];
     buildMqttPath(path, prefixedPath);
-    _mqttClient.subscribe(prefixedPath);
+    _device->mqttClient()->subscribe(prefixedPath);
 }
 
 void Network::restartAndConfigureWifi()
 {
-    _cookie.set();
-    delay(200);
-    ESP.restart();
+    _device->reconfigure();
 }
 
 bool Network::comparePrefixedPath(const char *fullPath, const char *subPath)

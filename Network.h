@@ -1,20 +1,30 @@
 #pragma once
 
 #include <PubSubClient.h>
-#include <WiFiClient.h>
+#include "networkDevices/NetworkDevice.h"
+#include "networkDevices/WifiDevice.h"
+#include "networkDevices/W5500Device.h"
 #include <Preferences.h>
 #include <vector>
 #include "NukiConstants.h"
 #include "SpiffsCookie.h"
 
+enum class NetworkDeviceType
+{
+    WiFi,
+    W5500
+};
+
 class Network
 {
 public:
-    explicit Network(Preferences* preferences);
-    virtual ~Network() = default;
+    explicit Network(const NetworkDeviceType networkDevice, Preferences* preferences);
+    virtual ~Network();
 
     void initialize();
     void update();
+    void setupDevice(const NetworkDeviceType hardware);
+    void initializeW5500();
 
     bool isMqttConnected();
 
@@ -45,10 +55,10 @@ private:
 
     bool reconnect();
 
-    PubSubClient _mqttClient;
-    WiFiClient _wifiClient;
+    NetworkDevice* _device = nullptr;
     Preferences* _preferences;
-    SpiffsCookie _cookie;
+    String _hostname;
+    NetworkDeviceType _networkDeviceType;
 
     bool _mqttConnected = false;
 
@@ -63,6 +73,8 @@ private:
     std::vector<char*> _configTopics;
 
     bool _firstTunerStatePublish = true;
+
+    long _lastMaintain = 0;
 
     void (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
