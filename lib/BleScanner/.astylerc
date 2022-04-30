@@ -1,0 +1,10 @@
+--indent=spaces=2
+--indent-classes
+--indent-preproc-cond
+--indent-preproc-block
+--indent-switches
+--pad-header
+--pad-oper
+--align-pointer=type
+--align-reference=type
+--add-braces

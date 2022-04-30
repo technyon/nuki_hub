@@ -1,0 +1,8 @@
+{
+  "name": "BleScanner",
+  "frameworks": "Arduino",
+  "platforms": [
+    "espressif32"
+  ],
+  "dependencies": []
+}

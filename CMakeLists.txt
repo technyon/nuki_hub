@@ -13,6 +13,7 @@ include_directories(${PROJECT_NAME}
         PRIVATE
         lib/Crc16
         lib/NimBLE-Arduino/src
+        lib/BleScanner/src
         lib/nuki_ble/src
         lib/ESP32_BLE_Arduino-1.0.1/src
         lib/WiFiManager
@@ -45,7 +46,8 @@ file(GLOB SRCFILES
         lib/nuki_ble/src/NukiConstants.h
         lib/nuki_ble/src/NukiDataTypes.h
         lib/nuki_ble/src/NukiUtils.cpp
-        lib/nuki_ble/src/BleScanner.cpp
+        lib/BleScanner/src/BleInterfaces.h
+        lib/BleScanner/src/BleScanner.cpp
         lib/pubsubclient/src/PubSubClient.cpp
 )
 
