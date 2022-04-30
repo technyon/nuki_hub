@@ -35,6 +35,16 @@ void W5500Device::initialize()
     _ethClient = new EthernetClient();
     _mqttClient = new PubSubClient(*_ethClient);
 
+    reconnect();
+
+    _fromTask = true;
+}
+
+
+bool W5500Device::reconnect()
+{
+    _hasDHCPAddress = false;
+
     // start the Ethernet connection:
     Serial.println(F("Initialize Ethernet with DHCP:"));
 
@@ -54,8 +64,6 @@ void W5500Device::initialize()
             if (Ethernet.hardwareStatus() == EthernetNoHardware)
             {
                 Serial.println(F("Ethernet module not found"));
-                delay(10000);
-                ESP.restart();
             }
             if (Ethernet.linkStatus() == LinkOFF)
             {
@@ -72,16 +80,20 @@ void W5500Device::initialize()
             Ethernet.begin(_mac, ip);
             Ethernet.setSubnetMask(subnet);
 
-            delay(2000);
+            nwDelay(1000);
         }
         else
         {
+            _hasDHCPAddress = true;
             dhcpRetryCnt = 1000;
             Serial.print(F("  DHCP assigned IP "));
             Serial.println(Ethernet.localIP());
         }
     }
+
+    return _hasDHCPAddress;
 }
+
 
 void W5500Device::reconfigure()
 {
@@ -93,11 +105,11 @@ void W5500Device::resetDevice()
     Serial.println(F("Resetting network hardware."));
     pinMode(ETHERNET_RESET_PIN, OUTPUT);
     digitalWrite(ETHERNET_RESET_PIN, HIGH);
-    delay(250);
+    nwDelay(250);
     digitalWrite(ETHERNET_RESET_PIN, LOW);
-    delay(50);
+    nwDelay(50);
     digitalWrite(ETHERNET_RESET_PIN, HIGH);
-    delay(1500);
+    nwDelay(1500);
 }
 
 PubSubClient *W5500Device::mqttClient()
@@ -107,7 +119,7 @@ PubSubClient *W5500Device::mqttClient()
 
 bool W5500Device::isConnected()
 {
-    return _ethClient->connected();
+    return Ethernet.linkStatus() == EthernetLinkStatus::LinkON && _maintainResult == 0 && _hasDHCPAddress;
 }
 
 void W5500Device::initializeMacAddress(byte *mac)
@@ -135,4 +147,21 @@ void W5500Device::initializeMacAddress(byte *mac)
         _preferences->putChar(preference_has_mac_byte_2, mac[5]);
         _preferences->putBool(preference_has_mac_saved, true);
     }
+}
+
+void W5500Device::nwDelay(unsigned long ms)
+{
+    if(_fromTask)
+    {
+        vTaskDelay( ms / portTICK_PERIOD_MS);
+    }
+    else
+    {
+        delay(ms);
+    }
+}
+
+void W5500Device::update()
+{
+    _maintainResult = Ethernet.maintain();
 }

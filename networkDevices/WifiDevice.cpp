@@ -60,3 +60,13 @@ bool WifiDevice::isConnected()
 {
     return WiFi.isConnected();
 }
+
+bool WifiDevice::reconnect()
+{
+    return isConnected();
+}
+
+void WifiDevice::update()
+{
+
+}

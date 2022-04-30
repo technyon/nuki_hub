@@ -11,7 +11,10 @@ public:
     ~W5500Device();
 
     virtual void initialize();
+    virtual bool reconnect();
     virtual void reconfigure();
+
+    virtual void update();
 
     virtual bool isConnected();
 
@@ -20,10 +23,16 @@ public:
 private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
+    void nwDelay(unsigned long ms);
+
+    bool _fromTask = false;
 
     EthernetClient* _ethClient = nullptr;
     PubSubClient* _mqttClient = nullptr;
     Preferences* _preferences = nullptr;
+
+    int _maintainResult = 0;
+    bool _hasDHCPAddress = false;
 
     byte _mac[6];
 };

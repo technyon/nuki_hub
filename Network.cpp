@@ -121,6 +121,8 @@ void Network::initialize()
 
 bool Network::reconnect()
 {
+    _mqttConnected = false;
+
     while (!_device->mqttClient()->connected() && millis() > _nextReconnect)
     {
         Serial.println(F("Attempting MQTT connection"));
@@ -137,11 +139,11 @@ bool Network::reconnect()
             success = _device->mqttClient()->connect(_preferences->getString(preference_hostname).c_str(), _mqttUser, _mqttPass);
         }
 
-
-        if (success) {
+        if (success)
+        {
             Serial.println(F("MQTT connected"));
             _mqttConnected = true;
-            delay(200);
+            delay(100);
             subscribe(mqtt_topic_lock_action);
 
             for(auto topic : _configTopics)
@@ -162,10 +164,23 @@ bool Network::reconnect()
 
 void Network::update()
 {
+    long ts = millis();
+
+    if((ts - _lastMaintain) > 1000)
+    {
+        _device->update();
+
+        if(!_device->isConnected())
+        {
+            Serial.println(F("Network not connected. Trying reconnect."));
+            bool success = _device->reconnect();
+            Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
+        }
+    }
+
     if(!_device->isConnected())
     {
-        Serial.println(F("Network not connected"));
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
+        return;
     }
 
     if(!_device->mqttClient()->connected())
