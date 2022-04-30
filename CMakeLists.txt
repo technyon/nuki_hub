@@ -18,6 +18,7 @@ include_directories(${PROJECT_NAME}
         lib/WiFiManager
         lib/pubsubclient/src
         lib/WebServer/src
+        include
 )
 
 file(GLOB SRCFILES
@@ -35,6 +36,7 @@ file(GLOB SRCFILES
         PreferencesKeys.h
         SpiffsCookie.cpp
         Version.h
+        include/RTOS.h
         lib/ESP32_BLE_Arduino-1.0.1/src/*.cpp
         lib/ESP32_BLE_Arduino-1.0.1/src/*.h
         lib/WiFiManager/WiFiManager.cpp
