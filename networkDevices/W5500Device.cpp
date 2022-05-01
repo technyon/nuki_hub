@@ -1,3 +1,5 @@
+#include <Arduino.h>
+#include <WiFi.h>
 #include "W5500Device.h"
 #include "../Pins.h"
 #include "../PreferencesKeys.h"
@@ -29,6 +31,8 @@ W5500Device::~W5500Device()
 
 void W5500Device::initialize()
 {
+    WiFi.mode(WIFI_OFF);    // Switch WiFi off
+
     resetDevice();
 
     Ethernet.init(ETHERNET_CS_PIN);

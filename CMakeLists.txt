@@ -23,8 +23,6 @@ include_directories(${PROJECT_NAME}
 )
 
 file(GLOB SRCFILES
-#        "Lib/FreeRTOS/src/*.c"
-#        "Lib/FreeRTOS/src/*.cpp"
         Pins.h
         Network.cpp
         networkDevices/NetworkDevice.h
