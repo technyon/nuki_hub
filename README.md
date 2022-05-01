@@ -43,7 +43,7 @@ Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should
 
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
 
-# Connecting via LAN (Optional)
+## Connecting via LAN (Optional)
 
 If you prefer to connect to the MQTT Broker via LAN instead of WiFi, you can use a Wizent W5x00 Module (W5100, W5200, W5500 are supported).
 To connect, just wire the module and connect the LAN cable:
@@ -59,7 +59,7 @@ W5x00 reset to GPIO33
 
 Wifi is now disabled, and the module doesn't boot into WifiManager anymore.
 
-# Disclaimer
+## Disclaimer
 
 This is a third party software for NUKI smart door locks. This project or any of it's authors aren't associated with Nuki Home Solutions GmbH. Please refer for official products and offical support to their website:
 
