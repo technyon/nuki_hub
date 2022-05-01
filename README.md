@@ -1,6 +1,6 @@
 ## About
 
-The NUKI Hub software acts as a bridge between a NUKI Lock and a smart home system. Via MQTT, the state can be queried and commands can be executed
+The NUKI Hub software acts as a bridge between a NUKI Lock and a smart home system. Exposes the lock state (and more) via MQTT, and allows to execute commands like locking and unlocking
 
 ## Installation
 
