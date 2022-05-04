@@ -15,10 +15,10 @@ struct PdDevice
 
 #define presence_detection_buffer_size 4096
 
-class PresenceDetection : public BLEScannerSubscriber
+class PresenceDetection : public BleScanner::Subscriber
 {
 public:
-    PresenceDetection(Preferences* preferences, BleScanner* bleScanner, Network* network);
+    PresenceDetection(Preferences* preferences, BleScanner::Scanner* bleScanner, Network* network);
     virtual ~PresenceDetection();
 
     void initialize();
@@ -30,7 +30,7 @@ private:
     void buildCsv(const PdDevice& device);
 
     Preferences* _preferences;
-    BleScanner* _bleScanner;
+    BleScanner::Scanner* _bleScanner;
     Network* _network;
     char* _csv = {0};
     std::map<long long, PdDevice> _devices;

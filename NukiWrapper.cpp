@@ -2,6 +2,7 @@
 #include <FreeRTOS.h>
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
+#include <NukiUtils.h>
 
 NukiWrapper* nukiInst;
 
@@ -33,7 +34,7 @@ NukiWrapper::~NukiWrapper()
 
 void NukiWrapper::initialize()
 {
-    _bleScanner = new BleScanner();
+    _bleScanner = new BleScanner::Scanner();
     _bleScanner->initialize(_deviceName);
     _bleScanner->setScanDuration(10);
     _nukiBle.initialize();
@@ -247,7 +248,7 @@ const bool NukiWrapper::isPaired()
     return _paired;
 }
 
-BleScanner *NukiWrapper::bleScanner()
+BleScanner::Scanner *NukiWrapper::bleScanner()
 {
     return _bleScanner;
 }

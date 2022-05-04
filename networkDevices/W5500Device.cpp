@@ -31,7 +31,7 @@ W5500Device::~W5500Device()
 
 void W5500Device::initialize()
 {
-    WiFi.mode(WIFI_OFF);    // Switch WiFi off
+    WiFi.mode(WIFI_OFF);
 
     resetDevice();
 

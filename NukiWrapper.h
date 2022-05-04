@@ -4,6 +4,7 @@
 #include "Network.h"
 #include "NukiConstants.h"
 #include "NukiDataTypes.h"
+#include "BleScanner.h"
 
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
@@ -19,7 +20,7 @@ public:
     const Nuki::KeyTurnerState& keyTurnerState();
     const bool isPaired();
 
-    BleScanner* bleScanner();
+    BleScanner::Scanner* bleScanner();
 
     void notify(Nuki::EventType eventType) override;
 
@@ -39,7 +40,7 @@ private:
 
     std::string _deviceName;
     Nuki::NukiBle _nukiBle;
-    BleScanner* _bleScanner;
+    BleScanner::Scanner* _bleScanner;
     Network* _network;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
