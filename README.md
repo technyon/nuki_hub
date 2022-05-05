@@ -22,7 +22,7 @@ After configuring the Wifi, the ESP should automatically connect to your network
 
 ## Paring
 
-Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). Nodes like lock state and battery level should now reflect the reported values from the lock.
+Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
 
 ## MQTT Interface
 
