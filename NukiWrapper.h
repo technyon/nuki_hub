@@ -32,6 +32,7 @@ private:
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
+    void updateAuthInfo();
 
     void readConfig();
     void readAdvancedConfig();
@@ -50,6 +51,8 @@ private:
     Nuki::KeyTurnerState _lastKeyTurnerState;
     Nuki::KeyTurnerState _keyTurnerState;
 
+    uint32_t _lastAuthId = 0xffff;
+
     Nuki::BatteryReport _batteryReport;
     Nuki::BatteryReport _lastBatteryReport;
 
@@ -63,6 +66,7 @@ private:
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
+    unsigned long _nextLogUpdateTs = 0;
     unsigned long _nextPairTs = 0;
     Nuki::LockAction _nextLockAction = (Nuki::LockAction)0xff;
 };

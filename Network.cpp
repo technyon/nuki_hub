@@ -286,6 +286,12 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
     _firstTunerStatePublish = false;
 }
 
+void Network::publishAuthorizationInfo(const uint32_t authId, const char *authName)
+{
+    publishUInt(mqtt_topic_lock_auth_id, authId);
+    publishString(mqtt_topic_lock_auth_name, authName);
+}
+
 void Network::publishCommandResult(const char *resultStr)
 {
     publishString(mqtt_topic_lock_action_command_result, resultStr);
@@ -338,9 +344,17 @@ void Network::publishFloat(const char* topic, const float value, const uint8_t p
 
 void Network::publishInt(const char *topic, const int value)
 {
-
     char str[30];
     itoa(value, str, 10);
+    char path[200] = {0};
+    buildMqttPath(topic, path);
+    _device->mqttClient()->publish(path, str);
+}
+
+void Network::publishUInt(const char *topic, const unsigned int value)
+{
+    char str[30];
+    utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(topic, path);
     _device->mqttClient()->publish(path, str);

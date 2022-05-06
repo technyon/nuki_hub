@@ -10,6 +10,8 @@
 
 #define mqtt_topic_lock_state "/lock/state"
 #define mqtt_topic_lock_trigger "/lock/trigger"
+#define mqtt_topic_lock_auth_id "/lock/authorizationId"
+#define mqtt_topic_lock_auth_name "/lock/authorizationName"
 #define mqtt_topic_lock_completionStatus "/lock/completionStatus"
 #define mqtt_topic_lock_action_command_result "/lock/commandResult"
 #define mqtt_topic_door_sensor_state "/lock/doorSensorState"

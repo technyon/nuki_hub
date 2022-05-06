@@ -101,6 +101,11 @@ void NukiWrapper::update()
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
     }
+    if(_nextLogUpdateTs == 0 || ts > _nextLogUpdateTs)
+    {
+        _nextLogUpdateTs = ts + 10 * 1000;
+        updateAuthInfo();
+    }
 
     if(_nextLockAction != (Nuki::LockAction)0xff)
     {
@@ -141,6 +146,8 @@ void NukiWrapper::updateKeyTurnerState()
         Serial.print(F("Nuki lock state: "));
         Serial.println(lockStateStr);
     }
+
+    updateAuthInfo();
 }
 
 void NukiWrapper::updateBatteryState()
@@ -166,6 +173,54 @@ void NukiWrapper::updateConfig()
     _network->publishConfig(_nukiConfig);
     _network->publishAdvancedConfig(_nukiAdvancedConfig);
 }
+
+void NukiWrapper::updateAuthInfo()
+{
+    return;
+
+    Nuki::CmdResult result = _nukiBle.retrieveLogEntries(0, 0, 0, true);
+    if(result != Nuki::CmdResult::Success)
+    {
+        return;
+    }
+    vTaskDelay( 100 / portTICK_PERIOD_MS);
+
+    result = _nukiBle.retrieveLogEntries(_nukiBle.getLogEntryCount() - 2, 1, 0, false);
+    if(result != Nuki::CmdResult::Success)
+    {
+        return;
+    }
+    vTaskDelay( 200 / portTICK_PERIOD_MS);
+
+    std::list<Nuki::LogEntry> log;
+    _nukiBle.getLogEntries(&log);
+
+    if(log.size() > 0)
+    {
+        const Nuki::LogEntry& entry = log.front();
+//        log_d("Log: %d-%d-%d %d:%d:%d %s", entry.timeStampYear, entry.timeStampMonth, entry.timeStampDay,
+//              entry.timeStampHour, entry.timeStampMinute, entry.timeStampSecond, entry.name);
+        if(entry.authId != _lastAuthId)
+        {
+            _network->publishAuthorizationInfo(entry.authId, (char *) entry.name);
+            _lastAuthId = entry.authId;
+        }
+    }
+}
+
+//struct __attribute__((packed)) LogEntry {
+//    uint32_t index;
+//    uint16_t timeStampYear;
+//    uint8_t timeStampMonth;
+//    uint8_t timeStampDay;
+//    uint8_t timeStampHour;
+//    uint8_t timeStampMinute;
+//    uint8_t timeStampSecond;
+//    uint32_t authId;
+//    uint8_t name[32];
+//    LoggingType loggingType;
+//    uint8_t data[5];
+//};
 
 Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {

@@ -29,6 +29,7 @@ public:
     bool isMqttConnected();
 
     void publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState);
+    void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);
     void publishBatteryReport(const Nuki::BatteryReport& batteryReport);
     void publishConfig(const Nuki::Config& config);
@@ -47,6 +48,7 @@ private:
 
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value);
+    void publishUInt(const char* topic, const unsigned int value);
     void publishBool(const char* topic, const bool value);
     void publishString(const char* topic, const char* value);
 
