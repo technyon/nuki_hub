@@ -18,11 +18,11 @@ https://github.com/technyon/nuki_hub/releases
 
 The firmware uses the Wifi Manager to configure the WiFi network. Power up the ESP32, a new Access Point should appear. Connect to this access point and in a browser navigate to "192.168.4.1". Use the web interface configure your Wifi network.
 
-After configuring the Wifi, the ESP should automatically connect to your network. Use the web interface to setup the MQTT broker; just navigate to the IP-Address assigned to the ESP32 via DHCP (often found the web interface of the internet router).
+After configuring the Wifi, the ESP should automatically connect to your network. Use the web interface to setup the MQTT broker; just navigate to the IP-Address assigned to the ESP32 via DHCP (often found in the web interface of the internet router).
 
 ## Paring
 
-Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should be automatic. Unfortunately there's no feedback at the time, except for debug output on the serial line. If it worked, the lock state and the battery level should be reported via MQTT.
+Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
 
 ## MQTT Interface
 
