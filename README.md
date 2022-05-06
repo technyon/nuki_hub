@@ -30,6 +30,8 @@ Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should
 - lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
 - lock/completionStatus: Status of the last action as reported by NUKI lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
+- lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
+- lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
 
