@@ -11,6 +11,7 @@
 #define preference_query_interval_battery "batInterval"
 #define preference_cred_user "crdusr"
 #define preference_cred_password "crdpass"
+#define preference_publish_authdata "pubauth"
 #define preference_presence_detection_timeout "prdtimeout"
 #define preference_has_mac_saved "hasmac"
 #define preference_has_mac_byte_0 "macb0"

@@ -37,6 +37,7 @@ private:
     void buildHtmlHeader(String& response);
     void printInputField(String& response, const char* token, const char* description, const char* value, const size_t maxLength, const bool isPassword = false);
     void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
+    void printCheckBox(String& response, const char* token, const char* description, const bool value);
 
     void printParameter(String& response, const char* description, const char* value);
 

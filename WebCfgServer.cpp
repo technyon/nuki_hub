@@ -98,6 +98,8 @@ bool WebCfgServer::processArgs(String& message)
     bool clearMqttCredentials = false;
     bool clearCredentials = false;
 
+    bool publishAuthData = false;
+
     int count = _server.args();
     for(int index = 0; index < count; index++)
     {
@@ -159,6 +161,10 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
             configChanged = true;
         }
+        else if(key == "PUBAUTH")
+        {
+            publishAuthData = true;
+        }
         else if(key == "CREDUSER")
         {
             if(value == "#")
@@ -189,6 +195,12 @@ bool WebCfgServer::processArgs(String& message)
                 _nuki->setPin(value.toInt());
             }
         }
+    }
+
+    if(_preferences->getBool(preference_publish_authdata) != publishAuthData)
+    {
+        _preferences->putBool(preference_publish_authdata, publishAuthData);
+        configChanged = true;
     }
 
     if(clearMqttCredentials)
@@ -255,6 +267,7 @@ void WebCfgServer::buildHtml(String& response)
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    printCheckBox(response, "PUBAUTH", "Publish auth data", _preferences->getBool(preference_publish_authdata));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds, -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     response.concat("</table>");
 
@@ -372,7 +385,7 @@ void WebCfgServer::printInputField(String& response,
     response.concat(token);
     response.concat("\" SIZE=\"25\" MAXLENGTH=\"");
     response.concat(maxLengthStr);
-    response.concat("\\\">");
+    response.concat("\\\"/>");
     response.concat("</td>");
     response.concat("</tr>");
 }
@@ -386,6 +399,24 @@ void WebCfgServer::printInputField(String& response,
     char valueStr[20];
     itoa(value, valueStr, 10);
     printInputField(response, token, description, valueStr, maxLength);
+}
+
+void WebCfgServer::printCheckBox(String &response, const char *token, const char *description, const bool value)
+{
+    response.concat("<tr>");
+    response.concat("<td>");
+    response.concat(description);
+    response.concat("</td>");
+    response.concat("<td>");
+    response.concat(" <INPUT TYPE=");
+    response.concat("checkbox ");
+    response.concat("NAME=\"");
+    response.concat(token);
+    response.concat("\"");
+    response.concat(value ? " checked=\"checked\"" : "");
+    response.concat(" />");
+    response.concat("</td>");
+    response.concat("</tr>");
 }
 
 void WebCfgServer::printParameter(String& response, const char *description, const char *value)

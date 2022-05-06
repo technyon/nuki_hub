@@ -32,7 +32,7 @@ private:
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
-    void updateAuthInfo();
+    void updateAuthData();
 
     void readConfig();
     void readAdvancedConfig();
@@ -47,6 +47,8 @@ private:
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
+    bool _publishAuthData = false;
+    bool _clearAuthData = false;
 
     Nuki::KeyTurnerState _lastKeyTurnerState;
     Nuki::KeyTurnerState _keyTurnerState;
@@ -66,7 +68,6 @@ private:
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
-    unsigned long _nextLogUpdateTs = 0;
     unsigned long _nextPairTs = 0;
     Nuki::LockAction _nextLockAction = (Nuki::LockAction)0xff;
 };

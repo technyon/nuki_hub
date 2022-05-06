@@ -42,6 +42,7 @@ void NukiWrapper::initialize()
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
+    _publishAuthData = _preferences->getBool(preference_publish_authdata);
 
     if(_intervalLockstate == 0)
     {
@@ -59,7 +60,14 @@ void NukiWrapper::initialize()
     Serial.print(F("Lock state interval: "));
     Serial.print(_intervalLockstate);
     Serial.print(F(" | Battery interval: "));
-    Serial.println(_intervalBattery);
+    Serial.print(_intervalBattery);
+    Serial.print(F(" | Publish auth data: "));
+    Serial.println(_publishAuthData ? "yes" : "no");
+
+    if(!_publishAuthData)
+    {
+        _clearAuthData = true;
+    }
 }
 
 void NukiWrapper::update()
@@ -101,11 +109,6 @@ void NukiWrapper::update()
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
     }
-    if(_nextLogUpdateTs == 0 || ts > _nextLogUpdateTs)
-    {
-        _nextLogUpdateTs = ts + 10 * 1000;
-        updateAuthInfo();
-    }
 
     if(_nextLockAction != (Nuki::LockAction)0xff)
     {
@@ -124,6 +127,12 @@ void NukiWrapper::update()
          {
              _nextLockStateUpdateTs = ts + 10 * 1000;
          }
+    }
+
+    if(_clearAuthData)
+    {
+        _network->publishAuthorizationInfo(0, "");
+        _clearAuthData = false;
     }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(Nuki::KeyTurnerState));
@@ -147,22 +156,15 @@ void NukiWrapper::updateKeyTurnerState()
         Serial.println(lockStateStr);
     }
 
-    updateAuthInfo();
+    if(_publishAuthData)
+    {
+        updateAuthData();
+    }
 }
 
 void NukiWrapper::updateBatteryState()
 {
     _nukiBle.requestBatteryReport(&_batteryReport);
-
-    /*
-    Serial.print(F("Voltage: ")); Serial.println(_batteryReport.batteryVoltage);
-    Serial.print(F("Drain: ")); Serial.println(_batteryReport.batteryDrain);
-    Serial.print(F("Resistance: ")); Serial.println(_batteryReport.batteryResistance);
-    Serial.print(F("Max Current: ")); Serial.println(_batteryReport.maxTurnCurrent);
-    Serial.print(F("Crit. State: ")); Serial.println(_batteryReport.criticalBatteryState);
-    Serial.print(F("Lock Dist: ")); Serial.println(_batteryReport.lockDistance);
-    */
-
     _network->publishBatteryReport(_batteryReport);
 }
 
@@ -174,13 +176,12 @@ void NukiWrapper::updateConfig()
     _network->publishAdvancedConfig(_nukiAdvancedConfig);
 }
 
-void NukiWrapper::updateAuthInfo()
+void NukiWrapper::updateAuthData()
 {
-    return;
-
     Nuki::CmdResult result = _nukiBle.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {
+        _network->publishAuthorizationInfo(0, "");
         return;
     }
     vTaskDelay( 100 / portTICK_PERIOD_MS);
@@ -188,6 +189,7 @@ void NukiWrapper::updateAuthInfo()
     result = _nukiBle.retrieveLogEntries(_nukiBle.getLogEntryCount() - 2, 1, 0, false);
     if(result != Nuki::CmdResult::Success)
     {
+        _network->publishAuthorizationInfo(0, "");
         return;
     }
     vTaskDelay( 200 / portTICK_PERIOD_MS);
@@ -205,6 +207,10 @@ void NukiWrapper::updateAuthInfo()
             _network->publishAuthorizationInfo(entry.authId, (char *) entry.name);
             _lastAuthId = entry.authId;
         }
+    }
+    else
+    {
+        _network->publishAuthorizationInfo(0, "");
     }
 }
 
