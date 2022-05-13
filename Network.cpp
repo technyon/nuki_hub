@@ -222,11 +222,12 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
 
         Serial.print(F("Lock action received: "));
         Serial.println(value);
+        bool success = false;
         if(_lockActionReceivedCallback != NULL)
         {
-            _lockActionReceivedCallback(value);
+            success = _lockActionReceivedCallback(value);
         }
-        publishString(mqtt_topic_lock_action, "");
+        publishString(mqtt_topic_lock_action, success ? "ack" : "unknown_action");
     }
 
     for(auto configTopic : _configTopics)
@@ -323,7 +324,7 @@ void Network::publishPresenceDetection(char *csv)
     _presenceCsv = csv;
 }
 
-void Network::setLockActionReceivedCallback(void (*lockActionReceivedCallback)(const char *))
+void Network::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }

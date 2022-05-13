@@ -25,7 +25,7 @@ public:
     void notify(Nuki::EventType eventType) override;
 
 private:
-    static void onLockActionReceivedCallback(const char* value);
+    static bool onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* topic, const char* value);
 

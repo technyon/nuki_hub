@@ -242,9 +242,11 @@ Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
     return (Nuki::LockAction)0xff;
 }
 
-void NukiWrapper::onLockActionReceivedCallback(const char *value)
+bool NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
-    nukiInst->_nextLockAction = nukiInst->lockActionToEnum(value);
+    Nuki::LockAction action = nukiInst->lockActionToEnum(value);
+    nukiInst->_nextLockAction = action;
+    return (int)action != 0xff;
 }
 
 void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
