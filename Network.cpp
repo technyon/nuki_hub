@@ -183,7 +183,7 @@ void Network::update()
 
     if(!_device->isConnected())
     {
-        if(ts - _lastConnectedTs > _networkTimeout * 1000)
+        if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000))
         {
             Serial.println("Network timeout has been reached, restarting ...");
             delay(200);
