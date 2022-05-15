@@ -218,7 +218,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
-        if(strcmp(value, "") == 0) return;
+        if(strcmp(value, "") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
         Serial.print(F("Lock action received: "));
         Serial.println(value);
