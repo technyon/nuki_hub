@@ -146,6 +146,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putString(preference_hostname, value);
             configChanged = true;
         }
+        else if(key == "NETTIMEOUT")
+        {
+            _preferences->putInt(preference_network_timeout, value.toInt());
+            configChanged = true;
+        }
         else if(key == "LSTINT")
         {
             _preferences->putInt(preference_query_interval_lockstate, value.toInt());
@@ -265,10 +270,11 @@ void WebCfgServer::buildHtml(String& response)
     printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
     printInputField(response, "MQTTPATH", "MQTT Path", _preferences->getString(preference_mqtt_path).c_str(), 180);
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
+    printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
-    printInputField(response, "PRDTMO", "Presence detection timeout (seconds, -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
+    printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     response.concat("</table>");
 
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");

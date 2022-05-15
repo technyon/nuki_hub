@@ -116,6 +116,13 @@ void Network::initialize()
 
     _device->mqttClient()->setServer(_mqttBrokerAddr, port);
     _device->mqttClient()->setCallback(Network::onMqttDataReceivedCallback);
+
+    _networkTimeout = _preferences->getInt(preference_network_timeout);
+    if(_networkTimeout == 0)
+    {
+        _networkTimeout = -1;
+        _preferences->putInt(preference_network_timeout, _networkTimeout);
+    }
 }
 
 bool Network::reconnect()
@@ -165,22 +172,27 @@ void Network::update()
 {
     long ts = millis();
 
-    if((ts - _lastMaintain) > 1000)
-    {
-        _device->update();
+    _device->update();
 
-        if(!_device->isConnected())
-        {
-            Serial.println(F("Network not connected. Trying reconnect."));
-            bool success = _device->reconnect();
-            Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
-        }
+    if(!_device->isConnected())
+    {
+        Serial.println(F("Network not connected. Trying reconnect."));
+        bool success = _device->reconnect();
+        Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
     }
 
     if(!_device->isConnected())
     {
+        if(ts - _lastConnectedTs > _networkTimeout * 1000)
+        {
+            Serial.println("Network timeout has been reached, restarting ...");
+            delay(200);
+            ESP.restart();
+        }
         return;
     }
+
+    _lastConnectedTs = ts;
 
     if(!_device->mqttClient()->connected())
     {

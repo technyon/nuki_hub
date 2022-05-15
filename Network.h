@@ -68,14 +68,15 @@ private:
     char _mqttPath[181] = {0};
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
+    int _networkTimeout = 0;
+
+    unsigned long _lastConnectedTs = 0;
 
     char* _presenceCsv = nullptr;
 
     std::vector<char*> _configTopics;
 
     bool _firstTunerStatePublish = true;
-
-    long _lastMaintain = 0;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
