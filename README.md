@@ -22,7 +22,7 @@ After configuring the Wifi, the ESP should automatically connect to your network
 
 ## Paring
 
-Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
+Just enable pairing mode on the NUKI lock (press button for a few seconds) and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
 
 ## MQTT Interface
 
@@ -47,7 +47,7 @@ Just enable pairing mode on the NUKI lock and power on the ESP32. Pairing should
 
 ## Connecting via LAN (Optional)
 
-If you prefer to connect to the MQTT Broker via LAN instead of WiFi, you can use a Wizent W5x00 Module (W5100, W5200, W5500 are supported).
+If you prefer to connect to the MQTT Broker via LAN instead of WiFi, you can use a Wiznet W5x00 Module (W5100, W5200, W5500 are supported).
 To connect, just wire the module and connect the LAN cable:
 
 - Connect W5x00 to ESP32 SPI0:<br>
