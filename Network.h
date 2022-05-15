@@ -60,7 +60,6 @@ private:
     NetworkDevice* _device = nullptr;
     Preferences* _preferences;
     String _hostname;
-    NetworkDeviceType _networkDeviceType;
 
     bool _mqttConnected = false;
 

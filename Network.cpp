@@ -8,8 +8,7 @@
 Network* nwInst;
 
 Network::Network(const NetworkDeviceType networkDevice, Preferences* preferences)
-: _preferences(preferences),
-  _networkDeviceType(networkDevice)
+: _preferences(preferences)
 {
     nwInst = this;
 
