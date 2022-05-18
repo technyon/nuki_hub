@@ -6,7 +6,7 @@
  * Created: 2022
  * License: GNU GENERAL PUBLIC LICENSE (see LICENSE)
  *
- * This library provides a BLE scanner to be used by other libraries to 
+ * This library provides a BLE scanner to be used by other libraries to
  * receive advertisements from BLE devices
  *
  */
@@ -44,9 +44,16 @@ class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
     /**
      * @brief Set the Scan Duration
      *
-     * @param value scan duration in seconds
+     * @param value scan duration in seconds, 0 for indefinite scan
      */
     void setScanDuration(const uint32_t value);
+
+    /**
+     * @brief enable/disable scanning
+     *
+     * @param enable
+     */
+    void enableScanning(bool enable);
 
     /**
      * @brief Subscribe to the scanner and receive results
@@ -73,6 +80,8 @@ class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
     uint32_t scanDuration = 3;
     BLEScan* bleScan = nullptr;
     std::vector<Subscriber*> subscribers;
+    uint16_t scanErrors = 0;
+    bool scanningEnabled = true;
 };
 
 } // namespace BleScanner

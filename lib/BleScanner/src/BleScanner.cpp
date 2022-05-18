@@ -32,12 +32,23 @@ void Scanner::initialize(const std::string& deviceName, const bool wantDuplicate
 }
 
 void Scanner::update() {
-  if (bleScan->isScanning()) {
+  if (!scanningEnabled || bleScan->isScanning()) {
     return;
   }
+
   bool result = bleScan->start(scanDuration, nullptr, false);
   if (!result) {
-    log_w("BLE Scan error");
+    scanErrors++;
+    if (scanErrors % 100 == 0) {
+      log_w("BLE Scan error (100x)");
+    }
+  }
+}
+
+void Scanner::enableScanning(bool enable) {
+  scanningEnabled = enable;
+  if (!enable) {
+    bleScan->stop();
   }
 }
 

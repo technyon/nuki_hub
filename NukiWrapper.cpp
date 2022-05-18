@@ -77,7 +77,7 @@ void NukiWrapper::update()
 
         _bleScanner->update();
         vTaskDelay( 5000 / portTICK_PERIOD_MS);
-        if (_nukiBle.pairNuki()) {
+        if (_nukiBle.pairNuki() == Nuki::PairingResult::Success) {
             Serial.println(F("Nuki paired"));
             _paired = true;
         }
@@ -90,6 +90,7 @@ void NukiWrapper::update()
 
     vTaskDelay( 20 / portTICK_PERIOD_MS);
     _bleScanner->update();
+    _nukiBle.updateConnectionState();
 
     unsigned long ts = millis();
 
@@ -213,20 +214,6 @@ void NukiWrapper::updateAuthData()
         _network->publishAuthorizationInfo(0, "");
     }
 }
-
-//struct __attribute__((packed)) LogEntry {
-//    uint32_t index;
-//    uint16_t timeStampYear;
-//    uint8_t timeStampMonth;
-//    uint8_t timeStampDay;
-//    uint8_t timeStampHour;
-//    uint8_t timeStampMinute;
-//    uint8_t timeStampSecond;
-//    uint32_t authId;
-//    uint8_t name[32];
-//    LoggingType loggingType;
-//    uint8_t data[5];
-//};
 
 Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {

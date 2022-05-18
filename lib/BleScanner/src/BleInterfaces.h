@@ -25,6 +25,7 @@ class Publisher {
   public:
     virtual void subscribe(Subscriber* subscriber) = 0;
     virtual void unsubscribe(Subscriber* subscriber) = 0;
+    virtual void enableScanning(bool enable) = 0;
 };
 
 } // namespace BleScanner
