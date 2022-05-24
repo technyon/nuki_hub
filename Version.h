@@ -1,3 +1,3 @@
 #pragma once
 
-#define nuki_hub_version "2.4"
+#define nuki_hub_version "2.5"

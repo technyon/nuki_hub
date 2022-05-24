@@ -17,6 +17,8 @@ public:
 
     void setPin(const uint16_t pin);
 
+    void unpair();
+
     const Nuki::KeyTurnerState& keyTurnerState();
     const bool isPaired();
 

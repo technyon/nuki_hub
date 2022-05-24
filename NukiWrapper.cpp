@@ -144,6 +144,12 @@ void NukiWrapper::setPin(const uint16_t pin)
         _nukiBle.saveSecurityPincode(pin);
 }
 
+void NukiWrapper::unpair()
+{
+    _nukiBle.unPairNuki();
+    _paired = false;
+}
+
 void NukiWrapper::updateKeyTurnerState()
 {
     _nukiBle.requestKeyTurnerState(&_keyTurnerState);

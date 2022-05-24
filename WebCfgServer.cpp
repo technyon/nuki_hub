@@ -10,6 +10,8 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethSe
   _preferences(preferences),
   _allowRestartToPortal(allowRestartToPortal)
 {
+    _confirmCode = generateConfirmCode();
+
     String str = _preferences->getString(preference_cred_user);
 
     if(str.length() > 0)
@@ -50,6 +52,13 @@ void WebCfgServer::initialize()
         String response = "";
         buildConfigureWifiHtml(response);
         _server.send(200, "text/html", response);
+    });
+    _server.on("/unpair", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
+        processUnpair();
     });
     _server.on("/wifimanager", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -320,6 +329,15 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
 
+    _confirmCode = generateConfirmCode();
+    response.concat("<br><br><h3>Unpair NUKI</h3>");
+    response.concat("<form method=\"get\" action=\"/unpair\">");
+    String message = "Type ";
+    message.concat(_confirmCode);
+    message.concat(" to confirm unpair");
+    printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
+    response.concat("<br><br><button type=\"submit\">OK</button>");
+
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
 }
@@ -357,6 +375,42 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
     response.concat("</HTML>\n");
 }
 
+//printInputField(response, "CONFIRMTOKEN", "Type confirm", "", 10);
+
+
+//int count = _server.args();
+//for(int index = 0; index < count; index++)
+//{
+//String key = _server.argName(index);
+//String value = _server.arg(index);
+void WebCfgServer::processUnpair()
+{
+    String response = "";
+    if(_server.args() == 0)
+    {
+        buildConfirmHtml(response, "Confirm code is invalid.", 3);
+        _server.send(200, "text/html", response);
+        return;
+    }
+    else
+    {
+        String key = _server.argName(0);
+        String value = _server.arg(0);
+
+        if(key != "CONFIRMTOKEN" || value != _confirmCode)
+        {
+            buildConfirmHtml(response, "Confirm code is invalid.", 3);
+            _server.send(200, "text/html", response);
+            return;
+        }
+    }
+
+    buildConfirmHtml(response, "Unpairing NUKI and restarting.", 3);
+    _server.send(200, "text/html", response);
+    _nuki->unpair();
+    waitAndProcess(false, 1000);
+    ESP.restart();
+}
 
 void WebCfgServer::buildHtmlHeader(String &response)
 {
@@ -438,6 +492,13 @@ void WebCfgServer::printParameter(String& response, const char *description, con
 
 }
 
+
+String WebCfgServer::generateConfirmCode()
+{
+    int code = random(1000,9999);
+    return String(code);
+}
+
 void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
 {
     unsigned long timeout = millis() + duration;
@@ -454,3 +515,4 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
         }
     }
 }
+

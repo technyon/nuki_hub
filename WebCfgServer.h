@@ -33,6 +33,7 @@ private:
     void buildCredHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
+    void processUnpair();
 
     void buildHtmlHeader(String& response);
     void printInputField(String& response, const char* token, const char* description, const char* value, const size_t maxLength, const bool isPassword = false);
@@ -41,6 +42,7 @@ private:
 
     void printParameter(String& response, const char* description, const char* value);
 
+    String generateConfirmCode();
     void waitAndProcess(const bool blocking, const uint32_t duration);
 
     WebServer _server;
@@ -52,6 +54,8 @@ private:
     char _credUser[20] = {0};
     char _credPassword[20] = {0};
     bool _allowRestartToPortal = false;
+
+    String _confirmCode = "----";
 
     bool _enabled = true;
 };
