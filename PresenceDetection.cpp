@@ -40,7 +40,11 @@ void PresenceDetection::update()
     vTaskDelay( 5000 / portTICK_PERIOD_MS);
 
     if(_timeout < 0) return;
-    if(_devices.size() == 0) return;
+    if(_devices.size() == 0)
+    {
+        _network->publishPresenceDetection(";;");
+        return;
+    }
 
     memset(_csv, 0, presence_detection_buffer_size);
     _csvIndex = 0;
