@@ -8,10 +8,12 @@
 #include "PresenceDetection.h"
 #include "hardware/W5500EthServer.h"
 #include "hardware/WifiEthServer.h"
+#include "NukiOpenerWrapper.h"
 
 Network* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 NukiWrapper* nuki = nullptr;
+NukiOpenerWrapper* nukiOpener = nullptr;
 PresenceDetection* presenceDetection = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
@@ -120,6 +122,7 @@ void setup()
     initEthServer(networkDevice);
 
     nuki = new NukiWrapper("NukiHub", deviceId, network, preferences);
+//    nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, network, preferences);
     webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
     nuki->initialize();

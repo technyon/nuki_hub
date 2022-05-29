@@ -29,6 +29,7 @@ file(GLOB SRCFILES
         networkDevices/WifiDevice.cpp
         networkDevices/W5500Device.cpp
         NukiWrapper.cpp
+        NukiOpenerWrapper.cpp
         MqttTopics.h
         WebCfgServer.cpp
         PresenceDetection.cpp
