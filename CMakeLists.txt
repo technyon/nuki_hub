@@ -41,9 +41,14 @@ file(GLOB SRCFILES
         lib/WiFiManager/WiFiManager.cpp
         lib/Crc16/Crc16.h
         lib/nuki_ble/src/NukiBle.cpp
+        lib/nuki_ble/src/NukiOpener.cpp
         lib/nuki_ble/src/NukiConstants.h
+        lib/nuki_ble/src/NukiOpenerConstants.h
+        lib/nuki_ble/src/NukiLockConstants.h
         lib/nuki_ble/src/NukiDataTypes.h
         lib/nuki_ble/src/NukiUtils.cpp
+        lib/nuki_ble/src/NukiLockUtils.cpp
+        lib/nuki_ble/src/NukiOpenerUtils.cpp
         lib/BleScanner/src/BleInterfaces.h
         lib/BleScanner/src/BleScanner.cpp
         lib/pubsubclient/src/PubSubClient.cpp
@@ -61,7 +66,7 @@ add_executable(${PROJECT_NAME}
         main.cpp
         ${SRCFILES}
         ${SRCFILESREC}
-)
+        )
 
 target_compile_definitions(${PROJECT_NAME}
         PRIVATE

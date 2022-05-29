@@ -2,7 +2,7 @@
 #include <FreeRTOS.h>
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
-#include <NukiUtils.h>
+#include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
 
@@ -14,11 +14,11 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* ne
 {
     nukiInst = this;
 
-    memset(&_lastKeyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
-    memset(&_lastBatteryReport, sizeof(Nuki::BatteryReport), 0);
-    memset(&_batteryReport, sizeof(Nuki::BatteryReport), 0);
-    memset(&_keyTurnerState, sizeof(Nuki::KeyTurnerState), 0);
-    _keyTurnerState.lockState = Nuki::LockState::Undefined;
+    memset(&_lastKeyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
+    memset(&_lastBatteryReport, sizeof(NukiLock::BatteryReport), 0);
+    memset(&_batteryReport, sizeof(NukiLock::BatteryReport), 0);
+    memset(&_keyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
+    _keyTurnerState.lockState = NukiLock::LockState::Undefined;
 
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
@@ -111,19 +111,19 @@ void NukiWrapper::update()
         updateConfig();
     }
 
-    if(_nextLockAction != (Nuki::LockAction)0xff)
+    if(_nextLockAction != (NukiLock::LockAction)0xff)
     {
          Nuki::CmdResult cmdResult = _nukiBle.lockAction(_nextLockAction, 0, 0);
 
          char resultStr[15] = {0};
-         Nuki::cmdResultToString(cmdResult, resultStr);
+         NukiLock::cmdResultToString(cmdResult, resultStr);
 
          _network->publishCommandResult(resultStr);
 
          Serial.print(F("Lock action result: "));
          Serial.println(resultStr);
 
-         _nextLockAction = (Nuki::LockAction)0xff;
+         _nextLockAction = (NukiLock::LockAction)0xff;
          if(_intervalLockstate > 10)
          {
              _nextLockStateUpdateTs = ts + 10 * 1000;
@@ -136,7 +136,7 @@ void NukiWrapper::update()
         _clearAuthData = false;
     }
 
-    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(Nuki::KeyTurnerState));
+    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiLock::KeyTurnerState));
 }
 
 void NukiWrapper::setPin(const uint16_t pin)
@@ -221,23 +221,23 @@ void NukiWrapper::updateAuthData()
     }
 }
 
-Nuki::LockAction NukiWrapper::lockActionToEnum(const char *str)
+NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {
-    if(strcmp(str, "unlock") == 0) return Nuki::LockAction::Unlock;
-    else if(strcmp(str, "lock") == 0) return Nuki::LockAction::Lock;
-    else if(strcmp(str, "unlatch") == 0) return Nuki::LockAction::Unlatch;
-    else if(strcmp(str, "lockNgo") == 0) return Nuki::LockAction::LockNgo;
-    else if(strcmp(str, "lockNgoUnlatch") == 0) return Nuki::LockAction::LockNgoUnlatch;
-    else if(strcmp(str, "fullLock") == 0) return Nuki::LockAction::FullLock;
-    else if(strcmp(str, "fobAction2") == 0) return Nuki::LockAction::FobAction2;
-    else if(strcmp(str, "fobAction1") == 0) return Nuki::LockAction::FobAction1;
-    else if(strcmp(str, "fobAction3") == 0) return Nuki::LockAction::FobAction3;
-    return (Nuki::LockAction)0xff;
+    if(strcmp(str, "unlock") == 0) return NukiLock::LockAction::Unlock;
+    else if(strcmp(str, "lock") == 0) return NukiLock::LockAction::Lock;
+    else if(strcmp(str, "unlatch") == 0) return NukiLock::LockAction::Unlatch;
+    else if(strcmp(str, "lockNgo") == 0) return NukiLock::LockAction::LockNgo;
+    else if(strcmp(str, "lockNgoUnlatch") == 0) return NukiLock::LockAction::LockNgoUnlatch;
+    else if(strcmp(str, "fullLock") == 0) return NukiLock::LockAction::FullLock;
+    else if(strcmp(str, "fobAction2") == 0) return NukiLock::LockAction::FobAction2;
+    else if(strcmp(str, "fobAction1") == 0) return NukiLock::LockAction::FobAction1;
+    else if(strcmp(str, "fobAction3") == 0) return NukiLock::LockAction::FobAction3;
+    return (NukiLock::LockAction)0xff;
 }
 
 bool NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
-    Nuki::LockAction action = nukiInst->lockActionToEnum(value);
+    NukiLock::LockAction action = nukiInst->lockActionToEnum(value);
     nukiInst->_nextLockAction = action;
     return (int)action != 0xff;
 }
@@ -294,7 +294,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
     }
 }
 
-const Nuki::KeyTurnerState &NukiWrapper::keyTurnerState()
+const NukiLock::KeyTurnerState &NukiWrapper::keyTurnerState()
 {
     return _keyTurnerState;
 }

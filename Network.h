@@ -8,6 +8,7 @@
 #include <vector>
 #include "NukiConstants.h"
 #include "SpiffsCookie.h"
+#include "NukiLockConstants.h"
 
 enum class NetworkDeviceType
 {
@@ -28,12 +29,12 @@ public:
 
     bool isMqttConnected();
 
-    void publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState);
+    void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);
-    void publishBatteryReport(const Nuki::BatteryReport& batteryReport);
-    void publishConfig(const Nuki::Config& config);
-    void publishAdvancedConfig(const Nuki::AdvancedConfig& config);
+    void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
+    void publishConfig(const NukiLock::Config& config);
+    void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
     void publishPresenceDetection(char* csv);
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));

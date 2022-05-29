@@ -258,7 +258,7 @@ void WebCfgServer::buildHtml(String& response)
     version.concat(nuki_hub_version);
 
     char lockstateArr[20];
-    Nuki::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
+    NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
     String lockState = "&nbsp;";
     lockState.concat(lockstateArr);
 

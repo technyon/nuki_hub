@@ -253,11 +253,11 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     }
 }
 
-void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState)
+void Network::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState)
 {
     char str[50];
 
-    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != Nuki::LockState::Undefined)
+    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != NukiLock::LockState::Undefined)
     {
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
@@ -274,14 +274,14 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
     if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));
-        completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
+        NukiLock::completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
         publishString(mqtt_topic_lock_completionStatus, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
     {
         memset(&str, 0, sizeof(str));
-        doorSensorStateToString(keyTurnerState.doorSensorState, str);
+        NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
         publishString(mqtt_topic_door_sensor_state, str);
     }
 
@@ -309,7 +309,7 @@ void Network::publishCommandResult(const char *resultStr)
     publishString(mqtt_topic_lock_action_command_result, resultStr);
 }
 
-void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
+void Network::publishBatteryReport(const NukiLock::BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
@@ -317,14 +317,14 @@ void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
     publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
 }
 
-void Network::publishConfig(const Nuki::Config &config)
+void Network::publishConfig(const NukiLock::Config &config)
 {
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
 }
 
-void Network::publishAdvancedConfig(const Nuki::AdvancedConfig &config)
+void Network::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 {
     publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);

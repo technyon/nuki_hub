@@ -19,7 +19,7 @@ public:
 
     void unpair();
 
-    const Nuki::KeyTurnerState& keyTurnerState();
+    const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();
 
     BleScanner::Scanner* bleScanner();
@@ -39,10 +39,10 @@ private:
     void readConfig();
     void readAdvancedConfig();
 
-    Nuki::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
+    NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     std::string _deviceName;
-    Nuki::NukiBle _nukiBle;
+    NukiLock::NukiBle _nukiBle;
     BleScanner::Scanner* _bleScanner;
     Network* _network;
     Preferences* _preferences;
@@ -52,16 +52,16 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
 
-    Nuki::KeyTurnerState _lastKeyTurnerState;
-    Nuki::KeyTurnerState _keyTurnerState;
+    NukiLock::KeyTurnerState _lastKeyTurnerState;
+    NukiLock::KeyTurnerState _keyTurnerState;
 
     uint32_t _lastAuthId = 0xffff;
 
-    Nuki::BatteryReport _batteryReport;
-    Nuki::BatteryReport _lastBatteryReport;
+    NukiLock::BatteryReport _batteryReport;
+    NukiLock::BatteryReport _lastBatteryReport;
 
-    Nuki::Config _nukiConfig = {0};
-    Nuki::AdvancedConfig _nukiAdvancedConfig = {0};
+    NukiLock::Config _nukiConfig = {0};
+    NukiLock::AdvancedConfig _nukiAdvancedConfig = {0};
     bool _nukiConfigValid = false;
     bool _nukiAdvancedConfigValid = false;
 
@@ -71,5 +71,5 @@ private:
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _nextPairTs = 0;
-    Nuki::LockAction _nextLockAction = (Nuki::LockAction)0xff;
+    NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };
