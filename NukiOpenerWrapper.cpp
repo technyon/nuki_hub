@@ -89,22 +89,22 @@ void NukiOpenerWrapper::update()
 
     unsigned long ts = millis();
 
-//    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
-//    {
-//        _statusUpdated = false;
-//        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
-//        updateKeyTurnerState();
-//    }
-//    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
-//    {
-//        _nextBatteryReportTs = ts + _intervalBattery * 1000;
-//        updateBatteryState();
-//    }
-//    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs)
-//    {
-//        _nextConfigUpdateTs = ts + _intervalConfig * 1000;
-//        updateConfig();
-//    }
+    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
+    {
+        _statusUpdated = false;
+        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
+        updateKeyTurnerState();
+    }
+    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
+    {
+        _nextBatteryReportTs = ts + _intervalBattery * 1000;
+        updateBatteryState();
+    }
+    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs)
+    {
+        _nextConfigUpdateTs = ts + _intervalConfig * 1000;
+        updateConfig();
+    }
 
     if(_nextLockAction != (NukiOpener::LockAction)0xff)
     {
@@ -148,7 +148,7 @@ void NukiOpenerWrapper::unpair()
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
     _nukiOpener.requestKeyTurnerState(&_keyTurnerState);
-//    _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+    _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
@@ -167,15 +167,15 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 void NukiOpenerWrapper::updateBatteryState()
 {
     _nukiOpener.requestBatteryReport(&_batteryReport);
-//    _network->publishBatteryReport(_batteryReport);
+    _network->publishBatteryReport(_batteryReport);
 }
 
 void NukiOpenerWrapper::updateConfig()
 {
     readConfig();
     readAdvancedConfig();
-//    _network->publishConfig(_nukiConfig);
-//    _network->publishAdvancedConfig(_nukiAdvancedConfig);
+    _network->publishConfig(_nukiConfig);
+    _network->publishAdvancedConfig(_nukiAdvancedConfig);
 }
 
 void NukiOpenerWrapper::updateAuthData()
@@ -254,36 +254,8 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *va
     if(strcmp(topic, mqtt_topic_config_led_enabled) == 0)
     {
         bool newValue = atoi(value) > 0;
-        if(!_nukiConfigValid || _nukiConfig.ledEnabled == newValue) return;
+        if(!_nukiConfigValid || _nukiConfig.ledFlashEnabled == newValue) return;
         _nukiOpener.enableLedFlash(newValue);
-        _nextConfigUpdateTs = millis() + 300;
-    }
-    else if(strcmp(topic, mqtt_topic_config_led_brightness) == 0)
-    {
-        int newValue = atoi(value);
-        if(!_nukiConfigValid || _nukiConfig.ledBrightness == newValue) return;
-        _nukiOpener.setLedBrightness(newValue);
-        _nextConfigUpdateTs = millis() + 300;
-    }
-    else if(strcmp(topic, mqtt_topic_config_auto_unlock) == 0)
-    {
-        bool newValue = !(atoi(value) > 0);
-        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoUnLockDisabled == newValue) return;
-        _nukiOpener.disableAutoUnlock(newValue);
-        _nextConfigUpdateTs = millis() + 300;
-    }
-    else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
-    {
-        bool newValue = atoi(value) > 0;
-        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
-        _nukiOpener.enableAutoLock(newValue);
-        _nextConfigUpdateTs = millis() + 300;
-    }
-    else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
-    {
-        bool newValue = atoi(value) > 0;
-        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
-        _nukiOpener.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
 }

@@ -157,21 +157,18 @@ void NetworkOpener::publishBatteryReport(const NukiOpener::BatteryReport& batter
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
-    publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
-    publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
 }
 
 void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 {
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
-    publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
-    publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
+    publishBool(mqtt_topic_config_led_enabled, config.ledFlashEnabled == 1);
 }
 
 void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &config)
 {
-    publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
-    publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
+//    publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
+//    publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
 
 void NetworkOpener::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
