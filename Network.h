@@ -67,7 +67,6 @@ private:
     unsigned long _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
     char _mqttPath[181] = {0};
-    char _mqttOpenerPath[181] = {0};
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
     int _networkTimeout = 0;

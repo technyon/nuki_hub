@@ -6,9 +6,10 @@
 
 NukiOpenerWrapper* nukiOpenerInst;
 
-NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences)
+NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  Network* network, Preferences* preferences)
         : _deviceName(deviceName),
-          _nukiBle(deviceName, id),
+          _nukiOpener(deviceName, id),
+          _bleScanner(scanner),
           _network(network),
           _preferences(preferences)
 {
@@ -27,18 +28,14 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id,
 
 NukiOpenerWrapper::~NukiOpenerWrapper()
 {
-    delete _bleScanner;
     _bleScanner = nullptr;
 }
 
 
 void NukiOpenerWrapper::initialize()
 {
-    _bleScanner = new BleScanner::Scanner();
-    _bleScanner->initialize(_deviceName);
-    _bleScanner->setScanDuration(10);
-    _nukiBle.initialize();
-    _nukiBle.registerBleScanner(_bleScanner);
+    _nukiOpener.initialize();
+    _nukiOpener.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
@@ -55,7 +52,7 @@ void NukiOpenerWrapper::initialize()
         _preferences->putInt(preference_query_interval_battery, _intervalBattery);
     }
 
-    _nukiBle.setEventHandler(this);
+    _nukiOpener.setEventHandler(this);
 
     Serial.print(F("Lock state interval: "));
     Serial.print(_intervalLockstate);
@@ -73,12 +70,12 @@ void NukiOpenerWrapper::initialize()
 void NukiOpenerWrapper::update()
 {
     if (!_paired) {
-        Serial.println(F("Nuki start pairing"));
+        Serial.println(F("Nuki opener start pairing"));
 
         _bleScanner->update();
         vTaskDelay( 5000 / portTICK_PERIOD_MS);
-        if (_nukiBle.pairNuki() == NukiOpener::PairingResult::Success) {
-            Serial.println(F("Nuki paired"));
+        if (_nukiOpener.pairNuki() == NukiOpener::PairingResult::Success) {
+            Serial.println(F("Nuki opener paired"));
             _paired = true;
         }
         else
@@ -88,32 +85,30 @@ void NukiOpenerWrapper::update()
         }
     }
 
-    vTaskDelay( 20 / portTICK_PERIOD_MS);
-    _bleScanner->update();
-    _nukiBle.updateConnectionState();
+    _nukiOpener.updateConnectionState();
 
     unsigned long ts = millis();
 
-    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
-    {
-        _statusUpdated = false;
-        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
-        updateKeyTurnerState();
-    }
-    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
-    {
-        _nextBatteryReportTs = ts + _intervalBattery * 1000;
-        updateBatteryState();
-    }
-    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs)
-    {
-        _nextConfigUpdateTs = ts + _intervalConfig * 1000;
-        updateConfig();
-    }
+//    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
+//    {
+//        _statusUpdated = false;
+//        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
+//        updateKeyTurnerState();
+//    }
+//    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
+//    {
+//        _nextBatteryReportTs = ts + _intervalBattery * 1000;
+//        updateBatteryState();
+//    }
+//    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs)
+//    {
+//        _nextConfigUpdateTs = ts + _intervalConfig * 1000;
+//        updateConfig();
+//    }
 
     if(_nextLockAction != (NukiOpener::LockAction)0xff)
     {
-        NukiOpener::CmdResult cmdResult = _nukiBle.lockAction(_nextLockAction, 0, 0);
+        NukiOpener::CmdResult cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
 
         char resultStr[15] = {0};
         NukiOpener::cmdResultToString(cmdResult, resultStr);
@@ -136,30 +131,30 @@ void NukiOpenerWrapper::update()
         _clearAuthData = false;
     }
 
-    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiLock::KeyTurnerState));
+    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiOpener::KeyTurnerState));
 }
 
 void NukiOpenerWrapper::setPin(const uint16_t pin)
 {
-    _nukiBle.saveSecurityPincode(pin);
+    _nukiOpener.saveSecurityPincode(pin);
 }
 
 void NukiOpenerWrapper::unpair()
 {
-    _nukiBle.unPairNuki();
+    _nukiOpener.unPairNuki();
     _paired = false;
 }
 
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
-    _nukiBle.requestKeyTurnerState(&_keyTurnerState);
+    _nukiOpener.requestKeyTurnerState(&_keyTurnerState);
 //    _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
     {
         char lockStateStr[20];
         lockstateToString(_keyTurnerState.lockState, lockStateStr);
-        Serial.print(F("Nuki lock state: "));
+        Serial.print(F("Nuki opener state: "));
         Serial.println(lockStateStr);
     }
 
@@ -171,7 +166,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 
 void NukiOpenerWrapper::updateBatteryState()
 {
-    _nukiBle.requestBatteryReport(&_batteryReport);
+    _nukiOpener.requestBatteryReport(&_batteryReport);
 //    _network->publishBatteryReport(_batteryReport);
 }
 
@@ -185,7 +180,7 @@ void NukiOpenerWrapper::updateConfig()
 
 void NukiOpenerWrapper::updateAuthData()
 {
-    Nuki::CmdResult result = _nukiBle.retrieveLogEntries(0, 0, 0, true);
+    Nuki::CmdResult result = _nukiOpener.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {
         _network->publishAuthorizationInfo(0, "");
@@ -193,7 +188,7 @@ void NukiOpenerWrapper::updateAuthData()
     }
     vTaskDelay( 100 / portTICK_PERIOD_MS);
 
-    result = _nukiBle.retrieveLogEntries(_nukiBle.getLogEntryCount() - 2, 1, 0, false);
+    result = _nukiOpener.retrieveLogEntries(_nukiOpener.getLogEntryCount() - 2, 1, 0, false);
     if(result != Nuki::CmdResult::Success)
     {
         _network->publishAuthorizationInfo(0, "");
@@ -202,7 +197,7 @@ void NukiOpenerWrapper::updateAuthData()
     vTaskDelay( 200 / portTICK_PERIOD_MS);
 
     std::list<NukiOpener::LogEntry> log;
-    _nukiBle.getLogEntries(&log);
+    _nukiOpener.getLogEntries(&log);
 
     if(log.size() > 0)
     {
@@ -253,42 +248,42 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *va
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiConfigValid || _nukiConfig.buttonEnabled == newValue) return;
-        _nukiBle.enableButton(newValue);
+        _nukiOpener.enableButton(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     if(strcmp(topic, mqtt_topic_config_led_enabled) == 0)
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiConfigValid || _nukiConfig.ledEnabled == newValue) return;
-        _nukiBle.enableLedFlash(newValue);
+        _nukiOpener.enableLedFlash(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_led_brightness) == 0)
     {
         int newValue = atoi(value);
         if(!_nukiConfigValid || _nukiConfig.ledBrightness == newValue) return;
-        _nukiBle.setLedBrightness(newValue);
+        _nukiOpener.setLedBrightness(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_auto_unlock) == 0)
     {
         bool newValue = !(atoi(value) > 0);
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoUnLockDisabled == newValue) return;
-        _nukiBle.disableAutoUnlock(newValue);
+        _nukiOpener.disableAutoUnlock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
-        _nukiBle.enableAutoLock(newValue);
+        _nukiOpener.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
-        _nukiBle.enableAutoLock(newValue);
+        _nukiOpener.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
 }
@@ -318,16 +313,16 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
 
 void NukiOpenerWrapper::readConfig()
 {
-    Serial.print(F("Reading config. Result: "));
-    Nuki::CmdResult result = _nukiBle.requestConfig(&_nukiConfig);
+    Serial.print(F("Reading opener config. Result: "));
+    Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
     _nukiConfigValid = result == Nuki::CmdResult::Success;
     Serial.println(result);
 }
 
 void NukiOpenerWrapper::readAdvancedConfig()
 {
-    Serial.print(F("Reading advanced config. Result: "));
-    Nuki::CmdResult result = _nukiBle.requestAdvancedConfig(&_nukiAdvancedConfig);
+    Serial.print(F("Reading opener advanced config. Result: "));
+    Nuki::CmdResult result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
     Serial.println(result);
 }

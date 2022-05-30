@@ -304,7 +304,7 @@ const bool NukiWrapper::isPaired()
     return _paired;
 }
 
-BleScanner::Scanner *NukiWrapper::bleScanner()
+BleScanner::Scanner* NukiWrapper::bleScanner()
 {
     return _bleScanner;
 }

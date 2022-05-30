@@ -89,21 +89,6 @@ void Network::initialize()
         _preferences->putString(preference_mqtt_lock_path, _mqttPath);
     }
 
-    String mqttOpenerPath = _preferences->getString(preference_mqtt_opener_path);
-    if(mqttOpenerPath.length() > 0)
-    {
-        size_t len = mqttOpenerPath.length();
-        for(int i=0; i < len; i++)
-        {
-            _mqttOpenerPath[i] = mqttOpenerPath.charAt(i);
-        }
-    }
-    else
-    {
-        strcpy(_mqttOpenerPath, "nukiopener");
-        _preferences->putString(preference_mqtt_opener_path, _mqttOpenerPath);
-    }
-
     String mqttUser = _preferences->getString(preference_mqtt_user);
     if(mqttUser.length() > 0)
     {
