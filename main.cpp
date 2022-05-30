@@ -11,6 +11,7 @@
 #include "NukiOpenerWrapper.h"
 
 Network* network = nullptr;
+NetworkOpener* networkOpener = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 NukiWrapper* nuki = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
@@ -23,6 +24,7 @@ void networkTask(void *pvParameters)
     while(true)
     {
         network->update();
+        networkOpener->update();
         webCfgServer->update();
         vTaskDelay(200 / portTICK_PERIOD_MS);
     }
@@ -112,6 +114,8 @@ void setup()
     preferences->begin("nukihub", false);
     network = new Network(networkDevice, preferences);
     network->initialize();
+    networkOpener = new NetworkOpener(network, preferences);
+    networkOpener->initialize();
 
     uint32_t deviceId = preferences->getUInt(preference_deviceId);
     if(deviceId == 0)
@@ -125,7 +129,7 @@ void setup()
     nuki = new NukiWrapper("NukiHub", deviceId, network, preferences);
     nuki->initialize();
 
-    nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, nuki->bleScanner(), network, preferences);
+    nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, nuki->bleScanner(), networkOpener, preferences);
     nukiOpener->initialize();
 
     webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);

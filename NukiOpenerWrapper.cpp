@@ -6,7 +6,7 @@
 
 NukiOpenerWrapper* nukiOpenerInst;
 
-NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  Network* network, Preferences* preferences)
+NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  NetworkOpener* network, Preferences* preferences)
         : _deviceName(deviceName),
           _nukiOpener(deviceName, id),
           _bleScanner(scanner),
@@ -115,7 +115,7 @@ void NukiOpenerWrapper::update()
 
         _network->publishCommandResult(resultStr);
 
-        Serial.print(F("Lock action result: "));
+        Serial.print(F("Opener lock action result: "));
         Serial.println(resultStr);
 
         _nextLockAction = (NukiOpener::LockAction)0xff;

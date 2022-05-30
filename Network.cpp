@@ -251,6 +251,11 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
             }
         }
     }
+
+    if(_mqttTopicReceivedForwardCallback != nullptr)
+    {
+        _mqttTopicReceivedForwardCallback(topic, payload, length);
+    }
 }
 
 void Network::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState)
@@ -345,6 +350,11 @@ void Network::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallbac
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
 
+void Network::setMqttDataReceivedForwardCallback(void (*callback)(char *, uint8_t *, unsigned int))
+{
+    _mqttTopicReceivedForwardCallback = callback;
+}
+
 void Network::publishFloat(const char* topic, const float value, const uint8_t precision)
 {
     char str[30];
@@ -433,4 +443,9 @@ bool Network::comparePrefixedPath(const char *fullPath, const char *subPath)
     char prefixedPath[500];
     buildMqttPath(subPath, prefixedPath);
     return strcmp(fullPath, prefixedPath) == 0;
+}
+
+NetworkDevice *Network::device()
+{
+    return _device;
 }

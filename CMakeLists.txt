@@ -25,6 +25,7 @@ include_directories(${PROJECT_NAME}
 file(GLOB SRCFILES
         Pins.h
         Network.cpp
+        NetworkOpener.cpp
         networkDevices/NetworkDevice.h
         networkDevices/WifiDevice.cpp
         networkDevices/W5500Device.cpp

@@ -8,42 +8,27 @@
 #include <vector>
 #include "NukiConstants.h"
 #include "SpiffsCookie.h"
-#include "NukiLockConstants.h"
+#include "NukiOpenerConstants.h"
+#include "Network.h"
 
-enum class NetworkDeviceType
-{
-    WiFi,
-    W5500
-};
-
-class Network
+class NetworkOpener
 {
 public:
-    explicit Network(const NetworkDeviceType networkDevice, Preferences* preferences);
-    virtual ~Network();
+    explicit NetworkOpener(Network* network, Preferences* preferences);
+    virtual ~NetworkOpener() = default;
 
     void initialize();
     void update();
-    void setupDevice(const NetworkDeviceType hardware);
-    void initializeW5500();
 
-    bool isMqttConnected();
-
-    void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
+    void publishKeyTurnerState(const NukiOpener::KeyTurnerState& keyTurnerState, const NukiOpener::KeyTurnerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);
-    void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
-    void publishConfig(const NukiLock::Config& config);
-    void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
-    void publishPresenceDetection(char* csv);
+    void publishBatteryReport(const NukiOpener::BatteryReport& batteryReport);
+    void publishConfig(const NukiOpener::Config& config);
+    void publishAdvancedConfig(const NukiOpener::AdvancedConfig& config);
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
-    void setMqttDataReceivedForwardCallback(void (*callback)(char*, uint8_t*, unsigned int));
-
-    void restartAndConfigureWifi();
-
-    NetworkDevice* device();
 
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
@@ -59,24 +44,12 @@ private:
     void buildMqttPath(const char* path, char* outPath);
     void subscribe(const char* path);
 
-    bool reconnect();
-
-    NetworkDevice* _device = nullptr;
     Preferences* _preferences;
-    String _hostname;
 
-    bool _mqttConnected = false;
+    Network* _network = nullptr;
 
-    unsigned long _nextReconnect = 0;
-    char _mqttBrokerAddr[101] = {0};
     char _mqttPath[181] = {0};
-    char _mqttUser[31] = {0};
-    char _mqttPass[31] = {0};
-    int _networkTimeout = 0;
-
-    unsigned long _lastConnectedTs = 0;
-
-    char* _presenceCsv = nullptr;
+    bool _isConnected = false;
 
     std::vector<char*> _configTopics;
 
@@ -84,5 +57,4 @@ private:
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
-    void (*_mqttTopicReceivedForwardCallback)(char*, uint8_t*, unsigned int)  = nullptr;
 };
