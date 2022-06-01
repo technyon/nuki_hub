@@ -229,13 +229,26 @@ bool WebCfgServer::processArgs(String& message)
         {
             if(value == "#")
             {
-                message = "PIN cleared";
+                message = "NUKI Lock PIN cleared";
                 _nuki->setPin(0xffff);
             }
             else
             {
-                message = "PIN saved";
+                message = "NUKI Lock PIN saved";
                 _nuki->setPin(value.toInt());
+            }
+        }
+        else if(key == "NUKIOPPIN" && _nukiOpener != nullptr)
+        {
+            if(value == "#")
+            {
+                message = "NUKI Opener PIN cleared";
+                _nukiOpener->setPin(0xffff);
+            }
+            else
+            {
+                message = "NUKI Opener PIN saved";
+                _nukiOpener->setPin(value.toInt());
             }
         }
     }
@@ -364,13 +377,27 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
 
-    response.concat("<br><br><FORM ACTION=method=get >");
-    response.concat("<h3>NUKI Pin Code</h3>");
-    response.concat("<table>");
-    printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, true);
-    response.concat("</table>");
-    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-    response.concat("</FORM>");
+    if(_nuki != nullptr)
+    {
+        response.concat("<br><br><FORM ACTION=method=get >");
+        response.concat("<h3>NUKI Lock PIN</h3>");
+        response.concat("<table>");
+        printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, true);
+        response.concat("</table>");
+        response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+        response.concat("</FORM>");
+    }
+
+    if(_nukiOpener != nullptr)
+    {
+        response.concat("<br><br><FORM ACTION=method=get >");
+        response.concat("<h3>NUKI Opener PIN</h3>");
+        response.concat("<table>");
+        printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, true);
+        response.concat("</table>");
+        response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+        response.concat("</FORM>");
+    }
 
     _confirmCode = generateConfirmCode();
     if(_nuki != nullptr)
