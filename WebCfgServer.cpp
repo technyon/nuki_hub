@@ -26,7 +26,6 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethSe
     }
 }
 
-
 void WebCfgServer::initialize()
 {
     _server.on("/", [&]() {
@@ -43,6 +42,14 @@ void WebCfgServer::initialize()
         }
         String response = "";
         buildCredHtml(response);
+        _server.send(200, "text/html", response);
+    });
+    _server.on("/mqttconfig", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildMqttConfigHtml(response);
         _server.send(200, "text/html", response);
     });
     _server.on("/wifi", [&]() {
@@ -106,10 +113,6 @@ bool WebCfgServer::processArgs(String& message)
     bool configChanged = false;
     bool clearMqttCredentials = false;
     bool clearCredentials = false;
-
-    bool publishAuthData = false;
-    bool lockEnabled = false;
-    bool openerEnabled = false;
 
     int count = _server.args();
     for(int index = 0; index < count; index++)
@@ -184,15 +187,18 @@ bool WebCfgServer::processArgs(String& message)
         }
         else if(key == "PUBAUTH")
         {
-            publishAuthData = true;
+            _preferences->putBool(preference_publish_authdata, (value == "1"));
+            configChanged = true;
         }
         else if(key == "LOCKENA")
         {
-            lockEnabled = true;
+            _preferences->putBool(preference_lock_enabled, (value == "1"));
+            configChanged = true;
         }
         else if(key == "OPENA")
         {
-            openerEnabled = true;
+            _preferences->putBool(preference_opener_enabled, (value == "1"));
+            configChanged = true;
         }
         else if(key == "CREDUSER")
         {
@@ -224,24 +230,6 @@ bool WebCfgServer::processArgs(String& message)
                 _nuki->setPin(value.toInt());
             }
         }
-    }
-
-    if(_preferences->getBool(preference_publish_authdata) != publishAuthData)
-    {
-        _preferences->putBool(preference_publish_authdata, publishAuthData);
-        configChanged = true;
-    }
-
-    if(_preferences->getBool(preference_lock_enabled) != lockEnabled)
-    {
-        _preferences->putBool(preference_lock_enabled, lockEnabled);
-        configChanged = true;
-    }
-
-    if(_preferences->getBool(preference_opener_enabled) != openerEnabled)
-    {
-        _preferences->putBool(preference_opener_enabled, openerEnabled);
-        configChanged = true;
     }
 
     if(clearMqttCredentials)
@@ -304,14 +292,15 @@ void WebCfgServer::buildHtml(String& response)
     printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
 
+    response.concat("<h3>MQTT Configuration</h3>");
+    response.concat("<form method=\"get\" action=\"/mqttconfig\">");
+    response.concat("<button type=\"submit\">Edit</button>");
+    response.concat("</form>");
+
     response.concat("<FORM ACTION=method=get >");
 
-    response.concat("<h3>Configuration</h3>");
+    response.concat("<br><h3>Configuration</h3>");
     response.concat("<table>");
-    printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
-    printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
-    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
-    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
     printCheckBox(response, "LOCKENA", "NUKI Lock enabled", _preferences->getBool(preference_lock_enabled));
     if(_preferences->getBool(preference_lock_enabled))
     {
@@ -332,9 +321,9 @@ void WebCfgServer::buildHtml(String& response)
 
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
 
-    response.concat("</FORM><BR><BR>");
+    response.concat("</FORM>");
 
-    response.concat("<h3>Credentials</h3>");
+    response.concat("<BR><BR><h3>Credentials</h3>");
     response.concat("<form method=\"get\" action=\"/cred\">");
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
@@ -384,6 +373,21 @@ void WebCfgServer::buildCredHtml(String &response)
 
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
+}
+
+void WebCfgServer::buildMqttConfigHtml(String &response)
+{
+    response.concat("<FORM ACTION=method=get >");
+    response.concat("<h3>MQTT COnfiguration</h3>");
+    response.concat("<table>");
+    printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
+    printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
+    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
+    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
+    response.concat("</table>");
+    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+    response.concat("</FORM>");
+
 }
 
 void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
@@ -510,20 +514,20 @@ void WebCfgServer::printInputField(String& response,
 
 void WebCfgServer::printCheckBox(String &response, const char *token, const char *description, const bool value)
 {
-    response.concat("<tr>");
-    response.concat("<td>");
+    response.concat("<tr><td>");
     response.concat(description);
-    response.concat("</td>");
-    response.concat("<td>");
-    response.concat(" <INPUT TYPE=");
-    response.concat("checkbox ");
-    response.concat("NAME=\"");
+    response.concat("</td><td>");
+
+    response.concat("<INPUT TYPE=hidden NAME=\"");
     response.concat(token);
-    response.concat("\"");
+    response.concat("\" value=\"0\"");
+    response.concat("/>");
+
+    response.concat("<INPUT TYPE=checkbox NAME=\"");
+    response.concat(token);
+    response.concat("\" value=\"1\"");
     response.concat(value ? " checked=\"checked\"" : "");
-    response.concat(" />");
-    response.concat("</td>");
-    response.concat("</tr>");
+    response.concat("/></td></tr>");
 }
 
 void WebCfgServer::printParameter(String& response, const char *description, const char *value)

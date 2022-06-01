@@ -40,6 +40,14 @@ void nukiTask(void *pvParameters)
     {
         bleScanner->update();
         vTaskDelay( 20 / portTICK_PERIOD_MS);
+
+        bool needsPairing = (lockEnabled && !nuki->isPaired()) || (openerEnabled && !nukiOpener->isPaired());
+
+        if (needsPairing)
+        {
+            vTaskDelay( 5000 / portTICK_PERIOD_MS);
+        }
+
         if(lockEnabled)
         {
             nuki->update();

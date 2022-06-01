@@ -73,8 +73,6 @@ void NukiWrapper::update()
     if (!_paired) {
         Serial.println(F("Nuki start pairing"));
 
-        _bleScanner->update();
-        vTaskDelay( 5000 / portTICK_PERIOD_MS);
         if (_nukiBle.pairNuki() == Nuki::PairingResult::Success) {
             Serial.println(F("Nuki paired"));
             _paired = true;
