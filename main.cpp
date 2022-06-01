@@ -13,6 +13,7 @@
 Network* network = nullptr;
 NetworkOpener* networkOpener = nullptr;
 WebCfgServer* webCfgServer = nullptr;
+Nuki::NukiTimeout* nukiTimeout = nullptr;
 NukiWrapper* nuki = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
 PresenceDetection* presenceDetection = nullptr;
@@ -36,6 +37,7 @@ void nukiTask(void *pvParameters)
     {
         nuki->update();
         nukiOpener->update();
+        nukiTimeout->update();
     }
 }
 
@@ -126,10 +128,12 @@ void setup()
 
     initEthServer(networkDevice);
 
-    nuki = new NukiWrapper("NukiHub", deviceId, network, preferences);
+    nukiTimeout = new Nuki::NukiTimeout();
+
+    nuki = new NukiWrapper("NukiHub", deviceId, network, preferences, nukiTimeout);
     nuki->initialize();
 
-    nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, nuki->bleScanner(), networkOpener, preferences);
+    nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, nuki->bleScanner(), networkOpener, preferences, nukiTimeout);
     nukiOpener->initialize();
 
     webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);

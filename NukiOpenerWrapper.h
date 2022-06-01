@@ -9,7 +9,7 @@
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
-    NukiOpenerWrapper(const std::string& deviceName,  uint32_t id,  BleScanner::Scanner* scanner, NetworkOpener* network, Preferences* preferences);
+    NukiOpenerWrapper(const std::string& deviceName,  uint32_t id,  BleScanner::Scanner* scanner, NetworkOpener* network, Preferences* preferences, Nuki::NukiTimeout* nukiTimeout);
     virtual ~NukiOpenerWrapper();
 
     void initialize();
@@ -46,6 +46,7 @@ private:
     BleScanner::Scanner* _bleScanner;
     NetworkOpener* _network;
     Preferences* _preferences;
+    Nuki::NukiTimeout* _nukiTimeout;
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds

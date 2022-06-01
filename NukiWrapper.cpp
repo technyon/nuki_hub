@@ -6,11 +6,12 @@
 
 NukiWrapper* nukiInst;
 
-NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences)
+NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences, Nuki::NukiTimeout* nukiTimeout)
 : _deviceName(deviceName),
-  _nukiBle(deviceName, id),
+  _nukiBle(deviceName, id, nukiTimeout),
   _network(network),
-  _preferences(preferences)
+  _preferences(preferences),
+  _nukiTimeout(nukiTimeout)
 {
     nukiInst = this;
 

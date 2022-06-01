@@ -9,7 +9,7 @@
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences);
+    NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences, Nuki::NukiTimeout* nukiTimeout);
     virtual ~NukiWrapper();
 
     void initialize();
@@ -46,6 +46,7 @@ private:
     BleScanner::Scanner* _bleScanner;
     Network* _network;
     Preferences* _preferences;
+    Nuki::NukiTimeout* _nukiTimeout;
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds

@@ -6,12 +6,13 @@
 
 NukiOpenerWrapper* nukiOpenerInst;
 
-NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  NetworkOpener* network, Preferences* preferences)
-        : _deviceName(deviceName),
-          _nukiOpener(deviceName, id),
-          _bleScanner(scanner),
-          _network(network),
-          _preferences(preferences)
+NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  NetworkOpener* network, Preferences* preferences, Nuki::NukiTimeout* nukiTimeout)
+: _deviceName(deviceName),
+  _nukiOpener(deviceName, id, nukiTimeout),
+  _bleScanner(scanner),
+  _network(network),
+  _preferences(preferences),
+  _nukiTimeout(nukiTimeout)
 {
     nukiOpenerInst = this;
 

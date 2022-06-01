@@ -42,6 +42,7 @@ file(GLOB SRCFILES
         lib/ESP32_BLE_Arduino-1.0.1/src/*.h
         lib/WiFiManager/WiFiManager.cpp
         lib/Crc16/Crc16.h
+        lib/nuki_ble/src/NukiTimeout.cpp
         lib/nuki_ble/src/NukiBle.cpp
         lib/nuki_ble/src/NukiOpener.cpp
         lib/nuki_ble/src/NukiConstants.h
