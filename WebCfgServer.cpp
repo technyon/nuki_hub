@@ -3,9 +3,10 @@
 #include "Version.h"
 #include "hardware/WifiEthServer.h"
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
   _nuki(nuki),
+  _nukiOpener(nukiOpener),
   _network(network),
   _preferences(preferences),
   _allowRestartToPortal(allowRestartToPortal)
@@ -274,25 +275,29 @@ void WebCfgServer::buildHtml(String& response)
 
     response.concat("<table>");
 
-    bool lockEnabled = _preferences->getBool(preference_lock_enabled);
-
-    String lockState = "&nbsp;";
-    if(lockEnabled)
+    printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "&nbsp;Yes" : "&nbsp;No");
+    if(_nuki != nullptr)
     {
+        String lockState = "&nbsp;";
         char lockstateArr[20];
         NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
         lockState.concat(lockstateArr);
-        printParameter(response, "Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+        printParameter(response, "NUKI Lock Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+        printParameter(response, "NUKI Lock state", lockState.c_str());
     }
-    printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "&nbsp;Yes" : "&nbsp;No");
-    if(lockEnabled)
+    if(_nukiOpener != nullptr)
     {
-        printParameter(response, "Lock state", lockState.c_str());
+        String lockState = "&nbsp;";
+        char lockstateArr[20];
+        NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
+        lockState.concat(lockstateArr);
+        printParameter(response, "NUKI Lock Paired", _nukiOpener->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+        printParameter(response, "NUKI Lock state", lockState.c_str());
     }
     printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
 
-    response.concat("<h3>MQTT Configuration</h3>");
+    response.concat("<h3>MQTT and Network Configuration</h3>");
     response.concat("<form method=\"get\" action=\"/mqttconfig\">");
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
@@ -311,8 +316,6 @@ void WebCfgServer::buildHtml(String& response)
     {
         printInputField(response, "MQTTOPPATH", "MQTT Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
     }
-    printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
-    printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
@@ -380,10 +383,12 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("<FORM ACTION=method=get >");
     response.concat("<h3>MQTT COnfiguration</h3>");
     response.concat("<table>");
+    printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
     printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
     printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
     printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
+    printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     response.concat("</table>");
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");

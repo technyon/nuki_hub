@@ -178,7 +178,7 @@ void setup()
         nukiOpener->initialize();
     }
 
-    webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
+    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
     presenceDetection = new PresenceDetection(preferences, bleScanner, network);
