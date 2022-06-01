@@ -35,7 +35,7 @@ private:
     void buildMqttConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
-    void processUnpair();
+    void processUnpair(bool opener);
 
     void buildHtmlHeader(String& response);
     void printInputField(String& response, const char* token, const char* description, const char* value, const size_t maxLength, const bool isPassword = false);

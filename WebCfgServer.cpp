@@ -61,12 +61,19 @@ void WebCfgServer::initialize()
         buildConfigureWifiHtml(response);
         _server.send(200, "text/html", response);
     });
-    _server.on("/unpair", [&]() {
+    _server.on("/unpairlock", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
 
-        processUnpair();
+        processUnpair(false);
+    });
+    _server.on("/unpairopener", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
+        processUnpair(true);
     });
     _server.on("/wifimanager", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -282,7 +289,7 @@ void WebCfgServer::buildHtml(String& response)
         char lockstateArr[20];
         NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
         lockState.concat(lockstateArr);
-        printParameter(response, "NUKI Lock Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+        printParameter(response, "NUKI Lock paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
         printParameter(response, "NUKI Lock state", lockState.c_str());
     }
     if(_nukiOpener != nullptr)
@@ -291,8 +298,8 @@ void WebCfgServer::buildHtml(String& response)
         char lockstateArr[20];
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
         lockState.concat(lockstateArr);
-        printParameter(response, "NUKI Lock Paired", _nukiOpener->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
-        printParameter(response, "NUKI Lock state", lockState.c_str());
+        printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+        printParameter(response, "NUKI Opener state", lockState.c_str());
     }
     printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
@@ -366,13 +373,28 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("</FORM>");
 
     _confirmCode = generateConfirmCode();
-    response.concat("<br><br><h3>Unpair NUKI</h3>");
-    response.concat("<form method=\"get\" action=\"/unpair\">");
-    String message = "Type ";
-    message.concat(_confirmCode);
-    message.concat(" to confirm unpair");
-    printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
-    response.concat("<br><br><button type=\"submit\">OK</button>");
+    if(_nuki != nullptr)
+    {
+        response.concat("<br><br><h3>Unpair NUKI Lock</h3>");
+        response.concat("<form method=\"get\" action=\"/unpairlock\">");
+        String message = "Type ";
+        message.concat(_confirmCode);
+        message.concat(" to confirm unpair");
+        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
+        response.concat("<br><br><button type=\"submit\">OK</button></form>");
+    }
+
+    if(_nukiOpener != nullptr)
+    {
+        response.concat("<br><br><h3>Unpair NUKI Opener</h3>");
+        response.concat("<form method=\"get\" action=\"/unpairopener\">");
+        String message = "Type ";
+        message.concat(_confirmCode);
+        message.concat(" to confirm unpair");
+        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
+        response.concat("<br><br><button type=\"submit\">OK</button></form>");
+    }
+
 
     response.concat("</BODY>\n");
     response.concat("</HTML>\n");
@@ -428,15 +450,7 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
     response.concat("</HTML>\n");
 }
 
-//printInputField(response, "CONFIRMTOKEN", "Type confirm", "", 10);
-
-
-//int count = _server.args();
-//for(int index = 0; index < count; index++)
-//{
-//String key = _server.argName(index);
-//String value = _server.arg(index);
-void WebCfgServer::processUnpair()
+void WebCfgServer::processUnpair(bool opener)
 {
     String response = "";
     if(_server.args() == 0)
@@ -458,11 +472,15 @@ void WebCfgServer::processUnpair()
         }
     }
 
-    buildConfirmHtml(response, "Unpairing NUKI and restarting.", 3);
+    buildConfirmHtml(response, opener ? "Unpairing NUKI Opener and restarting." : "Unpairing NUKI Lock and restarting.", 3);
     _server.send(200, "text/html", response);
-    if(_nuki != nullptr)
+    if(!opener && _nuki != nullptr)
     {
         _nuki->unpair();
+    }
+    if(opener && _nukiOpener != nullptr)
+    {
+        _nukiOpener->unpair();
     }
     waitAndProcess(false, 1000);
     ESP.restart();
