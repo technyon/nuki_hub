@@ -13,11 +13,15 @@
 Network* network = nullptr;
 NetworkOpener* networkOpener = nullptr;
 WebCfgServer* webCfgServer = nullptr;
+BleScanner::Scanner* bleScanner = nullptr;
 NukiWrapper* nuki = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
 PresenceDetection* presenceDetection = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
+
+bool lockEnabled = false;
+bool openerEnabled = false;
 
 void networkTask(void *pvParameters)
 {
@@ -34,8 +38,16 @@ void nukiTask(void *pvParameters)
 {
     while(true)
     {
-        nuki->update();
-        nukiOpener->update();
+        bleScanner->update();
+        vTaskDelay( 20 / portTICK_PERIOD_MS);
+        if(lockEnabled)
+        {
+            nuki->update();
+        }
+        if(openerEnabled)
+        {
+            nukiOpener->update();
+        }
     }
 }
 
@@ -101,17 +113,29 @@ void initEthServer(const NetworkDeviceType device)
     }
 }
 
+void initNuki()
+{
+
+}
+
 void setup()
 {
     pinMode(NETWORK_SELECT, INPUT_PULLUP);
 
     Serial.begin(115200);
 
+    preferences = new Preferences();
+    preferences->begin("nukihub", false);
+
+    if(!preferences->getBool(preference_started_befores))
+    {
+        preferences->putBool(preference_started_befores, true);
+        preferences->putBool(preference_lock_enabled, true);
+    }
+
 //    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
     const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
-    preferences = new Preferences();
-    preferences->begin("nukihub", false);
     network = new Network(networkDevice, preferences);
     network->initialize();
     networkOpener = new NetworkOpener(network, preferences);
@@ -126,16 +150,30 @@ void setup()
 
     initEthServer(networkDevice);
 
-    nuki = new NukiWrapper("NukiHub", deviceId, network, preferences);
-    nuki->initialize();
+    bleScanner = new BleScanner::Scanner();
+    bleScanner->initialize("NukiHub");
+    bleScanner->setScanDuration(10);
 
-    nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, nuki->bleScanner(), networkOpener, preferences);
-    nukiOpener->initialize();
+    lockEnabled = preferences->getBool(preference_lock_enabled);
+    Serial.println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
+    if(lockEnabled)
+    {
+        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, network, preferences);
+        nuki->initialize();
+    }
+
+    openerEnabled = preferences->getBool(preference_opener_enabled);
+    Serial.println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
+    if(openerEnabled)
+    {
+        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, preferences);
+        nukiOpener->initialize();
+    }
 
     webCfgServer = new WebCfgServer(nuki, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
-    presenceDetection = new PresenceDetection(preferences, nuki->bleScanner(), network);
+    presenceDetection = new PresenceDetection(preferences, bleScanner, network);
     presenceDetection->initialize();
 
     setupTasks();

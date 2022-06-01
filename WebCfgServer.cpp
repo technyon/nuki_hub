@@ -108,6 +108,8 @@ bool WebCfgServer::processArgs(String& message)
     bool clearCredentials = false;
 
     bool publishAuthData = false;
+    bool lockEnabled = false;
+    bool openerEnabled = false;
 
     int count = _server.args();
     for(int index = 0; index < count; index++)
@@ -184,6 +186,14 @@ bool WebCfgServer::processArgs(String& message)
         {
             publishAuthData = true;
         }
+        else if(key == "LOCKENA")
+        {
+            lockEnabled = true;
+        }
+        else if(key == "OPENA")
+        {
+            openerEnabled = true;
+        }
         else if(key == "CREDUSER")
         {
             if(value == "#")
@@ -201,7 +211,7 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putString(preference_cred_password, value);
             configChanged = true;
         }
-        else if(key == "NUKIPIN")
+        else if(key == "NUKIPIN" && _nuki != nullptr)
         {
             if(value == "#")
             {
@@ -219,6 +229,18 @@ bool WebCfgServer::processArgs(String& message)
     if(_preferences->getBool(preference_publish_authdata) != publishAuthData)
     {
         _preferences->putBool(preference_publish_authdata, publishAuthData);
+        configChanged = true;
+    }
+
+    if(_preferences->getBool(preference_lock_enabled) != lockEnabled)
+    {
+        _preferences->putBool(preference_lock_enabled, lockEnabled);
+        configChanged = true;
+    }
+
+    if(_preferences->getBool(preference_opener_enabled) != openerEnabled)
+    {
+        _preferences->putBool(preference_opener_enabled, openerEnabled);
         configChanged = true;
     }
 
@@ -262,15 +284,23 @@ void WebCfgServer::buildHtml(String& response)
     String version = "&nbsp;";
     version.concat(nuki_hub_version);
 
-    char lockstateArr[20];
-    NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
-    String lockState = "&nbsp;";
-    lockState.concat(lockstateArr);
-
     response.concat("<table>");
-    printParameter(response, "Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+
+    bool lockEnabled = _preferences->getBool(preference_lock_enabled);
+
+    String lockState = "&nbsp;";
+    if(lockEnabled)
+    {
+        char lockstateArr[20];
+        NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
+        lockState.concat(lockstateArr);
+        printParameter(response, "Paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
+    }
     printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "&nbsp;Yes" : "&nbsp;No");
-    printParameter(response, "Lock state", lockState.c_str());
+    if(lockEnabled)
+    {
+        printParameter(response, "Lock state", lockState.c_str());
+    }
     printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
 
@@ -282,8 +312,16 @@ void WebCfgServer::buildHtml(String& response)
     printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
     printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
     printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
-    printInputField(response, "MQTTPATH", "MQTT Lock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
-    printInputField(response, "MQTTOPPATH", "MQTT Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
+    printCheckBox(response, "LOCKENA", "NUKI Lock enabled", _preferences->getBool(preference_lock_enabled));
+    if(_preferences->getBool(preference_lock_enabled))
+    {
+        printInputField(response, "MQTTPATH", "MQTT Lock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
+    }
+    printCheckBox(response, "OPENA", "NUKI Opener enabled", _preferences->getBool(preference_opener_enabled));
+    if(_preferences->getBool(preference_opener_enabled))
+    {
+        printInputField(response, "MQTTOPPATH", "MQTT Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
+    }
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
@@ -413,7 +451,10 @@ void WebCfgServer::processUnpair()
 
     buildConfirmHtml(response, "Unpairing NUKI and restarting.", 3);
     _server.send(200, "text/html", response);
-    _nuki->unpair();
+    if(_nuki != nullptr)
+    {
+        _nuki->unpair();
+    }
     waitAndProcess(false, 1000);
     ESP.restart();
 }

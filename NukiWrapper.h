@@ -9,7 +9,7 @@
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences);
+    NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, Network* network, Preferences* preferences);
     virtual ~NukiWrapper();
 
     void initialize();
@@ -21,8 +21,6 @@ public:
 
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();
-
-    BleScanner::Scanner* bleScanner();
 
     void notify(Nuki::EventType eventType) override;
 

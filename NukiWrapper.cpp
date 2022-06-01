@@ -6,8 +6,9 @@
 
 NukiWrapper* nukiInst;
 
-NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* network, Preferences* preferences)
+NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, Network* network, Preferences* preferences)
 : _deviceName(deviceName),
+  _bleScanner(scanner),
   _nukiBle(deviceName, id),
   _network(network),
   _preferences(preferences)
@@ -27,16 +28,13 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, Network* ne
 
 NukiWrapper::~NukiWrapper()
 {
-    delete _bleScanner;
     _bleScanner = nullptr;
 }
 
 
 void NukiWrapper::initialize()
 {
-    _bleScanner = new BleScanner::Scanner();
-    _bleScanner->initialize(_deviceName);
-    _bleScanner->setScanDuration(10);
+
     _nukiBle.initialize();
     _nukiBle.registerBleScanner(_bleScanner);
 
@@ -88,8 +86,6 @@ void NukiWrapper::update()
         }
     }
 
-    vTaskDelay( 20 / portTICK_PERIOD_MS);
-    _bleScanner->update();
     _nukiBle.updateConnectionState();
 
     unsigned long ts = millis();
@@ -302,11 +298,6 @@ const NukiLock::KeyTurnerState &NukiWrapper::keyTurnerState()
 const bool NukiWrapper::isPaired()
 {
     return _paired;
-}
-
-BleScanner::Scanner* NukiWrapper::bleScanner()
-{
-    return _bleScanner;
 }
 
 void NukiWrapper::notify(Nuki::EventType eventType)
