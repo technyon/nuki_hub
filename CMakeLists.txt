@@ -43,6 +43,8 @@ file(GLOB SRCFILES
         lib/WiFiManager/WiFiManager.cpp
         lib/Crc16/Crc16.h
         lib/nuki_ble/src/NukiBle.cpp
+        lib/nuki_ble/src/NukiBle.hpp
+        lib/nuki_ble/src/NukiLock.cpp
         lib/nuki_ble/src/NukiOpener.cpp
         lib/nuki_ble/src/NukiConstants.h
         lib/nuki_ble/src/NukiOpenerConstants.h

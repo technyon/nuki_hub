@@ -1,10 +1,10 @@
 #pragma once
 
-#include "NukiBle.h"
 #include "Network.h"
 #include "NukiConstants.h"
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
+#include "NukiLock.h"
 
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
@@ -40,7 +40,7 @@ private:
     NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     std::string _deviceName;
-    NukiLock::NukiBle _nukiBle;
+    NukiLock::NukiLock _nukiLock;
     BleScanner::Scanner* _bleScanner;
     Network* _network;
     Preferences* _preferences;

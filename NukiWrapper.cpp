@@ -9,7 +9,7 @@ NukiWrapper* nukiInst;
 NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, Network* network, Preferences* preferences)
 : _deviceName(deviceName),
   _bleScanner(scanner),
-  _nukiBle(deviceName, id),
+  _nukiLock(deviceName, id),
   _network(network),
   _preferences(preferences)
 {
@@ -35,8 +35,8 @@ NukiWrapper::~NukiWrapper()
 void NukiWrapper::initialize()
 {
 
-    _nukiBle.initialize();
-    _nukiBle.registerBleScanner(_bleScanner);
+    _nukiLock.initialize();
+    _nukiLock.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
@@ -53,7 +53,7 @@ void NukiWrapper::initialize()
         _preferences->putInt(preference_query_interval_battery, _intervalBattery);
     }
 
-    _nukiBle.setEventHandler(this);
+    _nukiLock.setEventHandler(this);
 
     Serial.print(F("Lock state interval: "));
     Serial.print(_intervalLockstate);
@@ -73,7 +73,7 @@ void NukiWrapper::update()
     if (!_paired) {
         Serial.println(F("Nuki start pairing"));
 
-        if (_nukiBle.pairNuki() == Nuki::PairingResult::Success) {
+        if (_nukiLock.pairNuki() == Nuki::PairingResult::Success) {
             Serial.println(F("Nuki paired"));
             _paired = true;
         }
@@ -84,7 +84,7 @@ void NukiWrapper::update()
         }
     }
 
-    _nukiBle.updateConnectionState();
+    _nukiLock.updateConnectionState();
 
     unsigned long ts = millis();
 
@@ -107,7 +107,7 @@ void NukiWrapper::update()
 
     if(_nextLockAction != (NukiLock::LockAction)0xff)
     {
-         Nuki::CmdResult cmdResult = _nukiBle.lockAction(_nextLockAction, 0, 0);
+         Nuki::CmdResult cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
 
          char resultStr[15] = {0};
          NukiLock::cmdResultToString(cmdResult, resultStr);
@@ -135,18 +135,18 @@ void NukiWrapper::update()
 
 void NukiWrapper::setPin(const uint16_t pin)
 {
-        _nukiBle.saveSecurityPincode(pin);
+        _nukiLock.saveSecurityPincode(pin);
 }
 
 void NukiWrapper::unpair()
 {
-    _nukiBle.unPairNuki();
+    _nukiLock.unPairNuki();
     _paired = false;
 }
 
 void NukiWrapper::updateKeyTurnerState()
 {
-    _nukiBle.requestKeyTurnerState(&_keyTurnerState);
+    _nukiLock.requestKeyTurnerState(&_keyTurnerState);
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
@@ -165,7 +165,7 @@ void NukiWrapper::updateKeyTurnerState()
 
 void NukiWrapper::updateBatteryState()
 {
-    _nukiBle.requestBatteryReport(&_batteryReport);
+    _nukiLock.requestBatteryReport(&_batteryReport);
     _network->publishBatteryReport(_batteryReport);
 }
 
@@ -179,7 +179,7 @@ void NukiWrapper::updateConfig()
 
 void NukiWrapper::updateAuthData()
 {
-    Nuki::CmdResult result = _nukiBle.retrieveLogEntries(0, 0, 0, true);
+    Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {
         _network->publishAuthorizationInfo(0, "");
@@ -187,7 +187,7 @@ void NukiWrapper::updateAuthData()
     }
     vTaskDelay( 100 / portTICK_PERIOD_MS);
 
-    result = _nukiBle.retrieveLogEntries(_nukiBle.getLogEntryCount() - 2, 1, 0, false);
+    result = _nukiLock.retrieveLogEntries(_nukiLock.getLogEntryCount() - 2, 1, 0, false);
     if(result != Nuki::CmdResult::Success)
     {
         _network->publishAuthorizationInfo(0, "");
@@ -196,7 +196,7 @@ void NukiWrapper::updateAuthData()
     vTaskDelay( 200 / portTICK_PERIOD_MS);
 
     std::list<Nuki::LogEntry> log;
-    _nukiBle.getLogEntries(&log);
+    _nukiLock.getLogEntries(&log);
 
     if(log.size() > 0)
     {
@@ -248,42 +248,42 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiConfigValid || _nukiConfig.buttonEnabled == newValue) return;
-        _nukiBle.enableButton(newValue);
+        _nukiLock.enableButton(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     if(strcmp(topic, mqtt_topic_config_led_enabled) == 0)
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiConfigValid || _nukiConfig.ledEnabled == newValue) return;
-        _nukiBle.enableLedFlash(newValue);
+        _nukiLock.enableLedFlash(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_led_brightness) == 0)
     {
         int newValue = atoi(value);
         if(!_nukiConfigValid || _nukiConfig.ledBrightness == newValue) return;
-        _nukiBle.setLedBrightness(newValue);
+        _nukiLock.setLedBrightness(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_auto_unlock) == 0)
     {
         bool newValue = !(atoi(value) > 0);
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoUnLockDisabled == newValue) return;
-        _nukiBle.disableAutoUnlock(newValue);
+        _nukiLock.disableAutoUnlock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
-        _nukiBle.enableAutoLock(newValue);
+        _nukiLock.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
     else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
     {
         bool newValue = atoi(value) > 0;
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
-        _nukiBle.enableAutoLock(newValue);
+        _nukiLock.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
 }
@@ -309,7 +309,7 @@ void NukiWrapper::notify(Nuki::EventType eventType)
 void NukiWrapper::readConfig()
 {
     Serial.print(F("Reading config. Result: "));
-    Nuki::CmdResult result = _nukiBle.requestConfig(&_nukiConfig);
+    Nuki::CmdResult result = _nukiLock.requestConfig(&_nukiConfig);
     _nukiConfigValid = result == Nuki::CmdResult::Success;
     Serial.println(result);
 }
@@ -317,7 +317,7 @@ void NukiWrapper::readConfig()
 void NukiWrapper::readAdvancedConfig()
 {
     Serial.print(F("Reading advanced config. Result: "));
-    Nuki::CmdResult result = _nukiBle.requestAdvancedConfig(&_nukiAdvancedConfig);
+    Nuki::CmdResult result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
     Serial.println(result);
 }
