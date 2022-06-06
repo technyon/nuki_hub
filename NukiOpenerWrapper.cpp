@@ -145,7 +145,7 @@ void NukiOpenerWrapper::unpair()
 
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
-    _nukiOpener.requestKeyTurnerState(&_keyTurnerState);
+    _nukiOpener.requestOpenerState(&_keyTurnerState);
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
