@@ -19,7 +19,7 @@ public:
 
     void unpair();
 
-    const NukiOpener::KeyTurnerState& keyTurnerState();
+    const NukiOpener::OpenerState& keyTurnerState();
     const bool isPaired();
 
     BleScanner::Scanner* bleScanner();
@@ -52,8 +52,8 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
 
-    NukiOpener::KeyTurnerState _lastKeyTurnerState;
-    NukiOpener::KeyTurnerState _keyTurnerState;
+    NukiOpener::OpenerState _lastKeyTurnerState;
+    NukiOpener::OpenerState _keyTurnerState;
 
     uint32_t _lastAuthId = 0xffff;
 

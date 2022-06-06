@@ -97,7 +97,7 @@ void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned in
     }
 }
 
-void NetworkOpener::publishKeyTurnerState(const NukiOpener::KeyTurnerState& keyTurnerState, const NukiOpener::KeyTurnerState& lastKeyTurnerState)
+void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState)
 {
     char str[50];
 

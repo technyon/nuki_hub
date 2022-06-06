@@ -129,7 +129,7 @@ void NukiOpenerWrapper::update()
         _clearAuthData = false;
     }
 
-    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiOpener::KeyTurnerState));
+    memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiOpener::OpenerState));
 }
 
 void NukiOpenerWrapper::setPin(const uint16_t pin)
@@ -258,7 +258,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *va
     }
 }
 
-const NukiOpener::KeyTurnerState &NukiOpenerWrapper::keyTurnerState()
+const NukiOpener::OpenerState &NukiOpenerWrapper::keyTurnerState()
 {
     return _keyTurnerState;
 }

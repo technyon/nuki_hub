@@ -20,7 +20,7 @@ public:
     void initialize();
     void update();
 
-    void publishKeyTurnerState(const NukiOpener::KeyTurnerState& keyTurnerState, const NukiOpener::KeyTurnerState& lastKeyTurnerState);
+    void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);
     void publishBatteryReport(const NukiOpener::BatteryReport& batteryReport);
