@@ -55,6 +55,7 @@ private:
     void publishUInt(const char* topic, const unsigned int value);
     void publishBool(const char* topic, const bool value);
     void publishString(const char* topic, const char* value);
+    void publishString_P(const char* topic, const char* value);
 
     void buildMqttPath(const char* path, char* outPath);
     void subscribe(const char* path);

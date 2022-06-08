@@ -205,7 +205,7 @@ void Network::update()
 
     if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
     {
-        publishString(mqtt_topic_presence, _presenceCsv);
+        publishString_P(mqtt_topic_presence, _presenceCsv);
         _presenceCsv = nullptr;
     }
 
@@ -394,6 +394,12 @@ void Network::publishString(const char *topic, const char *value)
     _device->mqttClient()->publish(path, value);
 }
 
+void Network::publishString_P(const char *topic, const char *value)
+{
+    char path[200] = {0};
+    buildMqttPath(topic, path);
+    _device->mqttClient()->publish_P(path, value, true);
+}
 
 bool Network::isMqttConnected()
 {
