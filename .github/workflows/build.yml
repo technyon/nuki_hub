@@ -1,0 +1,58 @@
+name: Build using Github Actions
+on: [push, pull_request]
+jobs:
+  build-source:
+    name: Checkout source code and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-serial cmake
+      - name: Install Arduino IDE
+        run: |
+          curl -L https://downloads.arduino.cc/arduino-1.8.12-linux64.tar.xz -o /tmp/arduino-ide.tar.xz
+          tar -xf /tmp/arduino-ide.tar.xz --directory ~/
+          cd ~/arduino*
+          ./install.sh
+      - name: Install Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+      - name: Install ESP32 SDK
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://dl.espressif.com/dl/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+      - name: Install Arduino CMake Toolchain
+        uses: actions/checkout@v2
+        with:
+          repository: technyon/Arduino-CMake-Toolchain
+          path: arduino-toolchain
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake -D CMAKE_TOOLCHAIN_FILE=../arduino-toolchain/Arduino-toolchain.cmake ..
+          echo "# Espressif ESP32 Partition Table" > partitions.csv
+          echo "# Name, Type, SubType, Offset, Size, Flags" >> partitions.csv
+          echo "nvs,data,nvs,0x9000,20K," >> partitions.csv
+          echo "otadata,data,ota,0xe000,8K," >> partitions.csv
+          echo "app0,app,ota_0,0x10000,3M," >> partitions.csv
+          echo "spiffs,data,spiffs,0x310000,960K," >> partitions.csv
+          make
+      - name: Upload artifacts
+        run: |
+          mkdir release
+          cp build/nuki_hub.bin release/
+          cp build/nuki_hub.partitions.bin release/
+          cp $(find ~/.arduino15/packages/esp32/ | grep boot_app0.bin) release/
+          cp $(find ~/.arduino15/packages/esp32/ | grep bootloader_dio_80m.bin) release/
+          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader_dio_80m.bin 0x10000 nuki_hub.bin 0x8000 nuki_hub.partitions.bin" > release/flash.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: release-assets
+          path: release/
+  
