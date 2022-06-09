@@ -153,7 +153,10 @@ void NukiOpenerWrapper::updateKeyTurnerState()
         char lockStateStr[20];
         lockstateToString(_keyTurnerState.lockState, lockStateStr);
         Serial.print(F("Nuki opener state: "));
-        Serial.println(lockStateStr);
+        Serial.println((int)_keyTurnerState.lockState);
+//        Serial.println((int)_keyTurnerState.nukiState);
+//        Serial.println((int)_keyTurnerState.currentTimeYear);
+//        Serial.println((int)_keyTurnerState.ringToOpenTimer);
     }
 
     if(_publishAuthData)
