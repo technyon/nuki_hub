@@ -1,15 +1,35 @@
 #include <WiFi.h>
 #include "WifiDevice.h"
 #include "WiFiManager.h"
+#include "../PreferencesKeys.h"
 
-WifiDevice::WifiDevice(const String& hostname)
-: NetworkDevice(hostname),
-  _mqttClient(_wifiClient)
-{}
+WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
+: NetworkDevice(hostname)
+{
+    String MQTT_CA = _preferences->getString(preference_mqtt_ca);
+    String MQTT_CRT = _preferences->getString(preference_mqtt_crt);
+    String MQTT_KEY = _preferences->getString(preference_mqtt_key);
+    
+    if(MQTT_CA.length() > 0)
+    {
+        _wifiClientSecure = new WiFiClientSecure();
+        _wifiClientSecure->setCACert(MQTT_CA.c_str());
+        if(MQTT_CRT.length() > 0 && MQTT_KEY.length() > 0)
+        {
+            _wifiClientSecure->setCertificate(MQTT_CRT.c_str());
+            _wifiClientSecure->setPrivateKey(MQTT_KEY.c_str());
+        }
+        _mqttClient = new PubSubClient(*_wifiClientSecure);
+    } else
+    {
+        _wifiClient = new WiFiClient();
+        _mqttClient = new PubSubClient(*_wifiClient);
+    }
+}
 
 PubSubClient *WifiDevice::mqttClient()
 {
-    return &_mqttClient;
+    return _mqttClient;
 }
 
 void WifiDevice::initialize()

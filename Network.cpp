@@ -42,11 +42,11 @@ void Network::setupDevice(const NetworkDeviceType hardware)
             break;
         case NetworkDeviceType::WiFi:
             Serial.println(F("Network device: Builtin WiFi"));
-            _device = new WifiDevice(_hostname);
+            _device = new WifiDevice(_hostname, _preferences);
             break;
         default:
             Serial.println(F("Unknown network device type, defaulting to WiFi"));
-            _device = new WifiDevice(_hostname);
+            _device = new WifiDevice(_hostname, _preferences);
             break;
     }
 }
