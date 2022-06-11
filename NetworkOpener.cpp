@@ -131,12 +131,8 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
     {
-        uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
         bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
-        bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
-        publishInt(mqtt_topic_battery_level, level); // percent
         publishBool(mqtt_topic_battery_critical, critical);
-        publishBool(mqtt_topic_battery_charging, charging);
     }
 
     _firstTunerStatePublish = false;
@@ -156,7 +152,6 @@ void NetworkOpener::publishCommandResult(const char *resultStr)
 void NetworkOpener::publishBatteryReport(const NukiOpener::BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
-    publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
 }
 
 void NetworkOpener::publishConfig(const NukiOpener::Config &config)
