@@ -1,16 +1,16 @@
 #pragma once
 
-#include "Network.h"
-#include "NukiConstants.h"
+#include "NukiOpener.h"
+#include "NetworkOpener.h"
+#include "NukiOpenerConstants.h"
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
-#include "NukiLock.h"
 
-class NukiWrapper : public Nuki::SmartlockEventHandler
+class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, Network* network, Preferences* preferences);
-    virtual ~NukiWrapper();
+    NukiOpenerWrapper(const std::string& deviceName,  uint32_t id,  BleScanner::Scanner* scanner, NetworkOpener* network, Preferences* preferences);
+    virtual ~NukiOpenerWrapper();
 
     void initialize();
     void update();
@@ -19,10 +19,12 @@ public:
 
     void unpair();
 
-    const NukiLock::KeyTurnerState& keyTurnerState();
+    const NukiOpener::OpenerState& keyTurnerState();
     const bool isPaired();
 
-    void notify(Nuki::EventType eventType) override;
+    BleScanner::Scanner* bleScanner();
+
+    void notify(NukiOpener::EventType eventType) override;
 
 private:
     static bool onLockActionReceivedCallback(const char* value);
@@ -37,12 +39,12 @@ private:
     void readConfig();
     void readAdvancedConfig();
 
-    NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
+    NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     std::string _deviceName;
-    NukiLock::NukiLock _nukiLock;
+    NukiOpener::NukiOpener _nukiOpener;
     BleScanner::Scanner* _bleScanner;
-    Network* _network;
+    NetworkOpener* _network;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
@@ -50,16 +52,16 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
 
-    NukiLock::KeyTurnerState _lastKeyTurnerState;
-    NukiLock::KeyTurnerState _keyTurnerState;
+    NukiOpener::OpenerState _lastKeyTurnerState;
+    NukiOpener::OpenerState _keyTurnerState;
 
     uint32_t _lastAuthId = 0xffff;
 
-    NukiLock::BatteryReport _batteryReport;
-    NukiLock::BatteryReport _lastBatteryReport;
+    NukiOpener::BatteryReport _batteryReport;
+    NukiOpener::BatteryReport _lastBatteryReport;
 
-    NukiLock::Config _nukiConfig = {0};
-    NukiLock::AdvancedConfig _nukiAdvancedConfig = {0};
+    NukiOpener::Config _nukiConfig = {0};
+    NukiOpener::AdvancedConfig _nukiAdvancedConfig = {0};
     bool _nukiConfigValid = false;
     bool _nukiAdvancedConfigValid = false;
 
@@ -69,5 +71,5 @@ private:
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _nextPairTs = 0;
-    NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
+    NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
 };

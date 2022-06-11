@@ -74,7 +74,7 @@ void Network::initialize()
         _preferences->putInt(preference_mqtt_broker_port, port);
     }
 
-    String mqttPath = _preferences->getString(preference_mqtt_path);
+    String mqttPath = _preferences->getString(preference_mqtt_lock_path);
     if(mqttPath.length() > 0)
     {
         size_t len = mqttPath.length();
@@ -86,7 +86,7 @@ void Network::initialize()
     else
     {
         strcpy(_mqttPath, "nuki");
-        _preferences->putString(preference_mqtt_path, _mqttPath);
+        _preferences->putString(preference_mqtt_lock_path, _mqttPath);
     }
 
     String mqttUser = _preferences->getString(preference_mqtt_user);
@@ -205,7 +205,7 @@ void Network::update()
 
     if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
     {
-        publishString(mqtt_topic_presence, _presenceCsv);
+        publishString_P(mqtt_topic_presence, _presenceCsv);
         _presenceCsv = nullptr;
     }
 
@@ -251,13 +251,18 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
             }
         }
     }
+
+    if(_mqttTopicReceivedForwardCallback != nullptr)
+    {
+        _mqttTopicReceivedForwardCallback(topic, payload, length);
+    }
 }
 
-void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, const Nuki::KeyTurnerState& lastKeyTurnerState)
+void Network::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState)
 {
     char str[50];
 
-    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != Nuki::LockState::Undefined)
+    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != NukiLock::LockState::Undefined)
     {
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
@@ -274,25 +279,21 @@ void Network::publishKeyTurnerState(const Nuki::KeyTurnerState& keyTurnerState, 
     if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));
-        completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
+        NukiLock::completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
         publishString(mqtt_topic_lock_completionStatus, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
     {
         memset(&str, 0, sizeof(str));
-        doorSensorStateToString(keyTurnerState.doorSensorState, str);
+        NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
         publishString(mqtt_topic_door_sensor_state, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
     {
-        uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
         bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
-        bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
-        publishInt(mqtt_topic_battery_level, level); // percent
         publishBool(mqtt_topic_battery_critical, critical);
-        publishBool(mqtt_topic_battery_charging, charging);
     }
 
     _firstTunerStatePublish = false;
@@ -309,7 +310,7 @@ void Network::publishCommandResult(const char *resultStr)
     publishString(mqtt_topic_lock_action_command_result, resultStr);
 }
 
-void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
+void Network::publishBatteryReport(const NukiLock::BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
@@ -317,14 +318,14 @@ void Network::publishBatteryReport(const Nuki::BatteryReport& batteryReport)
     publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
 }
 
-void Network::publishConfig(const Nuki::Config &config)
+void Network::publishConfig(const NukiLock::Config &config)
 {
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
 }
 
-void Network::publishAdvancedConfig(const Nuki::AdvancedConfig &config)
+void Network::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 {
     publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
@@ -343,6 +344,11 @@ void Network::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(c
 void Network::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
+}
+
+void Network::setMqttDataReceivedForwardCallback(void (*callback)(char *, uint8_t *, unsigned int))
+{
+    _mqttTopicReceivedForwardCallback = callback;
 }
 
 void Network::publishFloat(const char* topic, const float value, const uint8_t precision)
@@ -388,6 +394,12 @@ void Network::publishString(const char *topic, const char *value)
     _device->mqttClient()->publish(path, value);
 }
 
+void Network::publishString_P(const char *topic, const char *value)
+{
+    char path[200] = {0};
+    buildMqttPath(topic, path);
+    _device->mqttClient()->publish_P(path, value, true);
+}
 
 bool Network::isMqttConnected()
 {
@@ -433,4 +445,9 @@ bool Network::comparePrefixedPath(const char *fullPath, const char *subPath)
     char prefixedPath[500];
     buildMqttPath(subPath, prefixedPath);
     return strcmp(fullPath, prefixedPath) == 0;
+}
+
+NetworkDevice *Network::device()
+{
+    return _device;
 }

@@ -7,7 +7,7 @@ project(nuki_hub CXX)
 # ARDUHAL_LOG_LEVEL_NONE, define ARDUHAL_LOG_LEVEL_ERROR, define ARDUHAL_LOG_LEVEL_WARN, define ARDUHAL_LOG_LEVEL_INFO,
 # define ARDUHAL_LOG_LEVEL_DEBUG, define ARDUHAL_LOG_LEVEL_VERBOSE
 
-set(LOG_LEVEL ARDUHAL_LOG_LEVEL_NONE)
+set(LOG_LEVEL ARDUHAL_LOG_LEVEL_DEBUG)
 
 include_directories(${PROJECT_NAME}
         PRIVATE
@@ -25,10 +25,12 @@ include_directories(${PROJECT_NAME}
 file(GLOB SRCFILES
         Pins.h
         Network.cpp
+        NetworkOpener.cpp
         networkDevices/NetworkDevice.h
         networkDevices/WifiDevice.cpp
         networkDevices/W5500Device.cpp
         NukiWrapper.cpp
+        NukiOpenerWrapper.cpp
         MqttTopics.h
         WebCfgServer.cpp
         PresenceDetection.cpp
@@ -41,9 +43,16 @@ file(GLOB SRCFILES
         lib/WiFiManager/WiFiManager.cpp
         lib/Crc16/Crc16.h
         lib/nuki_ble/src/NukiBle.cpp
+        lib/nuki_ble/src/NukiBle.hpp
+        lib/nuki_ble/src/NukiLock.cpp
+        lib/nuki_ble/src/NukiOpener.cpp
         lib/nuki_ble/src/NukiConstants.h
+        lib/nuki_ble/src/NukiOpenerConstants.h
+        lib/nuki_ble/src/NukiLockConstants.h
         lib/nuki_ble/src/NukiDataTypes.h
         lib/nuki_ble/src/NukiUtils.cpp
+        lib/nuki_ble/src/NukiLockUtils.cpp
+        lib/nuki_ble/src/NukiOpenerUtils.cpp
         lib/BleScanner/src/BleInterfaces.h
         lib/BleScanner/src/BleScanner.cpp
         lib/pubsubclient/src/PubSubClient.cpp
@@ -61,7 +70,7 @@ add_executable(${PROJECT_NAME}
         main.cpp
         ${SRCFILES}
         ${SRCFILESREC}
-)
+        )
 
 target_compile_definitions(${PROJECT_NAME}
         PRIVATE

@@ -4,6 +4,7 @@
 #include <WebServer.h>
 #include "NukiWrapper.h"
 #include "Network.h"
+#include "NukiOpenerWrapper.h"
 
 enum class TokenType
 {
@@ -20,7 +21,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer(NukiWrapper* nuki, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
+    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
     ~WebCfgServer() = default;
 
     void initialize();
@@ -31,9 +32,10 @@ private:
     bool processArgs(String& message);
     void buildHtml(String& response);
     void buildCredHtml(String& response);
+    void buildMqttConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
-    void processUnpair();
+    void processUnpair(bool opener);
 
     void buildHtmlHeader(String& response);
     void printInputField(String& response, const char* token, const char* description, const char* value, const size_t maxLength, const bool isPassword = false);
@@ -47,6 +49,7 @@ private:
 
     WebServer _server;
     NukiWrapper* _nuki;
+    NukiOpenerWrapper* _nukiOpener;
     Network* _network;
     Preferences* _preferences;
 

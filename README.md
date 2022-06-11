@@ -26,6 +26,8 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 
 ## MQTT Interface
 
+### Lock
+
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
 - lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
@@ -35,7 +37,6 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 - lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
 
-- battery/voltage: Reports the current battery voltage in Volts.
 - battery/level: Battery level in percent
 - battery/critical: 1 if battery level is critical, otherwise 0
 - battery/charging: 1 if charging, otherwise 0
@@ -43,6 +44,21 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 - battery/drain: The drain of the last lock action in Milliwattseconds (mWs)
 - battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A)
 
+### Opener
+
+- lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3
+- lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, open, opening, uncalibrated
+- lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
+- lock/completionStatus: Status of the last action as reported by NUKI lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
+- lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
+- lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
+- lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
+- lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
+
+- battery/voltage: Reports the current battery voltage in Volts.
+- battery/critical: 1 if battery level is critical, otherwise 0
+
+### Misc
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
 
 ## Connecting via LAN (Optional)
