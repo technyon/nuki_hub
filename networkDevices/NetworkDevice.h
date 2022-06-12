@@ -20,5 +20,6 @@ public:
     virtual bool isConnected() = 0;
 
 protected:
+    const uint16_t _mqttMaxBufferSize = 16384;
     const String _hostname;
 };

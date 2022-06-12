@@ -205,7 +205,12 @@ void Network::update()
 
     if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
     {
-        publishString_P(mqtt_topic_presence, _presenceCsv);
+        bool success = publishString(mqtt_topic_presence, _presenceCsv);
+        if(!success)
+        {
+            Serial.println(F("Failed to publish presence CSV data."));
+            Serial.println(_presenceCsv);
+        }
         _presenceCsv = nullptr;
     }
 
@@ -387,18 +392,11 @@ void Network::publishBool(const char *topic, const bool value)
     _device->mqttClient()->publish(path, str);
 }
 
-void Network::publishString(const char *topic, const char *value)
+bool Network::publishString(const char *topic, const char *value)
 {
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _device->mqttClient()->publish(path, value);
-}
-
-void Network::publishString_P(const char *topic, const char *value)
-{
-    char path[200] = {0};
-    buildMqttPath(topic, path);
-    _device->mqttClient()->publish_P(path, value, true);
+    return _device->mqttClient()->publish(path, value);
 }
 
 bool Network::isMqttConnected()

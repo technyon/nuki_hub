@@ -47,6 +47,8 @@ void WifiDevice::initialize()
         Serial.print(F("WiFi connected: "));
         Serial.println(WiFi.localIP().toString());
     }
+
+    _mqttClient.setBufferSize(_mqttMaxBufferSize);
 }
 
 void WifiDevice::reconfigure()
