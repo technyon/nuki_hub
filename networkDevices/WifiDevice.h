@@ -6,10 +6,6 @@
 #include "NetworkDevice.h"
 #include "../SpiffsCookie.h"
 
-#define TLS_CA_MAX_SIZE 1800
-#define TLS_CERT_MAX_SIZE 1800
-#define TLS_KEY_MAX_SIZE 1800
-
 class WifiDevice : public NetworkDevice
 {
 public:
