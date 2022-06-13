@@ -662,21 +662,10 @@ void WebCfgServer::handleOtaUpload()
             filename = "/" + filename;
         }
         Serial.print("handleFileUpload Name: "); Serial.println(filename);
-//        fsUploadFile = FILESYSTEM.open(filename, "w");
-        filename = String();
     } else if (upload.status == UPLOAD_FILE_WRITE) {
-        //DBG_OUTPUT_PORT.print("handleFileUpload Data: "); DBG_OUTPUT_PORT.println(upload.currentSize);
-//        if (fsUploadFile) {
-//            fsUploadFile.write(upload.buf, upload.currentSize);
-//        }
-        for(int i=0; i < upload.currentSize; i++)
-        {
-            Serial.print((char)upload.buf[i]);
-        }
+        Serial.println(upload.currentSize);
+        _ota.updateFirmware(*upload.buf, upload.currentSize);
     } else if (upload.status == UPLOAD_FILE_END) {
-//        if (fsUploadFile) {
-//            fsUploadFile.close();
-//        }
         Serial.println();
         Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
     }

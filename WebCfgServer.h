@@ -5,6 +5,7 @@
 #include "NukiWrapper.h"
 #include "Network.h"
 #include "NukiOpenerWrapper.h"
+#include "Ota.h"
 
 enum class TokenType
 {
@@ -54,6 +55,7 @@ private:
     NukiOpenerWrapper* _nukiOpener;
     Network* _network;
     Preferences* _preferences;
+    Ota _ota;
 
     bool _hasCredentials = false;
     char _credUser[20] = {0};
