@@ -74,7 +74,7 @@ void WifiDevice::initialize()
         Serial.println(WiFi.localIP().toString());
     }
 
-    _mqttClient.setBufferSize(_mqttMaxBufferSize);
+    _mqttClient->setBufferSize(_mqttMaxBufferSize);
 }
 
 void WifiDevice::reconfigure()
