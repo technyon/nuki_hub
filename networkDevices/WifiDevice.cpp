@@ -13,14 +13,14 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
     if(caLength > 1) // length is 1 when empty
     {
         Serial.println(F("MQTT over TLS."));
-        Serial.print(_ca);
+        Serial.println(_ca);
         _wifiClientSecure = new WiFiClientSecure();
         _wifiClientSecure->setCACert(_ca);
         if(crtLength > 1 && keyLength > 1) // length is 1 when empty
         {
             Serial.println(F("MQTT with client certificate."));
-            Serial.print(_cert);
-            Serial.print(_key);
+            Serial.println(_cert);
+            Serial.println(_key);
             _wifiClientSecure->setCertificate(_cert);
             _wifiClientSecure->setPrivateKey(_key);
         }
