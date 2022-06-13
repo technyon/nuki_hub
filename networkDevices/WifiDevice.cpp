@@ -6,22 +6,28 @@
 WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
 : NetworkDevice(hostname)
 {
-    String MQTT_CA = _preferences->getString(preference_mqtt_ca);
-    String MQTT_CRT = _preferences->getString(preference_mqtt_crt);
-    String MQTT_KEY = _preferences->getString(preference_mqtt_key);
-    
-    if(MQTT_CA.length() > 0)
+    size_t caLength = _preferences->getString(preference_mqtt_ca,_ca,TLS_CA_MAX_SIZE);
+    size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
+    size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
+
+    if(caLength > 1) // length is 1 when empty
     {
+        Serial.println(F("MQTT over TLS."));
+        Serial.print(_ca);
         _wifiClientSecure = new WiFiClientSecure();
-        _wifiClientSecure->setCACert(MQTT_CA.c_str());
-        if(MQTT_CRT.length() > 0 && MQTT_KEY.length() > 0)
+        _wifiClientSecure->setCACert(_ca);
+        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
         {
-            _wifiClientSecure->setCertificate(MQTT_CRT.c_str());
-            _wifiClientSecure->setPrivateKey(MQTT_KEY.c_str());
+            Serial.println(F("MQTT with client certificate."));
+            Serial.print(_cert);
+            Serial.print(_key);
+            _wifiClientSecure->setCertificate(_cert);
+            _wifiClientSecure->setPrivateKey(_key);
         }
         _mqttClient = new PubSubClient(*_wifiClientSecure);
     } else
     {
+        Serial.println(F("MQTT without TLS."));
         _wifiClient = new WiFiClient();
         _mqttClient = new PubSubClient(*_wifiClient);
     }
