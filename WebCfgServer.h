@@ -32,6 +32,7 @@ private:
     bool processArgs(String& message);
     void buildHtml(String& response);
     void buildCredHtml(String& response);
+    void buildOtaHtml(String& response);
     void buildMqttConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
@@ -46,6 +47,7 @@ private:
 
     String generateConfirmCode();
     void waitAndProcess(const bool blocking, const uint32_t duration);
+    void handleOtaUpload();
 
     WebServer _server;
     NukiWrapper* _nuki;

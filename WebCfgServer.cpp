@@ -112,6 +112,25 @@ void WebCfgServer::initialize()
             waitAndProcess(false, 1000);
         }
     });
+    _server.on("/ota", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildOtaHtml(response);
+        _server.send(200, "text/html", response);
+    });
+    _server.on("/uploadota", HTTP_POST, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
+        String response = "ok";
+
+        _server.send(200, "text/html", response);
+    }, [&]() {
+        handleOtaUpload();
+    });
 
     _server.begin();
 }
@@ -351,6 +370,11 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
+    response.concat("<BR><BR><h3>OTA</h3>");
+    response.concat("<form method=\"get\" action=\"/ota\">");
+    response.concat("<button type=\"submit\">Open</button>");
+    response.concat("</form>");
+
     if(_allowRestartToPortal)
     {
         response.concat("<br><br><h3>WiFi</h3>");
@@ -423,8 +447,17 @@ void WebCfgServer::buildCredHtml(String &response)
     }
 
 
-    response.concat("</BODY>\n");
-    response.concat("</HTML>\n");
+}
+
+void WebCfgServer::buildOtaHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\">");
+    response.concat("<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />");
+    response.concat("Choose a file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br />");
+    response.concat("<input type=\"submit\" value=\"Upload File\" /></form>");
+    response.concat("</BODY>\n</HTML>\n");
 }
 
 void WebCfgServer::buildMqttConfigHtml(String &response)
@@ -614,6 +647,38 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
         {
             vTaskDelay( 50 / portTICK_PERIOD_MS);
         }
+    }
+}
+
+void WebCfgServer::handleOtaUpload()
+{
+    if (_server.uri() != "/uploadota") {
+        return;
+    }
+    HTTPUpload& upload = _server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+        String filename = upload.filename;
+        if (!filename.startsWith("/")) {
+            filename = "/" + filename;
+        }
+        Serial.print("handleFileUpload Name: "); Serial.println(filename);
+//        fsUploadFile = FILESYSTEM.open(filename, "w");
+        filename = String();
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+        //DBG_OUTPUT_PORT.print("handleFileUpload Data: "); DBG_OUTPUT_PORT.println(upload.currentSize);
+//        if (fsUploadFile) {
+//            fsUploadFile.write(upload.buf, upload.currentSize);
+//        }
+        for(int i=0; i < upload.currentSize; i++)
+        {
+            Serial.print((char)upload.buf[i]);
+        }
+    } else if (upload.status == UPLOAD_FILE_END) {
+//        if (fsUploadFile) {
+//            fsUploadFile.close();
+//        }
+        Serial.println();
+        Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
     }
 }
 
