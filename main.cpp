@@ -30,7 +30,9 @@ void networkTask(void *pvParameters)
         network->update();
         networkOpener->update();
         webCfgServer->update();
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        delay(200);
+
+//        Serial.print(F("#### ")); Serial.println(uxTaskGetStackHighWaterMark(NULL));
     }
 }
 
@@ -39,13 +41,13 @@ void nukiTask(void *pvParameters)
     while(true)
     {
         bleScanner->update();
-        vTaskDelay( 20 / portTICK_PERIOD_MS);
+        delay(20);
 
         bool needsPairing = (lockEnabled && !nuki->isPaired()) || (openerEnabled && !nukiOpener->isPaired());
 
         if (needsPairing)
         {
-            vTaskDelay( 5000 / portTICK_PERIOD_MS);
+            delay(5000);
         }
 
         if(lockEnabled)
@@ -71,7 +73,7 @@ void checkMillisTask(void *pvParameters)
 {
     while(true)
     {
-        vTaskDelay( 60000 / portTICK_PERIOD_MS);
+        delay(60000);
         // millis() is about to overflow. Restart device to prevent problems with overflow
         if(millis() > (2^32) - 5 * 60000)
         {
@@ -87,9 +89,9 @@ void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
-    xTaskCreate(networkTask, "ntw", 65536, NULL, 3, NULL);
-    xTaskCreate(nukiTask, "nuki", 8192, NULL, 2, NULL);
-    xTaskCreate(presenceDetectionTask, "prdet", 1024, NULL, 5, NULL);
+    xTaskCreate(networkTask, "ntw", 8192, NULL, 3, NULL);
+    xTaskCreate(nukiTask, "nuki", 4096, NULL, 2, NULL);
+    xTaskCreate(presenceDetectionTask, "prdet", 768, NULL, 5, NULL);
     xTaskCreate(checkMillisTask, "mlchk", 512, NULL, 1, NULL);
 }
 
