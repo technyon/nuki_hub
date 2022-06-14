@@ -7,7 +7,7 @@
 class Ota
 {
 public:
-    void updateFirmware(uint8_t buf, size_t size);
+    void updateFirmware(uint8_t* buf, size_t size);
 
 private:
     bool _updateFlag = false;

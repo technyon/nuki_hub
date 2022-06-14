@@ -61,6 +61,7 @@ private:
     char _credUser[20] = {0};
     char _credPassword[20] = {0};
     bool _allowRestartToPortal = false;
+    uint32_t _transferredSize = 0;
 
     String _confirmCode = "----";
 

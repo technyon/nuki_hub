@@ -125,7 +125,8 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
 
-        String response = "ok";
+        String response = "";
+        buildConfirmHtml(response, "Initiating Over-the-air Update. This will take a moment, please be patient.", 35);
 
         _server.send(200, "text/html", response);
     }, [&]() {
@@ -463,7 +464,7 @@ void WebCfgServer::buildOtaHtml(String &response)
 void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     response.concat("<FORM ACTION=method=get >");
-    response.concat("<h3>MQTT COnfiguration</h3>");
+    response.concat("<h3>MQTT Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
@@ -655,6 +656,9 @@ void WebCfgServer::handleOtaUpload()
     if (_server.uri() != "/uploadota") {
         return;
     }
+
+    esp_task_wdt_init(30, false);
+
     HTTPUpload& upload = _server.upload();
     if (upload.status == UPLOAD_FILE_START) {
         String filename = upload.filename;
@@ -663,8 +667,9 @@ void WebCfgServer::handleOtaUpload()
         }
         Serial.print("handleFileUpload Name: "); Serial.println(filename);
     } else if (upload.status == UPLOAD_FILE_WRITE) {
-        Serial.println(upload.currentSize);
-        _ota.updateFirmware(*upload.buf, upload.currentSize);
+        _transferredSize = _transferredSize + upload.currentSize;
+        Serial.println(_transferredSize);
+        _ota.updateFirmware(upload.buf, upload.currentSize);
     } else if (upload.status == UPLOAD_FILE_END) {
         Serial.println();
         Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
