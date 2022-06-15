@@ -13,6 +13,7 @@ public:
     virtual void initialize();
     virtual bool reconnect();
     virtual void reconfigure();
+    virtual void printError();
 
     virtual void update();
 

@@ -84,6 +84,18 @@ void WifiDevice::reconfigure()
     ESP.restart();
 }
 
+void WifiDevice::printError()
+{
+    if(_wifiClientSecure != nullptr)
+    {
+        char lastError[100];
+        _wifiClientSecure->lastError(lastError,100);
+        Serial.println(lastError);
+    }
+    Serial.print(F("Free Heap: "));
+    Serial.println(ESP.getFreeHeap());
+}
+
 bool WifiDevice::isConnected()
 {
     return WiFi.isConnected();

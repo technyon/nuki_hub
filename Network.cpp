@@ -161,6 +161,8 @@ bool Network::reconnect()
         {
             Serial.print(F("MQTT connect failed, rc="));
             Serial.println(_device->mqttClient()->state());
+            _device->printError();
+            _device->mqttClient()->disconnect();
             _mqttConnected = false;
             _nextReconnect = millis() + 5000;
         }

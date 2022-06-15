@@ -14,6 +14,7 @@ public:
     virtual void initialize();
     virtual void reconfigure();
     virtual bool reconnect();
+    virtual void printError();
 
     virtual void update();
 
