@@ -112,6 +112,27 @@ void WebCfgServer::initialize()
             waitAndProcess(false, 1000);
         }
     });
+    _server.on("/ota", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildOtaHtml(response);
+        _server.send(200, "text/html", response);
+    });
+    _server.on("/uploadota", HTTP_POST, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
+        _server.send(200, "text/html", "");
+    }, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
+        handleOtaUpload();
+    });
 
     _server.begin();
 }
@@ -366,6 +387,11 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
+    response.concat("<BR><BR><h3>Firmware update</h3>");
+    response.concat("<form method=\"get\" action=\"/ota\">");
+    response.concat("<button type=\"submit\">Open</button>");
+    response.concat("</form>");
+
     if(_allowRestartToPortal)
     {
         response.concat("<br><br><h3>WiFi</h3>");
@@ -438,14 +464,32 @@ void WebCfgServer::buildCredHtml(String &response)
     }
 
 
-    response.concat("</BODY>\n");
-    response.concat("</HTML>\n");
+}
+
+void WebCfgServer::buildOtaHtml(String &response)
+{
+    buildHtmlHeader(response);
+    response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose a file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+    response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
+    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about a minute, please be patient.<br>You will be forwarwed automatically when the update is complete.</div>");
+    response.concat("<script type=\"text/javascript\">");
+    response.concat("window.addEventListener('load', function () {");
+    response.concat("	var button = document.getElementById(\"submitbtn\");");
+    response.concat("	button.addEventListener('click',hideshow,false);");
+    response.concat("	function hideshow() {");
+    response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
+    response.concat("		setTimeout(\"location.href = '/';\",60000);");
+    response.concat("	}");
+    response.concat("});");
+    response.concat("</script>");
+    response.concat("</BODY>\n</HTML>\n");
 }
 
 void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     response.concat("<FORM ACTION=method=get >");
-    response.concat("<h3>MQTT COnfiguration</h3>");
+    response.concat("<h3>MQTT Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
@@ -658,6 +702,31 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
         {
             vTaskDelay( 50 / portTICK_PERIOD_MS);
         }
+    }
+}
+
+void WebCfgServer::handleOtaUpload()
+{
+    if (_server.uri() != "/uploadota") {
+        return;
+    }
+
+    esp_task_wdt_init(30, false);
+
+    HTTPUpload& upload = _server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+        String filename = upload.filename;
+        if (!filename.startsWith("/")) {
+            filename = "/" + filename;
+        }
+        Serial.print("handleFileUpload Name: "); Serial.println(filename);
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+        _transferredSize = _transferredSize + upload.currentSize;
+        Serial.println(_transferredSize);
+        _ota.updateFirmware(upload.buf, upload.currentSize);
+    } else if (upload.status == UPLOAD_FILE_END) {
+        Serial.println();
+        Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
     }
 }
 

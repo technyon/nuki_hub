@@ -38,10 +38,11 @@ jobs:
           cmake -D CMAKE_TOOLCHAIN_FILE=../arduino-toolchain/Arduino-toolchain.cmake ..
           echo "# Espressif ESP32 Partition Table" > partitions.csv
           echo "# Name, Type, SubType, Offset, Size, Flags" >> partitions.csv
-          echo "nvs,data,nvs,0x9000,20K," >> partitions.csv
-          echo "otadata,data,ota,0xe000,8K," >> partitions.csv
-          echo "app0,app,ota_0,0x10000,3M," >> partitions.csv
-          echo "spiffs,data,spiffs,0x310000,960K," >> partitions.csv
+          echo "nvs,      data, nvs,     0x9000,  0x5000," >> partitions.csv
+          echo "otadata,  data, ota,     0xe000,  0x2000," >> partitions.csv
+          echo "app0,     app,  ota_0,   0x10000, 0x1E0000," >> partitions.csv
+          echo "app1,     app,  ota_1,   0x1F0000,0x1E0000," >> partitions.csv
+          echo "spiffs,   data, spiffs,  0x3D0000,0x30000," >> partitions.csv
           make
       - name: Upload artifacts
         run: |

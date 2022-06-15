@@ -37,6 +37,7 @@ file(GLOB SRCFILES
         NukiWrapper.cpp
         NukiOpenerWrapper.cpp
         MqttTopics.h
+        Ota.cpp
         WebCfgServer.cpp
         PresenceDetection.cpp
         PreferencesKeys.h
