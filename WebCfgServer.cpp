@@ -125,11 +125,12 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
 
-        String response = "";
-        buildConfirmHtml(response, "Initiating Over-the-air Update. This will take a moment, please be patient.", 35);
-
-        _server.send(200, "text/html", response);
+        _server.send(200, "text/html", "");
     }, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
         handleOtaUpload();
     });
 
@@ -371,7 +372,7 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
-    response.concat("<BR><BR><h3>OTA</h3>");
+    response.concat("<BR><BR><h3>Firmware update</h3>");
     response.concat("<form method=\"get\" action=\"/ota\">");
     response.concat("<button type=\"submit\">Open</button>");
     response.concat("</form>");
@@ -453,11 +454,20 @@ void WebCfgServer::buildCredHtml(String &response)
 void WebCfgServer::buildOtaHtml(String &response)
 {
     buildHtmlHeader(response);
-
-    response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\">");
-    response.concat("<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />");
-    response.concat("Choose a file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br />");
-    response.concat("<input type=\"submit\" value=\"Upload File\" /></form>");
+    response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose a file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+    response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
+    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about a minute, please be patient.<br>You will be forwarwed automatically when the update is complete.</div>");
+    response.concat("<script type=\"text/javascript\">");
+    response.concat("window.addEventListener('load', function () {");
+    response.concat("	var button = document.getElementById(\"submitbtn\");");
+    response.concat("	button.addEventListener('click',hideshow,false);");
+    response.concat("	function hideshow() {");
+    response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
+    response.concat("		setTimeout(\"location.href = '/';\",60000);");
+    response.concat("	}");
+    response.concat("});");
+    response.concat("</script>");
     response.concat("</BODY>\n</HTML>\n");
 }
 
