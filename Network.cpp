@@ -42,11 +42,11 @@ void Network::setupDevice(const NetworkDeviceType hardware)
             break;
         case NetworkDeviceType::WiFi:
             Serial.println(F("Network device: Builtin WiFi"));
-            _device = new WifiDevice(_hostname);
+            _device = new WifiDevice(_hostname, _preferences);
             break;
         default:
             Serial.println(F("Unknown network device type, defaulting to WiFi"));
-            _device = new WifiDevice(_hostname);
+            _device = new WifiDevice(_hostname, _preferences);
             break;
     }
 }
@@ -161,6 +161,8 @@ bool Network::reconnect()
         {
             Serial.print(F("MQTT connect failed, rc="));
             Serial.println(_device->mqttClient()->state());
+            _device->printError();
+            _device->mqttClient()->disconnect();
             _mqttConnected = false;
             _nextReconnect = millis() + 5000;
         }
