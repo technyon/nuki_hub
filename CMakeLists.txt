@@ -9,6 +9,11 @@ project(nuki_hub CXX)
 
 set(LOG_LEVEL ARDUHAL_LOG_LEVEL_NONE)
 
+# Length of char arrays to store certificates for MQTTS
+add_compile_definitions(TLS_CA_MAX_SIZE=1500)
+add_compile_definitions(TLS_CERT_MAX_SIZE=1500)
+add_compile_definitions(TLS_KEY_MAX_SIZE=1800)
+
 include_directories(${PROJECT_NAME}
         PRIVATE
         lib/Crc16
@@ -83,6 +88,7 @@ target_link_arduino_libraries(${PROJECT_NAME}
     PRIVATE
         core
         WiFi
+        WiFiClientSecure
         Update
 #        WebServer
         DNSServer

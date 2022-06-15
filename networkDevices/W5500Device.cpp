@@ -117,6 +117,13 @@ void W5500Device::resetDevice()
     nwDelay(1500);
 }
 
+
+void W5500Device::printError()
+{
+    Serial.print(F("Free Heap: "));
+    Serial.println(ESP.getFreeHeap());
+}
+
 PubSubClient *W5500Device::mqttClient()
 {
     return _mqttClient;

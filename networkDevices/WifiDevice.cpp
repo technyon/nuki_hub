@@ -1,15 +1,41 @@
 #include <WiFi.h>
 #include "WifiDevice.h"
 #include "WiFiManager.h"
+#include "../PreferencesKeys.h"
 
-WifiDevice::WifiDevice(const String& hostname)
-: NetworkDevice(hostname),
-  _mqttClient(_wifiClient)
-{}
+WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
+: NetworkDevice(hostname)
+{
+    size_t caLength = _preferences->getString(preference_mqtt_ca,_ca,TLS_CA_MAX_SIZE);
+    size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
+    size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
+
+    if(caLength > 1) // length is 1 when empty
+    {
+        Serial.println(F("MQTT over TLS."));
+        Serial.println(_ca);
+        _wifiClientSecure = new WiFiClientSecure();
+        _wifiClientSecure->setCACert(_ca);
+        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
+        {
+            Serial.println(F("MQTT with client certificate."));
+            Serial.println(_cert);
+            Serial.println(_key);
+            _wifiClientSecure->setCertificate(_cert);
+            _wifiClientSecure->setPrivateKey(_key);
+        }
+        _mqttClient = new PubSubClient(*_wifiClientSecure);
+    } else
+    {
+        Serial.println(F("MQTT without TLS."));
+        _wifiClient = new WiFiClient();
+        _mqttClient = new PubSubClient(*_wifiClient);
+    }
+}
 
 PubSubClient *WifiDevice::mqttClient()
 {
-    return &_mqttClient;
+    return _mqttClient;
 }
 
 void WifiDevice::initialize()
@@ -48,7 +74,7 @@ void WifiDevice::initialize()
         Serial.println(WiFi.localIP().toString());
     }
 
-    _mqttClient.setBufferSize(_mqttMaxBufferSize);
+    _mqttClient->setBufferSize(_mqttMaxBufferSize);
 }
 
 void WifiDevice::reconfigure()
@@ -56,6 +82,18 @@ void WifiDevice::reconfigure()
     _cookie.set();
     delay(200);
     ESP.restart();
+}
+
+void WifiDevice::printError()
+{
+    if(_wifiClientSecure != nullptr)
+    {
+        char lastError[100];
+        _wifiClientSecure->lastError(lastError,100);
+        Serial.println(lastError);
+    }
+    Serial.print(F("Free Heap: "));
+    Serial.println(ESP.getFreeHeap());
 }
 
 bool WifiDevice::isConnected()
