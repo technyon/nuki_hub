@@ -488,6 +488,7 @@ void WebCfgServer::buildOtaHtml(String &response)
 
 void WebCfgServer::buildMqttConfigHtml(String &response)
 {
+    buildHtmlHeader(response);
     response.concat("<FORM ACTION=method=get >");
     response.concat("<h3>MQTT Configuration</h3>");
     response.concat("<table>");
@@ -579,6 +580,8 @@ void WebCfgServer::buildHtmlHeader(String &response)
 {
     response.concat("<HTML>\n");
     response.concat("<HEAD>\n");
+    response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
+    response.concat("<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/open-fonts@1.1.1/fonts/inter.min.css'><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css'>\n");
     response.concat("<TITLE>NUKI Hub</TITLE>\n");
     response.concat("</HEAD>\n");
     response.concat("<BODY>\n");
