@@ -716,6 +716,13 @@ void WebCfgServer::handleOtaUpload()
     esp_task_wdt_init(30, false);
 
     HTTPUpload& upload = _server.upload();
+
+    if(upload.filename == "")
+    {
+        Serial.println("Invalid file for OTA upload");
+        return;
+    }
+
     if (upload.status == UPLOAD_FILE_START) {
         String filename = upload.filename;
         if (!filename.startsWith("/")) {
