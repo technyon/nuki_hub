@@ -326,29 +326,24 @@ void WebCfgServer::buildHtml(String& response)
 
     response.concat("<br><h3>Info</h3>\n");
 
-    String version = "&nbsp;";
-    version.concat(nuki_hub_version);
+    String version = nuki_hub_version;
 
     response.concat("<table>");
 
-    printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "&nbsp;Yes" : "&nbsp;No");
+    printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "Yes" : "No");
     if(_nuki != nullptr)
     {
-        String lockState = "&nbsp;";
         char lockstateArr[20];
         NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
-        lockState.concat(lockstateArr);
-        printParameter(response, "NUKI Lock paired", _nuki->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
-        printParameter(response, "NUKI Lock state", lockState.c_str());
+        printParameter(response, "NUKI Lock paired", _nuki->isPaired() ? "Yes" : "No");
+        printParameter(response, "NUKI Lock state", lockstateArr);
     }
     if(_nukiOpener != nullptr)
     {
-        String lockState = "&nbsp;";
         char lockstateArr[20];
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
-        lockState.concat(lockstateArr);
-        printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? "&nbsp;Yes" : "&nbsp;No");
-        printParameter(response, "NUKI Opener state", lockState.c_str());
+        printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? "Yes" : "No");
+        printParameter(response, "NUKI Opener state", lockstateArr);
     }
     printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
@@ -358,7 +353,7 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
-    response.concat("<FORM ACTION=method=get >");
+    response.concat("<FORM ACTION=method=get>");
 
     response.concat("<br><h3>Configuration</h3>");
     response.concat("<table>");
@@ -400,8 +395,7 @@ void WebCfgServer::buildHtml(String& response)
     }
     response.concat("</form>");
 
-    response.concat("</BODY>\n");
-    response.concat("</HTML>\n");
+    response.concat("</BODY></HTML>");
 }
 
 
@@ -578,13 +572,10 @@ void WebCfgServer::processUnpair(bool opener)
 
 void WebCfgServer::buildHtmlHeader(String &response)
 {
-    response.concat("<HTML>\n");
-    response.concat("<HEAD>\n");
+    response.concat("<HTML><HEAD>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    response.concat("<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/open-fonts@1.1.1/fonts/inter.min.css'><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css'>\n");
-    response.concat("<TITLE>NUKI Hub</TITLE>\n");
-    response.concat("</HEAD>\n");
-    response.concat("<BODY>\n");
+    response.concat("<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/open-fonts@1.1.1/fonts/inter.min.css'><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css'>");
+    response.concat("<TITLE>NUKI Hub</TITLE></HEAD><BODY>");
 }
 
 void WebCfgServer::printInputField(String& response,
@@ -603,7 +594,7 @@ void WebCfgServer::printInputField(String& response,
     response.concat(description);
     response.concat("</td>");
     response.concat("<td>");
-    response.concat(" <INPUT TYPE=");
+    response.concat("<INPUT TYPE=");
     response.concat(isPassword ? "PASSWORD" : "TEXT");
     response.concat(" VALUE=\"");
     response.concat(value);
