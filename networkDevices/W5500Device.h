@@ -24,9 +24,6 @@ public:
 private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
-    void nwDelay(unsigned long ms);
-
-    bool _fromTask = false;
 
     EthernetClient* _ethClient = nullptr;
     PubSubClient* _mqttClient = nullptr;

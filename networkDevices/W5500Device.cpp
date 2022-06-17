@@ -41,8 +41,6 @@ void W5500Device::initialize()
     _mqttClient->setBufferSize(_mqttMaxBufferSize);
 
     reconnect();
-
-    _fromTask = true;
 }
 
 
@@ -85,7 +83,7 @@ bool W5500Device::reconnect()
             Ethernet.begin(_mac, ip);
             Ethernet.setSubnetMask(subnet);
 
-            nwDelay(1000);
+            delay(1000);
         }
         else
         {
@@ -110,11 +108,11 @@ void W5500Device::resetDevice()
     Serial.println(F("Resetting network hardware."));
     pinMode(ETHERNET_RESET_PIN, OUTPUT);
     digitalWrite(ETHERNET_RESET_PIN, HIGH);
-    nwDelay(250);
+    delay(250);
     digitalWrite(ETHERNET_RESET_PIN, LOW);
-    nwDelay(50);
+    delay(50);
     digitalWrite(ETHERNET_RESET_PIN, HIGH);
-    nwDelay(1500);
+    delay(1500);
 }
 
 
@@ -158,18 +156,6 @@ void W5500Device::initializeMacAddress(byte *mac)
         _preferences->putChar(preference_has_mac_byte_1, mac[4]);
         _preferences->putChar(preference_has_mac_byte_2, mac[5]);
         _preferences->putBool(preference_has_mac_saved, true);
-    }
-}
-
-void W5500Device::nwDelay(unsigned long ms)
-{
-    if(_fromTask)
-    {
-        vTaskDelay( ms / portTICK_PERIOD_MS);
-    }
-    else
-    {
-        delay(ms);
     }
 }
 
