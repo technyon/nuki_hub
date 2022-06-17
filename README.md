@@ -13,8 +13,6 @@ As an alternative, download a release:<br>
 https://github.com/technyon/nuki_hub/releases
 <br>Read the included readme.txt for installation instructions for either Espressif Flash Download Tools or esptool.
 
-
-
 ## Setup
 
 The firmware uses the Wifi Manager to configure the WiFi network. Power up the ESP32, a new Access Point should appear. Connect to this access point and in a browser navigate to "192.168.4.1". Use the web interface configure your Wifi network.
@@ -62,6 +60,15 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 
 ### Misc
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
+
+## MQTT Encryption
+
+The communication via MQTT can be SSL encrypted. To enable SSL encryption, supply the necessary information in the MQTT Configuration page.
+The following configurations are supported:<br>
+
+CA, CERT and KEY are empty -> No encryption<br>
+CA is filled but CERT and KEY are empty -> Encrypted MQTT<br>
+CA, CERT and KEY are filled -> Encrypted MQTT with client vaildation<br>
 
 ## Connecting via LAN (Optional)
 

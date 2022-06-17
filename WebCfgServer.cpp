@@ -469,11 +469,13 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
     printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
     printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
-    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
-    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
-    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
+    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
+    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
+    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     response.concat("</table>");
+    response.concat("* If no encryption is configured for the MQTT broeker, leave empty.<br>");
+
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
     response.concat("</BODY></HTML>");
