@@ -357,31 +357,21 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("</table><br><br>");
 
     response.concat("<h3>MQTT and Network Configuration</h3>");
-    response.concat("<form method=\"get\" action=\"/mqttconfig\">");
-    response.concat("<button type=\"submit\">Edit</button>");
-    response.concat("</form>");
+    buildNavigationButton(response, "Edit", "/mqttconfig");
 
     response.concat("<BR><BR><h3>NUKI Configuration</h3>");
-    response.concat("<form method=\"get\" action=\"/nukicfg\">");
-    response.concat("<button type=\"submit\">Edit</button>");
-    response.concat("</form>");
+    buildNavigationButton(response, "Edit", "/nukicfg");
 
     response.concat("<BR><BR><h3>Credentials</h3>");
-    response.concat("<form method=\"get\" action=\"/cred\">");
-    response.concat("<button type=\"submit\">Edit</button>");
-    response.concat("</form>");
+    buildNavigationButton(response, "Edit", "/cred");
 
     response.concat("<BR><BR><h3>Firmware update</h3>");
-    response.concat("<form method=\"get\" action=\"/ota\">");
-    response.concat("<button type=\"submit\">Open</button>");
-    response.concat("</form>");
+    buildNavigationButton(response, "Open", "/ota");
 
     if(_allowRestartToPortal)
     {
         response.concat("<br><br><h3>WiFi</h3>");
-        response.concat("<form method=\"get\" action=\"/wifi\">");
-        response.concat("<button type=\"submit\">Restart and configure wifi</button>");
-        response.concat("</form>");
+        buildNavigationButton(response, "Restart and configure wifi", "/wifi");
     }
 
     response.concat("</BODY></HTML>");
@@ -540,12 +530,9 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
 
     response.concat("<h3>WiFi</h3>");
     response.concat("Click confirm to restart ESP into WiFi configuration mode. After restart, connect to ESP access point to reconfigure WiFI.<br><br>");
-    response.concat("<form method=\"get\" action=\"/wifimanager\">");
-    response.concat("<button type=\"submit\">Confirm</button>");
-    response.concat("</form>");
+    buildNavigationButton(response, "Confirm", "/wifimanager");
 
-    response.concat("</BODY>\n");
-    response.concat("</HTML>\n");
+    response.concat("</BODY></HTML>");
 }
 
 void WebCfgServer::processUnpair(bool opener)
@@ -670,6 +657,17 @@ void WebCfgServer::printTextarea(String& response,
     response.concat("</td></tr>");
 }
 
+void WebCfgServer::buildNavigationButton(String &response, const char *caption, const char *targetPath)
+{
+    response.concat("<form method=\"get\" action=\"");
+    response.concat(targetPath);
+    response.concat("\">");
+    response.concat("<button type=\"submit\">");
+    response.concat(caption);
+    response.concat("</button>");
+    response.concat("</form>");
+}
+
 void WebCfgServer::printParameter(String& response, const char *description, const char *value)
 {
     response.concat("<tr>");
@@ -731,5 +729,3 @@ void WebCfgServer::handleOtaUpload()
         Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
     }
 }
-
-
