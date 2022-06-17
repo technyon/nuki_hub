@@ -10,6 +10,6 @@ public:
     void updateFirmware(uint8_t* buf, size_t size);
 
 private:
-    bool _updateFlag = false;
+    bool _updateStarted = false;
     esp_ota_handle_t otaHandler = 0;
 };

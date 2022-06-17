@@ -5,11 +5,17 @@
 
 void Ota::updateFirmware(uint8_t* buf, size_t size)
 {
-    if (!_updateFlag)
+    if(!_updateStarted && size == 0)
+    {
+        Serial.println("OTA upload cancelled, size is 0.");
+        return;
+    }
+
+    if (!_updateStarted)
     { //If it's the first packet of OTA since bootup, begin OTA
         Serial.println("BeginOTA");
         esp_ota_begin(esp_ota_get_next_update_partition(NULL), OTA_SIZE_UNKNOWN, &otaHandler);
-        _updateFlag = true;
+        _updateStarted = true;
     }
     esp_ota_write(otaHandler, buf, size);
     if (size != FULL_PACKET)
