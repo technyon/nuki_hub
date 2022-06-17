@@ -53,6 +53,14 @@ void WebCfgServer::initialize()
         buildMqttConfigHtml(response);
         _server.send(200, "text/html", response);
     });
+    _server.on("/nukicfg", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildNukiConfigHtml(response);
+        _server.send(200, "text/html", response);
+    });
     _server.on("/wifi", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -353,29 +361,10 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<button type=\"submit\">Edit</button>");
     response.concat("</form>");
 
-    response.concat("<FORM ACTION=method=get>");
-
-    response.concat("<br><h3>Configuration</h3>");
-    response.concat("<table>");
-    printCheckBox(response, "LOCKENA", "NUKI Lock enabled", _preferences->getBool(preference_lock_enabled));
-    if(_preferences->getBool(preference_lock_enabled))
-    {
-        printInputField(response, "MQTTPATH", "MQTT Lock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
-    }
-    printCheckBox(response, "OPENA", "NUKI Opener enabled", _preferences->getBool(preference_opener_enabled));
-    if(_preferences->getBool(preference_opener_enabled))
-    {
-        printInputField(response, "MQTTOPPATH", "MQTT Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
-    }
-    printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
-    printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
-    printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
-    printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
-    response.concat("</table>");
-
-    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-
-    response.concat("</FORM>");
+    response.concat("<BR><BR><h3>NUKI Configuration</h3>");
+    response.concat("<form method=\"get\" action=\"/nukicfg\">");
+    response.concat("<button type=\"submit\">Edit</button>");
+    response.concat("</form>");
 
     response.concat("<BR><BR><h3>Credentials</h3>");
     response.concat("<form method=\"get\" action=\"/cred\">");
@@ -392,8 +381,8 @@ void WebCfgServer::buildHtml(String& response)
         response.concat("<br><br><h3>WiFi</h3>");
         response.concat("<form method=\"get\" action=\"/wifi\">");
         response.concat("<button type=\"submit\">Restart and configure wifi</button>");
+        response.concat("</form>");
     }
-    response.concat("</form>");
 
     response.concat("</BODY></HTML>");
 }
@@ -456,8 +445,7 @@ void WebCfgServer::buildCredHtml(String &response)
         printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
         response.concat("<br><br><button type=\"submit\">OK</button></form>");
     }
-
-
+    response.concat("</BODY></HTML>");
 }
 
 void WebCfgServer::buildOtaHtml(String &response)
@@ -477,7 +465,7 @@ void WebCfgServer::buildOtaHtml(String &response)
     response.concat("	}");
     response.concat("});");
     response.concat("</script>");
-    response.concat("</BODY>\n</HTML>\n");
+    response.concat("</BODY></HTML>");
 }
 
 void WebCfgServer::buildMqttConfigHtml(String &response)
@@ -498,7 +486,35 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("</table>");
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
+    response.concat("</BODY></HTML>");
+}
 
+
+void WebCfgServer::buildNukiConfigHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<FORM ACTION=method=get >");
+    response.concat("<h3>MQTT Configuration</h3>");
+    response.concat("<table>");
+    printCheckBox(response, "LOCKENA", "NUKI Lock enabled", _preferences->getBool(preference_lock_enabled));
+    if(_preferences->getBool(preference_lock_enabled))
+    {
+        printInputField(response, "MQTTPATH", "MQTT Lock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
+    }
+    printCheckBox(response, "OPENA", "NUKI Opener enabled", _preferences->getBool(preference_opener_enabled));
+    if(_preferences->getBool(preference_opener_enabled))
+    {
+        printInputField(response, "MQTTOPPATH", "MQTT Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
+    }
+    printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
+    printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
+    printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
+    response.concat("</table>");
+    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+    response.concat("</FORM>");
+    response.concat("</BODY></HTML>");
 }
 
 void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
@@ -515,10 +531,8 @@ void WebCfgServer::buildConfirmHtml(String &response, const String &message, uin
     response.concat("<BODY>\n");
     response.concat(message);
 
-    response.concat("</BODY>\n");
-    response.concat("</HTML>\n");
+    response.concat("</BODY></HTML>");
 }
-
 
 void WebCfgServer::buildConfigureWifiHtml(String &response)
 {
@@ -589,11 +603,9 @@ void WebCfgServer::printInputField(String& response,
 
     itoa(maxLength, maxLengthStr, 10);
 
-    response.concat("<tr>");
-    response.concat("<td>");
+    response.concat("<tr><td>");
     response.concat(description);
-    response.concat("</td>");
-    response.concat("<td>");
+    response.concat("</td><td>");
     response.concat("<INPUT TYPE=");
     response.concat(isPassword ? "PASSWORD" : "TEXT");
     response.concat(" VALUE=\"");
@@ -603,8 +615,7 @@ void WebCfgServer::printInputField(String& response,
     response.concat("\" SIZE=\"25\" MAXLENGTH=\"");
     response.concat(maxLengthStr);
     response.concat("\\\"/>");
-    response.concat("</td>");
-    response.concat("</tr>");
+    response.concat("</td></tr>\"");
 }
 
 void WebCfgServer::printInputField(String& response,
@@ -646,11 +657,9 @@ void WebCfgServer::printTextarea(String& response,
 
     itoa(maxLength, maxLengthStr, 10);
 
-    response.concat("<tr>");
-    response.concat("<td>");
+    response.concat("<tr><td>");
     response.concat(description);
-    response.concat("</td>");
-    response.concat("<td>");
+    response.concat("</td><td>");
     response.concat(" <TEXTAREA NAME=\"");
     response.concat(token);
     response.concat("\" MAXLENGTH=\"");
@@ -658,8 +667,7 @@ void WebCfgServer::printTextarea(String& response,
     response.concat("\\\">");
     response.concat(value);
     response.concat("</TEXTAREA>");
-    response.concat("</td>");
-    response.concat("</tr>");
+    response.concat("</td></tr>");
 }
 
 void WebCfgServer::printParameter(String& response, const char *description, const char *value)
@@ -723,4 +731,5 @@ void WebCfgServer::handleOtaUpload()
         Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
     }
 }
+
 

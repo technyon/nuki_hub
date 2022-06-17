@@ -35,6 +35,7 @@ private:
     void buildCredHtml(String& response);
     void buildOtaHtml(String& response);
     void buildMqttConfigHtml(String& response);
+    void buildNukiConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
     void processUnpair(bool opener);
