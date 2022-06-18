@@ -38,6 +38,8 @@ private:
     void buildNukiConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
+    void sendNewCss();
+    void sendFontsInterMinCss();
     void processUnpair(bool opener);
 
     void buildHtmlHeader(String& response);
