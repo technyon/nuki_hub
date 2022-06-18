@@ -455,7 +455,7 @@ void WebCfgServer::buildOtaHtml(String &response)
     buildHtmlHeader(response);
     response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose a file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
-    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about a minute, please be patient.<br>You will be forwarwed automatically when the update is complete.</div>");
+    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about a minute, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");
     response.concat("	var button = document.getElementById(\"submitbtn\");");
@@ -722,6 +722,10 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
 void WebCfgServer::handleOtaUpload()
 {
     if (_server.uri() != "/uploadota") {
+        return;
+    }
+    if(millis() < 60000)
+    {
         return;
     }
 
