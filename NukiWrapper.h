@@ -36,6 +36,8 @@ private:
 
     void readConfig();
     void readAdvancedConfig();
+    
+    void setupHASS();
 
     NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 

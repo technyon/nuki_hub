@@ -26,6 +26,7 @@ public:
     void publishBatteryReport(const NukiOpener::BatteryReport& batteryReport);
     void publishConfig(const NukiOpener::Config& config);
     void publishAdvancedConfig(const NukiOpener::AdvancedConfig& config);
+    void publishHASSConfig(const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));

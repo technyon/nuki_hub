@@ -343,6 +343,36 @@ void Network::publishPresenceDetection(char *csv)
     _presenceCsv = csv;
 }
 
+void Network::publishHASSConfig(const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+{
+    String configJSON = "{\"~\": \"";
+    configJSON.concat(baseTopic);
+    configJSON.concat("\", \"name\": \"");
+    configJSON.concat(name);
+    configJSON.concat("\", \"unique_id\": \"");
+    configJSON.concat(uidString);
+    configJSON.concat("\", \"cmd_t\": \"~/lock/action\", \"pl_lock\": \"");
+    configJSON.concat(lockAction);
+    configJSON.concat("\", \"pl_unlk\": \"");
+    configJSON.concat(unlockAction);
+    configJSON.concat("\", \"pl_open\": \"");
+    configJSON.concat(openAction);
+    configJSON.concat("\", \"stat_t\": \"~/lock/state\", \"stat_locked\": \"");
+    configJSON.concat(lockedState);
+    configJSON.concat("\", \"stat_unlocked\": \"");
+    configJSON.concat(unlockedState);
+    configJSON.concat("\", \"opt\": \"false\"}");
+
+    String path = "homeassistant/lock/";
+    path.concat(uidString);
+    path.concat("/config");
+
+    Serial.println("HASS Config:");
+    Serial.println(configJSON);
+
+    _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+}
+
 void Network::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
