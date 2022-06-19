@@ -74,6 +74,9 @@ void WifiDevice::initialize()
         Serial.println(WiFi.localIP().toString());
     }
 
+    _wifiSSID = wm.getWiFiSSID();
+    _wifiPSK = wm.getWiFiPass();
+
     _mqttClient->setBufferSize(_mqttMaxBufferSize);
 }
 
@@ -103,6 +106,15 @@ bool WifiDevice::isConnected()
 
 bool WifiDevice::reconnect()
 {
+    WiFi.disconnect();
+    WiFi.begin(_wifiSSID.c_str(), _wifiPSK.c_str());
+
+    unsigned long timeout = millis() + 5000;
+    while(!isConnected() && millis() < timeout)
+    {
+        delay(100);
+    }
+
     return isConnected();
 }
 
