@@ -61,6 +61,9 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 ### Misc
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
 
+## Over-the-air Update (OTA)
+After initially flashing the firmware via serial connection, further updates can be deployed via OTA update from a Web Browser. In the configuration portal, scroll down to "Firmware update" and click "Open". Then Click "Browse" and select the new "nuki_hub.bin" file and select "Upload file". After about a minute the new firmware should be installed.
+
 ## MQTT Encryption
 
 The communication via MQTT can be SSL encrypted. To enable SSL encryption, supply the necessary information in the MQTT Configuration page.
