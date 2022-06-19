@@ -2,6 +2,7 @@
 #include "PreferencesKeys.h"
 #include "Version.h"
 #include "hardware/WifiEthServer.h"
+#include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
@@ -453,7 +454,15 @@ void WebCfgServer::buildCredHtml(String &response)
 void WebCfgServer::buildOtaHtml(String &response)
 {
     buildHtmlHeader(response);
-    response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose a file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+
+    if(millis() < 60000)
+    {
+        response.concat("OTA functionality not ready. Please wait a moment and reload.");
+        response.concat("</BODY></HTML>");
+        return;
+    }
+
+    response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about a minute, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
