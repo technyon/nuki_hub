@@ -89,6 +89,11 @@ W5x00 reset to GPIO33
 
 Wifi is now disabled, and the module doesn't boot into WifiManager anymore.
 
+## Support
+
+If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:
+REF5PZ4TE39H5
+
 ## Disclaimer
 
 This is a third party software for NUKI smart door locks. This project or any of it's authors aren't associated with Nuki Home Solutions GmbH. Please refer for official products and offical support to their website:
