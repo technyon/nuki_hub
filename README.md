@@ -91,7 +91,7 @@ Wifi is now disabled, and the module doesn't boot into WifiManager anymore.
 
 ## Support
 
-If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:
+If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
 REF5PZ4TE39H5
 
 ## Disclaimer
