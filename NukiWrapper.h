@@ -18,6 +18,8 @@ public:
     void setPin(const uint16_t pin);
 
     void unpair();
+    
+    void disableHASS();
 
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();

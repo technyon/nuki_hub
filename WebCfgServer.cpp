@@ -227,6 +227,15 @@ bool WebCfgServer::processArgs(String& message)
         }
         else if(key == "HASSDISCOVERY")
         {
+            // Previous HASS config has to be disabled first (remove retained MQTT messages)
+            if ( _nuki != nullptr )
+            {
+                _nuki->disableHASS();
+            }
+            if ( _nukiOpener != nullptr )
+            {
+                _nukiOpener->disableHASS();
+            }
             _preferences->putString(preference_mqtt_hass_discovery, value);
             configChanged = true;
         }

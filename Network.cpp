@@ -412,6 +412,28 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
     }
 }
 
+void Network::removeHASSConfig(char* uidString)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if(discoveryTopic != "")
+    {
+        String path = discoveryTopic;
+        path.concat("/lock/");
+        path.concat(uidString);
+        path.concat("/smartlock/config");
+
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/battery_low/config");
+
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+    }
+}
+
 void Network::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;

@@ -171,6 +171,11 @@ void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, c
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
 }
 
+void NetworkOpener::removeHASSConfig(char* uidString)
+{
+    _network->removeHASSConfig(uidString);
+}
+
 void NetworkOpener::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
