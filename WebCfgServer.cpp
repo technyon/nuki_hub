@@ -599,10 +599,12 @@ void WebCfgServer::processUnpair(bool opener)
     _server.send(200, "text/html", response);
     if(!opener && _nuki != nullptr)
     {
+        _nuki->disableHASS();
         _nuki->unpair();
     }
     if(opener && _nukiOpener != nullptr)
     {
+        _nukiOpener->disableHASS();
         _nukiOpener->unpair();
     }
     waitAndProcess(false, 1000);
