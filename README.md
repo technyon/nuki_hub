@@ -73,6 +73,21 @@ CA, CERT and KEY are empty -> No encryption<br>
 CA is filled but CERT and KEY are empty -> Encrypted MQTT<br>
 CA, CERT and KEY are filled -> Encrypted MQTT with client vaildation<br>
 
+## Home Assistant Discovery
+
+Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/).
+
+For a simpler integration, this software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/). To enable autodiscovery, supply the discovery topic that is configured in your Home Assistant instance (typically "homeassistant") in the MQTT Configuration page. Once enabled, Smartlock and/or Opener should automatically appear on Home Assistant.
+
+The following mapping between Home Assistant services and Nuki commands is setup when enabling autodiscovery:
+|             | Smartlock | Opener                    |
+|-------------|-----------|---------------------------|
+| lock.lock   | Lock      | Disable Ring To Open               |
+| lock.unlock | Unlock    | Enable Ring To Open                |
+| lock.open   | Unlatch   | Electric Strike Actuation |
+
+NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.
+
 ## Connecting via LAN (Optional)
 
 If you prefer to connect to the MQTT Broker via LAN instead of WiFi, you can use a Wiznet W5x00 Module (W5100, W5200, W5500 are supported).
