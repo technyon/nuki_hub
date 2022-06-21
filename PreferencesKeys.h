@@ -13,6 +13,7 @@
 #define preference_mqtt_ca "mqttca"
 #define preference_mqtt_crt "mqttcrt"
 #define preference_mqtt_key "mqttkey"
+#define preference_mqtt_hass_discovery "hassdiscovery"
 #define preference_hostname "hostname"
 #define preference_network_timeout "nettmout"
 #define preference_query_interval_lockstate "lockStInterval"

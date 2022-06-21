@@ -225,6 +225,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putString(preference_mqtt_key, value);
             configChanged = true;
         }
+        else if(key == "HASSDISCOVERY")
+        {
+            _preferences->putString(preference_mqtt_hass_discovery, value);
+            configChanged = true;
+        }
         else if(key == "HOSTNAME")
         {
             _preferences->putString(preference_hostname, value);
@@ -493,6 +498,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
+    printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty.<br>");
