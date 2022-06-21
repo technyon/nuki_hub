@@ -166,9 +166,9 @@ void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &conf
 //    publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
 
-void NetworkOpener::publishHASSConfig(const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
-    _network->publishHASSConfig(baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
 }
 
 void NetworkOpener::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
