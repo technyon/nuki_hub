@@ -75,6 +75,7 @@ void NukiOpenerWrapper::update()
         if (_nukiOpener.pairNuki() == NukiOpener::PairingResult::Success) {
             Serial.println(F("Nuki opener paired"));
             _paired = true;
+            setupHASS();
         }
         else
         {
@@ -298,4 +299,44 @@ void NukiOpenerWrapper::readAdvancedConfig()
     Nuki::CmdResult result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
     Serial.println(result);
+}
+
+void NukiOpenerWrapper::setupHASS()
+{
+    if(!_nukiConfigValid) // only ask for config once to save battery life
+    {
+        Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
+        _nukiConfigValid = result == Nuki::CmdResult::Success;
+    }
+    if (_nukiConfigValid)
+    {
+        String baseTopic = _preferences->getString(preference_mqtt_opener_path);
+        char uidString[20];
+        itoa(_nukiConfig.nukiId, uidString, 16);
+        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString,"deactivateRTO","activateRTO","electricStrikeActuation","locked","RTOactive");
+    }
+    else
+    {
+        Serial.println(F("Unable to setup HASS. Invalid config received."));
+    }
+}
+
+void NukiOpenerWrapper::disableHASS()
+{
+    if(!_nukiConfigValid) // only ask for config once to save battery life
+    {
+        Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
+        _nukiConfigValid = result == Nuki::CmdResult::Success;
+    }
+    if (_nukiConfigValid)
+    {
+        String baseTopic = _preferences->getString(preference_mqtt_opener_path);
+        char uidString[20];
+        itoa(_nukiConfig.nukiId, uidString, 16);
+        _network->removeHASSConfig(uidString);
+    }
+    else
+    {
+        Serial.println(F("Unable to disable HASS. Invalid config received."));
+    }
 }

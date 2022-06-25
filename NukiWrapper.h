@@ -18,6 +18,8 @@ public:
     void setPin(const uint16_t pin);
 
     void unpair();
+    
+    void disableHASS();
 
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();
@@ -36,6 +38,8 @@ private:
 
     void readConfig();
     void readAdvancedConfig();
+    
+    void setupHASS();
 
     NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 

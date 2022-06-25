@@ -343,6 +343,97 @@ void Network::publishPresenceDetection(char *csv)
     _presenceCsv = csv;
 }
 
+void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if(discoveryTopic != "")
+    {
+        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat("_lock\",\"cmd_t\":\"~");
+        configJSON.concat(mqtt_topic_lock_action);
+        configJSON.concat("\",\"pl_lock\":\"");
+        configJSON.concat(lockAction);
+        configJSON.concat("\",\"pl_unlk\":\"");
+        configJSON.concat(unlockAction);
+        configJSON.concat("\",\"pl_open\":\"");
+        configJSON.concat(openAction);
+        configJSON.concat("\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_lock_state);
+        configJSON.concat("\",\"stat_locked\":\"");
+        configJSON.concat(lockedState);
+        configJSON.concat("\",\"stat_unlocked\":\"");
+        configJSON.concat(unlockedState);
+        configJSON.concat("\",\"opt\":\"false\"}");
+
+        String path = discoveryTopic;
+        path.concat("/lock/");
+        path.concat(uidString);
+        path.concat("/smartlock/config");
+
+        Serial.println("HASS Config:");
+        Serial.println(configJSON);
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+
+        configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" battery low\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat("_battery_low\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_battery_critical);
+        configJSON.concat("\"}");
+
+        path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/battery_low/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+    }
+}
+
+void Network::removeHASSConfig(char* uidString)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if(discoveryTopic != "")
+    {
+        String path = discoveryTopic;
+        path.concat("/lock/");
+        path.concat(uidString);
+        path.concat("/smartlock/config");
+
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/battery_low/config");
+
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+    }
+}
+
 void Network::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;

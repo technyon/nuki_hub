@@ -76,6 +76,7 @@ void NukiWrapper::update()
         if (_nukiLock.pairNuki() == Nuki::PairingResult::Success) {
             Serial.println(F("Nuki paired"));
             _paired = true;
+            setupHASS();
         }
         else
         {
@@ -320,4 +321,44 @@ void NukiWrapper::readAdvancedConfig()
     Nuki::CmdResult result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
     Serial.println(result);
+}
+
+void NukiWrapper::setupHASS()
+{
+    if(!_nukiConfigValid) // only ask for config once to save battery life
+    {
+        Nuki::CmdResult result = _nukiLock.requestConfig(&_nukiConfig);
+        _nukiConfigValid = result == Nuki::CmdResult::Success;
+    }
+    if (_nukiConfigValid)
+    {
+        String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+        char uidString[20];
+        itoa(_nukiConfig.nukiId, uidString, 16);
+        _network->publishHASSConfig("SmartLock",baseTopic.c_str(),(char*)_nukiConfig.name,uidString,"lock","unlock","unlatch","locked","unlocked");
+    }
+    else
+    {
+        Serial.println(F("Unable to setup HASS. Invalid config received."));
+    }
+}
+
+void NukiWrapper::disableHASS()
+{
+    if(!_nukiConfigValid) // only ask for config once to save battery life
+    {
+        Nuki::CmdResult result = _nukiLock.requestConfig(&_nukiConfig);
+        _nukiConfigValid = result == Nuki::CmdResult::Success;
+    }
+    if (_nukiConfigValid)
+    {
+        String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+        char uidString[20];
+        itoa(_nukiConfig.nukiId, uidString, 16);
+        _network->removeHASSConfig(uidString);
+    }
+    else
+    {
+        Serial.println(F("Unable to disable HASS. Invalid config received."));
+    }
 }
