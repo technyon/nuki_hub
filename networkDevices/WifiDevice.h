@@ -5,6 +5,7 @@
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #include "../SpiffsCookie.h"
+#include "WiFiManager.h"
 
 class WifiDevice : public NetworkDevice
 {
@@ -23,13 +24,11 @@ public:
     virtual PubSubClient *mqttClient();
 
 private:
+    WiFiManager _wm;
     WiFiClient* _wifiClient = nullptr;
     WiFiClientSecure* _wifiClientSecure = nullptr;
     PubSubClient* _mqttClient = nullptr;
     SpiffsCookie _cookie;
-
-    String _wifiSSID = "";
-    String _wifiPSK = "";
 
     char _ca[TLS_CA_MAX_SIZE];
     char _cert[TLS_CERT_MAX_SIZE];

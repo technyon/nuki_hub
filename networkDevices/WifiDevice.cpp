@@ -1,6 +1,5 @@
 #include <WiFi.h>
 #include "WifiDevice.h"
-#include "WiFiManager.h"
 #include "../PreferencesKeys.h"
 
 WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
@@ -42,14 +41,13 @@ void WifiDevice::initialize()
 {
     WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
 
-    WiFiManager wm;
 
     std::vector<const char *> wm_menu;
     wm_menu.push_back("wifi");
     wm_menu.push_back("exit");
-    wm.setShowInfoUpdate(false);
-    wm.setMenu(wm_menu);
-    wm.setHostname(_hostname);
+    _wm.setShowInfoUpdate(false);
+    _wm.setMenu(wm_menu);
+    _wm.setHostname(_hostname);
 
     bool res = false;
 
@@ -57,11 +55,11 @@ void WifiDevice::initialize()
     {
         Serial.println(F("Opening WiFi configuration portal."));
         _cookie.clear();
-        res = wm.startConfigPortal();
+        res = _wm.startConfigPortal();
     }
     else
     {
-        res = wm.autoConnect(); // password protected ap
+        res = _wm.autoConnect(); // password protected ap
     }
 
     if(!res) {
@@ -73,9 +71,6 @@ void WifiDevice::initialize()
         Serial.print(F("WiFi connected: "));
         Serial.println(WiFi.localIP().toString());
     }
-
-    _wifiSSID = wm.getWiFiSSID();
-    _wifiPSK = wm.getWiFiPass();
 
     _mqttClient->setBufferSize(_mqttMaxBufferSize);
 }
@@ -106,15 +101,7 @@ bool WifiDevice::isConnected()
 
 bool WifiDevice::reconnect()
 {
-    WiFi.disconnect();
-    WiFi.begin(_wifiSSID.c_str(), _wifiPSK.c_str());
-
-    unsigned long timeout = millis() + 5000;
-    while(!isConnected() && millis() < timeout)
-    {
-        delay(100);
-    }
-
+    delay(3000);
     return isConnected();
 }
 
