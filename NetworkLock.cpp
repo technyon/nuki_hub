@@ -455,7 +455,7 @@ void NetworkLock::publishFloat(const char* topic, const float value, const uint8
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _device->mqttClient()->publish(path, str);
+    _device->mqttClient()->publish(path, str, true);
 }
 
 void NetworkLock::publishInt(const char *topic, const int value)
@@ -464,7 +464,7 @@ void NetworkLock::publishInt(const char *topic, const int value)
     itoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _device->mqttClient()->publish(path, str);
+    _device->mqttClient()->publish(path, str, true);
 }
 
 void NetworkLock::publishUInt(const char *topic, const unsigned int value)
@@ -473,7 +473,7 @@ void NetworkLock::publishUInt(const char *topic, const unsigned int value)
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _device->mqttClient()->publish(path, str);
+    _device->mqttClient()->publish(path, str, true);
 }
 
 void NetworkLock::publishBool(const char *topic, const bool value)
@@ -482,14 +482,14 @@ void NetworkLock::publishBool(const char *topic, const bool value)
     str[0] = value ? '1' : '0';
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _device->mqttClient()->publish(path, str);
+    _device->mqttClient()->publish(path, str, true);
 }
 
 bool NetworkLock::publishString(const char *topic, const char *value)
 {
     char path[200] = {0};
     buildMqttPath(topic, path);
-    return _device->mqttClient()->publish(path, value);
+    return _device->mqttClient()->publish(path, value, true);
 }
 
 bool NetworkLock::isMqttConnected()

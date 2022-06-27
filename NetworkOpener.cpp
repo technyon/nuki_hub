@@ -192,7 +192,7 @@ void NetworkOpener::publishFloat(const char* topic, const float value, const uin
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str);
+    _network->device()->mqttClient()->publish(path, str, true);
 }
 
 void NetworkOpener::publishInt(const char *topic, const int value)
@@ -201,7 +201,7 @@ void NetworkOpener::publishInt(const char *topic, const int value)
     itoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str);
+    _network->device()->mqttClient()->publish(path, str, true);
 }
 
 void NetworkOpener::publishUInt(const char *topic, const unsigned int value)
@@ -210,7 +210,7 @@ void NetworkOpener::publishUInt(const char *topic, const unsigned int value)
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str);
+    _network->device()->mqttClient()->publish(path, str, true);
 }
 
 void NetworkOpener::publishBool(const char *topic, const bool value)
@@ -219,14 +219,14 @@ void NetworkOpener::publishBool(const char *topic, const bool value)
     str[0] = value ? '1' : '0';
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str);
+    _network->device()->mqttClient()->publish(path, str, true);
 }
 
 void NetworkOpener::publishString(const char *topic, const char *value)
 {
     char path[200] = {0};
     buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, value);
+    _network->device()->mqttClient()->publish(path, value, true);
 }
 
 void NetworkOpener::buildMqttPath(const char* path, char* outPath)
