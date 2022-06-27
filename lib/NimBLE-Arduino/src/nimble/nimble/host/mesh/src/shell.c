@@ -24,7 +24,7 @@
 #include "mesh/glue.h"
 #include "mesh/testing.h"
 
-/* Private includes for raw Network & Transport layer access */
+/* Private includes for raw NetworkLock & Transport layer access */
 #include "net.h"
 #include "rpl.h"
 #include "access.h"
@@ -2863,7 +2863,7 @@ static int cmd_cdb_show(int argc, char *argv[])
 		return 0;
 	}
 
-	printk("Mesh Network Information");
+	printk("Mesh NetworkLock Information");
 	printk("========================");
 
 	cdb_print_nodes();

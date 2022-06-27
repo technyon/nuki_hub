@@ -382,7 +382,7 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers);
  * @{
  */
 
-/* Primary Network Key index */
+/* Primary NetworkLock Key index */
 #define BT_MESH_NET_PRIMARY                 0x000
 
 /* Features */
@@ -450,8 +450,8 @@ int bt_mesh_resume(void);
  *  only exception is for testing purposes where manual provisioning is
  *  desired without an actual external provisioner.
  *
- *  @param net_key  Network Key
- *  @param net_idx  Network Key Index
+ *  @param net_key  NetworkLock Key
+ *  @param net_idx  NetworkLock Key Index
  *  @param flags    Provisioning Flags
  *  @param iv_index IV Index
  *  @param addr     Primary element address
@@ -466,7 +466,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 /** @brief Provision a Mesh Node using PB-ADV
  *
  * @param uuid    UUID
- * @param net_idx Network Key Index
+ * @param net_idx NetworkLock Key Index
  * @param addr    Address to assign to remote device. If addr is 0, the lowest
  *                available address will be chosen.
  * @param attention_duration The attention duration to be send to remote device

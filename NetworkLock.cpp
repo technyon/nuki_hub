@@ -1,13 +1,13 @@
-#include "Network.h"
+#include "NetworkLock.h"
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
 #include "Pins.h"
 
-Network* nwInst;
+NetworkLock* nwInst;
 
-Network::Network(const NetworkDeviceType networkDevice, Preferences* preferences)
+NetworkLock::NetworkLock(const NetworkDeviceType networkDevice, Preferences* preferences)
 : _preferences(preferences)
 {
     nwInst = this;
@@ -23,7 +23,7 @@ Network::Network(const NetworkDeviceType networkDevice, Preferences* preferences
     _configTopics.push_back(mqtt_topic_config_auto_lock);
 }
 
-Network::~Network()
+NetworkLock::~NetworkLock()
 {
     if(_device != nullptr)
     {
@@ -32,16 +32,16 @@ Network::~Network()
     }
 }
 
-void Network::setupDevice(const NetworkDeviceType hardware)
+void NetworkLock::setupDevice(const NetworkDeviceType hardware)
 {
     switch(hardware)
     {
         case NetworkDeviceType::W5500:
-            Serial.println(F("Network device: W5500"));
+            Serial.println(F("NetworkLock device: W5500"));
             _device = new W5500Device(_hostname, _preferences);
             break;
         case NetworkDeviceType::WiFi:
-            Serial.println(F("Network device: Builtin WiFi"));
+            Serial.println(F("NetworkLock device: Builtin WiFi"));
             _device = new WifiDevice(_hostname, _preferences);
             break;
         default:
@@ -51,7 +51,7 @@ void Network::setupDevice(const NetworkDeviceType hardware)
     }
 }
 
-void Network::initialize()
+void NetworkLock::initialize()
 {
     if(_hostname == "")
     {
@@ -115,7 +115,7 @@ void Network::initialize()
     Serial.println(port);
 
     _device->mqttClient()->setServer(_mqttBrokerAddr, port);
-    _device->mqttClient()->setCallback(Network::onMqttDataReceivedCallback);
+    _device->mqttClient()->setCallback(NetworkLock::onMqttDataReceivedCallback);
 
     _networkTimeout = _preferences->getInt(preference_network_timeout);
     if(_networkTimeout == 0)
@@ -125,7 +125,7 @@ void Network::initialize()
     }
 }
 
-bool Network::reconnect()
+bool NetworkLock::reconnect()
 {
     _mqttConnected = false;
 
@@ -170,7 +170,7 @@ bool Network::reconnect()
     return _mqttConnected;
 }
 
-void Network::update()
+void NetworkLock::update()
 {
     long ts = millis();
 
@@ -178,7 +178,7 @@ void Network::update()
 
     if(!_device->isConnected())
     {
-        Serial.println(F("Network not connected. Trying reconnect."));
+        Serial.println(F("NetworkLock not connected. Trying reconnect."));
         bool success = _device->reconnect();
         Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
     }
@@ -187,7 +187,7 @@ void Network::update()
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000))
         {
-            Serial.println("Network timeout has been reached, restarting ...");
+            Serial.println("NetworkLock timeout has been reached, restarting ...");
             delay(200);
             ESP.restart();
         }
@@ -219,12 +219,12 @@ void Network::update()
     _device->mqttClient()->loop();
 }
 
-void Network::onMqttDataReceivedCallback(char *topic, byte *payload, unsigned int length)
+void NetworkLock::onMqttDataReceivedCallback(char *topic, byte *payload, unsigned int length)
 {
     nwInst->onMqttDataReceived(topic, payload, length);
 }
 
-void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
+void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
 {
     char value[50] = {0};
     size_t l = min(length, sizeof(value)-1);
@@ -265,7 +265,7 @@ void Network::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &len
     }
 }
 
-void Network::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState)
+void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState)
 {
     char str[50];
 
@@ -306,18 +306,18 @@ void Network::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerSta
     _firstTunerStatePublish = false;
 }
 
-void Network::publishAuthorizationInfo(const uint32_t authId, const char *authName)
+void NetworkLock::publishAuthorizationInfo(const uint32_t authId, const char *authName)
 {
     publishUInt(mqtt_topic_lock_auth_id, authId);
     publishString(mqtt_topic_lock_auth_name, authName);
 }
 
-void Network::publishCommandResult(const char *resultStr)
+void NetworkLock::publishCommandResult(const char *resultStr)
 {
     publishString(mqtt_topic_lock_action_command_result, resultStr);
 }
 
-void Network::publishBatteryReport(const NukiLock::BatteryReport& batteryReport)
+void NetworkLock::publishBatteryReport(const NukiLock::BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
     publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
@@ -325,25 +325,25 @@ void Network::publishBatteryReport(const NukiLock::BatteryReport& batteryReport)
     publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
 }
 
-void Network::publishConfig(const NukiLock::Config &config)
+void NetworkLock::publishConfig(const NukiLock::Config &config)
 {
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
 }
 
-void Network::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
+void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 {
     publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
 
-void Network::publishPresenceDetection(char *csv)
+void NetworkLock::publishPresenceDetection(char *csv)
 {
     _presenceCsv = csv;
 }
 
-void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void NetworkLock::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -412,7 +412,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
     }
 }
 
-void Network::removeHASSConfig(char* uidString)
+void NetworkLock::removeHASSConfig(char* uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -434,22 +434,22 @@ void Network::removeHASSConfig(char* uidString)
     }
 }
 
-void Network::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
+void NetworkLock::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }
 
-void Network::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
+void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
 
-void Network::setMqttDataReceivedForwardCallback(void (*callback)(char *, uint8_t *, unsigned int))
+void NetworkLock::setMqttDataReceivedForwardCallback(void (*callback)(char *, uint8_t *, unsigned int))
 {
     _mqttTopicReceivedForwardCallback = callback;
 }
 
-void Network::publishFloat(const char* topic, const float value, const uint8_t precision)
+void NetworkLock::publishFloat(const char* topic, const float value, const uint8_t precision)
 {
     char str[30];
     dtostrf(value, 0, precision, str);
@@ -458,7 +458,7 @@ void Network::publishFloat(const char* topic, const float value, const uint8_t p
     _device->mqttClient()->publish(path, str);
 }
 
-void Network::publishInt(const char *topic, const int value)
+void NetworkLock::publishInt(const char *topic, const int value)
 {
     char str[30];
     itoa(value, str, 10);
@@ -467,7 +467,7 @@ void Network::publishInt(const char *topic, const int value)
     _device->mqttClient()->publish(path, str);
 }
 
-void Network::publishUInt(const char *topic, const unsigned int value)
+void NetworkLock::publishUInt(const char *topic, const unsigned int value)
 {
     char str[30];
     utoa(value, str, 10);
@@ -476,7 +476,7 @@ void Network::publishUInt(const char *topic, const unsigned int value)
     _device->mqttClient()->publish(path, str);
 }
 
-void Network::publishBool(const char *topic, const bool value)
+void NetworkLock::publishBool(const char *topic, const bool value)
 {
     char str[2] = {0};
     str[0] = value ? '1' : '0';
@@ -485,19 +485,19 @@ void Network::publishBool(const char *topic, const bool value)
     _device->mqttClient()->publish(path, str);
 }
 
-bool Network::publishString(const char *topic, const char *value)
+bool NetworkLock::publishString(const char *topic, const char *value)
 {
     char path[200] = {0};
     buildMqttPath(topic, path);
     return _device->mqttClient()->publish(path, value);
 }
 
-bool Network::isMqttConnected()
+bool NetworkLock::isMqttConnected()
 {
     return _mqttConnected;
 }
 
-void Network::buildMqttPath(const char* path, char* outPath)
+void NetworkLock::buildMqttPath(const char* path, char* outPath)
 {
     int offset = 0;
     for(const char& c : _mqttPath)
@@ -519,26 +519,26 @@ void Network::buildMqttPath(const char* path, char* outPath)
     outPath[i+1] = 0x00;
 }
 
-void Network::subscribe(const char *path)
+void NetworkLock::subscribe(const char *path)
 {
     char prefixedPath[500];
     buildMqttPath(path, prefixedPath);
     _device->mqttClient()->subscribe(prefixedPath);
 }
 
-void Network::restartAndConfigureWifi()
+void NetworkLock::restartAndConfigureWifi()
 {
     _device->reconfigure();
 }
 
-bool Network::comparePrefixedPath(const char *fullPath, const char *subPath)
+bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
     char prefixedPath[500];
     buildMqttPath(subPath, prefixedPath);
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
-NetworkDevice *Network::device()
+NetworkDevice *NetworkLock::device()
 {
     return _device;
 }

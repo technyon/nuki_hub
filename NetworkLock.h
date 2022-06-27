@@ -16,11 +16,11 @@ enum class NetworkDeviceType
     W5500
 };
 
-class Network
+class NetworkLock
 {
 public:
-    explicit Network(const NetworkDeviceType networkDevice, Preferences* preferences);
-    virtual ~Network();
+    explicit NetworkLock(const NetworkDeviceType networkDevice, Preferences* preferences);
+    virtual ~NetworkLock();
 
     void initialize();
     void update();

@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "Pins.h"
 #include "NukiWrapper.h"
-#include "Network.h"
+#include "NetworkLock.h"
 #include "WebCfgServer.h"
 #include <FreeRTOS.h>
 #include "PreferencesKeys.h"
@@ -10,7 +10,7 @@
 #include "hardware/WifiEthServer.h"
 #include "NukiOpenerWrapper.h"
 
-Network* network = nullptr;
+NetworkLock* network = nullptr;
 NetworkOpener* networkOpener = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
@@ -146,7 +146,7 @@ void setup()
 //    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
     const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
-    network = new Network(networkDevice, preferences);
+    network = new NetworkLock(networkDevice, preferences);
     network->initialize();
     networkOpener = new NetworkOpener(network, preferences);
     networkOpener->initialize();

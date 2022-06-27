@@ -24,7 +24,7 @@
 struct bt_mesh_net_rx;
 enum bt_mesh_key_evt;
 
-/** Network message encryption credentials */
+/** NetworkLock message encryption credentials */
 struct bt_mesh_net_cred {
 	uint8_t nid;         /* NID */
 	uint8_t enc[16];     /* EncKey */
@@ -56,7 +56,7 @@ struct bt_mesh_subnet {
 		bool valid;
 		uint8_t net[16];       /* NetKey */
 		struct bt_mesh_net_cred msg;
-		uint8_t net_id[8];     /* Network ID */
+		uint8_t net_id[8];     /* NetworkLock ID */
 	#if defined(CONFIG_BT_MESH_GATT_PROXY)
 		uint8_t identity[16];  /* IdentityKey */
 	#endif
@@ -78,7 +78,7 @@ struct bt_mesh_subnet_cb {
 			    enum bt_mesh_key_evt evt);
 };
 
-/** @brief Reset all Network keys. */
+/** @brief Reset all NetworkLock keys. */
 void bt_mesh_net_keys_reset(void);
 
 /** @brief Call cb on every valid Subnet until it returns a non-zero value.
@@ -113,7 +113,7 @@ struct bt_mesh_subnet *bt_mesh_subnet_next(struct bt_mesh_subnet *sub);
 
 /** @brief Get a pointer to the Subnet with the given index.
  *
- *  @param net_idx Network index to look for.
+ *  @param net_idx NetworkLock index to look for.
  *
  *  @returns Subnet with index @c net_idx, or NULL if no such Subnet is known.
  */
@@ -121,7 +121,7 @@ struct bt_mesh_subnet *bt_mesh_subnet_get(uint16_t net_idx);
 
 /** @brief Initialize a new Subnet.
  *
- *  @param net_idx Network index of the Subnet.
+ *  @param net_idx NetworkLock index of the Subnet.
  *  @param kr_phase Key refresh phase the Subnet should be in.
  *  @param key The current network key for the Subnet.
  *  @param new_key New network key, if available.
@@ -138,7 +138,7 @@ int bt_mesh_subnet_set(uint16_t net_idx, uint8_t kr_phase,
  *  @param frnd_addr Address of the Friend node in the friendship.
  *  @param lpn_counter The LPN's counter parameter.
  *  @param frnd_counter The Friend node's counter parameter.
- *  @param key Network key to create the Friendship credentials for.
+ *  @param key NetworkLock key to create the Friendship credentials for.
  *
  *  @returns 0 on success, or (negative) error code on failure.
  */
@@ -149,7 +149,7 @@ int bt_mesh_friend_cred_create(struct bt_mesh_net_cred *cred,
 
 /** @brief Iterate through all valid network credentials to decrypt a message.
  *
- *  @param rx Network RX parameters, passed to the callback.
+ *  @param rx NetworkLock RX parameters, passed to the callback.
  *  @param in Input message buffer, passed to the callback.
  *  @param out Output message buffer, passed to the callback.
  *  @param cb Callback to call for each known network credential. Iteration

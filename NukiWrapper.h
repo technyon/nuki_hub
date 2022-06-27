@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Network.h"
+#include "NetworkLock.h"
 #include "NukiConstants.h"
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
@@ -9,7 +9,7 @@
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, Network* network, Preferences* preferences);
+    NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, NetworkLock* network, Preferences* preferences);
     virtual ~NukiWrapper();
 
     void initialize();
@@ -46,7 +46,7 @@ private:
     std::string _deviceName;
     NukiLock::NukiLock _nukiLock;
     BleScanner::Scanner* _bleScanner;
-    Network* _network;
+    NetworkLock* _network;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds

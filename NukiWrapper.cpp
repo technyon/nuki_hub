@@ -6,7 +6,7 @@
 
 NukiWrapper* nukiInst;
 
-NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, Network* network, Preferences* preferences)
+NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, NetworkLock* network, Preferences* preferences)
 : _deviceName(deviceName),
   _bleScanner(scanner),
   _nukiLock(deviceName, id),

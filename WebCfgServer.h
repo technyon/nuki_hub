@@ -3,7 +3,7 @@
 #include <Preferences.h>
 #include <WebServer.h>
 #include "NukiWrapper.h"
-#include "Network.h"
+#include "NetworkLock.h"
 #include "NukiOpenerWrapper.h"
 #include "Ota.h"
 
@@ -22,7 +22,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
+    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NetworkLock* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
     ~WebCfgServer() = default;
 
     void initialize();
@@ -58,7 +58,7 @@ private:
     WebServer _server;
     NukiWrapper* _nuki;
     NukiOpenerWrapper* _nukiOpener;
-    Network* _network;
+    NetworkLock* _network;
     Preferences* _preferences;
     Ota _ota;
 

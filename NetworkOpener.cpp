@@ -7,7 +7,7 @@
 
 NetworkOpener* nwInstOpener;
 
-NetworkOpener::NetworkOpener(Network* network, Preferences* preferences)
+NetworkOpener::NetworkOpener(NetworkLock* network, Preferences* preferences)
         : _preferences(preferences),
           _network(network)
 {

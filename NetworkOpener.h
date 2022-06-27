@@ -9,12 +9,12 @@
 #include "NukiConstants.h"
 #include "SpiffsCookie.h"
 #include "NukiOpenerConstants.h"
-#include "Network.h"
+#include "NetworkLock.h"
 
 class NetworkOpener
 {
 public:
-    explicit NetworkOpener(Network* network, Preferences* preferences);
+    explicit NetworkOpener(NetworkLock* network, Preferences* preferences);
     virtual ~NetworkOpener() = default;
 
     void initialize();
@@ -48,7 +48,7 @@ private:
 
     Preferences* _preferences;
 
-    Network* _network = nullptr;
+    NetworkLock* _network = nullptr;
 
     char _mqttPath[181] = {0};
     bool _isConnected = false;

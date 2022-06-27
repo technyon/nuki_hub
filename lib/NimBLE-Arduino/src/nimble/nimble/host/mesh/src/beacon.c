@@ -69,7 +69,7 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 
 	net_buf_simple_add_u8(buf, flags);
 
-	/* Network ID */
+	/* NetworkLock ID */
 	net_buf_simple_add_mem(buf, keys->net_id, 8);
 
 	/* IV Index */

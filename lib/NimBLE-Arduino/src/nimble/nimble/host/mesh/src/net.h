@@ -165,7 +165,7 @@ struct bt_mesh_lpn {
 /* bt_mesh_net.flags */
 enum {
 	BT_MESH_VALID,           /* We have been provisioned */
-	BT_MESH_SUSPENDED,       /* Network is temporarily suspended */
+	BT_MESH_SUSPENDED,       /* NetworkLock is temporarily suspended */
 	BT_MESH_IVU_IN_PROGRESS, /* IV Update in Progress */
 	BT_MESH_IVU_INITIATOR,   /* IV Update initiated by us */
 	BT_MESH_IVU_TEST,        /* IV Update test mode */
@@ -224,7 +224,7 @@ struct bt_mesh_net {
 	uint8_t dev_key[16];
 };
 
-/* Network interface */
+/* NetworkLock interface */
 enum bt_mesh_net_if {
 	BT_MESH_NET_IF_ADV,
 	BT_MESH_NET_IF_LOCAL,
@@ -232,7 +232,7 @@ enum bt_mesh_net_if {
 	BT_MESH_NET_IF_PROXY_CFG,
 };
 
-/* Decoding context for Network/Transport data */
+/* Decoding context for NetworkLock/Transport data */
 struct bt_mesh_net_rx {
 	struct bt_mesh_subnet *sub;
 	struct bt_mesh_msg_ctx ctx;
@@ -240,14 +240,14 @@ struct bt_mesh_net_rx {
 	uint8_t   old_iv:1,       /* iv_index - 1 was used */
 	       new_key:1,      /* Data was encrypted with updated key */
 	       friend_cred:1,  /* Data was encrypted with friend cred */
-	       ctl:1,          /* Network Control */
-	       net_if:2,       /* Network interface */
+	       ctl:1,          /* NetworkLock Control */
+	       net_if:2,       /* NetworkLock interface */
 	       local_match:1,  /* Matched a local element */
 	       friend_match:1; /* Matched an LPN we're friends for */
 	uint16_t  msg_cache_idx;  /* Index of entry in message cache */
 };
 
-/* Encoding context for Network/Transport data */
+/* Encoding context for NetworkLock/Transport data */
 struct bt_mesh_net_tx {
 	struct bt_mesh_subnet *sub;
 	struct bt_mesh_msg_ctx *ctx;

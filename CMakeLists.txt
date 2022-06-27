@@ -29,7 +29,7 @@ include_directories(${PROJECT_NAME}
 
 file(GLOB SRCFILES
         Pins.h
-        Network.cpp
+        NetworkLock.cpp
         NetworkOpener.cpp
         networkDevices/NetworkDevice.h
         networkDevices/WifiDevice.cpp
