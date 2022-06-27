@@ -24,6 +24,11 @@ To configure MQTT, enter the adress of your MQTT broker and eventually a usernam
 
 Just enable pairing mode on the NUKI lock (press button for a few seconds) and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
 
+## Support
+
+If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
+REF4KST6J4S85
+
 ## MQTT Interface
 
 ### Lock
@@ -103,11 +108,6 @@ W5x00 reset to GPIO33
 - Last but not least, on the ESP32 bridge GPIO26 and GND. This let's the firmware know that a LAN Module is connected
 
 Wifi is now disabled, and the module doesn't boot into WifiManager anymore.
-
-## Support
-
-If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REF4KST6J4S85
 
 ## Disclaimer
 
