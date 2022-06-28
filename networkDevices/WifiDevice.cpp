@@ -39,9 +39,6 @@ PubSubClient *WifiDevice::mqttClient()
 
 void WifiDevice::initialize()
 {
-    WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
-
-
     std::vector<const char *> wm_menu;
     wm_menu.push_back("wifi");
     wm_menu.push_back("exit");
