@@ -301,6 +301,12 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     {
         bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
         publishBool(mqtt_topic_battery_critical, critical);
+
+        bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
+        publishBool(mqtt_topic_battery_charging, charging);
+
+        uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
+        publishInt(mqtt_topic_battery_level, level);
     }
 
     _firstTunerStatePublish = false;
