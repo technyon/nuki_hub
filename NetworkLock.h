@@ -25,7 +25,6 @@ public:
     void initialize();
     void update();
     void setupDevice(const NetworkDeviceType hardware);
-    void initializeW5500();
 
     bool isMqttConnected();
 
