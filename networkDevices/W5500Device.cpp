@@ -9,6 +9,7 @@ W5500Device::W5500Device(const String &hostname, Preferences* preferences)
   _preferences(preferences)
 {
     initializeMacAddress(_mac);
+    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
 
     Serial.print("MAC Adress: ");
     for(int i=0; i < 6; i++)
@@ -46,6 +47,11 @@ void W5500Device::initialize()
 
 bool W5500Device::reconnect()
 {
+    if(_restartOnDisconnect && millis() > 60000)
+    {
+        ESP.restart();
+    }
+
     _hasDHCPAddress = false;
 
     // start the Ethernet connection:

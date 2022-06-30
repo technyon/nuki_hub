@@ -143,8 +143,8 @@ void setup()
         preferences->putBool(preference_lock_enabled, true);
     }
 
-//    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
-    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
+//    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
     network = new NetworkLock(networkDevice, preferences);
     network->initialize();

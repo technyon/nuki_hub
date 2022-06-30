@@ -31,6 +31,7 @@ private:
 
     int _maintainResult = 0;
     bool _hasDHCPAddress = false;
+    bool _restartOnDisconnect = false;
 
     byte _mac[6];
 };
