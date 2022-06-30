@@ -249,6 +249,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_network_timeout, value.toInt());
             configChanged = true;
         }
+        else if(key == "RSTDISC")
+        {
+            _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "LSTINT")
         {
             _preferences->putInt(preference_query_interval_lockstate, value.toInt());
@@ -509,6 +514,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
     printInputField(response, "NETTIMEOUT", "NetworkLock Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
+    printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty.<br>");
 

@@ -253,6 +253,9 @@ class WiFiManager
     //called just before doing OTA update
     void          setPreOtaUpdateCallback( std::function<void()> func );
 
+    //called when WiFi has disconnected
+    void          setDisconnectedCallback( std::function<void()> func );
+
     //sets timeout before AP,webserver loop ends and exits even if there has been no setup.
     //useful for devices that failed to connect at some point and got stuck in a webserver loop
     //in seconds setConfigPortalTimeout is a new name for setTimeout, ! not used if setConfigPortalBlocking
@@ -720,6 +723,7 @@ class WiFiManager
     std::function<void()> _saveparamscallback;
     std::function<void()> _resetcallback;
     std::function<void()> _preotaupdatecallback;
+    std::function<void()> _disconnectedcallback = nullptr;
 
     template <class T>
     auto optionalIPFromString(T *obj, const char *s) -> decltype(  obj->fromString(s)  ) {

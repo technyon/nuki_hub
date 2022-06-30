@@ -5,6 +5,8 @@
 WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
 : NetworkDevice(hostname)
 {
+    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+
     size_t caLength = _preferences->getString(preference_mqtt_ca,_ca,TLS_CA_MAX_SIZE);
     size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
     size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
@@ -69,6 +71,14 @@ void WifiDevice::initialize()
         Serial.println(WiFi.localIP().toString());
     }
 
+    if(_restartOnDisconnect)
+    {
+        _wm.setDisconnectedCallback([&]()
+        {
+            onDisconnected();
+        });
+    }
+
     _mqttClient->setBufferSize(_mqttMaxBufferSize);
 }
 
@@ -105,4 +115,12 @@ bool WifiDevice::reconnect()
 void WifiDevice::update()
 {
 
+}
+
+void WifiDevice::onDisconnected()
+{
+    if(millis() > 60000)
+    {
+        ESP.restart();
+    }
 }
