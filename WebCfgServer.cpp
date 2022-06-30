@@ -388,7 +388,7 @@ void WebCfgServer::buildHtml(String& response)
     printParameter(response, "Firmware", version.c_str());
     response.concat("</table><br><br>");
 
-    response.concat("<h3>MQTT and NetworkLock Configuration</h3>");
+    response.concat("<h3>MQTT and Network Configuration</h3>");
     buildNavigationButton(response, "Edit", "/mqttconfig");
 
     response.concat("<BR><BR><h3>NUKI Configuration</h3>");
@@ -513,7 +513,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
-    printInputField(response, "NETTIMEOUT", "NetworkLock Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
+    printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty.<br>");

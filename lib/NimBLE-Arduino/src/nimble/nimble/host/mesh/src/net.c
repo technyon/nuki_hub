@@ -36,7 +36,7 @@
 #include "../include/mesh/glue.h"
 #include "../include/mesh/slist.h"
 
-/* Minimum valid Mesh NetworkLock PDU length. The NetworkLock headers
+/* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minumum of 1 byte
  * payload for both CTL=1 and CTL=0 PDUs (smallest OpCode is 1 byte). CTL=1
  * PDUs must use a 64-bit (8 byte) NetMIC, whereas CTL=0 PDUs have at least
@@ -575,7 +575,7 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct os_mbuf *in,
 	}
 
 	if (rx->net_if == BT_MESH_NET_IF_ADV && msg_cache_match(out)) {
-		BT_DBG("Duplicate found in NetworkLock Message Cache");
+		BT_DBG("Duplicate found in Network Message Cache");
 		return false;
 	}
 
@@ -624,7 +624,7 @@ static void bt_mesh_net_relay(struct os_mbuf *sbuf,
 
 	/* The Relay Retransmit state is only applied to adv-adv relaying.
 	 * Anything else (like GATT to adv, or locally originated packets)
-	 * use the NetworkLock Transmit state.
+	 * use the Network Transmit state.
 	 */
 	if (rx->net_if == BT_MESH_NET_IF_ADV && !rx->friend_cred) {
 		transmit = bt_mesh_relay_retransmit_get();
@@ -668,7 +668,7 @@ static void bt_mesh_net_relay(struct os_mbuf *sbuf,
 
 	/* When the Friend node relays message for lpn, the message will be
 	 * retransmitted using the managed master security credentials and
-	 * the NetworkLock PDU shall be retransmitted to all network interfaces.
+	 * the Network PDU shall be retransmitted to all network interfaces.
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    (rx->friend_cred ||
@@ -796,7 +796,7 @@ void bt_mesh_net_recv(struct os_mbuf *data, int8_t rssi,
 	 * it again in the future.
 	 */
 	if (bt_mesh_trans_recv(buf, &rx) == -EAGAIN) {
-		BT_WARN("Removing rejected message from NetworkLock Message Cache");
+		BT_WARN("Removing rejected message from NetworkMessage Cache");
 		msg_cache[rx.msg_cache_idx].src = BT_MESH_ADDR_UNASSIGNED;
 		/* Rewind the next index now that we're not using this entry */
 		msg_cache_next = rx.msg_cache_idx;

@@ -37,11 +37,11 @@ void NetworkLock::setupDevice(const NetworkDeviceType hardware)
     switch(hardware)
     {
         case NetworkDeviceType::W5500:
-            Serial.println(F("NetworkLock device: W5500"));
+            Serial.println(F("Network device: W5500"));
             _device = new W5500Device(_hostname, _preferences);
             break;
         case NetworkDeviceType::WiFi:
-            Serial.println(F("NetworkLock device: Builtin WiFi"));
+            Serial.println(F("Network device: Builtin WiFi"));
             _device = new WifiDevice(_hostname, _preferences);
             break;
         default:
@@ -178,7 +178,7 @@ void NetworkLock::update()
 
     if(!_device->isConnected())
     {
-        Serial.println(F("NetworkLock not connected. Trying reconnect."));
+        Serial.println(F("Network not connected. Trying reconnect."));
         bool success = _device->reconnect();
         Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
     }
@@ -187,7 +187,7 @@ void NetworkLock::update()
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000))
         {
-            Serial.println("NetworkLock timeout has been reached, restarting ...");
+            Serial.println("Network timeout has been reached, restarting ...");
             delay(200);
             ESP.restart();
         }

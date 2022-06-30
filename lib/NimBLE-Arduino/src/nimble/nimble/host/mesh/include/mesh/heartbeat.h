@@ -36,7 +36,7 @@ struct bt_mesh_hb_pub {
 	 * @ref BT_MESH_FEAT_LOW_POWER.
 	 */
 	uint16_t feat;
-	/** NetworkLock index used for publishing. */
+	/** Network index used for publishing. */
 	uint16_t net_idx;
 	/** Publication period in seconds. */
 	uint32_t period;

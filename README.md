@@ -20,7 +20,7 @@ The firmware uses the Wifi Manager to configure the WiFi network. Power up the E
 After configuring the Wifi, the ESP should automatically connect to your network. Use the web interface to setup the MQTT broker; just navigate to the IP-Address assigned to the ESP32 via DHCP (often found in the web interface of the internet router).<br>
 To configure MQTT, enter the adress of your MQTT broker and eventually a username and a password if required. The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this. In that case leave all fields about "MQTT SSL" blank.
 
-## Paring
+## Pairing
 
 Just enable pairing mode on the NUKI lock (press button for a few seconds) and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
 
@@ -109,6 +109,20 @@ W5x00 reset to GPIO33
 - Last but not least, on the ESP32 bridge GPIO26 and GND. This let's the firmware know that a LAN Module is connected
 
 Wifi is now disabled, and the module doesn't boot into WifiManager anymore.
+
+## Troubleshooting
+
+### Random WiFi disconnects
+Unfortunately the ESP32 has problems with some Access Points and reconnecting fails.
+As a workaround you can navigate to "MQTT and Network Configuration" and enable "Restart on disconnect".
+This will reboot the ESP as soon as it gets disconnected from WiFi. Also, this reduces
+the config portal timeout to three minutes to prevent the ESP being stuck in config
+mode in case an access point is offline temporarily.
+
+### Authorization data isn't published
+Reading the authorization data from the access log is protected by the configured PIN.
+If you don't get any published data try setting the PIN or try reentering it to make
+sure it's correct.
 
 ## Disclaimer
 

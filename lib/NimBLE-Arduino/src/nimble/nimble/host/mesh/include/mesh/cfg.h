@@ -55,15 +55,15 @@ enum bt_mesh_feat_state {
 #define BT_MESH_NODE_IDENTITY_RUNNING       BT_MESH_FEATURE_ENABLED
 #define BT_MESH_NODE_IDENTITY_NOT_SUPPORTED BT_MESH_FEATURE_NOT_SUPPORTED
 
-/** @brief Enable or disable sending of the Secure NetworkLock Beacon.
+/** @brief Enable or disable sending of the Secure Network Beacon.
  *
- *  @param beacon New Secure NetworkLock Beacon state.
+ *  @param beacon New Secure Network Beacon state.
  */
 void bt_mesh_beacon_set(bool beacon);
 
-/** @brief Get the current Secure NetworkLock Beacon state.
+/** @brief Get the current Secure Network Beacon state.
  *
- *  @returns Whether the Secure NetworkLock Beacon feature is enabled.
+ *  @returns Whether the Secure Network Beacon feature is enabled.
  */
 bool bt_mesh_beacon_enabled(void);
 
@@ -87,24 +87,24 @@ int bt_mesh_default_ttl_set(uint8_t default_ttl);
  */
 uint8_t bt_mesh_default_ttl_get(void);
 
-/** @brief Set the NetworkLock Transmit parameters.
+/** @brief Set the Network Transmit parameters.
  *
- *  The NetworkLock Transmit parameters determine the parameters local messages are
+ *  The Network Transmit parameters determine the parameters local messages are
  *  transmitted with.
  *
  *  @see BT_MESH_TRANSMIT
  *
- *  @param xmit New NetworkLock Transmit parameters. Use @ref BT_MESH_TRANSMIT for
+ *  @param xmit New Network Transmit parameters. Use @ref BT_MESH_TRANSMIT for
  *              encoding.
  */
 void bt_mesh_net_transmit_set(uint8_t xmit);
 
-/** @brief Get the current NetworkLock Transmit parameters.
+/** @brief Get the current Network Transmit parameters.
  *
  *  The @ref BT_MESH_TRANSMIT_COUNT and @ref BT_MESH_TRANSMIT_INT macros can be
- *  used to decode the NetworkLock Transmit parameters.
+ *  used to decode the Network Transmit parameters.
  *
- *  @return The current NetworkLock Transmit parameters.
+ *  @return The current Network Transmit parameters.
  */
 uint8_t bt_mesh_net_transmit_get(void);
 
@@ -210,10 +210,10 @@ enum bt_mesh_feat_state bt_mesh_friend_get(void);
  *
  *  Adds a subnet with the given network index and network key to the list of
  *  known Subnets. All messages sent on the given Subnet will be processed by
- *  this node, and the node may send and receive NetworkLock Beacons on the given
+ *  this node, and the node may send and receive Network Beacons on the given
  *  Subnet.
  *
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *  @param key     Root network key of the Subnet. All other keys are derived
  *                 from this.
  *
@@ -233,7 +233,7 @@ uint8_t bt_mesh_subnet_add(uint16_t net_idx, const uint8_t key[16]);
  *  keys for the entire network, effectively removing access for all nodes that
  *  aren't given the new keys.
  *
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *  @param key     New root network key of the Subnet.
  *
  *  @retval STATUS_SUCCESS The Subnet was updated with a second key.
@@ -247,12 +247,12 @@ uint8_t bt_mesh_subnet_update(uint16_t net_idx, const uint8_t key[16]);
 /** @brief Delete a Subnet.
  *
  *  Removes the Subnet with the given network index from the node. The node will
- *  stop sending NetworkLock Beacons with the given Subnet, and can no longer
+ *  stop sending Network Beacons with the given Subnet, and can no longer
  *  process messages on this Subnet.
  *
  *  All Applications bound to this Subnet are also deleted.
  *
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *
  *  @retval STATUS_SUCCESS The Subnet was deleted.
  *  @retval STATUS_INVALID_NETKEY The NetIdx is unknown.
@@ -261,7 +261,7 @@ uint8_t bt_mesh_subnet_del(uint16_t net_idx);
 
 /** @brief Check whether a Subnet is known.
  *
- *  @param net_idx NetworkLock index
+ *  @param net_idx Network index
  *
  *  @return true if a Subnet with the given index exists, false otherwise.
  */
@@ -277,7 +277,7 @@ bool bt_mesh_subnet_exists(uint16_t net_idx);
  *  removes the old keys from the node, and returns the Subnet back to normal
  *  single-key operation with the new key set.
  *
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *  @param phase   Pointer to the new Key Refresh phase. Will return the actual
  *                 Key Refresh phase after updating.
  *
@@ -290,7 +290,7 @@ uint8_t bt_mesh_subnet_kr_phase_set(uint16_t net_idx, uint8_t *phase);
 
 /** @brief Get the Subnet's Key Refresh phase.
  *
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *  @param phase   Pointer to the Key Refresh variable to fill.
  *
  *  @retval STATUS_SUCCESS Successfully populated the @c phase variable.
@@ -311,7 +311,7 @@ uint8_t bt_mesh_subnet_kr_phase_get(uint16_t net_idx, uint8_t *phase);
  *  GATT Proxy support must be enabled through
  *  @option{CONFIG_BT_MESH_GATT_PROXY}.
  *
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *  @param node_id New Node Identity state, must be either @ref
  *                 BT_MESH_FEATURE_ENABLED or @ref BT_MESH_FEATURE_DISABLED.
  *
@@ -326,7 +326,7 @@ uint8_t bt_mesh_subnet_node_id_set(uint16_t net_idx,
 
 /** @brief Get the Node Identity state of the Subnet.
  *
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *  @param node_id Node Identity variable to fill.
  *
  *  @retval STATUS_SUCCESS Successfully populated the @c node_id variable.
@@ -378,7 +378,7 @@ ssize_t bt_mesh_subnets_get(uint16_t net_idxs[], size_t max, off_t skip);
  *  Subnet the Application is bound to before it can add the Application.
  *
  *  @param app_idx Application index.
- *  @param net_idx NetworkLock index the Application is bound to.
+ *  @param net_idx Network index the Application is bound to.
  *  @param key     Application key value.
  *
  *  @retval STATUS_SUCCESS The Application was successfully added.
@@ -406,7 +406,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
  *        Refresh phase 1.
  *
  *  @param app_idx Application index.
- *  @param net_idx NetworkLock index the Application is bound to, or
+ *  @param net_idx Network index the Application is bound to, or
  *                 @ref BT_MESH_KEY_ANY to skip the binding check.
  *  @param key     New key value.
  *
@@ -427,7 +427,7 @@ uint8_t bt_mesh_app_key_update(uint16_t app_idx, uint16_t net_idx,
  *  All models publishing with this application will stop publishing.
  *
  *  @param app_idx Application index.
- *  @param net_idx NetworkLock index.
+ *  @param net_idx Network index.
  *
  *  @retval STATUS_SUCCESS The Application key was successfully deleted.
  *  @retval STATUS_INVALID_NETKEY The NetIdx is unknown.
@@ -457,7 +457,7 @@ bool bt_mesh_app_key_exists(uint16_t app_idx);
  *  Note that any changes to the Application key list between calls to this
  *  function could change the order and number of entries in the list.
  *
- *  @param net_idx  NetworkLock Index to get the Applications of, or @ref
+ *  @param net_idx  Network Index to get the Applications of, or @ref
  *                  BT_MESH_KEY_ANY to get all Applications.
  *  @param app_idxs Array to fill.
  *  @param max      Max number of indexes to return.
