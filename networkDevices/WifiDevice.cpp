@@ -44,6 +44,8 @@ void WifiDevice::initialize()
     std::vector<const char *> wm_menu;
     wm_menu.push_back("wifi");
     wm_menu.push_back("exit");
+    // reduced tieout if ESP is set to restart on disconnect
+    _wm.setConfigPortalTimeout(_restartOnDisconnect ? 60 * 3 : 60 * 30);
     _wm.setShowInfoUpdate(false);
     _wm.setMenu(wm_menu);
     _wm.setHostname(_hostname);
@@ -63,7 +65,7 @@ void WifiDevice::initialize()
 
     if(!res) {
         Serial.println(F("Failed to connect. Wait for ESP restart."));
-        delay(10000);
+        delay(1000);
         ESP.restart();
     }
     else {
