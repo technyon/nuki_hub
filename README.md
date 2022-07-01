@@ -94,6 +94,17 @@ The following mapping between Home Assistant services and Nuki commands is setup
 
 NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.
 
+## GPIO lock control (optional)
+
+The lock can be controlled via GPIO. For security reasons, this has to be enabled in
+the configuration portal (check "Enable control via GPIO" in the NUKI configuration
+section). The Pins use pullup configuration, so they have to be connected to ground to
+trigger the action.<br><br>
+The Pin configuration is:<br>
+32: Lock<br>
+33: Unlock<br>
+27: Unlatch
+
 ## Connecting via LAN (Optional)
 
 If you prefer to connect to the MQTT Broker via LAN instead of WiFi, you can use a Wiznet W5x00 Module (W5100, W5200, W5500 are supported).
