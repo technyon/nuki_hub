@@ -134,6 +134,21 @@ void NukiWrapper::update()
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiLock::KeyTurnerState));
 }
 
+void NukiWrapper::lock()
+{
+    _nextLockAction = NukiLock::LockAction::Lock;
+}
+
+void NukiWrapper::unlock()
+{
+    _nextLockAction = NukiLock::LockAction::Unlock;
+}
+
+void NukiWrapper::unlatch()
+{
+    _nextLockAction = NukiLock::LockAction::Unlatch;
+}
+
 void NukiWrapper::setPin(const uint16_t pin)
 {
         _nukiLock.saveSecurityPincode(pin);

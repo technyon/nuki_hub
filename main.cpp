@@ -9,6 +9,7 @@
 #include "hardware/W5500EthServer.h"
 #include "hardware/WifiEthServer.h"
 #include "NukiOpenerWrapper.h"
+#include "Gpio.h"
 
 NetworkLock* network = nullptr;
 NetworkOpener* networkOpener = nullptr;
@@ -31,8 +32,6 @@ void networkTask(void *pvParameters)
         networkOpener->update();
         webCfgServer->update();
         delay(200);
-
-//        Serial.print(F("#### ")); Serial.println(uxTaskGetStackHighWaterMark(NULL));
     }
 }
 
@@ -170,6 +169,11 @@ void setup()
     {
         nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, network, preferences);
         nuki->initialize();
+
+        if(preferences->getBool(preference_gpio_locking_enabled))
+        {
+            Gpio::init(nuki);
+        }
     }
 
     openerEnabled = preferences->getBool(preference_opener_enabled);

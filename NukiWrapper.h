@@ -15,8 +15,11 @@ public:
     void initialize();
     void update();
 
-    void setPin(const uint16_t pin);
+    void lock();
+    void unlock();
+    void unlatch();
 
+    void setPin(const uint16_t pin);
     void unpair();
     
     void disableHASS();

@@ -42,6 +42,7 @@ file(GLOB SRCFILES
         PresenceDetection.cpp
         PreferencesKeys.h
         SpiffsCookie.cpp
+        Gpio.cpp
         Version.h
         include/RTOS.h
         lib/ESP32_BLE_Arduino-1.0.1/src/*.cpp
