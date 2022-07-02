@@ -5,14 +5,10 @@
 #include "PreferencesKeys.h"
 #include "Pins.h"
 
-NetworkOpener* nwInstOpener;
-
-NetworkOpener::NetworkOpener(NetworkLock* network, Preferences* preferences)
+NetworkOpener::NetworkOpener(Network* network, Preferences* preferences)
         : _preferences(preferences),
           _network(network)
 {
-    nwInstOpener = this;
-
     _configTopics.reserve(5);
 //    _configTopics.push_back(mqtt_topic_config_button_enabled);
 //    _configTopics.push_back(mqtt_topic_config_led_enabled);
@@ -38,12 +34,13 @@ void NetworkOpener::initialize()
         _preferences->putString(preference_mqtt_opener_path, _mqttPath);
     }
 
-    _network->setMqttDataReceivedForwardCallback(nwInstOpener->onMqttDataReceivedCallback);
+    _network->subscribe(_mqttPath, mqtt_topic_lock_action);
+    _network->registerMqttReceiver(this);
 }
 
 void NetworkOpener::update()
 {
-    bool connected = _network->device()->mqttClient()->connected();
+    bool connected = _network->mqttClient()->connected();
 
     if(!_isConnected && connected)
     {
@@ -51,14 +48,6 @@ void NetworkOpener::update()
     }
 
     _isConnected = connected;
-
-//    long ts = millis();
-
-}
-
-void NetworkOpener::onMqttDataReceivedCallback(char *topic, byte *payload, unsigned int length)
-{
-    nwInstOpener->onMqttDataReceived(topic, payload, length);
 }
 
 void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
@@ -186,47 +175,29 @@ void NetworkOpener::setConfigUpdateReceivedCallback(void (*configUpdateReceivedC
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
 
-void NetworkOpener::publishFloat(const char* topic, const float value, const uint8_t precision)
+void NetworkOpener::publishFloat(const char *topic, const float value, const uint8_t precision)
 {
-    char str[30];
-    dtostrf(value, 0, precision, str);
-    char path[200] = {0};
-    buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str, true);
+    _network->publishFloat(_mqttPath, topic, value, precision);
 }
 
 void NetworkOpener::publishInt(const char *topic, const int value)
 {
-    char str[30];
-    itoa(value, str, 10);
-    char path[200] = {0};
-    buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str, true);
+    _network->publishInt(_mqttPath, topic, value);
 }
 
 void NetworkOpener::publishUInt(const char *topic, const unsigned int value)
 {
-    char str[30];
-    utoa(value, str, 10);
-    char path[200] = {0};
-    buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str, true);
+    _network->publishUInt(_mqttPath, topic, value);
 }
 
 void NetworkOpener::publishBool(const char *topic, const bool value)
 {
-    char str[2] = {0};
-    str[0] = value ? '1' : '0';
-    char path[200] = {0};
-    buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, str, true);
+    _network->publishBool(_mqttPath, topic, value);
 }
 
-void NetworkOpener::publishString(const char *topic, const char *value)
+void NetworkOpener::publishString(const char* topic, const char* value)
 {
-    char path[200] = {0};
-    buildMqttPath(topic, path);
-    _network->device()->mqttClient()->publish(path, value, true);
+    _network->publishString(_mqttPath, topic, value);
 }
 
 void NetworkOpener::buildMqttPath(const char* path, char* outPath)
@@ -255,7 +226,7 @@ void NetworkOpener::subscribe(const char *path)
 {
     char prefixedPath[500];
     buildMqttPath(path, prefixedPath);
-    _network->device()->mqttClient()->subscribe(prefixedPath);
+    _network->mqttClient()->subscribe(prefixedPath);
 }
 
 bool NetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPath)

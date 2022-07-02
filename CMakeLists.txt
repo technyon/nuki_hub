@@ -29,6 +29,8 @@ include_directories(${PROJECT_NAME}
 
 file(GLOB SRCFILES
         Pins.h
+        Network.cpp
+        MqttReceiver.h
         NetworkLock.cpp
         NetworkOpener.cpp
         networkDevices/NetworkDevice.h

@@ -22,7 +22,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NetworkLock* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
+    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
     ~WebCfgServer() = default;
 
     void initialize();
@@ -58,7 +58,7 @@ private:
     WebServer _server;
     NukiWrapper* _nuki;
     NukiOpenerWrapper* _nukiOpener;
-    NetworkLock* _network;
+    Network* _network;
     Preferences* _preferences;
     Ota _ota;
 

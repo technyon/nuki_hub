@@ -4,7 +4,7 @@
 #include "hardware/WifiEthServer.h"
 #include <esp_task_wdt.h>
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NetworkLock* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
   _nuki(nuki),
   _nukiOpener(nukiOpener),
@@ -106,7 +106,7 @@ void WebCfgServer::initialize()
             buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
             _server.send(200, "text/html", response);
             waitAndProcess(true, 2000);
-            _network->restartAndConfigureWifi();
+            _network->reconfigureDevice();
         }
     });
     _server.on("/method=get", [&]() {

@@ -11,7 +11,8 @@
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
 
-NetworkLock* network = nullptr;
+Network* network = nullptr;
+NetworkLock* networkLock = nullptr;
 NetworkOpener* networkOpener = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
@@ -28,9 +29,29 @@ void networkTask(void *pvParameters)
 {
     while(true)
     {
-        network->update();
-        networkOpener->update();
-        webCfgServer->update();
+        bool r = network->update();
+
+        switch(r)
+        {
+            // Network Device and MQTT is connected. Process all updates.
+            case 0:
+                network->update();
+                networkLock->update();
+                networkOpener->update();
+                webCfgServer->update();
+                break;
+            case 1:
+                // Network Device is connected, but MQTT isn't. Call network->update() to allow MQTT reconnect and
+                // keep Webserver alive to allow user to reconfigure network settings
+                network->update();
+                webCfgServer->update();
+                break;
+                // Neither Network Devicce or MQTT is connected
+            default:
+                network->update();
+                break;
+        }
+
         delay(200);
     }
 }
@@ -145,8 +166,10 @@ void setup()
 //    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
     const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
-    network = new NetworkLock(networkDevice, preferences);
+    network = new Network(networkDevice, preferences);
     network->initialize();
+    networkLock = new NetworkLock(network, preferences);
+    networkLock->initialize();
     networkOpener = new NetworkOpener(network, preferences);
     networkOpener->initialize();
 
@@ -167,7 +190,7 @@ void setup()
     Serial.println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, network, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, preferences);
         nuki->initialize();
 
         if(preferences->getBool(preference_gpio_locking_enabled))
@@ -187,7 +210,7 @@ void setup()
     webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
-    presenceDetection = new PresenceDetection(preferences, bleScanner, network);
+    presenceDetection = new PresenceDetection(preferences, bleScanner, networkLock);
     presenceDetection->initialize();
 
     setupTasks();
