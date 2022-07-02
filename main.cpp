@@ -36,8 +36,6 @@ void networkTask(void *pvParameters)
             // Network Device and MQTT is connected. Process all updates.
             case 0:
                 network->update();
-                networkLock->update();
-                networkOpener->update();
                 webCfgServer->update();
                 break;
             case 1:
@@ -210,7 +208,7 @@ void setup()
     webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
-    presenceDetection = new PresenceDetection(preferences, bleScanner, networkLock);
+    presenceDetection = new PresenceDetection(preferences, bleScanner, network);
     presenceDetection->initialize();
 
     setupTasks();

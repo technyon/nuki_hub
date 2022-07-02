@@ -20,6 +20,7 @@ public:
     int update();
     void registerMqttReceiver(MqttReceiver* receiver);
     void reconfigureDevice();
+    void setMqttPresencePath(char* path);
 
     void subscribe(const char* prefix, const char* path);
     void publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision = 2);
@@ -30,6 +31,8 @@ public:
 
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
+
+    void publishPresenceDetection(char* csv);
 
     PubSubClient* mqttClient();
     bool isMqttConnected();
@@ -52,9 +55,11 @@ private:
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
+    char _mqttPresencePrefix[181] = {0};
     std::vector<String> _subscribedTopics;
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;
+    char* _presenceCsv = nullptr;
 
     unsigned long _lastConnectedTs = 0;
 };

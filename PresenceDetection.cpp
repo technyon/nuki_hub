@@ -1,7 +1,7 @@
 #include "PresenceDetection.h"
 #include "PreferencesKeys.h"
 
-PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, NetworkLock* network)
+PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, Network* network)
 : _preferences(preferences),
   _bleScanner(bleScanner),
   _network(network)

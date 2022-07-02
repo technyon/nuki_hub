@@ -18,7 +18,6 @@ public:
     virtual ~NetworkOpener() = default;
 
     void initialize();
-    void update();
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);

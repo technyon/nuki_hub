@@ -40,24 +40,12 @@ void NetworkLock::initialize()
         _preferences->putString(preference_mqtt_lock_path, _mqttPath);
     }
 
+    _network->setMqttPresencePath(_mqttPath);
+
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     for(const auto& topic : _configTopics)
     {
         _network->subscribe(_mqttPath, topic);
-    }
-}
-
-void NetworkLock::update()
-{
-    if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
-    {
-        bool success = publishString(mqtt_topic_presence, _presenceCsv);
-        if(!success)
-        {
-            Serial.println(F("Failed to publish presence CSV data."));
-            Serial.println(_presenceCsv);
-        }
-        _presenceCsv = nullptr;
     }
 }
 
@@ -179,11 +167,6 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 {
     publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
-}
-
-void NetworkLock::publishPresenceDetection(char *csv)
-{
-    _presenceCsv = csv;
 }
 
 void NetworkLock::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))

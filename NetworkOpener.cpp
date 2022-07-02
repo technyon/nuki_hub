@@ -38,18 +38,6 @@ void NetworkOpener::initialize()
     _network->registerMqttReceiver(this);
 }
 
-void NetworkOpener::update()
-{
-    bool connected = _network->mqttClient()->connected();
-
-    if(!_isConnected && connected)
-    {
-        subscribe(mqtt_topic_lock_action);
-    }
-
-    _isConnected = connected;
-}
-
 void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
 {
     char value[50] = {0};

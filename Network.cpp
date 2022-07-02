@@ -129,6 +129,17 @@ int Network::update()
         }
     }
 
+    if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
+    {
+        bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, _presenceCsv);
+        if(!success)
+        {
+            Serial.println(F("Failed to publish presence CSV data."));
+            Serial.println(_presenceCsv);
+        }
+        _presenceCsv = nullptr;
+    }
+
     _device->mqttClient()->loop();
     return 0;
 }
@@ -231,6 +242,12 @@ PubSubClient *Network::mqttClient()
 void Network::reconfigureDevice()
 {
     _device->reconfigure();
+}
+
+void Network::setMqttPresencePath(char *path)
+{
+    memset(_mqttPresencePrefix, 0, sizeof(_mqttPresencePrefix));
+    strcpy(_mqttPresencePrefix, path);
 }
 
 bool Network::isMqttConnected()
@@ -372,4 +389,9 @@ void Network::removeHASSConfig(char* uidString)
 
         _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
     }
+}
+
+void Network::publishPresenceDetection(char *csv)
+{
+    _presenceCsv = csv;
 }

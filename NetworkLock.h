@@ -18,7 +18,6 @@ public:
     virtual ~NetworkLock();
 
     void initialize();
-    void update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
@@ -26,7 +25,6 @@ public:
     void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
     void publishConfig(const NukiLock::Config& config);
     void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
-    void publishPresenceDetection(char* csv);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
 
@@ -51,7 +49,6 @@ private:
     Network* _network;
     Preferences* _preferences;
 
-    char* _presenceCsv = nullptr;
     std::vector<char*> _configTopics;
     char _mqttPath[181] = {0};
 
