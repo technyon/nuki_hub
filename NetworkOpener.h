@@ -11,14 +11,13 @@
 #include "NukiOpenerConstants.h"
 #include "NetworkLock.h"
 
-class NetworkOpener
+class NetworkOpener : public MqttReceiver
 {
 public:
-    explicit NetworkOpener(NetworkLock* network, Preferences* preferences);
+    explicit NetworkOpener(Network* network, Preferences* preferences);
     virtual ~NetworkOpener() = default;
 
     void initialize();
-    void update();
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
@@ -32,9 +31,9 @@ public:
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
 
+    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
+
 private:
-    static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
-    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
@@ -48,7 +47,7 @@ private:
 
     Preferences* _preferences;
 
-    NetworkLock* _network = nullptr;
+    Network* _network = nullptr;
 
     char _mqttPath[181] = {0};
     bool _isConnected = false;

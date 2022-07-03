@@ -4,7 +4,7 @@
 #include "hardware/WifiEthServer.h"
 #include <esp_task_wdt.h>
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NetworkLock* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
   _nuki(nuki),
   _nukiOpener(nukiOpener),
@@ -106,7 +106,7 @@ void WebCfgServer::initialize()
             buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
             _server.send(200, "text/html", response);
             waitAndProcess(true, 2000);
-            _network->restartAndConfigureWifi();
+            _network->reconfigureDevice();
         }
     });
     _server.on("/method=get", [&]() {
@@ -252,6 +252,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "RSTDISC")
         {
             _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "RSTTMR")
+        {
+            _preferences->putInt(preference_restart_timer, value.toInt());
             configChanged = true;
         }
         else if(key == "LSTINT")
@@ -520,6 +525,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
+    printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty.<br>");
 

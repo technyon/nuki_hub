@@ -2,7 +2,7 @@
 
 #include "BleScanner.h"
 #include "BleInterfaces.h"
-#include "NetworkLock.h"
+#include "Network.h"
 
 struct PdDevice
 {
@@ -18,7 +18,7 @@ struct PdDevice
 class PresenceDetection : public BleScanner::Subscriber
 {
 public:
-    PresenceDetection(Preferences* preferences, BleScanner::Scanner* bleScanner, NetworkLock* network);
+    PresenceDetection(Preferences* preferences, BleScanner::Scanner* bleScanner, Network* network);
     virtual ~PresenceDetection();
 
     void initialize();
@@ -31,7 +31,7 @@ private:
 
     Preferences* _preferences;
     BleScanner::Scanner* _bleScanner;
-    NetworkLock* _network;
+    Network* _network;
     char* _csv = {0};
     std::map<long long, PdDevice> _devices;
     int _timeout = 20000;

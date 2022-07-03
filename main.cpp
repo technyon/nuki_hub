@@ -11,7 +11,8 @@
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
 
-NetworkLock* network = nullptr;
+Network* network = nullptr;
+NetworkLock* networkLock = nullptr;
 NetworkOpener* networkOpener = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
@@ -23,14 +24,33 @@ EthServer* ethServer = nullptr;
 
 bool lockEnabled = false;
 bool openerEnabled = false;
+unsigned long restartTs = (2^32) - 5 * 60000;
 
 void networkTask(void *pvParameters)
 {
     while(true)
     {
-        network->update();
-        networkOpener->update();
-        webCfgServer->update();
+        bool r = network->update();
+
+        switch(r)
+        {
+            // Network Device and MQTT is connected. Process all updates.
+            case 0:
+                network->update();
+                webCfgServer->update();
+                break;
+            case 1:
+                // Network Device is connected, but MQTT isn't. Call network->update() to allow MQTT reconnect and
+                // keep Webserver alive to allow user to reconfigure network settings
+                network->update();
+                webCfgServer->update();
+                break;
+                // Neither Network Devicce or MQTT is connected
+            default:
+                network->update();
+                break;
+        }
+
         delay(200);
     }
 }
@@ -72,12 +92,13 @@ void checkMillisTask(void *pvParameters)
 {
     while(true)
     {
-        delay(60000);
+        delay(30000);
+
         // millis() is about to overflow. Restart device to prevent problems with overflow
-        if(millis() > (2^32) - 5 * 60000)
+        if(millis() > restartTs)
         {
-            Serial.println(F("millis() is about to overflow. Restarting device."));
-            vTaskDelay( 2000 / portTICK_PERIOD_MS);
+            Serial.println(F("Restart timer expired, restarting device."));
+            delay(2000);
             ESP.restart();
         }
     }
@@ -122,17 +143,8 @@ void initEthServer(const NetworkDeviceType device)
     }
 }
 
-void initNuki()
+void initPreferences()
 {
-
-}
-
-void setup()
-{
-    pinMode(NETWORK_SELECT, INPUT_PULLUP);
-
-    Serial.begin(115200);
-
     preferences = new Preferences();
     preferences->begin("nukihub", false);
 
@@ -142,11 +154,32 @@ void setup()
         preferences->putBool(preference_lock_enabled, true);
     }
 
+    if(preferences->getInt(preference_restart_timer) == 0)
+    {
+        preferences->putInt(preference_restart_timer, -1);
+    }
+}
+
+void setup()
+{
+    pinMode(NETWORK_SELECT, INPUT_PULLUP);
+
+    Serial.begin(115200);
+
+    initPreferences();
+
+    if(preferences->getInt(preference_restart_timer) > 0)
+    {
+        restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
+    }
+
 //    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
     const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
-    network = new NetworkLock(networkDevice, preferences);
+    network = new Network(networkDevice, preferences);
     network->initialize();
+    networkLock = new NetworkLock(network, preferences);
+    networkLock->initialize();
     networkOpener = new NetworkOpener(network, preferences);
     networkOpener->initialize();
 
@@ -167,7 +200,7 @@ void setup()
     Serial.println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, network, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, preferences);
         nuki->initialize();
 
         if(preferences->getBool(preference_gpio_locking_enabled))

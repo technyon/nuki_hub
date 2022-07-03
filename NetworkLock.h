@@ -9,24 +9,15 @@
 #include "NukiConstants.h"
 #include "SpiffsCookie.h"
 #include "NukiLockConstants.h"
+#include "Network.h"
 
-enum class NetworkDeviceType
-{
-    WiFi,
-    W5500
-};
-
-class NetworkLock
+class NetworkLock : public MqttReceiver
 {
 public:
-    explicit NetworkLock(const NetworkDeviceType networkDevice, Preferences* preferences);
+    explicit NetworkLock(Network* network, Preferences* preferences);
     virtual ~NetworkLock();
 
     void initialize();
-    void update();
-    void setupDevice(const NetworkDeviceType hardware);
-
-    bool isMqttConnected();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
@@ -34,7 +25,6 @@ public:
     void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
     void publishConfig(const NukiLock::Config& config);
     void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
-    void publishPresenceDetection(char* csv);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
 
@@ -44,42 +34,24 @@ public:
 
     void restartAndConfigureWifi();
 
-    NetworkDevice* device();
+    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
+
 
 private:
-    static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
-    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
-    bool comparePrefixedPath(const char* fullPath, const char* subPath);
-
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value);
     void publishUInt(const char* topic, const unsigned int value);
     void publishBool(const char* topic, const bool value);
     bool publishString(const char* topic, const char* value);
+    bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     void buildMqttPath(const char* path, char* outPath);
-    void subscribe(const char* path);
 
-    bool reconnect();
-
-    NetworkDevice* _device = nullptr;
+    Network* _network;
     Preferences* _preferences;
-    String _hostname;
-
-    bool _mqttConnected = false;
-
-    unsigned long _nextReconnect = 0;
-    char _mqttBrokerAddr[101] = {0};
-    char _mqttPath[181] = {0};
-    char _mqttUser[31] = {0};
-    char _mqttPass[31] = {0};
-    int _networkTimeout = 0;
-
-    unsigned long _lastConnectedTs = 0;
-
-    char* _presenceCsv = nullptr;
 
     std::vector<char*> _configTopics;
+    char _mqttPath[181] = {0};
 
     bool _firstTunerStatePublish = true;
 
