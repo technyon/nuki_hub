@@ -83,11 +83,6 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
             }
         }
     }
-
-    if(_mqttTopicReceivedForwardCallback != nullptr)
-    {
-        _mqttTopicReceivedForwardCallback(topic, payload, length);
-    }
 }
 
 void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState)
@@ -179,11 +174,6 @@ void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCal
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
 
-void NetworkLock::setMqttDataReceivedForwardCallback(void (*callback)(char *, uint8_t *, unsigned int))
-{
-    _mqttTopicReceivedForwardCallback = callback;
-}
-
 void NetworkLock::buildMqttPath(const char* path, char* outPath)
 {
     int offset = 0;
@@ -204,12 +194,6 @@ void NetworkLock::buildMqttPath(const char* path, char* outPath)
         ++offset;
     }
     outPath[i+1] = 0x00;
-}
-
-
-void NetworkLock::restartAndConfigureWifi()
-{
-    _network->reconfigureDevice();
 }
 
 bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)

@@ -30,12 +30,8 @@ public:
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
-    void setMqttDataReceivedForwardCallback(void (*callback)(char*, uint8_t*, unsigned int));
-
-    void restartAndConfigureWifi();
 
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
-
 
 private:
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
@@ -57,5 +53,4 @@ private:
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
-    void (*_mqttTopicReceivedForwardCallback)(char*, uint8_t*, unsigned int)  = nullptr;
 };
