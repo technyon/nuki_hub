@@ -128,7 +128,10 @@ Unfortunately the ESP32 has problems with some Access Points and reconnecting fa
 As a workaround you can navigate to "MQTT and Network Configuration" and enable "Restart on disconnect".
 This will reboot the ESP as soon as it gets disconnected from WiFi. Also, this reduces
 the config portal timeout to three minutes to prevent the ESP being stuck in config
-mode in case an access point is offline temporarily.
+mode in case an access point is offline temporarily.<br>
+If this still doesn't fix the disconnects and the ESP becomes unreachable, the
+"Restart timer" option can be used as a last resort. It will restart the ESP
+after a configured amount of time.
 
 ### Authorization data isn't published
 Reading the authorization data from the access log is protected by the configured PIN.
