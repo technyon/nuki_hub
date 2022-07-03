@@ -24,6 +24,7 @@ EthServer* ethServer = nullptr;
 
 bool lockEnabled = false;
 bool openerEnabled = false;
+unsigned long restartTs = (2^32) - 5 * 60000;
 
 void networkTask(void *pvParameters)
 {
@@ -91,12 +92,13 @@ void checkMillisTask(void *pvParameters)
 {
     while(true)
     {
-        delay(60000);
+        delay(30000);
+
         // millis() is about to overflow. Restart device to prevent problems with overflow
-        if(millis() > (2^32) - 5 * 60000)
+        if(millis() > restartTs)
         {
-            Serial.println(F("millis() is about to overflow. Restarting device."));
-            vTaskDelay( 2000 / portTICK_PERIOD_MS);
+            Serial.println(F("Restart timer expired, restarting device."));
+            delay(2000);
             ESP.restart();
         }
     }
@@ -141,9 +143,21 @@ void initEthServer(const NetworkDeviceType device)
     }
 }
 
-void initNuki()
+void initPreferences()
 {
+    preferences = new Preferences();
+    preferences->begin("nukihub", false);
 
+    if(!preferences->getBool(preference_started_befores))
+    {
+        preferences->putBool(preference_started_befores, true);
+        preferences->putBool(preference_lock_enabled, true);
+    }
+
+    if(preferences->getInt(preference_restart_timer) == 0)
+    {
+        preferences->putInt(preference_restart_timer, -1);
+    }
 }
 
 void setup()
@@ -152,13 +166,11 @@ void setup()
 
     Serial.begin(115200);
 
-    preferences = new Preferences();
-    preferences->begin("nukihub", false);
+    initPreferences();
 
-    if(!preferences->getBool(preference_started_befores))
+    if(preferences->getInt(preference_restart_timer) > 0)
     {
-        preferences->putBool(preference_started_befores, true);
-        preferences->putBool(preference_lock_enabled, true);
+        restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
     }
 
 //    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;

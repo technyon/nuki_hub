@@ -17,6 +17,7 @@
 #define preference_hostname "hostname"
 #define preference_network_timeout "nettmout"
 #define preference_restart_on_disconnect "restdisc"
+#define preference_restart_timer "resttmr"
 #define preference_query_interval_lockstate "lockStInterval"
 #define preference_query_interval_battery "batInterval"
 #define preference_cred_user "crdusr"
