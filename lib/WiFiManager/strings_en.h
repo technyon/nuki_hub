@@ -13,8 +13,11 @@
 #ifndef _WM_STRINGS_H_
 #define _WM_STRINGS_H_
 
+
 #ifndef WIFI_MANAGER_OVERRIDE_STRINGS
 // !!! ABOVE WILL NOT WORK if you define in your sketch, must be build flag, if anyone one knows how to order includes to be able to do this it would be neat.. I have seen it done..
+
+const char WM_VERSION_STR[] PROGMEM = "v1.0.11-beta";
 
 const char HTTP_HEAD_START[]       PROGMEM = "<!DOCTYPE html>"
 "<html lang='en'><head>"
@@ -100,7 +103,9 @@ const char HTTP_STYLE[]            PROGMEM = "<style>"
 "dt{font-weight:bold}dd{margin:0;padding:0 0 0.5em 0;min-height:12px}"
 "td{vertical-align: top;}"
 ".h{display:none}"
+"button{transition: 0s opacity;transition-delay: 3s;transition-duration: 0s;cursor: pointer}"
 "button.D{background-color:#dc3630}"
+"button:active{opacity:50% !important;cursor:wait;transition-delay: 0s}"
 // invert
 "body.invert,body.invert a,body.invert h1 {background-color:#060606;color:#fff;}"
 "body.invert .msg{color:#fff;background-color:#282828;border-top:1px solid #555;border-right:1px solid #555;border-bottom:1px solid #555;}"
@@ -134,7 +139,7 @@ const char HTTP_HELP[]             PROGMEM =
  "<tr><td>/erase</td>"
  "<td>Erase WiFi configuration and reboot Device. Device will not reconnect to a network until new WiFi configuration data is entered.</td></tr>"
  "</table>"
- "<p/>More information about WiFiManager at <a href='https://github.com/tzapu/WiFiManager'>https://github.com/tzapu/WiFiManager</a>.";
+ "<p/>Github <a href='https://github.com/tzapu/WiFiManager'>https://github.com/tzapu/WiFiManager</a>.";
 #else
 const char HTTP_HELP[]             PROGMEM = "";
 #endif
@@ -164,6 +169,7 @@ const char HTTP_JS[] PROGMEM =
 #endif
 
 // Info html
+// @todo remove html elements from progmem, repetetive strings
 #ifdef ESP32
 	const char HTTP_INFO_esphead[]    PROGMEM = "<h3>esp32</h3><hr><dl>";
 	const char HTTP_INFO_chiprev[]    PROGMEM = "<dt>Chip Rev</dt><dd>{1}</dd>";
@@ -203,6 +209,10 @@ const char HTTP_INFO_stamac[]     PROGMEM = "<dt>Station MAC</dt><dd>{1}</dd>";
 const char HTTP_INFO_conx[]       PROGMEM = "<dt>Connected</dt><dd>{1}</dd>";
 const char HTTP_INFO_autoconx[]   PROGMEM = "<dt>Autoconnect</dt><dd>{1}</dd>";
 
+const char HTTP_INFO_aboutver[]     PROGMEM = "<dt>WiFiManager</dt><dd>{1}</dd>";
+const char HTTP_INFO_aboutarduino[] PROGMEM = "<dt>Arduino</dt><dd>{1}</dd>";
+const char HTTP_INFO_aboutsdk[]     PROGMEM = "<dt>ESP-SDK/IDF</dt><dd>{1}</dd>";
+const char HTTP_INFO_aboutdate[]    PROGMEM = "<dt>Build Date</dt><dd>{1}</dd>";
 
 const char S_brand[]              PROGMEM = "WiFiManager";
 const char S_debugPrefix[]        PROGMEM = "*wm:";
@@ -249,8 +259,8 @@ const char D_HR[]                 PROGMEM = "--------------------";
 // -----------------------------------------------------------------------------------------------
 // DO NOT EDIT BELOW THIS LINE
 
-const uint8_t _nummenutokens = 10;
-const char * const _menutokens[10] PROGMEM = {
+const uint8_t _nummenutokens = 11;
+const char * const _menutokens[_nummenutokens] PROGMEM = {
     "wifi",
     "wifinoscan",
     "info",
@@ -260,7 +270,8 @@ const char * const _menutokens[10] PROGMEM = {
     "exit",
     "erase",
     "update",
-    "sep"
+    "sep",
+    "custom"
 };
 
 const char R_root[]               PROGMEM = "/";

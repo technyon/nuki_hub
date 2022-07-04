@@ -506,7 +506,7 @@ I get stuck in ap mode when the power goes out or modem resets, try a setConfigP
 - param menu/page (setup) added to separate params from wifi page, handled automatically by setMenu
 - set custom root menu
 - disable configportal on autoconnect
-- wm parameters initialize is now protected, allowing child classes, example included
+- wm parameters init is now protected, allowing child classes, example included
 - wifiscans are precached and async for faster page loads, refresh forces rescan
 - adds esp32 gettemperature ( currently commented out, useful for relative measurement only )
 
