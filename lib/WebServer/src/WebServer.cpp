@@ -71,6 +71,12 @@ WebServer::~WebServer() {
     delete handler;
     handler = next;
   }
+  if(_server != nullptr)
+  {
+      delete _server;
+      _server = nullptr;
+      Serial.println("##### SERVER DELETED");
+  }
 }
 
 void WebServer::begin() {
