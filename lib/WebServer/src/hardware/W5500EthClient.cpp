@@ -18,7 +18,8 @@ uint8_t W5500EthClient::connected()
 
 int W5500EthClient::setTimeout(uint32_t seconds)
 {
-//    return _ethClient->setTimeout(seconds);
+    _ethClient->setTimeout(seconds);
+    return 0;
 }
 
 size_t W5500EthClient::write(const char *buffer, size_t size)
