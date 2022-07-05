@@ -1,5 +1,5 @@
 #include "NukiOpenerWrapper.h"
-#include <FreeRTOS.h>
+#include <RTOS.h>
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
 #include <NukiOpenerUtils.h>

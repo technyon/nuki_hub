@@ -3,7 +3,7 @@
 #include "NukiWrapper.h"
 #include "NetworkLock.h"
 #include "WebCfgServer.h"
-#include <FreeRTOS.h>
+#include <RTOS.h>
 #include "PreferencesKeys.h"
 #include "PresenceDetection.h"
 #include "hardware/W5500EthServer.h"
