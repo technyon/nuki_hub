@@ -18,14 +18,8 @@ jobs:
           tar -xf /tmp/arduino-ide.tar.xz --directory ~/
           cd ~/arduino*
           ./install.sh
-      - name: Install Arduino CLI
-        uses: arduino/setup-arduino-cli@v1
-      - name: Install ESP32 SDK
-        run: |
-          arduino-cli config init
-          arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/technyon/nuki_hub/master/.github/dist/package_esp32_index_2_0_4.json
-          arduino-cli core update-index
-          arduino-cli core install esp32:esp32
+          ./arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json" --save-prefs
+          ./arduino --install-boards esp32:esp32
       - name: Install Arduino CMake Toolchain
         uses: actions/checkout@v2
         with:
@@ -50,7 +44,7 @@ jobs:
           cp build/nuki_hub.bin release/
           cp build/nuki_hub.partitions.bin release/
           cp $(find ~/.arduino15/packages/esp32/ | grep boot_app0.bin) release/
-          cp $(find ~/.arduino15/packages/esp32/ | grep bootloader_dio_80m.bin) release/
+          cp $(find ~/.arduino15/packages/esp32/ | grep esp32/bin/bootloader_dio_80m.bin) release/
           echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader_dio_80m.bin 0x10000 nuki_hub.bin 0x8000 nuki_hub.partitions.bin" > release/flash.sh
       - uses: actions/upload-artifact@v3
         with:
