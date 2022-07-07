@@ -48,8 +48,8 @@ void Network::initialize()
     Serial.print(F("Host name: "));
     Serial.println(_hostname);
 
-    const char* brokerAddr = _preferences->getString(preference_mqtt_broker).c_str();
-    strcpy(_mqttBrokerAddr, brokerAddr);
+    String brokerAddr = _preferences->getString(preference_mqtt_broker);
+    strcpy(_mqttBrokerAddr, brokerAddr.c_str());
 
     int port = _preferences->getInt(preference_mqtt_broker_port);
     if(port == 0)
