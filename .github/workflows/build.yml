@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -D CMAKE_TOOLCHAIN_FILE=../arduino-toolchain/Arduino-toolchain.cmake -D ARDUINO_BOARD="ESP32 Dev Module [esp32.esp32]" ..
+          cmake -D CMAKE_TOOLCHAIN_FILE=../arduino-toolchain/Arduino-toolchain.cmake ..
           echo "# Espressif ESP32 Partition Table" > partitions.csv
           echo "# Name, Type, SubType, Offset, Size, Flags" >> partitions.csv
           echo "nvs,      data, nvs,     0x9000,  0x5000," >> partitions.csv
