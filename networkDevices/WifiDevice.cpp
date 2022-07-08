@@ -2,9 +2,15 @@
 #include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 
+RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
+
 WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
 : NetworkDevice(hostname)
 {
+    WiFiDevice_reconfdetect[16] = 0x00;
+    _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
+    memset(WiFiDevice_reconfdetect, 0, sizeof WiFiDevice_reconfdetect);
+
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
 
     size_t caLength = _preferences->getString(preference_mqtt_ca,_ca,TLS_CA_MAX_SIZE);
@@ -52,10 +58,9 @@ void WifiDevice::initialize()
 
     bool res = false;
 
-    if(_cookie.isSet())
+    if(_startAp)
     {
         Serial.println(F("Opening WiFi configuration portal."));
-        _cookie.clear();
         res = _wm.startConfigPortal();
     }
     else
@@ -86,8 +91,7 @@ void WifiDevice::initialize()
 
 void WifiDevice::reconfigure()
 {
-    _cookie.set();
-    delay(200);
+    strcpy(WiFiDevice_reconfdetect, "reconfigure_wifi");
     ESP.restart();
 }
 

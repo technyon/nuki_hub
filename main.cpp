@@ -173,8 +173,8 @@ void setup()
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
     }
 
-//    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
-    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
+//    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
     network = new Network(networkDevice, preferences);
     network->initialize();

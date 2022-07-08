@@ -4,7 +4,6 @@
 #include <WiFiClientSecure.h>
 #include <Preferences.h>
 #include "NetworkDevice.h"
-#include "../SpiffsCookie.h"
 #include "WiFiManager.h"
 
 class WifiDevice : public NetworkDevice
@@ -30,8 +29,9 @@ private:
     WiFiClient* _wifiClient = nullptr;
     WiFiClientSecure* _wifiClientSecure = nullptr;
     PubSubClient* _mqttClient = nullptr;
-    SpiffsCookie _cookie;
+//    SpiffsCookie _cookie;
     bool _restartOnDisconnect = false;
+    bool _startAp = false;
 
     char _ca[TLS_CA_MAX_SIZE];
     char _cert[TLS_CERT_MAX_SIZE];

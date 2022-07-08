@@ -43,7 +43,6 @@ file(GLOB SRCFILES
         WebCfgServer.cpp
         PresenceDetection.cpp
         PreferencesKeys.h
-        SpiffsCookie.cpp
         Gpio.cpp
         Version.h
 #        include/RTOS.h

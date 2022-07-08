@@ -7,7 +7,6 @@
 #include <Preferences.h>
 #include <vector>
 #include "NukiConstants.h"
-#include "SpiffsCookie.h"
 #include "NukiOpenerConstants.h"
 #include "NetworkLock.h"
 
