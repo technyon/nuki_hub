@@ -40,13 +40,15 @@ void PresenceDetection::update()
     delay(3000);
 
     if(_timeout < 0) return;
+    memset(_csv, 0, presence_detection_buffer_size);
+
     if(_devices.size() == 0)
     {
-        _network->publishPresenceDetection(";;");
+        strcpy(_csv, ";;");
+        _network->publishPresenceDetection(_csv);
         return;
     }
 
-    memset(_csv, 0, presence_detection_buffer_size);
     _csvIndex = 0;
     long ts = millis();
     for(auto it : _devices)
