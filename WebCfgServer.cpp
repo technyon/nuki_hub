@@ -165,6 +165,10 @@ bool WebCfgServer::processArgs(String& message)
     bool clearCredentials = false;
 
     int count = _server.args();
+
+    String pass1 = "";
+    String pass2 = "";
+
     for(int index = 0; index < count; index++)
     {
         String key = _server.argName(index);
@@ -308,8 +312,11 @@ bool WebCfgServer::processArgs(String& message)
         }
         else if(key == "CREDPASS")
         {
-            _preferences->putString(preference_cred_password, value);
-            configChanged = true;
+            pass1 = value;
+        }
+        else if(key == "CREDPASSRE")
+        {
+            pass2 = value;
         }
         else if(key == "NUKIPIN" && _nuki != nullptr)
         {
@@ -337,6 +344,12 @@ bool WebCfgServer::processArgs(String& message)
                 _nukiOpener->setPin(value.toInt());
             }
         }
+    }
+
+    if(pass1 != "" && pass1 == pass2)
+    {
+        _preferences->putString(preference_cred_password, pass1);
+        configChanged = true;
     }
 
     if(clearMqttCredentials)
@@ -428,7 +441,8 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
     printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 20);
-    printInputField(response, "CREDPASS", "Password", "*", 30, true);
+    printInputField(response, "CREDPASS", "Password (max 30 characters)", "*", 30, true);
+    printInputField(response, "CREDPASSRE", "Retype password", "*", 30, true);
     response.concat("</table>");
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
