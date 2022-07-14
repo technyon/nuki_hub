@@ -76,6 +76,7 @@ private:
     bool _allowRestartToPortal = false;
     uint32_t _transferredSize = 0;
     bool _otaStart = true;
+    String _hostname;
 
     String _confirmCode = "----";
 

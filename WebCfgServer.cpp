@@ -14,6 +14,8 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Net
 {
     _confirmCode = generateConfirmCode();
 
+    _hostname = _preferences->getString(preference_hostname);
+
     String str = _preferences->getString(preference_cred_user);
 
     if(str.length() > 0)
@@ -393,6 +395,7 @@ void WebCfgServer::buildHtml(String& response)
 
     response.concat("<table>");
 
+    printParameter(response, "Hostname", _hostname.c_str());
     printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "Yes" : "No");
     if(_nuki != nullptr)
     {
