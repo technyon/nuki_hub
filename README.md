@@ -37,7 +37,7 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFN8VHZXUBV4<br>
+REFSHC6Z6QZ4P<br>
 This will also give you a 30€ discount for your order.
 
 ## MQTT Interface

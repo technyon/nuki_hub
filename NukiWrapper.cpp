@@ -281,6 +281,13 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
         _nukiLock.setLedBrightness(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
+    if(strcmp(topic, mqtt_topic_config_single_lock) == 0)
+    {
+        bool newValue = atoi(value) > 0;
+        if(!_nukiConfigValid || _nukiConfig.singleLock == newValue) return;
+        _nukiLock.enableSingleLock(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
     else if(strcmp(topic, mqtt_topic_config_auto_unlock) == 0)
     {
         bool newValue = !(atoi(value) > 0);

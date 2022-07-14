@@ -15,6 +15,7 @@ NetworkLock::NetworkLock(Network* network, Preferences* preferences)
     _configTopics.push_back(mqtt_topic_config_led_brightness);
     _configTopics.push_back(mqtt_topic_config_auto_unlock);
     _configTopics.push_back(mqtt_topic_config_auto_lock);
+    _configTopics.push_back(mqtt_topic_config_single_lock);
 
     _network->registerMqttReceiver(this);
 }
@@ -156,6 +157,7 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
+    publishBool(mqtt_topic_config_single_lock, config.singleLock == 1);
 }
 
 void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
