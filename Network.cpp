@@ -96,7 +96,7 @@ void Network::initialize()
 
 int Network::update()
 {
-    long ts = millis();
+    unsigned long ts = millis();
 
     _device->update();
 
