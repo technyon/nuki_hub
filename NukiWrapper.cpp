@@ -80,7 +80,7 @@ void NukiWrapper::update()
         }
         else
         {
-            vTaskDelay( 200 / portTICK_PERIOD_MS);
+            delay(200);
             return;
         }
     }
