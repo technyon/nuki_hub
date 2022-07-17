@@ -13,13 +13,14 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Net
   _allowRestartToPortal(allowRestartToPortal)
 {
     _confirmCode = generateConfirmCode();
-
     _hostname = _preferences->getString(preference_hostname);
-
     String str = _preferences->getString(preference_cred_user);
 
     if(str.length() > 0)
     {
+        memset(&_credUser, 0, sizeof(_credUser));
+        memset(&_credPassword, 0, sizeof(_credPassword));
+
         _hasCredentials = true;
         const char *user = str.c_str();
         memcpy(&_credUser, user, str.length());
