@@ -260,6 +260,13 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *va
         _nukiOpener.enableLedFlash(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
+    if(strcmp(topic, mqtt_topic_config_sound_level) == 0)
+    {
+        uint8_t newValue = atoi(value);
+        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.soundLevel == newValue) return;
+        _nukiOpener.setSoundLevel(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
 }
 
 const NukiOpener::OpenerState &NukiOpenerWrapper::keyTurnerState()

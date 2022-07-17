@@ -23,5 +23,6 @@
 #define mqtt_topic_config_auto_unlock "/configuration/autoUnlock"
 #define mqtt_topic_config_auto_lock "/configuration/autoLock"
 #define mqtt_topic_config_single_lock "/configuration/singleLock"
+#define mqtt_topic_config_sound_level "/configuration/soundLevel"
 
 #define mqtt_topic_presence "/presence/devices"

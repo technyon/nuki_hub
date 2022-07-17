@@ -10,11 +10,11 @@ NetworkOpener::NetworkOpener(Network* network, Preferences* preferences)
           _network(network)
 {
     _configTopics.reserve(5);
-//    _configTopics.push_back(mqtt_topic_config_button_enabled);
-//    _configTopics.push_back(mqtt_topic_config_led_enabled);
-//    _configTopics.push_back(mqtt_topic_config_led_brightness);
-//    _configTopics.push_back(mqtt_topic_config_auto_unlock);
-//    _configTopics.push_back(mqtt_topic_config_auto_lock);
+    _configTopics.push_back(mqtt_topic_config_button_enabled);
+    _configTopics.push_back(mqtt_topic_config_led_enabled);
+    _configTopics.push_back(mqtt_topic_config_sound_level);
+
+    _network->registerMqttReceiver(this);
 }
 
 void NetworkOpener::initialize()
@@ -35,7 +35,10 @@ void NetworkOpener::initialize()
     }
 
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
-    _network->registerMqttReceiver(this);
+    for(const auto& topic : _configTopics)
+    {
+        _network->subscribe(_mqttPath, topic);
+    }
 }
 
 void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
@@ -139,8 +142,7 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 
 void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &config)
 {
-//    publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
-//    publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
+    publishUInt(mqtt_topic_config_sound_level, config.soundLevel);
 }
 
 void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
