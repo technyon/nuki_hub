@@ -444,7 +444,7 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<FORM ACTION=method=get >");
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
-    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 20);
+    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30);
     printInputField(response, "CREDPASS", "Password (max 30 characters)", "*", 30, true);
     printInputField(response, "CREDPASSRE", "Retype password", "*", 30, true);
     response.concat("</table>");
