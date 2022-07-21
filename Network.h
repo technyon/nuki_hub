@@ -21,6 +21,7 @@ public:
     void registerMqttReceiver(MqttReceiver* receiver);
     void reconfigureDevice();
     void setMqttPresencePath(char* path);
+    void disableAutoRestarts(); // disable on OTA start
 
     void subscribe(const char* prefix, const char* path);
     void publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision = 2);
@@ -60,6 +61,7 @@ private:
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;
     char* _presenceCsv = nullptr;
+    bool _restartOnDisconnect = false;
 
     unsigned long _lastConnectedTs = 0;
 };

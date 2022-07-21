@@ -37,6 +37,8 @@ void Network::setupDevice(const NetworkDeviceType hardware)
 
 void Network::initialize()
 {
+    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+
     if(_hostname == "")
     {
         _hostname = "nukihub";
@@ -102,6 +104,11 @@ int Network::update()
 
     if(!_device->isConnected())
     {
+        if(_restartOnDisconnect && millis() > 60000)
+        {
+            ESP.restart();
+        }
+
         Serial.println(F("Network not connected. Trying reconnect."));
         bool success = _device->reconnect();
         Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
@@ -248,6 +255,12 @@ void Network::setMqttPresencePath(char *path)
 {
     memset(_mqttPresencePrefix, 0, sizeof(_mqttPresencePrefix));
     strcpy(_mqttPresencePrefix, path);
+}
+
+void Network::disableAutoRestarts()
+{
+    _networkTimeout = 0;
+    _restartOnDisconnect = false;
 }
 
 bool Network::isMqttConnected()

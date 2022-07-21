@@ -792,6 +792,7 @@ void WebCfgServer::handleOtaUpload()
     }
 
     esp_task_wdt_init(30, false);
+    _network->disableAutoRestarts();
 
     HTTPUpload& upload = _server.upload();
 
@@ -827,4 +828,9 @@ void WebCfgServer::sendFontsInterMinCss()
 {
     // escaped by https://www.cescaper.com/
     _server.send(200, "text/plain", intercss);
+}
+
+bool WebCfgServer::otaStarted()
+{
+    return _ota.updateStarted();
 }

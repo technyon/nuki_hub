@@ -94,6 +94,11 @@ void checkMillisTask(void *pvParameters)
     {
         delay(30000);
 
+        if(webCfgServer->otaStarted())
+        {
+            return;
+        }
+
         // millis() is about to overflow. Restart device to prevent problems with overflow
         if(millis() > restartTs)
         {

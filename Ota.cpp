@@ -33,3 +33,8 @@ void Ota::updateFirmware(uint8_t* buf, size_t size)
         }
     }
 }
+
+bool Ota::updateStarted()
+{
+    return _updateStarted;
+}

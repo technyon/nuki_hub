@@ -27,6 +27,7 @@ public:
 
     void initialize();
     void update();
+    bool otaStarted();
 
 
 private:
@@ -75,7 +76,6 @@ private:
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;
     uint32_t _transferredSize = 0;
-    bool _otaStart = true;
     String _hostname;
 
     String _confirmCode = "----";
