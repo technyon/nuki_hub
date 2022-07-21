@@ -381,6 +381,13 @@ bool WebCfgServer::processArgs(String& message)
 
 void WebCfgServer::update()
 {
+    if(_otaStartTs > 0 && (millis() - _otaStartTs) > 120000)
+    {
+        Serial.println(F("OTA time out, restarting"));
+        delay(200);
+        ESP.restart();
+    }
+
     if(!_enabled) return;
 
     _server.handleClient();
@@ -783,16 +790,14 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
 
 void WebCfgServer::handleOtaUpload()
 {
-    if (_server.uri() != "/uploadota") {
+    if (_server.uri() != "/uploadota")
+    {
         return;
     }
     if(millis() < 60000)
     {
         return;
     }
-
-    esp_task_wdt_init(30, false);
-    _network->disableAutoRestarts();
 
     HTTPUpload& upload = _server.upload();
 
@@ -807,6 +812,9 @@ void WebCfgServer::handleOtaUpload()
         if (!filename.startsWith("/")) {
             filename = "/" + filename;
         }
+        _otaStartTs = millis();
+        esp_task_wdt_init(30, false);
+        _network->disableAutoRestarts();
         Serial.print("handleFileUpload Name: "); Serial.println(filename);
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         _transferredSize = _transferredSize + upload.currentSize;

@@ -74,6 +74,7 @@ private:
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;
     uint32_t _transferredSize = 0;
+    unsigned long _otaStartTs = 0;
     String _hostname;
 
     String _confirmCode = "----";
