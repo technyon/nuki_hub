@@ -94,16 +94,11 @@ void checkMillisTask(void *pvParameters)
     {
         delay(30000);
 
-        if(webCfgServer->otaStarted())
-        {
-            return;
-        }
-
         // millis() is about to overflow. Restart device to prevent problems with overflow
         if(millis() > restartTs)
         {
             Serial.println(F("Restart timer expired, restarting device."));
-            delay(2000);
+            delay(200);
             ESP.restart();
         }
     }
@@ -117,7 +112,7 @@ void setupTasks()
     xTaskCreatePinnedToCore(networkTask, "ntw", 8192, NULL, 3, NULL, 1);
     xTaskCreatePinnedToCore(nukiTask, "nuki", 4096, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 768, NULL, 5, NULL, 1);
-    xTaskCreatePinnedToCore(checkMillisTask, "mlchk", 640, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(checkMillisTask, "mlchk", 1024, NULL, 1, NULL, 1);
 }
 
 uint32_t getRandomId()

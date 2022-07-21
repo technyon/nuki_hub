@@ -27,8 +27,6 @@ public:
 
     void initialize();
     void update();
-    bool otaStarted();
-
 
 private:
     bool processArgs(String& message);

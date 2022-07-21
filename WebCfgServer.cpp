@@ -829,8 +829,3 @@ void WebCfgServer::sendFontsInterMinCss()
     // escaped by https://www.cescaper.com/
     _server.send(200, "text/plain", intercss);
 }
-
-bool WebCfgServer::otaStarted()
-{
-    return _ota.updateStarted();
-}
