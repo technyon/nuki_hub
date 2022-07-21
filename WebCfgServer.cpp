@@ -567,15 +567,15 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     response.concat("<FORM ACTION=method=get >");
     response.concat("<h3>MQTT Configuration</h3>");
     response.concat("<table>");
-    printCheckBox(response, "LOCKENA", "NUKI Lock enabled", _preferences->getBool(preference_lock_enabled));
+    printCheckBox(response, "LOCKENA", "NUKI Smartlock enabled", _preferences->getBool(preference_lock_enabled));
     if(_preferences->getBool(preference_lock_enabled))
     {
-        printInputField(response, "MQTTPATH", "MQTT Lock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
+        printInputField(response, "MQTTPATH", "MQTT NUKI Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
     }
     printCheckBox(response, "OPENA", "NUKI Opener enabled", _preferences->getBool(preference_opener_enabled));
     if(_preferences->getBool(preference_opener_enabled))
     {
-        printInputField(response, "MQTTOPPATH", "MQTT Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
+        printInputField(response, "MQTTOPPATH", "MQTT NUKI Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
     }
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
