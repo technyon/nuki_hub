@@ -52,14 +52,14 @@ This will also give you a 30€ discount for your order.
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-
+<br><br>
 - battery/level: Battery level in percent
 - battery/critical: 1 if battery level is critical, otherwise 0
 - battery/charging: 1 if charging, otherwise 0
 - battery/voltage: Current Battery voltage (V)
 - battery/drain: The drain of the last lock action in Milliwattseconds (mWs)
 - battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A)
-
+  <br><br>
 - configuration/autoLock: enable or disable autoLock (0 = disabled; 1 = enabled). Maps to "Auto lock enabled" in the bluetooth API.
 - configuration/autoUnlock: enable or disable autoLock in general (0 = disabled; 1 = enabled). Maps to "Auto unlock disabled" in the bluetooth API.
 - configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
@@ -77,13 +77,13 @@ This will also give you a 30€ discount for your order.
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-
+  <br><br>
 - battery/voltage: Reports the current battery voltage in Volts.
 - battery/critical: 1 if battery level is critical, otherwise 0
-
+  <br><br>
 - configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
 - configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled)
-- configuration/soundLEvel: configures the volume of sounds the opener plays back (0 = min; 255 = max)
+- configuration/soundLevel: configures the volume of sounds the opener plays back (0 = min; 255 = max)
 
 ### Misc
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
