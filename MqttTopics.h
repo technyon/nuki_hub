@@ -26,3 +26,7 @@
 #define mqtt_topic_config_sound_level "/configuration/soundLevel"
 
 #define mqtt_topic_presence "/presence/devices"
+
+#define mqtt_topic_reset "/maintenance/reset"
+#define mqtt_topic_uptime "/maintenance/uptime"
+#define mqtt_topic_freeheap "/maintenance/freeHeap"

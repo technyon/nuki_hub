@@ -48,6 +48,21 @@ void NetworkLock::initialize()
     {
         _network->subscribe(_mqttPath, topic);
     }
+
+    _network->subscribe(_mqttPath, mqtt_topic_reset);
+    _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
+}
+
+void NetworkLock::update()
+{
+    unsigned long ts = millis();
+
+    if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
+    {
+        _lastMaintenanceTs = ts;
+        publishULong(mqtt_topic_uptime, ts / 1000 / 60);
+        publishUInt(mqtt_topic_freeheap, esp_get_free_heap_size());
+    }
 }
 
 void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
@@ -58,6 +73,13 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
     for(int i=0; i<l; i++)
     {
         value[i] = payload[i];
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
+    {
+        Serial.println(F("Restart requested via MQTT."));
+        delay(200);
+        ESP.restart();
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
@@ -241,3 +263,9 @@ bool NetworkLock::publishString(const char *topic, const char *value)
 {
     return _network->publishString(_mqttPath, topic, value);
 }
+
+void NetworkLock::publishULong(const char *topic, const unsigned long value)
+{
+    return _network->publishULong(_mqttPath, topic, value);
+}
+

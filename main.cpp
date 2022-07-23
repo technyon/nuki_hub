@@ -36,16 +36,12 @@ void networkTask(void *pvParameters)
         {
             // Network Device and MQTT is connected. Process all updates.
             case 0:
-                network->update();
-                webCfgServer->update();
-                break;
             case 1:
-                // Network Device is connected, but MQTT isn't. Call network->update() to allow MQTT reconnect and
-                // keep Webserver alive to allow user to reconfigure network settings
+                networkLock->update();
                 network->update();
                 webCfgServer->update();
                 break;
-                // Neither Network Devicce or MQTT is connected
+                // Neither Network Devicc or MQTT is connected. Call network to allow for a reconnect.
             default:
                 network->update();
                 break;

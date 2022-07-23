@@ -180,6 +180,14 @@ bool Network::reconnect()
             {
                 _device->mqttClient()->subscribe(topic.c_str());
             }
+            if(_firstConnect)
+            {
+                _firstConnect = false;
+                for(const auto& it : _initTopics)
+                {
+                    _device->mqttClient()->publish(it.first.c_str(), it.second.c_str(), true);
+                }
+            }
         }
         else
         {
@@ -199,6 +207,15 @@ void Network::subscribe(const char* prefix, const char *path)
     char prefixedPath[500];
     buildMqttPath(prefix, path, prefixedPath);
     _subscribedTopics.push_back(prefixedPath);
+}
+
+void Network::initTopic(const char *prefix, const char *path, const char *value)
+{
+    char prefixedPath[500];
+    buildMqttPath(prefix, path, prefixedPath);
+    String pathStr = prefixedPath;
+    String valueStr = value;
+    _initTopics[pathStr] = valueStr;
 }
 
 void Network::buildMqttPath(const char* prefix, const char* path, char* outPath)
@@ -288,6 +305,15 @@ void Network::publishInt(const char* prefix, const char *topic, const int value)
 }
 
 void Network::publishUInt(const char* prefix, const char *topic, const unsigned int value)
+{
+    char str[30];
+    utoa(value, str, 10);
+    char path[200] = {0};
+    buildMqttPath(prefix, topic, path);
+    _device->mqttClient()->publish(path, str, true);
+}
+
+void Network::publishULong(const char* prefix, const char *topic, const unsigned long value)
 {
     char str[30];
     utoa(value, str, 10);

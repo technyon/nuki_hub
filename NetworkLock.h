@@ -17,6 +17,7 @@ public:
     virtual ~NetworkLock();
 
     void initialize();
+    void update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
@@ -36,6 +37,7 @@ private:
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value);
     void publishUInt(const char* topic, const unsigned int value);
+    void publishULong(const char* topic, const unsigned long value);
     void publishBool(const char* topic, const bool value);
     bool publishString(const char* topic, const char* value);
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
@@ -49,6 +51,7 @@ private:
     char _mqttPath[181] = {0};
 
     bool _firstTunerStatePublish = true;
+    unsigned long _lastMaintenanceTs = 0;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
