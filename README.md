@@ -37,7 +37,7 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFSHC6Z6QZ4P<br>
+REF53F34SUEFS<br>
 This will also give you a 30€ discount for your order.
 
 ## MQTT Interface
@@ -60,6 +60,13 @@ This will also give you a 30€ discount for your order.
 - battery/drain: The drain of the last lock action in Milliwattseconds (mWs)
 - battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A)
 
+- configuration/autoLock: enable or disable autoLock (0 = disabled; 1 = enabled). Maps to "Auto lock enabled" in the bluetooth API.
+- configuration/autoUnlock: enable or disable autoLock in general (0 = disabled; 1 = enabled). Maps to "Auto unlock disabled" in the bluetooth API.
+- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
+- configuration/ledBrightness: Set the brightness of the LED on the lock (0=min; 5=max)
+- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled)
+- configuration/singleLock: configures wether to single- or double-lock the door (1 = single; 2 = double)
+
 ### Opener
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3
@@ -73,6 +80,10 @@ This will also give you a 30€ discount for your order.
 
 - battery/voltage: Reports the current battery voltage in Volts.
 - battery/critical: 1 if battery level is critical, otherwise 0
+
+- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
+- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled)
+- configuration/soundLEvel: configures the volume of sounds the opener plays back (0 = min; 255 = max)
 
 ### Misc
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
