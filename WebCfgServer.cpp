@@ -234,17 +234,20 @@ bool WebCfgServer::processArgs(String& message)
         }
         else if(key == "HASSDISCOVERY")
         {
-            // Previous HASS config has to be disabled first (remove retained MQTT messages)
-            if ( _nuki != nullptr )
+            if(_preferences->getString(preference_mqtt_hass_discovery) != value)
             {
-                _nuki->disableHASS();
+                // Previous HASS config has to be disabled first (remove retained MQTT messages)
+                if (_nuki != nullptr)
+                {
+                    _nuki->disableHASS();
+                }
+                if (_nukiOpener != nullptr)
+                {
+                    _nukiOpener->disableHASS();
+                }
+                _preferences->putString(preference_mqtt_hass_discovery, value);
+                configChanged = true;
             }
-            if ( _nukiOpener != nullptr )
-            {
-                _nukiOpener->disableHASS();
-            }
-            _preferences->putString(preference_mqtt_hass_discovery, value);
-            configChanged = true;
         }
         else if(key == "HOSTNAME")
         {
