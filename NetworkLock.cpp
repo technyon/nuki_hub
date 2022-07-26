@@ -61,7 +61,7 @@ void NetworkLock::update()
     {
         _lastMaintenanceTs = ts;
         publishULong(mqtt_topic_uptime, ts / 1000 / 60);
-        publishUInt(mqtt_topic_freeheap, esp_get_free_heap_size());
+        // publishUInt(mqtt_topic_freeheap, esp_get_free_heap_size());
     }
 }
 
