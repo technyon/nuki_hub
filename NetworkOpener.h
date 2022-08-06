@@ -19,6 +19,7 @@ public:
     void initialize();
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
+    void publishBinaryState(NukiOpener::LockState lockState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);
     void publishBatteryReport(const NukiOpener::BatteryReport& batteryReport);
@@ -54,6 +55,7 @@ private:
     std::vector<char*> _configTopics;
 
     bool _firstTunerStatePublish = true;
+    bool _haEnabled= false;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;

@@ -34,6 +34,8 @@ void NetworkOpener::initialize()
         _preferences->putString(preference_mqtt_opener_path, _mqttPath);
     }
 
+    _haEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     for(const auto& topic : _configTopics)
     {
@@ -86,6 +88,11 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
         publishString(mqtt_topic_lock_state, str);
+
+        if(_haEnabled)
+        {
+            publishBinaryState(keyTurnerState.lockState);
+        }
     }
 
     if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
@@ -116,6 +123,23 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     }
 
     _firstTunerStatePublish = false;
+}
+
+void NetworkOpener::publishBinaryState(NukiOpener::LockState lockState)
+{
+    switch(lockState)
+    {
+        case NukiOpener::LockState::Locked:
+        case NukiOpener::LockState::RTOactive:
+            publishString(mqtt_topic_lock_binary_state, "locked");
+            break;
+        case NukiOpener::LockState::Open:
+        case NukiOpener::LockState::Opening:
+            publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
+        default:
+            break;
+    }
 }
 
 void NetworkOpener::publishAuthorizationInfo(const uint32_t authId, const char *authName)

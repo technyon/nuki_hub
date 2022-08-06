@@ -365,7 +365,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         configJSON.concat("\",\"pl_open\":\"");
         configJSON.concat(openAction);
         configJSON.concat("\",\"stat_t\":\"~");
-        configJSON.concat(mqtt_topic_lock_state);
+        configJSON.concat(mqtt_topic_lock_binary_state);
         configJSON.concat("\",\"stat_locked\":\"");
         configJSON.concat(lockedState);
         configJSON.concat("\",\"stat_unlocked\":\"");

@@ -20,6 +20,7 @@ public:
     void update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
+    void publishBinaryState(NukiLock::LockState lockState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);
     void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
@@ -52,6 +53,7 @@ private:
 
     bool _firstTunerStatePublish = true;
     unsigned long _lastMaintenanceTs = 0;
+    bool _haEnabled= false;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;

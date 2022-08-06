@@ -43,6 +43,8 @@ void NetworkLock::initialize()
 
     _network->setMqttPresencePath(_mqttPath);
 
+    _haEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     for(const auto& topic : _configTopics)
     {
@@ -117,6 +119,11 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
         memset(&str, 0, sizeof(str));
         lockstateToString(keyTurnerState.lockState, str);
         publishString(mqtt_topic_lock_state, str);
+
+        if(_haEnabled)
+        {
+            publishBinaryState(keyTurnerState.lockState);
+        }
     }
 
     if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
@@ -154,6 +161,27 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     _firstTunerStatePublish = false;
 }
+
+void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
+{
+    switch(lockState)
+    {
+        case NukiLock::LockState::Locked:
+        case NukiLock::LockState::Locking:
+            publishString(mqtt_topic_lock_binary_state, "locked");
+            break;
+        case NukiLock::LockState::Unlocked:
+        case NukiLock::LockState::Unlocking:
+        case NukiLock::LockState::Unlatched:
+        case NukiLock::LockState::Unlatching:
+        case NukiLock::LockState::UnlockedLnga:
+            publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
+        default:
+            break;
+    }
+}
+
 
 void NetworkLock::publishAuthorizationInfo(const uint32_t authId, const char *authName)
 {
