@@ -1,4 +1,5 @@
 #include "WebCfgServer.h"
+#include "WebCfgServerConstants.h"
 #include "PreferencesKeys.h"
 #include "Version.h"
 #include "hardware/WifiEthServer.h"
@@ -52,6 +53,12 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
         sendFontsInterMinCss();
+    });
+    _server.on("/favicon.ico", HTTP_GET, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        sendFavicon();
     });
     _server.on("/cred", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -832,11 +839,16 @@ void WebCfgServer::handleOtaUpload()
 void WebCfgServer::sendNewCss()
 {
     // escaped by https://www.cescaper.com/
-    _server.send(200, "text/plain", newcss);
+    _server.send(200, "text/plain", newcss, sizeof(newcss));
 }
 
 void WebCfgServer::sendFontsInterMinCss()
 {
     // escaped by https://www.cescaper.com/
-    _server.send(200, "text/plain", intercss);
+    _server.send(200, "text/plain", intercss, sizeof(intercss));
+}
+
+void WebCfgServer::sendFavicon()
+{
+    _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
 }

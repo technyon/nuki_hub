@@ -413,6 +413,15 @@ void WebServer::send(int code, const char* content_type, const String& content) 
       sendContent(content);
 }
 
+void WebServer::send(int code, const char *content_type, const char *content, size_t contentLength)
+{
+  String header;
+  _prepareHeader(header, code, content_type, contentLength);
+  _currentClientWrite(header.c_str(), header.length());
+  if(contentLength)
+    sendContent(content, contentLength);
+}
+
 void WebServer::send_P(int code, PGM_P content_type, PGM_P content) {
     size_t contentLength = 0;
 
@@ -429,6 +438,7 @@ void WebServer::send_P(int code, PGM_P content_type, PGM_P content) {
 }
 
 void WebServer::send_P(int code, PGM_P content_type, PGM_P content, size_t contentLength) {
+    _chunked = true;
     String header;
     char type[64];
     memccpy_P((void*)type, (PGM_VOID_P)content_type, 0, sizeof(type));

@@ -119,6 +119,7 @@ public:
   // content_type - HTTP content type, like "text/plain" or "image/png"
   // content - actual content body
   void send(int code, const char* content_type = NULL, const String& content = String(""));
+  void send(int code, const char* content_type, const char* content, size_t contentLength);
   void send(int code, char* content_type, const String& content);
   void send(int code, const String& content_type, const String& content);
   void send_P(int code, PGM_P content_type, PGM_P content);
