@@ -260,6 +260,7 @@ NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *na
                                char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
 }
 
 void NetworkLock::removeHASSConfig(char *uidString)

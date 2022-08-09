@@ -382,6 +382,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 
         _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
 
+        // Battery critical
         configJSON = "{\"dev\":{\"ids\":[\"nuki_";
         configJSON.concat(uidString);
         configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
@@ -405,8 +406,71 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat("/battery_low/config");
 
         _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+
+        // Battery voltage
+        configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" battery voltage\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat(
+                "_battery_voltage\",\"dev_cla\":\"voltage\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_battery_voltage);
+        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"V\"");
+        configJSON.concat("}");
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/battery_voltage/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
     }
 }
+
+void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic, char *name, char *uidString,
+                                        char *lockAction, char *unlockAction, char *openAction, char *lockedState,
+                                        char *unlockedState)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        // Battery level
+        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" battery level\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat(
+                "_battery_level\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_battery_level);
+        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"%\"");
+        configJSON.concat("}");
+
+        String path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/battery_level/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+    }
+}
+
 
 void Network::removeHASSConfig(char* uidString)
 {
