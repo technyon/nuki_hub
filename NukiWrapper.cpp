@@ -41,6 +41,7 @@ void NukiWrapper::initialize()
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
+    _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
 
     if(_intervalLockstate == 0)
     {
@@ -104,6 +105,11 @@ void NukiWrapper::update()
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
+    }
+    if(_hasKeypad && _nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs)
+    {
+        _nextKeypadUpdateTs = ts + 60 * 60 * 1000;
+        updateKeypad();
     }
 
     if(_nextLockAction != (NukiLock::LockAction)0xff)
@@ -189,6 +195,7 @@ void NukiWrapper::updateConfig()
 {
     readConfig();
     readAdvancedConfig();
+    _hasKeypad = _nukiConfig.hasKeypad > 0;
     _network->publishConfig(_nukiConfig);
     _network->publishAdvancedConfig(_nukiAdvancedConfig);
 }
@@ -228,6 +235,25 @@ void NukiWrapper::updateAuthData()
     else
     {
         _network->publishAuthorizationInfo(0, "");
+    }
+}
+
+void NukiWrapper::updateKeypad()
+{
+    Nuki::CmdResult result = _nukiLock.retrieveKeypadEntries(0, 0xffff);
+    if(result == 1)
+    {
+        std::list<NukiLock::KeypadEntry> entries;
+        _nukiLock.getKeypadEntries(&entries);
+
+        uint keypadCount = entries.size();
+        if(keypadCount > _maxKeypadCodeCount)
+        {
+            _maxKeypadCodeCount = keypadCount;
+            _preferences->putUInt(preference_max_keypad_code_count, _maxKeypadCodeCount);
+        }
+
+        _network->publishKeypad(entries, _maxKeypadCodeCount);
     }
 }
 

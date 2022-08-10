@@ -10,6 +10,7 @@
 #define preference_mqtt_lock_path "mqttpath"
 #define preference_opener_enabled "openerena"
 #define preference_mqtt_opener_path "mqttoppath"
+#define preference_max_keypad_code_count "maxkpad"
 #define preference_mqtt_ca "mqttca"
 #define preference_mqtt_crt "mqttcrt"
 #define preference_mqtt_key "mqttkey"

@@ -38,6 +38,7 @@ private:
     void updateBatteryState();
     void updateConfig();
     void updateAuthData();
+    void updateKeypad();
 
     void readConfig();
     void readAdvancedConfig();
@@ -72,9 +73,12 @@ private:
 
     bool _paired = false;
     bool _statusUpdated = false;
+    bool _hasKeypad = false;
+    uint _maxKeypadCodeCount = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
+    unsigned long _nextKeypadUpdateTs = 0;
     unsigned long _nextPairTs = 0;
     NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };

@@ -144,7 +144,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     {
         memset(&str, 0, sizeof(str));
         NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
-        publishString(mqtt_topic_door_sensor_state, str);
+        publishString(mqtt_topic_lock_door_sensor_state, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
@@ -214,6 +214,38 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 {
     publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
+}
+
+void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
+{
+    uint index = 0;
+    for(const auto& entry : entries)
+    {
+        String basePath = mqtt_topic_keypad;
+        basePath.concat("/code_");
+        basePath.concat(std::to_string(index).c_str());
+
+        char codeName[sizeof(entry.name) + 1];
+        memset(codeName, 0, sizeof(codeName));
+        memcpy(codeName, entry.name, sizeof(entry.name));
+
+        publishInt(concat(basePath, "/id").c_str(), entry.codeId);
+        publishBool(concat(basePath, "/enabled").c_str(), entry.enabled);
+        publishString(concat(basePath, "/name").c_str(), codeName);
+        publishInt(concat(basePath, "/createdYear").c_str(), entry.dateCreatedYear);
+        publishInt(concat(basePath, "/createdMonth").c_str(), entry.dateCreatedMonth);
+        publishInt(concat(basePath, "/createdDay").c_str(), entry.dateCreatedDay);
+        publishInt(concat(basePath, "/createdHour").c_str(), entry.dateCreatedHour);
+        publishInt(concat(basePath, "/createdMin").c_str(), entry.dateCreatedMin);
+        publishInt(concat(basePath, "/createdSec").c_str(), entry.dateCreatedSec);
+        publishInt(concat(basePath, "/lockCount").c_str(), entry.lockCount);
+
+        ++index;
+    }
+    while(index < maxKeypadCodeCount)
+    {
+        ++index;
+    }
 }
 
 void NetworkLock::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
@@ -296,5 +328,12 @@ bool NetworkLock::publishString(const char *topic, const char *value)
 void NetworkLock::publishULong(const char *topic, const unsigned long value)
 {
     return _network->publishULong(_mqttPath, topic, value);
+}
+
+String NetworkLock::concat(String a, String b)
+{
+    String c = a;
+    c.concat(b);
+    return c;
 }
 
