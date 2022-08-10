@@ -224,26 +224,19 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
         String basePath = mqtt_topic_keypad;
         basePath.concat("/code_");
         basePath.concat(std::to_string(index).c_str());
-
-        char codeName[sizeof(entry.name) + 1];
-        memset(codeName, 0, sizeof(codeName));
-        memcpy(codeName, entry.name, sizeof(entry.name));
-
-        publishInt(concat(basePath, "/id").c_str(), entry.codeId);
-        publishBool(concat(basePath, "/enabled").c_str(), entry.enabled);
-        publishString(concat(basePath, "/name").c_str(), codeName);
-        publishInt(concat(basePath, "/createdYear").c_str(), entry.dateCreatedYear);
-        publishInt(concat(basePath, "/createdMonth").c_str(), entry.dateCreatedMonth);
-        publishInt(concat(basePath, "/createdDay").c_str(), entry.dateCreatedDay);
-        publishInt(concat(basePath, "/createdHour").c_str(), entry.dateCreatedHour);
-        publishInt(concat(basePath, "/createdMin").c_str(), entry.dateCreatedMin);
-        publishInt(concat(basePath, "/createdSec").c_str(), entry.dateCreatedSec);
-        publishInt(concat(basePath, "/lockCount").c_str(), entry.lockCount);
+        publishKeypadEntry(basePath, entry);
 
         ++index;
     }
     while(index < maxKeypadCodeCount)
     {
+        NukiLock::KeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        String basePath = mqtt_topic_keypad;
+        basePath.concat("/code_");
+        basePath.concat(std::to_string(index).c_str());
+        publishKeypadEntry(basePath, entry);
+
         ++index;
     }
 }
@@ -324,6 +317,26 @@ bool NetworkLock::publishString(const char *topic, const char *value)
 {
     return _network->publishString(_mqttPath, topic, value);
 }
+
+void NetworkLock::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)
+{
+
+    char codeName[sizeof(entry.name) + 1];
+    memset(codeName, 0, sizeof(codeName));
+    memcpy(codeName, entry.name, sizeof(entry.name));
+
+    publishInt(concat(topic, "/id").c_str(), entry.codeId);
+    publishBool(concat(topic, "/enabled").c_str(), entry.enabled);
+    publishString(concat(topic, "/name").c_str(), codeName);
+    publishInt(concat(topic, "/createdYear").c_str(), entry.dateCreatedYear);
+    publishInt(concat(topic, "/createdMonth").c_str(), entry.dateCreatedMonth);
+    publishInt(concat(topic, "/createdDay").c_str(), entry.dateCreatedDay);
+    publishInt(concat(topic, "/createdHour").c_str(), entry.dateCreatedHour);
+    publishInt(concat(topic, "/createdMin").c_str(), entry.dateCreatedMin);
+    publishInt(concat(topic, "/createdSec").c_str(), entry.dateCreatedSec);
+    publishInt(concat(topic, "/lockCount").c_str(), entry.lockCount);
+}
+
 
 void NetworkLock::publishULong(const char *topic, const unsigned long value)
 {

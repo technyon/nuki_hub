@@ -43,6 +43,7 @@ private:
     void publishULong(const char* topic, const unsigned long value);
     void publishBool(const char* topic, const bool value);
     bool publishString(const char* topic, const char* value);
+    void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     String concat(String a, String b);
