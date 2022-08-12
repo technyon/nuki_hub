@@ -366,13 +366,19 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
     }
 
     bool idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), id) != _keypadCodeIds.end();
+    int codeInt = code.toInt();
     NukiLock::CmdResult result = (NukiLock::CmdResult)-1;
 
     if(strcmp(command, "add") == 0)
     {
-        if(name == "")
+        if(name == "" || name == "--")
         {
             _network->publishKeypadCommandResult("MissingParameterName");
+            return;
+        }
+        if(codeInt == 0)
+        {
+            _network->publishKeypadCommandResult("MissingParameterCode");
             return;
         }
 
@@ -380,7 +386,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         memset(&entry, 0, sizeof(entry));
         size_t nameLen = name.length();
         memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
-        entry.code = code.toInt();
+        entry.code = codeInt;
         result = _nukiLock.addKeypadEntry(entry);
         Serial.print("Add keypad code: "); Serial.println((int)result);
         updateKeypad();
@@ -398,9 +404,14 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
     }
     else if(strcmp(command, "update") == 0)
     {
-        if(name == "")
+        if(name == "" || name == "--")
         {
             _network->publishKeypadCommandResult("MissingParameterName");
+            return;
+        }
+        if(codeInt == 0)
+        {
+            _network->publishKeypadCommandResult("MissingParameterCode");
             return;
         }
         if(!idExists)
@@ -414,7 +425,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         entry.codeId = id;
         size_t nameLen = name.length();
         memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
-        entry.code = code.toInt();
+        entry.code = codeInt;
         entry.enabled = enabled == 0 ? 0 : 1;
         result = _nukiLock.updateKeypadEntry(entry);
         Serial.print("Update keypad code: "); Serial.println((int)result);
