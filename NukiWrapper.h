@@ -32,9 +32,9 @@ public:
 private:
     static bool onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
-    static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code);
+    static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* topic, const char* value);
-    void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code);
+    void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
 
     void updateKeyTurnerState();
     void updateBatteryState();

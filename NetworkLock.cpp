@@ -58,10 +58,12 @@ void NetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
     _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
     _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
+    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
     _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
     _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
     _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
+    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
 }
 
 void NetworkLock::update()
@@ -111,11 +113,17 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
     {
         if(_keypadCommandReceivedReceivedCallback != nullptr)
         {
-            _keypadCommandReceivedReceivedCallback(value, _keypadCommandId, _keypadCommandName, _keypadCommandCode);
+            _keypadCommandReceivedReceivedCallback(value, _keypadCommandId, _keypadCommandName, _keypadCommandCode, _keypadCommandEnabled);
+
+            _keypadCommandId = 0;
+            _keypadCommandName = "--";
+            _keypadCommandCode = "000000";
+            _keypadCommandEnabled = 1;
             publishString(mqtt_topic_keypad_command_action, "--");
-            publishInt(mqtt_topic_keypad_command_id, 0);
-            publishString(mqtt_topic_keypad_command_name, "--");
-            publishString(mqtt_topic_keypad_command_code, "000000");
+            publishInt(mqtt_topic_keypad_command_id, _keypadCommandId);
+            publishString(mqtt_topic_keypad_command_name, _keypadCommandName.c_str());
+            publishString(mqtt_topic_keypad_command_code, _keypadCommandCode.c_str());
+            publishInt(mqtt_topic_keypad_command_enabled, _keypadCommandEnabled);
         }
     }
     else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_id))
@@ -129,6 +137,10 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
     else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_code))
     {
         _keypadCommandCode = value;
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_enabled))
+    {
+        _keypadCommandEnabled = atoi(value);
     }
 
     for(auto configTopic : _configTopics)
@@ -284,7 +296,7 @@ void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCal
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
 
-void NetworkLock::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code))
+void NetworkLock::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled))
 {
     _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
 }
@@ -358,7 +370,6 @@ bool NetworkLock::publishString(const char *topic, const char *value)
 
 void NetworkLock::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)
 {
-
     char codeName[sizeof(entry.name) + 1];
     memset(codeName, 0, sizeof(codeName));
     memcpy(codeName, entry.name, sizeof(entry.name));

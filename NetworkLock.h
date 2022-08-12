@@ -33,7 +33,7 @@ public:
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
-    void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code));
+    void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
 
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
 
@@ -64,8 +64,9 @@ private:
     String _keypadCommandName = "";
     String _keypadCommandCode = "";
     uint _keypadCommandId = 0;
+    int _keypadCommandEnabled = 1;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
-    void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code) = nullptr;
+    void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
 };
