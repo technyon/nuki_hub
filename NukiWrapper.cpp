@@ -358,6 +358,8 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         return;
     }
 
+    NukiLock::CmdResult result = (NukiLock::CmdResult)-1;
+
     if(strcmp(command, "add") == 0)
     {
         if(name == "")
@@ -370,14 +372,14 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         size_t nameLen = name.length();
         memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
         entry.code = code.toInt();
-        const auto r = _nukiLock.addKeypadEntry(entry);
-        Serial.print("Add keypad code: "); Serial.println((int)r);
+        result = _nukiLock.addKeypadEntry(entry);
+        Serial.print("Add keypad code: "); Serial.println((int)result);
         updateKeypad();
     }
     else if(strcmp(command, "delete") == 0)
     {
-        const auto r = _nukiLock.deleteKeypadEntry(id);
-        Serial.print("Delete keypad code: "); Serial.println((int)r);
+        result = _nukiLock.deleteKeypadEntry(id);
+        Serial.print("Delete keypad code: "); Serial.println((int)result);
         updateKeypad();
     }
     if(strcmp(command, "update") == 0)
@@ -394,9 +396,20 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
         entry.code = code.toInt();
         entry.enabled = enabled == 0 ? 0 : 1;
-        const auto r = _nukiLock.updateKeypadEntry(entry);
-        Serial.print("Update keypad code: "); Serial.println((int)r);
+        result = _nukiLock.updateKeypadEntry(entry);
+        Serial.print("Update keypad code: "); Serial.println((int)result);
         updateKeypad();
+    }
+
+    if((int)result != -1)
+    {
+        char resultStr[15];
+        memset(&resultStr, 0, sizeof(resultStr));
+        NukiLock::cmdResultToString(result, resultStr);
+        _network->publishKeypadCommandResult(resultStr);
+    } else
+    {
+        _network->publishKeypadCommandResult("UnknownCommand");
     }
 }
 

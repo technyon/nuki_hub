@@ -286,6 +286,11 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
     }
 }
 
+void NetworkLock::publishKeypadCommandResult(const char* result)
+{
+    publishString(mqtt_topic_keypad_command_enabled, result);
+}
+
 void NetworkLock::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
