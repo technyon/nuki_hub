@@ -32,7 +32,7 @@
 #define mqtt_topic_keypad_command_name "/keypad/command/name"
 #define mqtt_topic_keypad_command_code "/keypad/command/code"
 #define mqtt_topic_keypad_command_enabled "/keypad/command/enabled"
-#define mqtt_topic_keypad_command_enabled "/keypad/command/commandResult"
+#define mqtt_topic_keypad_command_result "/keypad/command/commandResult"
 
 #define mqtt_topic_presence "/presence/devices"
 

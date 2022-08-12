@@ -262,6 +262,13 @@ void NukiWrapper::updateKeypad()
         }
 
         _network->publishKeypad(entries, _maxKeypadCodeCount);
+
+        _keypadCodeIds.clear();
+        _keypadCodeIds.reserve(entries.size());
+        for(const auto& entry : entries)
+        {
+            _keypadCodeIds.push_back(entry.codeId);
+        }
     }
 }
 
@@ -358,12 +365,14 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         return;
     }
 
+    bool idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), id) != _keypadCodeIds.end();
     NukiLock::CmdResult result = (NukiLock::CmdResult)-1;
 
     if(strcmp(command, "add") == 0)
     {
         if(name == "")
         {
+            _network->publishKeypadCommandResult("MissingParameterName");
             return;
         }
 
@@ -378,14 +387,25 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
     }
     else if(strcmp(command, "delete") == 0)
     {
+        if(!idExists)
+        {
+            _network->publishKeypadCommandResult("UnknownId");
+            return;
+        }
         result = _nukiLock.deleteKeypadEntry(id);
         Serial.print("Delete keypad code: "); Serial.println((int)result);
         updateKeypad();
     }
-    if(strcmp(command, "update") == 0)
+    else if(strcmp(command, "update") == 0)
     {
         if(name == "")
         {
+            _network->publishKeypadCommandResult("MissingParameterName");
+            return;
+        }
+        if(!idExists)
+        {
+            _network->publishKeypadCommandResult("UnknownId");
             return;
         }
 
@@ -400,6 +420,11 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         Serial.print("Update keypad code: "); Serial.println((int)result);
         updateKeypad();
     }
+    else
+    {
+        _network->publishKeypadCommandResult("UnknownCommand");
+        return;
+    }
 
     if((int)result != -1)
     {
@@ -407,9 +432,6 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         memset(&resultStr, 0, sizeof(resultStr));
         NukiLock::cmdResultToString(result, resultStr);
         _network->publishKeypadCommandResult(resultStr);
-    } else
-    {
-        _network->publishKeypadCommandResult("UnknownCommand");
     }
 }
 

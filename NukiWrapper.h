@@ -61,6 +61,7 @@ private:
     int _intervalKeypad = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
+    std::vector<uint16_t> _keypadCodeIds;
 
     NukiLock::KeyTurnerState _lastKeyTurnerState;
     NukiLock::KeyTurnerState _keyTurnerState;
@@ -84,6 +85,5 @@ private:
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _nextKeypadUpdateTs = 0;
-    unsigned long _nextPairTs = 0;
     NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };
