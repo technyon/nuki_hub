@@ -41,18 +41,25 @@ void NukiWrapper::initialize()
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
+    _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
+    _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
 
     if(_intervalLockstate == 0)
     {
-        _intervalLockstate = 60 * 5;
+        _intervalLockstate = 60 * 30;
         _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
     }
     if(_intervalBattery == 0)
     {
         _intervalBattery = 60 * 30;
         _preferences->putInt(preference_query_interval_battery, _intervalBattery);
+    }
+    if(_intervalKeypad == 0)
+    {
+        _intervalKeypad = 60 * 30;
+        _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
     }
 
     _nukiLock.setEventHandler(this);
@@ -107,9 +114,9 @@ void NukiWrapper::update()
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
     }
-    if(_hasKeypad && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
+    if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
     {
-        _nextKeypadUpdateTs = ts + 60 * 60 * 1000;
+        _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
         updateKeypad();
     }
 
@@ -346,13 +353,18 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 
 void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
-    if(!_hasKeypad)
+    if(!_hasKeypad || !_keypadEnabled)
     {
         return;
     }
 
     if(strcmp(command, "add") == 0)
     {
+        if(name == "")
+        {
+            return;
+        }
+
         NukiLock::NewKeypadEntry entry;
         memset(&entry, 0, sizeof(entry));
         size_t nameLen = name.length();
@@ -370,6 +382,11 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
     }
     if(strcmp(command, "update") == 0)
     {
+        if(name == "")
+        {
+            return;
+        }
+
         NukiLock::UpdatedKeypadEntry entry;
         memset(&entry, 0, sizeof(entry));
         entry.codeId = id;
@@ -391,6 +408,11 @@ const NukiLock::KeyTurnerState &NukiWrapper::keyTurnerState()
 const bool NukiWrapper::isPaired()
 {
     return _paired;
+}
+
+const bool NukiWrapper::hasKeypad()
+{
+    return _hasKeypad;
 }
 
 void NukiWrapper::notify(Nuki::EventType eventType)

@@ -26,6 +26,7 @@ public:
 
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();
+    const bool hasKeypad();
 
     void notify(Nuki::EventType eventType) override;
 
@@ -57,6 +58,7 @@ private:
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
+    int _intervalKeypad = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
 
@@ -76,6 +78,7 @@ private:
     bool _paired = false;
     bool _statusUpdated = false;
     bool _hasKeypad = false;
+    bool _keypadEnabled = false;
     uint _maxKeypadCodeCount = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;

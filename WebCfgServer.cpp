@@ -286,6 +286,16 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_query_interval_battery, value.toInt());
             configChanged = true;
         }
+        else if(key == "KPINT")
+        {
+            _preferences->putInt(preference_query_interval_keypad, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "KPENA")
+        {
+            _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "PRDTMO")
         {
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
@@ -589,6 +599,11 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     }
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    if(_nuki->hasKeypad())
+    {
+        printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
+        printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
+    }
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
     printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);

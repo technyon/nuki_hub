@@ -21,6 +21,8 @@
 #define preference_restart_timer "resttmr"
 #define preference_query_interval_lockstate "lockStInterval"
 #define preference_query_interval_battery "batInterval"
+#define preference_query_interval_keypad "kpInterval"
+#define preference_keypad_control_enabled "kpEnabled"
 #define preference_cred_user "crdusr"
 #define preference_cred_password "crdpass"
 #define preference_publish_authdata "pubauth"
