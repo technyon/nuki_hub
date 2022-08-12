@@ -367,6 +367,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
 
     bool idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), id) != _keypadCodeIds.end();
     int codeInt = code.toInt();
+    bool codeValid = codeInt > 100000 && (code.indexOf('0') == -1);
     NukiLock::CmdResult result = (NukiLock::CmdResult)-1;
 
     if(strcmp(command, "add") == 0)
@@ -379,6 +380,11 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         if(codeInt == 0)
         {
             _network->publishKeypadCommandResult("MissingParameterCode");
+            return;
+        }
+        if(!codeValid)
+        {
+            _network->publishKeypadCommandResult("CodeInvalid");
             return;
         }
 
@@ -412,6 +418,11 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         if(codeInt == 0)
         {
             _network->publishKeypadCommandResult("MissingParameterCode");
+            return;
+        }
+        if(!codeValid)
+        {
+            _network->publishKeypadCommandResult("CodeInvalid");
             return;
         }
         if(!idExists)
