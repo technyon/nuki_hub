@@ -53,6 +53,15 @@ void NetworkLock::initialize()
 
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
+
+    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
+    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
+    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
+    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
+    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
+    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
 }
 
 void NetworkLock::update()
@@ -96,6 +105,30 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
             success = _lockActionReceivedCallback(value);
         }
         publishString(mqtt_topic_lock_action, success ? "ack" : "unknown_action");
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
+    {
+        if(_keypadCommandReceivedReceivedCallback != nullptr)
+        {
+            _keypadCommandReceivedReceivedCallback(value, _keypadCommandId, _keypadCommandName, _keypadCommandCode);
+            publishString(mqtt_topic_keypad_command_action, "--");
+            publishInt(mqtt_topic_keypad_command_id, 0);
+            publishString(mqtt_topic_keypad_command_name, "--");
+            publishString(mqtt_topic_keypad_command_code, "000000");
+        }
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_id))
+    {
+        _keypadCommandId = atoi(value);
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_name))
+    {
+        _keypadCommandName = value;
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_code))
+    {
+        _keypadCommandCode = value;
     }
 
     for(auto configTopic : _configTopics)
@@ -251,6 +284,11 @@ void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCal
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
 
+void NetworkLock::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code))
+{
+    _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
+}
+
 void NetworkLock::buildMqttPath(const char* path, char* outPath)
 {
     int offset = 0;
@@ -349,4 +387,3 @@ String NetworkLock::concat(String a, String b)
     c.concat(b);
     return c;
 }
-

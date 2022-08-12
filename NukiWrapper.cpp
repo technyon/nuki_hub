@@ -23,6 +23,7 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner:
 
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
+    network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
 }
 
 
@@ -106,7 +107,7 @@ void NukiWrapper::update()
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
     }
-    if(_hasKeypad && _nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs)
+    if(_hasKeypad && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
     {
         _nextKeypadUpdateTs = ts + 60 * 60 * 1000;
         updateKeypad();
@@ -284,6 +285,13 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *
 }
 
 
+void NukiWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name,
+                                                  const String &code)
+{
+    nukiInst->onKeypadCommandReceived(command, id, name, code);
+}
+
+
 void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
     if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
@@ -334,6 +342,27 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
         _nukiLock.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
+    }
+}
+
+void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code)
+{
+    if(strcmp(command, "add") == 0)
+    {
+        NukiLock::NewKeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        size_t nameLen = name.length();
+        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+        entry.code = code.toInt();
+        const auto r = _nukiLock.addKeypadEntry(entry);
+        Serial.print("Add keypad code: "); Serial.println((int)r);
+        updateKeypad();
+    }
+    else if(strcmp(command, "delete") == 0)
+    {
+        const auto r = _nukiLock.deleteKeypadEntry(id);
+        Serial.print("Delete keypad code: "); Serial.println((int)r);
+        updateKeypad();
     }
 }
 

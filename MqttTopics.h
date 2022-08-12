@@ -27,6 +27,10 @@
 #define mqtt_topic_config_sound_level "/configuration/soundLevel"
 
 #define mqtt_topic_keypad "/keypad"
+#define mqtt_topic_keypad_command_action "/keypad/command/action"
+#define mqtt_topic_keypad_command_id "/keypad/command/id"
+#define mqtt_topic_keypad_command_name "/keypad/command/name"
+#define mqtt_topic_keypad_command_code "/keypad/command/code"
 
 #define mqtt_topic_presence "/presence/devices"
 

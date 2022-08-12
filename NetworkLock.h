@@ -27,12 +27,13 @@ public:
     void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
     void publishConfig(const NukiLock::Config& config);
     void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
-    void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
+    void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
+    void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code));
 
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
 
@@ -60,6 +61,11 @@ private:
     unsigned long _lastMaintenanceTs = 0;
     bool _haEnabled= false;
 
+    String _keypadCommandName = "";
+    String _keypadCommandCode = "";
+    uint _keypadCommandId = 0;
+
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+    void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code) = nullptr;
 };
