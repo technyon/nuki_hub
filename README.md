@@ -37,7 +37,7 @@ Just enable pairing mode on the NUKI lock (press button for a few seconds) and p
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFT6MTTJMBJ6<br>
+REFETQHSFVW33<br>
 This will also give you a 30€ discount for your order.
 
 ## MQTT Interface
@@ -91,7 +91,7 @@ This will also give you a 30€ discount for your order.
 ## Over-the-air Update (OTA)
 After initially flashing the firmware via serial connection, further updates can be deployed via OTA update from a Web Browser. In the configuration portal, scroll down to "Firmware update" and click "Open". Then Click "Browse" and select the new "nuki_hub.bin" file and select "Upload file". After about a minute the new firmware should be installed.
 
-## MQTT Encryption
+## MQTT Encryption (optional; WiFi only)
 
 The communication via MQTT can be SSL encrypted. To enable SSL encryption, supply the necessary information in the MQTT Configuration page.
 The following configurations are supported:<br>
@@ -100,7 +100,7 @@ CA, CERT and KEY are empty -> No encryption<br>
 CA is filled but CERT and KEY are empty -> Encrypted MQTT<br>
 CA, CERT and KEY are filled -> Encrypted MQTT with client vaildation<br>
 
-## Home Assistant Discovery
+## Home Assistant Discovery (optional)
 
 Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/).
 
@@ -114,6 +114,33 @@ The following mapping between Home Assistant services and Nuki commands is setup
 | lock.open   | Unlatch   | Electric Strike Actuation |
 
 NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.
+
+## Keypad control (optional)
+
+If a keypad is connected to the lock, keypad codes can be added, updated and removed.
+Information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes.
+<br>
+For security reasons, the code itself is not published. To modify keypad codes, a command
+structure is setup under keypad/command:
+
+- keypad/command/id: The id of an existing code, found under keypad_code_x
+- keypad/command/name: Display name of the code
+- keypad/command/code: The actual 6-digit keypad code
+- keypad/command/enabled: Set to 1 to enable the code, 0 to disable
+- keypad/command/action: The action to execute. Possible values are add, delete and update
+
+To modify keypad codes, the first four parameter nodes have to be set depending on the command:
+
+- To add a code, set name, code, enabled.
+- To delete a code, set id
+- To update a code, set id, name, code, enabled
+
+After setting the necessary parameters, write the action to be executed to the command node.
+For example, to add a code:
+- write "John Doe" to name
+- write 123456 to code
+- write 1 to enabled
+- write "add" to action
 
 ## GPIO lock control (optional)
 
