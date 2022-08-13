@@ -218,7 +218,7 @@ void NukiWrapper::updateAuthData()
     }
     delay(100);
 
-    result = _nukiLock.retrieveLogEntries(0, 5, 1, false);
+    result = _nukiLock.retrieveLogEntries(0, 10, 1, false);
     if(result != Nuki::CmdResult::Success)
     {
         return;

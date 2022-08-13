@@ -241,47 +241,76 @@ void NetworkLock::publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logE
     {
         json.concat("{\n");
 
-        json.concat("\"index\": ");
-        json.concat(log.index);
-        json.concat(",\n");
-        json.concat("\"authorizationId\": ");
-        json.concat(log.authId);
-        json.concat(",\n");
+        json.concat("\"index\": "); json.concat(log.index); json.concat(",\n");
+        json.concat("\"authorizationId\": "); json.concat(log.authId); json.concat(",\n");
 
         memset(str, 0, sizeof(str));
         memcpy(str, log.name, sizeof(log.name));
-        json.concat("\"authorizationName\": \"");
-        json.concat(str);
-        json.concat("\",\n");
+        json.concat("\"authorizationName\": \""); json.concat(str); json.concat("\",\n");
 
-        json.concat("\"timeYear\": ");
-        json.concat(log.timeStampYear);
-        json.concat(",\n");
-        json.concat("\"timeMonth\": ");
-        json.concat(log.timeStampMonth);
-        json.concat(",\n");
-        json.concat("\"timeDay\": ");
-        json.concat(log.timeStampDay);
-        json.concat(",\n");
-        json.concat("\"timeHour\": ");
-        json.concat(log.timeStampHour);
-        json.concat(",\n");
-        json.concat("\"timeMinute\": ");
-        json.concat(log.timeStampMinute);
-        json.concat(",\n");
-        json.concat("\"timeSecond\": ");
-        json.concat(log.timeStampSecond);
-        json.concat(",\n");
-
+        json.concat("\"timeYear\": "); json.concat(log.timeStampYear); json.concat(",\n");
+        json.concat("\"timeMonth\": "); json.concat(log.timeStampMonth); json.concat(",\n");
+        json.concat("\"timeDay\": "); json.concat(log.timeStampDay); json.concat(",\n");
+        json.concat("\"timeHour\": "); json.concat(log.timeStampHour); json.concat(",\n");
+        json.concat("\"timeMinute\": "); json.concat(log.timeStampMinute); json.concat(",\n");
+        json.concat("\"timeSecond\": "); json.concat(log.timeStampSecond); json.concat(",\n");
 
         memset(str, 0, sizeof(str));
         loggingTypeToString(log.loggingType, str);
-        json.concat("\"type\": \"");
-        json.concat(str);
-        json.concat("\"\n");
+        json.concat("\"type\": \""); json.concat(str); json.concat("\",\n");
+
+        switch(log.loggingType)
+        {
+            case Nuki::LoggingType::LockAction:
+                memset(str, 0, sizeof(str));
+                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
+                json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                break;
+            case Nuki::LoggingType::KeypadAction:
+                memset(str, 0, sizeof(str));
+                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                break;
+            case Nuki::LoggingType::DoorSensor:
+                memset(str, 0, sizeof(str));
+                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                json.concat("\"action\": \"");
+                switch(log.data[0])
+                {
+                    case 0:
+                        json.concat("DoorOpened");
+                        break;
+                    case 1:
+                        json.concat("DoorClosed");
+                        break;
+                    case 2:
+                        json.concat("SensorJammed");
+                        break;
+                    default:
+                        json.concat("Unknown");
+                        break;
+                }
+                json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                break;
+        }
 
         json.concat("}");
-
         if(&log == &logEntries.back())
         {
             json.concat("\n");
