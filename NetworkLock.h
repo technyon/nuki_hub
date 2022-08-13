@@ -21,6 +21,7 @@ public:
     void update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
+    void publishStateAsJson(const char* action, const NukiLock::KeyTurnerState& keyTurnerState, const uint32_t authId, const char* authName);
     void publishBinaryState(NukiLock::LockState lockState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);

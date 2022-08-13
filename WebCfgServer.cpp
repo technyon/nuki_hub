@@ -296,6 +296,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "PUBJSON")
+        {
+            _preferences->putBool(preference_publish_json, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "PRDTMO")
         {
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
@@ -557,7 +562,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     buildHtmlHeader(response);
     response.concat("<FORM ACTION=method=get >");
-    response.concat("<h3>Basic MQTT Configuration</h3>");
+    response.concat("<h3>Basic MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
@@ -566,7 +571,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
     response.concat("</table><br>");
 
-    response.concat("<h3>Advanced MQTT Configuration</h3>");
+    response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
@@ -613,6 +618,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
         printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
     }
+    printCheckBox(response, "PUBJSON", "Publish additional json state", _preferences->getBool(preference_publish_json));
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
     printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);

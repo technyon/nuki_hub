@@ -44,6 +44,7 @@ void NukiWrapper::initialize()
     _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
     _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
+    _publishJson = _preferences->getBool(preference_publish_json);
     _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
 
     if(_intervalLockstate == 0)
@@ -122,21 +123,21 @@ void NukiWrapper::update()
 
     if(_nextLockAction != (NukiLock::LockAction)0xff)
     {
-         Nuki::CmdResult cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
+        Nuki::CmdResult cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
 
-         char resultStr[15] = {0};
-         NukiLock::cmdResultToString(cmdResult, resultStr);
+        char resultStr[15] = {0};
+        NukiLock::cmdResultToString(cmdResult, resultStr);
 
-         _network->publishCommandResult(resultStr);
+        _network->publishCommandResult(resultStr);
 
-         Serial.print(F("Lock action result: "));
-         Serial.println(resultStr);
+        Serial.print(F("Lock action result: "));
+        Serial.println(resultStr);
 
-         _nextLockAction = (NukiLock::LockAction)0xff;
-         if(_intervalLockstate > 10)
-         {
-             _nextLockStateUpdateTs = ts + 10 * 1000;
-         }
+        _nextLockAction = (NukiLock::LockAction)0xff;
+        if(_intervalLockstate > 10)
+        {
+            _nextLockStateUpdateTs = ts + 10 * 1000;
+        }
     }
 
     if(_clearAuthData)
@@ -191,6 +192,11 @@ void NukiWrapper::updateKeyTurnerState()
     {
         updateAuthData();
     }
+
+    if(_publishJson)
+    {
+        _network->publishStateAsJson(_lastLockAction, _keyTurnerState, _lastAuthId, _lastAuthName);
+    }
 }
 
 void NukiWrapper::updateBatteryState()
@@ -233,17 +239,20 @@ void NukiWrapper::updateAuthData()
     if(log.size() > 0)
     {
         const Nuki::LogEntry& entry = log.front();
-//        log_d("Log: %d-%d-%d %d:%d:%d %s", entry.timeStampYear, entry.timeStampMonth, entry.timeStampDay,
-//              entry.timeStampHour, entry.timeStampMinute, entry.timeStampSecond, entry.name);
+
         if(entry.authId != _lastAuthId)
         {
             _network->publishAuthorizationInfo(entry.authId, (char *) entry.name);
             _lastAuthId = entry.authId;
+            memset(_lastAuthName, 0, sizeof(_lastAuthName));
+            memcpy(_lastAuthName, entry.name, sizeof(entry.name));
         }
     }
     else
     {
         _network->publishAuthorizationInfo(0, "");
+        _lastAuthId = 0;
+        memset(_lastAuthName, 0, sizeof(_lastAuthName));
     }
 }
 
@@ -277,6 +286,9 @@ void NukiWrapper::updateKeypad()
 
 NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {
+    memset(&_lastLockAction, 0, sizeof(_lastLockAction));
+    strcpy(_lastLockAction, str);
+
     if(strcmp(str, "unlock") == 0) return NukiLock::LockAction::Unlock;
     else if(strcmp(str, "lock") == 0) return NukiLock::LockAction::Lock;
     else if(strcmp(str, "unlatch") == 0) return NukiLock::LockAction::Unlatch;

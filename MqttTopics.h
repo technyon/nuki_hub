@@ -9,6 +9,7 @@
 #define mqtt_topic_battery_lock_distance "/battery/lockDistance"
 
 #define mqtt_topic_lock_state "/lock/state"
+#define mqtt_topic_lock_state_json "/lock/stateJson"
 #define mqtt_topic_lock_binary_state "/lock/binaryState"
 #define mqtt_topic_lock_trigger "/lock/trigger"
 #define mqtt_topic_lock_auth_id "/lock/authorizationId"

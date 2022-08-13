@@ -210,6 +210,47 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     _firstTunerStatePublish = false;
 }
 
+void NetworkLock::publishStateAsJson(const char* action, const NukiLock::KeyTurnerState &keyTurnerState, const uint32_t authId, const char *authName)
+{
+    char str[50];
+    String json = "{\n";
+
+    // action
+    json.concat("\"action\": \""); json.concat(action); json.concat("\",\n");
+
+    // state
+    memset(&str, 0, sizeof(str));
+    lockstateToString(keyTurnerState.lockState, str);
+    json.concat("\"state\": \""); json.concat(str); json.concat("\",\n");
+
+    // state
+    memset(&str, 0, sizeof(str));
+    lockstateToString(keyTurnerState.lockState, str);
+    json.concat("\"state\": \""); json.concat(str); json.concat("\",\n");
+
+    // trigger
+    memset(&str, 0, sizeof(str));
+    triggerToString(keyTurnerState.trigger, str);
+    json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
+
+    // completion status
+    memset(&str, 0, sizeof(str));
+    NukiLock::completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
+    json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\",\n");
+
+    // Door sensor state
+    memset(&str, 0, sizeof(str));
+    NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
+    json.concat("\"doorSensorState\": \""); json.concat(str); json.concat("\",\n");
+
+    // Auth date
+    json.concat("\"authorizationId\": "); json.concat(authId == 0xffff ? 0 : authId); json.concat(",\n");
+    json.concat("\"authorizationName\": \""); json.concat(authName); json.concat("\"\n");
+
+    json.concat("}");
+    publishString(mqtt_topic_lock_state_json, json.c_str());
+}
+
 void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
 {
     switch(lockState)
