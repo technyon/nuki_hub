@@ -59,9 +59,7 @@ private:
     NukiOpener::OpenerState _lastKeyTurnerState;
     NukiOpener::OpenerState _keyTurnerState;
 
-    char _lastLockAction[25] = { 0 };
     uint32_t _lastAuthId = 0xffff;
-    char _lastAuthName[33] = {0};
 
     NukiOpener::BatteryReport _batteryReport;
     NukiOpener::BatteryReport _lastBatteryReport;
@@ -73,7 +71,6 @@ private:
 
     bool _paired = false;
     bool _statusUpdated = false;
-    bool _publishJson = false;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;

@@ -44,7 +44,6 @@ void NukiWrapper::initialize()
     _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
     _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
-    _publishJson = _preferences->getBool(preference_publish_json);
     _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
 
     if(_intervalLockstate == 0)
@@ -142,7 +141,7 @@ void NukiWrapper::update()
 
     if(_clearAuthData)
     {
-        _network->publishAuthorizationInfo(0, "");
+        _network->clearAuthorizationInfo();
         _clearAuthData = false;
     }
 
@@ -192,11 +191,6 @@ void NukiWrapper::updateKeyTurnerState()
     {
         updateAuthData();
     }
-
-    if(_publishJson)
-    {
-        _network->publishStateAsJson(_lastLockAction, _keyTurnerState, _lastAuthId, _lastAuthName);
-    }
 }
 
 void NukiWrapper::updateBatteryState()
@@ -220,39 +214,23 @@ void NukiWrapper::updateAuthData()
     Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {
-        _network->publishAuthorizationInfo(0, "");
         return;
     }
-    vTaskDelay( 100 / portTICK_PERIOD_MS);
+    delay(100);
 
-    result = _nukiLock.retrieveLogEntries(_nukiLock.getLogEntryCount() - 2, 1, 0, false);
+    result = _nukiLock.retrieveLogEntries(0, 5, 1, false);
     if(result != Nuki::CmdResult::Success)
     {
-        _network->publishAuthorizationInfo(0, "");
         return;
     }
-    vTaskDelay( 200 / portTICK_PERIOD_MS);
+    delay(200);
 
     std::list<Nuki::LogEntry> log;
     _nukiLock.getLogEntries(&log);
 
     if(log.size() > 0)
     {
-        const Nuki::LogEntry& entry = log.front();
-
-        if(entry.authId != _lastAuthId)
-        {
-            _network->publishAuthorizationInfo(entry.authId, (char *) entry.name);
-            _lastAuthId = entry.authId;
-            memset(_lastAuthName, 0, sizeof(_lastAuthName));
-            memcpy(_lastAuthName, entry.name, sizeof(entry.name));
-        }
-    }
-    else
-    {
-        _network->publishAuthorizationInfo(0, "");
-        _lastAuthId = 0;
-        memset(_lastAuthName, 0, sizeof(_lastAuthName));
+             _network->publishAuthorizationInfo(log);
     }
 }
 
@@ -300,9 +278,6 @@ NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 
 bool NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
-    memset(&nukiInst->_lastLockAction, 0, sizeof(_lastLockAction));
-    strcpy(nukiInst->_lastLockAction, value);
-
     NukiLock::LockAction action = nukiInst->lockActionToEnum(value);
     nukiInst->_nextLockAction = action;
     return (int)action != 0xff;

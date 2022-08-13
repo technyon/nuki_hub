@@ -21,9 +21,9 @@ public:
     void update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
-    void publishStateAsJson(const char* action, const NukiLock::KeyTurnerState& keyTurnerState, const uint32_t authId, const char* authName);
     void publishBinaryState(NukiLock::LockState lockState);
-    void publishAuthorizationInfo(const uint32_t authId, const char* authName);
+    void publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logEntries);
+    void clearAuthorizationInfo();
     void publishCommandResult(const char* resultStr);
     void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
     void publishConfig(const NukiLock::Config& config);

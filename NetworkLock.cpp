@@ -210,42 +210,6 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     _firstTunerStatePublish = false;
 }
 
-void NetworkLock::publishStateAsJson(const char* action, const NukiLock::KeyTurnerState &keyTurnerState, const uint32_t authId, const char *authName)
-{
-    char str[50];
-    String json = "{\n";
-
-    // action
-    json.concat("\"action\": \""); json.concat(action); json.concat("\",\n");
-
-    // state
-    memset(&str, 0, sizeof(str));
-    lockstateToString(keyTurnerState.lockState, str);
-    json.concat("\"state\": \""); json.concat(str); json.concat("\",\n");
-
-    // trigger
-    memset(&str, 0, sizeof(str));
-    triggerToString(keyTurnerState.trigger, str);
-    json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
-
-    // completion status
-    memset(&str, 0, sizeof(str));
-    NukiLock::completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
-    json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\",\n");
-
-    // Door sensor state
-    memset(&str, 0, sizeof(str));
-    NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
-    json.concat("\"doorSensorState\": \""); json.concat(str); json.concat("\",\n");
-
-    // Auth date
-    json.concat("\"authorizationId\": "); json.concat(authId == 0xffff ? 0 : authId); json.concat(",\n");
-    json.concat("\"authorizationName\": \""); json.concat(authName); json.concat("\"\n");
-
-    json.concat("}");
-    publishString(mqtt_topic_lock_state_json, json.c_str());
-}
-
 void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
 {
     switch(lockState)
@@ -267,10 +231,79 @@ void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
 }
 
 
-void NetworkLock::publishAuthorizationInfo(const uint32_t authId, const char *authName)
+void NetworkLock::publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logEntries)
 {
-    publishUInt(mqtt_topic_lock_auth_id, authId);
-    publishString(mqtt_topic_lock_auth_name, authName);
+    char str[50];
+
+    String json = "[\n";
+
+    for(const auto& log : logEntries)
+    {
+        json.concat("{\n");
+
+        json.concat("\"index\": ");
+        json.concat(log.index);
+        json.concat(",\n");
+        json.concat("\"authorizationId\": ");
+        json.concat(log.authId);
+        json.concat(",\n");
+
+        memset(str, 0, sizeof(str));
+        memcpy(str, log.name, sizeof(log.name));
+        json.concat("\"authorizationName\": \"");
+        json.concat(str);
+        json.concat("\",\n");
+
+        json.concat("\"timeYear\": ");
+        json.concat(log.timeStampYear);
+        json.concat(",\n");
+        json.concat("\"timeMonth\": ");
+        json.concat(log.timeStampMonth);
+        json.concat(",\n");
+        json.concat("\"timeDay\": ");
+        json.concat(log.timeStampDay);
+        json.concat(",\n");
+        json.concat("\"timeHour\": ");
+        json.concat(log.timeStampHour);
+        json.concat(",\n");
+        json.concat("\"timeMinute\": ");
+        json.concat(log.timeStampMinute);
+        json.concat(",\n");
+        json.concat("\"timeSecond\": ");
+        json.concat(log.timeStampSecond);
+        json.concat(",\n");
+
+
+        memset(str, 0, sizeof(str));
+        loggingTypeToString(log.loggingType, str);
+        json.concat("\"type\": \"");
+        json.concat(str);
+        json.concat("\"\n");
+
+        json.concat("}");
+
+        if(&log == &logEntries.back())
+        {
+            json.concat("\n");
+        }
+        else
+        {
+            json.concat(",\n");
+        }
+    }
+
+    json.concat("]");
+    publishString(mqtt_topic_lock_log, json.c_str());
+}
+//uint16_t timeStampYear;
+//uint8_t timeStampMonth;
+//uint8_t timeStampDay;
+//uint8_t timeStampHour;
+//uint8_t timeStampMinute;
+//uint8_t timeStampSecond;
+void NetworkLock::clearAuthorizationInfo()
+{
+    publishString(mqtt_topic_lock_log, "");
 }
 
 void NetworkLock::publishCommandResult(const char *resultStr)

@@ -40,7 +40,6 @@ void NukiOpenerWrapper::initialize()
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
-    _publishJson = _preferences->getBool(preference_publish_json);
 
     if(_intervalLockstate == 0)
     {
@@ -165,11 +164,6 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         updateAuthData();
     }
-
-    if(_publishJson)
-    {
-        _network->publishStateAsJson(_lastLockAction, _keyTurnerState, _lastAuthId, _lastAuthName);
-    }
 }
 
 void NukiOpenerWrapper::updateBatteryState()
@@ -194,7 +188,7 @@ void NukiOpenerWrapper::updateAuthData()
         _network->publishAuthorizationInfo(0, "");
         return;
     }
-    vTaskDelay( 100 / portTICK_PERIOD_MS);
+    delay(100);
 
     result = _nukiOpener.retrieveLogEntries(_nukiOpener.getLogEntryCount() - 2, 1, 0, false);
     if(result != Nuki::CmdResult::Success)
@@ -202,28 +196,25 @@ void NukiOpenerWrapper::updateAuthData()
         _network->publishAuthorizationInfo(0, "");
         return;
     }
-    vTaskDelay( 200 / portTICK_PERIOD_MS);
+    delay(200);
 
-    std::list<NukiOpener::LogEntry> log;
+    std::list<Nuki::LogEntry> log;
     _nukiOpener.getLogEntries(&log);
 
     if(log.size() > 0)
     {
-        const NukiOpener::LogEntry& entry = log.front();
+        const Nuki::LogEntry& entry = log.front();
 
         if(entry.authId != _lastAuthId)
         {
             _network->publishAuthorizationInfo(entry.authId, (char *) entry.name);
             _lastAuthId = entry.authId;
-            memset(_lastAuthName, 0, sizeof(_lastAuthName));
-            memcpy(_lastAuthName, entry.name, sizeof(entry.name));
         }
     }
     else
     {
         _network->publishAuthorizationInfo(0, "");
         _lastAuthId = 0;
-        memset(_lastAuthName, 0, sizeof(_lastAuthName));
     }
 }
 
@@ -242,9 +233,6 @@ NukiOpener::LockAction NukiOpenerWrapper::lockActionToEnum(const char *str)
 
 bool NukiOpenerWrapper::onLockActionReceivedCallback(const char *value)
 {
-    memset(&nukiOpenerInst->_lastLockAction, 0, sizeof(_lastLockAction));
-    strcpy(nukiOpenerInst->_lastLockAction, value);
-
     NukiOpener::LockAction action = nukiOpenerInst->lockActionToEnum(value);
     nukiOpenerInst->_nextLockAction = action;
     return (int)action != 0xff;

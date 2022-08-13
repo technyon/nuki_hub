@@ -66,10 +66,6 @@ private:
     NukiLock::KeyTurnerState _lastKeyTurnerState;
     NukiLock::KeyTurnerState _keyTurnerState;
 
-    char _lastLockAction[15] = { 0 };
-    uint32_t _lastAuthId = 0xffff;
-    char _lastAuthName[33] = {0};
-
     NukiLock::BatteryReport _batteryReport;
     NukiLock::BatteryReport _lastBatteryReport;
 
@@ -83,7 +79,6 @@ private:
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
     bool _configRead = false;
-    bool _publishJson = false;
     uint _maxKeypadCodeCount = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
