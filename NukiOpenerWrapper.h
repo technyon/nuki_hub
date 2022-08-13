@@ -59,8 +59,6 @@ private:
     NukiOpener::OpenerState _lastKeyTurnerState;
     NukiOpener::OpenerState _keyTurnerState;
 
-    uint32_t _lastAuthId = 0xffff;
-
     NukiOpener::BatteryReport _batteryReport;
     NukiOpener::BatteryReport _lastBatteryReport;
 

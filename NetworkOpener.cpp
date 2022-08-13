@@ -142,10 +142,98 @@ void NetworkOpener::publishBinaryState(NukiOpener::LockState lockState)
     }
 }
 
-void NetworkOpener::publishAuthorizationInfo(const uint32_t authId, const char *authName)
+void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries)
 {
-    publishUInt(mqtt_topic_lock_auth_id, authId);
-    publishString(mqtt_topic_lock_auth_name, authName);
+    char str[50];
+
+    String json = "[\n";
+
+    for(const auto& log : logEntries)
+    {
+        json.concat("{\n");
+
+        json.concat("\"index\": "); json.concat(log.index); json.concat(",\n");
+        json.concat("\"authorizationId\": "); json.concat(log.authId); json.concat(",\n");
+
+        memset(str, 0, sizeof(str));
+        memcpy(str, log.name, sizeof(log.name));
+        json.concat("\"authorizationName\": \""); json.concat(str); json.concat("\",\n");
+
+        json.concat("\"timeYear\": "); json.concat(log.timeStampYear); json.concat(",\n");
+        json.concat("\"timeMonth\": "); json.concat(log.timeStampMonth); json.concat(",\n");
+        json.concat("\"timeDay\": "); json.concat(log.timeStampDay); json.concat(",\n");
+        json.concat("\"timeHour\": "); json.concat(log.timeStampHour); json.concat(",\n");
+        json.concat("\"timeMinute\": "); json.concat(log.timeStampMinute); json.concat(",\n");
+        json.concat("\"timeSecond\": "); json.concat(log.timeStampSecond); json.concat(",\n");
+
+        memset(str, 0, sizeof(str));
+        loggingTypeToString(log.loggingType, str);
+        json.concat("\"type\": \""); json.concat(str); json.concat("\",\n");
+
+        switch(log.loggingType)
+        {
+            case NukiOpener::LoggingType::LockAction:
+                memset(str, 0, sizeof(str));
+                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
+                json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                break;
+            case NukiOpener::LoggingType::KeypadAction:
+                memset(str, 0, sizeof(str));
+                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                break;
+            case NukiOpener::LoggingType::DoorbellRecognition:
+                json.concat("\"mode\": \"");
+                switch(log.data[0] & 3)
+                {
+                    case 0:
+                        json.concat("None");
+                        break;
+                    case 1:
+                        json.concat("RTO");
+                        break;
+                    case 2:
+                        json.concat("CM");
+                        break;
+                    default:
+                        json.concat("Unknown");
+                        break;
+                }
+                json.concat("\",\n");
+                break;
+
+        }
+
+        json.concat("}");
+        if(&log == &logEntries.back())
+        {
+            json.concat("\n");
+        }
+        else
+        {
+            json.concat(",\n");
+        }
+    }
+
+    json.concat("]");
+    publishString(mqtt_topic_lock_log, json.c_str());
+}
+
+void NetworkOpener::clearAuthorizationInfo()
+{
+    publishString(mqtt_topic_lock_log, "");
 }
 
 void NetworkOpener::publishCommandResult(const char *resultStr)

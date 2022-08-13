@@ -126,7 +126,7 @@ void NukiOpenerWrapper::update()
 
     if(_clearAuthData)
     {
-        _network->publishAuthorizationInfo(0, "");
+        _network->clearAuthorizationInfo();
         _clearAuthData = false;
     }
 
@@ -185,36 +185,23 @@ void NukiOpenerWrapper::updateAuthData()
     Nuki::CmdResult result = _nukiOpener.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {
-        _network->publishAuthorizationInfo(0, "");
         return;
     }
     delay(100);
 
-    result = _nukiOpener.retrieveLogEntries(_nukiOpener.getLogEntryCount() - 2, 1, 0, false);
+    result = _nukiOpener.retrieveLogEntries(0, 10, 1, false);
     if(result != Nuki::CmdResult::Success)
     {
-        _network->publishAuthorizationInfo(0, "");
         return;
     }
     delay(200);
 
-    std::list<Nuki::LogEntry> log;
+    std::list<NukiOpener::LogEntry> log;
     _nukiOpener.getLogEntries(&log);
 
     if(log.size() > 0)
     {
-        const Nuki::LogEntry& entry = log.front();
-
-        if(entry.authId != _lastAuthId)
-        {
-            _network->publishAuthorizationInfo(entry.authId, (char *) entry.name);
-            _lastAuthId = entry.authId;
-        }
-    }
-    else
-    {
-        _network->publishAuthorizationInfo(0, "");
-        _lastAuthId = 0;
+        _network->publishAuthorizationInfo(log);
     }
 }
 

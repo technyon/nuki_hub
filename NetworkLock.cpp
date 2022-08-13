@@ -231,7 +231,7 @@ void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
 }
 
 
-void NetworkLock::publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logEntries)
+void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries)
 {
     char str[50];
 
@@ -261,7 +261,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logE
 
         switch(log.loggingType)
         {
-            case Nuki::LoggingType::LockAction:
+            case NukiLock::LoggingType::LockAction:
                 memset(str, 0, sizeof(str));
                 NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
                 json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
@@ -274,7 +274,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logE
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
                 json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
                 break;
-            case Nuki::LoggingType::KeypadAction:
+            case NukiLock::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
                 NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
                 json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
@@ -283,7 +283,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logE
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
                 json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
                 break;
-            case Nuki::LoggingType::DoorSensor:
+            case NukiLock::LoggingType::DoorSensor:
                 memset(str, 0, sizeof(str));
                 NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
                 json.concat("\"action\": \"");
@@ -324,12 +324,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<Nuki::LogEntry>& logE
     json.concat("]");
     publishString(mqtt_topic_lock_log, json.c_str());
 }
-//uint16_t timeStampYear;
-//uint8_t timeStampMonth;
-//uint8_t timeStampDay;
-//uint8_t timeStampHour;
-//uint8_t timeStampMinute;
-//uint8_t timeStampSecond;
+
 void NetworkLock::clearAuthorizationInfo()
 {
     publishString(mqtt_topic_lock_log, "");

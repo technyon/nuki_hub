@@ -225,7 +225,7 @@ void NukiWrapper::updateAuthData()
     }
     delay(200);
 
-    std::list<Nuki::LogEntry> log;
+    std::list<NukiLock::LogEntry> log;
     _nukiLock.getLogEntries(&log);
 
     if(log.size() > 0)
