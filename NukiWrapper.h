@@ -26,18 +26,22 @@ public:
 
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();
+    const bool hasKeypad();
 
     void notify(Nuki::EventType eventType) override;
 
 private:
     static bool onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
+    static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* topic, const char* value);
+    void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
 
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
     void updateAuthData();
+    void updateKeypad();
 
     void readConfig();
     void readAdvancedConfig();
@@ -54,8 +58,10 @@ private:
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
+    int _intervalKeypad = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
+    std::vector<uint16_t> _keypadCodeIds;
 
     NukiLock::KeyTurnerState _lastKeyTurnerState;
     NukiLock::KeyTurnerState _keyTurnerState;
@@ -72,9 +78,13 @@ private:
 
     bool _paired = false;
     bool _statusUpdated = false;
+    bool _hasKeypad = false;
+    bool _keypadEnabled = false;
+    bool _configRead = false;
+    uint _maxKeypadCodeCount = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
-    unsigned long _nextPairTs = 0;
+    unsigned long _nextKeypadUpdateTs = 0;
     NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };

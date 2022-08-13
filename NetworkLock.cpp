@@ -53,6 +53,20 @@ void NetworkLock::initialize()
 
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
+
+    if(_preferences->getBool(preference_keypad_control_enabled))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
+    }
 }
 
 void NetworkLock::update()
@@ -96,6 +110,40 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
             success = _lockActionReceivedCallback(value);
         }
         publishString(mqtt_topic_lock_action, success ? "ack" : "unknown_action");
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
+    {
+        if(_keypadCommandReceivedReceivedCallback != nullptr)
+        {
+            _keypadCommandReceivedReceivedCallback(value, _keypadCommandId, _keypadCommandName, _keypadCommandCode, _keypadCommandEnabled);
+
+            _keypadCommandId = 0;
+            _keypadCommandName = "--";
+            _keypadCommandCode = "000000";
+            _keypadCommandEnabled = 1;
+            publishString(mqtt_topic_keypad_command_action, "--");
+            publishInt(mqtt_topic_keypad_command_id, _keypadCommandId);
+            publishString(mqtt_topic_keypad_command_name, _keypadCommandName.c_str());
+            publishString(mqtt_topic_keypad_command_code, _keypadCommandCode.c_str());
+            publishInt(mqtt_topic_keypad_command_enabled, _keypadCommandEnabled);
+        }
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_id))
+    {
+        _keypadCommandId = atoi(value);
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_name))
+    {
+        _keypadCommandName = value;
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_code))
+    {
+        _keypadCommandCode = value;
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_enabled))
+    {
+        _keypadCommandEnabled = atoi(value);
     }
 
     for(auto configTopic : _configTopics)
@@ -144,7 +192,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     {
         memset(&str, 0, sizeof(str));
         NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
-        publishString(mqtt_topic_door_sensor_state, str);
+        publishString(mqtt_topic_lock_door_sensor_state, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
@@ -216,6 +264,36 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
 
+void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
+{
+    uint index = 0;
+    for(const auto& entry : entries)
+    {
+        String basePath = mqtt_topic_keypad;
+        basePath.concat("/code_");
+        basePath.concat(std::to_string(index).c_str());
+        publishKeypadEntry(basePath, entry);
+
+        ++index;
+    }
+    while(index < maxKeypadCodeCount)
+    {
+        NukiLock::KeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        String basePath = mqtt_topic_keypad;
+        basePath.concat("/code_");
+        basePath.concat(std::to_string(index).c_str());
+        publishKeypadEntry(basePath, entry);
+
+        ++index;
+    }
+}
+
+void NetworkLock::publishKeypadCommandResult(const char* result)
+{
+    publishString(mqtt_topic_keypad_command_result, result);
+}
+
 void NetworkLock::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
@@ -224,6 +302,11 @@ void NetworkLock::setLockActionReceivedCallback(bool (*lockActionReceivedCallbac
 void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
+}
+
+void NetworkLock::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled))
+{
+    _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
 }
 
 void NetworkLock::buildMqttPath(const char* path, char* outPath)
@@ -293,8 +376,33 @@ bool NetworkLock::publishString(const char *topic, const char *value)
     return _network->publishString(_mqttPath, topic, value);
 }
 
+void NetworkLock::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)
+{
+    char codeName[sizeof(entry.name) + 1];
+    memset(codeName, 0, sizeof(codeName));
+    memcpy(codeName, entry.name, sizeof(entry.name));
+
+    publishInt(concat(topic, "/id").c_str(), entry.codeId);
+    publishBool(concat(topic, "/enabled").c_str(), entry.enabled);
+    publishString(concat(topic, "/name").c_str(), codeName);
+    publishInt(concat(topic, "/createdYear").c_str(), entry.dateCreatedYear);
+    publishInt(concat(topic, "/createdMonth").c_str(), entry.dateCreatedMonth);
+    publishInt(concat(topic, "/createdDay").c_str(), entry.dateCreatedDay);
+    publishInt(concat(topic, "/createdHour").c_str(), entry.dateCreatedHour);
+    publishInt(concat(topic, "/createdMin").c_str(), entry.dateCreatedMin);
+    publishInt(concat(topic, "/createdSec").c_str(), entry.dateCreatedSec);
+    publishInt(concat(topic, "/lockCount").c_str(), entry.lockCount);
+}
+
+
 void NetworkLock::publishULong(const char *topic, const unsigned long value)
 {
     return _network->publishULong(_mqttPath, topic, value);
 }
 
+String NetworkLock::concat(String a, String b)
+{
+    String c = a;
+    c.concat(b);
+    return c;
+}

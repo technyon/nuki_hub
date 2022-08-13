@@ -23,6 +23,7 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner:
 
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
+    network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
 }
 
 
@@ -40,17 +41,25 @@ void NukiWrapper::initialize()
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
+    _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
+    _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
+    _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
 
     if(_intervalLockstate == 0)
     {
-        _intervalLockstate = 60 * 5;
+        _intervalLockstate = 60 * 30;
         _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
     }
     if(_intervalBattery == 0)
     {
         _intervalBattery = 60 * 30;
         _preferences->putInt(preference_query_interval_battery, _intervalBattery);
+    }
+    if(_intervalKeypad == 0)
+    {
+        _intervalKeypad = 60 * 30;
+        _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
     }
 
     _nukiLock.setEventHandler(this);
@@ -104,6 +113,11 @@ void NukiWrapper::update()
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
+    }
+    if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
+    {
+        _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
+        updateKeypad();
     }
 
     if(_nextLockAction != (NukiLock::LockAction)0xff)
@@ -189,6 +203,8 @@ void NukiWrapper::updateConfig()
 {
     readConfig();
     readAdvancedConfig();
+    _configRead = true;
+    _hasKeypad = _nukiConfig.hasKeypad > 0;
     _network->publishConfig(_nukiConfig);
     _network->publishAdvancedConfig(_nukiAdvancedConfig);
 }
@@ -231,6 +247,34 @@ void NukiWrapper::updateAuthData()
     }
 }
 
+void NukiWrapper::updateKeypad()
+{
+    Nuki::CmdResult result = _nukiLock.retrieveKeypadEntries(0, 0xffff);
+    if(result == 1)
+    {
+        std::list<NukiLock::KeypadEntry> entries;
+        _nukiLock.getKeypadEntries(&entries);
+
+        entries.sort([](const NukiLock::KeypadEntry& a, const NukiLock::KeypadEntry& b) { return a.codeId < b.codeId; });
+
+        uint keypadCount = entries.size();
+        if(keypadCount > _maxKeypadCodeCount)
+        {
+            _maxKeypadCodeCount = keypadCount;
+            _preferences->putUInt(preference_max_keypad_code_count, _maxKeypadCodeCount);
+        }
+
+        _network->publishKeypad(entries, _maxKeypadCodeCount);
+
+        _keypadCodeIds.clear();
+        _keypadCodeIds.reserve(entries.size());
+        for(const auto& entry : entries)
+        {
+            _keypadCodeIds.push_back(entry.codeId);
+        }
+    }
+}
+
 NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {
     if(strcmp(str, "unlock") == 0) return NukiLock::LockAction::Unlock;
@@ -255,6 +299,12 @@ bool NukiWrapper::onLockActionReceivedCallback(const char *value)
 void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
 {
     nukiInst->onConfigUpdateReceived(topic, value);
+}
+
+
+void NukiWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
+{
+    nukiInst->onKeypadCommandReceived(command, id, name, code, enabled);
 }
 
 
@@ -311,6 +361,117 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
     }
 }
 
+void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
+{
+    if(!_hasKeypad)
+    {
+        if(_configRead)
+        {
+            _network->publishKeypadCommandResult("KeypadNotAvailable");
+        }
+        return;
+    }
+    if(!_keypadEnabled)
+    {
+        return;
+    }
+
+    bool idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), id) != _keypadCodeIds.end();
+    int codeInt = code.toInt();
+    bool codeValid = codeInt > 100000 && codeInt < 1000000 && (code.indexOf('0') == -1);
+    NukiLock::CmdResult result = (NukiLock::CmdResult)-1;
+
+    if(strcmp(command, "add") == 0)
+    {
+        if(name == "" || name == "--")
+        {
+            _network->publishKeypadCommandResult("MissingParameterName");
+            return;
+        }
+        if(codeInt == 0)
+        {
+            _network->publishKeypadCommandResult("MissingParameterCode");
+            return;
+        }
+        if(!codeValid)
+        {
+            _network->publishKeypadCommandResult("CodeInvalid");
+            return;
+        }
+
+        NukiLock::NewKeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        size_t nameLen = name.length();
+        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+        entry.code = codeInt;
+        result = _nukiLock.addKeypadEntry(entry);
+        Serial.print("Add keypad code: "); Serial.println((int)result);
+        updateKeypad();
+    }
+    else if(strcmp(command, "delete") == 0)
+    {
+        if(!idExists)
+        {
+            _network->publishKeypadCommandResult("UnknownId");
+            return;
+        }
+        result = _nukiLock.deleteKeypadEntry(id);
+        Serial.print("Delete keypad code: "); Serial.println((int)result);
+        updateKeypad();
+    }
+    else if(strcmp(command, "update") == 0)
+    {
+        if(name == "" || name == "--")
+        {
+            _network->publishKeypadCommandResult("MissingParameterName");
+            return;
+        }
+        if(codeInt == 0)
+        {
+            _network->publishKeypadCommandResult("MissingParameterCode");
+            return;
+        }
+        if(!codeValid)
+        {
+            _network->publishKeypadCommandResult("CodeInvalid");
+            return;
+        }
+        if(!idExists)
+        {
+            _network->publishKeypadCommandResult("UnknownId");
+            return;
+        }
+
+        NukiLock::UpdatedKeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        entry.codeId = id;
+        size_t nameLen = name.length();
+        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+        entry.code = codeInt;
+        entry.enabled = enabled == 0 ? 0 : 1;
+        result = _nukiLock.updateKeypadEntry(entry);
+        Serial.print("Update keypad code: "); Serial.println((int)result);
+        updateKeypad();
+    }
+    else if(command == "--")
+    {
+        return;
+    }
+    else
+    {
+        _network->publishKeypadCommandResult("UnknownCommand");
+        return;
+    }
+
+    if((int)result != -1)
+    {
+        char resultStr[15];
+        memset(&resultStr, 0, sizeof(resultStr));
+        NukiLock::cmdResultToString(result, resultStr);
+        _network->publishKeypadCommandResult(resultStr);
+    }
+}
+
 const NukiLock::KeyTurnerState &NukiWrapper::keyTurnerState()
 {
     return _keyTurnerState;
@@ -319,6 +480,11 @@ const NukiLock::KeyTurnerState &NukiWrapper::keyTurnerState()
 const bool NukiWrapper::isPaired()
 {
     return _paired;
+}
+
+const bool NukiWrapper::hasKeypad()
+{
+    return _hasKeypad;
 }
 
 void NukiWrapper::notify(Nuki::EventType eventType)

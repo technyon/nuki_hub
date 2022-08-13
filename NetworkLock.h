@@ -6,6 +6,7 @@
 #include "networkDevices/W5500Device.h"
 #include <Preferences.h>
 #include <vector>
+#include <list>
 #include "NukiConstants.h"
 #include "NukiLockConstants.h"
 #include "Network.h"
@@ -28,9 +29,12 @@ public:
     void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
+    void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
+    void publishKeypadCommandResult(const char* result);
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
+    void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
 
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
 
@@ -41,7 +45,10 @@ private:
     void publishULong(const char* topic, const unsigned long value);
     void publishBool(const char* topic, const bool value);
     bool publishString(const char* topic, const char* value);
+    void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
+
+    String concat(String a, String b);
 
     void buildMqttPath(const char* path, char* outPath);
 
@@ -55,6 +62,12 @@ private:
     unsigned long _lastMaintenanceTs = 0;
     bool _haEnabled= false;
 
+    String _keypadCommandName = "";
+    String _keypadCommandCode = "";
+    uint _keypadCommandId = 0;
+    int _keypadCommandEnabled = 1;
+
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+    void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
 };

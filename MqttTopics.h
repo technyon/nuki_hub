@@ -15,7 +15,7 @@
 #define mqtt_topic_lock_auth_name "/lock/authorizationName"
 #define mqtt_topic_lock_completionStatus "/lock/completionStatus"
 #define mqtt_topic_lock_action_command_result "/lock/commandResult"
-#define mqtt_topic_door_sensor_state "/lock/doorSensorState"
+#define mqtt_topic_lock_door_sensor_state "/lock/doorSensorState"
 #define mqtt_topic_lock_action "/lock/action"
 
 #define mqtt_topic_config_button_enabled "/configuration/buttonEnabled"
@@ -25,6 +25,14 @@
 #define mqtt_topic_config_auto_lock "/configuration/autoLock"
 #define mqtt_topic_config_single_lock "/configuration/singleLock"
 #define mqtt_topic_config_sound_level "/configuration/soundLevel"
+
+#define mqtt_topic_keypad "/keypad"
+#define mqtt_topic_keypad_command_action "/keypad/command/action"
+#define mqtt_topic_keypad_command_id "/keypad/command/id"
+#define mqtt_topic_keypad_command_name "/keypad/command/name"
+#define mqtt_topic_keypad_command_code "/keypad/command/code"
+#define mqtt_topic_keypad_command_enabled "/keypad/command/enabled"
+#define mqtt_topic_keypad_command_result "/keypad/command/commandResult"
 
 #define mqtt_topic_presence "/presence/devices"
 

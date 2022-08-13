@@ -286,6 +286,16 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_query_interval_battery, value.toInt());
             configChanged = true;
         }
+        else if(key == "KPINT")
+        {
+            _preferences->putInt(preference_query_interval_keypad, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "KPENA")
+        {
+            _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "PRDTMO")
         {
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
@@ -557,12 +567,12 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
-    printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
+    printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
     response.concat("</table>");
-    response.concat("* If no encryption is configured for the MQTT broker, leave empty.<br>");
+    response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br>");
 
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
@@ -589,6 +599,11 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     }
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    if(_nuki->hasKeypad())
+    {
+        printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
+        printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
+    }
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
     printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);

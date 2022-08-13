@@ -113,7 +113,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     {
         memset(&str, 0, sizeof(str));
         NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
-        publishString(mqtt_topic_door_sensor_state, str);
+        publishString(mqtt_topic_lock_door_sensor_state, str);
     }
 
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
