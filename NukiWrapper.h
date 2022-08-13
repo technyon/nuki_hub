@@ -66,6 +66,7 @@ private:
     NukiLock::KeyTurnerState _lastKeyTurnerState;
     NukiLock::KeyTurnerState _keyTurnerState;
 
+    char _lastLockAction[15] = { 0 };
     uint32_t _lastAuthId = 0xffff;
     char _lastAuthName[33] = {0};
 
@@ -89,5 +90,4 @@ private:
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _nextKeypadUpdateTs = 0;
     NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
-    char _lastLockAction[15] = { 0 };
 };

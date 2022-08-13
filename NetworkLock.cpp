@@ -223,11 +223,6 @@ void NetworkLock::publishStateAsJson(const char* action, const NukiLock::KeyTurn
     lockstateToString(keyTurnerState.lockState, str);
     json.concat("\"state\": \""); json.concat(str); json.concat("\",\n");
 
-    // state
-    memset(&str, 0, sizeof(str));
-    lockstateToString(keyTurnerState.lockState, str);
-    json.concat("\"state\": \""); json.concat(str); json.concat("\",\n");
-
     // trigger
     memset(&str, 0, sizeof(str));
     triggerToString(keyTurnerState.trigger, str);

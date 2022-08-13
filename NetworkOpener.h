@@ -19,6 +19,7 @@ public:
     void initialize();
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
+    void publishStateAsJson(const char* action, const NukiOpener::OpenerState& keyTurnerState, const uint32_t authId, const char* authName);
     void publishBinaryState(NukiOpener::LockState lockState);
     void publishAuthorizationInfo(const uint32_t authId, const char* authName);
     void publishCommandResult(const char* resultStr);

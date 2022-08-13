@@ -286,9 +286,6 @@ void NukiWrapper::updateKeypad()
 
 NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {
-    memset(&_lastLockAction, 0, sizeof(_lastLockAction));
-    strcpy(_lastLockAction, str);
-
     if(strcmp(str, "unlock") == 0) return NukiLock::LockAction::Unlock;
     else if(strcmp(str, "lock") == 0) return NukiLock::LockAction::Lock;
     else if(strcmp(str, "unlatch") == 0) return NukiLock::LockAction::Unlatch;
@@ -303,6 +300,9 @@ NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 
 bool NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
+    memset(&nukiInst->_lastLockAction, 0, sizeof(_lastLockAction));
+    strcpy(nukiInst->_lastLockAction, value);
+
     NukiLock::LockAction action = nukiInst->lockActionToEnum(value);
     nukiInst->_nextLockAction = action;
     return (int)action != 0xff;
