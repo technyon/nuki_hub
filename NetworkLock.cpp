@@ -54,16 +54,19 @@ void NetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
 
-    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
-    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
-    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
-    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
-    _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
-    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
-    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
-    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
-    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
-    _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
+    if(_preferences->getBool(preference_keypad_control_enabled))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
+    }
 }
 
 void NetworkLock::update()

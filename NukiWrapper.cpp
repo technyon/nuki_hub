@@ -203,6 +203,7 @@ void NukiWrapper::updateConfig()
 {
     readConfig();
     readAdvancedConfig();
+    _configRead = true;
     _hasKeypad = _nukiConfig.hasKeypad > 0;
     _network->publishConfig(_nukiConfig);
     _network->publishAdvancedConfig(_nukiAdvancedConfig);
@@ -362,7 +363,15 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 
 void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
-    if(!_hasKeypad || !_keypadEnabled)
+    if(!_hasKeypad)
+    {
+        if(_configRead)
+        {
+            _network->publishKeypadCommandResult("KeypadNotAvailable");
+        }
+        return;
+    }
+    if(!_keypadEnabled)
     {
         return;
     }
@@ -443,6 +452,10 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         result = _nukiLock.updateKeypadEntry(entry);
         Serial.print("Update keypad code: "); Serial.println((int)result);
         updateKeypad();
+    }
+    else if(command == "--")
+    {
+        return;
     }
     else
     {

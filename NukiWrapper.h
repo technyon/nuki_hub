@@ -80,6 +80,7 @@ private:
     bool _statusUpdated = false;
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
+    bool _configRead = false;
     uint _maxKeypadCodeCount = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;

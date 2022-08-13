@@ -148,7 +148,6 @@ void initPreferences()
     {
         preferences->putBool(preference_started_befores, true);
         preferences->putBool(preference_lock_enabled, true);
-        preferences->putBool(preference_keypad_control_enabled, true);
     }
 
     if(preferences->getInt(preference_restart_timer) == 0)

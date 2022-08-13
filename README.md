@@ -118,7 +118,8 @@ NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations
 ## Keypad control (optional)
 
 If a keypad is connected to the lock, keypad codes can be added, updated and removed.
-Information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes.
+This has to enabled first in the configuration portal. Check "Enabled keypad control via MQTT" and save the configuration.
+After enabling keypad control, information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes.
 <br>
 For security reasons, the code itself is not published. To modify keypad codes, a command
 structure is setup under keypad/command:
