@@ -557,13 +557,17 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     buildHtmlHeader(response);
     response.concat("<FORM ACTION=method=get >");
-    response.concat("<h3>MQTT Configuration</h3>");
+    response.concat("<h3>Basic MQTT Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
     printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
     printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
     printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
+    response.concat("</table><br>");
+
+    response.concat("<h3>Advanced MQTT Configuration</h3>");
+    response.concat("<table>");
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
@@ -585,7 +589,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     buildHtmlHeader(response);
 
     response.concat("<FORM ACTION=method=get >");
-    response.concat("<h3>MQTT Configuration</h3>");
+    response.concat("<h3>Basic NUKI Configuration</h3>");
     response.concat("<table>");
     printCheckBox(response, "LOCKENA", "NUKI Smartlock enabled", _preferences->getBool(preference_lock_enabled));
     if(_preferences->getBool(preference_lock_enabled))
@@ -597,6 +601,11 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     {
         printInputField(response, "MQTTOPPATH", "MQTT NUKI Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
     }
+    response.concat("</table><br>");
+
+    response.concat("<h3>Advanced NUKI Configuration</h3>");
+    response.concat("<table>");
+
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
     if(_nuki->hasKeypad())
