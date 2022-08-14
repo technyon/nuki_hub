@@ -189,7 +189,7 @@ void NukiOpenerWrapper::updateAuthData()
     }
     delay(100);
 
-    result = _nukiOpener.retrieveLogEntries(0, 10, 1, false);
+    result = _nukiOpener.retrieveLogEntries(0, 5, 1, false);
     if(result != Nuki::CmdResult::Success)
     {
         return;

@@ -182,7 +182,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
                 json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
 
                 memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+                logactionCompletionStatusToString(log.data[3], str);
                 json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
                 break;
             case NukiOpener::LoggingType::KeypadAction:
@@ -212,8 +212,42 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
                         break;
                 }
                 json.concat("\",\n");
-                break;
 
+                json.concat("\"source\": \"");
+                switch(log.data[1])
+                {
+                    case 0:
+                        json.concat("Doorbell");
+                        break;
+                    case 1:
+                        json.concat("Timecontrol");
+                        break;
+                    case 2:
+                        json.concat("App");
+                        break;
+                    case 3:
+                        json.concat("Button");
+                        break;
+                    case 4:
+                        json.concat("Fob");
+                        break;
+                    case 5:
+                        json.concat("Bridge");
+                        break;
+                    case 6:
+                        json.concat("Keypad");
+                        break;
+                }
+                json.concat("\",\n");
+
+                json.concat("\"geofence\": \""); json.concat(log.data[2] == 1 ? "active" : "inactive"); json.concat("\",\n");
+                json.concat("\"doorbellSuppression\": \""); json.concat(log.data[3] == 1 ? "active" : "inactive"); json.concat("\",\n");
+
+                memset(str, 0, sizeof(str));
+                logactionCompletionStatusToString(log.data[5], str);
+                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+
+                break;
         }
 
         json.concat("}");
@@ -229,6 +263,37 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 
     json.concat("]");
     publishString(mqtt_topic_lock_log, json.c_str());
+}
+
+void NetworkOpener::logactionCompletionStatusToString(uint8_t value, char* out)
+{
+    switch (value)
+    {
+        case 0x00:
+            strcpy(out, "success");
+            break;
+        case 0x02:
+            strcpy(out, "cancelled");
+            break;
+        case 0x03:
+            strcpy(out, "tooRecent");
+            break;
+        case 0x04:
+            strcpy(out, "busy");
+            break;
+        case 0x08:
+            strcpy(out, "incomplete");
+            break;
+        case 0xfe:
+            strcpy(out, "otherError");
+            break;
+        case 0xff:
+            strcpy(out, "unknown");
+            break;
+        default:
+            strcpy(out, "undefined");
+            break;
+    }
 }
 
 void NetworkOpener::clearAuthorizationInfo()

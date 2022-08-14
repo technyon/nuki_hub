@@ -45,6 +45,7 @@ private:
 
     void buildMqttPath(const char* path, char* outPath);
     void subscribe(const char* path);
+    void logactionCompletionStatusToString(uint8_t value, char* out);
 
     Preferences* _preferences;
 
