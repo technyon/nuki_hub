@@ -189,12 +189,14 @@ void NukiOpenerWrapper::updateAuthData()
     }
     delay(100);
 
-    result = _nukiOpener.retrieveLogEntries(0, 5, 1, false);
+    uint16_t count = _nukiOpener.getLogEntryCount();
+
+    result = _nukiOpener.retrieveLogEntries(0, count < 5 ? count : 5, 1, false);
     if(result != Nuki::CmdResult::Success)
     {
         return;
     }
-    delay(200);
+    delay(1000);
 
     std::list<NukiOpener::LogEntry> log;
     _nukiOpener.getLogEntries(&log);

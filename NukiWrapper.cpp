@@ -218,19 +218,21 @@ void NukiWrapper::updateAuthData()
     }
     delay(100);
 
-    result = _nukiLock.retrieveLogEntries(0, 10, 1, false);
+    uint16_t count = _nukiLock.getLogEntryCount();
+
+    result = _nukiLock.retrieveLogEntries(0, count < 5 ? count : 5, 1, false);
     if(result != Nuki::CmdResult::Success)
     {
         return;
     }
-    delay(200);
+    delay(1000);
 
     std::list<NukiLock::LogEntry> log;
     _nukiLock.getLogEntries(&log);
 
     if(log.size() > 0)
     {
-             _network->publishAuthorizationInfo(log);
+         _network->publishAuthorizationInfo(log);
     }
 }
 
