@@ -235,10 +235,22 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
 {
     char str[50];
 
+    bool authFound = false;
+    uint32_t authId = 0;
+    char authName[33];
+    memset(authName, 0, sizeof(authName));
+
     String json = "[\n";
 
     for(const auto& log : logEntries)
     {
+        if((log.loggingType == NukiLock::LoggingType::LockAction || log.loggingType == NukiLock::LoggingType::KeypadAction) && ! authFound)
+        {
+            authFound = true;
+            authId = log.authId;
+            memcpy(authName, log.name, sizeof(log.name));
+        }
+
         json.concat("{\n");
 
         json.concat("\"index\": "); json.concat(log.index); json.concat(",\n");
@@ -323,12 +335,19 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
 
     json.concat("]");
     publishString(mqtt_topic_lock_log, json.c_str());
+
+    if(authFound)
+    {
+        publishUInt(mqtt_topic_lock_auth_id, authId);
+        publishString(mqtt_topic_lock_auth_name, authName);
+    }
 }
 
 void NetworkLock::clearAuthorizationInfo()
 {
     publishString(mqtt_topic_lock_log, "");
-}
+    publishUInt(mqtt_topic_lock_auth_id, 0);
+    publishString(mqtt_topic_lock_auth_name, "--");}
 
 void NetworkLock::publishCommandResult(const char *resultStr)
 {

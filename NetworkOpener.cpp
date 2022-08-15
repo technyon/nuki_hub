@@ -146,10 +146,22 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 {
     char str[50];
 
+    bool authFound = false;
+    uint32_t authId = 0;
+    char authName[33];
+    memset(authName, 0, sizeof(authName));
+
     String json = "[\n";
 
     for(const auto& log : logEntries)
     {
+        if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction || log.loggingType == NukiOpener::LoggingType::DoorbellRecognition) && ! authFound)
+        {
+            authFound = true;
+            authId = log.authId;
+            memcpy(authName, log.name, sizeof(log.name));
+        }
+
         json.concat("{\n");
 
         json.concat("\"index\": "); json.concat(log.index); json.concat(",\n");
@@ -263,6 +275,12 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 
     json.concat("]");
     publishString(mqtt_topic_lock_log, json.c_str());
+
+    if(authFound)
+    {
+        publishUInt(mqtt_topic_lock_auth_id, authId);
+        publishString(mqtt_topic_lock_auth_name, authName);
+    }
 }
 
 void NetworkOpener::logactionCompletionStatusToString(uint8_t value, char* out)
