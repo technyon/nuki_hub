@@ -345,7 +345,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
 
 void NetworkLock::clearAuthorizationInfo()
 {
-    publishString(mqtt_topic_lock_log, "");
+    publishString(mqtt_topic_lock_log, "--");
     publishUInt(mqtt_topic_lock_auth_id, 0);
     publishString(mqtt_topic_lock_auth_name, "--");}
 
