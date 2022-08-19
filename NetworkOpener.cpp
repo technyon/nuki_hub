@@ -318,7 +318,7 @@ void NetworkOpener::clearAuthorizationInfo()
 {
     publishString(mqtt_topic_lock_log, "--");
     publishUInt(mqtt_topic_lock_auth_id, 0);
-    publishString(mqtt_topic_lock_auth_name, "--");}
+    publishString(mqtt_topic_lock_auth_name, "--");
 }
 
 void NetworkOpener::publishCommandResult(const char *resultStr)
