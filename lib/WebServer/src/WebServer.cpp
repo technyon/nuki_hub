@@ -75,7 +75,6 @@ WebServer::~WebServer() {
   {
       delete _server;
       _server = nullptr;
-      Serial.println("##### SERVER DELETED");
   }
 }
 
