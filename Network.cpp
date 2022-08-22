@@ -471,6 +471,40 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
     }
 }
 
+void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString,
+                                        char *lockAction, char *unlockAction, char *openAction, char *lockedState,
+                                        char *unlockedState)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" door sensor\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat(
+                "_door_sensor\",\"dev_cla\":\"door\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_lock_door_sensor_state);
+        configJSON.concat("\",\"pl_off\":\"doorClosed\",\"pl_on\":\"doorOpened\",\"pl_not_avail\":\"unavailable\"");
+        configJSON.concat("}");
+
+        String path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/door_sensor/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+    }
+}
 
 void Network::removeHASSConfig(char* uidString)
 {
