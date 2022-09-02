@@ -70,7 +70,7 @@ This will also give you a 30€ discount for your order.
 ### Opener
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3
-- lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, open, opening, uncalibrated
+- lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, ring, open, opening, uncalibrated
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
 - lock/completionStatus: Status of the last action as reported by NUKI lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
 - lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
