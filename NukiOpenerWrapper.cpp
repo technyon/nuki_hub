@@ -147,17 +147,23 @@ void NukiOpenerWrapper::unpair()
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
     _nukiOpener.requestOpenerState(&_keyTurnerState);
-    _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
-    if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
+    if(_keyTurnerState.lockState == NukiOpener::LockState::Locked && _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked)
     {
-        char lockStateStr[20];
-        lockstateToString(_keyTurnerState.lockState, lockStateStr);
-        Serial.print(F("Nuki opener state: "));
-        Serial.println((int)_keyTurnerState.lockState);
-//        Serial.println((int)_keyTurnerState.nukiState);
-//        Serial.println((int)_keyTurnerState.currentTimeYear);
-//        Serial.println((int)_keyTurnerState.ringToOpenTimer);
+        Serial.println(F("Nuki opener: Ring detected"));
+        _network->publishRing();
+    }
+    else
+    {
+        _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+
+        if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
+        {
+            char lockStateStr[20];
+            lockstateToString(_keyTurnerState.lockState, lockStateStr);
+            Serial.print(F("Nuki opener state: "));
+            Serial.println((int)_keyTurnerState.lockState);
+        }
     }
 
     if(_publishAuthData)

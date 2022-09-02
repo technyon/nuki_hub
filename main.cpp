@@ -38,6 +38,7 @@ void networkTask(void *pvParameters)
             case 0:
             case 1:
                 networkLock->update();
+                networkOpener->update();
                 network->update();
                 webCfgServer->update();
                 break;

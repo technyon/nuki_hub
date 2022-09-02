@@ -43,6 +43,18 @@ void NetworkOpener::initialize()
     }
 }
 
+void NetworkOpener::update()
+{
+    if(_resetLockStateTs != 0 && millis() >= _resetLockStateTs)
+    {
+        char str[50];
+        memset(str, 0, sizeof(str));
+        _resetLockStateTs = 0;
+        lockstateToString(NukiOpener::LockState::Locked, str);
+        publishString(mqtt_topic_lock_state, str);
+    }
+}
+
 void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
 {
     char value[50] = {0};
@@ -123,6 +135,12 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     }
 
     _firstTunerStatePublish = false;
+}
+
+void NetworkOpener::publishRing()
+{
+    publishString(mqtt_topic_lock_state, "ring");
+    _resetLockStateTs = millis() + 2000;
 }
 
 void NetworkOpener::publishBinaryState(NukiOpener::LockState lockState)

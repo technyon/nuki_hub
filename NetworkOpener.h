@@ -17,8 +17,10 @@ public:
     virtual ~NetworkOpener() = default;
 
     void initialize();
+    void update();
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
+    void publishRing();
     void publishBinaryState(NukiOpener::LockState lockState);
     void publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries);
     void clearAuthorizationInfo();
@@ -58,6 +60,7 @@ private:
 
     bool _firstTunerStatePublish = true;
     bool _haEnabled= false;
+    unsigned long _resetLockStateTs = 0;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
