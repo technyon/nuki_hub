@@ -432,6 +432,31 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat("/battery_voltage/config");
 
         _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+
+        // Trigger
+        configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" trigger\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat(
+                "_trigger\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_lock_trigger);
+        configJSON.concat("\",\"enabled_by_default\":true}");
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/trigger/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
     }
 }
 
