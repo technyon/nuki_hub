@@ -506,6 +506,40 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
     }
 }
 
+void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopic, char *name, char *uidString,
+                                          char *lockAction, char *unlockAction, char *openAction, char *lockedState,
+                                          char *unlockedState)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" ring\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat(
+                "_ring\",\"dev_cla\":\"sound\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_lock_state);
+        configJSON.concat("\",\"pl_off\":\"locked\",\"pl_on\":\"ring\"}");
+
+        String path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/ring/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+    }
+}
+
 void Network::removeHASSConfig(char* uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
