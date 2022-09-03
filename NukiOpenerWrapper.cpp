@@ -90,9 +90,9 @@ void NukiOpenerWrapper::update()
 
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
     {
-        _statusUpdated = false;
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
+        _statusUpdated = false;
     }
     if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
     {
@@ -148,7 +148,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 {
     _nukiOpener.requestOpenerState(&_keyTurnerState);
 
-    if(_keyTurnerState.lockState == NukiOpener::LockState::Locked && _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked)
+    if(_statusUpdated && _keyTurnerState.lockState == NukiOpener::LockState::Locked && _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked)
     {
         Serial.println(F("Nuki opener: Ring detected"));
         _network->publishRing();
