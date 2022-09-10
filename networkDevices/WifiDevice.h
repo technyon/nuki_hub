@@ -20,6 +20,8 @@ public:
 
     virtual bool isConnected();
 
+    int8_t signalStrength() override;
+
     virtual PubSubClient *mqttClient();
 
 private:

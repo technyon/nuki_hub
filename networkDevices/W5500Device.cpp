@@ -165,3 +165,8 @@ void W5500Device::update()
 {
     _maintainResult = Ethernet.maintain();
 }
+
+int8_t W5500Device::signalStrength()
+{
+    return 127;
+}

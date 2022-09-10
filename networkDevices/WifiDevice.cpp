@@ -130,3 +130,8 @@ void WifiDevice::onDisconnected()
         ESP.restart();
     }
 }
+
+int8_t WifiDevice::signalStrength()
+{
+    return WiFi.RSSI();
+}

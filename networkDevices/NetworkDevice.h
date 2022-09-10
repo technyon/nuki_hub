@@ -19,6 +19,7 @@ public:
     virtual void update() = 0;
 
     virtual bool isConnected() = 0;
+    virtual int8_t signalStrength() = 0;
 
 protected:
     const uint16_t _mqttMaxBufferSize = 6144;

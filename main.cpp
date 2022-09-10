@@ -173,7 +173,8 @@ void setup()
 //    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
     const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
-    network = new Network(networkDevice, preferences);
+    const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
+    network = new Network(networkDevice, preferences, mqttLockPath);
     network->initialize();
     networkLock = new NetworkLock(network, preferences);
     networkLock->initialize();

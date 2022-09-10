@@ -7,11 +7,19 @@
 
 Network* Network::_inst = nullptr;
 
-Network::Network(const NetworkDeviceType networkDevice, Preferences *preferences)
+Network::Network(const NetworkDeviceType networkDevice, Preferences *preferences, const String& maintenancePathPrefix)
 : _preferences(preferences)
 {
     _inst = this;
     _hostname = _preferences->getString(preference_hostname);
+
+    memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
+
+    size_t len = maintenancePathPrefix.length();
+    for(int i=0; i < len; i++)
+    {
+        _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
+    }
     setupDevice(networkDevice);
 }
 
@@ -145,6 +153,12 @@ int Network::update()
             Serial.println(_presenceCsv);
         }
         _presenceCsv = nullptr;
+    }
+
+    if(_device->signalStrength() != 127 && ts - _lastMaintenancePublish > 2000)
+    {
+        publishInt(_maintenancePathPrefix, mqtt_topic_wifi_rssi, _device->signalStrength());
+        _lastMaintenancePublish = ts;
     }
 
     _device->mqttClient()->loop();

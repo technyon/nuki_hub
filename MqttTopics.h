@@ -39,4 +39,5 @@
 
 #define mqtt_topic_reset "/maintenance/reset"
 #define mqtt_topic_uptime "/maintenance/uptime"
+#define mqtt_topic_wifi_rssi "/maintenance/wifiRssi"
 #define mqtt_topic_freeheap "/maintenance/freeHeap"

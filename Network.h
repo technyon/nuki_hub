@@ -15,7 +15,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(const NetworkDeviceType networkDevice, Preferences* preferences);
+    explicit Network(const NetworkDeviceType networkDevice, Preferences* preferences, const String& maintenancePathPrefix);
 
     void initialize();
     int update();
@@ -63,6 +63,7 @@ private:
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
     char _mqttPresencePrefix[181] = {0};
+    char _maintenancePathPrefix[181] = {0};
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;
     char* _presenceCsv = nullptr;
@@ -72,4 +73,5 @@ private:
     std::map<String, String> _initTopics;
 
     unsigned long _lastConnectedTs = 0;
+    unsigned long _lastMaintenancePublish = 0;
 };
