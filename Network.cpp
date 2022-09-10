@@ -592,6 +592,46 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
     }
 }
 
+void Network::publishHASSWifiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    if(_device->signalStrength() == 127)
+    {
+        return;
+    }
+
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        // Battery level
+        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" WiFi signal strength\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat(
+                "_wifi_signal_strength\",\"dev_cla\":\"signal_strength\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_wifi_rssi);
+        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"db\"");
+        configJSON.concat("}");
+
+        String path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/signal_strength/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+    }
+}
+
+
 void Network::removeHASSConfig(char* uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);

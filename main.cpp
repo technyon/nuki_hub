@@ -169,8 +169,8 @@ void setup()
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
     }
 
-//    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
-    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
+//    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
     network = new Network(networkDevice, preferences, mqttLockPath);
