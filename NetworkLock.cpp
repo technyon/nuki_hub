@@ -69,18 +69,6 @@ void NetworkLock::initialize()
     }
 }
 
-void NetworkLock::update()
-{
-    unsigned long ts = millis();
-
-    if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
-    {
-        _lastMaintenanceTs = ts;
-        publishULong(mqtt_topic_uptime, ts / 1000 / 60);
-        // publishUInt(mqtt_topic_freeheap, esp_get_free_heap_size());
-    }
-}
-
 void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
 {
     char value[50] = {0};

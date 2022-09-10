@@ -155,10 +155,23 @@ int Network::update()
         _presenceCsv = nullptr;
     }
 
-    if(_device->signalStrength() != 127 && ts - _lastMaintenancePublish > 2000)
+    if(_device->signalStrength() != 127 && ts - _lastRssiTs > 2000)
     {
-        publishInt(_maintenancePathPrefix, mqtt_topic_wifi_rssi, _device->signalStrength());
-        _lastMaintenancePublish = ts;
+        int8_t rssi = _device->signalStrength();
+
+        if(rssi != _lastRssi)
+        {
+            publishInt(_maintenancePathPrefix, mqtt_topic_wifi_rssi, _device->signalStrength());
+            _lastRssi = rssi;
+            _lastRssiTs = ts;
+        }
+    }
+
+    if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
+    {
+        publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60);
+//        publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
+        _lastMaintenanceTs = ts;
     }
 
     _device->mqttClient()->loop();

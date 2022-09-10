@@ -37,7 +37,6 @@ void networkTask(void *pvParameters)
             // Network Device and MQTT is connected. Process all updates.
             case 0:
             case 1:
-                networkLock->update();
                 networkOpener->update();
                 network->update();
                 webCfgServer->update();

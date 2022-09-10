@@ -73,5 +73,8 @@ private:
     std::map<String, String> _initTopics;
 
     unsigned long _lastConnectedTs = 0;
-    unsigned long _lastMaintenancePublish = 0;
+    unsigned long _lastMaintenanceTs = 0;
+    unsigned long _lastRssiTs = 0;
+
+    int8_t _lastRssi = 127;
 };

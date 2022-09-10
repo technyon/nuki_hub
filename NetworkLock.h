@@ -18,7 +18,6 @@ public:
     virtual ~NetworkLock();
 
     void initialize();
-    void update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
     void publishBinaryState(NukiLock::LockState lockState);
