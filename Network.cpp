@@ -667,8 +667,6 @@ void Network::removeHASSConfig(char* uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
-    Serial.print("##### "); Serial.println(uidString);
-
     if(discoveryTopic != "")
     {
         String path = discoveryTopic;
