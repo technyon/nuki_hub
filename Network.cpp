@@ -592,7 +592,7 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
     }
 }
 
-void Network::publishHASSWifiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     if(_device->signalStrength() == 127)
     {
@@ -603,7 +603,6 @@ void Network::publishHASSWifiConfig(char *deviceType, const char *baseTopic, cha
 
     if (discoveryTopic != "")
     {
-        // Battery level
         String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
         configJSON.concat(uidString);
         configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
@@ -625,16 +624,50 @@ void Network::publishHASSWifiConfig(char *deviceType, const char *baseTopic, cha
         String path = discoveryTopic;
         path.concat("/sensor/");
         path.concat(uidString);
-        path.concat("/signal_strength/config");
+        path.concat("/wifi_signal_strength/config");
 
         _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
     }
 }
 
+void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" bluetooth signal strength\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat(
+                "_bluetooth_signal_strength\",\"dev_cla\":\"signal_strength\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_lock_rssi);
+        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"db\"");
+        configJSON.concat("}");
+
+        String path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/bluetooth_signal_strength/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+    }
+}
 
 void Network::removeHASSConfig(char* uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    Serial.print("##### "); Serial.println(uidString);
 
     if(discoveryTopic != "")
     {
@@ -642,14 +675,54 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/lock/");
         path.concat(uidString);
         path.concat("/smartlock/config");
-
         _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
 
         path = discoveryTopic;
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/battery_low/config");
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
 
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/battery_voltage/config");
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/trigger/config");
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/battery_level/config");
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/door_sensor/config");
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/ring/config");
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/wifi_signal_strength/config");
+        _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/bluetooth_signal_strength/config");
         _device->mqttClient()->publish(path.c_str(), NULL, 0U, true);
     }
 }

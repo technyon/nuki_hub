@@ -343,7 +343,6 @@ void NukiOpenerWrapper::disableHASS()
     }
     if (_nukiConfigValid)
     {
-        String baseTopic = _preferences->getString(preference_mqtt_opener_path);
         char uidString[20];
         itoa(_nukiConfig.nukiId, uidString, 16);
         _network->removeHASSConfig(uidString);

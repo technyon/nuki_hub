@@ -369,6 +369,7 @@ void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, c
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
     _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
 }
 
 void NetworkOpener::removeHASSConfig(char* uidString)

@@ -37,7 +37,8 @@ public:
     void publishHASSConfigBatLevel(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
-    void publishHASSWifiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
 
     void publishPresenceDetection(char* csv);
