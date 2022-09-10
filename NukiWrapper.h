@@ -84,5 +84,7 @@ private:
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _nextKeypadUpdateTs = 0;
+    unsigned long _nextRssiTs = 0;
+    unsigned long _lastRssi = 0;
     NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };

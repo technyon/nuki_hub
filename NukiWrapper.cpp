@@ -114,6 +114,17 @@ void NukiWrapper::update()
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
     }
+    if(_nextRssiTs == 0 || ts > _nextRssiTs)
+    {
+        _nextRssiTs = ts + 3000;
+
+        int rssi = _nukiLock.getRssi();
+        if(rssi != _lastRssi)
+        {
+            _network->publishRssi(rssi);
+            _lastRssi = rssi;
+        }
+    }
     if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
     {
         _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;

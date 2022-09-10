@@ -104,6 +104,17 @@ void NukiOpenerWrapper::update()
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
     }
+    if(_nextRssiTs == 0 || ts > _nextRssiTs)
+    {
+        _nextRssiTs = ts + 3000;
+
+        int rssi = _nukiOpener.getRssi();
+        if(rssi != _lastRssi)
+        {
+            _network->publishRssi(rssi);
+            _lastRssi = rssi;
+        }
+    }
 
     if(_nextLockAction != (NukiOpener::LockAction)0xff)
     {

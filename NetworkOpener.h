@@ -28,6 +28,7 @@ public:
     void publishBatteryReport(const NukiOpener::BatteryReport& batteryReport);
     void publishConfig(const NukiOpener::Config& config);
     void publishAdvancedConfig(const NukiOpener::AdvancedConfig& config);
+    void publishRssi(const int& rssi);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
 

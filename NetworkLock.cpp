@@ -364,6 +364,11 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
 
+void NetworkLock::publishRssi(const int& rssi)
+{
+    publishInt(mqtt_topic_lock_rssi, rssi);
+}
+
 void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
 {
     uint index = 0;
