@@ -125,6 +125,7 @@ void NukiWrapper::update()
             _lastRssi = rssi;
         }
     }
+
     if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
     {
         _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;

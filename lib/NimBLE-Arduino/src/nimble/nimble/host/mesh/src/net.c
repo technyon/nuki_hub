@@ -796,7 +796,7 @@ void bt_mesh_net_recv(struct os_mbuf *data, int8_t rssi,
 	 * it again in the future.
 	 */
 	if (bt_mesh_trans_recv(buf, &rx) == -EAGAIN) {
-		BT_WARN("Removing rejected message from NetworkMessage Cache");
+		BT_WARN("Removing rejected message from Network Message Cache");
 		msg_cache[rx.msg_cache_idx].src = BT_MESH_ADDR_UNASSIGNED;
 		/* Rewind the next index now that we're not using this entry */
 		msg_cache_next = rx.msg_cache_idx;
