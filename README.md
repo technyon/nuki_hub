@@ -34,10 +34,12 @@ To configure MQTT, enter the adress of your MQTT broker and eventually a usernam
 
 Just enable pairing mode on the NUKI lock (press button for a few seconds) and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
 
+Note: If you already have a NUKI Bridge and you want to keep using it along the NUKI Hub, enable "Register as app" before pairing. Otherwise the Bridge will be unregistered when pairing the NUKI Hub.
+
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFCBAB9ZQU9U<br>
+REFPSAF5MR884<br>
 This will also give you a 30€ discount for your order.
 
 ## MQTT Interface
