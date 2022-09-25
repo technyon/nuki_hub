@@ -23,6 +23,7 @@
 #define preference_query_interval_battery "batInterval"
 #define preference_query_interval_keypad "kpInterval"
 #define preference_keypad_control_enabled "kpEnabled"
+#define preference_register_as_app "regAsApp" // true = register as hub; false = register as app
 #define preference_cred_user "crdusr"
 #define preference_cred_password "crdpass"
 #define preference_publish_authdata "pubauth"

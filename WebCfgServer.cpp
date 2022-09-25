@@ -311,6 +311,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_gpio_locking_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "REGAPP")
+        {
+            _preferences->putBool(preference_register_as_app, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "LOCKENA")
         {
             _preferences->putBool(preference_lock_enabled, (value == "1"));
@@ -606,6 +611,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     response.concat("<h3>Advanced NUKI Configuration</h3>");
     response.concat("<table>");
 
+    printCheckBox(response, "REGAPP", "Register as app (on: register as app, off: register as bridge; needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
     if(_nuki->hasKeypad())

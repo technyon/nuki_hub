@@ -69,10 +69,15 @@ void NukiOpenerWrapper::initialize()
 
 void NukiOpenerWrapper::update()
 {
-    if (!_paired) {
+    if (!_paired)
+    {
         Serial.println(F("Nuki opener start pairing"));
 
-        if (_nukiOpener.pairNuki() == NukiOpener::PairingResult::Success) {
+        Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
+                                           Nuki::AuthorizationIdType::App :
+                                           Nuki::AuthorizationIdType::Bridge;
+
+        if (_nukiOpener.pairNuki(idType) == NukiOpener::PairingResult::Success) {
             Serial.println(F("Nuki opener paired"));
             _paired = true;
             setupHASS();
