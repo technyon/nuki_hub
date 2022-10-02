@@ -9,6 +9,13 @@ project(nuki_hub CXX)
 
 set(LOG_LEVEL ARDUHAL_LOG_LEVEL_NONE)
 
+#add_compile_definitions(DEBUG_SENSE_NUKI)
+#add_compile_definitions(DEBUG_NUKI_COMMAND)
+#add_compile_definitions(DEBUG_NUKI_CONNECT)
+#add_compile_definitions(DEBUG_NUKI_COMMUNICATION)
+#add_compile_definitions(DEBUG_NUKI_HEX_DATA)
+#add_compile_definitions(DEBUG_NUKI_READABLE_DATA)
+
 # Length of char arrays to store certificates for MQTTS
 add_compile_definitions(TLS_CA_MAX_SIZE=1500)
 add_compile_definitions(TLS_CERT_MAX_SIZE=1500)
