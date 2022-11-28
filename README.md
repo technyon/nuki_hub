@@ -39,7 +39,7 @@ Note: If you already have a NUKI Bridge and you want to keep using it along the 
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFEZ82VZVVX6<br>
+REFRVWNWWBTMV<br>
 This will also give you a 30€ discount for your order.
 
 ## MQTT Interface
@@ -183,6 +183,16 @@ mode in case an access point is offline temporarily.<br>
 If this still doesn't fix the disconnects and the ESP becomes unreachable, the
 "Restart timer" option can be used as a last resort. It will restart the ESP
 after a configured amount of time.
+
+### Pairing with the Lock (or Opener) doesn't work
+There are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.
+<br><br>
+Reported as working are:<br>
+ESP32-WROOM-32D (DEVKIT V4)<br>
+ESP32-WROOM-32E<br>
+
+For more information check the related issue:<br>
+https://github.com/technyon/nuki_hub/issues/39
 
 ### Authorization data isn't published
 Reading the authorization data from the access log is protected by the configured PIN.
