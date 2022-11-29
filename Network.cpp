@@ -257,14 +257,14 @@ void Network::buildMqttPath(const char* prefix, const char* path, char* outPath)
     }
 
     i=0;
-    while(outPath[i] != 0x00)
+    while(path[i] != 0x00)
     {
         outPath[offset] = path[i];
         ++i;
         ++offset;
     }
 
-    outPath[i+1] = 0x00;
+    outPath[offset] = 0x00;
 }
 
 void Network::registerMqttReceiver(MqttReceiver* receiver)
