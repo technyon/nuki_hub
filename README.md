@@ -42,6 +42,10 @@ If you haven't ordered your NUKI product yet, you can support me by using my ref
 REFRVWNWWBTMV<br>
 This will also give you a 30€ discount for your order.
 
+This project is free to use for everyone. However if you feel like donating, you can do so here:
+
+[Buy me a coffee](https://www.buymeacoffee.com/joschuemann)
+
 ## MQTT Interface
 
 ### Lock
