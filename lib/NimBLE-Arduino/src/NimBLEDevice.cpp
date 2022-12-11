@@ -407,7 +407,7 @@ int NimBLEDevice::getPower(esp_ble_power_type_t powerType) {
         case ESP_PWR_LVL_N6:
             return -6;
         case ESP_PWR_LVL_N3:
-            return -6;
+            return -3;
         case ESP_PWR_LVL_N0:
             return 0;
         case ESP_PWR_LVL_P3:
@@ -970,6 +970,15 @@ void NimBLEDevice::deinit(bool clearAll) {
         }
     }
 } // deinit
+
+/**
+ * @brief Set the BLEDevice's name
+ * @param [in] deviceName The device name of the device.
+ */
+/* STATIC */
+void NimBLEDevice::setDeviceName(const std::string &deviceName) {
+    ble_svc_gap_device_name_set(deviceName.c_str());
+} // setDeviceName
 
 
 /**
