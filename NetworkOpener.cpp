@@ -36,6 +36,7 @@ void NetworkOpener::initialize()
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
 
+    _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     for(const auto& topic : _configTopics)
     {
@@ -67,7 +68,7 @@ void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned in
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
-        if(strcmp(value, "") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
         Serial.print(F("Opener lock action received: "));
         Serial.println(value);
