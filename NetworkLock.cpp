@@ -105,7 +105,7 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
     {
         if(_keypadCommandReceivedReceivedCallback != nullptr)
         {
-            if(strcmp(value, "--") != 0) return;
+            if(strcmp(value, "--") == 0) return;
 
             _keypadCommandReceivedReceivedCallback(value, _keypadCommandId, _keypadCommandName, _keypadCommandCode, _keypadCommandEnabled);
 
