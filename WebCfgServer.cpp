@@ -301,6 +301,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
             configChanged = true;
         }
+        else if(key == "RSBC")
+        {
+            _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
+            configChanged = true;
+        }
         else if(key == "PUBAUTH")
         {
             _preferences->putBool(preference_publish_authdata, (value == "1"));
@@ -622,6 +627,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
     printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
+    printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
     response.concat("</table>");
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");

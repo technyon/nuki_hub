@@ -53,6 +53,7 @@ private:
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
+    int _restartBeaconTimeout = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
 

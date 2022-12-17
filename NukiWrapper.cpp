@@ -45,6 +45,7 @@ void NukiWrapper::initialize()
     _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
+    _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
 
     if(_intervalLockstate == 0)
     {
@@ -60,6 +61,11 @@ void NukiWrapper::initialize()
     {
         _intervalKeypad = 60 * 30;
         _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
+    }
+    if(_restartBeaconTimeout < 10)
+    {
+        _restartBeaconTimeout = -1;
+        _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
     }
 
     _nukiLock.setEventHandler(this);
@@ -101,6 +107,15 @@ void NukiWrapper::update()
             delay(200);
             return;
         }
+    }
+
+    if(_restartBeaconTimeout > 0 && (millis() - _nukiLock.getLastReceivedBeaconTs() > _restartBeaconTimeout * 1000))
+    {
+        Serial.print("No BLE beacon received from the lock for ");
+        Serial.print((millis() - _nukiLock.getLastReceivedBeaconTs()) / 1000);
+        Serial.println(" seconds, restarting device.");
+        delay(200);
+        ESP.restart();
     }
 
     _nukiLock.updateConnectionState();

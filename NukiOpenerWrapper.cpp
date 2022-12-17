@@ -40,6 +40,7 @@ void NukiOpenerWrapper::initialize()
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
+    _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
 
     if(_intervalLockstate == 0)
     {
@@ -84,9 +85,18 @@ void NukiOpenerWrapper::update()
         }
         else
         {
-            vTaskDelay( 200 / portTICK_PERIOD_MS);
+            delay(200);
             return;
         }
+    }
+
+    if(_restartBeaconTimeout > 0 && (millis() - _nukiOpener.getLastReceivedBeaconTs() > _restartBeaconTimeout * 1000))
+    {
+        Serial.print("No BLE beacon received from the opener for ");
+        Serial.print((millis() - _nukiOpener.getLastReceivedBeaconTs()) / 1000);
+        Serial.println(" seconds, restarting device.");
+        delay(200);
+        ESP.restart();
     }
 
     _nukiOpener.updateConnectionState();
