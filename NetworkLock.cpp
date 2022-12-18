@@ -202,6 +202,17 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
         publishInt(mqtt_topic_battery_level, level);
     }
 
+    if(_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState)
+    {
+        if ((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
+            publishBool(mqtt_topic_battery_keypad_critical, (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
+        }
+        else
+        {
+            publishBool(mqtt_topic_battery_keypad_critical, false);
+        }
+    }
+
     _firstTunerStatePublish = false;
 }
 

@@ -7,6 +7,7 @@
 #define mqtt_topic_battery_drain "/battery/drain"
 #define mqtt_topic_battery_max_turn_current "/battery/maxTurnCurrent"
 #define mqtt_topic_battery_lock_distance "/battery/lockDistance"
+#define mqtt_topic_battery_keypad_critical "/battery/keypadCritical"
 
 #define mqtt_topic_lock_state "/lock/state"
 #define mqtt_topic_lock_binary_state "/lock/binaryState"
