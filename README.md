@@ -39,7 +39,7 @@ Note: If you already have a NUKI Bridge and you want to keep using it along the 
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFRVWNWWBTMV<br>
+REFTRAJ7GX32Y<br>
 This will also give you a 30€ discount for your order.
 
 This project is free to use for everyone. However if you feel like donating, you can do so here:
@@ -145,7 +145,7 @@ To modify keypad codes, the first four parameter nodes have to be set depending 
 After setting the necessary parameters, write the action to be executed to the command node.
 For example, to add a code:
 - write "John Doe" to name
-- write 123456 to code
+- write 111222 to code
 - write 1 to enabled
 - write "add" to action
 
