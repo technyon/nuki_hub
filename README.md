@@ -138,9 +138,14 @@ structure is setup under keypad/command:
 
 To modify keypad codes, the first four parameter nodes have to be set depending on the command:
 
-- To add a code, set name, code, enabled.
+- To add a code, set name, code, enabled **
 - To delete a code, set id
 - To update a code, set id, name, code, enabled
+
+** Note: Rules for codes are:
+- The code must be a 6 digit number
+- The code can't contain 0
+- The code can't start with 12
 
 After setting the necessary parameters, write the action to be executed to the command node.
 For example, to add a code:
