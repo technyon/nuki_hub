@@ -404,9 +404,6 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/smartlock/config");
 
-        Serial.println("HASS Config:");
-        Serial.println(configJSON);
-
         _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
 
         // Battery critical
@@ -422,8 +419,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         configJSON.concat(name);
         configJSON.concat(" battery low\",\"unique_id\":\"");
         configJSON.concat(uidString);
-        configJSON.concat(
-                "_battery_low\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"stat_t\":\"~");
+        configJSON.concat("_battery_low\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"stat_t\":\"~");
         configJSON.concat(mqtt_topic_battery_critical);
         configJSON.concat("\"}");
 
@@ -431,6 +427,30 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/battery_low/config");
+
+        _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
+
+        // Keypad battery critical
+        configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        configJSON.concat(uidString);
+        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+        configJSON.concat(deviceType);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat("\"},\"~\":\"");
+        configJSON.concat(baseTopic);
+        configJSON.concat("\",\"name\":\"");
+        configJSON.concat(name);
+        configJSON.concat(" keypad battery low\",\"unique_id\":\"");
+        configJSON.concat(uidString);
+        configJSON.concat("_keypad_battery_low\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"stat_t\":\"~");
+        configJSON.concat(mqtt_topic_battery_keypad_critical);
+        configJSON.concat("\"}");
+
+        path = discoveryTopic;
+        path.concat("/binary_sensor/");
+        path.concat(uidString);
+        path.concat("/keypad_battery_low/config");
 
         _device->mqttClient()->publish(path.c_str(), configJSON.c_str(), true);
 
