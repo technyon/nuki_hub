@@ -39,7 +39,7 @@ Note: If you already have a NUKI Bridge and you want to keep using it along the 
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFTRAJ7GX32Y<br>
+REF8VDS8X9DE6<br>
 This will also give you a 30€ discount for your order.
 
 This project is free to use for everyone. However if you feel like donating, you can do so here:
