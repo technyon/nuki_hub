@@ -1,0 +1,18 @@
+{
+    "name": "MqttLogger",
+    "keywords": "serial, mqtt, logging",
+    "description": "Remote logging on a mqtt broker with the same interface as Serial.print().",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/androbi-com/MqttLogger.git"
+    },
+    "version": "0.2.3",
+    "exclude": "examples/*/wifi_secrets.h",
+    "examples": "examples/*/*.ino",
+    "frameworks": "arduino",
+    "platforms": [
+        "atmelavr",
+        "espressif8266",
+        "espressif32"
+    ]
+}

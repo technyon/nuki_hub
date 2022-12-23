@@ -10,6 +10,7 @@
 #include "hardware/WifiEthServer.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
+#include "Logger.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -161,6 +162,7 @@ void setup()
     pinMode(NETWORK_SELECT, INPUT_PULLUP);
 
     Serial.begin(115200);
+    Log = &Serial;
 
     initPreferences();
 

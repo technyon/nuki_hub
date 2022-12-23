@@ -2,6 +2,7 @@
 #include <RTOS.h>
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
+#include "Logger.h"
 #include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
@@ -70,12 +71,12 @@ void NukiWrapper::initialize()
 
     _nukiLock.setEventHandler(this);
 
-    Serial.print(F("Lock state interval: "));
-    Serial.print(_intervalLockstate);
-    Serial.print(F(" | Battery interval: "));
-    Serial.print(_intervalBattery);
-    Serial.print(F(" | Publish auth data: "));
-    Serial.println(_publishAuthData ? "yes" : "no");
+    Log->print(F("Lock state interval: "));
+    Log->print(_intervalLockstate);
+    Log->print(F(" | Battery interval: "));
+    Log->print(_intervalBattery);
+    Log->print(F(" | Publish auth data: "));
+    Log->println(_publishAuthData ? "yes" : "no");
 
     if(!_publishAuthData)
     {
@@ -91,14 +92,14 @@ void NukiWrapper::update()
 
     if (!_paired)
     {
-        Serial.println(F("Nuki start pairing"));
+        Log->println(F("Nuki start pairing"));
 
         Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
                                            Nuki::AuthorizationIdType::App :
                                            Nuki::AuthorizationIdType::Bridge;
 
         if (_nukiLock.pairNuki(idType) == Nuki::PairingResult::Success) {
-            Serial.println(F("Nuki paired"));
+            Log->println(F("Nuki paired"));
             _paired = true;
             setupHASS();
         }
@@ -111,9 +112,9 @@ void NukiWrapper::update()
 
     if(_restartBeaconTimeout > 0 && (millis() - _nukiLock.getLastReceivedBeaconTs() > _restartBeaconTimeout * 1000))
     {
-        Serial.print("No BLE beacon received from the lock for ");
-        Serial.print((millis() - _nukiLock.getLastReceivedBeaconTs()) / 1000);
-        Serial.println(" seconds, restarting device.");
+        Log->print("No BLE beacon received from the lock for ");
+        Log->print((millis() - _nukiLock.getLastReceivedBeaconTs()) / 1000);
+        Log->println(" seconds, restarting device.");
         delay(200);
         ESP.restart();
     }
@@ -165,8 +166,8 @@ void NukiWrapper::update()
 
         _network->publishCommandResult(resultStr);
 
-        Serial.print(F("Lock action result: "));
-        Serial.println(resultStr);
+        Log->print(F("Lock action result: "));
+        Log->println(resultStr);
 
         _nextLockAction = (NukiLock::LockAction)0xff;
         if(_intervalLockstate > 10)
@@ -219,8 +220,8 @@ void NukiWrapper::updateKeyTurnerState()
     {
         char lockStateStr[20];
         lockstateToString(_keyTurnerState.lockState, lockStateStr);
-        Serial.print(F("Nuki lock state: "));
-        Serial.println(lockStateStr);
+        Log->print(F("Nuki lock state: "));
+        Log->println(lockStateStr);
     }
 
     if(_publishAuthData)
@@ -430,7 +431,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
         entry.code = codeInt;
         result = _nukiLock.addKeypadEntry(entry);
-        Serial.print("Add keypad code: "); Serial.println((int)result);
+        Log->print("Add keypad code: "); Log->println((int)result);
         updateKeypad();
     }
     else if(strcmp(command, "delete") == 0)
@@ -441,7 +442,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             return;
         }
         result = _nukiLock.deleteKeypadEntry(id);
-        Serial.print("Delete keypad code: "); Serial.println((int)result);
+        Log->print("Delete keypad code: "); Log->println((int)result);
         updateKeypad();
     }
     else if(strcmp(command, "update") == 0)
@@ -475,7 +476,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         entry.code = codeInt;
         entry.enabled = enabled == 0 ? 0 : 1;
         result = _nukiLock.updateKeypadEntry(entry);
-        Serial.print("Update keypad code: "); Serial.println((int)result);
+        Log->print("Update keypad code: "); Log->println((int)result);
         updateKeypad();
     }
     else if(command == "--")
@@ -522,18 +523,18 @@ void NukiWrapper::notify(Nuki::EventType eventType)
 
 void NukiWrapper::readConfig()
 {
-    Serial.print(F("Reading config. Result: "));
+    Log->print(F("Reading config. Result: "));
     Nuki::CmdResult result = _nukiLock.requestConfig(&_nukiConfig);
     _nukiConfigValid = result == Nuki::CmdResult::Success;
-    Serial.println(result);
+    Log->println(result);
 }
 
 void NukiWrapper::readAdvancedConfig()
 {
-    Serial.print(F("Reading advanced config. Result: "));
+    Log->print(F("Reading advanced config. Result: "));
     Nuki::CmdResult result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
-    Serial.println(result);
+    Log->println(result);
 }
 
 void NukiWrapper::setupHASS()
@@ -552,7 +553,7 @@ void NukiWrapper::setupHASS()
     }
     else
     {
-        Serial.println(F("Unable to setup HASS. Invalid config received."));
+        Log->println(F("Unable to setup HASS. Invalid config received."));
     }
 }
 
@@ -571,6 +572,6 @@ void NukiWrapper::disableHASS()
     }
     else
     {
-        Serial.println(F("Unable to disable HASS. Invalid config received."));
+        Log->println(F("Unable to disable HASS. Invalid config received."));
     }
 }
