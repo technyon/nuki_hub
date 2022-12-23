@@ -33,6 +33,7 @@ private:
 
     int _maintainResult = 0;
     bool _hasDHCPAddress = false;
+    char* _path;
 
     byte _mac[6];
 };

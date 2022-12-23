@@ -34,6 +34,7 @@ private:
 //    SpiffsCookie _cookie;
     bool _restartOnDisconnect = false;
     bool _startAp = false;
+    char* _path;
 
     char _ca[TLS_CA_MAX_SIZE];
     char _cert[TLS_CERT_MAX_SIZE];

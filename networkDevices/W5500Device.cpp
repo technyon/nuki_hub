@@ -4,6 +4,7 @@
 #include "../Pins.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
+#include "../MqttTopics.h"
 
 W5500Device::W5500Device(const String &hostname, Preferences* preferences)
 : NetworkDevice(hostname),
@@ -40,7 +41,14 @@ void W5500Device::initialize()
     _ethClient = new EthernetClient();
     _mqttClient = new PubSubClient(*_ethClient);
     _mqttClient->setBufferSize(_mqttMaxBufferSize);
-    Log = new MqttLogger(*_mqttClient, "nuki/log");
+
+    _path = new char[200];
+    memset(_path, 0, sizeof(_path));
+
+    String pathStr = _preferences->getString(preference_mqtt_lock_path);
+    pathStr.concat(mqtt_topic_log);
+    strcpy(_path, pathStr.c_str());
+    Log = new MqttLogger(*_mqttClient, _path);
 
     reconnect();
 }

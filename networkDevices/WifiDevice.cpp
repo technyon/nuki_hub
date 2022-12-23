@@ -2,6 +2,7 @@
 #include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
+#include "../MqttTopics.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
@@ -40,7 +41,10 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
         _mqttClient = new PubSubClient(*_wifiClient);
     }
 
-    Log = new MqttLogger(*_mqttClient, "nuki/log");
+    String pathStr = _preferences->getString(preference_mqtt_lock_path);
+    pathStr.concat(mqtt_topic_log);
+    strcpy(_path, pathStr.c_str());
+    Log = new MqttLogger(*_mqttClient, _path);
 }
 
 PubSubClient *WifiDevice::mqttClient()
