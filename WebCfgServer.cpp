@@ -3,6 +3,7 @@
 #include "PreferencesKeys.h"
 #include "Version.h"
 #include "hardware/WifiEthServer.h"
+#include "Logger.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -130,7 +131,7 @@ void WebCfgServer::initialize()
             String response = "";
             buildConfirmHtml(response, message);
             _server.send(200, "text/html", response);
-            Serial.println(F("Restarting"));
+            Log->println(F("Restarting"));
 
             waitAndProcess(true, 1000);
             ESP.restart();
@@ -413,7 +414,7 @@ void WebCfgServer::update()
 {
     if(_otaStartTs > 0 && (millis() - _otaStartTs) > 120000)
     {
-        Serial.println(F("OTA time out, restarting"));
+        Log->println(F("OTA time out, restarting"));
         delay(200);
         ESP.restart();
     }
@@ -849,7 +850,7 @@ void WebCfgServer::handleOtaUpload()
 
     if(upload.filename == "")
     {
-        Serial.println("Invalid file for OTA upload");
+        Log->println("Invalid file for OTA upload");
         return;
     }
 
@@ -861,7 +862,7 @@ void WebCfgServer::handleOtaUpload()
         _otaStartTs = millis();
         esp_task_wdt_init(30, false);
         _network->disableAutoRestarts();
-        Serial.print("handleFileUpload Name: "); Serial.println(filename);
+        Log->print("handleFileUpload Name: "); Serial.println(filename);
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         _transferredSize = _transferredSize + upload.currentSize;
         Serial.println(_transferredSize);

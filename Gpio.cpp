@@ -2,6 +2,7 @@
 #include "Gpio.h"
 #include "Arduino.h"
 #include "Pins.h"
+#include "Logger.h"
 
 Gpio* Gpio::_inst = nullptr;
 NukiWrapper* Gpio::_nuki = nullptr;
@@ -26,7 +27,7 @@ void Gpio::isrLock()
     if(millis() < _lockedTs) return;
     _nuki->lock();
     _lockedTs = millis() + _debounceTime;
-    Serial.println(F("Lock via GPIO"));;
+    Log->println(F("Lock via GPIO"));;
 }
 
 void Gpio::isrUnlock()
@@ -34,7 +35,7 @@ void Gpio::isrUnlock()
     if(millis() < _lockedTs) return;
     _nuki->unlock();
     _lockedTs = millis() + _debounceTime;
-    Serial.println(F("Unlock via GPIO"));;
+    Log->println(F("Unlock via GPIO"));;
 }
 
 void Gpio::isrUnlatch()
@@ -42,5 +43,5 @@ void Gpio::isrUnlatch()
     if(millis() < _lockedTs) return;
     _nuki->unlatch();
     _lockedTs = millis() + _debounceTime;
-    Serial.println(F("Unlatch via GPIO"));;
+    Log->println(F("Unlatch via GPIO"));;
 }
