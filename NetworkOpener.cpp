@@ -4,6 +4,7 @@
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
 #include "Pins.h"
+#include "Logger.h"
 
 NetworkOpener::NetworkOpener(Network* network, Preferences* preferences)
         : _preferences(preferences),
@@ -70,8 +71,8 @@ void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned in
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
-        Serial.print(F("Opener lock action received: "));
-        Serial.println(value);
+        Log->print(F("Opener lock action received: "));
+        Log->println(value);
         bool success = false;
         if(_lockActionReceivedCallback != NULL)
         {

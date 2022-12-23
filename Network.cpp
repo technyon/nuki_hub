@@ -3,6 +3,7 @@
 #include "MqttTopics.h"
 #include "networkDevices/W5500Device.h"
 #include "networkDevices/WifiDevice.h"
+#include "Logger.h"
 
 
 Network* Network::_inst = nullptr;
@@ -29,15 +30,15 @@ void Network::setupDevice(const NetworkDeviceType hardware)
     switch(hardware)
     {
         case NetworkDeviceType::W5500:
-            Serial.println(F("Network device: W5500"));
+            Log->println(F("Network device: W5500"));
             _device = new W5500Device(_hostname, _preferences);
             break;
         case NetworkDeviceType::WiFi:
-            Serial.println(F("Network device: Builtin WiFi"));
+            Log->println(F("Network device: Builtin WiFi"));
             _device = new WifiDevice(_hostname, _preferences);
             break;
         default:
-            Serial.println(F("Unknown network device type, defaulting to WiFi"));
+            Log->println(F("Unknown network device type, defaulting to WiFi"));
             _device = new WifiDevice(_hostname, _preferences);
             break;
     }
@@ -55,8 +56,8 @@ void Network::initialize()
 
     _device->initialize();
 
-    Serial.print(F("Host name: "));
-    Serial.println(_hostname);
+    Log->print(F("Host name: "));
+    Log->println(_hostname);
 
     String brokerAddr = _preferences->getString(preference_mqtt_broker);
     strcpy(_mqttBrokerAddr, brokerAddr.c_str());
@@ -88,10 +89,10 @@ void Network::initialize()
         }
     }
 
-    Serial.print(F("MQTT Broker: "));
-    Serial.print(_mqttBrokerAddr);
-    Serial.print(F(":"));
-    Serial.println(port);
+    Log->print(F("MQTT Broker: "));
+    Log->print(_mqttBrokerAddr);
+    Log->print(F(":"));
+    Log->println(port);
 
     _device->mqttClient()->setServer(_mqttBrokerAddr, port);
     _device->mqttClient()->setCallback(Network::onMqttDataReceivedCallback);
@@ -117,16 +118,16 @@ int Network::update()
             ESP.restart();
         }
 
-        Serial.println(F("Network not connected. Trying reconnect."));
+        Log->println(F("Network not connected. Trying reconnect."));
         bool success = _device->reconnect();
-        Serial.println(success ? F("Reconnect successful") : F("Reconnect failed"));
+        Log->println(success ? F("Reconnect successful") : F("Reconnect failed"));
     }
 
     if(!_device->isConnected())
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000))
         {
-            Serial.println("Network timeout has been reached, restarting ...");
+            Log->println("Network timeout has been reached, restarting ...");
             delay(200);
             ESP.restart();
         }
@@ -149,8 +150,8 @@ int Network::update()
         bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, _presenceCsv);
         if(!success)
         {
-            Serial.println(F("Failed to publish presence CSV data."));
-            Serial.println(_presenceCsv);
+            Log->println(F("Failed to publish presence CSV data."));
+            Log->println(_presenceCsv);
         }
         _presenceCsv = nullptr;
     }
@@ -184,23 +185,23 @@ bool Network::reconnect()
 
     while (!_device->mqttClient()->connected() && millis() > _nextReconnect)
     {
-        Serial.println(F("Attempting MQTT connection"));
+        Log->println(F("Attempting MQTT connection"));
         bool success = false;
 
         if(strlen(_mqttUser) == 0)
         {
-            Serial.println(F("MQTT: Connecting without credentials"));
+            Log->println(F("MQTT: Connecting without credentials"));
             success = _device->mqttClient()->connect(_preferences->getString(preference_hostname).c_str());
         }
         else
         {
-            Serial.print(F("MQTT: Connecting with user: ")); Serial.println(_mqttUser);
+            Log->print(F("MQTT: Connecting with user: ")); Log->println(_mqttUser);
             success = _device->mqttClient()->connect(_preferences->getString(preference_hostname).c_str(), _mqttUser, _mqttPass);
         }
 
         if (success)
         {
-            Serial.println(F("MQTT connected"));
+            Log->println(F("MQTT connected"));
             _mqttConnected = true;
             delay(100);
             for(const String& topic : _subscribedTopics)
@@ -218,8 +219,8 @@ bool Network::reconnect()
         }
         else
         {
-            Serial.print(F("MQTT connect failed, rc="));
-            Serial.println(_device->mqttClient()->state());
+            Log->print(F("MQTT connect failed, rc="));
+            Log->println(_device->mqttClient()->state());
             _device->printError();
             _device->mqttClient()->disconnect();
             _mqttConnected = false;

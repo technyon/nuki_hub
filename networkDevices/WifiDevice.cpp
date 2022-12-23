@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include "WifiDevice.h"
 #include "../PreferencesKeys.h"
+#include "../Logger.h"
+#include "../MqttTopics.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
@@ -19,24 +21,35 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
 
     if(caLength > 1) // length is 1 when empty
     {
-        Serial.println(F("MQTT over TLS."));
-        Serial.println(_ca);
+        Log->println(F("MQTT over TLS."));
+        Log->println(_ca);
         _wifiClientSecure = new WiFiClientSecure();
         _wifiClientSecure->setCACert(_ca);
         if(crtLength > 1 && keyLength > 1) // length is 1 when empty
         {
-            Serial.println(F("MQTT with client certificate."));
-            Serial.println(_cert);
-            Serial.println(_key);
+            Log->println(F("MQTT with client certificate."));
+            Log->println(_cert);
+            Log->println(_key);
             _wifiClientSecure->setCertificate(_cert);
             _wifiClientSecure->setPrivateKey(_key);
         }
         _mqttClient = new PubSubClient(*_wifiClientSecure);
     } else
     {
-        Serial.println(F("MQTT without TLS."));
+        Log->println(F("MQTT without TLS."));
         _wifiClient = new WiFiClient();
         _mqttClient = new PubSubClient(*_wifiClient);
+    }
+
+    if(_preferences->getBool(preference_mqtt_log_enabled))
+    {
+        _path = new char[200];
+        memset(_path, 0, sizeof(_path));
+
+        String pathStr = _preferences->getString(preference_mqtt_lock_path);
+        pathStr.concat(mqtt_topic_log);
+        strcpy(_path, pathStr.c_str());
+        Log = new MqttLogger(*_mqttClient, _path);
     }
 }
 
@@ -60,7 +73,7 @@ void WifiDevice::initialize()
 
     if(_startAp)
     {
-        Serial.println(F("Opening WiFi configuration portal."));
+        Log->println(F("Opening WiFi configuration portal."));
         res = _wm.startConfigPortal();
     }
     else
@@ -69,13 +82,13 @@ void WifiDevice::initialize()
     }
 
     if(!res) {
-        Serial.println(F("Failed to connect. Wait for ESP restart."));
+        Log->println(F("Failed to connect. Wait for ESP restart."));
         delay(1000);
         ESP.restart();
     }
     else {
-        Serial.print(F("WiFi connected: "));
-        Serial.println(WiFi.localIP().toString());
+        Log->print(F("WiFi connected: "));
+        Log->println(WiFi.localIP().toString());
     }
 
     if(_restartOnDisconnect)
@@ -101,10 +114,10 @@ void WifiDevice::printError()
     {
         char lastError[100];
         _wifiClientSecure->lastError(lastError,100);
-        Serial.println(lastError);
+        Log->println(lastError);
     }
-    Serial.print(F("Free Heap: "));
-    Serial.println(ESP.getFreeHeap());
+    Log->print(F("Free Heap: "));
+    Log->println(ESP.getFreeHeap());
 }
 
 bool WifiDevice::isConnected()

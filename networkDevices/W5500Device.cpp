@@ -3,6 +3,8 @@
 #include "W5500Device.h"
 #include "../Pins.h"
 #include "../PreferencesKeys.h"
+#include "../Logger.h"
+#include "../MqttTopics.h"
 
 W5500Device::W5500Device(const String &hostname, Preferences* preferences)
 : NetworkDevice(hostname),
@@ -10,20 +12,20 @@ W5500Device::W5500Device(const String &hostname, Preferences* preferences)
 {
     initializeMacAddress(_mac);
 
-    Serial.print("MAC Adress: ");
+    Log->print("MAC Adress: ");
     for(int i=0; i < 6; i++)
     {
         if(_mac[i] < 10)
         {
-            Serial.print(F("0"));
+            Log->print(F("0"));
         }
-        Serial.print(_mac[i], 16);
+        Log->print(_mac[i], 16);
         if(i < 5)
         {
-            Serial.print(F(":"));
+            Log->print(F(":"));
         }
     }
-    Serial.println();
+    Log->println();
 }
 
 W5500Device::~W5500Device()
@@ -40,39 +42,49 @@ void W5500Device::initialize()
     _mqttClient = new PubSubClient(*_ethClient);
     _mqttClient->setBufferSize(_mqttMaxBufferSize);
 
+
+    if(_preferences->getBool(preference_mqtt_log_enabled))
+    {
+        _path = new char[200];
+        memset(_path, 0, sizeof(_path));
+
+        String pathStr = _preferences->getString(preference_mqtt_lock_path);
+        pathStr.concat(mqtt_topic_log);
+        strcpy(_path, pathStr.c_str());
+        Log = new MqttLogger(*_mqttClient, _path);
+    }
+
     reconnect();
 }
 
 
 bool W5500Device::reconnect()
 {
-
-
     _hasDHCPAddress = false;
 
     // start the Ethernet connection:
-    Serial.println(F("Initialize Ethernet with DHCP:"));
+    Log->println(F("Initialize Ethernet with DHCP:"));
 
     int dhcpRetryCnt = 0;
 
     while(dhcpRetryCnt < 3)
     {
-        Serial.print(F("DHCP connect try #"));
-        Serial.print(dhcpRetryCnt);
-        Serial.println();
+        Log->print(F("DHCP connect try #"));
+        Log->print(dhcpRetryCnt);
+        Log->println();
         dhcpRetryCnt++;
 
         if (Ethernet.begin(_mac, 1000, 1000) == 0)
         {
-            Serial.println(F("Failed to configure Ethernet using DHCP"));
+            Log->println(F("Failed to configure Ethernet using DHCP"));
             // Check for Ethernet hardware present
             if (Ethernet.hardwareStatus() == EthernetNoHardware)
             {
-                Serial.println(F("Ethernet module not found"));
+                Log->println(F("Ethernet module not found"));
             }
             if (Ethernet.linkStatus() == LinkOFF)
             {
-                Serial.println(F("Ethernet cable is not connected."));
+                Log->println(F("Ethernet cable is not connected."));
             }
 
             IPAddress ip;
@@ -91,8 +103,8 @@ bool W5500Device::reconnect()
         {
             _hasDHCPAddress = true;
             dhcpRetryCnt = 1000;
-            Serial.print(F("  DHCP assigned IP "));
-            Serial.println(Ethernet.localIP());
+            Log->print(F("  DHCP assigned IP "));
+            Log->println(Ethernet.localIP());
         }
     }
 
@@ -102,12 +114,12 @@ bool W5500Device::reconnect()
 
 void W5500Device::reconfigure()
 {
-    Serial.println(F("Reconfigure W5500 not implemented."));
+    Log->println(F("Reconfigure W5500 not implemented."));
 }
 
 void W5500Device::resetDevice()
 {
-    Serial.println(F("Resetting network hardware."));
+    Log->println(F("Resetting network hardware."));
     pinMode(ETHERNET_RESET_PIN, OUTPUT);
     digitalWrite(ETHERNET_RESET_PIN, HIGH);
     delay(250);
@@ -120,8 +132,8 @@ void W5500Device::resetDevice()
 
 void W5500Device::printError()
 {
-    Serial.print(F("Free Heap: "));
-    Serial.println(ESP.getFreeHeap());
+    Log->print(F("Free Heap: "));
+    Log->println(ESP.getFreeHeap());
 }
 
 PubSubClient *W5500Device::mqttClient()

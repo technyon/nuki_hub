@@ -33,7 +33,7 @@ include_directories(${PROJECT_NAME}
         lib/pubsubclient/src
         lib/WebServer/src
         lib/Ethernet/src
-#        include
+        lib/MqttLogger/src
 )
 
 file(GLOB SRCFILES
@@ -54,6 +54,7 @@ file(GLOB SRCFILES
         PresenceDetection.cpp
         PreferencesKeys.h
         Gpio.cpp
+        Logger.cpp
         Version.h
 #        include/RTOS.h
         lib/WiFiManager/WiFiManager.cpp
@@ -72,6 +73,7 @@ file(GLOB SRCFILES
         lib/BleScanner/src/BleInterfaces.h
         lib/BleScanner/src/BleScanner.cpp
         lib/pubsubclient/src/PubSubClient.cpp
+        lib/MqttLogger/src/MqttLogger.cpp
 )
 
 file(GLOB_RECURSE SRCFILESREC

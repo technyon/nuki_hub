@@ -10,6 +10,7 @@
 #include "hardware/WifiEthServer.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
+#include "Logger.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -93,7 +94,7 @@ void checkMillisTask(void *pvParameters)
         // millis() is about to overflow. Restart device to prevent problems with overflow
         if(millis() > restartTs)
         {
-            Serial.println(F("Restart timer expired, restarting device."));
+            Log->println(F("Restart timer expired, restarting device."));
             delay(200);
             ESP.restart();
         }
@@ -161,6 +162,7 @@ void setup()
     pinMode(NETWORK_SELECT, INPUT_PULLUP);
 
     Serial.begin(115200);
+    Log = &Serial;
 
     initPreferences();
 
@@ -194,7 +196,7 @@ void setup()
     bleScanner->setScanDuration(10);
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
-    Serial.println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
+    Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
         nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, preferences);
@@ -207,7 +209,7 @@ void setup()
     }
 
     openerEnabled = preferences->getBool(preference_opener_enabled);
-    Serial.println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
+    Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
     if(openerEnabled)
     {
         nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, preferences);

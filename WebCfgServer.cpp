@@ -3,6 +3,7 @@
 #include "PreferencesKeys.h"
 #include "Version.h"
 #include "hardware/WifiEthServer.h"
+#include "Logger.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -130,7 +131,7 @@ void WebCfgServer::initialize()
             String response = "";
             buildConfirmHtml(response, message);
             _server.send(200, "text/html", response);
-            Serial.println(F("Restarting"));
+            Log->println(F("Restarting"));
 
             waitAndProcess(true, 1000);
             ESP.restart();
@@ -276,6 +277,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_restart_timer, value.toInt());
             configChanged = true;
         }
+        else if(key == "MQTTLOG")
+        {
+            _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "LSTINT")
         {
             _preferences->putInt(preference_query_interval_lockstate, value.toInt());
@@ -413,7 +419,7 @@ void WebCfgServer::update()
 {
     if(_otaStartTs > 0 && (millis() - _otaStartTs) > 120000)
     {
-        Serial.println(F("OTA time out, restarting"));
+        Log->println(F("OTA time out, restarting"));
         delay(200);
         ESP.restart();
     }
@@ -585,6 +591,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
+    printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br>");
 
@@ -849,7 +856,7 @@ void WebCfgServer::handleOtaUpload()
 
     if(upload.filename == "")
     {
-        Serial.println("Invalid file for OTA upload");
+        Log->println("Invalid file for OTA upload");
         return;
     }
 
@@ -861,7 +868,7 @@ void WebCfgServer::handleOtaUpload()
         _otaStartTs = millis();
         esp_task_wdt_init(30, false);
         _network->disableAutoRestarts();
-        Serial.print("handleFileUpload Name: "); Serial.println(filename);
+        Log->print("handleFileUpload Name: "); Serial.println(filename);
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         _transferredSize = _transferredSize + upload.currentSize;
         Serial.println(_transferredSize);

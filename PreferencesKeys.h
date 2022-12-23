@@ -6,6 +6,7 @@
 #define preference_mqtt_broker_port "mqttport"
 #define preference_mqtt_user "mqttuser"
 #define preference_mqtt_password "mqttpass"
+#define preference_mqtt_log_enabled "mqttlog"
 #define preference_lock_enabled "lockena"
 #define preference_mqtt_lock_path "mqttpath"
 #define preference_opener_enabled "openerena"
