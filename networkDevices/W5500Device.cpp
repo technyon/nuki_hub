@@ -42,13 +42,17 @@ void W5500Device::initialize()
     _mqttClient = new PubSubClient(*_ethClient);
     _mqttClient->setBufferSize(_mqttMaxBufferSize);
 
-    _path = new char[200];
-    memset(_path, 0, sizeof(_path));
 
-    String pathStr = _preferences->getString(preference_mqtt_lock_path);
-    pathStr.concat(mqtt_topic_log);
-    strcpy(_path, pathStr.c_str());
-    Log = new MqttLogger(*_mqttClient, _path);
+    if(_preferences->getBool(preference_mqtt_log_enabled))
+    {
+        _path = new char[200];
+        memset(_path, 0, sizeof(_path));
+
+        String pathStr = _preferences->getString(preference_mqtt_lock_path);
+        pathStr.concat(mqtt_topic_log);
+        strcpy(_path, pathStr.c_str());
+        Log = new MqttLogger(*_mqttClient, _path);
+    }
 
     reconnect();
 }

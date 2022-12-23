@@ -277,6 +277,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_restart_timer, value.toInt());
             configChanged = true;
         }
+        else if(key == "MQTTLOG")
+        {
+            _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "LSTINT")
         {
             _preferences->putInt(preference_query_interval_lockstate, value.toInt());
@@ -586,6 +591,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
+    printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br>");
 
