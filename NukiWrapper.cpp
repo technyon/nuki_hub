@@ -224,7 +224,7 @@ void NukiWrapper::updateKeyTurnerState()
     {
         char lockStateStr[20];
         lockstateToString(_keyTurnerState.lockState, lockStateStr);
-        Log->print(F("Nuki lock state: "));
+        Log->print(F("Nuki lock state update: "));
         Log->println(lockStateStr);
     }
 
@@ -530,7 +530,9 @@ void NukiWrapper::readConfig()
     Log->print(F("Reading config. Result: "));
     Nuki::CmdResult result = _nukiLock.requestConfig(&_nukiConfig);
     _nukiConfigValid = result == Nuki::CmdResult::Success;
-    Log->println(result);
+    char resultStr[20];
+    NukiLock::cmdResultToString(result, resultStr);
+    Log->println(resultStr);
 }
 
 void NukiWrapper::readAdvancedConfig()
@@ -538,7 +540,9 @@ void NukiWrapper::readAdvancedConfig()
     Log->print(F("Reading advanced config. Result: "));
     Nuki::CmdResult result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
-    Log->println(result);
+    char resultStr[20];
+    NukiLock::cmdResultToString(result, resultStr);
+    Log->println(resultStr);
 }
 
 void NukiWrapper::setupHASS()

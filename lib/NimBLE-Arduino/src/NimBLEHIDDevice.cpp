@@ -203,12 +203,12 @@ void NimBLEHIDDevice::setBatteryLevel(uint8_t level) {
 /*
  * @brief Returns battery level characteristic
  * @ return battery level characteristic
- */
-NimBLECharacteristic* NimBLEHIDDevice::batteryLevel() {
+ *//*
+BLECharacteristic* BLEHIDDevice::batteryLevel() {
 	return m_batteryLevelCharacteristic;
 }
 
-/*
+
 
 BLECharacteristic*	 BLEHIDDevice::reportMap() {
 	return m_reportMapCharacteristic;
