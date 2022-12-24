@@ -44,7 +44,7 @@ jobs:
           cp build/nuki_hub.bin release/
           cp build/nuki_hub.partitions.bin release/
           cp $(find ~/.arduino15/packages/esp32/ | grep boot_app0.bin) release/
-          cp $(find ~/.arduino15/packages/esp32/ | grep esp32/bin/bootloader_dio_80m.bin) release/
+ #         cp $(find ~/.arduino15/packages/esp32/ | grep esp32/bin/bootloader_dio_80m.bin) release/
           echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader_dio_80m.bin 0x10000 nuki_hub.bin 0x8000 nuki_hub.partitions.bin" > release/flash.sh
       - uses: actions/upload-artifact@v3
         with:
