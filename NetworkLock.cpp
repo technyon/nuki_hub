@@ -4,6 +4,7 @@
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
 #include "Pins.h"
+#include "Logger.h"
 
 NetworkLock::NetworkLock(Network* network, Preferences* preferences)
 : _network(network),
@@ -82,7 +83,7 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
 
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
     {
-        Serial.println(F("Restart requested via MQTT."));
+        Log->println(F("Restart requested via MQTT."));
         delay(200);
         ESP.restart();
     }
@@ -91,8 +92,8 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
-        Serial.print(F("Lock action received: "));
-        Serial.println(value);
+        Log->print(F("Lock action received: "));
+        Log->println(value);
         bool success = false;
         if(_lockActionReceivedCallback != NULL)
         {

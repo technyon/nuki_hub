@@ -47,6 +47,7 @@ void NukiWrapper::initialize()
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
+    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
 
     if(_intervalLockstate == 0)
     {
@@ -101,7 +102,6 @@ void NukiWrapper::update()
         if (_nukiLock.pairNuki(idType) == Nuki::PairingResult::Success) {
             Log->println(F("Nuki paired"));
             _paired = true;
-            setupHASS();
         }
         else
         {
@@ -138,6 +138,10 @@ void NukiWrapper::update()
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
+        if(_hassEnabled)
+        {
+            setupHASS();
+        }
     }
     if(_nextRssiTs == 0 || ts > _nextRssiTs)
     {
@@ -539,22 +543,15 @@ void NukiWrapper::readAdvancedConfig()
 
 void NukiWrapper::setupHASS()
 {
-    if(!_nukiConfigValid) // only ask for config once to save battery life
-    {
-        Nuki::CmdResult result = _nukiLock.requestConfig(&_nukiConfig);
-        _nukiConfigValid = result == Nuki::CmdResult::Success;
-    }
-    if (_nukiConfigValid)
-    {
-        String baseTopic = _preferences->getString(preference_mqtt_lock_path);
-        char uidString[20];
-        itoa(_nukiConfig.nukiId, uidString, 16);
-        _network->publishHASSConfig("SmartLock",baseTopic.c_str(),(char*)_nukiConfig.name,uidString,"lock","unlock","unlatch","locked","unlocked");
-    }
-    else
-    {
-        Log->println(F("Unable to setup HASS. Invalid config received."));
-    }
+    if(!_nukiConfigValid || _hassSetupCompleted) return;
+
+    String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+    char uidString[20];
+    itoa(_nukiConfig.nukiId, uidString, 16);
+    _network->publishHASSConfig("SmartLock",baseTopic.c_str(),(char*)_nukiConfig.name,uidString,"lock","unlock","unlatch","locked","unlocked");
+    _hassSetupCompleted = true;
+
+    Log->println("HASS setup for lock completed.");
 }
 
 void NukiWrapper::disableHASS()

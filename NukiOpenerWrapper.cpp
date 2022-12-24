@@ -2,6 +2,7 @@
 #include <RTOS.h>
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
+#include "Logger.h"
 #include <NukiOpenerUtils.h>
 
 NukiOpenerWrapper* nukiOpenerInst;
@@ -41,6 +42,7 @@ void NukiOpenerWrapper::initialize()
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
+    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
 
     if(_intervalLockstate == 0)
     {
@@ -55,12 +57,12 @@ void NukiOpenerWrapper::initialize()
 
     _nukiOpener.setEventHandler(this);
 
-    Serial.print(F("Lock state interval: "));
-    Serial.print(_intervalLockstate);
-    Serial.print(F(" | Battery interval: "));
-    Serial.print(_intervalBattery);
-    Serial.print(F(" | Publish auth data: "));
-    Serial.println(_publishAuthData ? "yes" : "no");
+    Log->print(F("Lock state interval: "));
+    Log->print(_intervalLockstate);
+    Log->print(F(" | Battery interval: "));
+    Log->print(_intervalBattery);
+    Log->print(F(" | Publish auth data: "));
+    Log->println(_publishAuthData ? "yes" : "no");
 
     if(!_publishAuthData)
     {
@@ -72,16 +74,15 @@ void NukiOpenerWrapper::update()
 {
     if (!_paired)
     {
-        Serial.println(F("Nuki opener start pairing"));
+        Log->println(F("Nuki opener start pairing"));
 
         Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
                                            Nuki::AuthorizationIdType::App :
                                            Nuki::AuthorizationIdType::Bridge;
 
         if (_nukiOpener.pairNuki(idType) == NukiOpener::PairingResult::Success) {
-            Serial.println(F("Nuki opener paired"));
+            Log->println(F("Nuki opener paired"));
             _paired = true;
-            setupHASS();
         }
         else
         {
@@ -92,9 +93,9 @@ void NukiOpenerWrapper::update()
 
     if(_restartBeaconTimeout > 0 && (millis() - _nukiOpener.getLastReceivedBeaconTs() > _restartBeaconTimeout * 1000))
     {
-        Serial.print("No BLE beacon received from the opener for ");
-        Serial.print((millis() - _nukiOpener.getLastReceivedBeaconTs()) / 1000);
-        Serial.println(" seconds, restarting device.");
+        Log->print("No BLE beacon received from the opener for ");
+        Log->print((millis() - _nukiOpener.getLastReceivedBeaconTs()) / 1000);
+        Log->println(" seconds, restarting device.");
         delay(200);
         ESP.restart();
     }
@@ -118,6 +119,10 @@ void NukiOpenerWrapper::update()
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
+        if(_hassEnabled)
+        {
+            setupHASS();
+        }
     }
     if(_nextRssiTs == 0 || ts > _nextRssiTs)
     {
@@ -140,8 +145,8 @@ void NukiOpenerWrapper::update()
 
         _network->publishCommandResult(resultStr);
 
-        Serial.print(F("Opener lock action result: "));
-        Serial.println(resultStr);
+        Log->print(F("Opener lock action result: "));
+        Log->println(resultStr);
 
         _nextLockAction = (NukiOpener::LockAction)0xff;
         if(_intervalLockstate > 10)
@@ -176,7 +181,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 
     if(_statusUpdated && _keyTurnerState.lockState == NukiOpener::LockState::Locked && _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked)
     {
-        Serial.println(F("Nuki opener: Ring detected"));
+        Log->println(F("Nuki opener: Ring detected"));
         _network->publishRing();
     }
     else
@@ -187,8 +192,8 @@ void NukiOpenerWrapper::updateKeyTurnerState()
         {
             char lockStateStr[20];
             lockstateToString(_keyTurnerState.lockState, lockStateStr);
-            Serial.print(F("Nuki opener state: "));
-            Serial.println((int)_keyTurnerState.lockState);
+            Log->print(F("Nuki opener state: "));
+            Log->println((int)_keyTurnerState.lockState);
         }
     }
 
@@ -315,38 +320,31 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
 
 void NukiOpenerWrapper::readConfig()
 {
-    Serial.print(F("Reading opener config. Result: "));
+    Log->print(F("Reading opener config. Result: "));
     Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
     _nukiConfigValid = result == Nuki::CmdResult::Success;
-    Serial.println(result);
+    Log->println(result);
 }
 
 void NukiOpenerWrapper::readAdvancedConfig()
 {
-    Serial.print(F("Reading opener advanced config. Result: "));
+    Log->print(F("Reading opener advanced config. Result: "));
     Nuki::CmdResult result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
-    Serial.println(result);
+    Log->println(result);
 }
 
 void NukiOpenerWrapper::setupHASS()
 {
-    if(!_nukiConfigValid) // only ask for config once to save battery life
-    {
-        Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
-        _nukiConfigValid = result == Nuki::CmdResult::Success;
-    }
-    if (_nukiConfigValid)
-    {
-        String baseTopic = _preferences->getString(preference_mqtt_opener_path);
-        char uidString[20];
-        itoa(_nukiConfig.nukiId, uidString, 16);
-        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString,"deactivateRTO","activateRTO","electricStrikeActuation","locked","unlocked");
-    }
-    else
-    {
-        Serial.println(F("Unable to setup HASS. Invalid config received."));
-    }
+    if(!_nukiConfigValid || _hassSetupCompleted) return;
+
+    String baseTopic = _preferences->getString(preference_mqtt_opener_path);
+    char uidString[20];
+    itoa(_nukiConfig.nukiId, uidString, 16);
+    _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString,"deactivateRTO","activateRTO","electricStrikeActuation","locked","unlocked");
+    _hassSetupCompleted = true;
+
+    Log->println("HASS setup for opener completed.");
 }
 
 void NukiOpenerWrapper::disableHASS()
@@ -364,6 +362,6 @@ void NukiOpenerWrapper::disableHASS()
     }
     else
     {
-        Serial.println(F("Unable to disable HASS. Invalid config received."));
+        Log->println(F("Unable to disable HASS. Invalid config received."));
     }
 }

@@ -74,6 +74,8 @@ private:
     NukiLock::AdvancedConfig _nukiAdvancedConfig = {0};
     bool _nukiConfigValid = false;
     bool _nukiAdvancedConfigValid = false;
+    bool _hassEnabled = false;
+    bool _hassSetupCompleted = false;
 
     bool _paired = false;
     bool _statusUpdated = false;

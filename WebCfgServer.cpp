@@ -868,14 +868,14 @@ void WebCfgServer::handleOtaUpload()
         _otaStartTs = millis();
         esp_task_wdt_init(30, false);
         _network->disableAutoRestarts();
-        Log->print("handleFileUpload Name: "); Serial.println(filename);
+        Log->print("handleFileUpload Name: "); Log->println(filename);
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         _transferredSize = _transferredSize + upload.currentSize;
-        Serial.println(_transferredSize);
+        Log->println(_transferredSize);
         _ota.updateFirmware(upload.buf, upload.currentSize);
     } else if (upload.status == UPLOAD_FILE_END) {
-        Serial.println();
-        Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
+        Log->println();
+        Log->print("handleFileUpload Size: "); Log->println(upload.totalSize);
     }
 }
 

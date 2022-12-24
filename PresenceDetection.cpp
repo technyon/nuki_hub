@@ -1,5 +1,6 @@
 #include "PresenceDetection.h"
 #include "PreferencesKeys.h"
+#include "Logger.h"
 
 PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, Network* network)
 : _preferences(preferences),
@@ -15,8 +16,8 @@ PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scann
         _preferences->putInt(preference_presence_detection_timeout, 60);
     }
 
-    Serial.print(F("Presence detection timeout (ms): "));
-    Serial.println(_timeout);
+    Log->print(F("Presence detection timeout (ms): "));
+    Log->println(_timeout);
 }
 
 PresenceDetection::~PresenceDetection()
@@ -67,8 +68,8 @@ void PresenceDetection::update()
 
     _csv[_csvIndex-1] = 0x00;
 
-//    Serial.print("Devices found: ");
-//    Serial.println(_devices.size());
+//    Log->print("Devices found: ");
+//    Log->println(_devices.size());
     _network->publishPresenceDetection(_csv);
 }
 
@@ -117,7 +118,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
     std::string addressStr = device->getAddress().toString();
     char addrArrComp[13] = {0};
 
-//    Serial.println(addressStr.c_str());
+//    Log->println(addressStr.c_str());
 
     addrArrComp[0] = addressStr.at(0);
     addrArrComp[1] = addressStr.at(1);
@@ -184,14 +185,14 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 
 //    if(device->haveName())
 //    {
-//        Serial.print(" | ");
-//        Serial.print(device->getName().c_str());
+//        Log->print(" | ");
+//        Log->print(device->getName().c_str());
 //        if(device->haveRSSI())
 //        {
-//            Serial.print(" | ");
-//            Serial.print(device->getRSSI());
+//            Log->print(" | ");
+//            Log->print(device->getRSSI());
 //        }
 //    }
-//    Serial.println();
+//    Log->println();
 
 }
