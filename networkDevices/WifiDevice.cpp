@@ -49,7 +49,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*_mqttClient, _path);
+        Log = new MqttLogger(*_mqttClient, _path, MqttLoggerMode::MqttAndSerial);
     }
 }
 
