@@ -25,6 +25,8 @@ public:
     virtual PubSubClient *mqttClient();
 
 private:
+    static void clearRtcInitVar(WiFiManager*);
+
     void onDisconnected();
 
     WiFiManager _wm;

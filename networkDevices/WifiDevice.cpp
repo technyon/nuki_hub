@@ -9,9 +9,7 @@ RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
 : NetworkDevice(hostname)
 {
-    WiFiDevice_reconfdetect[16] = 0x00;
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
-    memset(WiFiDevice_reconfdetect, 0, sizeof WiFiDevice_reconfdetect);
 
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
 
@@ -69,6 +67,8 @@ void WifiDevice::initialize()
     _wm.setMenu(wm_menu);
     _wm.setHostname(_hostname);
 
+    _wm.setAPCallback(clearRtcInitVar);
+
     bool res = false;
 
     if(_startAp)
@@ -105,6 +105,7 @@ void WifiDevice::initialize()
 void WifiDevice::reconfigure()
 {
     strcpy(WiFiDevice_reconfdetect, "reconfigure_wifi");
+    delay(200);
     ESP.restart();
 }
 
@@ -147,4 +148,9 @@ void WifiDevice::onDisconnected()
 int8_t WifiDevice::signalStrength()
 {
     return WiFi.RSSI();
+}
+
+void WifiDevice::clearRtcInitVar(WiFiManager *)
+{
+    memset(WiFiDevice_reconfdetect, 0, sizeof WiFiDevice_reconfdetect);
 }
