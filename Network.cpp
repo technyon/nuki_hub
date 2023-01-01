@@ -8,6 +8,8 @@
 
 Network* Network::_inst = nullptr;
 
+RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
+
 Network::Network(const NetworkDeviceType networkDevice, Preferences *preferences, const String& maintenancePathPrefix)
 : _preferences(preferences)
 {
@@ -25,8 +27,14 @@ Network::Network(const NetworkDeviceType networkDevice, Preferences *preferences
 }
 
 
-void Network::setupDevice(const NetworkDeviceType hardware)
+void Network::setupDevice(NetworkDeviceType hardware)
 {
+    if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
+    {
+        Log->println(F("Switching to WiFi device as fallabck."));
+        hardware = NetworkDeviceType::WiFi;
+    }
+
     switch(hardware)
     {
         case NetworkDeviceType::W5500:
@@ -119,8 +127,25 @@ int Network::update()
         }
 
         Log->println(F("Network not connected. Trying reconnect."));
-        bool success = _device->reconnect();
-        Log->println(success ? F("Reconnect successful") : F("Reconnect failed"));
+        ReconnectStatus reconnectStatus = _device->reconnect();
+
+        switch(reconnectStatus)
+        {
+            case ReconnectStatus::CriticalFailure:
+                strcpy(WiFi_fallbackDetect, "wifi_fallback");
+                Log->println("Network device has a critical failure, enable fallback to Wifi and reboot.");
+                delay(200);
+                ESP.restart();
+                break;
+            case ReconnectStatus::Success:
+                memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
+                Log->println(F("Reconnect successful"));
+                break;
+            case ReconnectStatus::Failure:
+                Log->println(F("Reconnect failed"));
+                break;
+        }
+
     }
 
     if(!_device->isConnected())

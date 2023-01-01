@@ -49,7 +49,7 @@ public:
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
-    void setupDevice(const NetworkDeviceType hardware);
+    void setupDevice(NetworkDeviceType hardware);
     bool reconnect();
 
     void buildMqttPath(const char* prefix, const char* path, char* outPath);

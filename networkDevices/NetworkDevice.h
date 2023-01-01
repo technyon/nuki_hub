@@ -2,6 +2,13 @@
 
 #include "PubSubClient.h"
 
+enum class ReconnectStatus
+{
+    Failure = 0,
+    Success = 1,
+    CriticalFailure = 2
+};
+
 class NetworkDevice
 {
 public:
@@ -12,7 +19,7 @@ public:
     virtual PubSubClient* mqttClient() = 0;
 
     virtual void initialize() = 0;
-    virtual bool reconnect() = 0;
+    virtual ReconnectStatus reconnect() = 0;
     virtual void reconfigure() = 0;
     virtual void printError() = 0;
 

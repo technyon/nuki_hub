@@ -11,7 +11,7 @@ public:
     ~W5500Device();
 
     virtual void initialize();
-    virtual bool reconnect();
+    virtual ReconnectStatus reconnect();
     virtual void reconfigure();
     virtual void printError();
 

@@ -126,10 +126,10 @@ bool WifiDevice::isConnected()
     return WiFi.isConnected();
 }
 
-bool WifiDevice::reconnect()
+ReconnectStatus WifiDevice::reconnect()
 {
     delay(3000);
-    return isConnected();
+    return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
 void WifiDevice::update()

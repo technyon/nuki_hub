@@ -57,8 +57,7 @@ void W5500Device::initialize()
     reconnect();
 }
 
-
-bool W5500Device::reconnect()
+ReconnectStatus W5500Device::reconnect()
 {
     _hasDHCPAddress = false;
 
@@ -66,6 +65,7 @@ bool W5500Device::reconnect()
     Log->println(F("Initialize Ethernet with DHCP:"));
 
     int dhcpRetryCnt = 0;
+    bool hardwareFound = false;
 
     while(dhcpRetryCnt < 3)
     {
@@ -81,11 +81,14 @@ bool W5500Device::reconnect()
             if (Ethernet.hardwareStatus() == EthernetNoHardware)
             {
                 Log->println(F("Ethernet module not found"));
+                continue;
             }
             if (Ethernet.linkStatus() == LinkOFF)
             {
                 Log->println(F("Ethernet cable is not connected."));
             }
+
+            hardwareFound = true;
 
             IPAddress ip;
             ip.fromString("192.168.4.1");
@@ -108,7 +111,12 @@ bool W5500Device::reconnect()
         }
     }
 
-    return _hasDHCPAddress;
+    if(!hardwareFound)
+    {
+        return ReconnectStatus::CriticalFailure;
+    }
+
+    return _hasDHCPAddress ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
 

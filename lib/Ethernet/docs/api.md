@@ -332,7 +332,7 @@ void setup() {
   Serial.begin(9600);
   // start the Ethernet connection:
   if (Ethernet.begin(mac) == 0) {
-    Serial.println("Failed to configure Ethernet using DHCP");
+    Serial.println("Failure to configure Ethernet using DHCP");
     // no point in carrying on, so do nothing forevermore:
     for(;;)
       ;
