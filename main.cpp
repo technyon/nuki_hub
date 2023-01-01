@@ -159,7 +159,6 @@ void initPreferences()
 
 void setup()
 {
-    pinMode(NETWORK_SELECT, INPUT_PULLUP);
 
     Serial.begin(115200);
     Log = &Serial;
@@ -171,11 +170,8 @@ void setup()
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
     }
 
-//    const NetworkDeviceType networkDevice = NetworkDeviceType::WiFi;
-    const NetworkDeviceType networkDevice = digitalRead(NETWORK_SELECT) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
-
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(networkDevice, preferences, mqttLockPath);
+    network = new Network(preferences, mqttLockPath);
     network->initialize();
     networkLock = new NetworkLock(network, preferences);
     networkLock->initialize();
@@ -189,7 +185,7 @@ void setup()
         preferences->putUInt(preference_deviceId, deviceId);
     }
 
-    initEthServer(networkDevice);
+    initEthServer(network->networkDeviceType());
 
     bleScanner = new BleScanner::Scanner();
     bleScanner->initialize("NukiHub");
@@ -216,7 +212,7 @@ void setup()
         nukiOpener->initialize();
     }
 
-    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, networkDevice == NetworkDeviceType::WiFi);
+    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
     presenceDetection = new PresenceDetection(preferences, bleScanner, network);

@@ -47,7 +47,10 @@ private:
     void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
     void printCheckBox(String& response, const char* token, const char* description, const bool value);
     void printTextarea(String& response, const char *token, const char *description, const char *value, const size_t maxLength);
+    void printDropDown(String &response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options);
     void buildNavigationButton(String& response, const char* caption, const char* targetPath);
+
+    const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
 
     void printParameter(String& response, const char* description, const char* value);
 

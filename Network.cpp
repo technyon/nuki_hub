@@ -10,7 +10,7 @@ Network* Network::_inst = nullptr;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(const NetworkDeviceType networkDevice, Preferences *preferences, const String& maintenancePathPrefix)
+Network::Network(Preferences *preferences, const String& maintenancePathPrefix)
 : _preferences(preferences)
 {
     _inst = this;
@@ -23,19 +23,44 @@ Network::Network(const NetworkDeviceType networkDevice, Preferences *preferences
     {
         _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
     }
-    setupDevice(networkDevice);
+    setupDevice();
 }
 
-
-void Network::setupDevice(NetworkDeviceType hardware)
+void Network::setupDevice()
 {
+
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
     {
-        Log->println(F("Switching to WiFi device as fallabck."));
-        hardware = NetworkDeviceType::WiFi;
+        Log->println(F("Switching to WiFi device as fallback."));
+        _networkDeviceType = NetworkDeviceType::WiFi;
+    }
+    else
+    {
+        int hardwareDetect = _preferences->getInt(preference_network_hardware_detect);
+
+        if(hardwareDetect == 0)
+        {
+            hardwareDetect = 26;
+            _preferences->putInt(preference_network_hardware_detect, hardwareDetect);
+        }
+
+        if(hardwareDetect == -1)
+        {
+            Log->println(F("W5500 hardware is disable, using Wifi."));
+            _networkDeviceType = NetworkDeviceType::WiFi;
+        }
+        else
+        {
+            Log->print(F("Using PIN "));
+            Log->print(hardwareDetect);
+            Log->println(F(" for network device selection"));
+
+            pinMode(hardwareDetect, INPUT_PULLUP);
+            _networkDeviceType = digitalRead(hardwareDetect) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+        }
     }
 
-    switch(hardware)
+    switch(_networkDeviceType)
     {
         case NetworkDeviceType::W5500:
             Log->println(F("Network device: W5500"));
@@ -774,4 +799,9 @@ void Network::removeHASSConfig(char* uidString)
 void Network::publishPresenceDetection(char *csv)
 {
     _presenceCsv = csv;
+}
+
+const NetworkDeviceType Network::networkDeviceType()
+{
+    return _networkDeviceType;
 }

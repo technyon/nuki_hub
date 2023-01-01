@@ -15,7 +15,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(const NetworkDeviceType networkDevice, Preferences* preferences, const String& maintenancePathPrefix);
+    explicit Network(Preferences* preferences, const String& maintenancePathPrefix);
 
     void initialize();
     int update();
@@ -46,10 +46,12 @@ public:
     PubSubClient* mqttClient();
     bool isMqttConnected();
 
+    const NetworkDeviceType networkDeviceType();
+
 private:
     static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
     void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
-    void setupDevice(NetworkDeviceType hardware);
+    void setupDevice();
     bool reconnect();
 
     void buildMqttPath(const char* prefix, const char* path, char* outPath);
@@ -77,6 +79,8 @@ private:
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastRssiTs = 0;
+
+    NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
 
     int8_t _lastRssi = 127;
 };

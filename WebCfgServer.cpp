@@ -240,6 +240,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putString(preference_mqtt_key, value);
             configChanged = true;
         }
+        else if(key == "NWHWDT")
+        {
+            _preferences->putInt(preference_network_hardware_detect, value.toInt());
+            configChanged = true;
+        }
         else if(key == "HASSDISCOVERY")
         {
             if(_preferences->getString(preference_mqtt_hass_discovery) != value)
@@ -588,6 +593,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
+    printDropDown(response, "NWHWDT", "Network hardward detection", String(_preferences->getInt(preference_network_hardware_detect)), getNetworkDetectionOptions());
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
@@ -793,6 +799,36 @@ void WebCfgServer::printTextarea(String& response,
     response.concat("</td></tr>");
 }
 
+void WebCfgServer::printDropDown(String &response, const char *token, const char *description, const String preselectedValue, const std::vector<std::pair<String, String>> options)
+{
+    response.concat("<tr><td>");
+    response.concat(description);
+    response.concat("</td><td>");
+
+    response.concat("<select name=\"");
+    response.concat(token);
+    response.concat("\">");
+
+    for(const auto option : options)
+    {
+        if(option.first == preselectedValue)
+        {
+            response.concat("<option selected=\"selected\" value=\"");
+        }
+        else
+        {
+            response.concat("<option value=\"");
+        }
+        response.concat(option.first);
+        response.concat("\">");
+        response.concat(option.second);
+        response.concat("</option>");
+    }
+
+    response.concat("</select>");
+    response.concat("</td></tr>");
+}
+
 void WebCfgServer::buildNavigationButton(String &response, const char *caption, const char *targetPath)
 {
     response.concat("<form method=\"get\" action=\"");
@@ -894,4 +930,20 @@ void WebCfgServer::sendFontsInterMinCss()
 void WebCfgServer::sendFavicon()
 {
     _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
+}
+
+const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+
+    options.push_back(std::make_pair("-1", "Disable W5500"));
+
+    for(int i=16; i <= 33; i++)
+    {
+        String txt = "Detect W5500 via GPIO ";
+        txt.concat(i);
+        options.push_back(std::make_pair(String(i),  txt));
+    }
+
+    return options;
 }
