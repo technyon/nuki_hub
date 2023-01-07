@@ -97,7 +97,6 @@ class NimBLEDevice {
 public:
     static void             init(const std::string &deviceName);
     static void             deinit(bool clearAll = false);
-    static void             setDeviceName(const std::string &deviceName);
     static bool             getInitialized();
     static NimBLEAddress    getAddress();
     static std::string      toString();
@@ -151,8 +150,7 @@ public:
                                                   int max_events = 0);
     static bool                  stopAdvertising(uint8_t inst_id);
     static bool                  stopAdvertising();
-#  endif
-#  if !CONFIG_BT_NIMBLE_EXT_ADV || defined(_DOXYGEN_)
+#  else
     static NimBLEAdvertising*    getAdvertising();
     static bool                  startAdvertising();
     static bool                  stopAdvertising();

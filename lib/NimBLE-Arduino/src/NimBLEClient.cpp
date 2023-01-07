@@ -336,7 +336,6 @@ bool NimBLEClient::connect(const NimBLEAddress &address, bool deleteAttributes) 
  * @return True on success.
  */
 bool NimBLEClient::secureConnection() {
-    NIMBLE_LOGD(LOG_TAG, ">> secureConnection()");
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
     ble_task_data_t taskData = {this, cur_task, 0, nullptr};
 
@@ -346,7 +345,7 @@ bool NimBLEClient::secureConnection() {
         m_pTaskData = &taskData;
 
         int rc = NimBLEDevice::startSecurity(m_conn_id);
-        if(rc != 0 && rc != BLE_HS_EALREADY){
+        if(rc != 0){
             m_lastErr = rc;
             m_pTaskData = nullptr;
             return false;
@@ -361,11 +360,9 @@ bool NimBLEClient::secureConnection() {
 
     if(taskData.rc != 0){
         m_lastErr = taskData.rc;
-        NIMBLE_LOGE(LOG_TAG, "secureConnection: failed rc=%d", taskData.rc);
         return false;
     }
 
-    NIMBLE_LOGD(LOG_TAG, "<< secureConnection: success");
     return true;
 } // secureConnection
 
