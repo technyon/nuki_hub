@@ -75,6 +75,7 @@ void NukiOpenerWrapper::update()
     if (!_paired)
     {
         Log->println(F("Nuki opener start pairing"));
+        _network->publishBleAddress("");
 
         Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
                                            Nuki::AuthorizationIdType::App :
@@ -83,6 +84,7 @@ void NukiOpenerWrapper::update()
         if (_nukiOpener.pairNuki(idType) == NukiOpener::PairingResult::Success) {
             Log->println(F("Nuki opener paired"));
             _paired = true;
+            _network->publishBleAddress(_nukiOpener.getBleAddress().toString());
         }
         else
         {

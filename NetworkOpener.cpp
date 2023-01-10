@@ -367,6 +367,11 @@ void NetworkOpener::publishRssi(const int &rssi)
     publishInt(mqtt_topic_lock_rssi, rssi);
 }
 
+void NetworkOpener::publishBleAddress(const std::string &address)
+{
+    publishString(mqtt_topic_lock_address, address.c_str());
+}
+
 void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
@@ -449,4 +454,3 @@ bool NetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPat
     buildMqttPath(subPath, prefixedPath);
     return strcmp(fullPath, prefixedPath) == 0;
 }
-

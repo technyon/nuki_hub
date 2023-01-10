@@ -94,6 +94,7 @@ void NukiWrapper::update()
     if (!_paired)
     {
         Log->println(F("Nuki start pairing"));
+        _network->publishBleAddress("");
 
         Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
                                            Nuki::AuthorizationIdType::App :
@@ -102,6 +103,7 @@ void NukiWrapper::update()
         if (_nukiLock.pairNuki(idType) == Nuki::PairingResult::Success) {
             Log->println(F("Nuki paired"));
             _paired = true;
+            _network->publishBleAddress(_nukiLock.getBleAddress().toString());
         }
         else
         {

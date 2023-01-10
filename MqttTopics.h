@@ -20,6 +20,7 @@
 #define mqtt_topic_lock_door_sensor_state "/lock/doorSensorState"
 #define mqtt_topic_lock_action "/lock/action"
 #define mqtt_topic_lock_rssi "/lock/rssi"
+#define mqtt_topic_lock_address "/lock/address"
 
 #define mqtt_topic_config_button_enabled "/configuration/buttonEnabled"
 #define mqtt_topic_config_led_enabled "/configuration/ledEnabled"

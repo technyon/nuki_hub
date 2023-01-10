@@ -28,6 +28,7 @@ public:
     void publishConfig(const NukiLock::Config& config);
     void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
     void publishRssi(const int& rssi);
+    void publishBleAddress(const std::string& address);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
