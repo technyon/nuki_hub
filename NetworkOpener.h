@@ -21,7 +21,7 @@ public:
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
     void publishRing();
-    void publishBinaryState(NukiOpener::LockState lockState);
+    void publishBinaryState(NukiOpener::OpenerState lockState);
     void publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries);
     void clearAuthorizationInfo();
     void publishCommandResult(const char* resultStr);

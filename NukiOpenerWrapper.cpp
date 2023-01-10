@@ -181,7 +181,10 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 {
     _nukiOpener.requestOpenerState(&_keyTurnerState);
 
-    if(_statusUpdated && _keyTurnerState.lockState == NukiOpener::LockState::Locked && _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked)
+    if(_statusUpdated &&
+        _keyTurnerState.lockState == NukiOpener::LockState::Locked &&
+        _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked &&
+        _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState)
     {
         Log->println(F("Nuki opener: Ring detected"));
         _network->publishRing();
@@ -190,7 +193,11 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
-        if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
+        if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
+        {
+            Log->println(F("Nuki opener state: Continuous Mode"));
+        }
+        else if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
         {
             char lockStateStr[20];
             lockstateToString(_keyTurnerState.lockState, lockStateStr);

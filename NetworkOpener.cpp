@@ -97,15 +97,23 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 {
     char str[50];
 
-    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != NukiOpener::LockState::Undefined)
+    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState || keyTurnerState.nukiState != lastKeyTurnerState.nukiState) && keyTurnerState.lockState != NukiOpener::LockState::Undefined)
     {
         memset(&str, 0, sizeof(str));
-        lockstateToString(keyTurnerState.lockState, str);
-        publishString(mqtt_topic_lock_state, str);
+
+        if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
+        {
+            publishString(mqtt_topic_lock_state, "ContinuousMode");
+        }
+        else
+        {
+            lockstateToString(keyTurnerState.lockState, str);
+            publishString(mqtt_topic_lock_state, str);
+        }
 
         if(_haEnabled)
         {
-            publishBinaryState(keyTurnerState.lockState);
+            publishBinaryState(keyTurnerState);
         }
     }
 
@@ -145,20 +153,27 @@ void NetworkOpener::publishRing()
     _resetLockStateTs = millis() + 2000;
 }
 
-void NetworkOpener::publishBinaryState(NukiOpener::LockState lockState)
+void NetworkOpener::publishBinaryState(NukiOpener::OpenerState lockState)
 {
-    switch(lockState)
+    if(lockState.nukiState == NukiOpener::State::ContinuousMode)
     {
-        case NukiOpener::LockState::Locked:
-            publishString(mqtt_topic_lock_binary_state, "locked");
-            break;
-        case NukiOpener::LockState::RTOactive:
-        case NukiOpener::LockState::Open:
-        case NukiOpener::LockState::Opening:
-            publishString(mqtt_topic_lock_binary_state, "unlocked");
-            break;
-        default:
-            break;
+        publishString(mqtt_topic_lock_binary_state, "unlocked");
+    }
+    else
+    {
+        switch (lockState.lockState)
+        {
+            case NukiOpener::LockState::Locked:
+                publishString(mqtt_topic_lock_binary_state, "locked");
+                break;
+            case NukiOpener::LockState::RTOactive:
+            case NukiOpener::LockState::Open:
+            case NukiOpener::LockState::Opening:
+                publishString(mqtt_topic_lock_binary_state, "unlocked");
+                break;
+            default:
+                break;
+        }
     }
 }
 
