@@ -305,6 +305,11 @@ const bool NukiOpenerWrapper::isPaired()
     return _paired;
 }
 
+const BLEAddress NukiOpenerWrapper::getBleAddress() const
+{
+    return _nukiOpener.getBleAddress();
+}
+
 BleScanner::Scanner *NukiOpenerWrapper::bleScanner()
 {
     return _bleScanner;

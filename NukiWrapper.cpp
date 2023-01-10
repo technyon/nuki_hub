@@ -576,3 +576,8 @@ void NukiWrapper::disableHASS()
         Log->println(F("Unable to disable HASS. Invalid config received."));
     }
 }
+
+const BLEAddress NukiWrapper::getBleAddress() const
+{
+    return _nukiLock.getBleAddress();
+}

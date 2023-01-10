@@ -450,14 +450,14 @@ void WebCfgServer::buildHtml(String& response)
     {
         char lockstateArr[20];
         NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
-        printParameter(response, "NUKI Lock paired", _nuki->isPaired() ? "Yes" : "No");
+        printParameter(response, "NUKI Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No");
         printParameter(response, "NUKI Lock state", lockstateArr);
     }
     if(_nukiOpener != nullptr)
     {
         char lockstateArr[20];
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
-        printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? "Yes" : "No");
+        printParameter(response, "NUKI Opener paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
         printParameter(response, "NUKI Opener state", lockstateArr);
     }
     printParameter(response, "Firmware", version.c_str());
