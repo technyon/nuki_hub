@@ -21,7 +21,7 @@ public:
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
     void publishRing();
-    void publishBinaryState(NukiOpener::LockState lockState);
+    void publishBinaryState(NukiOpener::OpenerState lockState);
     void publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries);
     void clearAuthorizationInfo();
     void publishCommandResult(const char* resultStr);
@@ -29,6 +29,7 @@ public:
     void publishConfig(const NukiOpener::Config& config);
     void publishAdvancedConfig(const NukiOpener::AdvancedConfig& config);
     void publishRssi(const int& rssi);
+    void publishBleAddress(const std::string& address);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
 

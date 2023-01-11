@@ -388,6 +388,11 @@ void NetworkLock::publishRssi(const int& rssi)
     publishInt(mqtt_topic_lock_rssi, rssi);
 }
 
+void NetworkLock::publishBleAddress(const std::string &address)
+{
+    publishString(mqtt_topic_lock_address, address.c_str());
+}
+
 void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
 {
     uint index = 0;

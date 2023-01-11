@@ -23,6 +23,7 @@ public:
 
     const NukiOpener::OpenerState& keyTurnerState();
     const bool isPaired();
+    const BLEAddress getBleAddress() const;
 
     BleScanner::Scanner* bleScanner();
 

@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
  - Compile warning removed for esp32c3
  - NimBLEDevice::getPower incorrect value when power level is -3db.
- - Failure pairing when already in progress.
+ - Failed pairing when already in progress.
 
 ### Changed
  - Revert previous change that forced writing with response when subscribing in favor of allowing the application to decide.

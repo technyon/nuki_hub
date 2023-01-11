@@ -27,6 +27,7 @@ public:
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();
     const bool hasKeypad();
+    const BLEAddress getBleAddress() const;
 
     void notify(Nuki::EventType eventType) override;
 

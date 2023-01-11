@@ -75,14 +75,17 @@ void NukiOpenerWrapper::update()
     if (!_paired)
     {
         Log->println(F("Nuki opener start pairing"));
+        _network->publishBleAddress("");
 
         Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
                                            Nuki::AuthorizationIdType::App :
                                            Nuki::AuthorizationIdType::Bridge;
 
-        if (_nukiOpener.pairNuki(idType) == NukiOpener::PairingResult::Success) {
+        if (_nukiOpener.pairNuki(idType) == NukiOpener::PairingResult::Success)
+        {
             Log->println(F("Nuki opener paired"));
             _paired = true;
+            _network->publishBleAddress(_nukiOpener.getBleAddress().toString());
         }
         else
         {
@@ -91,7 +94,12 @@ void NukiOpenerWrapper::update()
         }
     }
 
-    if(_restartBeaconTimeout > 0 && (millis() - _nukiOpener.getLastReceivedBeaconTs() > _restartBeaconTimeout * 1000))
+    unsigned long ts = millis();
+    unsigned long lastReceivedBeaconTs = _nukiOpener.getLastReceivedBeaconTs();
+    if(_restartBeaconTimeout > 0 &&
+       ts > 60000 &&
+       lastReceivedBeaconTs > 0 &&
+       (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the opener for ");
         Log->print((millis() - _nukiOpener.getLastReceivedBeaconTs()) / 1000);
@@ -101,8 +109,6 @@ void NukiOpenerWrapper::update()
     }
 
     _nukiOpener.updateConnectionState();
-
-    unsigned long ts = millis();
 
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
     {
@@ -179,7 +185,10 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 {
     _nukiOpener.requestOpenerState(&_keyTurnerState);
 
-    if(_statusUpdated && _keyTurnerState.lockState == NukiOpener::LockState::Locked && _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked)
+    if(_statusUpdated &&
+        _keyTurnerState.lockState == NukiOpener::LockState::Locked &&
+        _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked &&
+        _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState)
     {
         Log->println(F("Nuki opener: Ring detected"));
         _network->publishRing();
@@ -188,7 +197,11 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
-        if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
+        if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
+        {
+            Log->println(F("Nuki opener state: Continuous Mode"));
+        }
+        else if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
         {
             char lockStateStr[20];
             lockstateToString(_keyTurnerState.lockState, lockStateStr);
@@ -303,6 +316,11 @@ const NukiOpener::OpenerState &NukiOpenerWrapper::keyTurnerState()
 const bool NukiOpenerWrapper::isPaired()
 {
     return _paired;
+}
+
+const BLEAddress NukiOpenerWrapper::getBleAddress() const
+{
+    return _nukiOpener.getBleAddress();
 }
 
 BleScanner::Scanner *NukiOpenerWrapper::bleScanner()
