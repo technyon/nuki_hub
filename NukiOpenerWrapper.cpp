@@ -81,7 +81,8 @@ void NukiOpenerWrapper::update()
                                            Nuki::AuthorizationIdType::App :
                                            Nuki::AuthorizationIdType::Bridge;
 
-        if (_nukiOpener.pairNuki(idType) == NukiOpener::PairingResult::Success) {
+        if (_nukiOpener.pairNuki(idType) == NukiOpener::PairingResult::Success)
+        {
             Log->println(F("Nuki opener paired"));
             _paired = true;
             _network->publishBleAddress(_nukiOpener.getBleAddress().toString());
@@ -93,7 +94,12 @@ void NukiOpenerWrapper::update()
         }
     }
 
-    if(_restartBeaconTimeout > 0 && (millis() - _nukiOpener.getLastReceivedBeaconTs() > _restartBeaconTimeout * 1000))
+    unsigned long ts = millis();
+    unsigned long lastReceivedBeaconTs = _nukiOpener.getLastReceivedBeaconTs();
+    if(_restartBeaconTimeout > 0 &&
+       ts > 60000 &&
+       lastReceivedBeaconTs > 0 &&
+       (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the opener for ");
         Log->print((millis() - _nukiOpener.getLastReceivedBeaconTs()) / 1000);
@@ -103,8 +109,6 @@ void NukiOpenerWrapper::update()
     }
 
     _nukiOpener.updateConnectionState();
-
-    unsigned long ts = millis();
 
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
     {

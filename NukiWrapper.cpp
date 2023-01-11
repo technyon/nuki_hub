@@ -87,10 +87,6 @@ void NukiWrapper::initialize()
 
 void NukiWrapper::update()
 {
-    Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
-                                       Nuki::AuthorizationIdType::App :
-                                       Nuki::AuthorizationIdType::Bridge;
-
     if (!_paired)
     {
         Log->println(F("Nuki start pairing"));
@@ -100,7 +96,8 @@ void NukiWrapper::update()
                                            Nuki::AuthorizationIdType::App :
                                            Nuki::AuthorizationIdType::Bridge;
 
-        if (_nukiLock.pairNuki(idType) == Nuki::PairingResult::Success) {
+        if (_nukiLock.pairNuki(idType) == Nuki::PairingResult::Success)
+        {
             Log->println(F("Nuki paired"));
             _paired = true;
             _network->publishBleAddress(_nukiLock.getBleAddress().toString());
@@ -112,7 +109,12 @@ void NukiWrapper::update()
         }
     }
 
-    if(_restartBeaconTimeout > 0 && (millis() - _nukiLock.getLastReceivedBeaconTs() > _restartBeaconTimeout * 1000))
+    unsigned long ts = millis();
+    unsigned long lastReceivedBeaconTs = _nukiLock.getLastReceivedBeaconTs();
+    if(_restartBeaconTimeout > 0 &&
+       ts > 60000 &&
+       lastReceivedBeaconTs > 0 &&
+       (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the lock for ");
         Log->print((millis() - _nukiLock.getLastReceivedBeaconTs()) / 1000);
@@ -122,8 +124,6 @@ void NukiWrapper::update()
     }
 
     _nukiLock.updateConnectionState();
-
-    unsigned long ts = millis();
 
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
     {
