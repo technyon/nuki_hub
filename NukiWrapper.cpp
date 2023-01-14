@@ -171,7 +171,7 @@ void NukiWrapper::update()
         updateKeypad();
     }
 
-    if(_nextLockAction != (NukiLock::LockAction)0xff)
+    if(_nextLockAction != (NukiLock::LockAction)0xff && ts > _nextRetryTs)
     {
         Nuki::CmdResult cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
 
@@ -187,6 +187,7 @@ void NukiWrapper::update()
         {
             _retryCount = 0;
             _nextLockAction = (NukiLock::LockAction) 0xff;
+            _network->publishRetry("--");
             if (_intervalLockstate > 10)
             {
                 _nextLockStateUpdateTs = ts + 10 * 1000;
@@ -205,7 +206,7 @@ void NukiWrapper::update()
 
                 _network->publishRetry(std::to_string(_retryCount + 1));
 
-                _nextLockStateUpdateTs = millis() + _retryDelay;
+                _nextRetryTs = millis() + _retryDelay;
 
                 ++_retryCount;
             }
@@ -214,6 +215,7 @@ void NukiWrapper::update()
                 Log->println(F("Maximum number of retries exceeded, aborting."));
                 _network->publishRetry("failed");
                 _retryCount = 0;
+                _nextRetryTs = 0;
                 _nextLockAction = (NukiLock::LockAction) 0xff;
             }
         }
