@@ -1,6 +1,6 @@
 #pragma once
 
-#define preference_started_befores "run"
+#define preference_started_before "run"
 #define preference_deviceId "deviceId"
 #define preference_mqtt_broker "mqttbroker"
 #define preference_mqtt_broker_port "mqttport"

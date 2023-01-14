@@ -34,7 +34,7 @@ NukiWrapper::~NukiWrapper()
 }
 
 
-void NukiWrapper::initialize()
+void NukiWrapper::initialize(const bool& firstStart)
 {
 
     _nukiLock.initialize();
@@ -51,6 +51,11 @@ void NukiWrapper::initialize()
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
 
+    if(firstStart)
+    {
+        _preferences->putInt(preference_command_nr_of_retries, 3);
+        _preferences->putInt(preference_command_retry_delay, 1000);
+    }
     if(_retryDelay <= 100)
     {
         _retryDelay = 100;

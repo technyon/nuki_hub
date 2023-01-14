@@ -12,7 +12,7 @@ public:
     NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, NetworkLock* network, Preferences* preferences);
     virtual ~NukiWrapper();
 
-    void initialize();
+    void initialize(const bool& firstStart);
     void update();
 
     void lock();
