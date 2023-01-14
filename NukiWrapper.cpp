@@ -48,6 +48,14 @@ void NukiWrapper::initialize()
     _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
+    _retryDelay = _preferences->getInt(preference_command_retry_delay);
+
+    if(_retryDelay <= 100)
+    {
+        _retryDelay = 100;
+        _preferences->putInt(preference_command_retry_delay, _retryDelay);
+    }
 
     if(_intervalLockstate == 0)
     {
@@ -175,10 +183,37 @@ void NukiWrapper::update()
         Log->print(F("Lock action result: "));
         Log->println(resultStr);
 
-        _nextLockAction = (NukiLock::LockAction)0xff;
-        if(_intervalLockstate > 10)
+        if(cmdResult == Nuki::CmdResult::Success)
         {
-            _nextLockStateUpdateTs = ts + 10 * 1000;
+            _nextLockAction = (NukiLock::LockAction) 0xff;
+            if (_intervalLockstate > 10)
+            {
+                _nextLockStateUpdateTs = ts + 10 * 1000;
+            }
+        }
+        else
+        {
+            if(_retryCount == -1)
+            {
+                _retryCount = _nrOfRetries;
+            }
+            else if(_retryCount == 0)
+            {
+                _nextLockAction = (NukiLock::LockAction) 0xff;
+                _retryCount = -1;
+                if (_intervalLockstate > 10)
+                {
+                    _nextLockStateUpdateTs = ts + 10 * 1000;
+                }
+                return;
+            }
+
+            Log->print(F("Last command failed, retrying after "));
+            Log->print(_retryDelay);
+            Log->print(F(" milliseconds."));
+
+            --_retryCount;
+            _nextLockStateUpdateTs = millis() + _retryDelay;
         }
     }
 
