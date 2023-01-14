@@ -185,6 +185,7 @@ void NukiWrapper::update()
 
         if(cmdResult == Nuki::CmdResult::Success)
         {
+            _retryCount = 0;
             _nextLockAction = (NukiLock::LockAction) 0xff;
             if (_intervalLockstate > 10)
             {
@@ -193,27 +194,28 @@ void NukiWrapper::update()
         }
         else
         {
-            if(_retryCount == -1)
+            if(_retryCount < _nrOfRetries)
             {
-                _retryCount = _nrOfRetries;
+                Log->print(F("Last command failed, retrying after "));
+                Log->print(_retryDelay);
+                Log->print(F(" milliseconds. Retry "));
+                Log->print(_retryCount + 1);
+                Log->print(" of ");
+                Log->println(_nrOfRetries);
+
+                _network->publishRetry(std::to_string(_retryCount + 1));
+
+                _nextLockStateUpdateTs = millis() + _retryDelay;
+
+                ++_retryCount;
             }
-            else if(_retryCount == 0)
+            else
             {
+                Log->println(F("Maximum number of retries exceeded, aborting."));
+                _network->publishRetry("failed");
+                _retryCount = 0;
                 _nextLockAction = (NukiLock::LockAction) 0xff;
-                _retryCount = -1;
-                if (_intervalLockstate > 10)
-                {
-                    _nextLockStateUpdateTs = ts + 10 * 1000;
-                }
-                return;
             }
-
-            Log->print(F("Last command failed, retrying after "));
-            Log->print(_retryDelay);
-            Log->print(F(" milliseconds."));
-
-            --_retryCount;
-            _nextLockStateUpdateTs = millis() + _retryDelay;
         }
     }
 

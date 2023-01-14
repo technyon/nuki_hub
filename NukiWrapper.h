@@ -86,7 +86,7 @@ private:
     uint _maxKeypadCodeCount = 0;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
-    int _retryCount = -1;
+    int _retryCount = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
