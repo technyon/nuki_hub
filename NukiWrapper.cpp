@@ -202,7 +202,7 @@ void NukiWrapper::update()
         {
             if(_retryCount < _nrOfRetries)
             {
-                Log->print(F("Last command failed, retrying after "));
+                Log->print(F("Lock: Last command failed, retrying after "));
                 Log->print(_retryDelay);
                 Log->print(F(" milliseconds. Retry "));
                 Log->print(_retryCount + 1);
@@ -217,7 +217,7 @@ void NukiWrapper::update()
             }
             else
             {
-                Log->println(F("Maximum number of retries exceeded, aborting."));
+                Log->println(F("Lock: Maximum number of retries exceeded, aborting."));
                 _network->publishRetry("failed");
                 _retryCount = 0;
                 _nextRetryTs = 0;

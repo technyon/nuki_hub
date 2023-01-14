@@ -43,6 +43,8 @@ void NukiOpenerWrapper::initialize()
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
+    _retryDelay = _preferences->getInt(preference_command_retry_delay);
 
     if(_intervalLockstate == 0)
     {
@@ -142,22 +144,53 @@ void NukiOpenerWrapper::update()
         }
     }
 
-    if(_nextLockAction != (NukiOpener::LockAction)0xff)
+    if(_nextLockAction != (NukiOpener::LockAction)0xff && ts > _nextRetryTs)
     {
-        NukiOpener::CmdResult cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
+        Nuki::CmdResult cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
 
         char resultStr[15] = {0};
         NukiOpener::cmdResultToString(cmdResult, resultStr);
 
         _network->publishCommandResult(resultStr);
 
-        Log->print(F("Opener lock action result: "));
+        Log->print(F("Lock action result: "));
         Log->println(resultStr);
 
-        _nextLockAction = (NukiOpener::LockAction)0xff;
-        if(_intervalLockstate > 10)
+        if(cmdResult == Nuki::CmdResult::Success)
         {
-            _nextLockStateUpdateTs = ts + 10 * 1000;
+            _retryCount = 0;
+            _nextLockAction = (NukiOpener::LockAction) 0xff;
+            _network->publishRetry("--");
+            if (_intervalLockstate > 10)
+            {
+                _nextLockStateUpdateTs = ts + 10 * 1000;
+            }
+        }
+        else
+        {
+            if(_retryCount < _nrOfRetries)
+            {
+                Log->print(F("Opener: Last command failed, retrying after "));
+                Log->print(_retryDelay);
+                Log->print(F(" milliseconds. Retry "));
+                Log->print(_retryCount + 1);
+                Log->print(" of ");
+                Log->println(_nrOfRetries);
+
+                _network->publishRetry(std::to_string(_retryCount + 1));
+
+                _nextRetryTs = millis() + _retryDelay;
+
+                ++_retryCount;
+            }
+            else
+            {
+                Log->println(F("Opener: Maximum number of retries exceeded, aborting."));
+                _network->publishRetry("failed");
+                _retryCount = 0;
+                _nextRetryTs = 0;
+                _nextLockAction = (NukiOpener::LockAction) 0xff;
+            }
         }
     }
 
