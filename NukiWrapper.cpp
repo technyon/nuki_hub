@@ -34,7 +34,7 @@ NukiWrapper::~NukiWrapper()
 }
 
 
-void NukiWrapper::initialize()
+void NukiWrapper::initialize(const bool& firstStart)
 {
 
     _nukiLock.initialize();
@@ -48,6 +48,19 @@ void NukiWrapper::initialize()
     _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
+    _retryDelay = _preferences->getInt(preference_command_retry_delay);
+
+    if(firstStart)
+    {
+        _preferences->putInt(preference_command_nr_of_retries, 3);
+        _preferences->putInt(preference_command_retry_delay, 1000);
+    }
+    if(_retryDelay <= 100)
+    {
+        _retryDelay = 100;
+        _preferences->putInt(preference_command_retry_delay, _retryDelay);
+    }
 
     if(_intervalLockstate == 0)
     {
@@ -163,7 +176,7 @@ void NukiWrapper::update()
         updateKeypad();
     }
 
-    if(_nextLockAction != (NukiLock::LockAction)0xff)
+    if(_nextLockAction != (NukiLock::LockAction)0xff && ts > _nextRetryTs)
     {
         Nuki::CmdResult cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
 
@@ -175,10 +188,41 @@ void NukiWrapper::update()
         Log->print(F("Lock action result: "));
         Log->println(resultStr);
 
-        _nextLockAction = (NukiLock::LockAction)0xff;
-        if(_intervalLockstate > 10)
+        if(cmdResult == Nuki::CmdResult::Success)
         {
-            _nextLockStateUpdateTs = ts + 10 * 1000;
+            _retryCount = 0;
+            _nextLockAction = (NukiLock::LockAction) 0xff;
+            _network->publishRetry("--");
+            if (_intervalLockstate > 10)
+            {
+                _nextLockStateUpdateTs = ts + 10 * 1000;
+            }
+        }
+        else
+        {
+            if(_retryCount < _nrOfRetries)
+            {
+                Log->print(F("Lock: Last command failed, retrying after "));
+                Log->print(_retryDelay);
+                Log->print(F(" milliseconds. Retry "));
+                Log->print(_retryCount + 1);
+                Log->print(" of ");
+                Log->println(_nrOfRetries);
+
+                _network->publishRetry(std::to_string(_retryCount + 1));
+
+                _nextRetryTs = millis() + _retryDelay;
+
+                ++_retryCount;
+            }
+            else
+            {
+                Log->println(F("Lock: Maximum number of retries exceeded, aborting."));
+                _network->publishRetry("failed");
+                _retryCount = 0;
+                _nextRetryTs = 0;
+                _nextLockAction = (NukiLock::LockAction) 0xff;
+            }
         }
     }
 

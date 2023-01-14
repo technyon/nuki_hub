@@ -12,7 +12,7 @@ public:
     NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, NetworkLock* network, Preferences* preferences);
     virtual ~NukiWrapper();
 
-    void initialize();
+    void initialize(const bool& firstStart);
     void update();
 
     void lock();
@@ -84,6 +84,10 @@ private:
     bool _keypadEnabled = false;
     bool _configRead = false;
     uint _maxKeypadCodeCount = 0;
+    int _nrOfRetries = 0;
+    int _retryDelay = 0;
+    int _retryCount = 0;
+    unsigned long _nextRetryTs = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;

@@ -307,6 +307,16 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "NRTRY")
+        {
+            _preferences->putInt(preference_command_nr_of_retries, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "TRYDLY")
+        {
+            _preferences->putInt(preference_command_retry_delay, value.toInt());
+            configChanged = true;
+        }
         else if(key == "PRDTMO")
         {
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
@@ -637,6 +647,8 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
         printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
     }
+    printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
+    printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
     printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);

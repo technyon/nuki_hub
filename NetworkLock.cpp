@@ -388,6 +388,11 @@ void NetworkLock::publishRssi(const int& rssi)
     publishInt(mqtt_topic_lock_rssi, rssi);
 }
 
+void NetworkLock::publishRetry(const std::string& message)
+{
+    publishString(mqtt_topic_lock_retry, message.c_str());
+}
+
 void NetworkLock::publishBleAddress(const std::string &address)
 {
     publishString(mqtt_topic_lock_address, address.c_str());

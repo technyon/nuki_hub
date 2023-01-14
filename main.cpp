@@ -140,14 +140,16 @@ void initEthServer(const NetworkDeviceType device)
     }
 }
 
-void initPreferences()
+bool initPreferences()
 {
     preferences = new Preferences();
     preferences->begin("nukihub", false);
 
-    if(!preferences->getBool(preference_started_befores))
+    bool firstStart = !preferences->getBool(preference_started_before);
+
+    if(firstStart)
     {
-        preferences->putBool(preference_started_befores, true);
+        preferences->putBool(preference_started_before, true);
         preferences->putBool(preference_lock_enabled, true);
     }
 
@@ -155,6 +157,8 @@ void initPreferences()
     {
         preferences->putInt(preference_restart_timer, -1);
     }
+
+    return firstStart;
 }
 
 void setup()
@@ -163,7 +167,7 @@ void setup()
     Serial.begin(115200);
     Log = &Serial;
 
-    initPreferences();
+    bool firstStart = initPreferences();
 
     if(preferences->getInt(preference_restart_timer) > 0)
     {
@@ -196,7 +200,7 @@ void setup()
     if(lockEnabled)
     {
         nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, preferences);
-        nuki->initialize();
+        nuki->initialize(firstStart);
 
         if(preferences->getBool(preference_gpio_locking_enabled))
         {

@@ -29,6 +29,7 @@ public:
     void publishConfig(const NukiOpener::Config& config);
     void publishAdvancedConfig(const NukiOpener::AdvancedConfig& config);
     void publishRssi(const int& rssi);
+    void publishRetry(const std::string& message);
     void publishBleAddress(const std::string& address);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);

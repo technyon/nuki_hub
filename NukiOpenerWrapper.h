@@ -57,6 +57,10 @@ private:
     int _restartBeaconTimeout = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
+    int _nrOfRetries = 0;
+    int _retryDelay = 0;
+    int _retryCount = 0;
+    unsigned long _nextRetryTs = 0;
 
     NukiOpener::OpenerState _lastKeyTurnerState;
     NukiOpener::OpenerState _keyTurnerState;
