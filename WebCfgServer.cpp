@@ -648,7 +648,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
         printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
     }
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
-    printInputField(response, "TRYDLY", "Delay between retries", _preferences->getInt(preference_command_retry_delay), 10);
+    printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
     printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
