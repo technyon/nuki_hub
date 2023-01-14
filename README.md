@@ -39,7 +39,7 @@ Note: It is possible to run NUKI Hub alongside a NUKI Bridge. This is not recomm
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REF8VDS8X9DE6<br>
+REF7QU6M8XAJC<br>
 This will also give you a 30€ discount for your order.
 
 This project is free to use for everyone. However if you feel like donating, you can do so here:
@@ -199,9 +199,12 @@ There are reports that ESP32 "DEVKIT1" module don't work and pairing is not poss
 Reported as working are:<br>
 ESP32-WROOM-32D (DEVKIT V4)<br>
 ESP32-WROOM-32E<br>
-
+<br>
 For more information check the related issue:<br>
 https://github.com/technyon/nuki_hub/issues/39
+<br><br>
+Also, check that pairing is allowed. In the smartphone app, go to Settings --> Features & Configuration --> Button & LED and make sure "Bluetooh Pairing" is enabled.
+
 
 ### Authorization data isn't published
 Reading the authorization data from the access log is protected by the configured PIN.
