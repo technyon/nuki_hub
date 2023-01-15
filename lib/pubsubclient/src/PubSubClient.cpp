@@ -743,8 +743,10 @@ boolean PubSubClient::setBufferSize(uint16_t size) {
         return false;
     }
     if (this->bufferSize == 0) {
+        Serial.print("MALLOC: "); Serial.println(size);
         this->buffer = (uint8_t*)malloc(size);
     } else {
+        Serial.print("REALLOC: "); Serial.println(size);
         uint8_t* newBuffer = (uint8_t*)realloc(this->buffer, size);
         if (newBuffer != NULL) {
             this->buffer = newBuffer;

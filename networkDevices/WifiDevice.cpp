@@ -98,8 +98,6 @@ void WifiDevice::initialize()
             onDisconnected();
         });
     }
-
-    _mqttClient->setBufferSize(_mqttMaxBufferSize);
 }
 
 void WifiDevice::reconfigure()

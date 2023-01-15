@@ -40,8 +40,6 @@ void W5500Device::initialize()
     Ethernet.init(ETHERNET_CS_PIN);
     _ethClient = new EthernetClient();
     _mqttClient = new PubSubClient(*_ethClient);
-    _mqttClient->setBufferSize(_mqttMaxBufferSize);
-
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
