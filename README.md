@@ -211,6 +211,22 @@ Reading the authorization data from the access log is protected by the configure
 If you don't get any published data try setting the PIN or try reentering it to make
 sure it's correct.
 
+## Development VM
+
+Since setting up the toolchain can be difficult, I've uploaded a virtual machine (vmware image) that is
+setup to compile NUKI Hub:
+
+https://mega.nz/file/4yJRjS4Q#F0FNVJZTsUdcTMhiJIB47Fm-7YqKuyQs15E5zznmroc
+
+User and password for the VM are both "nuki" and "nuki". The source is checked out at ~/projects/nuki_hub,
+the cmake build directory is build. So to compile, run the following commands:
+
+cd projects/nuki_hub/build<br>
+ninja
+
+To upload the image via serial port, run "ninja upload-nuki_hub". The serial device is defined in
+~/.bashrc (Environment variable SERIAL_PORT), which you'll eventually have to adopt to your device.
+
 ## Disclaimer
 
 This is a third party software for NUKI smart door locks. This project or any of it's authors aren't associated with Nuki Home Solutions GmbH. Please refer for official products and offical support to their website:
