@@ -11,7 +11,9 @@
 
 #include <Arduino.h>
 #include <Print.h>
-#include <PubSubClient.h>
+#include "MqttClient.h"
+
+#define MQTT_MAX_PACKET_SIZE 1024
 
 enum MqttLoggerMode {
     MqttAndSerialFallback = 0,
@@ -27,16 +29,16 @@ private:
     uint8_t* buffer;
     uint8_t* bufferEnd;
     uint16_t bufferCnt = 0, bufferSize = 0;
-    PubSubClient* client;
+    MqttClient* client;
     MqttLoggerMode mode;
     void sendBuffer();
 
 public:
     MqttLogger(MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
-    MqttLogger(PubSubClient& client, const char* topic, MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
+    MqttLogger(MqttClient& client, const char* topic, MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
     ~MqttLogger();
 
-    void setClient(PubSubClient& client);
+    void setClient(MqttClient& client);
     void setTopic(const char* topic);
     void setMode(MqttLoggerMode mode);
     void setRetained(boolean retained);

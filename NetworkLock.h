@@ -1,6 +1,5 @@
 #pragma once
 
-#include <PubSubClient.h>
 #include "networkDevices/NetworkDevice.h"
 #include "networkDevices/WifiDevice.h"
 #include "networkDevices/W5500Device.h"
@@ -39,7 +38,7 @@ public:
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
 
-    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
+    void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
 private:
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
@@ -47,6 +46,8 @@ private:
     void publishUInt(const char* topic, const unsigned int value);
     void publishULong(const char* topic, const unsigned long value);
     void publishBool(const char* topic, const bool value);
+    bool publishString(const char* topic, const String& value);
+    bool publishString(const char* topic, const std::string& value);
     bool publishString(const char* topic, const char* value);
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     bool comparePrefixedPath(const char* fullPath, const char* subPath);

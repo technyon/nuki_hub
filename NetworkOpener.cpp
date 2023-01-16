@@ -57,7 +57,7 @@ void NetworkOpener::update()
     }
 }
 
-void NetworkOpener::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
+void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char value[50] = {0};
     size_t l = min(length, sizeof(value)-1);
@@ -309,7 +309,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     }
 
     json.concat("]");
-    publishString(mqtt_topic_lock_log, json.c_str());
+    publishString(mqtt_topic_lock_log, json);
 
     if(authFound)
     {
@@ -384,12 +384,12 @@ void NetworkOpener::publishRssi(const int &rssi)
 
 void NetworkOpener::publishRetry(const std::string& message)
 {
-    publishString(mqtt_topic_lock_retry, message.c_str());
+    publishString(mqtt_topic_lock_retry, message);
 }
 
 void NetworkOpener::publishBleAddress(const std::string &address)
 {
-    publishString(mqtt_topic_lock_address, address.c_str());
+    publishString(mqtt_topic_lock_address, address);
 }
 
 void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
@@ -432,6 +432,22 @@ void NetworkOpener::publishUInt(const char *topic, const unsigned int value)
 void NetworkOpener::publishBool(const char *topic, const bool value)
 {
     _network->publishBool(_mqttPath, topic, value);
+}
+
+void NetworkOpener::publishString(const char *topic, const String &value)
+{
+    char str[value.length() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.begin(), value.length());
+    publishString(topic, str);
+}
+
+void NetworkOpener::publishString(const char *topic, const std::string &value)
+{
+    char str[value.size() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.data(), value.length());
+    publishString(topic, str);
 }
 
 void NetworkOpener::publishString(const char* topic, const char* value)

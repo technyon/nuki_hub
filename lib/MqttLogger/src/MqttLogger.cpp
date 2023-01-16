@@ -7,7 +7,7 @@ MqttLogger::MqttLogger(MqttLoggerMode mode)
     this->setBufferSize(MQTT_MAX_PACKET_SIZE);
 }
 
-MqttLogger::MqttLogger(PubSubClient& client, const char* topic, MqttLoggerMode mode)
+MqttLogger::MqttLogger(MqttClient& client, const char* topic, MqttLoggerMode mode)
 {
     this->setClient(client);
     this->setTopic(topic);
@@ -19,7 +19,7 @@ MqttLogger::~MqttLogger()
 {
 }
 
-void MqttLogger::setClient(PubSubClient& client)
+void MqttLogger::setClient(MqttClient& client)
 {
     this->client = &client;
 }
@@ -76,7 +76,9 @@ void MqttLogger::sendBuffer()
         bool doSerial = this->mode==MqttLoggerMode::SerialOnly || this->mode==MqttLoggerMode::MqttAndSerial;
         if (this->mode!=MqttLoggerMode::SerialOnly && this->client != NULL && this->client->connected()) 
         {
-            this->client->publish(this->topic, (byte *)this->buffer, this->bufferCnt, 1);
+            this->client->beginMessage(topic);
+            this->client->write((byte *)this->buffer, this->bufferCnt);
+            this->client->endMessage();
         } else if (this->mode == MqttLoggerMode::MqttAndSerialFallback)
         {
             doSerial = true;

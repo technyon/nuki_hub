@@ -22,7 +22,7 @@ public:
 
     int8_t signalStrength() override;
 
-    virtual PubSubClient *mqttClient();
+    virtual MqttClient* mqttClient();
 
 private:
     static void clearRtcInitVar(WiFiManager*);
@@ -32,7 +32,7 @@ private:
     WiFiManager _wm;
     WiFiClient* _wifiClient = nullptr;
     WiFiClientSecure* _wifiClientSecure = nullptr;
-    PubSubClient* _mqttClient = nullptr;
+    MqttClient* _mqttClient = nullptr;
 //    SpiffsCookie _cookie;
     bool _restartOnDisconnect = false;
     bool _startAp = false;

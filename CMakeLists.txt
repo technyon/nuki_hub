@@ -30,7 +30,7 @@ include_directories(${PROJECT_NAME}
         lib/BleScanner/src
         lib/nuki_ble/src
         lib/WiFiManager
-        lib/pubsubclient/src
+        lib/ArduinoMqttClient/src
         lib/WebServer/src
         lib/Ethernet/src
         lib/MqttLogger/src
@@ -72,7 +72,8 @@ file(GLOB SRCFILES
         lib/nuki_ble/src/NukiOpenerUtils.cpp
         lib/BleScanner/src/BleInterfaces.h
         lib/BleScanner/src/BleScanner.cpp
-        lib/pubsubclient/src/PubSubClient.cpp
+        lib/ArduinoMqttClient/src/MqttClient.cpp
+        lib/ArduinoMqttClient/src/ArduinoMqttClient.h
         lib/MqttLogger/src/MqttLogger.cpp
 )
 

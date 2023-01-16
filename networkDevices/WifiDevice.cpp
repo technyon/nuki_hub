@@ -31,12 +31,12 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
             _wifiClientSecure->setCertificate(_cert);
             _wifiClientSecure->setPrivateKey(_key);
         }
-        _mqttClient = new PubSubClient(*_wifiClientSecure);
+        _mqttClient = new MqttClient(*_wifiClientSecure);
     } else
     {
         Log->println(F("MQTT without TLS."));
         _wifiClient = new WiFiClient();
-        _mqttClient = new PubSubClient(*_wifiClient);
+        _mqttClient = new MqttClient(*_wifiClient);
     }
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
@@ -51,7 +51,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
     }
 }
 
-PubSubClient *WifiDevice::mqttClient()
+MqttClient *WifiDevice::mqttClient()
 {
     return _mqttClient;
 }
