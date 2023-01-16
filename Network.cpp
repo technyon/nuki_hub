@@ -127,7 +127,7 @@ void Network::initialize()
     Log->print(F(":"));
     Log->println(port);
 
-//    _device->mqttClient()->connect(_mqttBrokerAddr, port);
+    _device->mqttClient()->setId(_preferences->getString(preference_hostname));
 
     _networkTimeout = _preferences->getInt(preference_network_timeout);
     if(_networkTimeout == 0)
@@ -241,14 +241,13 @@ bool Network::reconnect()
         if(strlen(_mqttUser) == 0)
         {
             Log->println(F("MQTT: Connecting without credentials"));
-//            success = _device->mqttClient()->connect(_preferences->getString(preference_hostname).c_str()) > 0;
             success = _device->mqttClient()->connect(_mqttBrokerAddr, port);
         }
         else
         {
             Log->print(F("MQTT: Connecting with user: ")); Log->println(_mqttUser);
             _device->mqttClient()->setUsernamePassword(_mqttUser, _mqttPass);
-            success = _device->mqttClient()->connect(_preferences->getString(preference_hostname).c_str()) > 0;
+            success = _device->mqttClient()->connect(_mqttBrokerAddr, port);
         }
 
         if (success)
@@ -259,7 +258,6 @@ bool Network::reconnect()
             _device->mqttClient()->onMessage(Network::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {
-                Serial.println(topic.c_str());
                 _device->mqttClient()->subscribe(topic.c_str());
             }
             if(_firstConnect)
@@ -334,7 +332,7 @@ void Network::onMqttDataReceivedCallback(int messageSize)
     _inst->onMqttDataReceived(messageSize);
 }
 
-void Network::onMqttDataReceived(int messageSize)
+void Network::onMqttDataReceived(int)
 {
     MqttClient* mqttClient = _device->mqttClient();
     String topic = mqttClient->messageTopic();
