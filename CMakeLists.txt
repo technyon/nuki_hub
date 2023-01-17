@@ -20,6 +20,7 @@ set(LOG_LEVEL ARDUHAL_LOG_LEVEL_NONE)
 add_compile_definitions(TLS_CA_MAX_SIZE=1500)
 add_compile_definitions(TLS_CERT_MAX_SIZE=1500)
 add_compile_definitions(TLS_KEY_MAX_SIZE=1800)
+add_compile_definitions(TX_PAYLOAD_BUFFER_SIZE=6144)
 add_compile_definitions(ESP_PLATFORM)
 add_compile_definitions(ESP32)
 
