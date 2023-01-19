@@ -1,0 +1,52 @@
+############################################
+# Syntax Coloring Map For ArduinoMqttClient
+############################################ 
+# Class
+############################################
+
+ArduinoMqttClient	KEYWORD1
+MqttClient	KEYWORD1
+
+############################################
+# Methods and Functions
+############################################
+
+onMessage 	KEYWORD2
+
+parseMessage 	KEYWORD2
+messageTopic	KEYWORD2
+messageDup	KEYWORD2
+messageQoS 	KEYWORD2
+messageRetain	KEYWORD2
+
+beginMessage 	KEYWORD2
+endMessage	KEYWORD2
+beginWill 	KEYWORD2
+endWill	KEYWORD2
+
+subscribe 	KEYWORD2
+unsubscribe 	KEYWORD2
+
+poll 	KEYWORD2
+
+connect 	KEYWORD2
+write	KEYWORD2
+available	KEYWORD2
+read	KEYWORD2
+peek	KEYWORD2
+flush	KEYWORD2
+stop	KEYWORD2
+connected	KEYWORD2
+
+setId	KEYWORD2
+setUsernamePassword	KEYWORD2
+setCleanSession	KEYWORD2
+setKeepAliveInterval 	KEYWORD2
+setConnectionTimeout	KEYWORD2
+
+connectError	KEYWORD2
+subscribeQoS	KEYWORD2
+
+############################################
+# Constants
+############################################

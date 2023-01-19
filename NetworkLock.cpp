@@ -71,7 +71,7 @@ void NetworkLock::initialize()
     }
 }
 
-void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int &length)
+void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char value[50] = {0};
     size_t l = min(length, sizeof(value)-1);
@@ -120,8 +120,8 @@ void NetworkLock::onMqttDataReceived(char *&topic, byte *&payload, unsigned int 
                 publishString(mqtt_topic_keypad_command_action, "--");
             }
             publishInt(mqtt_topic_keypad_command_id, _keypadCommandId);
-            publishString(mqtt_topic_keypad_command_name, _keypadCommandName.c_str());
-            publishString(mqtt_topic_keypad_command_code, _keypadCommandCode.c_str());
+            publishString(mqtt_topic_keypad_command_name, _keypadCommandName);
+            publishString(mqtt_topic_keypad_command_code, _keypadCommandCode);
             publishInt(mqtt_topic_keypad_command_enabled, _keypadCommandEnabled);
         }
     }
@@ -341,7 +341,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     }
 
     json.concat("]");
-    publishString(mqtt_topic_lock_log, json.c_str());
+    publishString(mqtt_topic_lock_log, json);
 
     if(authFound)
     {
@@ -390,12 +390,12 @@ void NetworkLock::publishRssi(const int& rssi)
 
 void NetworkLock::publishRetry(const std::string& message)
 {
-    publishString(mqtt_topic_lock_retry, message.c_str());
+    publishString(mqtt_topic_lock_retry, message);
 }
 
 void NetworkLock::publishBleAddress(const std::string &address)
 {
-    publishString(mqtt_topic_lock_address, address.c_str());
+    publishString(mqtt_topic_lock_address, address);
 }
 
 void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
@@ -505,6 +505,22 @@ void NetworkLock::publishUInt(const char *topic, const unsigned int value)
 void NetworkLock::publishBool(const char *topic, const bool value)
 {
     _network->publishBool(_mqttPath, topic, value);
+}
+
+bool NetworkLock::publishString(const char *topic, const String &value)
+{
+    char str[value.length() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.begin(), value.length());
+    return publishString(topic, str);
+}
+
+bool NetworkLock::publishString(const char *topic, const std::string &value)
+{
+    char str[value.size() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.data(), value.length());
+    return publishString(topic, str);
 }
 
 bool NetworkLock::publishString(const char *topic, const char *value)

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <PubSubClient.h>
 #include "networkDevices/NetworkDevice.h"
 #include "networkDevices/WifiDevice.h"
 #include "networkDevices/W5500Device.h"
@@ -37,7 +36,7 @@ public:
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
 
-    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) override;
+    void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
@@ -46,6 +45,8 @@ private:
     void publishInt(const char* topic, const int value);
     void publishUInt(const char* topic, const unsigned int value);
     void publishBool(const char* topic, const bool value);
+    void publishString(const char* topic, const String& value);
+    void publishString(const char* topic, const std::string& value);
     void publishString(const char* topic, const char* value);
 
     void buildMqttPath(const char* path, char* outPath);

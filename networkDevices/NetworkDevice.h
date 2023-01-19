@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PubSubClient.h"
+#include "MqttClient.h"
 
 enum class ReconnectStatus
 {
@@ -16,7 +16,7 @@ public:
     : _hostname(hostname)
     {}
 
-    virtual PubSubClient* mqttClient() = 0;
+    virtual MqttClient* mqttClient() = 0;
 
     virtual void initialize() = 0;
     virtual ReconnectStatus reconnect() = 0;

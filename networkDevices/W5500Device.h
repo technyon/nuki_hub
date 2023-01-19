@@ -21,14 +21,14 @@ public:
 
     int8_t signalStrength() override;
 
-    virtual PubSubClient *mqttClient();
+    virtual MqttClient *mqttClient();
 
 private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
 
     EthernetClient* _ethClient = nullptr;
-    PubSubClient* _mqttClient = nullptr;
+    MqttClient* _mqttClient = nullptr;
     Preferences* _preferences = nullptr;
 
     int _maintainResult = 0;

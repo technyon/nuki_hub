@@ -43,14 +43,14 @@ public:
 
     void publishPresenceDetection(char* csv);
 
-    PubSubClient* mqttClient();
+    MqttClient* mqttClient();
     bool isMqttConnected();
 
     const NetworkDeviceType networkDeviceType();
 
 private:
-    static void onMqttDataReceivedCallback(char* topic, byte* payload, unsigned int length);
-    void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length);
+    static void onMqttDataReceivedCallback(int);
+    void onMqttDataReceived(int messageSize);
     void setupDevice();
     bool reconnect();
 

@@ -5,5 +5,5 @@
 class MqttReceiver
 {
 public:
-    virtual void onMqttDataReceived(char*& topic, byte*& payload, unsigned int& length) = 0;
+    virtual void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) = 0;
 };
