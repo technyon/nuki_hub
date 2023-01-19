@@ -176,8 +176,6 @@ void setup()
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
     }
 
-//    preferences->putBool(preference_lock_enabled, true);
-
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
