@@ -38,7 +38,10 @@ void networkTask(void *pvParameters)
             // Network Device and MQTT is connected. Process all updates.
             case 0:
             case 1:
-                networkOpener->update();
+                if(openerEnabled)
+                {
+                    networkOpener->update();
+                }
                 network->update();
                 webCfgServer->update();
                 break;
@@ -163,7 +166,6 @@ bool initPreferences()
 
 void setup()
 {
-
     Serial.begin(115200);
     Log = &Serial;
 
@@ -174,13 +176,20 @@ void setup()
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
     }
 
+    lockEnabled = preferences->getBool(preference_lock_enabled);
+    openerEnabled = preferences->getBool(preference_opener_enabled);
+
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
     network = new Network(preferences, mqttLockPath);
     network->initialize();
     networkLock = new NetworkLock(network, preferences);
     networkLock->initialize();
-    networkOpener = new NetworkOpener(network, preferences);
-    networkOpener->initialize();
+
+    if(openerEnabled)
+    {
+        networkOpener = new NetworkOpener(network, preferences);
+        networkOpener->initialize();
+    }
 
     uint32_t deviceId = preferences->getUInt(preference_deviceId);
     if(deviceId == 0)
@@ -193,9 +202,8 @@ void setup()
 
     bleScanner = new BleScanner::Scanner();
     bleScanner->initialize("NukiHub");
-    bleScanner->setScanDuration(10);
+    bleScanner->setScanDuration(3);
 
-    lockEnabled = preferences->getBool(preference_lock_enabled);
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
@@ -208,7 +216,6 @@ void setup()
         }
     }
 
-    openerEnabled = preferences->getBool(preference_opener_enabled);
     Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
     if(openerEnabled)
     {
