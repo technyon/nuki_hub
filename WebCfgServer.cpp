@@ -467,7 +467,7 @@ void WebCfgServer::buildHtml(String& response)
     {
         char lockstateArr[20];
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
-        printParameter(response, "NUKI Opener paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
+        printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
         printParameter(response, "NUKI Opener state", lockstateArr);
     }
     printParameter(response, "Firmware", version.c_str());
@@ -642,7 +642,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printCheckBox(response, "REGAPP", "Register as app (on: register as app, off: register as bridge; needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
-    if(_nuki->hasKeypad())
+    if(_nuki != nullptr && _nuki->hasKeypad())
     {
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
         printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
