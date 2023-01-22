@@ -45,6 +45,7 @@ void NukiOpenerWrapper::initialize()
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
+    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval);
 
     if(_intervalLockstate == 0)
     {
@@ -132,9 +133,9 @@ void NukiOpenerWrapper::update()
             setupHASS();
         }
     }
-    if(_nextRssiTs == 0 || ts > _nextRssiTs)
+    if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
     {
-        _nextRssiTs = ts + 3000;
+        _nextRssiTs = ts + _rssiPublishInterval;
 
         int rssi = _nukiOpener.getRssi();
         if(rssi != _lastRssi)

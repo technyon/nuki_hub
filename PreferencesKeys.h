@@ -17,6 +17,7 @@
 #define preference_mqtt_key "mqttkey"
 #define preference_mqtt_hass_discovery "hassdiscovery"
 #define preference_network_hardware_detect "nwhwdt"
+#define preference_rssi_publish_interval "rssipb"
 #define preference_hostname "hostname"
 #define preference_network_timeout "nettmout"
 #define preference_restart_on_disconnect "restdisc"

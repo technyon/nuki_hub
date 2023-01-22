@@ -77,11 +77,12 @@ private:
 
     bool _paired = false;
     bool _statusUpdated = false;
+    unsigned long _rssiPublishInterval = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _nextPairTs = 0;
-    unsigned long _nextRssiTs = 0;
+    long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
 };

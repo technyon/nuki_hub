@@ -80,13 +80,18 @@ void Network::setupDevice()
 void Network::initialize()
 {
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval);
 
     if(_hostname == "")
     {
         _hostname = "nukihub";
         _preferences->putString(preference_hostname, _hostname);
     }
-
+    if(_rssiPublishInterval == 0)
+    {
+        _rssiPublishInterval = -1;
+        _preferences->putInt(preference_rssi_publish_interval, _rssiPublishInterval);
+    }
     _device->initialize();
 
     Log->print(F("Host name: "));
@@ -205,15 +210,15 @@ int Network::update()
         _presenceCsv = nullptr;
     }
 
-    if(_device->signalStrength() != 127 && ts - _lastRssiTs > 2000)
+    if(_device->signalStrength() != 127 && _rssiPublishInterval > 0 && ts - _lastRssiTs > _rssiPublishInterval)
     {
+        _lastRssiTs = ts;
         int8_t rssi = _device->signalStrength();
 
         if(rssi != _lastRssi)
         {
             publishInt(_maintenancePathPrefix, mqtt_topic_wifi_rssi, _device->signalStrength());
             _lastRssi = rssi;
-            _lastRssiTs = ts;
         }
     }
 

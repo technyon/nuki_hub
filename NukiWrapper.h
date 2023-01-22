@@ -87,6 +87,7 @@ private:
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryCount = 0;
+    long _rssiPublishInterval = 0;
     unsigned long _nextRetryTs = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;

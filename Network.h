@@ -79,6 +79,7 @@ private:
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastRssiTs = 0;
+    long _rssiPublishInterval = 0;
 
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
 

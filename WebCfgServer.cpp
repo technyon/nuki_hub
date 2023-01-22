@@ -245,6 +245,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_network_hardware_detect, value.toInt());
             configChanged = true;
         }
+        else if(key == "RSSI")
+        {
+            _preferences->putInt(preference_rssi_publish_interval, value.toInt());
+            configChanged = true;
+        }
         else if(key == "HASSDISCOVERY")
         {
             if(_preferences->getString(preference_mqtt_hass_discovery) != value)
@@ -604,6 +609,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
     printDropDown(response, "NWHWDT", "Network hardware detection", String(_preferences->getInt(preference_network_hardware_detect)), getNetworkDetectionOptions());
+    printInputField(response, "RSSI", "RSSI Publish interval (milliseconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
