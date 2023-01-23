@@ -39,6 +39,7 @@ include_directories(${PROJECT_NAME}
 
 file(GLOB SRCFILES
         Pins.h
+        Config.h
         Network.cpp
         MqttReceiver.h
         NetworkLock.cpp

@@ -4,6 +4,7 @@
 #include "networkDevices/W5500Device.h"
 #include "networkDevices/WifiDevice.h"
 #include "Logger.h"
+#include "Config.h"
 
 
 Network* Network::_inst = nullptr;
@@ -133,6 +134,7 @@ void Network::initialize()
     Log->println(port);
 
     _device->mqttClient()->setId(_preferences->getString(preference_hostname));
+    _device->mqttClient()->setCleanSession(MQTT_CLEAN_SESSIONS);
 
     _networkTimeout = _preferences->getInt(preference_network_timeout);
     if(_networkTimeout == 0)
@@ -263,14 +265,14 @@ bool Network::reconnect()
             _device->mqttClient()->onMessage(Network::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {
-                _device->mqttClient()->subscribe(topic.c_str());
+                _device->mqttClient()->subscribe(topic.c_str(), MQTT_QOS_LEVEL);
             }
             if(_firstConnect)
             {
                 _firstConnect = false;
                 for(const auto& it : _initTopics)
                 {
-                    _device->mqttClient()->beginMessage(it.first, true);
+                    _device->mqttClient()->beginMessage(it.first, true, MQTT_QOS_LEVEL);
                     _device->mqttClient()->print(it.second);
                     _device->mqttClient()->endMessage();
                 }
@@ -490,7 +492,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/smartlock/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
 
@@ -516,7 +518,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/battery_low/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
 
@@ -542,7 +544,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/keypad_battery_low/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
         // Battery voltage
@@ -569,7 +571,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/battery_voltage/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
 
@@ -596,7 +598,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/trigger/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
     }
@@ -634,7 +636,7 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
         path.concat(uidString);
         path.concat("/battery_level/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
     }
@@ -671,7 +673,7 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
         path.concat(uidString);
         path.concat("/door_sensor/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
     }
@@ -707,7 +709,7 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
         path.concat(uidString);
         path.concat("/ring/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
     }
@@ -747,7 +749,7 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
         path.concat(uidString);
         path.concat("/wifi_signal_strength/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
     }
@@ -782,7 +784,7 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
         path.concat(uidString);
         path.concat("/bluetooth_signal_strength/config");
 
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print(configJSON);
         _device->mqttClient()->endMessage();
     }
@@ -798,7 +800,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/lock/");
         path.concat(uidString);
         path.concat("/smartlock/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -806,7 +808,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/battery_low/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -814,7 +816,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/battery_voltage/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -822,7 +824,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/trigger/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -830,7 +832,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/battery_level/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -838,7 +840,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/door_sensor/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -846,7 +848,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/ring/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -854,7 +856,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/wifi_signal_strength/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
 
@@ -862,7 +864,7 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/bluetooth_signal_strength/config");
-        _device->mqttClient()->beginMessage(path, true);
+        _device->mqttClient()->beginMessage(path, true, MQTT_QOS_LEVEL);
         _device->mqttClient()->print("");
         _device->mqttClient()->endMessage();
     }
