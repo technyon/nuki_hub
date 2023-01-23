@@ -237,7 +237,7 @@ int Network::update()
 
 bool Network::reconnect()
 {
-    _mqttConnected = false;
+    _mqttConnectionState = 0;
     int port = _preferences->getInt(preference_mqtt_broker_port);
 
     while (!_device->mqttClient()->connected() && millis() > _nextReconnect)
@@ -260,7 +260,7 @@ bool Network::reconnect()
         if (success)
         {
             Log->println(F("MQTT connected"));
-            _mqttConnected = true;
+            _mqttConnectionState = 1;
             delay(100);
             _device->mqttClient()->onMessage(Network::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
@@ -277,6 +277,12 @@ bool Network::reconnect()
                     _device->mqttClient()->endMessage();
                 }
             }
+            for(int i=0; i<10; i++)
+            {
+                _device->mqttClient()->poll();
+                delay(100);
+            }
+            _mqttConnectionState = 2;
         }
         else
         {
@@ -284,11 +290,11 @@ bool Network::reconnect()
             Log->println(_device->mqttClient()->connectError());
             _device->printError();
             _device->mqttClient()->stop();
-            _mqttConnected = false;
+            _mqttConnectionState = 0;
             _nextReconnect = millis() + 5000;
         }
     }
-    return _mqttConnected;
+    return _mqttConnectionState > 0;
 }
 
 void Network::subscribe(const char* prefix, const char *path)
@@ -382,9 +388,9 @@ void Network::disableAutoRestarts()
     _restartOnDisconnect = false;
 }
 
-bool Network::isMqttConnected()
+int Network::mqttConnectionState()
 {
-    return _mqttConnected;
+    return _mqttConnectionState;
 }
 
 

@@ -77,7 +77,7 @@ private:
 
     bool _paired = false;
     bool _statusUpdated = false;
-    unsigned long _rssiPublishInterval = 0;
+    long _rssiPublishInterval = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;

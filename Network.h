@@ -44,7 +44,7 @@ public:
     void publishPresenceDetection(char* csv);
 
     MqttClient* mqttClient();
-    bool isMqttConnected();
+    int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
 
     const NetworkDeviceType networkDeviceType();
 
@@ -60,7 +60,7 @@ private:
     Preferences* _preferences;
     String _hostname;
     NetworkDevice* _device = nullptr;
-    bool _mqttConnected = false;
+    int _mqttConnectionState = 0;
 
     unsigned long _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};

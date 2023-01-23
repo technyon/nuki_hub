@@ -81,14 +81,16 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
         value[i] = payload[i];
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
+    bool processActions = _network->mqttConnectionState() >= 2;
+
+    if(processActions && comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
     {
         Log->println(F("Restart requested via MQTT."));
         delay(200);
         ESP.restart();
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_lock_action))
+    if(processActions && comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
@@ -102,7 +104,7 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
         publishString(mqtt_topic_lock_action, success ? "ack" : "unknown_action");
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
+    if(processActions && comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
     {
         if(_keypadCommandReceivedReceivedCallback != nullptr)
         {

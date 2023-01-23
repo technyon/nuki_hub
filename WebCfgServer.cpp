@@ -460,7 +460,7 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<table>");
 
     printParameter(response, "Hostname", _hostname.c_str());
-    printParameter(response, "MQTT Connected", _network->isMqttConnected() ? "Yes" : "No");
+    printParameter(response, "MQTT Connected", _network->mqttConnectionState() > 0 ? "Yes" : "No");
     if(_nuki != nullptr)
     {
         char lockstateArr[20];

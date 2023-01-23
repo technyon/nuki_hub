@@ -67,7 +67,9 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
         value[i] = payload[i];
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_lock_action))
+    bool processActions = _network->mqttConnectionState() >= 2;
+
+    if(processActions && comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
