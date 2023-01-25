@@ -735,7 +735,9 @@ void WebCfgServer::buildHtmlHeader(String &response)
 {
     response.concat("<HTML><HEAD>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    response.concat("<link rel='stylesheet' href='/style.css'>");
+    response.concat("<style>");
+    response.concat(stylecss);
+    response.concat("</style>");
     response.concat("<TITLE>NUKI Hub</TITLE></HEAD><BODY>");
 }
 
