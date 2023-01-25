@@ -735,7 +735,7 @@ void WebCfgServer::buildHtmlHeader(String &response)
 {
     response.concat("<HTML><HEAD>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    response.concat("<link rel='stylesheet' href='/inter.css'><link rel='stylesheet' href='/new.css'>");
+    response.concat("<link rel='stylesheet' href='/new.css'>");
     response.concat("<TITLE>NUKI Hub</TITLE></HEAD><BODY>");
 }
 
@@ -942,7 +942,7 @@ void WebCfgServer::sendNewCss()
 void WebCfgServer::sendFontsInterMinCss()
 {
     // escaped by https://www.cescaper.com/
-    _server.send(200, "text/plain", intercss, sizeof(intercss));
+//    _server.send(200, "text/plain", intercss, sizeof(intercss));
 }
 
 void WebCfgServer::sendFavicon()
