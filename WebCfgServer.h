@@ -38,7 +38,6 @@ private:
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
     void sendCss();
-    void sendFontsInterMinCss();
     void sendFavicon();
     void processUnpair(bool opener);
 
