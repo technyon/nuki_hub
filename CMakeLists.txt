@@ -57,7 +57,6 @@ file(GLOB SRCFILES
         PreferencesKeys.h
         Gpio.cpp
         Logger.cpp
-        Version.h
 #        include/RTOS.h
         lib/WiFiManager/WiFiManager.cpp
         lib/Crc16/Crc16.h

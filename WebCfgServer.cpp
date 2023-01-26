@@ -1,9 +1,9 @@
 #include "WebCfgServer.h"
 #include "WebCfgServerConstants.h"
 #include "PreferencesKeys.h"
-#include "Version.h"
 #include "hardware/WifiEthServer.h"
 #include "Logger.h"
+#include "Config.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -449,7 +449,7 @@ void WebCfgServer::buildHtml(String& response)
 
     response.concat("<br><h3>Info</h3>\n");
 
-    String version = nuki_hub_version;
+    String version = NUKI_HUB_VERSION;
 
     response.concat("<table>");
 
