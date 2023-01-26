@@ -18,7 +18,7 @@ public:
     explicit Network(Preferences* preferences, const String& maintenancePathPrefix);
 
     void initialize();
-    int update();
+    bool update();
     void registerMqttReceiver(MqttReceiver* receiver);
     void reconfigureDevice();
     void setMqttPresencePath(char* path);

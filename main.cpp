@@ -31,24 +31,20 @@ void networkTask(void *pvParameters)
 {
     while(true)
     {
-        bool r = network->update();
+        bool connected = network->update();
 
-        switch(r)
+        if(connected)
         {
-            // Network Device and MQTT is connected. Process all updates.
-            case 0:
-            case 1:
-                if(openerEnabled)
-                {
-                    networkOpener->update();
-                }
-                network->update();
-                webCfgServer->update();
-                break;
-                // Neither Network Devicc or MQTT is connected. Call network to allow for a reconnect.
-            default:
-                network->update();
-                break;
+            if(openerEnabled)
+            {
+                networkOpener->update();
+            }
+            network->update();
+            webCfgServer->update();
+        }
+        else
+        {
+            network->update();
         }
 
         delay(200);

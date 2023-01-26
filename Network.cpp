@@ -144,7 +144,7 @@ void Network::initialize()
     }
 }
 
-int Network::update()
+bool Network::update()
 {
     unsigned long ts = millis();
 
@@ -179,11 +179,6 @@ int Network::update()
 
     }
 
-    if(!_device->isConnected())
-    {
-        return 2;
-    }
-
     if(!_device->mqttClient()->connected())
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
@@ -196,7 +191,7 @@ int Network::update()
         bool success = reconnect();
         if(!success)
         {
-            return 1;
+            return false;
         }
     }
 
@@ -233,7 +228,7 @@ int Network::update()
     }
 
     _device->mqttClient()->poll();
-    return 0;
+    return true;
 }
 
 bool Network::reconnect()
