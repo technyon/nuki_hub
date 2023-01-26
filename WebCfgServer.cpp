@@ -43,17 +43,11 @@ void WebCfgServer::initialize()
         buildHtml(response);
         _server.send(200, "text/html", response);
     });
-    _server.on("/new.css", [&]() {
+    _server.on("/style.css", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        sendNewCss();
-    });
-    _server.on("/inter.css", [&]() {
-        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
-            return _server.requestAuthentication();
-        }
-        sendFontsInterMinCss();
+        sendCss();
     });
     _server.on("/favicon.ico", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -735,7 +729,10 @@ void WebCfgServer::buildHtmlHeader(String &response)
 {
     response.concat("<HTML><HEAD>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    response.concat("<link rel='stylesheet' href='/inter.css'><link rel='stylesheet' href='/new.css'>");
+//    response.concat("<style>");
+//    response.concat(stylecss);
+//    response.concat("</style>");
+    response.concat("<link rel='stylesheet' href='/style.css'>");
     response.concat("<TITLE>NUKI Hub</TITLE></HEAD><BODY>");
 }
 
@@ -933,16 +930,10 @@ void WebCfgServer::handleOtaUpload()
     }
 }
 
-void WebCfgServer::sendNewCss()
+void WebCfgServer::sendCss()
 {
     // escaped by https://www.cescaper.com/
-    _server.send(200, "text/plain", newcss, sizeof(newcss));
-}
-
-void WebCfgServer::sendFontsInterMinCss()
-{
-    // escaped by https://www.cescaper.com/
-    _server.send(200, "text/plain", intercss, sizeof(intercss));
+    _server.send(200, "text/plain", stylecss, sizeof(stylecss));
 }
 
 void WebCfgServer::sendFavicon()
