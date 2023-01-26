@@ -93,9 +93,12 @@ void WifiDevice::initialize()
 
     if(_restartOnDisconnect)
     {
-        _wm.setDisconnectedCallback([&]()
+        WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
         {
-            onDisconnected();
+            if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
+            {
+                onDisconnected();
+            }
         });
     }
 }

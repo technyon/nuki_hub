@@ -59,6 +59,8 @@ file(GLOB SRCFILES
         Logger.cpp
 #        include/RTOS.h
         lib/WiFiManager/WiFiManager.cpp
+        lib/WiFiManager/wm_consts_en.h
+        lib/WiFiManager/wm_strings_en.h
         lib/Crc16/Crc16.h
         lib/nuki_ble/src/NukiBle.cpp
         lib/nuki_ble/src/NukiBle.hpp
