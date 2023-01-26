@@ -747,7 +747,7 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
         configJSON.concat(
                 "_wifi_signal_strength\",\"dev_cla\":\"signal_strength\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
         configJSON.concat(mqtt_topic_wifi_rssi);
-        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"dB\"");
+        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"dBm\"");
         configJSON.concat("}");
 
         String path = discoveryTopic;
@@ -779,10 +779,9 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
         configJSON.concat(name);
         configJSON.concat(" bluetooth signal strength\",\"unique_id\":\"");
         configJSON.concat(uidString);
-        configJSON.concat(
-                "_bluetooth_signal_strength\",\"dev_cla\":\"signal_strength\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
+        configJSON.concat("_bluetooth_signal_strength\",\"dev_cla\":\"signal_strength\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
         configJSON.concat(mqtt_topic_lock_rssi);
-        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"dB\"");
+        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"dBsm\"");
         configJSON.concat("}");
 
         String path = discoveryTopic;
