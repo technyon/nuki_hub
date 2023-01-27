@@ -1,10 +1,9 @@
 #include "NetworkOpener.h"
-#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
-#include "Pins.h"
 #include "Logger.h"
+#include "Config.h"
 
 NetworkOpener::NetworkOpener(Network* network, Preferences* preferences)
         : _preferences(preferences),
@@ -483,7 +482,7 @@ void NetworkOpener::subscribe(const char *path)
 {
     char prefixedPath[500];
     buildMqttPath(path, prefixedPath);
-    _network->mqttClient()->subscribe(prefixedPath);
+    _network->mqttClient()->subscribe(prefixedPath, MQTT_QOS_LEVEL);
 }
 
 bool NetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPath)

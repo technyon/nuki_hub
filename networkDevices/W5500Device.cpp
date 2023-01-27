@@ -39,7 +39,7 @@ void W5500Device::initialize()
 
     Ethernet.init(ETHERNET_CS_PIN);
     _ethClient = new EthernetClient();
-    _mqttClient = new MqttClient(*_ethClient);
+    _mqttClient = new espMqttClientEthernet(_ethClient);
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
@@ -142,10 +142,6 @@ void W5500Device::printError()
     Log->println(ESP.getFreeHeap());
 }
 
-MqttClient *W5500Device::mqttClient()
-{
-    return _mqttClient;
-}
 
 bool W5500Device::isConnected()
 {
@@ -188,3 +184,9 @@ int8_t W5500Device::signalStrength()
 {
     return 127;
 }
+
+MqttClientSetup *W5500Device::mqttClient()
+{
+    return _mqttClient;
+}
+

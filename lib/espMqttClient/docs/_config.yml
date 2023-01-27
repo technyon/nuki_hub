@@ -1,0 +1,6 @@
+theme: jekyll-theme-cayman
+title: espMqttClient
+description: |
+  MQTT client library for the Espressif devices ESP8266 and ESP32 on the Arduino framework.
+  Aims to be a non-blocking fully compliant MQTT 3.1.1 client.
+show_downloads: false

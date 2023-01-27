@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NetworkDevice.h"
+#include "espMqttClient.h"
 #include <Ethernet.h>
 #include <Preferences.h>
 
@@ -21,14 +22,14 @@ public:
 
     int8_t signalStrength() override;
 
-    virtual MqttClient *mqttClient();
+    virtual MqttClientSetup* mqttClient();
 
 private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
 
     EthernetClient* _ethClient = nullptr;
-    MqttClient* _mqttClient = nullptr;
+    MqttClientSetup* _mqttClient = nullptr;
     Preferences* _preferences = nullptr;
 
     int _maintainResult = 0;

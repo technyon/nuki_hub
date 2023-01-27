@@ -3,6 +3,7 @@
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../MqttTopics.h"
+#include "espMqttClient.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
@@ -31,12 +32,13 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
             _wifiClientSecure->setCertificate(_cert);
             _wifiClientSecure->setPrivateKey(_key);
         }
-        _mqttClient = new MqttClient(*_wifiClientSecure);
+        // TODO
+//        _mqttClient = new espMqttClient(*_wifiClientSecure);
     } else
     {
         Log->println(F("MQTT without TLS."));
         _wifiClient = new WiFiClient();
-        _mqttClient = new MqttClient(*_wifiClient);
+        _mqttClient = new espMqttClient(_wifiClient);
     }
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
@@ -49,11 +51,6 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*_mqttClient, _path, MqttLoggerMode::MqttAndSerial);
     }
-}
-
-MqttClient *WifiDevice::mqttClient()
-{
-    return _mqttClient;
 }
 
 void WifiDevice::initialize()
@@ -151,4 +148,9 @@ int8_t WifiDevice::signalStrength()
 void WifiDevice::clearRtcInitVar(WiFiManager *)
 {
     memset(WiFiDevice_reconfdetect, 0, sizeof WiFiDevice_reconfdetect);
+}
+
+MqttClientSetup *WifiDevice::mqttClient()
+{
+    return _mqttClient;
 }
