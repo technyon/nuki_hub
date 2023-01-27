@@ -569,7 +569,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         configJSON.concat(
                 "_battery_voltage\",\"dev_cla\":\"voltage\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
         configJSON.concat(mqtt_topic_battery_voltage);
-        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"V\"");
+        configJSON.concat("\",\"stat_cla\":\"measurement\",\"unit_of_meas\":\"V\"");
         configJSON.concat("}");
 
         path = discoveryTopic;
@@ -634,7 +634,7 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
         configJSON.concat(
                 "_battery_level\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
         configJSON.concat(mqtt_topic_battery_level);
-        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"%\"");
+        configJSON.concat("\",\"stat_cla\":\"measurement\",\"unit_of_meas\":\"%\"");
         configJSON.concat("}");
 
         String path = discoveryTopic;
@@ -747,7 +747,7 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
         configJSON.concat(
                 "_wifi_signal_strength\",\"dev_cla\":\"signal_strength\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
         configJSON.concat(mqtt_topic_wifi_rssi);
-        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"dBm\"");
+        configJSON.concat("\",\"stat_cla\":\"measurement\",\"unit_of_meas\":\"dBm\"");
         configJSON.concat("}");
 
         String path = discoveryTopic;
@@ -781,7 +781,7 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
         configJSON.concat(uidString);
         configJSON.concat("_bluetooth_signal_strength\",\"dev_cla\":\"signal_strength\",\"ent_cat\":\"diagnostic\",\"stat_t\":\"~");
         configJSON.concat(mqtt_topic_lock_rssi);
-        configJSON.concat("\",\"state_cla\":\"measurement\",\"unit_of_meas\":\"dBsm\"");
+        configJSON.concat("\",\"stat_cla\":\"measurement\",\"unit_of_meas\":\"dBm\"");
         configJSON.concat("}");
 
         String path = discoveryTopic;
