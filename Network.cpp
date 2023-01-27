@@ -144,7 +144,7 @@ void Network::initialize()
     }
 }
 
-int Network::update()
+bool Network::update()
 {
     unsigned long ts = millis();
 
@@ -179,27 +179,23 @@ int Network::update()
 
     }
 
-    if(!_device->isConnected())
+    if(!_device->mqttClient()->connected())
     {
-        if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000))
+        if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
         {
             Log->println("Network timeout has been reached, restarting ...");
             delay(200);
             ESP.restart();
         }
-        return 2;
-    }
 
-    _lastConnectedTs = ts;
-
-    if(!_device->mqttClient()->connected())
-    {
         bool success = reconnect();
         if(!success)
         {
-            return 1;
+            return false;
         }
     }
+
+    _lastConnectedTs = ts;
 
     if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
     {
@@ -232,7 +228,7 @@ int Network::update()
     }
 
     _device->mqttClient()->poll();
-    return 0;
+    return true;
 }
 
 bool Network::reconnect()
