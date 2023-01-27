@@ -58,19 +58,14 @@ void NetworkOpener::update()
 
 void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
-    char value[50] = {0};
-    size_t l = min(length, sizeof(value)-1);
-
-    for(int i=0; i<l; i++)
-    {
-        value[i] = payload[i];
-    }
+    char* value = (char*)payload;
 
     bool processActions = _network->mqttConnectionState() >= 2;
 
     if(processActions && comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
-        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
+        Serial.println(value);
+        if(strcmp((char*)payload, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
         Log->print(F("Opener lock action received: "));
         Log->println(value);
@@ -489,5 +484,6 @@ bool NetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPat
 {
     char prefixedPath[500];
     buildMqttPath(subPath, prefixedPath);
+
     return strcmp(fullPath, prefixedPath) == 0;
 }

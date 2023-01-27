@@ -280,11 +280,7 @@ bool Network::reconnect()
                     _device->mqttClient()->publish(it.first.c_str(), MQTT_QOS_LEVEL, true, it.second.c_str());
                 }
             }
-            for(int i=0; i<10; i++)
-            {
-//                _device->mqttClient()->poll();
-                delay(100);
-            }
+            delay(1000);
             _mqttConnectionState = 2;
         }
         else
@@ -292,7 +288,6 @@ bool Network::reconnect()
             Log->print(F("MQTT connect failed, rc="));
 //            Log->println(_device->mqttClient()->connectError());
             _device->printError();
-//            _device->mqttClient()->stop();
             _mqttConnectionState = 0;
             _nextReconnect = millis() + 5000;
         }
@@ -345,7 +340,15 @@ void Network::registerMqttReceiver(MqttReceiver* receiver)
 
 void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
-    _inst->onMqttDataReceived(properties, topic, payload, len, index, total);
+    uint8_t value[50] = {0};
+    size_t l = min(len, sizeof(value)-1);
+
+    for(int i=0; i<l; i++)
+    {
+        value[i] = payload[i];
+    }
+
+    _inst->onMqttDataReceived(properties, topic, value, len, index, total);
 }
 
 void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
