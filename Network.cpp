@@ -83,6 +83,8 @@ void Network::initialize()
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval);
 
+    _hostname = _preferences->getString(preference_hostname);
+
     if(_hostname == "")
     {
         _hostname = "nukihub";
@@ -93,6 +95,7 @@ void Network::initialize()
         _rssiPublishInterval = -1;
         _preferences->putInt(preference_rssi_publish_interval, _rssiPublishInterval);
     }
+    strcpy(_hostnameArr, _hostname.c_str());
     _device->initialize();
 
     Log->print(F("Host name: "));
@@ -133,8 +136,8 @@ void Network::initialize()
     Log->print(F(":"));
     Log->println(port);
 
-    // TODO
-//    _device->mqttClient()->setId(_preferences->getString(preference_hostname));
+    _device->mqttClient()->setClientId(_hostnameArr);
+    _device->mqttClient()->setCleanSession(MQTT_CLEAN_SESSIONS);
 
     _networkTimeout = _preferences->getInt(preference_network_timeout);
     if(_networkTimeout == 0)

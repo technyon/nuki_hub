@@ -59,6 +59,7 @@ private:
     static Network* _inst;
     Preferences* _preferences;
     String _hostname;
+    char _hostnameArr[101] = {0};
     NetworkDevice* _device = nullptr;
     int _mqttConnectionState = 0;
 

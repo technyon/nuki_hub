@@ -64,7 +64,6 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
 
     if(processActions && comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
-        Serial.println(value);
         if(strcmp((char*)payload, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
         Log->print(F("Opener lock action received: "));
