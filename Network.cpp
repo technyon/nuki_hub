@@ -81,7 +81,7 @@ void Network::setupDevice()
 void Network::initialize()
 {
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
-    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval);
+    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
     _hostname = _preferences->getString(preference_hostname);
 
