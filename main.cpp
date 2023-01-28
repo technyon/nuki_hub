@@ -45,6 +45,7 @@ void networkTask(void *pvParameters)
         else
         {
             network->update();
+            webCfgServer->update();
         }
 
         delay(200);
