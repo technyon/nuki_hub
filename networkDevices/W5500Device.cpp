@@ -38,8 +38,6 @@ void W5500Device::initialize()
     resetDevice();
 
     Ethernet.init(ETHERNET_CS_PIN);
-    _ethClient = new EthernetClient();
-    _mqttClient = new espMqttClientEthernet(_ethClient);
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
@@ -49,7 +47,7 @@ void W5500Device::initialize()
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*_mqttClient, _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
     }
 
     reconnect();
@@ -185,8 +183,52 @@ int8_t W5500Device::signalStrength()
     return 127;
 }
 
-MqttClientSetup *W5500Device::mqttClient()
+void W5500Device::mqttSetClientId(const char *clientId)
 {
-    return _mqttClient;
+    _mqttClient.setClientId(clientId);
 }
 
+void W5500Device::mqttSetCleanSession(bool cleanSession)
+{
+    _mqttClient.setCleanSession(cleanSession);
+}
+
+uint16_t W5500Device::mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload)
+{
+    return _mqttClient.publish(topic, qos, retain, payload);
+}
+
+bool W5500Device::mqttConnected() const
+{
+    return _mqttClient.connected();
+}
+
+void W5500Device::mqttSetServer(const char *host, uint16_t port)
+{
+    _mqttClient.setServer(host, port);
+}
+
+bool W5500Device::mqttConnect()
+{
+    return _mqttClient.connect();
+}
+
+void W5500Device::mqttSetCredentials(const char *username, const char *password)
+{
+    _mqttClient.setCredentials(username, password);
+}
+
+void W5500Device::mqttOnMessage(espMqttClientTypes::OnMessageCallback callback)
+{
+    _mqttClient.onMessage(callback);
+}
+
+uint16_t W5500Device::mqttSubscribe(const char *topic, uint8_t qos)
+{
+    return _mqttClient.subscribe(topic, qos);
+}
+
+uint16_t W5500Device::mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length)
+{
+    return _mqttClient.publish(topic, qos, retain, payload, length);
+}

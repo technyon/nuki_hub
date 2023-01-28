@@ -49,6 +49,8 @@ file(GLOB SRCFILES
         networkDevices/NetworkDevice.h
         networkDevices/WifiDevice.cpp
         networkDevices/W5500Device.cpp
+        networkDevices/ClientSyncEthernet.cpp
+        networkDevices/espMqttClientEthernet.cpp
         NukiWrapper.cpp
         NukiOpenerWrapper.cpp
         MqttTopics.h

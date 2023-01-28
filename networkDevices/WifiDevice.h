@@ -5,6 +5,7 @@
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #include "WiFiManager.h"
+#include "espMqttClient.h"
 
 class WifiDevice : public NetworkDevice
 {
@@ -22,7 +23,25 @@ public:
 
     int8_t signalStrength() override;
 
-    MqttClientSetup *mqttClient() override;
+    void mqttSetClientId(const char *clientId) override;
+
+    void mqttSetCleanSession(bool cleanSession) override;
+
+    uint16_t mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload) override;
+
+    uint16_t mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length) override;
+
+    bool mqttConnected() const override;
+
+    void mqttSetServer(const char *host, uint16_t port) override;
+
+    bool mqttConnect() override;
+
+    void mqttSetCredentials(const char *username, const char *password) override;
+
+    void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback) override;
+
+    uint16_t mqttSubscribe(const char *topic, uint8_t qos) override;
 
 private:
     static void clearRtcInitVar(WiFiManager*);
@@ -30,13 +49,13 @@ private:
     void onDisconnected();
 
     WiFiManager _wm;
-    WiFiClient* _wifiClient = nullptr;
-    WiFiClientSecure* _wifiClientSecure = nullptr;
-    MqttClientSetup* _mqttClient = nullptr;
-//    SpiffsCookie _cookie;
+    espMqttClient* _mqttClient = nullptr;
+    espMqttClientSecure* _mqttClientSecure = nullptr;
+
     bool _restartOnDisconnect = false;
     bool _startAp = false;
     char* _path;
+    bool _useEncryption = false;
 
     char _ca[TLS_CA_MAX_SIZE];
     char _cert[TLS_CERT_MAX_SIZE];

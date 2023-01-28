@@ -13,65 +13,65 @@ the LICENSE file.
 
 namespace espMqttClientInternals {
 
-    ClientSyncEthernet::ClientSyncEthernet(EthernetClient* ethernetClient)
-            : client(ethernetClient) {
+    ClientSyncEthernet::ClientSyncEthernet()
+            : client() {
         // empty
     }
 
     bool ClientSyncEthernet::connect(IPAddress ip, uint16_t port) {
-        bool ret = client->connect(ip, port);  // implicit conversion of return code int --> bool
+        bool ret = client.connect(ip, port);  // implicit conversion of return code int --> bool
         if (ret) {
 #if defined(ARDUINO_ARCH_ESP8266)
-            client->setNoDelay(true);
+            client.setNoDelay(true);
 #elif defined(ARDUINO_ARCH_ESP32)
             // Set TCP option directly to bypass lack of working setNoDelay for WiFiClientSecure (for consistency also here)
             int val = true;
 
             // TODO
-//            client->setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
+//            client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
 #endif
         }
         return ret;
     }
 
     bool ClientSyncEthernet::connect(const char* host, uint16_t port) {
-        bool ret = client->connect(host, port);  // implicit conversion of return code int --> bool
+        bool ret = client.connect(host, port);  // implicit conversion of return code int --> bool
         if (ret) {
 #if defined(ARDUINO_ARCH_ESP8266)
-            client->setNoDelay(true);
+            client.setNoDelay(true);
 #elif defined(ARDUINO_ARCH_ESP32)
             // Set TCP option directly to bypass lack of working setNoDelay for WiFiClientSecure (for consistency also here)
             int val = true;
 
             // TODO
-//            client->setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
+//            client.setSocketOption(IPPROTO_TCP, TCP_NODELAY, &val, sizeof(int));
 #endif
         }
         return ret;
     }
 
     size_t ClientSyncEthernet::write(const uint8_t* buf, size_t size) {
-        return client->write(buf, size);
+        return client.write(buf, size);
     }
 
     int ClientSyncEthernet::available() {
-        return client->available();
+        return client.available();
     }
 
     int ClientSyncEthernet::read(uint8_t* buf, size_t size) {
-        return client->read(buf, size);
+        return client.read(buf, size);
     }
 
     void ClientSyncEthernet::stop() {
-        client->stop();
+        client.stop();
     }
 
     bool ClientSyncEthernet::connected() {
-        return client->connected();
+        return client.connected();
     }
 
     bool ClientSyncEthernet::disconnected() {
-        return !client->connected();
+        return !client.connected();
     }
 
 }  // namespace espMqttClientInternals

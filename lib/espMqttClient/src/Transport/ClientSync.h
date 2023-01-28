@@ -18,7 +18,7 @@ namespace espMqttClientInternals {
 
 class ClientSync : public Transport {
  public:
-  ClientSync(WiFiClient* wiFiClient);
+  ClientSync();
   bool connect(IPAddress ip, uint16_t port) override;
   bool connect(const char* host, uint16_t port) override;
   size_t write(const uint8_t* buf, size_t size) override;
@@ -27,7 +27,7 @@ class ClientSync : public Transport {
   void stop() override;
   bool connected() override;
   bool disconnected() override;
-  WiFiClient* client;
+  WiFiClient client;
 };
 
 }  // namespace espMqttClientInternals

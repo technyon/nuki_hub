@@ -136,8 +136,8 @@ void Network::initialize()
     Log->print(F(":"));
     Log->println(port);
 
-    _device->mqttClient()->setClientId(_hostnameArr);
-    _device->mqttClient()->setCleanSession(MQTT_CLEAN_SESSIONS);
+    _device->mqttSetClientId(_hostnameArr);
+    _device->mqttSetCleanSession(MQTT_CLEAN_SESSIONS);
 
     _networkTimeout = _preferences->getInt(preference_network_timeout);
     if(_networkTimeout == 0)
@@ -182,7 +182,7 @@ bool Network::update()
 
     }
 
-    if(!_device->mqttClient()->connected())
+    if(!_device->mqttConnected())
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
         {
@@ -238,7 +238,7 @@ bool Network::reconnect()
     _mqttConnectionState = 0;
     int port = _preferences->getInt(preference_mqtt_broker_port);
 
-    while (!_device->mqttClient()->connected() && millis() > _nextReconnect)
+    while (!_device->mqttConnected() && millis() > _nextReconnect)
     {
         if(strcmp(_mqttBrokerAddr, "") == 0)
         {
@@ -252,23 +252,23 @@ bool Network::reconnect()
         if(strlen(_mqttUser) == 0)
         {
             Log->println(F("MQTT: Connecting without credentials"));
-            _device->mqttClient()->setServer(_mqttBrokerAddr, port);
-            _device->mqttClient()->connect();
+            _device->mqttSetServer(_mqttBrokerAddr, port);
+            _device->mqttConnect();
         }
         else
         {
             Log->print(F("MQTT: Connecting with user: ")); Log->println(_mqttUser);
-            _device->mqttClient()->setCredentials(_mqttUser, _mqttPass);
-            _device->mqttClient()->setServer(_mqttBrokerAddr, port);
-            _device->mqttClient()->connect();
+            _device->mqttSetCredentials(_mqttUser, _mqttPass);
+            _device->mqttSetServer(_mqttBrokerAddr, port);
+            _device->mqttConnect();
         }
 
-        bool connected = _device->mqttClient()->connected();
+        bool connected = _device->mqttConnected();
         unsigned long timeout = millis() + 5000;
 
         while(!connected && millis() < timeout)
         {
-            connected = _device->mqttClient()->connected();
+            connected = _device->mqttConnected();
             delay(200);
         }
 
@@ -279,17 +279,17 @@ bool Network::reconnect()
             delay(100);
 
             // TODO
-            _device->mqttClient()->onMessage(Network::onMqttDataReceivedCallback);
+            _device->mqttOnMessage(Network::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {
-                _device->mqttClient()->subscribe(topic.c_str(), MQTT_QOS_LEVEL);
+                _device->mqttSubscribe(topic.c_str(), MQTT_QOS_LEVEL);
             }
             if(_firstConnect)
             {
                 _firstConnect = false;
                 for(const auto& it : _initTopics)
                 {
-                    _device->mqttClient()->publish(it.first.c_str(), MQTT_QOS_LEVEL, true, it.second.c_str());
+                    _device->mqttPublish(it.first.c_str(), MQTT_QOS_LEVEL, true, it.second.c_str());
                 }
             }
             delay(1000);
@@ -371,11 +371,6 @@ void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& pr
     }
 }
 
-MqttClientSetup *Network::mqttClient()
-{
-    return _device->mqttClient();
-}
-
 void Network::reconfigureDevice()
 {
     _device->reconfigure();
@@ -405,7 +400,7 @@ void Network::publishFloat(const char* prefix, const char* topic, const float va
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
     buildMqttPath(prefix, topic, path);
-    _device->mqttClient()->publish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
 void Network::publishInt(const char* prefix, const char *topic, const int value)
@@ -414,7 +409,7 @@ void Network::publishInt(const char* prefix, const char *topic, const int value)
     itoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(prefix, topic, path);
-    _device->mqttClient()->publish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
 void Network::publishUInt(const char* prefix, const char *topic, const unsigned int value)
@@ -423,7 +418,7 @@ void Network::publishUInt(const char* prefix, const char *topic, const unsigned 
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(prefix, topic, path);
-    _device->mqttClient()->publish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
 void Network::publishULong(const char* prefix, const char *topic, const unsigned long value)
@@ -432,7 +427,7 @@ void Network::publishULong(const char* prefix, const char *topic, const unsigned
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(prefix, topic, path);
-    _device->mqttClient()->publish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
 void Network::publishBool(const char* prefix, const char *topic, const bool value)
@@ -441,14 +436,14 @@ void Network::publishBool(const char* prefix, const char *topic, const bool valu
     str[0] = value ? '1' : '0';
     char path[200] = {0};
     buildMqttPath(prefix, topic, path);
-    _device->mqttClient()->publish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
 bool Network::publishString(const char* prefix, const char *topic, const char *value)
 {
     char path[200] = {0};
     buildMqttPath(prefix, topic, path);
-    return _device->mqttClient()->publish(path, MQTT_QOS_LEVEL, true, value) > 0;
+    return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
 }
 
 void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
@@ -490,7 +485,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/smartlock/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
 
         // Battery critical
         configJSON = "{\"dev\":{\"ids\":[\"nuki_";
@@ -514,7 +509,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/battery_low/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
 
         // Keypad battery critical
         configJSON = "{\"dev\":{\"ids\":[\"nuki_";
@@ -538,7 +533,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/keypad_battery_low/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
 
         // Battery voltage
         configJSON = "{\"dev\":{\"ids\":[\"nuki_";
@@ -564,7 +559,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/battery_voltage/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
 
         // Trigger
         configJSON = "{\"dev\":{\"ids\":[\"nuki_";
@@ -589,7 +584,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat(uidString);
         path.concat("/trigger/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
     }
 }
 
@@ -625,7 +620,7 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
         path.concat(uidString);
         path.concat("/battery_level/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
     }
 }
 
@@ -660,7 +655,7 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
         path.concat(uidString);
         path.concat("/door_sensor/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
     }
 }
 
@@ -694,7 +689,7 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
         path.concat(uidString);
         path.concat("/ring/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
     }
 }
 
@@ -732,7 +727,7 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
         path.concat(uidString);
         path.concat("/wifi_signal_strength/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
     }
 }
 
@@ -764,7 +759,7 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
         path.concat(uidString);
         path.concat("/bluetooth_signal_strength/config");
 
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
     }
 }
 
@@ -778,55 +773,55 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/lock/");
         path.concat(uidString);
         path.concat("/smartlock/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/battery_low/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/battery_voltage/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/trigger/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/battery_level/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/door_sensor/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/ring/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/wifi_signal_strength/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/bluetooth_signal_strength/config");
-        _device->mqttClient()->publish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
     }
 }
 
@@ -838,4 +833,9 @@ void Network::publishPresenceDetection(char *csv)
 const NetworkDeviceType Network::networkDeviceType()
 {
     return _networkDeviceType;
+}
+
+uint16_t Network::subscribe(const char *topic, uint8_t qos)
+{
+    return _device->mqttSubscribe(topic, qos);
 }

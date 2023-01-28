@@ -476,7 +476,7 @@ void NetworkOpener::subscribe(const char *path)
 {
     char prefixedPath[500];
     buildMqttPath(path, prefixedPath);
-    _network->mqttClient()->subscribe(prefixedPath, MQTT_QOS_LEVEL);
+    _network->subscribe(prefixedPath, MQTT_QOS_LEVEL);
 }
 
 bool NetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPath)
