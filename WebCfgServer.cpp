@@ -568,7 +568,7 @@ void WebCfgServer::buildOtaHtml(String &response)
 
     response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
-    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about a minute, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
+    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");
     response.concat("	var button = document.getElementById(\"submitbtn\");");
@@ -576,7 +576,7 @@ void WebCfgServer::buildOtaHtml(String &response)
     response.concat("	function hideshow() {");
     response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
     response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response.concat("		setTimeout(\"location.href = '/';\",60000);");
+    response.concat("		setTimeout(\"location.href = '/';\",120000);");
     response.concat("	}");
     response.concat("});");
     response.concat("</script>");
