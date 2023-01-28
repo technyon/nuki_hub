@@ -263,8 +263,6 @@ bool Network::reconnect()
             _device->mqttClient()->connect();
         }
 
-        delay(200);
-
         bool connected = _device->mqttClient()->connected();
         unsigned long timeout = millis() + 5000;
 
