@@ -18,9 +18,9 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
     size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
     size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
 
-    _useEncryption = caLength > 1;
+    _useEncryption = caLength > 1;  // length is 1 when empty
 
-    if(_useEncryption > 1) // length is 1 when empty
+    if(_useEncryption)
     {
         Log->println(F("MQTT over TLS."));
         Log->println(_ca);

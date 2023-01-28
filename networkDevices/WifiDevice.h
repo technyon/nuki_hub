@@ -57,7 +57,7 @@ private:
     char* _path;
     bool _useEncryption = false;
 
-    char _ca[TLS_CA_MAX_SIZE];
-    char _cert[TLS_CERT_MAX_SIZE];
-    char _key[TLS_KEY_MAX_SIZE];
+    char _ca[TLS_CA_MAX_SIZE] = {0};
+    char _cert[TLS_CERT_MAX_SIZE] = {0};
+    char _key[TLS_KEY_MAX_SIZE] = {0};
 };
