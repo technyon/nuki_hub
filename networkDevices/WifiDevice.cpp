@@ -32,8 +32,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
             _wifiClientSecure->setCertificate(_cert);
             _wifiClientSecure->setPrivateKey(_key);
         }
-        // TODO
-//        _mqttClient = new espMqttClient(*_wifiClientSecure);
+        _mqttClient = new espMqttClientSecure(_wifiClientSecure);
     } else
     {
         Log->println(F("MQTT without TLS."));

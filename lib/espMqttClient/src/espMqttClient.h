@@ -41,7 +41,7 @@ protected:
 class espMqttClientSecure : public MqttClientSetup {
 public:
 #if defined(ARDUINO_ARCH_ESP32)
-    explicit espMqttClientSecure(uint8_t priority = 1, uint8_t core = 1);
+    explicit espMqttClientSecure(WiFiClientSecure* wiFiClient, uint8_t priority = 1, uint8_t core = 1);
 #else
     espMqttClientSecure();
 #endif
