@@ -240,24 +240,32 @@ bool Network::reconnect()
 
     while (!_device->mqttClient()->connected() && millis() > _nextReconnect)
     {
+        if(strcmp(_mqttBrokerAddr, "") == 0)
+        {
+            Log->println(F("MQTT Broker not configured, aborting connection attempt."));
+            _nextReconnect = millis() + 5000;
+            return false;
+        }
+
         Log->println(F("Attempting MQTT connection"));
-        bool success = false;
 
         if(strlen(_mqttUser) == 0)
         {
             Log->println(F("MQTT: Connecting without credentials"));
             _device->mqttClient()->setServer(_mqttBrokerAddr, port);
-            success = _device->mqttClient()->connect();
+            _device->mqttClient()->connect();
         }
         else
         {
             Log->print(F("MQTT: Connecting with user: ")); Log->println(_mqttUser);
             _device->mqttClient()->setCredentials(_mqttUser, _mqttPass);
             _device->mqttClient()->setServer(_mqttBrokerAddr, port);
-            success = _device->mqttClient()->connect();
+            _device->mqttClient()->connect();
         }
 
-        if (success)
+        delay(200);
+
+        if (_device->mqttClient()->connected())
         {
             Log->println(F("MQTT connected"));
             _mqttConnectionState = 1;
