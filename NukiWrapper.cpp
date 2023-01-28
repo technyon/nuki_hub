@@ -50,7 +50,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
-    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval);
+    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
     if(firstStart)
     {

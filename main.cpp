@@ -32,20 +32,11 @@ void networkTask(void *pvParameters)
     while(true)
     {
         bool connected = network->update();
-
-        if(connected)
+        if(connected && openerEnabled)
         {
-            if(openerEnabled)
-            {
-                networkOpener->update();
-            }
-            network->update();
-            webCfgServer->update();
+            networkOpener->update();
         }
-        else
-        {
-            network->update();
-        }
+        webCfgServer->update();
 
         delay(200);
     }

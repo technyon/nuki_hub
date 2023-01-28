@@ -43,14 +43,16 @@ public:
 
     void publishPresenceDetection(char* csv);
 
-    MqttClient* mqttClient();
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
+    bool encryptionSupported();
 
     const NetworkDeviceType networkDeviceType();
 
+    uint16_t subscribe(const char* topic, uint8_t qos);
+
 private:
-    static void onMqttDataReceivedCallback(int);
-    void onMqttDataReceived(int messageSize);
+    static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
+    void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void setupDevice();
     bool reconnect();
 
@@ -59,6 +61,7 @@ private:
     static Network* _inst;
     Preferences* _preferences;
     String _hostname;
+    char _hostnameArr[101] = {0};
     NetworkDevice* _device = nullptr;
     int _mqttConnectionState = 0;
 

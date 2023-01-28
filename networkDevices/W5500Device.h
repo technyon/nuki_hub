@@ -1,6 +1,8 @@
 #pragma once
 
 #include "NetworkDevice.h"
+#include "espMqttClient.h"
+#include "espMqttClientEthernet.h"
 #include <Ethernet.h>
 #include <Preferences.h>
 
@@ -15,20 +17,39 @@ public:
     virtual void reconfigure();
     virtual void printError();
 
+    bool supportsEncryption() override;
+
     virtual void update();
 
     virtual bool isConnected();
 
     int8_t signalStrength() override;
 
-    virtual MqttClient *mqttClient();
+    void mqttSetClientId(const char *clientId) override;
+
+    void mqttSetCleanSession(bool cleanSession) override;
+
+    uint16_t mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload) override;
+
+    uint16_t mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length) override;
+
+    bool mqttConnected() const override;
+
+    void mqttSetServer(const char *host, uint16_t port) override;
+
+    bool mqttConnect() override;
+
+    void mqttSetCredentials(const char *username, const char *password) override;
+
+    void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback) override;
+
+    uint16_t mqttSubscribe(const char *topic, uint8_t qos) override;
 
 private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
 
-    EthernetClient* _ethClient = nullptr;
-    MqttClient* _mqttClient = nullptr;
+    espMqttClientEthernet _mqttClient;
     Preferences* _preferences = nullptr;
 
     int _maintainResult = 0;

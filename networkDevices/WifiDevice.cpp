@@ -3,6 +3,7 @@
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../MqttTopics.h"
+#include "espMqttClient.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
@@ -17,26 +18,26 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
     size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
     size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
 
-    if(caLength > 1) // length is 1 when empty
+    _useEncryption = caLength > 1;  // length is 1 when empty
+
+    if(_useEncryption)
     {
         Log->println(F("MQTT over TLS."));
         Log->println(_ca);
-        _wifiClientSecure = new WiFiClientSecure();
-        _wifiClientSecure->setCACert(_ca);
+        _mqttClientSecure = new espMqttClientSecure();
+        _mqttClientSecure->setCACert(_ca);
         if(crtLength > 1 && keyLength > 1) // length is 1 when empty
         {
             Log->println(F("MQTT with client certificate."));
             Log->println(_cert);
             Log->println(_key);
-            _wifiClientSecure->setCertificate(_cert);
-            _wifiClientSecure->setPrivateKey(_key);
+            _mqttClientSecure->setCertificate(_cert);
+            _mqttClientSecure->setPrivateKey(_key);
         }
-        _mqttClient = new MqttClient(*_wifiClientSecure);
     } else
     {
         Log->println(F("MQTT without TLS."));
-        _wifiClient = new WiFiClient();
-        _mqttClient = new MqttClient(*_wifiClient);
+        _mqttClient = new espMqttClient();
     }
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
@@ -47,13 +48,8 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*_mqttClient, _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
     }
-}
-
-MqttClient *WifiDevice::mqttClient()
-{
-    return _mqttClient;
 }
 
 void WifiDevice::initialize()
@@ -112,14 +108,19 @@ void WifiDevice::reconfigure()
 
 void WifiDevice::printError()
 {
-    if(_wifiClientSecure != nullptr)
-    {
-        char lastError[100];
-        _wifiClientSecure->lastError(lastError,100);
-        Log->println(lastError);
-    }
+//    if(_wifiClientSecure != nullptr)
+//    {
+//        char lastError[100];
+//        _wifiClientSecure->lastError(lastError,100);
+//        Log->println(lastError);
+//    }
     Log->print(F("Free Heap: "));
     Log->println(ESP.getFreeHeap());
+}
+
+bool WifiDevice::supportsEncryption()
+{
+    return true;
 }
 
 bool WifiDevice::isConnected()
@@ -154,4 +155,124 @@ int8_t WifiDevice::signalStrength()
 void WifiDevice::clearRtcInitVar(WiFiManager *)
 {
     memset(WiFiDevice_reconfdetect, 0, sizeof WiFiDevice_reconfdetect);
+}
+
+void WifiDevice::mqttSetClientId(const char *clientId)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->setClientId(clientId);
+    }
+    else
+    {
+        _mqttClient->setClientId(clientId);
+    }
+}
+
+void WifiDevice::mqttSetCleanSession(bool cleanSession)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->setCleanSession(cleanSession);
+    }
+    else
+    {
+        _mqttClient->setCleanSession(cleanSession);
+    }
+}
+
+uint16_t WifiDevice::mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload)
+{
+    if(_useEncryption)
+    {
+        return _mqttClientSecure->publish(topic, qos, retain, payload);
+    }
+    else
+    {
+        return _mqttClient->publish(topic, qos, retain, payload);
+    }
+}
+
+uint16_t WifiDevice::mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length)
+{
+    if(_useEncryption)
+    {
+        return _mqttClientSecure->publish(topic, qos, retain, payload, length);
+    }
+    else
+    {
+        return _mqttClient->publish(topic, qos, retain, payload, length);
+    }
+}
+
+bool WifiDevice::mqttConnected() const
+{
+    if(_useEncryption)
+    {
+        return _mqttClientSecure->connected();
+    }
+    else
+    {
+        return _mqttClient->connected();
+    }
+}
+
+void WifiDevice::mqttSetServer(const char *host, uint16_t port)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->setServer(host, port);
+    }
+    else
+    {
+        _mqttClient->setServer(host, port);
+    }
+}
+
+bool WifiDevice::mqttConnect()
+{
+    if(_useEncryption)
+    {
+        return _mqttClientSecure->connect();
+    }
+    else
+    {
+        return _mqttClient->connect();
+    }
+}
+
+void WifiDevice::mqttSetCredentials(const char *username, const char *password)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->setCredentials(username, password);
+    }
+    else
+    {
+        _mqttClient->setCredentials(username, password);
+    }
+}
+
+void WifiDevice::mqttOnMessage(espMqttClientTypes::OnMessageCallback callback)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->onMessage(callback);
+    }
+    else
+    {
+        _mqttClient->onMessage(callback);
+    }
+}
+
+uint16_t WifiDevice::mqttSubscribe(const char *topic, uint8_t qos)
+{
+    if(_useEncryption)
+    {
+        return _mqttClientSecure->subscribe(topic, qos);
+    }
+    else
+    {
+        return _mqttClient->subscribe(topic, qos);
+    }
 }

@@ -568,7 +568,7 @@ void WebCfgServer::buildOtaHtml(String &response)
 
     response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
-    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about a minute, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
+    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");
     response.concat("	var button = document.getElementById(\"submitbtn\");");
@@ -576,7 +576,7 @@ void WebCfgServer::buildOtaHtml(String &response)
     response.concat("	function hideshow() {");
     response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
     response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response.concat("		setTimeout(\"location.href = '/';\",60000);");
+    response.concat("		setTimeout(\"location.href = '/';\",120000);");
     response.concat("	}");
     response.concat("});");
     response.concat("</script>");
@@ -599,11 +599,11 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
-    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
-    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
-    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
+    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported());
+    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported());
+    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported());
     printDropDown(response, "NWHWDT", "Network hardware detection", String(_preferences->getInt(preference_network_hardware_detect)), getNetworkDetectionOptions());
-    printInputField(response, "RSSI", "RSSI Publish interval (milliseconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
+    printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
@@ -795,7 +795,8 @@ void WebCfgServer::printTextarea(String& response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
-                                   const size_t maxLength)
+                                   const size_t maxLength,
+                                   const bool enabled)
 {
     char maxLengthStr[20];
 
@@ -804,7 +805,12 @@ void WebCfgServer::printTextarea(String& response,
     response.concat("<tr><td>");
     response.concat(description);
     response.concat("</td><td>");
-    response.concat(" <TEXTAREA NAME=\"");
+    response.concat(" <TEXTAREA ");
+    if(!enabled)
+    {
+        response.concat("DISABLED");
+    }
+    response.concat(" NAME=\"");
     response.concat(token);
     response.concat("\" MAXLENGTH=\"");
     response.concat(maxLengthStr);

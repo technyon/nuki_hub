@@ -73,13 +73,7 @@ void NetworkLock::initialize()
 
 void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
-    char value[50] = {0};
-    size_t l = min(length, sizeof(value)-1);
-
-    for(int i=0; i<l; i++)
-    {
-        value[i] = payload[i];
-    }
+    char* value = (char*)payload;
 
     bool processActions = _network->mqttConnectionState() >= 2;
 
