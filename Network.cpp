@@ -265,7 +265,16 @@ bool Network::reconnect()
 
         delay(200);
 
-        if (_device->mqttClient()->connected())
+        bool connected = _device->mqttClient()->connected();
+        unsigned long timeout = millis() + 5000;
+
+        while(!connected && millis() < timeout)
+        {
+            connected = _device->mqttClient()->connected();
+            delay(200);
+        }
+
+        if (connected)
         {
             Log->println(F("MQTT connected"));
             _mqttConnectionState = 1;
