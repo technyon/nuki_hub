@@ -393,6 +393,10 @@ int Network::mqttConnectionState()
     return _mqttConnectionState;
 }
 
+bool Network::encryptionSupported()
+{
+    return _device->supportsEncryption();
+}
 
 void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision)
 {

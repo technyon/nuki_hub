@@ -599,9 +599,9 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
-    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE);
-    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE);
-    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE);
+    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported());
+    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported());
+    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported());
     printDropDown(response, "NWHWDT", "Network hardware detection", String(_preferences->getInt(preference_network_hardware_detect)), getNetworkDetectionOptions());
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
@@ -795,7 +795,8 @@ void WebCfgServer::printTextarea(String& response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
-                                   const size_t maxLength)
+                                   const size_t maxLength,
+                                   const bool enabled)
 {
     char maxLengthStr[20];
 
@@ -804,7 +805,12 @@ void WebCfgServer::printTextarea(String& response,
     response.concat("<tr><td>");
     response.concat(description);
     response.concat("</td><td>");
-    response.concat(" <TEXTAREA NAME=\"");
+    response.concat(" <TEXTAREA ");
+    if(!enabled)
+    {
+        response.concat("DISABLED");
+    }
+    response.concat(" NAME=\"");
     response.concat(token);
     response.concat("\" MAXLENGTH=\"");
     response.concat(maxLengthStr);

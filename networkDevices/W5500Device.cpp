@@ -140,6 +140,10 @@ void W5500Device::printError()
     Log->println(ESP.getFreeHeap());
 }
 
+bool W5500Device::supportsEncryption()
+{
+    return false;
+}
 
 bool W5500Device::isConnected()
 {

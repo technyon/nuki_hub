@@ -21,6 +21,7 @@ public:
     virtual ReconnectStatus reconnect() = 0;
     virtual void reconfigure() = 0;
     virtual void printError() = 0;
+    virtual bool supportsEncryption() = 0;
 
     virtual void update() = 0;
 

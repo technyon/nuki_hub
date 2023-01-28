@@ -17,6 +17,8 @@ public:
     virtual void reconfigure();
     virtual void printError();
 
+    bool supportsEncryption() override;
+
     virtual void update();
 
     virtual bool isConnected();

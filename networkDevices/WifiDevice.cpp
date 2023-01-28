@@ -118,6 +118,11 @@ void WifiDevice::printError()
     Log->println(ESP.getFreeHeap());
 }
 
+bool WifiDevice::supportsEncryption()
+{
+    return true;
+}
+
 bool WifiDevice::isConnected()
 {
     return WiFi.isConnected();
