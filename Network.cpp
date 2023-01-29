@@ -450,7 +450,7 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
     return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
 }
 
-void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -515,29 +515,33 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
 
-        // Keypad battery critical
-        configJSON = "{\"dev\":{\"ids\":[\"nuki_";
-        configJSON.concat(uidString);
-        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
-        configJSON.concat(deviceType);
-        configJSON.concat("\",\"name\":\"");
-        configJSON.concat(name);
-        configJSON.concat("\"},\"~\":\"");
-        configJSON.concat(baseTopic);
-        configJSON.concat("\",\"name\":\"");
-        configJSON.concat(name);
-        configJSON.concat(" keypad battery low\",\"unique_id\":\"");
-        configJSON.concat(uidString);
-        configJSON.concat("_keypad_battery_low\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"stat_t\":\"~");
-        configJSON.concat(mqtt_topic_battery_keypad_critical);
-        configJSON.concat("\"}");
+        if(hasKeypad)
+        {
+            // Keypad battery critical
+            configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+            configJSON.concat(uidString);
+            configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
+            configJSON.concat(deviceType);
+            configJSON.concat("\",\"name\":\"");
+            configJSON.concat(name);
+            configJSON.concat("\"},\"~\":\"");
+            configJSON.concat(baseTopic);
+            configJSON.concat("\",\"name\":\"");
+            configJSON.concat(name);
+            configJSON.concat(" keypad battery low\",\"unique_id\":\"");
+            configJSON.concat(uidString);
+            configJSON.concat(
+                    "_keypad_battery_low\",\"dev_cla\":\"battery\",\"ent_cat\":\"diagnostic\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"stat_t\":\"~");
+            configJSON.concat(mqtt_topic_battery_keypad_critical);
+            configJSON.concat("\"}");
 
-        path = discoveryTopic;
-        path.concat("/binary_sensor/");
-        path.concat(uidString);
-        path.concat("/keypad_battery_low/config");
+            path = discoveryTopic;
+            path.concat("/binary_sensor/");
+            path.concat(uidString);
+            path.concat("/keypad_battery_low/config");
 
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+            _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        }
 
         // Battery voltage
         configJSON = "{\"dev\":{\"ids\":[\"nuki_";

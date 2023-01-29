@@ -468,10 +468,10 @@ bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
-void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, char *lockAction,
+void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasKeypad, char *lockAction,
                                char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
 {
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
     _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
     _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
