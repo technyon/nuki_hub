@@ -599,10 +599,19 @@ void NukiWrapper::setupHASS()
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
-    _network->publishHASSConfig("SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, _hasKeypad, "lock", "unlock", "unlatch", "locked", "unlocked");
+
+    _network->publishHASSConfig("SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, _hasKeypad, hasDoorSensor(), "lock", "unlock", "unlatch", "locked", "unlocked");
     _hassSetupCompleted = true;
 
     Log->println("HASS setup for lock completed.");
+}
+
+bool NukiWrapper::hasDoorSensor()
+{
+    return _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
+           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
+           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorStateUnknown ||
+           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating;;
 }
 
 void NukiWrapper::disableHASS()
