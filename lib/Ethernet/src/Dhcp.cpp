@@ -26,11 +26,11 @@ int DhcpClass::beginWithDHCP(uint8_t *mac, unsigned long timeout, unsigned long 
 void DhcpClass::reset_DHCP_lease()
 {
 	// zero out _dhcpSubnetMask, _dhcpGatewayIp, _dhcpLocalIp, _dhcpDhcpServerIp, _dhcpDnsServerIp
-	memset(_dhcpLocalIp, 0, sizeof(_dhcpLocalIp));
-    memset(_dhcpGatewayIp, 0, sizeof(_dhcpGatewayIp));
-    memset(_dhcpSubnetMask, 0, sizeof(_dhcpSubnetMask));
-    memset(_dhcpDnsServerIp, 0, sizeof(_dhcpDnsServerIp));
     memset(_dhcpLocalIp, 0, sizeof(_dhcpLocalIp));
+    memset(_dhcpSubnetMask, 0, sizeof(_dhcpSubnetMask));
+    memset(_dhcpGatewayIp, 0, sizeof(_dhcpGatewayIp));
+    memset(_dhcpDhcpServerIp, 0, sizeof(_dhcpDhcpServerIp));
+    memset(_dhcpDnsServerIp, 0, sizeof(_dhcpDnsServerIp));
 }
 	//return:0 on error, 1 if request is sent and response is received
 int DhcpClass::request_DHCP_lease()
