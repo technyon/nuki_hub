@@ -67,6 +67,11 @@ void nukiTask(void *pvParameters)
     }
 }
 
+void webServerTask(void *pvParameters)
+{
+
+}
+
 void presenceDetectionTask(void *pvParameters)
 {
     while(true)

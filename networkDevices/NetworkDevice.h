@@ -35,8 +35,12 @@ public:
     virtual bool mqttConnected() const = 0;
     virtual void mqttSetServer(const char* host, uint16_t port) = 0;
     virtual bool mqttConnect() = 0;
+    virtual bool mqttDisonnect(bool force) = 0;
     virtual void mqttSetCredentials(const char* username, const char* password) = 0;
     virtual void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback) = 0;
+    virtual void mqttOnConnect(espMqttClientTypes::OnConnectCallback callback) = 0;
+    virtual void mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback) = 0;
+
     virtual uint16_t mqttSubscribe(const char* topic, uint8_t qos) = 0;
 
 protected:
