@@ -11,7 +11,8 @@ NUKI Smart Lock 1.0<br>
 NUKI Smart Lock 2.0<br>
 NUKI Smart Lock 3.0<br>
 NUKI Smart Lock 3.0 Pro<br>
-NUKI Opener
+NUKI Opener<br>
+NUKI Keypad 1.0
 
 ## Installation
 
