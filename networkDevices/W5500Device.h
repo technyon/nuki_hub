@@ -39,9 +39,15 @@ public:
 
     bool mqttConnect() override;
 
+    bool mqttDisonnect(bool force) override;
+
     void mqttSetCredentials(const char *username, const char *password) override;
 
     void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback) override;
+
+    void mqttOnConnect(espMqttClientTypes::OnConnectCallback callback) override;
+
+    void mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback) override;
 
     uint16_t mqttSubscribe(const char *topic, uint8_t qos) override;
 

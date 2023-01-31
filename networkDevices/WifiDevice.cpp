@@ -241,6 +241,18 @@ bool WifiDevice::mqttConnect()
     }
 }
 
+bool WifiDevice::mqttDisonnect(bool force)
+{
+    if(_useEncryption)
+    {
+        return _mqttClientSecure->disconnect(force);
+    }
+    else
+    {
+        return _mqttClient->disconnect(force);
+    }
+}
+
 void WifiDevice::mqttSetCredentials(const char *username, const char *password)
 {
     if(_useEncryption)
@@ -264,6 +276,32 @@ void WifiDevice::mqttOnMessage(espMqttClientTypes::OnMessageCallback callback)
         _mqttClient->onMessage(callback);
     }
 }
+
+
+void WifiDevice::mqttOnConnect(espMqttClientTypes::OnConnectCallback callback)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->onConnect(callback);
+    }
+    else
+    {
+        _mqttClient->onConnect(callback);
+    }
+}
+
+void WifiDevice::mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->onDisconnect(callback);
+    }
+    else
+    {
+        _mqttClient->onDisconnect(callback);
+    }
+}
+
 
 uint16_t WifiDevice::mqttSubscribe(const char *topic, uint8_t qos)
 {

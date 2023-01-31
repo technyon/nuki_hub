@@ -50,11 +50,16 @@ public:
 
     uint16_t subscribe(const char* topic, uint8_t qos);
 
+    void setKeepAliveCallback(std::function<void()> reconnectTick);
+
 private:
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void setupDevice();
     bool reconnect();
+
+    void onMqttConnect(const bool& sessionPresent);
+    void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
 
     void buildMqttPath(const char* prefix, const char* path, char* outPath);
 
@@ -64,6 +69,7 @@ private:
     char _hostnameArr[101] = {0};
     NetworkDevice* _device = nullptr;
     int _mqttConnectionState = 0;
+    bool _connectReplyReceived = false;
 
     unsigned long _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
@@ -83,6 +89,7 @@ private:
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastRssiTs = 0;
     long _rssiPublishInterval = 0;
+    std::function<void()> _keepAliveCallback;
 
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
 

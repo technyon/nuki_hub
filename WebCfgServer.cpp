@@ -161,6 +161,11 @@ void WebCfgServer::initialize()
     });
 
     _server.begin();
+
+    _network->setKeepAliveCallback([&]()
+                                   {
+                                       update();
+                                   });
 }
 
 bool WebCfgServer::processArgs(String& message)

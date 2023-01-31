@@ -217,6 +217,11 @@ bool W5500Device::mqttConnect()
     return _mqttClient.connect();
 }
 
+bool W5500Device::mqttDisonnect(bool force)
+{
+    return _mqttClient.disconnect(force);
+}
+
 void W5500Device::mqttSetCredentials(const char *username, const char *password)
 {
     _mqttClient.setCredentials(username, password);
@@ -225,6 +230,16 @@ void W5500Device::mqttSetCredentials(const char *username, const char *password)
 void W5500Device::mqttOnMessage(espMqttClientTypes::OnMessageCallback callback)
 {
     _mqttClient.onMessage(callback);
+}
+
+void W5500Device::mqttOnConnect(espMqttClientTypes::OnConnectCallback callback)
+{
+    _mqttClient.onConnect(callback);
+}
+
+void W5500Device::mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback)
+{
+    _mqttClient.onDisconnect(callback);
 }
 
 uint16_t W5500Device::mqttSubscribe(const char *topic, uint8_t qos)

@@ -76,6 +76,15 @@ void Network::setupDevice()
             _device = new WifiDevice(_hostname, _preferences);
             break;
     }
+
+    _device->mqttOnConnect([&](bool sessionPresent)
+        {
+            onMqttConnect(sessionPresent);
+        });
+    _device->mqttOnDisconnect([&](espMqttClientTypes::DisconnectReason reason)
+        {
+            onMqttDisconnect(reason);
+        });
 }
 
 void Network::initialize()
@@ -233,6 +242,49 @@ bool Network::update()
     return true;
 }
 
+
+void Network::onMqttConnect(const bool &sessionPresent)
+{
+    _connectReplyReceived = true;
+}
+
+void Network::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &reason)
+{
+    _connectReplyReceived = true;
+
+    Log->print("MQTT disconnected. Reason: ");
+    switch(reason)
+    {
+        case espMqttClientTypes::DisconnectReason::USER_OK:
+            Log->println(F("USER_OK"));
+            break;
+        case espMqttClientTypes::DisconnectReason::MQTT_UNACCEPTABLE_PROTOCOL_VERSION:
+            Log->println(F("MQTT_UNACCEPTABLE_PROTOCOL_VERSION"));
+            break;
+        case espMqttClientTypes::DisconnectReason::MQTT_IDENTIFIER_REJECTED:
+            Log->println(F("MQTT_IDENTIFIER_REJECTED"));
+            break;
+        case espMqttClientTypes::DisconnectReason::MQTT_SERVER_UNAVAILABLE:
+            Log->println(F("MQTT_SERVER_UNAVAILABLE"));
+            break;
+        case espMqttClientTypes::DisconnectReason::MQTT_MALFORMED_CREDENTIALS:
+            Log->println(F("MQTT_MALFORMED_CREDENTIALS"));
+            break;
+        case espMqttClientTypes::DisconnectReason::MQTT_NOT_AUTHORIZED:
+            Log->println(F("MQTT_NOT_AUTHORIZED"));
+            break;
+        case espMqttClientTypes::DisconnectReason::TLS_BAD_FINGERPRINT:
+            Log->println(F("TLS_BAD_FINGERPRINT"));
+            break;
+        case espMqttClientTypes::DisconnectReason::TCP_DISCONNECTED:
+            Log->println(F("TCP_DISCONNECTED"));
+            break;
+        default:
+            Log->println(F("Unknown"));
+            break;
+    }
+}
+
 bool Network::reconnect()
 {
     _mqttConnectionState = 0;
@@ -249,6 +301,7 @@ bool Network::reconnect()
 
         Log->println(F("Attempting MQTT connection"));
 
+        _connectReplyReceived = false;
         if(strlen(_mqttUser) == 0)
         {
             Log->println(F("MQTT: Connecting without credentials"));
@@ -263,22 +316,23 @@ bool Network::reconnect()
             _device->mqttConnect();
         }
 
-        bool connected = _device->mqttConnected();
-        unsigned long timeout = millis() + 3000;
+        unsigned long timeout = millis() + 60000;
 
-        while(!connected && millis() < timeout)
+        while(!_connectReplyReceived && millis() < timeout)
         {
-            connected = _device->mqttConnected();
             delay(200);
+            if(_keepAliveCallback != nullptr)
+            {
+                _keepAliveCallback();
+            }
         }
 
-        if (connected)
+        if (_device->mqttConnected())
         {
             Log->println(F("MQTT connected"));
             _mqttConnectionState = 1;
             delay(100);
 
-            // TODO
             _device->mqttOnMessage(Network::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {
@@ -298,10 +352,10 @@ bool Network::reconnect()
         else
         {
             Log->print(F("MQTT connect failed, rc="));
-//            Log->println(_device->mqttClient()->connectError());
             _device->printError();
             _mqttConnectionState = 0;
             _nextReconnect = millis() + 5000;
+            _device->mqttDisonnect(true);
         }
     }
     return _mqttConnectionState > 0;
@@ -846,4 +900,9 @@ const NetworkDeviceType Network::networkDeviceType()
 uint16_t Network::subscribe(const char *topic, uint8_t qos)
 {
     return _device->mqttSubscribe(topic, qos);
+}
+
+void Network::setKeepAliveCallback(std::function<void()> reconnectTick)
+{
+    _keepAliveCallback = reconnectTick;
 }
