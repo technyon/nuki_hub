@@ -194,7 +194,7 @@ void setup()
 
     bleScanner = new BleScanner::Scanner();
     bleScanner->initialize("NukiHub");
-    bleScanner->setScanDuration(3);
+    bleScanner->setScanDuration(10);
 
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
