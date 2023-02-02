@@ -220,7 +220,7 @@ sure it's correct.
 Since setting up the toolchain can be difficult, I've uploaded a virtual machine (vmware image) that is
 setup to compile NUKI Hub:
 
-https://mega.nz/file/4yJRjS4Q#F0FNVJZTsUdcTMhiJIB47Fm-7YqKuyQs15E5zznmroc
+https://mega.nz/file/8uRkDKyS#F0FNVJZTsUdcTMhiJIB47Fm-7YqKuyQs15E5zznmroc
 
 User and password for the VM are both "nuki" and "nuki". The source is checked out at ~/projects/nuki_hub,
 the cmake build directory is build. So to compile, run the following commands:
