@@ -45,7 +45,7 @@ This will also give you a 30€ discount for your order.
 
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:
 
-[ko-fi.com](https://ko-fi.com/technyon)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1IDUBV)
 
 ## MQTT Interface
 
