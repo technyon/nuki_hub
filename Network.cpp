@@ -32,8 +32,8 @@ void Network::setupDevice()
     int hardwareDetect = _preferences->getInt(preference_network_hardware);
     int hardwareDetectGpio = _preferences->getInt(preference_network_hardware_gpio);
 
-    Log->print("Hardware detect     : "); Log->println(hardwareDetect);
-    Log->print("Hardware detect GPIO: "); Log->println(hardwareDetectGpio);
+    Log->print(F("Hardware detect     : ")); Log->println(hardwareDetect);
+    Log->print(F("Hardware detect GPIO: ")); Log->println(hardwareDetectGpio);
 
     if(hardwareDetect == 0)
     {
