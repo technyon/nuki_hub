@@ -182,6 +182,9 @@ W5x00 reset to GPIO33
 
 Wifi is now disabled, and the module doesn't boot into WifiManager anymore.
 
+As an alternative to do the wiring yourself, you can use an [M5Stack Atom POE](https://docs.m5stack.com/en/atom/atom_poe).
+After flashing, go to MQTT and network settings and select the module under "Network hardware".
+
 ## Troubleshooting
 
 ### Random WiFi disconnects
