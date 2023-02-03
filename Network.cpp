@@ -69,7 +69,7 @@ void Network::setupDevice()
         }
         else if(hardwareDetect == 3)
         {
-            Log->print(F("W5500 on M5Sack Atom POE"));
+            Log->print(F("W5500 on M5Stack Atom POE"));
             _networkDeviceType = NetworkDeviceType::W5500;
         }
         else
