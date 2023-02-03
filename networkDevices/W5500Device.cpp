@@ -37,7 +37,7 @@ void W5500Device::initialize()
 
     resetDevice();
 
-    Ethernet.init(ETHERNET_CS_PIN);
+    Ethernet.init(ETHERNET_CS_PIN, ETHERNET_SCK_PIN, ETHERNET_MISO_PIN, ETHERNET_MOSI_PIN);
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
@@ -123,6 +123,7 @@ void W5500Device::reconfigure()
 
 void W5500Device::resetDevice()
 {
+    if(ETHERNET_RESET_PIN == -1) return;
     Log->println(F("Resetting network hardware."));
     pinMode(ETHERNET_RESET_PIN, OUTPUT);
     digitalWrite(ETHERNET_RESET_PIN, HIGH);

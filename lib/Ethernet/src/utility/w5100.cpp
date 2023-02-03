@@ -53,6 +53,9 @@
 uint8_t  W5100Class::chip = 0;
 uint8_t  W5100Class::CH_BASE_MSB;
 uint8_t  W5100Class::ss_pin = SS_PIN_DEFAULT;
+uint8_t  W5100Class::sck_pin = 255;
+uint8_t  W5100Class::miso_pin = 255;
+uint8_t  W5100Class::mosi_pin = 255;
 #ifdef ETHERNET_LARGE_BUFFERS
 uint16_t W5100Class::SSIZE = 2048;
 uint16_t W5100Class::SMASK = 0x07FF;
@@ -101,7 +104,11 @@ uint8_t W5100Class::init(void)
 	delay(560);
 	//Serial.println("w5100 init");
 
-	SPI.begin();
+    if(sck_pin != 255 && miso_pin != 255 && mosi_pin != 255) {
+        SPI.begin(sck_pin, miso_pin, mosi_pin, -1);
+    } else {
+        SPI.begin();
+    }
 	initSS();
 	resetSS();
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);

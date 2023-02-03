@@ -60,7 +60,7 @@ void Network::setupDevice()
             _networkDeviceType = digitalRead(hardwareDetect) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
         }
     }
-
+    _networkDeviceType = NetworkDeviceType::W5500;
     switch(_networkDeviceType)
     {
         case NetworkDeviceType::W5500:

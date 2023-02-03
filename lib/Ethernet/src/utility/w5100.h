@@ -298,6 +298,9 @@ public:
 private:
   static uint8_t chip;
   static uint8_t ss_pin;
+  static uint8_t sck_pin;
+  static uint8_t miso_pin;
+  static uint8_t mosi_pin;
   static uint8_t softReset(void);
   static uint8_t isW5100(void);
   static uint8_t isW5200(void);
@@ -332,6 +335,11 @@ public:
     return false;
   }
   static void setSS(uint8_t pin) { ss_pin = pin; }
+  static void setSPI(uint8_t sckpin, uint8_t misopin, uint8_t mosipin) {
+    sck_pin = sckpin;
+    miso_pin = misopin;
+    mosi_pin = mosipin;
+  }
 
 private:
 #if defined(__AVR__)
