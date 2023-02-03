@@ -8,8 +8,8 @@
 
 enum class W5500Variant
 {
-    Generic = 1,
-    M5StackAtomPoe = 2
+    Generic = 2,
+    M5StackAtomPoe = 3
 };
 
 class W5500Device : public NetworkDevice

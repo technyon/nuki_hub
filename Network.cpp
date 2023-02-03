@@ -35,6 +35,17 @@ void Network::setupDevice()
     Log->print("Hardware detect     : "); Log->println(hardwareDetect);
     Log->print("Hardware detect GPIO: "); Log->println(hardwareDetectGpio);
 
+    if(hardwareDetect == 0)
+    {
+        hardwareDetect = 2;
+        _preferences->putInt(preference_network_hardware_gpio, hardwareDetect);
+    }
+    if(hardwareDetectGpio == 0)
+    {
+        hardwareDetectGpio = 26;
+        _preferences->putInt(preference_network_hardware_gpio, hardwareDetectGpio);
+    }
+
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
     {
         Log->println(F("Switching to WiFi device as fallback."));
@@ -42,18 +53,12 @@ void Network::setupDevice()
     }
     else
     {
-        if(hardwareDetectGpio == 0)
-        {
-            hardwareDetectGpio = 26;
-            _preferences->putInt(preference_network_hardware_gpio, hardwareDetectGpio);
-        }
-
-        if(hardwareDetect == 0)
+        if(hardwareDetect == 1)
         {
             Log->println(F("W5500 hardware is disabled, using Wifi."));
             _networkDeviceType = NetworkDeviceType::WiFi;
         }
-        else if(hardwareDetect == 1)
+        else if(hardwareDetect == 2)
         {
             Log->print(F("Using PIN "));
             Log->print(hardwareDetectGpio);
@@ -62,7 +67,7 @@ void Network::setupDevice()
             pinMode(hardwareDetectGpio, INPUT_PULLUP);
             _networkDeviceType = digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
         }
-        else if(hardwareDetect == 2)
+        else if(hardwareDetect == 3)
         {
             Log->print(F("W5500 on M5Sack Atom POE"));
             _networkDeviceType = NetworkDeviceType::W5500;
