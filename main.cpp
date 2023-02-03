@@ -11,6 +11,7 @@
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
 #include "Logger.h"
+#include "Config.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -160,6 +161,8 @@ void setup()
 {
     Serial.begin(115200);
     Log = &Serial;
+
+    Log->print(F("NUKI Hub version ")); Log->println(NUKI_HUB_VERSION);
 
     bool firstStart = initPreferences();
 
