@@ -569,7 +569,7 @@ void WebCfgServer::buildOtaHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    if(millis() < 20000)
+    if(millis() < 60000)
     {
         response.concat("OTA functionality not ready. Please wait a moment and reload.");
         response.concat("</BODY></HTML>");
