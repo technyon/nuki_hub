@@ -32,6 +32,9 @@ void Network::setupDevice()
     int hardwareDetect = _preferences->getInt(preference_network_hardware);
     int hardwareDetectGpio = _preferences->getInt(preference_network_hardware_gpio);
 
+    Log->print("Hardware detect     : "); Log->println(hardwareDetect);
+    Log->print("Hardware detect GPIO: "); Log->println(hardwareDetectGpio);
+
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
     {
         Log->println(F("Switching to WiFi device as fallback."));
@@ -56,13 +59,18 @@ void Network::setupDevice()
             Log->print(hardwareDetectGpio);
             Log->println(F(" for network device selection"));
 
-            pinMode(hardwareDetect, INPUT_PULLUP);
-            _networkDeviceType = digitalRead(hardwareDetect) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+            pinMode(hardwareDetectGpio, INPUT_PULLUP);
+            _networkDeviceType = digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
         }
         else if(hardwareDetect == 2)
         {
             Log->print(F("W5500 on M5Sack Atom POE"));
             _networkDeviceType = NetworkDeviceType::W5500;
+        }
+        else
+        {
+            Log->println(F("Unknown hardware selected, falling back to Wifi."));
+            _networkDeviceType = NetworkDeviceType::WiFi;
         }
     }
 

@@ -65,6 +65,7 @@ private:
     Preferences* _preferences = nullptr;
 
     int _maintainResult = 0;
+    int _resetPin = -1;
     bool _hasDHCPAddress = false;
     char* _path;
     W5500Variant _variant;
