@@ -6,10 +6,16 @@
 #include <Ethernet.h>
 #include <Preferences.h>
 
+enum class W5500Variant
+{
+    Generic = 1,
+    M5StackAtomPoe = 2
+};
+
 class W5500Device : public NetworkDevice
 {
 public:
-    explicit W5500Device(const String& hostname, Preferences* _preferences);
+    explicit W5500Device(const String& hostname, Preferences* _preferences, int variant);
     ~W5500Device();
 
     virtual void initialize();
@@ -61,6 +67,7 @@ private:
     int _maintainResult = 0;
     bool _hasDHCPAddress = false;
     char* _path;
+    W5500Variant _variant;
 
     byte _mac[6];
 };

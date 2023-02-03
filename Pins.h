@@ -1,8 +1,5 @@
 #pragma once
 
-#define ETHERNET_SCK_PIN  22
-#define ETHERNET_MISO_PIN 23
-#define ETHERNET_MOSI_PIN 33
 #define ETHERNET_CS_PIN 19
 #define ETHERNET_RESET_PIN -1
 #define TRIGGER_LOCK_PIN 32

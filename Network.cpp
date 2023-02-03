@@ -29,6 +29,8 @@ Network::Network(Preferences *preferences, const String& maintenancePathPrefix)
 
 void Network::setupDevice()
 {
+    int hardwareDetect = _preferences->getInt(preference_network_hardware);
+    int hardwareDetectGpio = _preferences->getInt(preference_network_hardware_gpio);
 
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
     {
@@ -37,35 +39,38 @@ void Network::setupDevice()
     }
     else
     {
-        int hardwareDetect = _preferences->getInt(preference_network_hardware_detect);
+        if(hardwareDetectGpio == 0)
+        {
+            hardwareDetectGpio = 26;
+            _preferences->putInt(preference_network_hardware_gpio, hardwareDetectGpio);
+        }
 
         if(hardwareDetect == 0)
         {
-            hardwareDetect = 26;
-            _preferences->putInt(preference_network_hardware_detect, hardwareDetect);
-        }
-
-        if(hardwareDetect == -1)
-        {
-            Log->println(F("W5500 hardware is disable, using Wifi."));
+            Log->println(F("W5500 hardware is disabled, using Wifi."));
             _networkDeviceType = NetworkDeviceType::WiFi;
         }
-        else
+        else if(hardwareDetect == 1)
         {
             Log->print(F("Using PIN "));
-            Log->print(hardwareDetect);
+            Log->print(hardwareDetectGpio);
             Log->println(F(" for network device selection"));
 
             pinMode(hardwareDetect, INPUT_PULLUP);
             _networkDeviceType = digitalRead(hardwareDetect) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
         }
+        else if(hardwareDetect == 2)
+        {
+            Log->print(F("W5500 on M5Sack Atom POE"));
+            _networkDeviceType = NetworkDeviceType::W5500;
+        }
     }
-    _networkDeviceType = NetworkDeviceType::W5500;
+
     switch(_networkDeviceType)
     {
         case NetworkDeviceType::W5500:
             Log->println(F("Network device: W5500"));
-            _device = new W5500Device(_hostname, _preferences);
+            _device = new W5500Device(_hostname, _preferences, hardwareDetect);
             break;
         case NetworkDeviceType::WiFi:
             Log->println(F("Network device: Builtin WiFi"));
