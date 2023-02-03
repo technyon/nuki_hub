@@ -100,9 +100,10 @@ void EthernetClass::begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress g
 	_dnsServerAddress = dns;
 }
 
-void EthernetClass::init(uint8_t sspin)
+void EthernetClass::init(uint8_t sspin, uint8_t sckpin, uint8_t misopin, uint8_t mosipin)
 {
 	W5100.setSS(sspin);
+	W5100.setSPI(sckpin, misopin, mosipin);
 }
 
 EthernetLinkStatus EthernetClass::linkStatus()

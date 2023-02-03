@@ -50,6 +50,7 @@ private:
     void buildNavigationButton(String& response, const char* caption, const char* targetPath);
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
+    const std::vector<std::pair<String, String>> getNetworkGpioOptions() const;
 
     void printParameter(String& response, const char* description, const char* value);
 

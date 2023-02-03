@@ -6,9 +6,10 @@
 #include "../Logger.h"
 #include "../MqttTopics.h"
 
-W5500Device::W5500Device(const String &hostname, Preferences* preferences)
+W5500Device::W5500Device(const String &hostname, Preferences* preferences, int variant)
 : NetworkDevice(hostname),
-  _preferences(preferences)
+  _preferences(preferences),
+  _variant((W5500Variant)variant)
 {
     initializeMacAddress(_mac);
 
@@ -37,7 +38,17 @@ void W5500Device::initialize()
 
     resetDevice();
 
-    Ethernet.init(ETHERNET_CS_PIN);
+    switch(_variant)
+    {
+        case W5500Variant::M5StackAtomPoe:
+            _resetPin = -1;
+            Ethernet.init(19, 22, 23, 33);
+            break;
+        default:
+            _resetPin = -1;
+            Ethernet.init(5);
+            break;
+    }
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
@@ -123,13 +134,15 @@ void W5500Device::reconfigure()
 
 void W5500Device::resetDevice()
 {
+    if(_resetPin == -1) return;
+
     Log->println(F("Resetting network hardware."));
-    pinMode(ETHERNET_RESET_PIN, OUTPUT);
-    digitalWrite(ETHERNET_RESET_PIN, HIGH);
+    pinMode(_resetPin, OUTPUT);
+    digitalWrite(_resetPin, HIGH);
     delay(250);
-    digitalWrite(ETHERNET_RESET_PIN, LOW);
+    digitalWrite(_resetPin, LOW);
     delay(50);
-    digitalWrite(ETHERNET_RESET_PIN, HIGH);
+    digitalWrite(_resetPin, HIGH);
     delay(1500);
 }
 

@@ -89,7 +89,7 @@ public:
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns);
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress gateway);
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress gateway, IPAddress subnet);
-	static void init(uint8_t sspin = 10);
+	static void init(uint8_t sspin = 10, uint8_t sckpin = 255, uint8_t misopin = 255, uint8_t mosipin = 255);
 
 	static void MACAddress(uint8_t *mac_address);
 	static IPAddress localIP();

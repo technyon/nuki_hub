@@ -1,7 +1,5 @@
 #pragma once
 
-#define ETHERNET_CS_PIN 5
-#define ETHERNET_RESET_PIN 33
 #define TRIGGER_LOCK_PIN 32
 #define TRIGGER_UNLOCK_PIN 33
 #define TRIGGER_UNLATCH_PIN 27
