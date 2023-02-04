@@ -37,6 +37,7 @@ include_directories(${PROJECT_NAME}
         lib/MqttLogger/src
         lib/espMqttClient/src
         lib/AsyncTCP/src
+        lib/ArduinoJson/src
 )
 
 file(GLOB SRCFILES
@@ -97,6 +98,8 @@ file(GLOB_RECURSE SRCFILESREC
         lib/espMqttClient/src/Packets/*.h
         lib/espMqttClient/src/Transport/*.cpp
         lib/espMqttClient/src/Transport/*.h
+        lib/ArduinoJson/src/*.h
+        lib/ArduinoJson/src/*.hpp
 )
 
 add_executable(${PROJECT_NAME}

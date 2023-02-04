@@ -5,7 +5,7 @@
 #include "networkDevices/WifiDevice.h"
 #include "Logger.h"
 #include "Config.h"
-
+#include <ArduinoJson.h>
 
 Network* Network::_inst = nullptr;
 
@@ -525,47 +525,44 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
 
 void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
+    const int jsonBufferSize = 2048;
+
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
     if (discoveryTopic != "")
     {
-        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
-        configJSON.concat(uidString);
-        configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
-        configJSON.concat(deviceType);
-        configJSON.concat("\",\"name\":\"");
-        configJSON.concat(name);
-        configJSON.concat("\"},\"~\":\"");
-        configJSON.concat(baseTopic);
-        configJSON.concat("\",\"name\":\"");
-        configJSON.concat(name);
-        configJSON.concat("\",\"unique_id\":\"");
-        configJSON.concat(uidString);
-        configJSON.concat("_lock\",\"cmd_t\":\"~");
-        configJSON.concat(mqtt_topic_lock_action);
-        configJSON.concat("\",\"pl_lock\":\"");
-        configJSON.concat(lockAction);
-        configJSON.concat("\",\"pl_unlk\":\"");
-        configJSON.concat(unlockAction);
-        configJSON.concat("\",\"pl_open\":\"");
-        configJSON.concat(openAction);
-        configJSON.concat("\",\"stat_t\":\"~");
-        configJSON.concat(mqtt_topic_lock_binary_state);
-        configJSON.concat("\",\"stat_locked\":\"");
-        configJSON.concat(lockedState);
-        configJSON.concat("\",\"stat_unlocked\":\"");
-        configJSON.concat(unlockedState);
-        configJSON.concat("\",\"opt\":\"false\"}");
+        char* jsonOut = new char[jsonBufferSize];
+        DynamicJsonDocument json(jsonBufferSize);
+
+        auto dev = json.createNestedObject("dev");
+        auto ids = dev.createNestedArray("ids");
+        ids.add(String("nuki_") + uidString);
+        json["dev"]["mf"] = "Nuki";
+        json["dev"]["mdl"] = deviceType;
+        json["dev"]["name"] = name;
+        json["~"] = baseTopic;
+        json["name"] = name;
+        json["unique_id"] = String(uidString) + "_lock";
+        json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
+        json["pl_lock"] = lockAction;
+        json["pl_unlk"] = unlockAction;
+        json["pl_open"] = openAction;
+        json["stat_t"] = String("~") + mqtt_topic_lock_binary_state;
+        json["stat_locked"] = lockedState;
+        json["stat_unlocked"] = unlockedState;
+        json["opt"] = "false";
+
+        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
 
         String path = discoveryTopic;
         path.concat("/lock/");
         path.concat(uidString);
         path.concat("/smartlock/config");
 
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
 
         // Battery critical
-        configJSON = "{\"dev\":{\"ids\":[\"nuki_";
+        String configJSON = "{\"dev\":{\"ids\":[\"nuki_";
         configJSON.concat(uidString);
         configJSON.concat("\"],\"mf\":\"Nuki\",\"mdl\":\"");
         configJSON.concat(deviceType);
@@ -666,6 +663,8 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         path.concat("/trigger/config");
 
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, configJSON.c_str());
+
+        delete jsonOut;
     }
 }
 
