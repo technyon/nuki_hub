@@ -7,9 +7,9 @@
 
 namespace espMqttClientInternals {
 
-    class ClientSyncEthernet : public Transport {
+    class ClientSyncW5500 : public Transport {
     public:
-        ClientSyncEthernet();
+        ClientSyncW5500();
         bool connect(IPAddress ip, uint16_t port) override;
         bool connect(const char* host, uint16_t port) override;
         size_t write(const uint8_t* buf, size_t size) override;

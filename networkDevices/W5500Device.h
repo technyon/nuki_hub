@@ -2,7 +2,7 @@
 
 #include "NetworkDevice.h"
 #include "espMqttClient.h"
-#include "espMqttClientEthernet.h"
+#include "espMqttClientW5500.h"
 #include <Ethernet.h>
 #include <Preferences.h>
 
@@ -61,7 +61,7 @@ private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
 
-    espMqttClientEthernet _mqttClient;
+    espMqttClientW5500 _mqttClient;
     Preferences* _preferences = nullptr;
 
     int _maintainResult = 0;
