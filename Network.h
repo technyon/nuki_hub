@@ -82,7 +82,7 @@ private:
     char* _presenceCsv = nullptr;
     bool _restartOnDisconnect = false;
     bool _firstConnect = true;
-    bool _publishFreeHeap = false;
+    bool _publishDebugInfo = false;
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
 

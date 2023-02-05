@@ -175,7 +175,7 @@ void Network::initialize()
         _preferences->putInt(preference_network_timeout, _networkTimeout);
     }
 
-    _publishFreeHeap = _preferences->getBool(preference_publish_heap);
+    _publishDebugInfo = _preferences->getBool(preference_publish_debug_info);
 }
 
 bool Network::update()
@@ -257,9 +257,11 @@ bool Network::update()
     if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
     {
         publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60);
-        if(_publishFreeHeap)
+        if(_publishDebugInfo)
         {
             publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
+            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_fw, getRestartReason().c_str());
+            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_esp, getEspRestartReason().c_str());
         }
         _lastMaintenanceTs = ts;
     }

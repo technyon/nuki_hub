@@ -168,8 +168,8 @@ void WebCfgServer::initialize()
         buildInfoHtml(response);
         _server.send(200, "text/html", response);
     });
-    _server.on("/heapon", [&]() {
-        _preferences->putBool(preference_publish_heap, true);
+    _server.on("/debugon", [&]() {
+        _preferences->putBool(preference_publish_debug_info, true);
 
         String response = "";
         buildConfirmHtml(response, "OK");
@@ -179,8 +179,8 @@ void WebCfgServer::initialize()
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::ConfigurationUpdated);
     });
-    _server.on("/heapoff", [&]() {
-        _preferences->putBool(preference_publish_heap, false);
+    _server.on("/debugoff", [&]() {
+        _preferences->putBool(preference_publish_debug_info, false);
 
         String response = "";
         buildConfirmHtml(response, "OK");
@@ -765,12 +765,12 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat("\n");
 
     response.concat("Restart reason FW: ");
-    response.concat(getRestartReasion());
+    response.concat(getRestartReason());
     response.concat("\n");
 
-//    response.concat("Restart reason ESP: ");
-//    response.concat(getRestartReasion());
-//    response.concat("\n");
+    response.concat("Restart reason ESP: ");
+    response.concat(getEspRestartReason());
+    response.concat("\n");
 
     response.concat("</pre> </BODY></HTML>");
 }

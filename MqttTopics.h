@@ -46,3 +46,5 @@
 #define mqtt_topic_wifi_rssi "/maintenance/wifiRssi"
 #define mqtt_topic_log "/maintenance/log"
 #define mqtt_topic_freeheap "/maintenance/freeHeap"
+#define mqtt_topic_restart_reason_fw "/maintenance/restartReasonNukiHub"
+#define mqtt_topic_restart_reason_esp "/maintenance/restartReasonNukiEsp"
