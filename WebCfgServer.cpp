@@ -487,7 +487,7 @@ void WebCfgServer::buildHtml(String& response)
         printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
         printParameter(response, "NUKI Opener state", lockstateArr);
     }
-    printParameter(response, "Firmware", version.c_str());
+    printParameter(response, "Firmware", version.c_str(), "/info");
     response.concat("</table><br><br>");
 
     response.concat("<h3>MQTT and Network Configuration</h3>");
@@ -711,13 +711,22 @@ void WebCfgServer::buildInfoHtml(String &response)
     DebugPreferences debugPreferences;
 
     buildHtmlHeader(response);
-    response.concat("<h3>Info</h3> <pre>");
+    response.concat("<h3>System Information</h3> <pre>");
+
+    response.concat("Firmware version: ");
+    response.concat(NUKI_HUB_VERSION);
+    response.concat("\n");
+
     response.concat(debugPreferences.preferencesToString(_preferences));
 
     response.concat("Lock PIN set: ");
     response.concat(_nuki->isPinSet() ? "Yes\n" : "No\n");
     response.concat("Opener PIN set: ");
     response.concat(_nukiOpener->isPinSet() ? "Yes\n" : "No\n");
+
+    response.concat("Heap: ");
+    response.concat(esp_get_free_heap_size());
+    response.concat("\n");
 
     response.concat("</pre> </BODY></HTML>");
 }
@@ -912,14 +921,25 @@ void WebCfgServer::buildNavigationButton(String &response, const char *caption, 
     response.concat("</form>");
 }
 
-void WebCfgServer::printParameter(String& response, const char *description, const char *value)
+void WebCfgServer::printParameter(String& response, const char *description, const char *value, const char *link)
 {
     response.concat("<tr>");
     response.concat("<td>");
     response.concat(description);
     response.concat("</td>");
     response.concat("<td>");
-    response.concat(value);
+    if(strcmp(link, "") == 0)
+    {
+        response.concat(value);
+    }
+    else
+    {
+        response.concat("<a href=\"");
+        response.concat(link);
+        response.concat("\"> ");
+        response.concat(value);
+        response.concat("</a>");
+    }
     response.concat("</td>");
     response.concat("</tr>");
 

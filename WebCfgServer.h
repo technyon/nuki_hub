@@ -53,7 +53,7 @@ private:
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getNetworkGpioOptions() const;
 
-    void printParameter(String& response, const char* description, const char* value);
+    void printParameter(String& response, const char* description, const char* value, const char *link = "");
 
     String generateConfirmCode();
     void waitAndProcess(const bool blocking, const uint32_t duration);
