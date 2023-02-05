@@ -79,19 +79,69 @@ private:
     {
         return i == 0 ? "" : "***";
     }
+    const String redact(const int64_t i) const
+    {
+        return i == 0 ? "" : "***";
+    }
+    const String redact(const uint64_t i) const
+    {
+        return i == 0 ? "" : "***";
+    }
 
-    const void appendPreferenceInt(Preferences *preferences, String& s, const char* description, const char* key)
+    const void appendPreferenceInt8(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getChar(key)) : String(preferences->getChar(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceUInt8(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getUChar(key)) : String(preferences->getUChar(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceInt16(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getShort(key)) : String(preferences->getShort(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceUInt16(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getUShort(key)) : String(preferences->getUShort(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceInt32(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
         s.concat(isRedacted(key) ? redact(preferences->getInt(key)) : String(preferences->getInt(key)));
         s.concat("\n");
     }
-    const void appendPreferenceUInt(Preferences *preferences, String& s, const char* description, const char* key)
+    const void appendPreferenceUInt32(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
         s.concat(isRedacted(key) ? redact(preferences->getUInt(key)) : String(preferences->getUInt(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceInt64(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getLong64(key)) : String(preferences->getLong64(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceUInt64(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getULong64(key)) : String(preferences->getULong64(key)));
         s.concat("\n");
     }
     const void appendPreferenceBool(Preferences *preferences, String& s, const char* description, const char* key)
@@ -120,16 +170,28 @@ private:
         switch(preferences->getType(key))
         {
             case PT_I8:
+                appendPreferenceInt8(preferences, s, key, key);
+                break;
             case PT_I16:
+                appendPreferenceInt16(preferences, s, key, key);
+                break;
             case PT_I32:
+                appendPreferenceInt32(preferences, s, key, key);
+                break;
             case PT_I64:
-                appendPreferenceInt(preferences, s, key, key);
+                appendPreferenceInt64(preferences, s, key, key);
                 break;
             case PT_U8:
+                appendPreferenceUInt8(preferences, s, key, key);
+                break;
             case PT_U16:
+                appendPreferenceUInt16(preferences, s, key, key);
+                break;
             case PT_U32:
+                appendPreferenceUInt32(preferences, s, key, key);
+                break;
             case PT_U64:
-                appendPreferenceUInt(preferences, s, key, key);
+                appendPreferenceUInt64(preferences, s, key, key);
                 break;
             case PT_STR:
                 appendPreferenceString(preferences, s, key, key);
