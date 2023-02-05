@@ -719,10 +719,20 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     response.concat(debugPreferences.preferencesToString(_preferences));
 
-    response.concat("Lock PIN set: ");
-    response.concat(_nuki->isPinSet() ? "Yes\n" : "No\n");
-    response.concat("Opener PIN set: ");
-    response.concat(_nukiOpener->isPinSet() ? "Yes\n" : "No\n");
+    if(_nuki != nullptr)
+    {
+        response.concat("Lock paired: ");
+        response.concat(_nuki->isPaired() ? "Yes\n" : "No\n");
+        response.concat("Lock PIN set: ");
+        response.concat(_nuki->isPaired() ? _nuki->isPinSet() ? "Yes\n" : "No\n" : "-\n");
+    }
+    if(_nukiOpener != nullptr)
+    {
+        response.concat("Opener paired: ");
+        response.concat(_nukiOpener->isPaired() ? "Yes\n" : "No\n");
+        response.concat("Opener PIN set: ");
+        response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinSet() ? "Yes\n" : "No\n" : "-\n");
+    }
 
     response.concat("Heap: ");
     response.concat(esp_get_free_heap_size());
