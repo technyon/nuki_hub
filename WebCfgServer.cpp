@@ -719,6 +719,9 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     response.concat(debugPreferences.preferencesToString(_preferences));
 
+    response.concat("MQTT connected: ");
+    response.concat(_network->mqttConnectionState() > 0 ? "Yes\n" : "No\n");
+
     if(_nuki != nullptr)
     {
         response.concat("Lock paired: ");
