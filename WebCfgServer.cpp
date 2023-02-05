@@ -519,8 +519,8 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<FORM ACTION=method=get >");
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
-    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30);
-    printInputField(response, "CREDPASS", "Password (max 30 characters)", "*", 30, true);
+    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, false, true);
+    printInputField(response, "CREDPASS", "Password", "*", 30, true, true);
     printInputField(response, "CREDPASSRE", "Retype password", "*", 30, true);
     response.concat("</table>");
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
@@ -610,16 +610,16 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
     printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
-    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
-    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
+    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, false, true);
+    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true, true);
     response.concat("</table><br>");
 
     response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
-    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported());
-    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported());
-    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported());
+    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
+    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
+    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
     printDropDown(response, "NWHWDT", "Network hardware detection", String(_preferences->getInt(preference_network_hardware_gpio)), getNetworkGpioOptions());
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
@@ -775,8 +775,9 @@ void WebCfgServer::printInputField(String& response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
-                                   const size_t maxLength,
-                                   const bool isPassword)
+                                   const size_t& maxLength,
+                                   const bool& isPassword,
+                                   const bool& showLengthRestriction)
 {
     char maxLengthStr[20];
 
@@ -784,6 +785,14 @@ void WebCfgServer::printInputField(String& response,
 
     response.concat("<tr><td>");
     response.concat(description);
+
+    if(showLengthRestriction)
+    {
+        response.concat(" (Max. ");
+        response.concat(maxLength);
+        response.concat(" characters)");
+    }
+
     response.concat("</td><td>");
     response.concat("<INPUT TYPE=");
     response.concat(isPassword ? "PASSWORD" : "TEXT");
@@ -830,8 +839,9 @@ void WebCfgServer::printTextarea(String& response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
-                                   const size_t maxLength,
-                                   const bool enabled)
+                                   const size_t& maxLength,
+                                   const bool& enabled,
+                                   const bool& showLengthRestriction)
 {
     char maxLengthStr[20];
 
@@ -839,6 +849,12 @@ void WebCfgServer::printTextarea(String& response,
 
     response.concat("<tr><td>");
     response.concat(description);
+    if(showLengthRestriction)
+    {
+        response.concat(" (Max. ");
+        response.concat(maxLength);
+        response.concat(" characters)");
+    }
     response.concat("</td><td>");
     response.concat(" <TEXTAREA ");
     if(!enabled)
