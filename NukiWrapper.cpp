@@ -60,6 +60,37 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_command_retry_delay, 1000);
     }
 
+    if(_retryDelay <= 100)
+    {
+        _retryDelay = 100;
+        _preferences->putInt(preference_command_retry_delay, _retryDelay);
+    }
+
+    if(_intervalLockstate == 0)
+    {
+        _intervalLockstate = 60 * 30;
+        _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
+    }
+    if(_intervalConfig == 0)
+    {
+        _intervalConfig = 60 * 60;
+        _preferences->putInt(preference_query_interval_configuration, _intervalConfig);
+    }
+    if(_intervalBattery == 0)
+    {
+        _intervalBattery = 60 * 30;
+        _preferences->putInt(preference_query_interval_battery, _intervalBattery);
+    }
+    if(_intervalKeypad == 0)
+    {
+        _intervalKeypad = 60 * 30;
+        _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
+    }
+    if(_restartBeaconTimeout < 10)
+    {
+        _restartBeaconTimeout = -1;
+        _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
+    }
 
     _nukiLock.setEventHandler(this);
 
