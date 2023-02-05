@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #define preference_started_before "run"
 #define preference_deviceId "deviceId"
 #define preference_mqtt_broker "mqttbroker"
@@ -41,5 +43,114 @@
 #define preference_has_mac_byte_1 "macb1"
 #define preference_has_mac_byte_2 "macb2"
 
+class DebugPreferences
+{
+private:
+    std::vector<char*> _keys =
+    {
+        preference_started_before, preference_deviceId, preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled, preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path, preference_max_keypad_code_count, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_network_hardware, preference_network_hardware_gpio, preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_restart_timer, preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata, preference_gpio_locking_enabled, preference_presence_detection_timeout, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,
+    };
+    std::vector<char*> _redact =
+    {
+        preference_mqtt_user, preference_mqtt_password,
+        preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key,
+        preference_cred_user, preference_cred_password,
+    };
+    std::vector<char*> _boolPrefs =
+    {
+        preference_started_before, preference_mqtt_log_enabled, preference_lock_enabled, preference_opener_enabled,
+        preference_restart_on_disconnect, preference_keypad_control_enabled, preference_register_as_app,
+        preference_publish_authdata, preference_gpio_locking_enabled, preference_has_mac_saved,
+    };
 
+    const bool isRedacted(const char* key) const
+    {
+        return std::find(_redact.begin(), _redact.end(), key) != _redact.end();
+    }
+    const String redact(const String s) const
+    {
+        return s == "" ? "" : "***";
+    }
+    const String redact(const int i) const
+    {
+        return i == 0 ? "" : "***";
+    }
+    const String redact(const uint i) const
+    {
+        return i == 0 ? "" : "***";
+    }
 
+    const void appendPreferenceInt(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getInt(key)) : String(preferences->getInt(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceUInt(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getUInt(key)) : String(preferences->getUInt(key)));
+        s.concat("\n");
+    }
+    const void appendPreferenceBool(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(preferences->getBool(key) ? "true" : "false");
+        s.concat("\n");
+    }
+    const void appendPreferenceString(Preferences *preferences, String& s, const char* description, const char* key)
+    {
+        s.concat(description);
+        s.concat(": ");
+        s.concat(isRedacted(key) ? redact(preferences->getString(key)) : preferences->getString(key));
+        s.concat("\n");
+    }
+
+    const void appendPreference(Preferences *preferences, String& s, const char* key)
+    {
+        if(std::find(_boolPrefs.begin(), _boolPrefs.end(), key) != _boolPrefs.end())
+        {
+            appendPreferenceBool(preferences, s, key, key);
+            return;
+        }
+
+        switch(preferences->getType(key))
+        {
+            case PT_I8:
+            case PT_I16:
+            case PT_I32:
+            case PT_I64:
+                appendPreferenceInt(preferences, s, key, key);
+                break;
+            case PT_U8:
+            case PT_U16:
+            case PT_U32:
+            case PT_U64:
+                appendPreferenceUInt(preferences, s, key, key);
+                break;
+            case PT_STR:
+                appendPreferenceString(preferences, s, key, key);
+                break;
+            default:
+                appendPreferenceString(preferences, s, key, key);
+                break;
+        }
+    }
+
+public:
+    const String preferencesToString(Preferences *preferences)
+    {
+        String s = "";
+
+        for(const auto& key : _keys)
+        {
+            appendPreference(preferences, s, key);
+        }
+
+        return s;
+    }
+
+};

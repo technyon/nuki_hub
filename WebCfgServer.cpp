@@ -159,6 +159,14 @@ void WebCfgServer::initialize()
 
         handleOtaUpload();
     });
+    _server.on("/info", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildInfoHtml(response);
+        _server.send(200, "text/html", response);
+    });
 
     _server.begin();
 
@@ -696,6 +704,22 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
     buildNavigationButton(response, "Confirm", "/wifimanager");
 
     response.concat("</BODY></HTML>");
+}
+
+void WebCfgServer::buildInfoHtml(String &response)
+{
+    DebugPreferences debugPreferences;
+
+    buildHtmlHeader(response);
+    response.concat("<h3>Info</h3> <pre>");
+    response.concat(debugPreferences.preferencesToString(_preferences));
+
+    response.concat("Lock PIN set: ");
+    response.concat(_nuki->isPinSet() ? "Yes\n" : "No\n");
+    response.concat("Opener PIN set: ");
+    response.concat(_nukiOpener->isPinSet() ? "Yes\n" : "No\n");
+
+    response.concat("</pre> </BODY></HTML>");
 }
 
 void WebCfgServer::processUnpair(bool opener)

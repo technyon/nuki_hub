@@ -251,6 +251,11 @@ void NukiWrapper::unlatch()
     _nextLockAction = NukiLock::LockAction::Unlatch;
 }
 
+bool NukiWrapper::isPinSet()
+{
+    return _nukiLock.getSecurityPincode() != 0;
+}
+
 void NukiWrapper::setPin(const uint16_t pin)
 {
         _nukiLock.saveSecurityPincode(pin);

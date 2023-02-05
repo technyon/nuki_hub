@@ -19,6 +19,7 @@ public:
     void unlock();
     void unlatch();
 
+    bool isPinSet();
     void setPin(const uint16_t pin);
     void unpair();
     

@@ -205,6 +205,11 @@ void NukiOpenerWrapper::update()
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiOpener::OpenerState));
 }
 
+bool NukiOpenerWrapper::isPinSet()
+{
+    return _nukiOpener.getSecurityPincode() != 0;
+}
+
 void NukiOpenerWrapper::setPin(const uint16_t pin)
 {
     _nukiOpener.saveSecurityPincode(pin);

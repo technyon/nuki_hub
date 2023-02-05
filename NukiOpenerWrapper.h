@@ -15,6 +15,7 @@ public:
     void initialize();
     void update();
 
+    bool isPinSet();
     void setPin(const uint16_t pin);
 
     void unpair();
