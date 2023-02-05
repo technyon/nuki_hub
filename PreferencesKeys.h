@@ -37,6 +37,7 @@
 #define preference_cred_password "crdpass"
 #define preference_publish_authdata "pubauth"
 #define preference_gpio_locking_enabled "gpiolck"
+#define preference_publish_heap "pubheap"
 #define preference_presence_detection_timeout "prdtimeout"
 #define preference_has_mac_saved "hasmac"
 #define preference_has_mac_byte_0 "macb0"
@@ -48,7 +49,7 @@ class DebugPreferences
 private:
     std::vector<char*> _keys =
     {
-        preference_started_before, preference_deviceId, preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled, preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path, preference_max_keypad_code_count, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_network_hardware, preference_network_hardware_gpio, preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_restart_timer, preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata, preference_gpio_locking_enabled, preference_presence_detection_timeout, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,
+        preference_started_before, preference_deviceId, preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled, preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path, preference_max_keypad_code_count, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_network_hardware, preference_network_hardware_gpio, preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_restart_timer, preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata, preference_gpio_locking_enabled, preference_publish_heap, preference_presence_detection_timeout, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,
     };
     std::vector<char*> _redact =
     {
@@ -60,7 +61,7 @@ private:
     {
         preference_started_before, preference_mqtt_log_enabled, preference_lock_enabled, preference_opener_enabled,
         preference_restart_on_disconnect, preference_keypad_control_enabled, preference_register_as_app,
-        preference_publish_authdata, preference_gpio_locking_enabled, preference_has_mac_saved,
+        preference_publish_authdata, preference_gpio_locking_enabled, preference_has_mac_saved, preference_publish_heap
     };
 
     const bool isRedacted(const char* key) const

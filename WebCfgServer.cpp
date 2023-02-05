@@ -167,13 +167,35 @@ void WebCfgServer::initialize()
         buildInfoHtml(response);
         _server.send(200, "text/html", response);
     });
+    _server.on("/heapon", [&]() {
+        _preferences->putBool(preference_publish_heap, true);
+
+        String response = "";
+        buildConfirmHtml(response, "OK");
+        _server.send(200, "text/html", response);
+        Log->println(F("Restarting"));
+
+        waitAndProcess(true, 1000);
+        ESP.restart();
+    });
+    _server.on("/heapoff", [&]() {
+        _preferences->putBool(preference_publish_heap, false);
+
+        String response = "";
+        buildConfirmHtml(response, "OK");
+        _server.send(200, "text/html", response);
+        Log->println(F("Restarting"));
+
+        waitAndProcess(true, 1000);
+        ESP.restart();
+    });
 
     _server.begin();
 
     _network->setKeepAliveCallback([&]()
-                                   {
-                                       update();
-                                   });
+        {
+            update();
+        });
 }
 
 bool WebCfgServer::processArgs(String& message)
