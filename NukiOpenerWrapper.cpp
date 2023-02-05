@@ -40,7 +40,9 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
+    _intervalConfig = _preferences->getInt(preference_query_interval_battery);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
+    _intervalConfig = _preferences->getInt(preference_query_interval_configuration);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
@@ -48,15 +50,38 @@ void NukiOpenerWrapper::initialize()
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
+    if(_retryDelay <= 100)
+    {
+        _retryDelay = 100;
+        _preferences->putInt(preference_command_retry_delay, _retryDelay);
+    }
+
     if(_intervalLockstate == 0)
     {
-        _intervalLockstate = 60 * 5;
+        _intervalLockstate = 60 * 30;
         _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
+    }
+    if(_intervalConfig == 0)
+    {
+        _intervalConfig = 60 * 60;
+        _preferences->putInt(preference_query_interval_configuration, _intervalConfig);
     }
     if(_intervalBattery == 0)
     {
         _intervalBattery = 60 * 30;
         _preferences->putInt(preference_query_interval_battery, _intervalBattery);
+    }
+    /*
+    if(_intervalKeypad == 0)
+    {
+        _intervalKeypad = 60 * 30;
+        _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
+    }
+     */
+    if(_restartBeaconTimeout < 10)
+    {
+        _restartBeaconTimeout = -1;
+        _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
     }
 
     _nukiOpener.setEventHandler(this);

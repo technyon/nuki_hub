@@ -332,6 +332,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_query_interval_lockstate, value.toInt());
             configChanged = true;
         }
+        else if(key == "CFGINT")
+        {
+            _preferences->putInt(preference_query_interval_configuration, value.toInt());
+            configChanged = true;
+        }
         else if(key == "BATINT")
         {
             _preferences->putInt(preference_query_interval_battery, value.toInt());
@@ -683,6 +688,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 
     printCheckBox(response, "REGAPP", "Register as app (on: register as app, off: register as bridge; needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
+    printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
     if(_nuki != nullptr && _nuki->hasKeypad())
     {
