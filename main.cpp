@@ -12,6 +12,7 @@
 #include "Gpio.h"
 #include "Logger.h"
 #include "Config.h"
+#include "RestartReason.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -27,6 +28,9 @@ EthServer* ethServer = nullptr;
 bool lockEnabled = false;
 bool openerEnabled = false;
 unsigned long restartTs = (2^32) - 5 * 60000;
+
+RTC_NOINIT_ATTR int restartReason;
+RTC_NOINIT_ATTR uint64_t restartReasonValid;
 
 void networkTask(void *pvParameters)
 {
@@ -92,7 +96,7 @@ void checkMillisTask(void *pvParameters)
         {
             Log->println(F("Restart timer expired, restarting device."));
             delay(200);
-            ESP.restart();
+            restartEsp(RestartReason::RestartTimer);
         }
     }
 }

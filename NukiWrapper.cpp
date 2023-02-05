@@ -3,6 +3,7 @@
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
 #include "Logger.h"
+#include "RestartReason.h"
 #include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
@@ -134,7 +135,7 @@ void NukiWrapper::update()
         Log->print((millis() - _nukiLock.getLastReceivedBeaconTs()) / 1000);
         Log->println(" seconds, restarting device.");
         delay(200);
-        ESP.restart();
+        restartEsp(RestartReason::BLEBeaconWatchdog);
     }
 
     _nukiLock.updateConnectionState();

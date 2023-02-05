@@ -5,6 +5,7 @@
 #include "networkDevices/WifiDevice.h"
 #include "Logger.h"
 #include "Config.h"
+#include "RestartReason.h"
 
 
 Network* Network::_inst = nullptr;
@@ -187,7 +188,7 @@ bool Network::update()
     {
         if(_restartOnDisconnect && millis() > 60000)
         {
-            ESP.restart();
+            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
 
         Log->println(F("Network not connected. Trying reconnect."));
@@ -199,7 +200,7 @@ bool Network::update()
                 strcpy(WiFi_fallbackDetect, "wifi_fallback");
                 Log->println("Network device has a critical failure, enable fallback to Wifi and reboot.");
                 delay(200);
-                ESP.restart();
+                restartEsp(RestartReason::NetworkDeviceCriticalFailure);
                 break;
             case ReconnectStatus::Success:
                 memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
@@ -218,7 +219,7 @@ bool Network::update()
         {
             Log->println("Network timeout has been reached, restarting ...");
             delay(200);
-            ESP.restart();
+            restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
 
         bool success = reconnect();

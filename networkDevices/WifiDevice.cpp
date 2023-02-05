@@ -4,6 +4,7 @@
 #include "../Logger.h"
 #include "../MqttTopics.h"
 #include "espMqttClient.h"
+#include "../RestartReason.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
@@ -80,7 +81,7 @@ void WifiDevice::initialize()
     if(!res) {
         Log->println(F("Failed to connect. Wait for ESP restart."));
         delay(1000);
-        ESP.restart();
+        restartEsp(RestartReason::WifiInitFailed);
     }
     else {
         Log->print(F("WiFi connected: "));
@@ -103,7 +104,7 @@ void WifiDevice::reconfigure()
 {
     strcpy(WiFiDevice_reconfdetect, "reconfigure_wifi");
     delay(200);
-    ESP.restart();
+    restartEsp(RestartReason::ReconfigureWifi);
 }
 
 void WifiDevice::printError()
@@ -143,7 +144,7 @@ void WifiDevice::onDisconnected()
 {
     if(millis() > 60000)
     {
-        ESP.restart();
+        restartEsp(RestartReason::RestartOnDisconnectWatchdog);
     }
 }
 

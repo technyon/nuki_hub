@@ -61,6 +61,7 @@ file(GLOB SRCFILES
         PreferencesKeys.h
         Gpio.cpp
         Logger.cpp
+        RestartReason.h
 #        include/RTOS.h
         lib/WiFiManager/WiFiManager.cpp
         lib/WiFiManager/wm_consts_en.h

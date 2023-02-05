@@ -4,6 +4,7 @@
 #include "hardware/WifiEthServer.h"
 #include "Logger.h"
 #include "Config.h"
+#include "RestartReason.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -119,8 +120,8 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
         String message = "";
-        bool restartEsp = processArgs(message);
-        if(restartEsp)
+        bool restart = processArgs(message);
+        if(restart)
         {
             String response = "";
             buildConfirmHtml(response, message);
@@ -128,7 +129,7 @@ void WebCfgServer::initialize()
             Log->println(F("Restarting"));
 
             waitAndProcess(true, 1000);
-            ESP.restart();
+            restartEsp(RestartReason::ConfigurationUpdated);
         }
         else
         {
@@ -176,7 +177,7 @@ void WebCfgServer::initialize()
         Log->println(F("Restarting"));
 
         waitAndProcess(true, 1000);
-        ESP.restart();
+        restartEsp(RestartReason::ConfigurationUpdated);
     });
     _server.on("/heapoff", [&]() {
         _preferences->putBool(preference_publish_heap, false);
@@ -187,7 +188,7 @@ void WebCfgServer::initialize()
         Log->println(F("Restarting"));
 
         waitAndProcess(true, 1000);
-        ESP.restart();
+        restartEsp(RestartReason::ConfigurationUpdated);
     });
 
     _server.begin();
@@ -475,7 +476,7 @@ void WebCfgServer::update()
     {
         Log->println(F("OTA time out, restarting"));
         delay(200);
-        ESP.restart();
+        restartEsp(RestartReason::OTATimeout);
     }
 
     if(!_enabled) return;
@@ -763,6 +764,14 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(esp_get_free_heap_size());
     response.concat("\n");
 
+    response.concat("Restart reason FW: ");
+    response.concat(getRestartReasion());
+    response.concat("\n");
+
+//    response.concat("Restart reason ESP: ");
+//    response.concat(getRestartReasion());
+//    response.concat("\n");
+
     response.concat("</pre> </BODY></HTML>");
 }
 
@@ -801,7 +810,7 @@ void WebCfgServer::processUnpair(bool opener)
         _nukiOpener->unpair();
     }
     waitAndProcess(false, 1000);
-    ESP.restart();
+    restartEsp(RestartReason::DeviceUnpaired);
 }
 
 void WebCfgServer::buildHtmlHeader(String &response)

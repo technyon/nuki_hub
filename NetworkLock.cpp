@@ -5,6 +5,7 @@
 #include "PreferencesKeys.h"
 #include "Pins.h"
 #include "Logger.h"
+#include "RestartReason.h"
 
 NetworkLock::NetworkLock(Network* network, Preferences* preferences)
 : _network(network),
@@ -81,7 +82,7 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     {
         Log->println(F("Restart requested via MQTT."));
         delay(200);
-        ESP.restart();
+        restartEsp(RestartReason::RequestedViaMqtt);
     }
 
     if(processActions && comparePrefixedPath(topic, mqtt_topic_lock_action))
