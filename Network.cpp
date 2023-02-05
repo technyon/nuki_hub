@@ -479,6 +479,11 @@ bool Network::encryptionSupported()
     return _device->supportsEncryption();
 }
 
+const String Network::networkDeviceName() const
+{
+    return _device->deviceName();
+}
+
 void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision)
 {
     char str[30];

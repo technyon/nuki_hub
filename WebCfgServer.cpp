@@ -766,6 +766,10 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinSet() ? "Yes\n" : "No\n" : "-\n");
     }
 
+    response.concat("Network device: ");
+    response.concat(_network->networkDeviceName());
+    response.concat("\n");
+
     response.concat("Heap: ");
     response.concat(esp_get_free_heap_size());
     response.concat("\n");

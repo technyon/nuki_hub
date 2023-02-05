@@ -53,6 +53,11 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
     }
 }
 
+const String WifiDevice::deviceName() const
+{
+    return "Built-in Wifi";
+}
+
 void WifiDevice::initialize()
 {
     std::vector<const char *> wm_menu;

@@ -18,6 +18,8 @@ public:
     explicit W5500Device(const String& hostname, Preferences* _preferences, int variant);
     ~W5500Device();
 
+    const String deviceName() const override;
+
     virtual void initialize();
     virtual ReconnectStatus reconnect();
     virtual void reconfigure();

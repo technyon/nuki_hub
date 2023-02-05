@@ -32,6 +32,11 @@ W5500Device::W5500Device(const String &hostname, Preferences* preferences, int v
 W5500Device::~W5500Device()
 {}
 
+const String W5500Device::deviceName() const
+{
+    return "Wiznet W5500";
+}
+
 void W5500Device::initialize()
 {
     WiFi.mode(WIFI_OFF);
