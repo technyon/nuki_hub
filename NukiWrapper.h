@@ -44,12 +44,12 @@ private:
     void updateConfig();
     void updateAuthData();
     void updateKeypad();
+    void postponeBleWatchdog();
 
     void readConfig();
     void readAdvancedConfig();
     
     void setupHASS();
-
     bool hasDoorSensor();
 
     NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
@@ -98,5 +98,6 @@ private:
     unsigned long _nextKeypadUpdateTs = 0;
     unsigned long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;
+    unsigned long _disableBleWatchdogTs = 0;
     NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };

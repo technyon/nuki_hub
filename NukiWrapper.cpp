@@ -136,6 +136,7 @@ void NukiWrapper::update()
     if(_restartBeaconTimeout > 0 &&
        ts > 60000 &&
        lastReceivedBeaconTs > 0 &&
+       _disableBleWatchdogTs < ts &&
        (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the lock for ");
@@ -233,6 +234,7 @@ void NukiWrapper::update()
                 _nextLockAction = (NukiLock::LockAction) 0xff;
             }
         }
+        postponeBleWatchdog();
     }
 
     if(_clearAuthData)
@@ -292,12 +294,15 @@ void NukiWrapper::updateKeyTurnerState()
     {
         updateAuthData();
     }
+
+    postponeBleWatchdog();
 }
 
 void NukiWrapper::updateBatteryState()
 {
     _nukiLock.requestBatteryReport(&_batteryReport);
     _network->publishBatteryReport(_batteryReport);
+    postponeBleWatchdog();
 }
 
 void NukiWrapper::updateConfig()
@@ -335,6 +340,7 @@ void NukiWrapper::updateAuthData()
     {
          _network->publishAuthorizationInfo(log);
     }
+    postponeBleWatchdog();
 }
 
 void NukiWrapper::updateKeypad()
@@ -363,6 +369,12 @@ void NukiWrapper::updateKeypad()
             _keypadCodeIds.push_back(entry.codeId);
         }
     }
+    postponeBleWatchdog();
+}
+
+void NukiWrapper::postponeBleWatchdog()
+{
+    _disableBleWatchdogTs = millis() + 15000;
 }
 
 NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)

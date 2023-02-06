@@ -39,6 +39,7 @@ private:
     void updateBatteryState();
     void updateConfig();
     void updateAuthData();
+    void postponeBleWatchdog();
 
     void readConfig();
     void readAdvancedConfig();
@@ -85,5 +86,6 @@ private:
     unsigned long _nextPairTs = 0;
     long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;
+    unsigned long _disableBleWatchdogTs = 0;
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
 };

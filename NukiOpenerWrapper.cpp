@@ -220,6 +220,7 @@ void NukiOpenerWrapper::update()
                 _nextLockAction = (NukiOpener::LockAction) 0xff;
             }
         }
+        postponeBleWatchdog();
     }
 
     if(_clearAuthData)
@@ -280,12 +281,15 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         updateAuthData();
     }
+
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::updateBatteryState()
 {
     _nukiOpener.requestBatteryReport(&_batteryReport);
     _network->publishBatteryReport(_batteryReport);
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::updateConfig()
@@ -321,6 +325,12 @@ void NukiOpenerWrapper::updateAuthData()
     {
         _network->publishAuthorizationInfo(log);
     }
+    postponeBleWatchdog();
+}
+
+void NukiOpenerWrapper::postponeBleWatchdog()
+{
+    _disableBleWatchdogTs = millis() + 15000;
 }
 
 NukiOpener::LockAction NukiOpenerWrapper::lockActionToEnum(const char *str)
@@ -410,6 +420,7 @@ void NukiOpenerWrapper::readConfig()
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->println(resultStr);
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::readAdvancedConfig()
@@ -420,6 +431,7 @@ void NukiOpenerWrapper::readAdvancedConfig()
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->println(resultStr);
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::setupHASS()
