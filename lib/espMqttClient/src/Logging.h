@@ -11,9 +11,15 @@ the LICENSE file.
 #if defined(ARDUINO_ARCH_ESP32)
   // Logging is en/disabled by Arduino framework macros
   #include <esp32-hal-log.h>
-  #define emc_log_i(...) log_i(__VA_ARGS__)
-  #define emc_log_e(...) log_e(__VA_ARGS__)
-  #define emc_log_w(...) log_w(__VA_ARGS__)
+  #if defined(DEBUG_ESP_MQTT_CLIENT)
+    #define emc_log_i(...) log_i(__VA_ARGS__)
+    #define emc_log_e(...) log_e(__VA_ARGS__)
+    #define emc_log_w(...) log_w(__VA_ARGS__)
+  #else
+    #define emc_log_i(...)
+    #define emc_log_e(...)
+    #define emc_log_w(...)
+  #endif
 #elif defined(ARDUINO_ARCH_ESP8266)
   #if defined(DEBUG_ESP_PORT) && defined(DEBUG_ESP_MQTT_CLIENT)
     #include <Arduino.h>
