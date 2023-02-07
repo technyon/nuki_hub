@@ -60,6 +60,7 @@ protected:
     HTTPMethod _method;
 };
 
+#ifdef WEBSERVER_ENABLE_STATIC_CONTENT
 class StaticRequestHandler : public RequestHandler {
 public:
     StaticRequestHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
@@ -146,6 +147,6 @@ protected:
     bool _isFile;
     size_t _baseUriLength;
 };
-
+#endif
 
 #endif //REQUESTHANDLERSIMPL_H

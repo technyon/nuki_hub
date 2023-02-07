@@ -90,7 +90,9 @@ public:
   void on(const Uri &uri, HTTPMethod method, THandlerFunction fn);
   void on(const Uri &uri, HTTPMethod method, THandlerFunction fn, THandlerFunction ufn);
   void addHandler(RequestHandler* handler);
+#ifdef WEBSERVER_ENABLE_STATIC_CONTENT
   void serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header = NULL );
+#endif
   void onNotFound(THandlerFunction fn);  //called when handler is not assigned
   void onFileUpload(THandlerFunction fn); //handle file uploads
 

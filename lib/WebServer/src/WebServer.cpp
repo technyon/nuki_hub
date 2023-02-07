@@ -26,7 +26,9 @@
 #include <libb64/cencode.h>
 #include "WiFiClient.h"
 #include "WebServer.h"
-#include "FS.h"
+#ifdef WEBSERVER_ENABLE_STATIC_CONTENT
+  #include "FS.h"
+#endif
 #include "detail/RequestHandlersImpl.h"
 #include "mbedtls/md5.h"
 
@@ -258,9 +260,11 @@ void WebServer::_addRequestHandler(RequestHandler* handler) {
     }
 }
 
+#ifdef WEBSERVER_ENABLE_STATIC_CONTENT
 void WebServer::serveStatic(const char* uri, FS& fs, const char* path, const char* cache_header) {
     _addRequestHandler(new StaticRequestHandler(fs, path, uri, cache_header));
 }
+#endif
 
 void WebServer::handleClient() {
   if (_currentStatus == HC_NONE) {

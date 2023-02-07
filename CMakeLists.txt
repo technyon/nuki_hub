@@ -120,15 +120,9 @@ target_link_arduino_libraries(${PROJECT_NAME}
         WiFi
         WiFiClientSecure
         Update
-#        WebServer
         DNSServer
         Preferences
-        SPIFFS
         SPI
-#        Ethernet
-#        esp32
-#        Wire
-#        FS
 )
 
 target_link_arduino_libraries(DNSServer PUBLIC WiFi)
