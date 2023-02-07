@@ -12,7 +12,7 @@ NUKI Smart Lock 2.0<br>
 NUKI Smart Lock 3.0<br>
 NUKI Smart Lock 3.0 Pro<br>
 NUKI Opener<br>
-NUKI Keypad 1.0
+NUKI Keypad 1.0 (2.0 not supported yet due to current [NUKI limitations](https://developer.nuki.io/t/keypad-2-not-setting-has-keypad-flag-in-config-of-nuki-lock/19539))
 
 ## Installation
 
@@ -123,6 +123,8 @@ The following mapping between Home Assistant services and Nuki commands is setup
 NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.
 
 ## Keypad control (optional)
+
+Note: Only devices listed in the [About section](#about) are currently supported.
 
 If a keypad is connected to the lock, keypad codes can be added, updated and removed.
 This has to enabled first in the configuration portal. Check "Enabled keypad control via MQTT" and save the configuration.
