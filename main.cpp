@@ -43,6 +43,14 @@ void networkTask(void *pvParameters)
         }
         webCfgServer->update();
 
+        // millis() is about to overflow. Restart device to prevent problems with overflow
+        if(millis() > restartTs)
+        {
+            Log->println(F("Restart timer expired, restarting device."));
+            delay(200);
+            restartEsp(RestartReason::RestartTimer);
+        }
+
         delay(200);
     }
 }
@@ -69,12 +77,8 @@ void nukiTask(void *pvParameters)
         {
             nukiOpener->update();
         }
+
     }
-}
-
-void webServerTask(void *pvParameters)
-{
-
 }
 
 void presenceDetectionTask(void *pvParameters)
@@ -85,31 +89,14 @@ void presenceDetectionTask(void *pvParameters)
     }
 }
 
-void checkMillisTask(void *pvParameters)
-{
-    while(true)
-    {
-        delay(30000);
-
-        // millis() is about to overflow. Restart device to prevent problems with overflow
-        if(millis() > restartTs)
-        {
-            Log->println(F("Restart timer expired, restarting device."));
-            delay(200);
-            restartEsp(RestartReason::RestartTimer);
-        }
-    }
-}
-
 
 void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
-    xTaskCreatePinnedToCore(networkTask, "ntw", 8192, NULL, 3, NULL, 1);
+    xTaskCreatePinnedToCore(networkTask, "ntw", 2560, NULL, 3, NULL, 1);
     xTaskCreatePinnedToCore(nukiTask, "nuki", 4096, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 768, NULL, 5, NULL, 1);
-    xTaskCreatePinnedToCore(checkMillisTask, "mlchk", 1024, NULL, 1, NULL, 1);
 }
 
 uint32_t getRandomId()
