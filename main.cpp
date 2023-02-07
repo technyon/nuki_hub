@@ -52,6 +52,8 @@ void networkTask(void *pvParameters)
         }
 
         delay(200);
+
+//        Serial.println(uxTaskGetStackHighWaterMark(NULL));
     }
 }
 
@@ -94,7 +96,7 @@ void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
-    xTaskCreatePinnedToCore(networkTask, "ntw", 2560, NULL, 3, NULL, 1);
+    xTaskCreatePinnedToCore(networkTask, "ntw", 8192, NULL, 3, NULL, 1);
     xTaskCreatePinnedToCore(nukiTask, "nuki", 4096, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 768, NULL, 5, NULL, 1);
 }
