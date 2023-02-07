@@ -32,9 +32,12 @@ public:
     void publishBleAddress(const std::string& address);
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
+    void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
+    void publishKeypadCommandResult(const char* result);
 
     void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
+    void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
 
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
@@ -48,10 +51,13 @@ private:
     void publishString(const char* topic, const String& value);
     void publishString(const char* topic, const std::string& value);
     void publishString(const char* topic, const char* value);
+    void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
 
     void buildMqttPath(const char* path, char* outPath);
     void subscribe(const char* path);
     void logactionCompletionStatusToString(uint8_t value, char* out);
+
+    String concat(String a, String b);
 
     Preferences* _preferences;
 
@@ -64,8 +70,13 @@ private:
 
     bool _firstTunerStatePublish = true;
     bool _haEnabled= false;
+    String _keypadCommandName = "";
+    String _keypadCommandCode = "";
+    uint _keypadCommandId = 0;
+    int _keypadCommandEnabled = 1;
     unsigned long _resetLockStateTs = 0;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+    void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
 };

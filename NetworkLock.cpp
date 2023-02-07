@@ -546,7 +546,6 @@ void NetworkLock::publishKeypadEntry(const String topic, NukiLock::KeypadEntry e
     publishInt(concat(topic, "/lockCount").c_str(), entry.lockCount);
 }
 
-
 void NetworkLock::publishULong(const char *topic, const unsigned long value)
 {
     return _network->publishULong(_mqttPath, topic, value);

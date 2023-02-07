@@ -47,7 +47,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
     _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
-    _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
+    _maxKeypadCodeCount = _preferences->getUInt(preference_lock_max_keypad_code_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
@@ -357,7 +357,7 @@ void NukiWrapper::updateKeypad()
         if(keypadCount > _maxKeypadCodeCount)
         {
             _maxKeypadCodeCount = keypadCount;
-            _preferences->putUInt(preference_max_keypad_code_count, _maxKeypadCodeCount);
+            _preferences->putUInt(preference_lock_max_keypad_code_count, _maxKeypadCodeCount);
         }
 
         _network->publishKeypad(entries, _maxKeypadCodeCount);
@@ -403,12 +403,10 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *
     nukiInst->onConfigUpdateReceived(topic, value);
 }
 
-
 void NukiWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
     nukiInst->onKeypadCommandReceived(command, id, name, code, enabled);
 }
-
 
 void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {

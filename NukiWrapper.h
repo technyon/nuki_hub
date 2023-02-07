@@ -85,8 +85,8 @@ private:
     bool _statusUpdated = false;
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
-    bool _configRead = false;
     uint _maxKeypadCodeCount = 0;
+    bool _configRead = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryCount = 0;
