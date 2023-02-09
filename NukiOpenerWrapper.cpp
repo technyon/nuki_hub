@@ -167,7 +167,10 @@ void NukiOpenerWrapper::update()
             setupHASS();
         }
     }
-
+    if(_hassEnabled && _configRead && _network->reconnected())
+    {
+        setupHASS();
+    }
     if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
     {
         _nextRssiTs = ts + _rssiPublishInterval;

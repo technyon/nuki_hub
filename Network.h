@@ -52,6 +52,7 @@ public:
     uint16_t subscribe(const char* topic, uint8_t qos);
 
     void setKeepAliveCallback(std::function<void()> reconnectTick);
+    void addReconnectedCallback(std::function<void()> reconnectedCallback);
 
 private:
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
@@ -91,7 +92,8 @@ private:
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastRssiTs = 0;
     long _rssiPublishInterval = 0;
-    std::function<void()> _keepAliveCallback;
+    std::function<void()> _keepAliveCallback = nullptr;
+    std::vector<std::function<void()>> _reconnectedCallbacks;
 
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
 

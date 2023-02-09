@@ -56,6 +56,11 @@ void NetworkOpener::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
     }
+
+    _network->addReconnectedCallback([&]()
+     {
+         _reconnected = true;
+     });
 }
 
 void NetworkOpener::update()
@@ -599,4 +604,11 @@ String NetworkOpener::concat(String a, String b)
     String c = a;
     c.concat(b);
     return c;
+}
+
+bool NetworkOpener::reconnected()
+{
+    bool r = _reconnected;
+    _reconnected = false;
+    return r;
 }

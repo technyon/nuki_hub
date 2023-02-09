@@ -41,6 +41,8 @@ public:
 
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
+    bool reconnected();
+
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
@@ -70,6 +72,8 @@ private:
 
     bool _firstTunerStatePublish = true;
     bool _haEnabled= false;
+    bool _reconnected = false;
+
     String _keypadCommandName = "";
     String _keypadCommandCode = "";
     uint _keypadCommandId = 0;

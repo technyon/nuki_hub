@@ -375,6 +375,10 @@ bool Network::reconnect()
             }
             delay(1000);
             _mqttConnectionState = 2;
+            for(const auto& callback : _reconnectedCallbacks)
+            {
+                callback();
+            }
         }
         else
         {
@@ -937,4 +941,9 @@ uint16_t Network::subscribe(const char *topic, uint8_t qos)
 void Network::setKeepAliveCallback(std::function<void()> reconnectTick)
 {
     _keepAliveCallback = reconnectTick;
+}
+
+void Network::addReconnectedCallback(std::function<void()> reconnectedCallback)
+{
+    _reconnectedCallbacks.push_back(reconnectedCallback);
 }

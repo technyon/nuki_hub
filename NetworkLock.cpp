@@ -70,6 +70,11 @@ void NetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
     }
+
+    _network->addReconnectedCallback([&]()
+    {
+        _reconnected = true;
+    });
 }
 
 void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
@@ -556,4 +561,11 @@ String NetworkLock::concat(String a, String b)
     String c = a;
     c.concat(b);
     return c;
+}
+
+bool NetworkLock::reconnected()
+{
+    bool r = _reconnected;
+    _reconnected = false;
+    return r;
 }
