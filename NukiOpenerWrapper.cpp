@@ -304,8 +304,11 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 
 void NukiOpenerWrapper::updateBatteryState()
 {
-    _nukiOpener.requestBatteryReport(&_batteryReport);
-    _network->publishBatteryReport(_batteryReport);
+    Nuki::CmdResult result = _nukiOpener.requestBatteryReport(&_batteryReport);
+    if(result == Nuki::CmdResult::Success)
+    {
+        _network->publishBatteryReport(_batteryReport);
+    }
     postponeBleWatchdog();
 }
 
@@ -315,8 +318,14 @@ void NukiOpenerWrapper::updateConfig()
     readAdvancedConfig();
     _configRead = true;
     _hasKeypad = _nukiConfig.hasKeypad > 0;
-    _network->publishConfig(_nukiConfig);
-    _network->publishAdvancedConfig(_nukiAdvancedConfig);
+    if(_nukiConfigValid)
+    {
+        _network->publishConfig(_nukiConfig);
+    }
+    if(_nukiAdvancedConfigValid)
+    {
+        _network->publishAdvancedConfig(_nukiAdvancedConfig);
+    }
 }
 
 void NukiOpenerWrapper::updateAuthData()
