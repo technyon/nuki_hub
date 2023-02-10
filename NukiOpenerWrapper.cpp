@@ -577,6 +577,11 @@ const bool NukiOpenerWrapper::isPaired()
     return _paired;
 }
 
+const bool NukiOpenerWrapper::hasKeypad()
+{
+    return _hasKeypad;
+}
+
 const BLEAddress NukiOpenerWrapper::getBleAddress() const
 {
     return _nukiOpener.getBleAddress();
