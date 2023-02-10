@@ -100,5 +100,5 @@ private:
     unsigned long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;
     unsigned long _disableBleWatchdogTs = 0;
-    NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
+    volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };
