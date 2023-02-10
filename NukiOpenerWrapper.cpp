@@ -162,7 +162,7 @@ void NukiOpenerWrapper::update()
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
-        if(_hassEnabled)
+        if(_hassEnabled && !_hassSetupCompleted)
         {
             setupHASS();
         }
@@ -619,7 +619,7 @@ void NukiOpenerWrapper::readAdvancedConfig()
 
 void NukiOpenerWrapper::setupHASS()
 {
-    if(!_nukiConfigValid || _hassSetupCompleted) return;
+    if(!_nukiConfigValid) return;
 
     String baseTopic = _preferences->getString(preference_mqtt_opener_path);
     char uidString[20];
