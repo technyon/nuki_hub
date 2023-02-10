@@ -267,7 +267,18 @@ void NukiOpenerWrapper::unpair()
 
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
-    _nukiOpener.requestOpenerState(&_keyTurnerState);
+    Nuki::CmdResult result =_nukiOpener.requestOpenerState(&_keyTurnerState);
+    if(result != Nuki::CmdResult::Success)
+    {
+        _retryLockstateCount++;
+        postponeBleWatchdog();
+        if(_retryLockstateCount < _nrOfRetries)
+        {
+            _nextLockStateUpdateTs = millis() + _retryDelay;
+        }
+        return;
+    }
+    _retryLockstateCount = 0;
 
     if(_statusUpdated &&
         _keyTurnerState.lockState == NukiOpener::LockState::Locked &&

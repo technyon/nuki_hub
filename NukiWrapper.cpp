@@ -283,7 +283,19 @@ void NukiWrapper::unpair()
 
 void NukiWrapper::updateKeyTurnerState()
 {
-    _nukiLock.requestKeyTurnerState(&_keyTurnerState);
+    Nuki::CmdResult result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
+    if(result != Nuki::CmdResult::Success)
+    {
+        _retryLockstateCount++;
+        postponeBleWatchdog();
+        if(_retryLockstateCount < _nrOfRetries)
+        {
+            _nextLockStateUpdateTs = millis() + _retryDelay;
+        }
+        return;
+    }
+    _retryLockstateCount = 0;
+
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)

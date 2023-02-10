@@ -66,6 +66,7 @@ private:
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryCount = 0;
+    int _retryLockstateCount = 0;
     unsigned long _nextRetryTs = 0;
     std::vector<uint16_t> _keypadCodeIds;
 
