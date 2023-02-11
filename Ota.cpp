@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "Ota.h"
 #include "Logger.h"
+#include "RestartReason.h"
 
 #define FULL_PACKET 1436 // HTTP_UPLOAD_BUFLEN in WebServer,h
 
@@ -26,7 +27,7 @@ void Ota::updateFirmware(uint8_t* buf, size_t size)
         if (ESP_OK == esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL)))
         {
             delay(2000);
-            esp_restart();
+            restartEsp(RestartReason::OTACompleted);
         }
         else
         {

@@ -12,6 +12,7 @@ enum class RestartReason
     NetworkDeviceCriticalFailure,
     ConfigurationUpdated,
     RestartTimer,
+    OTACompleted,
     OTATimeout,
     OTAAborted,
     OTAUnknownState,
@@ -60,8 +61,14 @@ inline static String getRestartReason()
             return "ConfigurationUpdated";
         case RestartReason::RestartTimer:
             return "RestartTimer";
+        case RestartReason::OTACompleted:
+            return "OTACompleted";
         case RestartReason::OTATimeout:
             return "OTATimeout";
+        case RestartReason::OTAAborted:
+            return "OTAAborted";
+        case RestartReason::OTAUnknownState:
+            return "OTAUnknownState";
         case RestartReason::DeviceUnpaired:
             return "DeviceUnpaired";
         default:
