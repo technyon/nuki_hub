@@ -1042,22 +1042,40 @@ void WebCfgServer::handleOtaUpload()
         return;
     }
 
-    if (upload.status == UPLOAD_FILE_START) {
+    if (upload.status == UPLOAD_FILE_START)
+    {
         String filename = upload.filename;
-        if (!filename.startsWith("/")) {
+        if (!filename.startsWith("/"))
+        {
             filename = "/" + filename;
         }
         _otaStartTs = millis();
         esp_task_wdt_init(30, false);
         _network->disableAutoRestarts();
         Log->print("handleFileUpload Name: "); Log->println(filename);
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
+    }
+    else if (upload.status == UPLOAD_FILE_WRITE)
+    {
         _transferredSize = _transferredSize + upload.currentSize;
         Log->println(_transferredSize);
         _ota.updateFirmware(upload.buf, upload.currentSize);
-    } else if (upload.status == UPLOAD_FILE_END) {
+    } else if (upload.status == UPLOAD_FILE_END)
+    {
         Log->println();
         Log->print("handleFileUpload Size: "); Log->println(upload.totalSize);
+    }
+    else if(upload.status == UPLOAD_FILE_ABORTED)
+    {
+        Log->println();
+        Log->println("OTA aborted, restarting ESP.");
+        restartEsp(RestartReason::OTAAborted);
+    }
+    else
+    {
+        Log->println();
+        Log->print("OTA unknown state: ");
+        Log->println((int)upload.status);
+        restartEsp(RestartReason::OTAUnknownState);
     }
 }
 

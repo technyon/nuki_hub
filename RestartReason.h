@@ -13,6 +13,8 @@ enum class RestartReason
     ConfigurationUpdated,
     RestartTimer,
     OTATimeout,
+    OTAAborted,
+    OTAUnknownState,
     DeviceUnpaired,
 };
 
