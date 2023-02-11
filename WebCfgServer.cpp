@@ -770,6 +770,10 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(_network->networkDeviceName());
     response.concat("\n");
 
+    response.concat("Uptime: ");
+    response.concat(millis() / 1000 / 60);
+    response.concat(" minutes\n");
+
     response.concat("Heap: ");
     response.concat(esp_get_free_heap_size());
     response.concat("\n");
