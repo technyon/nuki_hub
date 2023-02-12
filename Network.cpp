@@ -66,8 +66,7 @@ void Network::setupDevice()
             Log->println(F(" for network device selection"));
 
             pinMode(hardwareDetectGpio, INPUT_PULLUP);
-            _networkDeviceType = NetworkDeviceType::W5500;
-//                    digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+            _networkDeviceType = digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
         }
         else if(hardwareDetect == 3)
         {
