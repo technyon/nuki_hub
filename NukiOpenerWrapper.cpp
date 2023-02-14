@@ -3,6 +3,7 @@
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
 #include "Logger.h"
+#include "RestartReason.h"
 #include <NukiOpenerUtils.h>
 
 NukiOpenerWrapper* nukiOpenerInst;
@@ -24,6 +25,7 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id,
 
     network->setLockActionReceivedCallback(nukiOpenerInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiOpenerInst->onConfigUpdateReceivedCallback);
+    network->setKeypadCommandReceivedCallback(nukiOpenerInst->onKeypadCommandReceivedCallback);
 }
 
 
@@ -39,23 +41,55 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
+    _intervalConfig = _preferences->getInt(preference_query_interval_configuration);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
+    _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
+    _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
+    _maxKeypadCodeCount = _preferences->getUInt(preference_opener_max_keypad_code_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
+    if(_retryDelay <= 100)
+    {
+        _retryDelay = 100;
+        _preferences->putInt(preference_command_retry_delay, _retryDelay);
+    }
+
     if(_intervalLockstate == 0)
     {
-        _intervalLockstate = 60 * 5;
+        _intervalLockstate = 60 * 30;
         _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
+    }
+    if(_intervalConfig == 0)
+    {
+        _intervalConfig = 60 * 60;
+        _preferences->putInt(preference_query_interval_configuration, _intervalConfig);
     }
     if(_intervalBattery == 0)
     {
         _intervalBattery = 60 * 30;
         _preferences->putInt(preference_query_interval_battery, _intervalBattery);
+    }
+    if(_intervalKeypad == 0)
+    {
+        _intervalKeypad = 60 * 30;
+        _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
+    }
+    /*
+    if(_intervalKeypad == 0)
+    {
+        _intervalKeypad = 60 * 30;
+        _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
+    }
+     */
+    if(_restartBeaconTimeout < 10)
+    {
+        _restartBeaconTimeout = -1;
+        _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
     }
 
     _nukiOpener.setEventHandler(this);
@@ -108,7 +142,7 @@ void NukiOpenerWrapper::update()
         Log->print((millis() - _nukiOpener.getLastReceivedBeaconTs()) / 1000);
         Log->println(" seconds, restarting device.");
         delay(200);
-        ESP.restart();
+        restartEsp(RestartReason::BLEBeaconWatchdog);
     }
 
     _nukiOpener.updateConnectionState();
@@ -128,12 +162,15 @@ void NukiOpenerWrapper::update()
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
-        if(_hassEnabled)
+        if(_hassEnabled && !_hassSetupCompleted)
         {
             setupHASS();
         }
     }
-
+    if(_hassEnabled && _configRead && _network->reconnected())
+    {
+        setupHASS();
+    }
     if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
     {
         _nextRssiTs = ts + _rssiPublishInterval;
@@ -144,6 +181,12 @@ void NukiOpenerWrapper::update()
             _network->publishRssi(rssi);
             _lastRssi = rssi;
         }
+    }
+
+    if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
+    {
+        _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
+        updateKeypad();
     }
 
     if(_nextLockAction != (NukiOpener::LockAction)0xff && ts > _nextRetryTs)
@@ -194,6 +237,7 @@ void NukiOpenerWrapper::update()
                 _nextLockAction = (NukiOpener::LockAction) 0xff;
             }
         }
+        postponeBleWatchdog();
     }
 
     if(_clearAuthData)
@@ -203,6 +247,11 @@ void NukiOpenerWrapper::update()
     }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiOpener::OpenerState));
+}
+
+bool NukiOpenerWrapper::isPinSet()
+{
+    return _nukiOpener.getSecurityPincode() != 0;
 }
 
 void NukiOpenerWrapper::setPin(const uint16_t pin)
@@ -218,7 +267,18 @@ void NukiOpenerWrapper::unpair()
 
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
-    _nukiOpener.requestOpenerState(&_keyTurnerState);
+    Nuki::CmdResult result =_nukiOpener.requestOpenerState(&_keyTurnerState);
+    if(result != Nuki::CmdResult::Success)
+    {
+        _retryLockstateCount++;
+        postponeBleWatchdog();
+        if(_retryLockstateCount < _nrOfRetries)
+        {
+            _nextLockStateUpdateTs = millis() + _retryDelay;
+        }
+        return;
+    }
+    _retryLockstateCount = 0;
 
     if(_statusUpdated &&
         _keyTurnerState.lockState == NukiOpener::LockState::Locked &&
@@ -249,20 +309,34 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         updateAuthData();
     }
+
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::updateBatteryState()
 {
-    _nukiOpener.requestBatteryReport(&_batteryReport);
-    _network->publishBatteryReport(_batteryReport);
+    Nuki::CmdResult result = _nukiOpener.requestBatteryReport(&_batteryReport);
+    if(result == Nuki::CmdResult::Success)
+    {
+        _network->publishBatteryReport(_batteryReport);
+    }
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::updateConfig()
 {
     readConfig();
     readAdvancedConfig();
-    _network->publishConfig(_nukiConfig);
-    _network->publishAdvancedConfig(_nukiAdvancedConfig);
+    _configRead = true;
+    _hasKeypad = _nukiConfig.hasKeypad > 0;
+    if(_nukiConfigValid)
+    {
+        _network->publishConfig(_nukiConfig);
+    }
+    if(_nukiAdvancedConfigValid)
+    {
+        _network->publishAdvancedConfig(_nukiAdvancedConfig);
+    }
 }
 
 void NukiOpenerWrapper::updateAuthData()
@@ -290,6 +364,41 @@ void NukiOpenerWrapper::updateAuthData()
     {
         _network->publishAuthorizationInfo(log);
     }
+    postponeBleWatchdog();
+}
+
+void NukiOpenerWrapper::updateKeypad()
+{
+    Nuki::CmdResult result = _nukiOpener.retrieveKeypadEntries(0, 0xffff);
+    if(result == 1)
+    {
+        std::list<NukiLock::KeypadEntry> entries;
+        _nukiOpener.getKeypadEntries(&entries);
+
+        entries.sort([](const NukiLock::KeypadEntry& a, const NukiLock::KeypadEntry& b) { return a.codeId < b.codeId; });
+
+        uint keypadCount = entries.size();
+        if(keypadCount > _maxKeypadCodeCount)
+        {
+            _maxKeypadCodeCount = keypadCount;
+            _preferences->putUInt(preference_opener_max_keypad_code_count, _maxKeypadCodeCount);
+        }
+
+        _network->publishKeypad(entries, _maxKeypadCodeCount);
+
+        _keypadCodeIds.clear();
+        _keypadCodeIds.reserve(entries.size());
+        for(const auto& entry : entries)
+        {
+            _keypadCodeIds.push_back(entry.codeId);
+        }
+    }
+    postponeBleWatchdog();
+}
+
+void NukiOpenerWrapper::postponeBleWatchdog()
+{
+    _disableBleWatchdogTs = millis() + 15000;
 }
 
 NukiOpener::LockAction NukiOpenerWrapper::lockActionToEnum(const char *str)
@@ -317,6 +426,10 @@ void NukiOpenerWrapper::onConfigUpdateReceivedCallback(const char *topic, const 
     nukiOpenerInst->onConfigUpdateReceived(topic, value);
 }
 
+void NukiOpenerWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
+{
+    nukiOpenerInst->onKeypadCommandReceived(command, id, name, code, enabled);
+}
 
 void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
@@ -343,6 +456,117 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *va
     }
 }
 
+void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
+{
+    if(!_hasKeypad)
+    {
+        if(_configRead)
+        {
+            _network->publishKeypadCommandResult("KeypadNotAvailable");
+        }
+        return;
+    }
+    if(!_keypadEnabled)
+    {
+        return;
+    }
+
+    bool idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), id) != _keypadCodeIds.end();
+    int codeInt = code.toInt();
+    bool codeValid = codeInt > 100000 && codeInt < 1000000 && (code.indexOf('0') == -1);
+    NukiLock::CmdResult result = (NukiLock::CmdResult)-1;
+
+    if(strcmp(command, "add") == 0)
+    {
+        if(name == "" || name == "--")
+        {
+            _network->publishKeypadCommandResult("MissingParameterName");
+            return;
+        }
+        if(codeInt == 0)
+        {
+            _network->publishKeypadCommandResult("MissingParameterCode");
+            return;
+        }
+        if(!codeValid)
+        {
+            _network->publishKeypadCommandResult("CodeInvalid");
+            return;
+        }
+
+        NukiLock::NewKeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        size_t nameLen = name.length();
+        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+        entry.code = codeInt;
+        result = _nukiOpener.addKeypadEntry(entry);
+        Log->print("Add keypad code: "); Log->println((int)result);
+        updateKeypad();
+    }
+    else if(strcmp(command, "delete") == 0)
+    {
+        if(!idExists)
+        {
+            _network->publishKeypadCommandResult("UnknownId");
+            return;
+        }
+        result = _nukiOpener.deleteKeypadEntry(id);
+        Log->print("Delete keypad code: "); Log->println((int)result);
+        updateKeypad();
+    }
+    else if(strcmp(command, "update") == 0)
+    {
+        if(name == "" || name == "--")
+        {
+            _network->publishKeypadCommandResult("MissingParameterName");
+            return;
+        }
+        if(codeInt == 0)
+        {
+            _network->publishKeypadCommandResult("MissingParameterCode");
+            return;
+        }
+        if(!codeValid)
+        {
+            _network->publishKeypadCommandResult("CodeInvalid");
+            return;
+        }
+        if(!idExists)
+        {
+            _network->publishKeypadCommandResult("UnknownId");
+            return;
+        }
+
+        NukiLock::UpdatedKeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        entry.codeId = id;
+        size_t nameLen = name.length();
+        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+        entry.code = codeInt;
+        entry.enabled = enabled == 0 ? 0 : 1;
+        result = _nukiOpener.updateKeypadEntry(entry);
+        Log->print("Update keypad code: "); Log->println((int)result);
+        updateKeypad();
+    }
+    else if(command == "--")
+    {
+        return;
+    }
+    else
+    {
+        _network->publishKeypadCommandResult("UnknownCommand");
+        return;
+    }
+
+    if((int)result != -1)
+    {
+        char resultStr[15];
+        memset(&resultStr, 0, sizeof(resultStr));
+        NukiOpener::cmdResultToString(result, resultStr);
+        _network->publishKeypadCommandResult(resultStr);
+    }
+}
+
 const NukiOpener::OpenerState &NukiOpenerWrapper::keyTurnerState()
 {
     return _keyTurnerState;
@@ -351,6 +575,11 @@ const NukiOpener::OpenerState &NukiOpenerWrapper::keyTurnerState()
 const bool NukiOpenerWrapper::isPaired()
 {
     return _paired;
+}
+
+const bool NukiOpenerWrapper::hasKeypad()
+{
+    return _hasKeypad;
 }
 
 const BLEAddress NukiOpenerWrapper::getBleAddress() const
@@ -379,6 +608,7 @@ void NukiOpenerWrapper::readConfig()
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->println(resultStr);
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::readAdvancedConfig()
@@ -389,11 +619,12 @@ void NukiOpenerWrapper::readAdvancedConfig()
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->println(resultStr);
+    postponeBleWatchdog();
 }
 
 void NukiOpenerWrapper::setupHASS()
 {
-    if(!_nukiConfigValid || _hassSetupCompleted) return;
+    if(!_nukiConfigValid) return;
 
     String baseTopic = _preferences->getString(preference_mqtt_opener_path);
     char uidString[20];

@@ -32,6 +32,11 @@ W5500Device::W5500Device(const String &hostname, Preferences* preferences, int v
 W5500Device::~W5500Device()
 {}
 
+const String W5500Device::deviceName() const
+{
+    return "Wiznet W5500";
+}
+
 void W5500Device::initialize()
 {
     WiFi.mode(WIFI_OFF);
@@ -52,11 +57,10 @@ void W5500Device::initialize()
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
-        _path = new char[200];
-        memset(_path, 0, sizeof(_path));
-
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
+        _path = new char[pathStr.length() + 1];
+        memset(_path, 0, sizeof(_path));
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
     }

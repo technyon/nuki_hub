@@ -5,6 +5,7 @@
 #include "PreferencesKeys.h"
 #include "Pins.h"
 #include "Logger.h"
+#include "RestartReason.h"
 
 NetworkLock::NetworkLock(Network* network, Preferences* preferences)
 : _network(network),
@@ -69,6 +70,11 @@ void NetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
     }
+
+    _network->addReconnectedCallback([&]()
+    {
+        _reconnected = true;
+    });
 }
 
 void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
@@ -81,7 +87,7 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     {
         Log->println(F("Restart requested via MQTT."));
         delay(200);
-        ESP.restart();
+        restartEsp(RestartReason::RequestedViaMqtt);
     }
 
     if(processActions && comparePrefixedPath(topic, mqtt_topic_lock_action))
@@ -545,7 +551,6 @@ void NetworkLock::publishKeypadEntry(const String topic, NukiLock::KeypadEntry e
     publishInt(concat(topic, "/lockCount").c_str(), entry.lockCount);
 }
 
-
 void NetworkLock::publishULong(const char *topic, const unsigned long value)
 {
     return _network->publishULong(_mqttPath, topic, value);
@@ -556,4 +561,11 @@ String NetworkLock::concat(String a, String b)
     String c = a;
     c.concat(b);
     return c;
+}
+
+bool NetworkLock::reconnected()
+{
+    bool r = _reconnected;
+    _reconnected = false;
+    return r;
 }

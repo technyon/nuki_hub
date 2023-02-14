@@ -8,17 +8,17 @@ the LICENSE file.
 
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 
-#include "ClientSyncEthernet.h"
+#include "ClientSyncW5500.h"
 #include <lwip/sockets.h>  // socket options
 
 namespace espMqttClientInternals {
 
-    ClientSyncEthernet::ClientSyncEthernet()
+    ClientSyncW5500::ClientSyncW5500()
             : client() {
         // empty
     }
 
-    bool ClientSyncEthernet::connect(IPAddress ip, uint16_t port) {
+    bool ClientSyncW5500::connect(IPAddress ip, uint16_t port) {
         bool ret = client.connect(ip, port);  // implicit conversion of return code int --> bool
         if (ret) {
 #if defined(ARDUINO_ARCH_ESP8266)
@@ -34,7 +34,7 @@ namespace espMqttClientInternals {
         return ret;
     }
 
-    bool ClientSyncEthernet::connect(const char* host, uint16_t port) {
+    bool ClientSyncW5500::connect(const char* host, uint16_t port) {
         bool ret = client.connect(host, port);  // implicit conversion of return code int --> bool
         if (ret) {
 #if defined(ARDUINO_ARCH_ESP8266)
@@ -50,27 +50,27 @@ namespace espMqttClientInternals {
         return ret;
     }
 
-    size_t ClientSyncEthernet::write(const uint8_t* buf, size_t size) {
+    size_t ClientSyncW5500::write(const uint8_t* buf, size_t size) {
         return client.write(buf, size);
     }
 
-    int ClientSyncEthernet::available() {
+    int ClientSyncW5500::available() {
         return client.available();
     }
 
-    int ClientSyncEthernet::read(uint8_t* buf, size_t size) {
+    int ClientSyncW5500::read(uint8_t* buf, size_t size) {
         return client.read(buf, size);
     }
 
-    void ClientSyncEthernet::stop() {
+    void ClientSyncW5500::stop() {
         client.stop();
     }
 
-    bool ClientSyncEthernet::connected() {
+    bool ClientSyncW5500::connected() {
         return client.connected();
     }
 
-    bool ClientSyncEthernet::disconnected() {
+    bool ClientSyncW5500::disconnected() {
         return !client.connected();
     }
 

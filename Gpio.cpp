@@ -27,7 +27,6 @@ void Gpio::isrLock()
     if(millis() < _lockedTs) return;
     _nuki->lock();
     _lockedTs = millis() + _debounceTime;
-    Log->println(F("Lock via GPIO"));;
 }
 
 void Gpio::isrUnlock()
@@ -35,7 +34,6 @@ void Gpio::isrUnlock()
     if(millis() < _lockedTs) return;
     _nuki->unlock();
     _lockedTs = millis() + _debounceTime;
-    Log->println(F("Unlock via GPIO"));;
 }
 
 void Gpio::isrUnlatch()
@@ -43,5 +41,4 @@ void Gpio::isrUnlatch()
     if(millis() < _lockedTs) return;
     _nuki->unlatch();
     _lockedTs = millis() + _debounceTime;
-    Log->println(F("Unlatch via GPIO"));;
 }

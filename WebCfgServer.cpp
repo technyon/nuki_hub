@@ -4,6 +4,7 @@
 #include "hardware/WifiEthServer.h"
 #include "Logger.h"
 #include "Config.h"
+#include "RestartReason.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -119,8 +120,8 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
         String message = "";
-        bool restartEsp = processArgs(message);
-        if(restartEsp)
+        bool restart = processArgs(message);
+        if(restart)
         {
             String response = "";
             buildConfirmHtml(response, message);
@@ -128,7 +129,7 @@ void WebCfgServer::initialize()
             Log->println(F("Restarting"));
 
             waitAndProcess(true, 1000);
-            ESP.restart();
+            restartEsp(RestartReason::ConfigurationUpdated);
         }
         else
         {
@@ -159,13 +160,43 @@ void WebCfgServer::initialize()
 
         handleOtaUpload();
     });
+    _server.on("/info", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildInfoHtml(response);
+        _server.send(200, "text/html", response);
+    });
+    _server.on("/debugon", [&]() {
+        _preferences->putBool(preference_publish_debug_info, true);
+
+        String response = "";
+        buildConfirmHtml(response, "OK");
+        _server.send(200, "text/html", response);
+        Log->println(F("Restarting"));
+
+        waitAndProcess(true, 1000);
+        restartEsp(RestartReason::ConfigurationUpdated);
+    });
+    _server.on("/debugoff", [&]() {
+        _preferences->putBool(preference_publish_debug_info, false);
+
+        String response = "";
+        buildConfirmHtml(response, "OK");
+        _server.send(200, "text/html", response);
+        Log->println(F("Restarting"));
+
+        waitAndProcess(true, 1000);
+        restartEsp(RestartReason::ConfigurationUpdated);
+    });
 
     _server.begin();
 
     _network->setKeepAliveCallback([&]()
-                                   {
-                                       update();
-                                   });
+        {
+            update();
+        });
 }
 
 bool WebCfgServer::processArgs(String& message)
@@ -299,6 +330,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "LSTINT")
         {
             _preferences->putInt(preference_query_interval_lockstate, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "CFGINT")
+        {
+            _preferences->putInt(preference_query_interval_configuration, value.toInt());
             configChanged = true;
         }
         else if(key == "BATINT")
@@ -445,7 +481,7 @@ void WebCfgServer::update()
     {
         Log->println(F("OTA time out, restarting"));
         delay(200);
-        ESP.restart();
+        restartEsp(RestartReason::OTATimeout);
     }
 
     if(!_enabled) return;
@@ -479,7 +515,7 @@ void WebCfgServer::buildHtml(String& response)
         printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
         printParameter(response, "NUKI Opener state", lockstateArr);
     }
-    printParameter(response, "Firmware", version.c_str());
+    printParameter(response, "Firmware", version.c_str(), "/info");
     response.concat("</table><br><br>");
 
     response.concat("<h3>MQTT and Network Configuration</h3>");
@@ -511,8 +547,8 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<FORM ACTION=method=get >");
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
-    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30);
-    printInputField(response, "CREDPASS", "Password (max 30 characters)", "*", 30, true);
+    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, false, true);
+    printInputField(response, "CREDPASS", "Password", "*", 30, true, true);
     printInputField(response, "CREDPASSRE", "Retype password", "*", 30, true);
     response.concat("</table>");
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
@@ -602,16 +638,16 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
     printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
     printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
-    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30);
-    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true);
+    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, false, true);
+    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true, true);
     response.concat("</table><br>");
 
     response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
-    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported());
-    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported());
-    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported());
+    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
+    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
+    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
     printDropDown(response, "NWHWDT", "Network hardware detection", String(_preferences->getInt(preference_network_hardware_gpio)), getNetworkGpioOptions());
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
@@ -652,8 +688,9 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 
     printCheckBox(response, "REGAPP", "Register as app (on: register as app, off: register as bridge; needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
+    printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
-    if(_nuki != nullptr && _nuki->hasKeypad())
+    if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
         printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
@@ -698,6 +735,60 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
     response.concat("</BODY></HTML>");
 }
 
+void WebCfgServer::buildInfoHtml(String &response)
+{
+    DebugPreferences debugPreferences;
+
+    buildHtmlHeader(response);
+    response.concat("<h3>System Information</h3> <pre>");
+
+    response.concat("Firmware version: ");
+    response.concat(NUKI_HUB_VERSION);
+    response.concat("\n");
+
+    response.concat(debugPreferences.preferencesToString(_preferences));
+
+    response.concat("MQTT connected: ");
+    response.concat(_network->mqttConnectionState() > 0 ? "Yes\n" : "No\n");
+
+    if(_nuki != nullptr)
+    {
+        response.concat("Lock paired: ");
+        response.concat(_nuki->isPaired() ? "Yes\n" : "No\n");
+        response.concat("Lock PIN set: ");
+        response.concat(_nuki->isPaired() ? _nuki->isPinSet() ? "Yes\n" : "No\n" : "-\n");
+    }
+    if(_nukiOpener != nullptr)
+    {
+        response.concat("Opener paired: ");
+        response.concat(_nukiOpener->isPaired() ? "Yes\n" : "No\n");
+        response.concat("Opener PIN set: ");
+        response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinSet() ? "Yes\n" : "No\n" : "-\n");
+    }
+
+    response.concat("Network device: ");
+    response.concat(_network->networkDeviceName());
+    response.concat("\n");
+
+    response.concat("Uptime: ");
+    response.concat(millis() / 1000 / 60);
+    response.concat(" minutes\n");
+
+    response.concat("Heap: ");
+    response.concat(esp_get_free_heap_size());
+    response.concat("\n");
+
+    response.concat("Restart reason FW: ");
+    response.concat(getRestartReason());
+    response.concat("\n");
+
+    response.concat("Restart reason ESP: ");
+    response.concat(getEspRestartReason());
+    response.concat("\n");
+
+    response.concat("</pre> </BODY></HTML>");
+}
+
 void WebCfgServer::processUnpair(bool opener)
 {
     String response = "";
@@ -733,7 +824,7 @@ void WebCfgServer::processUnpair(bool opener)
         _nukiOpener->unpair();
     }
     waitAndProcess(false, 1000);
-    ESP.restart();
+    restartEsp(RestartReason::DeviceUnpaired);
 }
 
 void WebCfgServer::buildHtmlHeader(String &response)
@@ -751,8 +842,9 @@ void WebCfgServer::printInputField(String& response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
-                                   const size_t maxLength,
-                                   const bool isPassword)
+                                   const size_t& maxLength,
+                                   const bool& isPassword,
+                                   const bool& showLengthRestriction)
 {
     char maxLengthStr[20];
 
@@ -760,6 +852,14 @@ void WebCfgServer::printInputField(String& response,
 
     response.concat("<tr><td>");
     response.concat(description);
+
+    if(showLengthRestriction)
+    {
+        response.concat(" (Max. ");
+        response.concat(maxLength);
+        response.concat(" characters)");
+    }
+
     response.concat("</td><td>");
     response.concat("<INPUT TYPE=");
     response.concat(isPassword ? "PASSWORD" : "TEXT");
@@ -806,8 +906,9 @@ void WebCfgServer::printTextarea(String& response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
-                                   const size_t maxLength,
-                                   const bool enabled)
+                                   const size_t& maxLength,
+                                   const bool& enabled,
+                                   const bool& showLengthRestriction)
 {
     char maxLengthStr[20];
 
@@ -815,6 +916,12 @@ void WebCfgServer::printTextarea(String& response,
 
     response.concat("<tr><td>");
     response.concat(description);
+    if(showLengthRestriction)
+    {
+        response.concat(" (Max. ");
+        response.concat(maxLength);
+        response.concat(" characters)");
+    }
     response.concat("</td><td>");
     response.concat(" <TEXTAREA ");
     if(!enabled)
@@ -872,14 +979,25 @@ void WebCfgServer::buildNavigationButton(String &response, const char *caption, 
     response.concat("</form>");
 }
 
-void WebCfgServer::printParameter(String& response, const char *description, const char *value)
+void WebCfgServer::printParameter(String& response, const char *description, const char *value, const char *link)
 {
     response.concat("<tr>");
     response.concat("<td>");
     response.concat(description);
     response.concat("</td>");
     response.concat("<td>");
-    response.concat(value);
+    if(strcmp(link, "") == 0)
+    {
+        response.concat(value);
+    }
+    else
+    {
+        response.concat("<a href=\"");
+        response.concat(link);
+        response.concat("\"> ");
+        response.concat(value);
+        response.concat("</a>");
+    }
     response.concat("</td>");
     response.concat("</tr>");
 
@@ -928,22 +1046,40 @@ void WebCfgServer::handleOtaUpload()
         return;
     }
 
-    if (upload.status == UPLOAD_FILE_START) {
+    if (upload.status == UPLOAD_FILE_START)
+    {
         String filename = upload.filename;
-        if (!filename.startsWith("/")) {
+        if (!filename.startsWith("/"))
+        {
             filename = "/" + filename;
         }
         _otaStartTs = millis();
         esp_task_wdt_init(30, false);
         _network->disableAutoRestarts();
         Log->print("handleFileUpload Name: "); Log->println(filename);
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
+    }
+    else if (upload.status == UPLOAD_FILE_WRITE)
+    {
         _transferredSize = _transferredSize + upload.currentSize;
         Log->println(_transferredSize);
         _ota.updateFirmware(upload.buf, upload.currentSize);
-    } else if (upload.status == UPLOAD_FILE_END) {
+    } else if (upload.status == UPLOAD_FILE_END)
+    {
         Log->println();
         Log->print("handleFileUpload Size: "); Log->println(upload.totalSize);
+    }
+    else if(upload.status == UPLOAD_FILE_ABORTED)
+    {
+        Log->println();
+        Log->println("OTA aborted, restarting ESP.");
+        restartEsp(RestartReason::OTAAborted);
+    }
+    else
+    {
+        Log->println();
+        Log->print("OTA unknown state: ");
+        Log->println((int)upload.status);
+        restartEsp(RestartReason::OTAUnknownState);
     }
 }
 

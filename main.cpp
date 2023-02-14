@@ -12,6 +12,7 @@
 #include "Gpio.h"
 #include "Logger.h"
 #include "Config.h"
+#include "RestartReason.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -28,6 +29,9 @@ bool lockEnabled = false;
 bool openerEnabled = false;
 unsigned long restartTs = (2^32) - 5 * 60000;
 
+RTC_NOINIT_ATTR int restartReason;
+RTC_NOINIT_ATTR uint64_t restartReasonValid;
+
 void networkTask(void *pvParameters)
 {
     while(true)
@@ -39,7 +43,17 @@ void networkTask(void *pvParameters)
         }
         webCfgServer->update();
 
+        // millis() is about to overflow. Restart device to prevent problems with overflow
+        if(millis() > restartTs)
+        {
+            Log->println(F("Restart timer expired, restarting device."));
+            delay(200);
+            restartEsp(RestartReason::RestartTimer);
+        }
+
         delay(200);
+
+//        Serial.println(uxTaskGetStackHighWaterMark(NULL));
     }
 }
 
@@ -65,12 +79,8 @@ void nukiTask(void *pvParameters)
         {
             nukiOpener->update();
         }
+
     }
-}
-
-void webServerTask(void *pvParameters)
-{
-
 }
 
 void presenceDetectionTask(void *pvParameters)
@@ -78,22 +88,6 @@ void presenceDetectionTask(void *pvParameters)
     while(true)
     {
         presenceDetection->update();
-    }
-}
-
-void checkMillisTask(void *pvParameters)
-{
-    while(true)
-    {
-        delay(30000);
-
-        // millis() is about to overflow. Restart device to prevent problems with overflow
-        if(millis() > restartTs)
-        {
-            Log->println(F("Restart timer expired, restarting device."));
-            delay(200);
-            ESP.restart();
-        }
     }
 }
 
@@ -105,7 +99,6 @@ void setupTasks()
     xTaskCreatePinnedToCore(networkTask, "ntw", 8192, NULL, 3, NULL, 1);
     xTaskCreatePinnedToCore(nukiTask, "nuki", 4096, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 768, NULL, 5, NULL, 1);
-    xTaskCreatePinnedToCore(checkMillisTask, "mlchk", 1024, NULL, 1, NULL, 1);
 }
 
 uint32_t getRandomId()

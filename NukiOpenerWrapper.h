@@ -15,6 +15,7 @@ public:
     void initialize();
     void update();
 
+    bool isPinSet();
     void setPin(const uint16_t pin);
 
     void unpair();
@@ -23,6 +24,7 @@ public:
 
     const NukiOpener::OpenerState& keyTurnerState();
     const bool isPaired();
+    const bool hasKeypad();
     const BLEAddress getBleAddress() const;
 
     BleScanner::Scanner* bleScanner();
@@ -32,12 +34,16 @@ public:
 private:
     static bool onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
+    static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* topic, const char* value);
+    void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
 
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
     void updateAuthData();
+    void updateKeypad();
+    void postponeBleWatchdog();
 
     void readConfig();
     void readAdvancedConfig();
@@ -54,13 +60,16 @@ private:
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
+    int _intervalKeypad = 0; // seconds
     int _restartBeaconTimeout = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryCount = 0;
+    int _retryLockstateCount = 0;
     unsigned long _nextRetryTs = 0;
+    std::vector<uint16_t> _keypadCodeIds;
 
     NukiOpener::OpenerState _lastKeyTurnerState;
     NukiOpener::OpenerState _keyTurnerState;
@@ -77,12 +86,18 @@ private:
 
     bool _paired = false;
     bool _statusUpdated = false;
+    bool _hasKeypad = false;
+    bool _keypadEnabled = false;
+    uint _maxKeypadCodeCount = 0;
+    bool _configRead = false;
     long _rssiPublishInterval = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
+    unsigned long _nextKeypadUpdateTs = 0;
     unsigned long _nextPairTs = 0;
     long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;
+    unsigned long _disableBleWatchdogTs = 0;
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
 };

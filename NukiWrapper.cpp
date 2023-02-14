@@ -3,6 +3,7 @@
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
 #include "Logger.h"
+#include "RestartReason.h"
 #include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
@@ -41,11 +42,12 @@ void NukiWrapper::initialize(const bool& firstStart)
     _nukiLock.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
+    _intervalConfig = _preferences->getInt(preference_query_interval_battery);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
     _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
     _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
-    _maxKeypadCodeCount = _preferences->getUInt(preference_max_keypad_code_count);
+    _maxKeypadCodeCount = _preferences->getUInt(preference_lock_max_keypad_code_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
@@ -57,6 +59,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_command_nr_of_retries, 3);
         _preferences->putInt(preference_command_retry_delay, 1000);
     }
+
     if(_retryDelay <= 100)
     {
         _retryDelay = 100;
@@ -67,6 +70,11 @@ void NukiWrapper::initialize(const bool& firstStart)
     {
         _intervalLockstate = 60 * 30;
         _preferences->putInt(preference_query_interval_lockstate, _intervalLockstate);
+    }
+    if(_intervalConfig == 0)
+    {
+        _intervalConfig = 60 * 60;
+        _preferences->putInt(preference_query_interval_configuration, _intervalConfig);
     }
     if(_intervalBattery == 0)
     {
@@ -128,13 +136,14 @@ void NukiWrapper::update()
     if(_restartBeaconTimeout > 0 &&
        ts > 60000 &&
        lastReceivedBeaconTs > 0 &&
+       _disableBleWatchdogTs < ts &&
        (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the lock for ");
         Log->print((millis() - _nukiLock.getLastReceivedBeaconTs()) / 1000);
         Log->println(" seconds, restarting device.");
         delay(200);
-        ESP.restart();
+        restartEsp(RestartReason::BLEBeaconWatchdog);
     }
 
     _nukiLock.updateConnectionState();
@@ -154,10 +163,14 @@ void NukiWrapper::update()
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
-        if(_hassEnabled)
+        if(_hassEnabled && !_hassSetupCompleted)
         {
             setupHASS();
         }
+    }
+    if(_hassEnabled && _configRead && _network->reconnected())
+    {
+        setupHASS();
     }
     if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
     {
@@ -225,6 +238,7 @@ void NukiWrapper::update()
                 _nextLockAction = (NukiLock::LockAction) 0xff;
             }
         }
+        postponeBleWatchdog();
     }
 
     if(_clearAuthData)
@@ -251,6 +265,11 @@ void NukiWrapper::unlatch()
     _nextLockAction = NukiLock::LockAction::Unlatch;
 }
 
+bool NukiWrapper::isPinSet()
+{
+    return _nukiLock.getSecurityPincode() != 0;
+}
+
 void NukiWrapper::setPin(const uint16_t pin)
 {
         _nukiLock.saveSecurityPincode(pin);
@@ -264,7 +283,19 @@ void NukiWrapper::unpair()
 
 void NukiWrapper::updateKeyTurnerState()
 {
-    _nukiLock.requestKeyTurnerState(&_keyTurnerState);
+    Nuki::CmdResult result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
+    if(result != Nuki::CmdResult::Success)
+    {
+        _retryLockstateCount++;
+        postponeBleWatchdog();
+        if(_retryLockstateCount < _nrOfRetries)
+        {
+            _nextLockStateUpdateTs = millis() + _retryDelay;
+        }
+        return;
+    }
+    _retryLockstateCount = 0;
+
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
@@ -279,12 +310,18 @@ void NukiWrapper::updateKeyTurnerState()
     {
         updateAuthData();
     }
+
+    postponeBleWatchdog();
 }
 
 void NukiWrapper::updateBatteryState()
 {
-    _nukiLock.requestBatteryReport(&_batteryReport);
-    _network->publishBatteryReport(_batteryReport);
+    Nuki::CmdResult result = _nukiLock.requestBatteryReport(&_batteryReport);
+    if(result == Nuki::CmdResult::Success)
+    {
+        _network->publishBatteryReport(_batteryReport);
+    }
+    postponeBleWatchdog();
 }
 
 void NukiWrapper::updateConfig()
@@ -293,8 +330,14 @@ void NukiWrapper::updateConfig()
     readAdvancedConfig();
     _configRead = true;
     _hasKeypad = _nukiConfig.hasKeypad > 0;
-    _network->publishConfig(_nukiConfig);
-    _network->publishAdvancedConfig(_nukiAdvancedConfig);
+    if(_nukiConfigValid)
+    {
+        _network->publishConfig(_nukiConfig);
+    }
+    if(_nukiAdvancedConfigValid)
+    {
+        _network->publishAdvancedConfig(_nukiAdvancedConfig);
+    }
 }
 
 void NukiWrapper::updateAuthData()
@@ -322,6 +365,7 @@ void NukiWrapper::updateAuthData()
     {
          _network->publishAuthorizationInfo(log);
     }
+    postponeBleWatchdog();
 }
 
 void NukiWrapper::updateKeypad()
@@ -338,7 +382,7 @@ void NukiWrapper::updateKeypad()
         if(keypadCount > _maxKeypadCodeCount)
         {
             _maxKeypadCodeCount = keypadCount;
-            _preferences->putUInt(preference_max_keypad_code_count, _maxKeypadCodeCount);
+            _preferences->putUInt(preference_lock_max_keypad_code_count, _maxKeypadCodeCount);
         }
 
         _network->publishKeypad(entries, _maxKeypadCodeCount);
@@ -350,6 +394,12 @@ void NukiWrapper::updateKeypad()
             _keypadCodeIds.push_back(entry.codeId);
         }
     }
+    postponeBleWatchdog();
+}
+
+void NukiWrapper::postponeBleWatchdog()
+{
+    _disableBleWatchdogTs = millis() + 15000;
 }
 
 NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
@@ -378,12 +428,10 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *
     nukiInst->onConfigUpdateReceived(topic, value);
 }
 
-
 void NukiWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
     nukiInst->onKeypadCommandReceived(command, id, name, code, enabled);
 }
-
 
 void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
@@ -594,7 +642,7 @@ void NukiWrapper::readAdvancedConfig()
 
 void NukiWrapper::setupHASS()
 {
-    if(!_nukiConfigValid || _hassSetupCompleted) return;
+    if(!_nukiConfigValid) return;
 
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
     char uidString[20];

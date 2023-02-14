@@ -42,6 +42,25 @@ void NetworkOpener::initialize()
     {
         _network->subscribe(_mqttPath, topic);
     }
+
+    if(_preferences->getBool(preference_keypad_control_enabled))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
+    }
+
+    _network->addReconnectedCallback([&]()
+     {
+         _reconnected = true;
+     });
 }
 
 void NetworkOpener::update()
@@ -74,6 +93,46 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
             success = _lockActionReceivedCallback(value);
         }
         publishString(mqtt_topic_lock_action, success ? "ack" : "unknown_action");
+    }
+
+    if(processActions && comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
+    {
+        if(_keypadCommandReceivedReceivedCallback != nullptr)
+        {
+            if(strcmp(value, "--") == 0) return;
+
+            _keypadCommandReceivedReceivedCallback(value, _keypadCommandId, _keypadCommandName, _keypadCommandCode, _keypadCommandEnabled);
+
+            _keypadCommandId = 0;
+            _keypadCommandName = "--";
+            _keypadCommandCode = "000000";
+            _keypadCommandEnabled = 1;
+
+            if(strcmp(value, "--") != 0)
+            {
+                publishString(mqtt_topic_keypad_command_action, "--");
+            }
+            publishInt(mqtt_topic_keypad_command_id, _keypadCommandId);
+            publishString(mqtt_topic_keypad_command_name, _keypadCommandName);
+            publishString(mqtt_topic_keypad_command_code, _keypadCommandCode);
+            publishInt(mqtt_topic_keypad_command_enabled, _keypadCommandEnabled);
+        }
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_id))
+    {
+        _keypadCommandId = atoi(value);
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_name))
+    {
+        _keypadCommandName = value;
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_code))
+    {
+        _keypadCommandCode = value;
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_enabled))
+    {
+        _keypadCommandEnabled = atoi(value);
     }
 
     for(auto configTopic : _configTopics)
@@ -399,6 +458,36 @@ void NetworkOpener::removeHASSConfig(char* uidString)
     _network->removeHASSConfig(uidString);
 }
 
+void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
+{
+    uint index = 0;
+    for(const auto& entry : entries)
+    {
+        String basePath = mqtt_topic_keypad;
+        basePath.concat("/code_");
+        basePath.concat(std::to_string(index).c_str());
+        publishKeypadEntry(basePath, entry);
+
+        ++index;
+    }
+    while(index < maxKeypadCodeCount)
+    {
+        NukiLock::KeypadEntry entry;
+        memset(&entry, 0, sizeof(entry));
+        String basePath = mqtt_topic_keypad;
+        basePath.concat("/code_");
+        basePath.concat(std::to_string(index).c_str());
+        publishKeypadEntry(basePath, entry);
+
+        ++index;
+    }
+}
+
+void NetworkOpener::publishKeypadCommandResult(const char* result)
+{
+    publishString(mqtt_topic_keypad_command_result, result);
+}
+
 void NetworkOpener::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
@@ -407,6 +496,11 @@ void NetworkOpener::setLockActionReceivedCallback(bool (*lockActionReceivedCallb
 void NetworkOpener::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
+}
+
+void NetworkOpener::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled))
+{
+    _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
 }
 
 void NetworkOpener::publishFloat(const char *topic, const float value, const uint8_t precision)
@@ -450,6 +544,24 @@ void NetworkOpener::publishString(const char* topic, const char* value)
     _network->publishString(_mqttPath, topic, value);
 }
 
+void NetworkOpener::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)
+{
+    char codeName[sizeof(entry.name) + 1];
+    memset(codeName, 0, sizeof(codeName));
+    memcpy(codeName, entry.name, sizeof(entry.name));
+
+    publishInt(concat(topic, "/id").c_str(), entry.codeId);
+    publishBool(concat(topic, "/enabled").c_str(), entry.enabled);
+    publishString(concat(topic, "/name").c_str(), codeName);
+    publishInt(concat(topic, "/createdYear").c_str(), entry.dateCreatedYear);
+    publishInt(concat(topic, "/createdMonth").c_str(), entry.dateCreatedMonth);
+    publishInt(concat(topic, "/createdDay").c_str(), entry.dateCreatedDay);
+    publishInt(concat(topic, "/createdHour").c_str(), entry.dateCreatedHour);
+    publishInt(concat(topic, "/createdMin").c_str(), entry.dateCreatedMin);
+    publishInt(concat(topic, "/createdSec").c_str(), entry.dateCreatedSec);
+    publishInt(concat(topic, "/lockCount").c_str(), entry.lockCount);
+}
+
 void NetworkOpener::buildMqttPath(const char* path, char* outPath)
 {
     int offset = 0;
@@ -485,4 +597,18 @@ bool NetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPat
     buildMqttPath(subPath, prefixedPath);
 
     return strcmp(fullPath, prefixedPath) == 0;
+}
+
+String NetworkOpener::concat(String a, String b)
+{
+    String c = a;
+    c.concat(b);
+    return c;
+}
+
+bool NetworkOpener::reconnected()
+{
+    bool r = _reconnected;
+    _reconnected = false;
+    return r;
 }

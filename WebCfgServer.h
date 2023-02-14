@@ -37,22 +37,23 @@ private:
     void buildNukiConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
+    void buildInfoHtml(String& response);
     void sendCss();
     void sendFavicon();
     void processUnpair(bool opener);
 
     void buildHtmlHeader(String& response);
-    void printInputField(String& response, const char* token, const char* description, const char* value, const size_t maxLength, const bool isPassword = false);
+    void printInputField(String& response, const char* token, const char* description, const char* value, const size_t& maxLength, const bool& isPassword = false, const bool& showLengthRestriction = false);
     void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
     void printCheckBox(String& response, const char* token, const char* description, const bool value);
-    void printTextarea(String& response, const char *token, const char *description, const char *value, const size_t maxLength, const bool enabled = true);
+    void printTextarea(String& response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(String &response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options);
     void buildNavigationButton(String& response, const char* caption, const char* targetPath);
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getNetworkGpioOptions() const;
 
-    void printParameter(String& response, const char* description, const char* value);
+    void printParameter(String& response, const char* description, const char* value, const char *link = "");
 
     String generateConfirmCode();
     void waitAndProcess(const bool blocking, const uint32_t duration);

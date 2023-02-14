@@ -2,7 +2,7 @@
 
 #include "NetworkDevice.h"
 #include "espMqttClient.h"
-#include "espMqttClientEthernet.h"
+#include "espMqttClientW5500.h"
 #include <Ethernet.h>
 #include <Preferences.h>
 
@@ -17,6 +17,8 @@ class W5500Device : public NetworkDevice
 public:
     explicit W5500Device(const String& hostname, Preferences* _preferences, int variant);
     ~W5500Device();
+
+    const String deviceName() const override;
 
     virtual void initialize();
     virtual ReconnectStatus reconnect();
@@ -61,7 +63,7 @@ private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
 
-    espMqttClientEthernet _mqttClient;
+    espMqttClientW5500 _mqttClient;
     Preferences* _preferences = nullptr;
 
     int _maintainResult = 0;

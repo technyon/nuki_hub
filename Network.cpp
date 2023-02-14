@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include "Config.h"
 #include <ArduinoJson.h>
+#include "RestartReason.h"
 
 Network* Network::_inst = nullptr;
 
@@ -65,8 +66,7 @@ void Network::setupDevice()
             Log->println(F(" for network device selection"));
 
             pinMode(hardwareDetectGpio, INPUT_PULLUP);
-            _networkDeviceType = NetworkDeviceType::W5500;
-//                    digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+            _networkDeviceType = digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
         }
         else if(hardwareDetect == 3)
         {
@@ -173,6 +173,8 @@ void Network::initialize()
         _networkTimeout = -1;
         _preferences->putInt(preference_network_timeout, _networkTimeout);
     }
+
+    _publishDebugInfo = _preferences->getBool(preference_publish_debug_info);
 }
 
 bool Network::update()
@@ -185,7 +187,7 @@ bool Network::update()
     {
         if(_restartOnDisconnect && millis() > 60000)
         {
-            ESP.restart();
+            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
 
         Log->println(F("Network not connected. Trying reconnect."));
@@ -197,7 +199,7 @@ bool Network::update()
                 strcpy(WiFi_fallbackDetect, "wifi_fallback");
                 Log->println("Network device has a critical failure, enable fallback to Wifi and reboot.");
                 delay(200);
-                ESP.restart();
+                restartEsp(RestartReason::NetworkDeviceCriticalFailure);
                 break;
             case ReconnectStatus::Success:
                 memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
@@ -216,7 +218,7 @@ bool Network::update()
         {
             Log->println("Network timeout has been reached, restarting ...");
             delay(200);
-            ESP.restart();
+            restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
 
         bool success = reconnect();
@@ -254,7 +256,12 @@ bool Network::update()
     if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
     {
         publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60);
-//        publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
+        if(_publishDebugInfo)
+        {
+            publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
+            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_fw, getRestartReason().c_str());
+            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_esp, getEspRestartReason().c_str());
+        }
         _lastMaintenanceTs = ts;
     }
 
@@ -367,6 +374,10 @@ bool Network::reconnect()
             }
             delay(1000);
             _mqttConnectionState = 2;
+            for(const auto& callback : _reconnectedCallbacks)
+            {
+                callback();
+            }
         }
         else
         {
@@ -469,6 +480,11 @@ int Network::mqttConnectionState()
 bool Network::encryptionSupported()
 {
     return _device->supportsEncryption();
+}
+
+const String Network::networkDeviceName() const
+{
+    return _device->deviceName();
 }
 
 void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision)
@@ -923,4 +939,9 @@ uint16_t Network::subscribe(const char *topic, uint8_t qos)
 void Network::setKeepAliveCallback(std::function<void()> reconnectTick)
 {
     _keepAliveCallback = reconnectTick;
+}
+
+void Network::addReconnectedCallback(std::function<void()> reconnectedCallback)
+{
+    _reconnectedCallbacks.push_back(reconnectedCallback);
 }

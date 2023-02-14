@@ -12,6 +12,8 @@ class WifiDevice : public NetworkDevice
 public:
     WifiDevice(const String& hostname, Preferences* _preferences);
 
+    const String deviceName() const override;
+
     virtual void initialize();
     virtual void reconfigure();
     virtual ReconnectStatus reconnect();

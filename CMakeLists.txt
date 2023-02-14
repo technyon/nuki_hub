@@ -50,8 +50,8 @@ file(GLOB SRCFILES
         networkDevices/NetworkDevice.h
         networkDevices/WifiDevice.cpp
         networkDevices/W5500Device.cpp
-        networkDevices/ClientSyncEthernet.cpp
-        networkDevices/espMqttClientEthernet.cpp
+        networkDevices/ClientSyncW5500.cpp
+        networkDevices/espMqttClientW5500.cpp
         NukiWrapper.cpp
         NukiOpenerWrapper.cpp
         MqttTopics.h
@@ -62,6 +62,7 @@ file(GLOB SRCFILES
         PreferencesKeys.h
         Gpio.cpp
         Logger.cpp
+        RestartReason.h
 #        include/RTOS.h
         lib/WiFiManager/WiFiManager.cpp
         lib/WiFiManager/wm_consts_en.h
@@ -122,15 +123,9 @@ target_link_arduino_libraries(${PROJECT_NAME}
         WiFi
         WiFiClientSecure
         Update
-#        WebServer
         DNSServer
         Preferences
-        SPIFFS
         SPI
-#        Ethernet
-#        esp32
-#        Wire
-#        FS
 )
 
 target_link_arduino_libraries(DNSServer PUBLIC WiFi)

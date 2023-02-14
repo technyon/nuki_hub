@@ -17,6 +17,8 @@ public:
     : _hostname(hostname)
     {}
 
+    virtual const String deviceName() const = 0;
+
     virtual void initialize() = 0;
     virtual ReconnectStatus reconnect() = 0;
     virtual void reconfigure() = 0;

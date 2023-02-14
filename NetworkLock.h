@@ -40,7 +40,11 @@ public:
 
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
+    bool reconnected();
+
 private:
+    bool comparePrefixedPath(const char* fullPath, const char* subPath);
+
     void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value);
     void publishUInt(const char* topic, const unsigned int value);
@@ -50,7 +54,6 @@ private:
     bool publishString(const char* topic, const std::string& value);
     bool publishString(const char* topic, const char* value);
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
-    bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     String concat(String a, String b);
 
@@ -65,6 +68,7 @@ private:
     bool _firstTunerStatePublish = true;
     unsigned long _lastMaintenanceTs = 0;
     bool _haEnabled= false;
+    bool _reconnected = false;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";

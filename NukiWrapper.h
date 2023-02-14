@@ -19,6 +19,7 @@ public:
     void unlock();
     void unlatch();
 
+    bool isPinSet();
     void setPin(const uint16_t pin);
     void unpair();
     
@@ -43,12 +44,12 @@ private:
     void updateConfig();
     void updateAuthData();
     void updateKeypad();
+    void postponeBleWatchdog();
 
     void readConfig();
     void readAdvancedConfig();
     
     void setupHASS();
-
     bool hasDoorSensor();
 
     NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
@@ -84,11 +85,12 @@ private:
     bool _statusUpdated = false;
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
-    bool _configRead = false;
     uint _maxKeypadCodeCount = 0;
+    bool _configRead = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryCount = 0;
+    int _retryLockstateCount = 0;
     long _rssiPublishInterval = 0;
     unsigned long _nextRetryTs = 0;
     unsigned long _nextLockStateUpdateTs = 0;
@@ -97,5 +99,6 @@ private:
     unsigned long _nextKeypadUpdateTs = 0;
     unsigned long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;
-    NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
+    unsigned long _disableBleWatchdogTs = 0;
+    volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };
