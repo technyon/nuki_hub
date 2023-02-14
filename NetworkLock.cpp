@@ -57,6 +57,13 @@ void NetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
 
+    _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
+    _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
+    _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
+    _network->subscribe(_mqttPath, mqtt_topic_query_config);
+    _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
+    _network->subscribe(_mqttPath, mqtt_topic_query_battery);
+
     if(_preferences->getBool(preference_keypad_control_enabled))
     {
         _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
@@ -64,11 +71,13 @@ void NetworkLock::initialize()
         _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
         _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
         _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
+        _network->subscribe(_mqttPath, mqtt_topic_query_keypad);
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
+        _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
     }
 
     _network->addReconnectedCallback([&]()
@@ -142,6 +151,26 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_enabled))
     {
         _keypadCommandEnabled = atoi(value);
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_query_config) && strcmp(value, "1") == 0)
+    {
+        _queryCommands = _queryCommands | QUERY_COMMAND_CONFIG;
+        publishString(mqtt_topic_query_config, "0");
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_query_lockstate) && strcmp(value, "1") == 0)
+    {
+        _queryCommands = _queryCommands | QUERY_COMMAND_LOCKSTATE;
+        publishString(mqtt_topic_query_lockstate, "0");
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_query_keypad) && strcmp(value, "1") == 0)
+    {
+        _queryCommands = _queryCommands | QUERY_COMMAND_KEYPAD;
+        publishString(mqtt_topic_query_keypad, "0");
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_query_battery) && strcmp(value, "1") == 0)
+    {
+        _queryCommands = _queryCommands | QUERY_COMMAND_BATTERY;
+        publishString(mqtt_topic_query_battery, "0");
     }
 
     for(auto configTopic : _configTopics)
@@ -568,4 +597,11 @@ bool NetworkLock::reconnected()
     bool r = _reconnected;
     _reconnected = false;
     return r;
+}
+
+uint8_t NetworkLock::queryCommands()
+{
+    uint8_t qc = _queryCommands;
+    _queryCommands = 0;
+    return qc;
 }

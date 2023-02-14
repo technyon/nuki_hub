@@ -133,6 +133,8 @@ void NukiWrapper::update()
 
     unsigned long ts = millis();
     unsigned long lastReceivedBeaconTs = _nukiLock.getLastReceivedBeaconTs();
+    uint8_t queryCommands = _network->queryCommands();
+
     if(_restartBeaconTimeout > 0 &&
        ts > 60000 &&
        lastReceivedBeaconTs > 0 &&
@@ -148,18 +150,18 @@ void NukiWrapper::update()
 
     _nukiLock.updateConnectionState();
 
-    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
+    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         _statusUpdated = false;
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
     }
-    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
+    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
     {
         _nextBatteryReportTs = ts + _intervalBattery * 1000;
         updateBatteryState();
     }
-    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs)
+    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs || (queryCommands & QUERY_COMMAND_CONFIG) > 0)
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
@@ -184,7 +186,7 @@ void NukiWrapper::update()
         }
     }
 
-    if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
+    if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
     {
         _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
         updateKeypad();
@@ -283,6 +285,7 @@ void NukiWrapper::unpair()
 
 void NukiWrapper::updateKeyTurnerState()
 {
+    Log->print(F("Querying lock state: "));
     Nuki::CmdResult result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
     if(result != Nuki::CmdResult::Success)
     {
@@ -298,13 +301,9 @@ void NukiWrapper::updateKeyTurnerState()
 
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
-    if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
-    {
-        char lockStateStr[20];
-        lockstateToString(_keyTurnerState.lockState, lockStateStr);
-        Log->print(F("Nuki lock state update: "));
-        Log->println(lockStateStr);
-    }
+    char lockStateStr[20];
+    lockstateToString(_keyTurnerState.lockState, lockStateStr);
+    Log->println(lockStateStr);
 
     if(_publishAuthData)
     {
@@ -316,7 +315,9 @@ void NukiWrapper::updateKeyTurnerState()
 
 void NukiWrapper::updateBatteryState()
 {
+    Log->print("Querying lock battery state: ");
     Nuki::CmdResult result = _nukiLock.requestBatteryReport(&_batteryReport);
+    printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
@@ -370,8 +371,10 @@ void NukiWrapper::updateAuthData()
 
 void NukiWrapper::updateKeypad()
 {
+    Log->print(F("Querying lock keypad: "));
     Nuki::CmdResult result = _nukiLock.retrieveKeypadEntries(0, 0xffff);
-    if(result == 1)
+    printCommandResult(result);
+    if(result == Nuki::CmdResult::Success)
     {
         std::list<NukiLock::KeypadEntry> entries;
         _nukiLock.getKeypadEntries(&entries);
@@ -394,6 +397,7 @@ void NukiWrapper::updateKeypad()
             _keypadCodeIds.push_back(entry.codeId);
         }
     }
+
     postponeBleWatchdog();
 }
 
@@ -684,4 +688,11 @@ void NukiWrapper::disableHASS()
 const BLEAddress NukiWrapper::getBleAddress() const
 {
     return _nukiLock.getBleAddress();
+}
+
+void NukiWrapper::printCommandResult(Nuki::CmdResult result)
+{
+    char resultStr[15];
+    NukiLock::cmdResultToString(result, resultStr);
+    Log->println(resultStr);
 }

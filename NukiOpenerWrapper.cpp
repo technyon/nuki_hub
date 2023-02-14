@@ -133,6 +133,8 @@ void NukiOpenerWrapper::update()
 
     unsigned long ts = millis();
     unsigned long lastReceivedBeaconTs = _nukiOpener.getLastReceivedBeaconTs();
+    uint8_t queryCommands = _network->queryCommands();
+
     if(_restartBeaconTimeout > 0 &&
        ts > 60000 &&
        lastReceivedBeaconTs > 0 &&
@@ -147,18 +149,18 @@ void NukiOpenerWrapper::update()
 
     _nukiOpener.updateConnectionState();
 
-    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs)
+    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
         _statusUpdated = false;
     }
-    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs)
+    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
     {
         _nextBatteryReportTs = ts + _intervalBattery * 1000;
         updateBatteryState();
     }
-    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs)
+    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs || (queryCommands & QUERY_COMMAND_CONFIG) > 0)
     {
         _nextConfigUpdateTs = ts + _intervalConfig * 1000;
         updateConfig();
@@ -183,7 +185,7 @@ void NukiOpenerWrapper::update()
         }
     }
 
-    if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs))
+    if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
     {
         _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
         updateKeypad();
@@ -267,6 +269,7 @@ void NukiOpenerWrapper::unpair()
 
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
+    Log->print(F("Querying opener state: "));
     Nuki::CmdResult result =_nukiOpener.requestOpenerState(&_keyTurnerState);
     if(result != Nuki::CmdResult::Success)
     {
@@ -294,13 +297,12 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 
         if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
         {
-            Log->println(F("Nuki opener state: Continuous Mode"));
+            Log->println(F("Continuous Mode"));
         }
-        else if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState)
+        else
         {
             char lockStateStr[20];
             lockstateToString(_keyTurnerState.lockState, lockStateStr);
-            Log->print(F("Nuki opener state: "));
             Log->println(lockStateStr);
         }
     }
@@ -315,7 +317,9 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 
 void NukiOpenerWrapper::updateBatteryState()
 {
+    Log->print("Querying opener battery state: ");
     Nuki::CmdResult result = _nukiOpener.requestBatteryReport(&_batteryReport);
+    printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
@@ -369,8 +373,10 @@ void NukiOpenerWrapper::updateAuthData()
 
 void NukiOpenerWrapper::updateKeypad()
 {
+    Log->print(F("Querying opener keypad: "));
     Nuki::CmdResult result = _nukiOpener.retrieveKeypadEntries(0, 0xffff);
-    if(result == 1)
+    printCommandResult(result);
+    if(result == Nuki::CmdResult::Success)
     {
         std::list<NukiLock::KeypadEntry> entries;
         _nukiOpener.getKeypadEntries(&entries);
@@ -381,7 +387,7 @@ void NukiOpenerWrapper::updateKeypad()
         if(keypadCount > _maxKeypadCodeCount)
         {
             _maxKeypadCodeCount = keypadCount;
-            _preferences->putUInt(preference_opener_max_keypad_code_count, _maxKeypadCodeCount);
+            _preferences->putUInt(preference_lock_max_keypad_code_count, _maxKeypadCodeCount);
         }
 
         _network->publishKeypad(entries, _maxKeypadCodeCount);
@@ -393,6 +399,7 @@ void NukiOpenerWrapper::updateKeypad()
             _keypadCodeIds.push_back(entry.codeId);
         }
     }
+
     postponeBleWatchdog();
 }
 
@@ -652,4 +659,11 @@ void NukiOpenerWrapper::disableHASS()
     {
         Log->println(F("Unable to disable HASS. Invalid config received."));
     }
+}
+
+void NukiOpenerWrapper::printCommandResult(Nuki::CmdResult result)
+{
+    char resultStr[15];
+    NukiOpener::cmdResultToString(result, resultStr);
+    Log->println(resultStr);
 }
