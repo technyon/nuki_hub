@@ -9,6 +9,7 @@
 
 
 Network* Network::_inst = nullptr;
+unsigned long Network::_ignoreSubscriptionsTs = 0;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
@@ -359,6 +360,7 @@ bool Network::reconnect()
             _mqttConnectionState = 1;
             delay(100);
 
+            _ignoreSubscriptionsTs = millis() + 2000;
             _device->mqttOnMessage(Network::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {
@@ -372,7 +374,6 @@ bool Network::reconnect()
                     _device->mqttPublish(it.first.c_str(), MQTT_QOS_LEVEL, true, it.second.c_str());
                 }
             }
-            delay(1000);
             _mqttConnectionState = 2;
             for(const auto& callback : _reconnectedCallbacks)
             {
@@ -436,6 +437,11 @@ void Network::registerMqttReceiver(MqttReceiver* receiver)
 
 void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
+    if(millis() < _ignoreSubscriptionsTs)
+    {
+        return;
+    }
+
     uint8_t value[50] = {0};
     size_t l = min(len, sizeof(value)-1);
 

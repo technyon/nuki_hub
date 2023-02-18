@@ -154,6 +154,7 @@ void setup()
 {
     Serial.begin(115200);
     Log = &Serial;
+    initializeRestartReason();
 
     Log->print(F("NUKI Hub version ")); Log->println(NUKI_HUB_VERSION);
 
@@ -170,6 +171,7 @@ void setup()
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
     network = new Network(preferences, mqttLockPath);
     network->initialize();
+
     networkLock = new NetworkLock(network, preferences);
     networkLock->initialize();
 

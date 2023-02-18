@@ -88,9 +88,7 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
 {
     char* value = (char*)payload;
 
-    bool processActions = _network->mqttConnectionState() >= 2;
-
-    if(processActions && comparePrefixedPath(topic, mqtt_topic_lock_action))
+    if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
         if(strcmp((char*)payload, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
 
@@ -104,7 +102,7 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
         publishString(mqtt_topic_lock_action, success ? "ack" : "unknown_action");
     }
 
-    if(processActions && comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
+    if(comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
     {
         if(_keypadCommandReceivedReceivedCallback != nullptr)
         {
