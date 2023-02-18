@@ -154,7 +154,6 @@ void setup()
 {
     Serial.begin(115200);
     Log = &Serial;
-    initializeRestartReason();
 
     Log->print(F("NUKI Hub version ")); Log->println(NUKI_HUB_VERSION);
 
