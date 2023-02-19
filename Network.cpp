@@ -630,7 +630,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          baseTopic,
                          mqtt_topic_battery_voltage,
                          deviceType,
-                         "battery",
+                         "voltage",
                          "measurement",
                          "diagnostic",
                          "V");
@@ -790,7 +790,10 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         json["~"] = baseTopic;
         json["name"] = name + String(" " + displayName);
         json["unique_id"] = String(uidString) + uidStringPostfix;
-        json["dev_cla"] = deviceClass;
+        if(deviceClass != "")
+        {
+            json["dev_cla"] = deviceClass;
+        }
         json["stat_t"] = String("~") + stateTopic;
 
         if(stateClass != "")
