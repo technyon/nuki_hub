@@ -581,6 +581,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
 
+        delete jsonOut;
 
         // Battery critical
         publishHassTopic("binary_sensor",
