@@ -766,9 +766,9 @@ void Network::publishHassTopic(const String& mqttDeviceType,
                                const String& stateClass,
                                const String& entityCat,
                                const String& unitOfMeasurement,
-                               const String& plfOn,
-                               const String& plfOff,
-                               const String& plfNotAvailable,
+                               const String& plOn,
+                               const String& plOff,
+                               const String& plNotAvailable,
                                const String& enabledByDefault
                                )
 {
@@ -810,17 +810,17 @@ void Network::publishHassTopic(const String& mqttDeviceType,
             json["unit_of_meas"] = unitOfMeasurement;
         }
 
-        if (plfOff != "")
+        if (plOff != "")
         {
-            json["plf_off"] = plfOff;
+            json["pl_off"] = plOff;
         }
-        if (plfOn != "")
+        if (plOn != "")
         {
-            json["plf_on"] = plfOn;
+            json["pl_on"] = plOn;
         }
-        if (plfNotAvailable != "")
+        if (plNotAvailable != "")
         {
-            json["pl_not_avail"] = plfNotAvailable;
+            json["pl_not_avail"] = plNotAvailable;
         }
         if (enabledByDefault != "")
         {

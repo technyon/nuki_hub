@@ -77,9 +77,9 @@ private:
                           const String& stateClass = "",
                           const String& entityCat = "",
                           const String& unitOfMeasurement = "",
-                          const String& plfOn = "",
-                          const String& plfOff = "",
-                          const String& plfNotAvailable = "",
+                          const String& plOn = "",
+                          const String& plOff = "",
+                          const String& plNotAvailable = "",
                           const String& enabledByDefault = ""
                           );
 
