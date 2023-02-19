@@ -572,7 +572,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["stat_unlocked"] = unlockedState;
         json["opt"] = "false";
 
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
+        serializeJson(json, reinterpret_cast<char(&)[JSON_BUFFER_SIZE]>(*jsonOut));
 
         String path = discoveryTopic;
         path.concat("/lock/");
@@ -583,113 +583,75 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 
 
         // Battery critical
-        json.clear();
-        dev = json.createNestedObject("dev");
-        ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = name + String(" battery low");
-        json["unique_id"] = String(uidString) + "_battery_low";
-        json["dev_cla"] = "battery";
-        json["ent_cat"] = "diagnostic";
-        json["plf_off"] = "0";
-        json["plf_on"] = "1";
-        json["stat_t"] = String("~") + mqtt_topic_battery_critical;
-
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-        path = discoveryTopic;
-        path.concat("/binary_sensor/");
-        path.concat(uidString);
-        path.concat("/battery_low/config");
-
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
+        publishHassTopic("binary_sensor",
+                         "battery_low",
+                         uidString,
+                         "_battery_low",
+                         "battery low",
+                         name,
+                         baseTopic,
+                         mqtt_topic_battery_critical,
+                         deviceType,
+                         "battery",
+                         "",
+                         "diagnostic",
+                         "",
+                         "1",
+                         "0");
 
         if(hasKeypad)
         {
             // Keypad battery critical
-            json.clear();
-            dev = json.createNestedObject("dev");
-            ids = dev.createNestedArray("ids");
-            ids.add(String("nuki_") + uidString);
-            json["dev"]["mf"] = "Nuki";
-            json["dev"]["mdl"] = deviceType;
-            json["dev"]["name"] = name;
-            json["~"] = baseTopic;
-            json["name"] = name + String(" keypad battery low");
-            json["unique_id"] = String(uidString) + "_keypad_battery_low";
-            json["dev_cla"] = "battery";
-            json["ent_cat"] = "diagnostic";
-            json["plf_off"] = "0";
-            json["plf_on"] = "1";
-            json["stat_t"] = String("~") + mqtt_topic_battery_keypad_critical;
-
-            serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-            path = discoveryTopic;
-            path.concat("/binary_sensor/");
-            path.concat(uidString);
-            path.concat("/keypad_battery_low/config");
-
-            _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
+            publishHassTopic("binary_sensor",
+                             "keypad_battery_low",
+                             uidString,
+                             "_keypad_battery_low",
+                             "keypad battery low",
+                             name,
+                             baseTopic,
+                             mqtt_topic_battery_keypad_critical,
+                             deviceType,
+                             "battery",
+                             "",
+                             "diagnostic",
+                             "",
+                             "1",
+                             "0");
         }
 
         // Battery voltage
-        json.clear();
-        dev = json.createNestedObject("dev");
-        ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = name + String(" battery voltage");
-        json["unique_id"] = String(uidString) + "_battery_voltage";
-        json["dev_cla"] = "voltage";
-        json["stat_cla"] = "measurement";
-        json["unit_of_meas"] = "V";
-        json["ent_cat"] = "diagnostic";
-        json["plf_off"] = "0";
-        json["plf_on"] = "1";
-        json["stat_t"] = String("~") + mqtt_topic_battery_voltage;
-
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/battery_voltage/config");
-
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
+        publishHassTopic("sensor",
+                         "battery_voltage",
+                         uidString,
+                         "_battery_voltage",
+                         "battery voltage",
+                         name,
+                         baseTopic,
+                         mqtt_topic_battery_voltage,
+                         deviceType,
+                         "battery",
+                         "measurement",
+                         "diagnostic",
+                         "V");
 
         // Trigger
-        json.clear();
-        dev = json.createNestedObject("dev");
-        ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = name + String(" trigger");
-        json["unique_id"] = String(uidString) + "_trigger";
-        json["ent_cat"] = "diagnostic";
-        json["enabled_by_default"] = "true";
-        json["stat_t"] = String("~") + mqtt_topic_lock_trigger;
-
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/trigger/config");
-
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
-
-        delete jsonOut;
+        publishHassTopic("sensor",
+                         "trigger",
+                         uidString,
+                         "_trigger",
+                         "trigger",
+                         name,
+                         baseTopic,
+                         mqtt_topic_lock_trigger,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         "",
+                         "",
+                         "",
+                         "true");
     }
 }
 
@@ -701,36 +663,19 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
 
     if (discoveryTopic != "")
     {
-        char* jsonOut = new char[JSON_BUFFER_SIZE];
-        DynamicJsonDocument json(JSON_BUFFER_SIZE);
-
-        // Battery level
-        json.clear();
-        auto dev = json.createNestedObject("dev");
-        auto ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = name + String(" battery level");
-        json["unique_id"] = String(uidString) + "_battery_level";
-        json["dev_cla"] = "battery";
-        json["stat_cla"] = "measurement";
-        json["unit_of_meas"] = "%";
-        json["ent_cat"] = "diagnostic";
-        json["stat_t"] = String("~") + mqtt_topic_battery_level;
-
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-        String path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/battery_voltage/config");
-
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
-
-        delete jsonOut;
+        publishHassTopic("sensor",
+                         "battery_level",
+                         uidString,
+                         "_battery_level",
+                         "battery level",
+                         name,
+                         baseTopic,
+                         mqtt_topic_battery_level,
+                         deviceType,
+                         "battery",
+                         "measurement",
+                         "diagnostic",
+                         "%");
     }
 }
 
@@ -742,36 +687,22 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
 
     if (discoveryTopic != "")
     {
-        char* jsonOut = new char[JSON_BUFFER_SIZE];
-        DynamicJsonDocument json(JSON_BUFFER_SIZE);
-
-        // Battery level
-        json.clear();
-        auto dev = json.createNestedObject("dev");
-        auto ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = name + String(" door sensor");
-        json["unique_id"] = String(uidString) + "_door_sensor";
-        json["dev_cla"] = "door";
-        json["plf_off"] = "doorClosed";
-        json["plf_on"] = "doorOpened";
-        json["pl_not_avail"] = "unavailable";
-        json["stat_t"] = String("~") + mqtt_topic_lock_door_sensor_state;
-
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-        String path = discoveryTopic;
-        path.concat("/binary_sensor/");
-        path.concat(uidString);
-        path.concat("/door_sensor/config");
-
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
-
-        delete jsonOut;
+        publishHassTopic("binary_sensor",
+                         "door_sensor",
+                         uidString,
+                         "_door_sensor",
+                         "door sensor",
+                         name,
+                         baseTopic,
+                         mqtt_topic_lock_door_sensor_state,
+                         deviceType,
+                         "door",
+                         "",
+                         "",
+                         "",
+                         "doorOpened",
+                         "doorClosed",
+                         "unavailable");
     }
 }
 
@@ -783,35 +714,16 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
 
     if (discoveryTopic != "")
     {
-        char* jsonOut = new char[JSON_BUFFER_SIZE];
-        DynamicJsonDocument json(JSON_BUFFER_SIZE);
-
-        // Battery level
-        json.clear();
-        auto dev = json.createNestedObject("dev");
-        auto ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = name + String(" door sensor");
-        json["unique_id"] = String(uidString) + "_door_sensor";
-        json["dev_cla"] = "sound";
-        json["plf_off"] = "locked";
-        json["plf_on"] = "ring";
-        json["stat_t"] = String("~") + mqtt_topic_lock_door_sensor_state;
-
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-        String path = discoveryTopic;
-        path.concat("/binary_sensor/");
-        path.concat(uidString);
-        path.concat("/ring/config");
-
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
-
-        delete jsonOut;
+        publishHassTopic("sensor",
+                         "ring",
+                         uidString,
+                         "_ring_detect",
+                         "ring detect",
+                         name,
+                         baseTopic,
+                         mqtt_topic_lock_door_sensor_state,
+                         deviceType,
+                         "sound");
     }
 }
 
@@ -826,36 +738,7 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
 
     if (discoveryTopic != "")
     {
-        char* jsonOut = new char[JSON_BUFFER_SIZE];
-        DynamicJsonDocument json(JSON_BUFFER_SIZE);
-
-        // Battery level
-        json.clear();
-        auto dev = json.createNestedObject("dev");
-        auto ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = name + String(" WiFi signal strength");
-        json["unique_id"] = String(uidString) + "_wifi_signal_strength";
-        json["dev_cla"] = "signal_strength";
-        json["stat_cla"] = "measurement";
-        json["unit_of_meas"] = "dBm";
-        json["ent_cat"] = "diagnostic";
-        json["stat_t"] = String("~") + mqtt_topic_wifi_rssi;
-
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
-
-        String path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/wifi_signal_strength/config");
-
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
-
-        delete jsonOut;
+        publishHassTopic("sensor", "wifi_signal_strength", uidString, "_wifi_signal_strength", "wifi signal strength", name, baseTopic, mqtt_topic_wifi_rssi, deviceType, "signal_strength", "measurement", "diagnostic", "dBm");
     }
 }
 
@@ -865,7 +748,34 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
 
     if (discoveryTopic != "")
     {
-        char* jsonOut = new char[JSON_BUFFER_SIZE];
+        publishHassTopic("sensor", "bluetooth_signal_strength", uidString, "_bluetooth_signal_strength", "bluetooth signal strength", name, baseTopic, mqtt_topic_lock_rssi, deviceType, "signal_strength", "measurement", "diagnostic", "dBm");
+    }
+}
+
+void Network::publishHassTopic(const String& mqttDeviceType,
+                               const String& mattDeviceName,
+                               const String& uidString,
+                               const String& uidStringPostfix,
+                               const String& displayName,
+                               const String& name,
+                               const String& baseTopic,
+                               const String& stateTopic,
+                               const String& deviceType,
+                               const String& deviceClass,
+                               const String& stateClass,
+                               const String& entityCat,
+                               const String& unitOfMeasurement,
+                               const String& plfOn,
+                               const String& plfOff,
+                               const String& plfNotAvailable,
+                               const String& enabledByDefault
+                               )
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        char *jsonOut = new char[JSON_BUFFER_SIZE];
         DynamicJsonDocument json(JSON_BUFFER_SIZE);
 
         // Battery level
@@ -877,20 +787,52 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
         json["dev"]["mdl"] = deviceType;
         json["dev"]["name"] = name;
         json["~"] = baseTopic;
-        json["name"] = name + String(" bluetooth signal strength");
-        json["unique_id"] = String(uidString) + "_bluetooth_signal_strength";
-        json["dev_cla"] = "signal_strength";
-        json["stat_cla"] = "measurement";
-        json["unit_of_meas"] = "dBm";
-        json["ent_cat"] = "diagnostic";
-        json["stat_t"] = String("~") + mqtt_topic_lock_rssi;
+        json["name"] = name + String(" " + displayName);
+        json["unique_id"] = String(uidString) + uidStringPostfix;
+        json["dev_cla"] = deviceClass;
+        json["stat_t"] = String("~") + stateTopic;
 
-        serializeJson(json, reinterpret_cast<char(&)[2048]>(*jsonOut));
+        if(stateClass != "")
+        {
+            json["stat_cla"] = stateClass;
+        }
+        if(entityCat != "")
+        {
+            json["ent_cat"] = entityCat;
+        }
+
+        if (unitOfMeasurement != "")
+        {
+            json["unit_of_meas"] = unitOfMeasurement;
+        }
+
+        if (plfOff != "")
+        {
+            json["plf_off"] = plfOff;
+        }
+        if (plfOn != "")
+        {
+            json["plf_on"] = plfOn;
+        }
+        if (plfNotAvailable != "")
+        {
+            json["pl_not_avail"] = plfNotAvailable;
+        }
+        if (enabledByDefault != "")
+        {
+            json["enabled_by_default"] = "true";
+        }
+
+        serializeJson(json, reinterpret_cast<char (&)[JSON_BUFFER_SIZE]>(*jsonOut));
 
         String path = discoveryTopic;
-        path.concat("/sensor/");
+        path.concat("/");
+        path.concat(mqttDeviceType);
+        path.concat("/");
         path.concat(uidString);
-        path.concat("/bluetooth_signal_strength/config");
+        path.concat("/");
+        path.concat(mattDeviceName);
+        path.concat("/config");
 
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
 

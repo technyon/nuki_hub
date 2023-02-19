@@ -62,6 +62,25 @@ private:
     void setupDevice();
     bool reconnect();
 
+    void publishHassTopic(const String& mqttDeviceType,
+                          const String& mattDeviceName,
+                          const String& uidString,
+                          const String& uidStringPostfix,
+                          const String& displayName,
+                          const String& name,
+                          const String& baseTopic,
+                          const String& stateTopic,
+                          const String& deviceType,
+                          const String& deviceClass,
+                          const String& stateClass = "",
+                          const String& entityCat = "",
+                          const String& unitOfMeasurement = "",
+                          const String& plfOn = "",
+                          const String& plfOff = "",
+                          const String& plfNotAvailable = "",
+                          const String& enabledByDefault = ""
+                          );
+
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
 
