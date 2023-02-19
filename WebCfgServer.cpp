@@ -780,7 +780,7 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     response.concat("Restart reason FW: ");
     response.concat(getRestartReason());
-    response.concat("\n");
+    response.concat( "\n");
 
     response.concat("Restart reason ESP: ");
     response.concat(getEspRestartReason());

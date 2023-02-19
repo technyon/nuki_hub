@@ -42,6 +42,7 @@ public:
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
     bool reconnected();
+    uint8_t queryCommands();
 
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
@@ -79,6 +80,7 @@ private:
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
     unsigned long _resetLockStateTs = 0;
+    uint8_t _queryCommands = 0;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;

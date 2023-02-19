@@ -91,6 +91,7 @@ private:
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastRssiTs = 0;
+    static unsigned long _ignoreSubscriptionsTs;
     long _rssiPublishInterval = 0;
     std::function<void()> _keepAliveCallback = nullptr;
     std::vector<std::function<void()>> _reconnectedCallbacks;

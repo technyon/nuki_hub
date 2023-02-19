@@ -143,11 +143,11 @@ void W5500Device::resetDevice()
     Log->println(F("Resetting network hardware."));
     pinMode(_resetPin, OUTPUT);
     digitalWrite(_resetPin, HIGH);
-    delay(250);
+    delay(50);
     digitalWrite(_resetPin, LOW);
     delay(50);
     digitalWrite(_resetPin, HIGH);
-    delay(1500);
+    delay(50);
 }
 
 

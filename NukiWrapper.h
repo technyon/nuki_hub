@@ -52,6 +52,8 @@ private:
     void setupHASS();
     bool hasDoorSensor();
 
+    void printCommandResult(Nuki::CmdResult result);
+
     NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     std::string _deviceName;

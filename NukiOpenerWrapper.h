@@ -50,6 +50,8 @@ private:
     
     void setupHASS();
 
+    void printCommandResult(Nuki::CmdResult result);
+
     NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     std::string _deviceName;

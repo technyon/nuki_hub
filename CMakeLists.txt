@@ -52,6 +52,7 @@ file(GLOB SRCFILES
         networkDevices/W5500Device.cpp
         networkDevices/ClientSyncW5500.cpp
         networkDevices/espMqttClientW5500.cpp
+        QueryCommand.h
         NukiWrapper.cpp
         NukiOpenerWrapper.cpp
         MqttTopics.h

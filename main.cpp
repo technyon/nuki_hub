@@ -170,6 +170,7 @@ void setup()
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
     network = new Network(preferences, mqttLockPath);
     network->initialize();
+
     networkLock = new NetworkLock(network, preferences);
     networkLock->initialize();
 

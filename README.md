@@ -59,6 +59,9 @@ This project is free to use for everyone. However if you feel like donating, you
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
+- query/lockstate: Set to 1 to trigger query lockstage. Auto-resets to 0.
+- query/config: Set to 1 to trigger query config. Auto-resets to 0.
+- query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
 <br><br>
 - battery/level: Battery level in percent
 - battery/critical: 1 if battery level is critical, otherwise 0
@@ -84,6 +87,9 @@ This project is free to use for everyone. However if you feel like donating, you
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
+- query/lockstate: Set to 1 to trigger query lockstage. Auto-resets to 0.
+- query/config: Set to 1 to trigger query config. Auto-resets to 0.
+- query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
   <br><br>
 - battery/voltage: Reports the current battery voltage in Volts.
 - battery/critical: 1 if battery level is critical, otherwise 0
