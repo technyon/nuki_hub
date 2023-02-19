@@ -926,3 +926,8 @@ void Network::addReconnectedCallback(std::function<void()> reconnectedCallback)
 {
     _reconnectedCallbacks.push_back(reconnectedCallback);
 }
+
+void Network::clearWifiFallback()
+{
+    memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
+}

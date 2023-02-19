@@ -43,6 +43,8 @@ public:
     void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
 
+    void clearWifiFallback();
+
     void publishPresenceDetection(char* csv);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed

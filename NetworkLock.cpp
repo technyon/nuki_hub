@@ -93,6 +93,7 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
     {
         Log->println(F("Restart requested via MQTT."));
+        _network->clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
