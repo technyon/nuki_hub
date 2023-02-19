@@ -1,0 +1,725 @@
+{
+	"inputs" : 
+	[
+		{
+			"path" : "CMakeLists.txt"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release/CMakeFiles/3.24.2/CMakeSystem.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino-toolchain.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/BoardsIndex.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseArguments.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/CommonUtils.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/PropertiesReader.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/PackagePathIndex.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/PlatformIndex.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/CommonUtils.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/JSONParser.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseArguments.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/CommonUtils.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/PackagePathIndex.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/BoardToolchain.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/CommonUtils.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/PropertiesReader.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/PackagePathIndex.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/PlatformIndex.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/BoardsIndex.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/BoardBuildTargets.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseArguments.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/CommonUtils.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/SourceLocator.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseArguments.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/CommonUtils.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/SourceDependency.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseArguments.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/Utilities/CommonUtils.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/BoardToolchain.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release/ArduinoSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release/CMakeFiles/3.24.2/CMakeCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeGenericSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Platform/Arduino.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCXXInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Platform/Arduino.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release/CMakeFiles/3.24.2/CMakeCCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Platform/Arduino.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release/CMakeFiles/3.24.2/CMakeCCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Platform/Arduino.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release/CMakeFiles/3.24.2/CMakeCCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-C.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Platform/Arduino.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/phr/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/223.8617.54/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release/BoardOptions.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLE2902.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLE2904.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEAddress.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEAdvertisedDevice.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEAdvertising.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEBeacon.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLECharacteristic.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEClient.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEDescriptor.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEDevice.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEEddystoneTLM.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEEddystoneURL.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEExceptions.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEHIDDevice.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLERemoteCharacteristic.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLERemoteDescriptor.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLERemoteService.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEScan.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLESecurity.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEServer.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEService.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEUUID.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEUtils.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEValue.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/GeneralUtils.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/HIDKeyboardTypes.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/HIDTypes.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/RTOS.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLE2902.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLE2904.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEAddress.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEAdvertisedDevice.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEAdvertising.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEBeacon.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLECharacteristic.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLECharacteristicMap.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEClient.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEDescriptor.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEDescriptorMap.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEDevice.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEEddystoneTLM.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEEddystoneURL.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEExceptions.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEHIDDevice.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLERemoteCharacteristic.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLERemoteDescriptor.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLERemoteService.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEScan.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLESecurity.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEServer.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEService.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEServiceMap.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEUUID.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEUtils.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/BLEValue.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/FreeRTOS.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src/GeneralUtils.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFi.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiAP.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiClient.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiGeneric.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiMulti.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiSTA.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiScan.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiServer.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiType.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiUdp.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFi.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiAP.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiClient.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiGeneric.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiMulti.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiSTA.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiScan.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiServer.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src/WiFiUdp.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/WiFiClientSecure.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/esp_crt_bundle.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/ssl_client.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/esp_crt_bundle.c"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/WiFiClientSecure.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/ssl_client.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/WiFiClientSecure.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/esp_crt_bundle.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/ssl_client.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/esp_crt_bundle.c"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/WiFiClientSecure.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src/ssl_client.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/HTTPClient/src/HTTPClient.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/HTTPClient/src/HTTPClient.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/HTTPClient/src/HTTPClient.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/HTTPClient/src/HTTPClient.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/DNSServer/src/DNSServer.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/DNSServer/src/DNSServer.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/DNSServer/src/DNSServer.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/DNSServer/src/DNSServer.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Update/src/HttpsOTAUpdate.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Update/src/Update.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Update/src/HttpsOTAUpdate.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Update/src/Updater.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Preferences/src/Preferences.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Preferences/src/Preferences.cpp"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/SPI/src/SPI.h"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/SPI/src/SPI.cpp"
+		}
+	],
+	"kind" : "cmakeFiles",
+	"paths" : 
+	{
+		"build" : "/home/phr/workspace/nuki_hub/cmake-build-release",
+		"source" : "/home/phr/workspace/nuki_hub"
+	},
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 0
+	}
+}

@@ -1,0 +1,177 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "nuki_hub",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_BLE::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_BLE-Release-460e31126632a814d10e.json",
+					"name" : "_arduino_lib_BLE",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_Client::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_Client-Release-2c863ab41490518561b9.json",
+					"name" : "_arduino_lib_Client",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_DNSServer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_DNSServer-Release-490d2edc140b98cabf50.json",
+					"name" : "_arduino_lib_DNSServer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_HTTPClient::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_HTTPClient-Release-304137aab2e9cbf4e0dc.json",
+					"name" : "_arduino_lib_HTTPClient",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_Preferences::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_Preferences-Release-1a2cd6568ab0d48b2be8.json",
+					"name" : "_arduino_lib_Preferences",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_SPI::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_SPI-Release-e26d8cf0ae99f3ce2f1e.json",
+					"name" : "_arduino_lib_SPI",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_Server::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_Server-Release-e100a7f6b6d513aff742.json",
+					"name" : "_arduino_lib_Server",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_Update::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_Update-Release-a23f8285d79b49343982.json",
+					"name" : "_arduino_lib_Update",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_WiFi::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_WiFi-Release-477d42b334d064f35b92.json",
+					"name" : "_arduino_lib_WiFi",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_WiFiClient::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_WiFiClient-Release-3ad019f7c7bb14b4c557.json",
+					"name" : "_arduino_lib_WiFiClient",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_WiFiClientSecure::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_WiFiClientSecure-Release-ea385e03e4a800f1fc01.json",
+					"name" : "_arduino_lib_WiFiClientSecure",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "_arduino_lib_core::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-_arduino_lib_core-Release-cd80220cdc8fb3561e26.json",
+					"name" : "_arduino_lib_core",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "nuki_hub::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-nuki_hub-Release-69fea0c62c5b42968952.json",
+					"name" : "nuki_hub",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "upload-nuki_hub::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-upload-nuki_hub-Release-c98640c0d2877c043744.json",
+					"name" : "upload-nuki_hub",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/phr/workspace/nuki_hub/cmake-build-release",
+		"source" : "/home/phr/workspace/nuki_hub"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 4
+	}
+}

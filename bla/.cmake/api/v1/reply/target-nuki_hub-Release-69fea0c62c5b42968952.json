@@ -1,0 +1,4084 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "nuki_hub.elf"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"_link_ard_lib_list",
+			"target_link_arduino_libraries",
+			"target_compile_definitions",
+			"add_compile_definitions",
+			"add_definitions",
+			"include",
+			"project",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt",
+			"/home/phr/workspace/sdk/Arduino-CMake-Toolchain/Arduino/System/BoardBuildTargets.cmake",
+			"cmake-build-release/ArduinoSystem.cmake",
+			"cmake-build-release/CMakeFiles/3.24.2/CMakeSystem.cmake"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 104,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 117,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 183,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 700,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 685,
+				"parent" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 212,
+				"parent" : 5
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 700,
+				"parent" : 6
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 685,
+				"parent" : 6
+			},
+			{
+				"command" : 2,
+				"file" : 1,
+				"line" : 212,
+				"parent" : 8
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 700,
+				"parent" : 9
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 110,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 0
+			},
+			{
+				"command" : 8,
+				"file" : 0,
+				"line" : 5,
+				"parent" : 0
+			},
+			{
+				"file" : 3,
+				"parent" : 13
+			},
+			{
+				"command" : 7,
+				"file" : 3,
+				"line" : 12,
+				"parent" : 14
+			},
+			{
+				"file" : 2,
+				"parent" : 15
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 61,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 75,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 77,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 73,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 65,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 63,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 67,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 55,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 71,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 59,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 57,
+				"parent" : 16
+			},
+			{
+				"command" : 6,
+				"file" : 2,
+				"line" : 69,
+				"parent" : 16
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 25,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 24,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 20,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 21,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 22,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 23,
+				"parent" : 0
+			},
+			{
+				"command" : 9,
+				"file" : 0,
+				"line" : 28,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-O3 -DNDEBUG -fdiagnostics-color=always"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 11,
+					"define" : "ARDUHAL_LOG_LEVEL=ARDUHAL_LOG_LEVEL_NONE"
+				},
+				{
+					"backtrace" : 12,
+					"define" : "ARDUINO_ARCH_ESP32"
+				},
+				{
+					"backtrace" : 17,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_CPUFREQ_240"
+				},
+				{
+					"backtrace" : 18,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_DEBUGLEVEL_NONE"
+				},
+				{
+					"backtrace" : 19,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_ERASEFLASH_NONE"
+				},
+				{
+					"backtrace" : 20,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_EVENTSCORE_1"
+				},
+				{
+					"backtrace" : 21,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_FLASHFREQ_80"
+				},
+				{
+					"backtrace" : 22,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_FLASHMODE_QIO"
+				},
+				{
+					"backtrace" : 23,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_FLASHSIZE_4M"
+				},
+				{
+					"backtrace" : 24,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_JTAGADAPTER_EXTERNAL"
+				},
+				{
+					"backtrace" : 25,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_LOOPCORE_1"
+				},
+				{
+					"backtrace" : 26,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_PARTITIONSCHEME_MIN_SPIFFS"
+				},
+				{
+					"backtrace" : 27,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_PSRAM_DISABLED"
+				},
+				{
+					"backtrace" : 28,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_UPLOADSPEED_921600"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CONFIG_NIMBLE_CPP_LOG_LEVEL=0"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_NONE"
+				},
+				{
+					"backtrace" : 29,
+					"define" : "ESP32"
+				},
+				{
+					"backtrace" : 30,
+					"define" : "ESP_PLATFORM"
+				},
+				{
+					"backtrace" : 31,
+					"define" : "TLS_CA_MAX_SIZE=2200"
+				},
+				{
+					"backtrace" : 32,
+					"define" : "TLS_CERT_MAX_SIZE=1500"
+				},
+				{
+					"backtrace" : 33,
+					"define" : "TLS_KEY_MAX_SIZE=1800"
+				},
+				{
+					"backtrace" : 34,
+					"define" : "TX_PAYLOAD_BUFFER_SIZE=6144"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/nuki_hub"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/PRIVATE"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/Crc16"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/NimBLE-Arduino/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/BleScanner/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/nuki_ble/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/WiFiManager"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/WebServer/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/Ethernet/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/MqttLogger/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/espMqttClient/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/AsyncTCP/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/cores/esp32"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/variants/esp32"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/HTTPClient/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/DNSServer/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Update/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Preferences/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/SPI/src"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0,
+				2,
+				3,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				14,
+				17,
+				19,
+				21,
+				23,
+				24,
+				27,
+				31,
+				33,
+				34,
+				36,
+				37,
+				38,
+				40,
+				41,
+				42,
+				43,
+				45,
+				47,
+				49,
+				51,
+				53,
+				55,
+				56,
+				60,
+				62,
+				64,
+				66,
+				69,
+				71,
+				73,
+				76,
+				78,
+				80,
+				82,
+				84,
+				86,
+				89,
+				91,
+				93,
+				95,
+				97,
+				99,
+				101,
+				103,
+				105,
+				422,
+				424,
+				428,
+				430,
+				432,
+				434,
+				436,
+				444,
+				449,
+				451,
+				453,
+				455,
+				457,
+				459,
+				461,
+				463,
+				465,
+				468,
+				470,
+				472
+			]
+		},
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-O3 -DNDEBUG"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 11,
+					"define" : "ARDUHAL_LOG_LEVEL=ARDUHAL_LOG_LEVEL_NONE"
+				},
+				{
+					"backtrace" : 12,
+					"define" : "ARDUINO_ARCH_ESP32"
+				},
+				{
+					"backtrace" : 17,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_CPUFREQ_240"
+				},
+				{
+					"backtrace" : 18,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_DEBUGLEVEL_NONE"
+				},
+				{
+					"backtrace" : 19,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_ERASEFLASH_NONE"
+				},
+				{
+					"backtrace" : 20,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_EVENTSCORE_1"
+				},
+				{
+					"backtrace" : 21,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_FLASHFREQ_80"
+				},
+				{
+					"backtrace" : 22,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_FLASHMODE_QIO"
+				},
+				{
+					"backtrace" : 23,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_FLASHSIZE_4M"
+				},
+				{
+					"backtrace" : 24,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_JTAGADAPTER_EXTERNAL"
+				},
+				{
+					"backtrace" : 25,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_LOOPCORE_1"
+				},
+				{
+					"backtrace" : 26,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_PARTITIONSCHEME_MIN_SPIFFS"
+				},
+				{
+					"backtrace" : 27,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_PSRAM_DISABLED"
+				},
+				{
+					"backtrace" : 28,
+					"define" : "ARDUINO_ESP32_ESP32_MENU_UPLOADSPEED_921600"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CONFIG_NIMBLE_CPP_LOG_LEVEL=0"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_NONE"
+				},
+				{
+					"backtrace" : 29,
+					"define" : "ESP32"
+				},
+				{
+					"backtrace" : 30,
+					"define" : "ESP_PLATFORM"
+				},
+				{
+					"backtrace" : 31,
+					"define" : "TLS_CA_MAX_SIZE=2200"
+				},
+				{
+					"backtrace" : 32,
+					"define" : "TLS_CERT_MAX_SIZE=1500"
+				},
+				{
+					"backtrace" : 33,
+					"define" : "TLS_KEY_MAX_SIZE=1800"
+				},
+				{
+					"backtrace" : 34,
+					"define" : "TX_PAYLOAD_BUFFER_SIZE=6144"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/nuki_hub"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/PRIVATE"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/Crc16"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/NimBLE-Arduino/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/BleScanner/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/nuki_ble/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/WiFiManager"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/WebServer/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/Ethernet/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/MqttLogger/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/espMqttClient/src"
+				},
+				{
+					"backtrace" : 35,
+					"path" : "/home/phr/workspace/nuki_hub/lib/AsyncTCP/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/cores/esp32"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/variants/esp32"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/BLE/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFi/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/WiFiClientSecure/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/HTTPClient/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/DNSServer/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Update/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/Preferences/src"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "/home/phr/.arduino15/packages/esp32/hardware/esp32/2.0.6/libraries/SPI/src"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				110,
+				113,
+				129,
+				130,
+				131,
+				132,
+				133,
+				134,
+				135,
+				136,
+				137,
+				138,
+				139,
+				140,
+				141,
+				142,
+				143,
+				162,
+				163,
+				164,
+				165,
+				167,
+				168,
+				170,
+				171,
+				172,
+				174,
+				175,
+				176,
+				177,
+				178,
+				179,
+				180,
+				181,
+				182,
+				183,
+				185,
+				186,
+				188,
+				189,
+				190,
+				227,
+				229,
+				231,
+				232,
+				235,
+				237,
+				238,
+				240,
+				241,
+				242,
+				245,
+				247,
+				248,
+				249,
+				250,
+				252,
+				254,
+				256,
+				258,
+				259,
+				260,
+				262,
+				264,
+				265,
+				266,
+				269,
+				270,
+				272,
+				274,
+				276,
+				278,
+				280,
+				282,
+				285,
+				287,
+				289,
+				291,
+				293,
+				295,
+				297,
+				299,
+				300,
+				301,
+				302,
+				305,
+				306,
+				307,
+				310,
+				311,
+				312,
+				313,
+				314,
+				316,
+				318,
+				319,
+				321,
+				323,
+				324,
+				325,
+				327,
+				328,
+				330,
+				331,
+				333,
+				334,
+				335,
+				338,
+				340,
+				342,
+				343,
+				345,
+				346,
+				347,
+				348,
+				351,
+				352,
+				354,
+				356,
+				357,
+				358,
+				359,
+				361,
+				362,
+				363,
+				364,
+				367,
+				368,
+				370,
+				372,
+				380,
+				402,
+				403,
+				404,
+				405,
+				406,
+				407,
+				408,
+				409,
+				410,
+				411,
+				415,
+				416
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 4,
+			"id" : "_arduino_lib_Update::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "_arduino_lib_Preferences::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "_arduino_lib_SPI::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "_arduino_lib_core::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "_arduino_lib_BLE::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "_arduino_lib_WiFi::@6890427a1f51a3e7e1df"
+		}
+	],
+	"id" : "nuki_hub::@6890427a1f51a3e7e1df",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-O3 -DNDEBUG",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_core.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_BLE.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_WiFi.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_WiFiClientSecure.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_Update.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_DNSServer.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_Preferences.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_SPI.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "lib_arduino_lib_WiFiClient.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "lib_arduino_lib_Client.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "lib_arduino_lib_Server.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "lib_arduino_lib_HTTPClient.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_WiFi.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_WiFiClientSecure.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_DNSServer.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "lib_arduino_lib_WiFiClient.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "lib_arduino_lib_Client.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "lib_arduino_lib_Server.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "lib_arduino_lib_HTTPClient.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib_arduino_lib_core.a",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "nuki_hub",
+	"nameOnDisk" : "nuki_hub.elf",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				2,
+				3,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				14,
+				17,
+				19,
+				21,
+				23,
+				24,
+				27,
+				31,
+				33,
+				34,
+				36,
+				37,
+				38,
+				40,
+				41,
+				42,
+				43,
+				45,
+				47,
+				49,
+				51,
+				53,
+				55,
+				56,
+				60,
+				62,
+				64,
+				66,
+				69,
+				71,
+				73,
+				76,
+				78,
+				80,
+				82,
+				84,
+				86,
+				89,
+				91,
+				93,
+				95,
+				97,
+				99,
+				101,
+				103,
+				105,
+				110,
+				113,
+				129,
+				130,
+				131,
+				132,
+				133,
+				134,
+				135,
+				136,
+				137,
+				138,
+				139,
+				140,
+				141,
+				142,
+				143,
+				162,
+				163,
+				164,
+				165,
+				167,
+				168,
+				170,
+				171,
+				172,
+				174,
+				175,
+				176,
+				177,
+				178,
+				179,
+				180,
+				181,
+				182,
+				183,
+				185,
+				186,
+				188,
+				189,
+				190,
+				227,
+				229,
+				231,
+				232,
+				235,
+				237,
+				238,
+				240,
+				241,
+				242,
+				245,
+				247,
+				248,
+				249,
+				250,
+				252,
+				254,
+				256,
+				258,
+				259,
+				260,
+				262,
+				264,
+				265,
+				266,
+				269,
+				270,
+				272,
+				274,
+				276,
+				278,
+				280,
+				282,
+				285,
+				287,
+				289,
+				291,
+				293,
+				295,
+				297,
+				299,
+				300,
+				301,
+				302,
+				305,
+				306,
+				307,
+				310,
+				311,
+				312,
+				313,
+				314,
+				316,
+				318,
+				319,
+				321,
+				323,
+				324,
+				325,
+				327,
+				328,
+				330,
+				331,
+				333,
+				334,
+				335,
+				338,
+				340,
+				342,
+				343,
+				345,
+				346,
+				347,
+				348,
+				351,
+				352,
+				354,
+				356,
+				357,
+				358,
+				359,
+				361,
+				362,
+				363,
+				364,
+				367,
+				368,
+				370,
+				372,
+				380,
+				402,
+				403,
+				404,
+				405,
+				406,
+				407,
+				408,
+				409,
+				410,
+				411,
+				415,
+				416,
+				422,
+				424,
+				428,
+				430,
+				432,
+				434,
+				436,
+				444,
+				449,
+				451,
+				453,
+				455,
+				457,
+				459,
+				461,
+				463,
+				465,
+				468,
+				470,
+				472
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				1,
+				4,
+				5,
+				12,
+				13,
+				15,
+				16,
+				18,
+				20,
+				22,
+				25,
+				26,
+				28,
+				29,
+				30,
+				32,
+				35,
+				39,
+				44,
+				46,
+				48,
+				50,
+				52,
+				54,
+				57,
+				58,
+				59,
+				61,
+				63,
+				65,
+				67,
+				68,
+				70,
+				72,
+				74,
+				75,
+				77,
+				79,
+				81,
+				83,
+				85,
+				87,
+				88,
+				90,
+				92,
+				94,
+				96,
+				98,
+				100,
+				102,
+				104,
+				106,
+				107,
+				108,
+				109,
+				111,
+				112,
+				114,
+				115,
+				116,
+				117,
+				118,
+				119,
+				120,
+				121,
+				122,
+				123,
+				124,
+				125,
+				126,
+				127,
+				128,
+				144,
+				145,
+				146,
+				147,
+				148,
+				149,
+				150,
+				151,
+				152,
+				153,
+				154,
+				155,
+				156,
+				157,
+				158,
+				159,
+				160,
+				161,
+				166,
+				169,
+				173,
+				184,
+				187,
+				191,
+				192,
+				193,
+				194,
+				195,
+				196,
+				197,
+				198,
+				199,
+				200,
+				201,
+				202,
+				203,
+				204,
+				205,
+				206,
+				207,
+				208,
+				209,
+				210,
+				211,
+				212,
+				213,
+				214,
+				215,
+				216,
+				217,
+				218,
+				219,
+				220,
+				221,
+				222,
+				223,
+				224,
+				225,
+				226,
+				228,
+				230,
+				233,
+				234,
+				236,
+				239,
+				243,
+				244,
+				246,
+				251,
+				253,
+				255,
+				257,
+				261,
+				263,
+				267,
+				268,
+				271,
+				273,
+				275,
+				277,
+				279,
+				281,
+				283,
+				284,
+				286,
+				288,
+				290,
+				292,
+				294,
+				296,
+				298,
+				303,
+				304,
+				308,
+				309,
+				315,
+				317,
+				320,
+				322,
+				326,
+				329,
+				332,
+				336,
+				337,
+				339,
+				341,
+				344,
+				349,
+				350,
+				353,
+				355,
+				360,
+				365,
+				366,
+				369,
+				371,
+				373,
+				374,
+				375,
+				376,
+				377,
+				378,
+				379,
+				381,
+				382,
+				383,
+				384,
+				385,
+				386,
+				387,
+				388,
+				389,
+				390,
+				391,
+				392,
+				393,
+				394,
+				395,
+				396,
+				397,
+				398,
+				399,
+				400,
+				401,
+				412,
+				413,
+				414,
+				417,
+				418,
+				419,
+				420,
+				421,
+				423,
+				425,
+				426,
+				427,
+				429,
+				431,
+				433,
+				435,
+				437,
+				438,
+				439,
+				440,
+				441,
+				442,
+				443,
+				445,
+				446,
+				447,
+				448,
+				450,
+				452,
+				454,
+				456,
+				458,
+				460,
+				462,
+				464,
+				466,
+				467,
+				469,
+				471,
+				473
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "main.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "Config.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "Gpio.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "Logger.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "MqttReceiver.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "MqttTopics.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "Network.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "NetworkLock.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "NetworkOpener.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "NukiOpenerWrapper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "NukiWrapper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "Ota.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "Pins.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "PreferencesKeys.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "PresenceDetection.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "QueryCommand.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "RestartReason.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "WebCfgServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "WebCfgServerConstants.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/AsyncTCP/src/AsyncTCP.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/BleScanner/src/BleInterfaces.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/BleScanner/src/BleScanner.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Crc16/Crc16.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/MqttLogger/src/MqttLogger.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WiFiManager/WiFiManager.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WiFiManager/wm_consts_en.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WiFiManager/wm_strings_en.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/nuki_ble/src/NukiBle.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/nuki_ble/src/NukiBle.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/nuki_ble/src/NukiConstants.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/nuki_ble/src/NukiDataTypes.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/nuki_ble/src/NukiLock.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/nuki_ble/src/NukiLockConstants.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/nuki_ble/src/NukiLockUtils.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/nuki_ble/src/NukiOpener.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/nuki_ble/src/NukiOpenerConstants.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/nuki_ble/src/NukiOpenerUtils.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/nuki_ble/src/NukiUtils.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "networkDevices/ClientSyncW5500.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "networkDevices/NetworkDevice.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "networkDevices/W5500Device.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "networkDevices/WifiDevice.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "networkDevices/espMqttClientW5500.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/Dhcp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Ethernet/src/Dhcp.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/Dns.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Ethernet/src/Dns.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/Ethernet.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Ethernet/src/Ethernet.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/EthernetClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Ethernet/src/EthernetClient.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/EthernetServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Ethernet/src/EthernetServer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/EthernetUdp.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Ethernet/src/EthernetUdp.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/socket.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/Ethernet/src/utility/w5100.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/Ethernet/src/utility/w5100.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/HIDKeyboardTypes.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/HIDTypes.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLE2904.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLE2904.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEAddress.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEAddress.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEAdvertisedDevice.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEAdvertisedDevice.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEAdvertising.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEAdvertising.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEAttValue.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEBeacon.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEBeacon.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLECharacteristic.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLECharacteristic.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEClient.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEConnInfo.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEDescriptor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEDescriptor.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEDevice.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEDevice.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEEddystoneTLM.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEEddystoneTLM.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEEddystoneURL.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEEddystoneURL.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEExtAdvertising.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEExtAdvertising.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEHIDDevice.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEHIDDevice.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLELog.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLERemoteCharacteristic.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLERemoteCharacteristic.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLERemoteDescriptor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLERemoteDescriptor.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLERemoteService.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLERemoteService.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEScan.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEScan.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLESecurity.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLESecurity.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEServer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEService.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEService.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEUUID.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEUUID.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEUtils.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/NimBLEUtils.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/console/console.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/esp_port/esp-hci/include/esp_compiler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/esp_port/esp-hci/include/esp_nimble_hci.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/esp_port/esp-hci/src/esp_nimble_hci.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/esp_port/port/include/esp_nimble_cfg.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/esp_port/port/include/esp_nimble_mem.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/esp_port/port/src/esp_nimble_mem.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/aes.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/cbc_mode.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/ccm_mode.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/cmac_mode.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/constants.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/ctr_mode.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/ctr_prng.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/ecc.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/ecc_dh.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/ecc_dsa.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/ecc_platform_specific.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/hmac.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/hmac_prng.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/sha256.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/include/tinycrypt/utils.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/aes_decrypt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/aes_encrypt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/cbc_mode.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/ccm_mode.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/cmac_mode.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/ctr_mode.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/ctr_prng.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/ecc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/ecc_dh.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/ecc_dsa.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/ecc_platform_specific.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/hmac.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/hmac_prng.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/sha256.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/ext/tinycrypt/src/utils.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_hw.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_adv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_conn.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_ctrl.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_hci.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_iso.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_resolv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_rfmgmt.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_scan.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_sched.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_sync.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_test.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_trace.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_utils.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_ll_whitelist.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_phy.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/include/controller/ble_phy_trace.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_adv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_conn.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_conn_hci.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_conn_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_ctrl.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_dtm.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_dtm_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_hci.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_hci_ev.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_iso.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_rand.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_resolv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_rfmgmt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_scan.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_sched.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_supp_cmd.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_sync.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_trace.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_utils.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/controller/src/ble_ll_whitelist.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/drivers/nrf51/include/ble/xcvr.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/drivers/nrf51/src/ble_hw.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/drivers/nrf51/src/ble_phy.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/drivers/nrf52/include/ble/xcvr.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/drivers/nrf52/src/ble_hw.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/drivers/nrf52/src/ble_phy.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/drivers/nrf52/src/ble_phy_trace.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_att.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_eddystone.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gap.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gatt.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_adv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_hci.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_id.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_log.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_mbuf.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_pvcy.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_stop.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_ibeacon.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_l2cap.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_monitor.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_sm.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_store.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_uuid.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/access.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/atomic.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/cdb.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/cfg.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/cfg_cli.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/cfg_srv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/glue.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/health_cli.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/health_srv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/heartbeat.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/main.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/mesh.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/model_cli.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/model_srv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/porting.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/proxy.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/slist.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/include/mesh/testing.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/access.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/access.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/adv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/adv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/aes-ccm.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/app_keys.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/app_keys.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/atomic.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/beacon.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/beacon.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/cdb.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/cfg.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/cfg.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/cfg_cli.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/cfg_srv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/crypto.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/crypto.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/foundation.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/friend.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/friend.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/glue.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/health_cli.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/health_srv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/heartbeat.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/heartbeat.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/light_model.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/light_model.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/lpn.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/lpn.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/mesh.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/mesh_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/model_cli.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/model_srv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/net.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/net.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/nodes.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/nodes.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/pb_adv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/pb_gatt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/prov.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/prov.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/prov_bearer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/prov_device.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/provisioner.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/provisioner.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/proxy.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/proxy.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/rpl.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/rpl.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/settings.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/settings.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/shell.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/shell.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/subnet.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/subnet.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/transport.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/mesh/src/transport.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/ans/include/services/ans/ble_svc_ans.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/ans/src/ble_svc_ans.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/bas/include/services/bas/ble_svc_bas.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/bas/src/ble_svc_bas.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/dis/include/services/dis/ble_svc_dis.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/dis/src/ble_svc_dis.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/gap/include/services/gap/ble_svc_gap.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/gap/src/ble_svc_gap.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/gatt/include/services/gatt/ble_svc_gatt.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/gatt/src/ble_svc_gatt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/ias/include/services/ias/ble_svc_ias.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/ias/src/ble_svc_ias.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/ipss/include/services/ipss/ble_svc_ipss.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/ipss/src/ble_svc_ipss.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/lls/include/services/lls/ble_svc_lls.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/services/lls/src/ble_svc_lls.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_att.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_att_clt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_att_cmd.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_att_cmd_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_att_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_att_svr.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_eddystone.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_gap.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_gap_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_gatt_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_gattc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_gatts.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_gatts_lcl.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_adv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_adv_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_atomic.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_atomic_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_cfg.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_conn.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_conn_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_flow.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_flow_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_hci.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_hci_cmd.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_hci_evt.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_hci_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_hci_util.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_id.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_id_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_log.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_mbuf.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_mbuf_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_misc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_mqueue.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_periodic_sync.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_periodic_sync_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_pvcy.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_pvcy_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_resolv.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_resolv_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_shutdown.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_startup.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_startup_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_stop.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_ibeacon.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_l2cap.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_l2cap_coc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_l2cap_coc_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_l2cap_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_l2cap_sig.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_l2cap_sig_cmd.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_l2cap_sig_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_monitor.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_monitor_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_sm.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_sm_alg.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_sm_cmd.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_sm_lgcy.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_sm_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_sm_sc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_store.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_store_util.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_uuid.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/src/ble_uuid_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/store/config/include/store/config/ble_store_config.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/store/config/src/ble_store_config.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/store/config/src/ble_store_config_conf.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/store/config/src/ble_store_config_priv.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/store/config/src/ble_store_nvs.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/util/include/host/util/util.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/host/util/src/addr.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble_hci_trans.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/include/nimble/hci_common.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_npl.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_opt.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_opt_auto.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/transport/ram/include/transport/ram/ble_hci_ram.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/nimble/transport/ram/src/ble_hci_ram.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/hal/hal_timer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/log/log.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/log_common/ignore.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/log_common/log_common.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/logcfg/logcfg.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/mem/mem.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/modlog.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/nimble/nimble_port.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/endian.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_cputime.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_error.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_mbuf.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_mempool.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_trace_api.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/queue.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/os/util.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/stats/stats.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/syscfg/syscfg.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/sysflash/sysflash.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/include/sysinit/sysinit.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/endian.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/hal_timer.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/hal_uart.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/mem.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/nimble_port.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/os_cputime.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/os_cputime_pwr2.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/os_mbuf.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/os_mempool.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/nimble/src/os_msys_init.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/npl/freertos/include/nimble/nimble_npl_os.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/npl/freertos/include/nimble/nimble_port_freertos.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/npl/freertos/include/nimble/npl_freertos.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/npl/freertos/src/nimble_port_freertos.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimble/porting/npl/freertos/src/npl_os_freertos.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimconfig.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/NimBLE-Arduino/src/nimconfig_rename.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/EthClient.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/EthServer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/HTTP_Method.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WebServer/src/Parsing.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/Uri.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WebServer/src/WebServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/WebServer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/detail/RequestHandler.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/detail/RequestHandlersImpl.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WebServer/src/detail/mimetable.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/detail/mimetable.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WebServer/src/hardware/W5500EthClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/hardware/W5500EthClient.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WebServer/src/hardware/W5500EthServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/hardware/W5500EthServer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WebServer/src/hardware/WifiEthClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/hardware/WifiEthClient.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/WebServer/src/hardware/WifiEthServer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/hardware/WifiEthServer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/uri/UriBraces.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/uri/UriGlob.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/WebServer/src/uri/UriRegex.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Config.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Helpers.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Logging.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/MqttClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/MqttClient.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/MqttClientSetup.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Outbox.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Packets/Constants.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Packets/Packet.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Packets/Packet.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Packets/Parser.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Packets/Parser.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Packets/RemainingLength.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Packets/RemainingLength.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Packets/String.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Packets/String.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Transport/ClientAsync.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Transport/ClientAsync.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Transport/ClientPosix.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Transport/ClientPosix.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Transport/ClientSecureSync.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Transport/ClientSecureSync.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Transport/ClientSync.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Transport/ClientSync.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/Transport/IPAddress.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Transport/IPAddress.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/Transport/Transport.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/TypeDefs.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/TypeDefs.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/espMqttClient.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/espMqttClient.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "lib/espMqttClient/src/espMqttClientAsync.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "lib/espMqttClient/src/espMqttClientAsync.h",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "EXECUTABLE"
+}
