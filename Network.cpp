@@ -652,20 +652,6 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          { { "enabled_by_default", "true" } });
 
-//        doc_out["name"] = name + " LED enabled";
-//        doc_out["object_id"] = object_id + " LED enabled";
-//        doc_out["uniq_id"] = build_unique_id(address, "led_enabled");
-//        doc_out["ic"] = "mdi:led-variant-on";
-//        doc_out["ent_cat"] = "config";
-//        doc_out["stat_t"] = net_build_topic("config");
-//        doc_out["val_tpl"] = "{{iif(value_json.led_enabled,'ON','OFF')}}";
-//        doc_out["cmd_t"] = net_build_topic("config/set");
-//        doc_out["state_on"] = "ON";
-//        doc_out["state_off"] = "OFF";
-//        doc_out["pl_on"] = "{'led_enabled': true}";
-//        doc_out["pl_off"] = "{'led_enabled': false}";
-//        doc_out["opt"] = true;
-
         // LED enabled
         publishHassTopic("switch",
                          "led_enabled",
@@ -676,7 +662,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          baseTopic,
                          mqtt_topic_config_led_enabled,
                          deviceType,
-                         "switch",
+                         "",
                          "",
                          "config",
                          mqtt_topic_config_led_enabled,
@@ -684,13 +670,31 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                                           { "pl_on", "1" },
                                           { "pl_off", "0" },
                                           { "state_on", "1" },
-                                          { "state_off", "0" },});
+                                          { "state_off", "0" }});
+
+        // Button enabled
+        publishHassTopic("switch",
+                         "button_enabled",
+                         uidString,
+                         "_button_enabled",
+                         "Button enabled",
+                         name,
+                         baseTopic,
+                         mqtt_topic_config_button_enabled,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         mqtt_topic_config_button_enabled,
+                         { { "ic", "mdi:radiobox-marked" },
+                           { "pl_on", "1" },
+                           { "pl_off", "0" },
+                           { "state_on", "1" },
+                           { "state_off", "0" }});
     }
 }
 //json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
-void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic, char *name, char *uidString,
-                                        char *lockAction, char *unlockAction, char *openAction, char *lockedState,
-                                        char *unlockedState)
+void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -740,9 +744,7 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
     }
 }
 
-void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopic, char *name, char *uidString,
-                                          char *lockAction, char *unlockAction, char *openAction, char *lockedState,
-                                          char *unlockedState)
+void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -764,6 +766,47 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                          {{"pl_on", "ring"},
                           {"pl_off", "locked"}});
     }
+}
+
+
+void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    publishHassTopic("number",
+                     "led_brightness",
+                     uidString,
+                     "_led_brightness",
+                     "LED brightness",
+                     name,
+                     baseTopic,
+                     mqtt_topic_config_led_brightness,
+                     deviceType,
+                     "",
+                     "",
+                     "config",
+                     mqtt_topic_config_led_brightness,
+                     { { "ic", "mdi:brightness-6" },
+                       { "min", "0" },
+                       { "max", "5" }});
+}
+
+void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    publishHassTopic("number",
+                     "sound_level",
+                     uidString,
+                     "_sound_level",
+                     "Sound level",
+                     name,
+                     baseTopic,
+                     mqtt_topic_config_sound_level,
+                     deviceType,
+                     "",
+                     "",
+                     "config",
+                     mqtt_topic_config_sound_level,
+                     { { "ic", "mdi:volume-source" },
+                       { "min", "0" },
+                       { "max", "255" }});
 }
 
 void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)

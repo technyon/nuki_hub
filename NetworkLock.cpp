@@ -506,7 +506,8 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
                                char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
-    _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString);
+    _network->publishHASSConfigLedBrightness(deviceType, baseTopic, name, uidString);
     if(hasDoorSensor)
     {
         _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);

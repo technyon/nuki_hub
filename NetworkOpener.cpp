@@ -476,7 +476,8 @@ void NetworkOpener::publishBleAddress(const std::string &address)
 void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, false, lockAction, unlockAction, openAction, lockedState, unlockedState);
-    _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString);
+    _network->publishHASSConfigSoundLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
 }
 
