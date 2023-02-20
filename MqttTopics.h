@@ -35,6 +35,10 @@
 #define mqtt_topic_config_single_lock "/configuration/singleLock"
 #define mqtt_topic_config_sound_level "/configuration/soundLevel"
 
+#define mqtt_topic_info_hardware_version "/info/hardwareVersion"
+#define mqtt_topic_info_firmware_version "/info/firmwareVersion"
+
+
 #define mqtt_topic_keypad "/keypad"
 #define mqtt_topic_keypad_command_action "/keypad/command/action"
 #define mqtt_topic_keypad_command_id "/keypad/command/id"

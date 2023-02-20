@@ -652,6 +652,40 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          { { "enabled_by_default", "true" } });
 
+        // Firmware version
+        publishHassTopic("sensor",
+                         "firmware_version",
+                         uidString,
+                         "_firmware_version",
+                         "Firmware version",
+                         name,
+                         baseTopic,
+                         mqtt_topic_info_firmware_version,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         { { "enabled_by_default", "true" },
+                           {"ic", "mdi:counter"}});
+
+        // Firmware version
+        publishHassTopic("sensor",
+                         "hardware_version",
+                         uidString,
+                         "_hardware_version",
+                         "Hardware version",
+                         name,
+                         baseTopic,
+                         mqtt_topic_info_hardware_version,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         { { "enabled_by_default", "true" },
+                           {"ic", "mdi:counter"}});
+
         // LED enabled
         publishHassTopic("switch",
                          "led_enabled",

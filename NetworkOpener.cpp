@@ -451,6 +451,8 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 {
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledFlashEnabled == 1);
+    publishString(mqtt_topic_info_firmware_version, std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]));
+    publishString(mqtt_topic_info_hardware_version, std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]));
 }
 
 void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &config)

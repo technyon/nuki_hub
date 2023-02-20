@@ -405,6 +405,8 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
     publishBool(mqtt_topic_config_single_lock, config.singleLock == 1);
+    publishString(mqtt_topic_info_firmware_version, std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]));
+    publishString(mqtt_topic_info_hardware_version, std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]));
 }
 
 void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
