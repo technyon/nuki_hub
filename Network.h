@@ -12,6 +12,8 @@ enum class NetworkDeviceType
     W5500
 };
 
+#define JSON_BUFFER_SIZE 1024
+
 class Network
 {
 public:
@@ -34,12 +36,16 @@ public:
     bool publishString(const char* prefix, const char* topic, const char* value);
 
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
-    void publishHASSConfigBatLevel(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
+    void publishHASSConfigBatLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
-    void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
+    void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigLedBrightness(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigSoundLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
+
+    void clearWifiFallback();
 
     void publishPresenceDetection(char* csv);
 
@@ -59,6 +65,22 @@ private:
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void setupDevice();
     bool reconnect();
+
+    void publishHassTopic(const String& mqttDeviceType,
+                          const String& mattDeviceName,
+                          const String& uidString,
+                          const String& uidStringPostfix,
+                          const String& displayName,
+                          const String& name,
+                          const String& baseTopic,
+                          const String& stateTopic,
+                          const String& deviceType,
+                          const String& deviceClass,
+                          const String& stateClass = "",
+                          const String& entityCat = "",
+                          const String& commandTopic = "",
+                          std::vector<std::pair<char*, char*>> additionalEntries = {}
+                          );
 
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
