@@ -76,11 +76,7 @@ private:
                           const String& deviceClass,
                           const String& stateClass = "",
                           const String& entityCat = "",
-                          const String& unitOfMeasurement = "",
-                          const String& plOn = "",
-                          const String& plOff = "",
-                          const String& plNotAvailable = "",
-                          const String& enabledByDefault = ""
+                          std::vector<std::pair<char*, char*>> additionalEntries = {}
                           );
 
     void onMqttConnect(const bool& sessionPresent);

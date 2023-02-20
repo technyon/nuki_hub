@@ -596,9 +596,8 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "battery",
                          "",
                          "diagnostic",
-                         "",
-                         "1",
-                         "0");
+                         {{"pl_on", "1"},
+                          {"pl_off", "0"}});
 
         if(hasKeypad)
         {
@@ -615,9 +614,8 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              "battery",
                              "",
                              "diagnostic",
-                             "",
-                             "1",
-                             "0");
+                             {{"pl_on", "1"},
+                              {"pl_off", "0"}});
         }
 
         // Battery voltage
@@ -633,7 +631,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "voltage",
                          "measurement",
                          "diagnostic",
-                         "V");
+                         { {"unit_of_meas", "V"} });
 
         // Trigger
         publishHassTopic("sensor",
@@ -648,11 +646,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          "",
                          "diagnostic",
-                         "",
-                         "",
-                         "",
-                         "",
-                         "true");
+                         { { "enabled_by_default", "true" } });
     }
 }
 
@@ -676,7 +670,7 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
                          "battery",
                          "measurement",
                          "diagnostic",
-                         "%");
+                         { {"unit_of_meas", "%"} });
     }
 }
 
@@ -700,10 +694,9 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
                          "door",
                          "",
                          "",
-                         "",
-                         "doorOpened",
-                         "doorClosed",
-                         "unavailable");
+                         {{"pl_on", "doorOpened"},
+                          {"pl_off", "doorClosed"},
+                          {"pl_not_avail", "unavailable"}});
     }
 }
 
@@ -715,16 +708,20 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
 
     if (discoveryTopic != "")
     {
-        publishHassTopic("sensor",
+        publishHassTopic("binary_sensor",
                          "ring",
                          uidString,
                          "_ring_detect",
                          "ring detect",
                          name,
                          baseTopic,
-                         mqtt_topic_lock_door_sensor_state,
+                         mqtt_topic_lock_state,
                          deviceType,
-                         "sound");
+                         "sound",
+                         "",
+                         "",
+                         {{"pl_on", "ring"},
+                          {"pl_off", "locked"}});
     }
 }
 
@@ -739,7 +736,19 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
 
     if (discoveryTopic != "")
     {
-        publishHassTopic("sensor", "wifi_signal_strength", uidString, "_wifi_signal_strength", "wifi signal strength", name, baseTopic, mqtt_topic_wifi_rssi, deviceType, "signal_strength", "measurement", "diagnostic", "dBm");
+        publishHassTopic("sensor",
+                         "wifi_signal_strength",
+                         uidString,
+                         "_wifi_signal_strength",
+                         "wifi signal strength",
+                         name,
+                         baseTopic,
+                         mqtt_topic_wifi_rssi,
+                         deviceType,
+                         "signal_strength",
+                         "measurement",
+                         "diagnostic",
+                         { {"unit_of_meas", "dBm"} });
     }
 }
 
@@ -749,7 +758,19 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
 
     if (discoveryTopic != "")
     {
-        publishHassTopic("sensor", "bluetooth_signal_strength", uidString, "_bluetooth_signal_strength", "bluetooth signal strength", name, baseTopic, mqtt_topic_lock_rssi, deviceType, "signal_strength", "measurement", "diagnostic", "dBm");
+        publishHassTopic("sensor",
+                         "bluetooth_signal_strength",
+                         uidString,
+                         "_bluetooth_signal_strength",
+                         "bluetooth signal strength",
+                         name,
+                         baseTopic,
+                         mqtt_topic_lock_rssi,
+                         deviceType,
+                         "signal_strength",
+                         "measurement",
+                         "diagnostic",
+                         { {"unit_of_meas", "dBm"} });
     }
 }
 
@@ -765,12 +786,8 @@ void Network::publishHassTopic(const String& mqttDeviceType,
                                const String& deviceClass,
                                const String& stateClass,
                                const String& entityCat,
-                               const String& unitOfMeasurement,
-                               const String& plOn,
-                               const String& plOff,
-                               const String& plNotAvailable,
-                               const String& enabledByDefault
-                               )
+                               std::vector<std::pair<char*, char*>> additionalEntries
+)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -805,26 +822,9 @@ void Network::publishHassTopic(const String& mqttDeviceType,
             json["ent_cat"] = entityCat;
         }
 
-        if (unitOfMeasurement != "")
+        for(const auto& entry : additionalEntries)
         {
-            json["unit_of_meas"] = unitOfMeasurement;
-        }
-
-        if (plOff != "")
-        {
-            json["pl_off"] = plOff;
-        }
-        if (plOn != "")
-        {
-            json["pl_on"] = plOn;
-        }
-        if (plNotAvailable != "")
-        {
-            json["pl_not_avail"] = plNotAvailable;
-        }
-        if (enabledByDefault != "")
-        {
-            json["enabled_by_default"] = "true";
+            json[entry.first] = entry.second;
         }
 
         serializeJson(json, reinterpret_cast<char (&)[JSON_BUFFER_SIZE]>(*jsonOut));
