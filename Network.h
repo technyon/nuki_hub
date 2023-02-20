@@ -76,6 +76,7 @@ private:
                           const String& deviceClass,
                           const String& stateClass = "",
                           const String& entityCat = "",
+                          const String& commandTopic = "",
                           std::vector<std::pair<char*, char*>> additionalEntries = {}
                           );
 

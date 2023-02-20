@@ -596,6 +596,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "battery",
                          "",
                          "diagnostic",
+                         "",
                          {{"pl_on", "1"},
                           {"pl_off", "0"}});
 
@@ -614,6 +615,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              "battery",
                              "",
                              "diagnostic",
+                             "",
                              {{"pl_on", "1"},
                               {"pl_off", "0"}});
         }
@@ -631,6 +633,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "voltage",
                          "measurement",
                          "diagnostic",
+                         "",
                          { {"unit_of_meas", "V"} });
 
         // Trigger
@@ -646,10 +649,45 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          "",
                          "diagnostic",
+                         "",
                          { { "enabled_by_default", "true" } });
+
+//        doc_out["name"] = name + " LED enabled";
+//        doc_out["object_id"] = object_id + " LED enabled";
+//        doc_out["uniq_id"] = build_unique_id(address, "led_enabled");
+//        doc_out["ic"] = "mdi:led-variant-on";
+//        doc_out["ent_cat"] = "config";
+//        doc_out["stat_t"] = net_build_topic("config");
+//        doc_out["val_tpl"] = "{{iif(value_json.led_enabled,'ON','OFF')}}";
+//        doc_out["cmd_t"] = net_build_topic("config/set");
+//        doc_out["state_on"] = "ON";
+//        doc_out["state_off"] = "OFF";
+//        doc_out["pl_on"] = "{'led_enabled': true}";
+//        doc_out["pl_off"] = "{'led_enabled': false}";
+//        doc_out["opt"] = true;
+
+        // LED enabled
+        publishHassTopic("switch",
+                         "led_enabled",
+                         uidString,
+                         "_led_enabled",
+                         "LED enabled",
+                         name,
+                         baseTopic,
+                         mqtt_topic_config_led_enabled,
+                         deviceType,
+                         "switch",
+                         "",
+                         "config",
+                         mqtt_topic_config_led_enabled,
+                         { { "ic", "mdi:led-variant-on" },
+                                          { "pl_on", "1" },
+                                          { "pl_off", "0" },
+                                          { "state_on", "1" },
+                                          { "state_off", "0" },});
     }
 }
-
+//json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
 void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic, char *name, char *uidString,
                                         char *lockAction, char *unlockAction, char *openAction, char *lockedState,
                                         char *unlockedState)
@@ -670,6 +708,7 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
                          "battery",
                          "measurement",
                          "diagnostic",
+                         "",
                          { {"unit_of_meas", "%"} });
     }
 }
@@ -692,6 +731,7 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
                          mqtt_topic_lock_door_sensor_state,
                          deviceType,
                          "door",
+                         "",
                          "",
                          "",
                          {{"pl_on", "doorOpened"},
@@ -718,6 +758,7 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                          mqtt_topic_lock_state,
                          deviceType,
                          "sound",
+                         "",
                          "",
                          "",
                          {{"pl_on", "ring"},
@@ -748,6 +789,7 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
                          "signal_strength",
                          "measurement",
                          "diagnostic",
+                         "",
                          { {"unit_of_meas", "dBm"} });
     }
 }
@@ -770,6 +812,7 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
                          "signal_strength",
                          "measurement",
                          "diagnostic",
+                         "",
                          { {"unit_of_meas", "dBm"} });
     }
 }
@@ -786,6 +829,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
                                const String& deviceClass,
                                const String& stateClass,
                                const String& entityCat,
+                               const String& commandTopic,
                                std::vector<std::pair<char*, char*>> additionalEntries
 )
 {
@@ -820,6 +864,10 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         if(entityCat != "")
         {
             json["ent_cat"] = entityCat;
+        }
+        if(commandTopic != "")
+        {
+            json["cmd_t"] = String("~") + commandTopic;
         }
 
         for(const auto& entry : additionalEntries)
