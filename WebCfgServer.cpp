@@ -742,7 +742,7 @@ void WebCfgServer::buildInfoHtml(String &response)
     buildHtmlHeader(response);
     response.concat("<h3>System Information</h3> <pre>");
 
-    response.concat("Firmware version: ");
+    response.concat("NUKI Hub version: ");
     response.concat(NUKI_HUB_VERSION);
     response.concat("\n");
 
@@ -753,14 +753,21 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     if(_nuki != nullptr)
     {
-        response.concat("Lock paired: ");
+        response.concat("Lock firmware version: ");
+        response.concat(_nuki->firmwareVersion().c_str());
+        response.concat("\nLock hardware version: ");
+        response.concat(_nuki->hardwareVersion().c_str());
+        response.concat("\nLock paired: ");
         response.concat(_nuki->isPaired() ? "Yes\n" : "No\n");
         response.concat("Lock PIN set: ");
         response.concat(_nuki->isPaired() ? _nuki->isPinSet() ? "Yes\n" : "No\n" : "-\n");
     }
     if(_nukiOpener != nullptr)
     {
-        response.concat("Opener paired: ");
+        response.concat("Opener firmware version: ");
+        response.concat(_nukiOpener->firmwareVersion().c_str());
+        response.concat("\nOpener hardware version: ");
+        response.concat(_nukiOpener->hardwareVersion().c_str());        response.concat("\nOpener paired: ");
         response.concat(_nukiOpener->isPaired() ? "Yes\n" : "No\n");
         response.concat("Opener PIN set: ");
         response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinSet() ? "Yes\n" : "No\n" : "-\n");

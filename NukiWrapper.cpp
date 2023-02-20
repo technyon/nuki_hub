@@ -333,6 +333,8 @@ void NukiWrapper::updateConfig()
     _hasKeypad = _nukiConfig.hasKeypad > 0;
     if(_nukiConfigValid)
     {
+        _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
+        _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
         _network->publishConfig(_nukiConfig);
     }
     if(_nukiAdvancedConfigValid)
@@ -695,4 +697,14 @@ void NukiWrapper::printCommandResult(Nuki::CmdResult result)
     char resultStr[15];
     NukiLock::cmdResultToString(result, resultStr);
     Log->println(resultStr);
+}
+
+std::string NukiWrapper::firmwareVersion() const
+{
+    return _firmwareVersion;
+}
+
+std::string NukiWrapper::hardwareVersion() const
+{
+    return _hardwareVersion;
 }

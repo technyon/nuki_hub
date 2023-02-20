@@ -30,6 +30,9 @@ public:
     const bool hasKeypad();
     const BLEAddress getBleAddress() const;
 
+    std::string firmwareVersion() const;
+    std::string hardwareVersion() const;
+
     void notify(Nuki::EventType eventType) override;
 
 private:
@@ -102,5 +105,7 @@ private:
     unsigned long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;
     unsigned long _disableBleWatchdogTs = 0;
+    std::string _firmwareVersion = "";
+    std::string _hardwareVersion = "";
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 };

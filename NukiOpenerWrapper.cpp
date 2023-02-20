@@ -138,6 +138,7 @@ void NukiOpenerWrapper::update()
     if(_restartBeaconTimeout > 0 &&
        ts > 60000 &&
        lastReceivedBeaconTs > 0 &&
+       _disableBleWatchdogTs < ts &&
        (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the opener for ");
@@ -335,6 +336,8 @@ void NukiOpenerWrapper::updateConfig()
     _hasKeypad = _nukiConfig.hasKeypad > 0;
     if(_nukiConfigValid)
     {
+        _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
+        _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
         _network->publishConfig(_nukiConfig);
     }
     if(_nukiAdvancedConfigValid)
@@ -666,4 +669,14 @@ void NukiOpenerWrapper::printCommandResult(Nuki::CmdResult result)
     char resultStr[15];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->println(resultStr);
+}
+
+std::string NukiOpenerWrapper::firmwareVersion() const
+{
+    return _firmwareVersion;
+}
+
+std::string NukiOpenerWrapper::hardwareVersion() const
+{
+    return _hardwareVersion;
 }
