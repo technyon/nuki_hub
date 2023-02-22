@@ -1,5 +1,5 @@
-#define ETH_CLK_MODE ETH_CLOCK_GPIO17_OUT
-#define ETH_PHY_POWER 12
+//#define ETH_CLK_MODE ETH_CLOCK_GPIO17_OUT
+//#define ETH_PHY_POWER 12
 
 #include <WiFi.h>
 #include <ETH.h>
@@ -55,14 +55,14 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
 
 const String EthLan8720Device::deviceName() const
 {
-    return "LAN8720";
+    return "Olimex LAN8720";
 }
 
 void EthLan8720Device::initialize()
 {
     delay(250);
 
-    _hardwareInitialized = ETH.begin();
+    _hardwareInitialized = ETH.begin(ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
 
     if(_restartOnDisconnect)
     {
@@ -79,7 +79,7 @@ void EthLan8720Device::initialize()
 void EthLan8720Device::reconfigure()
 {
     delay(200);
-    restartEsp(RestartReason::ReconfigureWifi);
+    restartEsp(RestartReason::ReconfigureLAN8720);
 }
 
 void EthLan8720Device::printError()
@@ -100,6 +100,10 @@ bool EthLan8720Device::isConnected()
 
 ReconnectStatus EthLan8720Device::reconnect()
 {
+    if(!_hardwareInitialized)
+    {
+        return ReconnectStatus::CriticalFailure;
+    }
     delay(3000);
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }

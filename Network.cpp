@@ -72,12 +72,12 @@ void Network::setupDevice()
         }
         else if(hardwareDetect == 3)
         {
-            Log->print(F("W5500 on M5Stack Atom POE"));
+            Log->println(F("W5500 on M5Stack Atom POE"));
             _networkDeviceType = NetworkDeviceType::W5500;
         }
         else if(hardwareDetect == 4)
         {
-            Log->print(F("Olimex ESP32-POE / ESP-POE-ISO"));
+            Log->println(F("Olimex ESP32-POE / ESP-POE-ISO"));
             _networkDeviceType = NetworkDeviceType::LAN8720;
         }
         else
