@@ -50,6 +50,7 @@ file(GLOB SRCFILES
         networkDevices/NetworkDevice.h
         networkDevices/WifiDevice.cpp
         networkDevices/W5500Device.cpp
+        networkDevices/EthLan8720Device.cpp
         networkDevices/ClientSyncW5500.cpp
         networkDevices/espMqttClientW5500.cpp
         QueryCommand.h
@@ -126,6 +127,7 @@ target_link_arduino_libraries(${PROJECT_NAME}
         Update
         DNSServer
         Preferences
+        Ethernet
         SPI
 )
 

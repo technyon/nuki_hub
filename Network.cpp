@@ -7,6 +7,7 @@
 #include "Config.h"
 #include <ArduinoJson.h>
 #include "RestartReason.h"
+#include "networkDevices/EthLan8720Device.h"
 
 Network* Network::_inst = nullptr;
 unsigned long Network::_ignoreSubscriptionsTs = 0;
@@ -74,6 +75,11 @@ void Network::setupDevice()
             Log->print(F("W5500 on M5Stack Atom POE"));
             _networkDeviceType = NetworkDeviceType::W5500;
         }
+        else if(hardwareDetect == 4)
+        {
+            Log->print(F("Olimex ESP32-POE / ESP-POE-ISO"));
+            _networkDeviceType = NetworkDeviceType::LAN8720;
+        }
         else
         {
             Log->println(F("Unknown hardware selected, falling back to Wifi."));
@@ -86,6 +92,10 @@ void Network::setupDevice()
         case NetworkDeviceType::W5500:
             Log->println(F("Network device: W5500"));
             _device = new W5500Device(_hostname, _preferences, hardwareDetect);
+            break;
+        case NetworkDeviceType::LAN8720:
+            Log->println(F("Network device: LAN8720"));
+            _device = new EthLan8720Device(_hostname, _preferences);
             break;
         case NetworkDeviceType::WiFi:
             Log->println(F("Network device: Builtin WiFi"));

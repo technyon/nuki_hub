@@ -9,6 +9,7 @@ enum class RestartReason
     NetworkTimeoutWatchdog,
     WifiInitFailed,
     ReconfigureWifi,
+    ReconfigureLAN8720,
     NetworkDeviceCriticalFailure,
     ConfigurationUpdated,
     RestartTimer,
@@ -55,6 +56,8 @@ inline static String getRestartReason()
             return "WifiInitFailed";
         case RestartReason::ReconfigureWifi:
             return "ReconfigureWifi";
+        case RestartReason::ReconfigureLAN8720:
+            return "ReconfigureLAN8720";
         case RestartReason::NetworkDeviceCriticalFailure:
             return "NetworkDeviceCriticalFailure";
         case RestartReason::ConfigurationUpdated:
