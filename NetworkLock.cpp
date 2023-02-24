@@ -207,6 +207,13 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
         publishString(mqtt_topic_lock_trigger, str);
     }
 
+    if(_firstTunerStatePublish || keyTurnerState.lastLockAction != lastKeyTurnerState.lastLockAction)
+    {
+        memset(&str, 0, sizeof(str));
+        lockactionToString(keyTurnerState.lastLockAction, str);
+        publishString(mqtt_topic_lock_last_lock_action, str);
+    }
+
     if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));

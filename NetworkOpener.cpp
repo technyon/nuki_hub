@@ -205,10 +205,11 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
         publishString(mqtt_topic_lock_trigger, str);
     }
 
+
     if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
         memset(&str, 0, sizeof(str));
-        NukiOpener::completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
+        completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
         publishString(mqtt_topic_lock_completionStatus, str);
     }
 
@@ -302,11 +303,11 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         {
             case NukiOpener::LoggingType::LockAction:
                 memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
 
                 memset(str, 0, sizeof(str));
-                NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
+                triggerToString((NukiOpener::Trigger)log.data[1], str);
                 json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
 
                 memset(str, 0, sizeof(str));
@@ -315,11 +316,11 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
                 break;
             case NukiOpener::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
 
                 memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
                 json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
                 break;
             case NukiOpener::LoggingType::DoorbellRecognition:
