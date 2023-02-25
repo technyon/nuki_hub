@@ -115,7 +115,7 @@ void WebCfgServer::initialize()
             _network->reconfigureDevice();
         }
     });
-    _server.on("/method=get", [&]() {
+    _server.on("/savecfg", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
@@ -544,7 +544,7 @@ void WebCfgServer::buildCredHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<FORM ACTION=method=get >");
+    response.concat("<FORM ACTION=savecfg method='POST'>");
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
     printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, false, true);
@@ -632,7 +632,7 @@ void WebCfgServer::buildOtaHtml(String &response)
 void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     buildHtmlHeader(response);
-    response.concat("<FORM ACTION=method=get >");
+    response.concat("<FORM ACTION=savecfg method='POST'>");
     response.concat("<h3>Basic MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
@@ -668,7 +668,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<FORM ACTION=method=get >");
+    response.concat("<FORM ACTION=savecfg method='POST'>");
     response.concat("<h3>Basic NUKI Configuration</h3>");
     response.concat("<table>");
     printCheckBox(response, "LOCKENA", "NUKI Smartlock enabled", _preferences->getBool(preference_lock_enabled));
