@@ -25,7 +25,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
     {
         Log->println(F("MQTT over TLS."));
         Log->println(_ca);
-        _mqttClientSecure = new espMqttClientWifiSecure();
+        _mqttClientSecure = new espMqttClientSecure();
         _mqttClientSecure->setCACert(_ca);
         if(crtLength > 1 && keyLength > 1) // length is 1 when empty
         {
@@ -38,7 +38,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
     } else
     {
         Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClientWifi();
+        _mqttClient = new espMqttClient();
     }
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
@@ -112,11 +112,11 @@ void EthLan8720Device::update()
 {
     if(_useEncryption)
     {
-        _mqttClientSecure->update();
+        _mqttClientSecure->loop();
     }
     else
     {
-        _mqttClient->update();
+        _mqttClient->loop();
     }
 }
 

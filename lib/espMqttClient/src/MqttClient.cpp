@@ -42,6 +42,7 @@ MqttClient::MqttClient()
 , _willPayloadLength(0)
 , _willQos(0)
 , _willRetain(false)
+, _timeout(10000)
 , _state(State::disconnected)
 , _generatedClientId{0}
 , _packetId(0)
@@ -373,6 +374,9 @@ int MqttClient::_sendPacket() {
       EMC_SEMAPHORE_GIVE();
       return -1;
     }
+    // handle with care! millis() returns unsigned 32 bit, token is void*
+    static_assert(sizeof(uint32_t) <= sizeof(void*), "the size of uint32_t must be smaller than or equal to the size of a pointer");
+    packet->token = reinterpret_cast<void*>(millis());
     _lastClientActivity = millis();
     _bytesSent += written;
     emc_log_i("tx %zu/%zu (%02x)", _bytesSent, packet->size(), packet->packetType());
@@ -392,8 +396,7 @@ bool MqttClient::_advanceOutbox() {
     if (packet->removable()) {
       _outbox.removeCurrent();
     } else {
-      // handle with care! millis() returns unsigned 32 bit, token is void*
-      packet->token = reinterpret_cast<void*>(millis());
+      // we already set 'dup' here, in case we have to retry
       if ((packet->packetType()) == PacketType.PUBLISH) packet->setDup();
       _outbox.next();
     }
@@ -493,6 +496,17 @@ void MqttClient::_checkPing() {
     }
     EMC_SEMAPHORE_GIVE();
     _pingSent = true;
+  }
+}
+
+void MqttClient::_checkTimeout() {
+  espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.front();
+  if (it && _bytesSent == 0) {  // check that we're not busy sending
+    if (millis() - *((uint32_t*)&(it.get()->token)) > _timeout) {  // NOLINT(readability/casting)
+                                                                   // TODO(bertmelis): fix ugly casting hack
+      emc_log_w("Packet ack timeout, retrying");
+      _outbox.resetCurrent();
+    }
   }
 }
 

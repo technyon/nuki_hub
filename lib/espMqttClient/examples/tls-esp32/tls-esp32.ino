@@ -1,4 +1,6 @@
 #include <WiFi.h>
+#include <Ticker.h>
+
 #include <espMqttClient.h>
 
 #define WIFI_SSID "yourSSID"
@@ -15,6 +17,8 @@ const char rootCA[] = \
   "-----END CERTIFICATE-----\n";
 
 espMqttClientSecure mqttClient;
+bool reconnectMqtt = false;
+uint32_t lastReconnect = 0;
 
 void connectToWiFi() {
   Serial.println("Connecting to Wi-Fi...");
@@ -23,7 +27,13 @@ void connectToWiFi() {
 
 void connectToMqtt() {
   Serial.println("Connecting to MQTT...");
-  mqttClient.connect();
+  if (!mqttClient.connect()) {
+    reconnectMqtt = true;
+    lastReconnect = millis();
+    Serial.println("Connecting failed.");
+  } else {
+    reconnectMqtt = false;
+  }
 }
 
 void WiFiEvent(WiFiEvent_t event) {
@@ -61,7 +71,8 @@ void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
   Serial.printf("Disconnected from MQTT: %u.\n", static_cast<uint8_t>(reason));
 
   if (WiFi.isConnected()) {
-    connectToMqtt();
+    reconnectMqtt = true;
+    lastReconnect = millis();
   }
 }
 
@@ -130,15 +141,21 @@ void setup() {
 }
 
 void loop() {
+  static uint32_t currentMillis = millis();
+
+  if (reconnectMqtt && currentMillis - lastReconnect > 5000) {
+    connectToMqtt();
+  }
+
   static uint32_t lastMillis = 0;
-  if (millis() - lastMillis > 5000) {
-    lastMillis = millis();
+  if (currentMillis - lastMillis > 5000) {
+    lastMillis = currentMillis;
     Serial.printf("heap: %u\n", ESP.getFreeHeap());
   }
 
   static uint32_t millisDisconnect = 0;
-  if (millis() - millisDisconnect > 60000) {
-    millisDisconnect = millis();
+  if (currentMillis - millisDisconnect > 60000) {
+    millisDisconnect = currentMillis;
     mqttClient.disconnect();
   }
 }

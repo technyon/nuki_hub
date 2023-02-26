@@ -53,7 +53,6 @@ file(GLOB SRCFILES
         networkDevices/EthLan8720Device.cpp
         networkDevices/ClientSyncW5500.cpp
         networkDevices/espMqttClientW5500.cpp
-        networkDevices/espMqttClientWifi.cpp
         QueryCommand.h
         NukiWrapper.cpp
         NukiOpenerWrapper.cpp

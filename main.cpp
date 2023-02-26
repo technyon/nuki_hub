@@ -106,8 +106,8 @@ void setupTasks()
     // configMAX_PRIORITIES is 25
 
     xTaskCreatePinnedToCore(networkTask, "ntw", 8192, NULL, 3, &networkTaskHandle, 1);
-    xTaskCreatePinnedToCore(nukiTask, "nuki", 4096, NULL, 2, &nukiTaskHandle, 1);
-    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 768, NULL, 5, &presenceDetectionTaskHandle, 1);
+    xTaskCreatePinnedToCore(nukiTask, "nuki", 3328, NULL, 2, &nukiTaskHandle, 1);
+    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 896, NULL, 5, &presenceDetectionTaskHandle, 1);
 }
 
 uint32_t getRandomId()

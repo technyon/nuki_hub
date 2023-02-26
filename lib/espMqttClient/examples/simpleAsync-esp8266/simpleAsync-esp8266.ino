@@ -1,4 +1,6 @@
 #include <ESP8266WiFi.h>
+#include <Ticker.h>
+
 #include <espMqttClientAsync.h>
 
 #define WIFI_SSID "yourSSID"
@@ -10,6 +12,8 @@
 WiFiEventHandler wifiConnectHandler;
 WiFiEventHandler wifiDisconnectHandler;
 espMqttClientAsync mqttClient;
+bool reconnectMqtt = false;
+uint32_t lastReconnect = 0;
 
 void connectToWiFi() {
   Serial.println("Connecting to Wi-Fi...");
@@ -18,7 +22,13 @@ void connectToWiFi() {
 
 void connectToMqtt() {
   Serial.println("Connecting to MQTT...");
-  mqttClient.connect();
+  if (!mqttClient.connect()) {
+    reconnectMqtt = true;
+    lastReconnect = millis();
+    Serial.println("Connecting failed.");
+  } else {
+    reconnectMqtt = false;
+  }
 }
 
 void onWiFiConnect(const WiFiEventStationModeGotIP& event) {
@@ -51,7 +61,8 @@ void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
   Serial.printf("Disconnected from MQTT: %u.\n", static_cast<uint8_t>(reason));
 
   if (WiFi.isConnected()) {
-    connectToMqtt();
+    reconnectMqtt = true;
+    lastReconnect = millis();
   }
 }
 
@@ -117,5 +128,9 @@ void setup() {
 }
 
 void loop() {
-  // nothing to do here
+  static uint32_t currentMillis = millis();
+
+  if (reconnectMqtt && currentMillis - lastReconnect > 5000) {
+    connectToMqtt();
+  }
 }

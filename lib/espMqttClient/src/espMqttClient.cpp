@@ -9,8 +9,8 @@ the LICENSE file.
 #include "espMqttClient.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
-espMqttClient::espMqttClient(uint8_t priority, uint8_t core)
-: MqttClientSetup(true, priority, core)
+espMqttClient::espMqttClient(bool internalTask, uint8_t priority, uint8_t core)
+: MqttClientSetup(internalTask, priority, core)
 , _client() {
 #else
 espMqttClient::espMqttClient()
@@ -21,8 +21,8 @@ espMqttClient::espMqttClient()
 
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 #if defined(ARDUINO_ARCH_ESP32)
-espMqttClientSecure::espMqttClientSecure(uint8_t priority, uint8_t core)
-: MqttClientSetup(priority, core)
+espMqttClientSecure::espMqttClientSecure(bool internalTask, uint8_t priority, uint8_t core)
+: MqttClientSetup(internalTask, priority, core)
 , _client() {
 #else
 espMqttClientSecure::espMqttClientSecure()
