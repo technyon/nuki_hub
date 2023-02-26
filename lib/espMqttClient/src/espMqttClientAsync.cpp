@@ -66,3 +66,69 @@ void espMqttClientAsync::onPollCb(void* a, AsyncClient* c) {
 }
 
 #endif
+
+
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+#if defined(ARDUINO_ARCH_ESP32)
+espMqttClientSecureAsync::espMqttClientSecureAsync(uint8_t priority, uint8_t core)
+        : MqttClientSetup(false, priority, core)
+        , _client() {
+#else
+    espMqttClientSecure::espMqttClientSecure()
+: _client() {
+#endif
+    _transport = &_client;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setInsecure() {
+    _client.client.setInsecure();
+    return *this;
+}
+
+#if defined(ARDUINO_ARCH_ESP32)
+espMqttClientSecureAsync& espMqttClientSecureAsync::setCACert(const char* rootCA) {
+    _client.client.setCACert(rootCA);
+    return *this;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setCertificate(const char* clientCa) {
+    _client.client.setCertificate(clientCa);
+    return *this;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setPrivateKey(const char* privateKey) {
+    _client.client.setPrivateKey(privateKey);
+    return *this;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setPreSharedKey(const char* pskIdent, const char* psKey) {
+    _client.client.setPreSharedKey(pskIdent, psKey);
+    return *this;
+}
+#elif defined(ARDUINO_ARCH_ESP8266)
+espMqttClientSecureAsync& espMqttClientSecureAsync::setFingerprint(const uint8_t fingerprint[20]) {
+  _client.client.setFingerprint(fingerprint);
+  return *this;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setTrustAnchors(const X509List *ta) {
+  _client.client.setTrustAnchors(ta);
+  return *this;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setClientRSACert(const X509List *cert, const PrivateKey *sk) {
+  _client.client.setClientRSACert(cert, sk);
+  return *this;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setClientECCert(const X509List *cert, const PrivateKey *sk, unsigned allowed_usages, unsigned cert_issuer_key_type) {
+  _client.client.setClientECCert(cert, sk, allowed_usages, cert_issuer_key_type);
+  return *this;
+}
+
+espMqttClientSecureAsync& espMqttClientSecureAsync::setCertStore(CertStoreBase *certStore) {
+  _client.client.setCertStore(certStore);
+  return *this;
+}
+#endif
+#endif

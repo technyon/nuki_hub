@@ -66,10 +66,10 @@ class MqttClient {
   void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
   const char* getClientId() const;
   #if defined(ARDUINO_ARCH_ESP32)
+    void loop();
 
  protected:
   #endif
-  void loop();
   #if defined(ARDUINO_ARCH_ESP32)
   explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
   bool _useTask;

@@ -357,7 +357,8 @@ bool Network::reconnect()
 
         while(!_connectReplyReceived && millis() < timeout)
         {
-            delay(200);
+            delay(50);
+            _device->update();
             if(_keepAliveCallback != nullptr)
             {
                 _keepAliveCallback();

@@ -51,7 +51,7 @@ void networkTask(void *pvParameters)
             restartEsp(RestartReason::RestartTimer);
         }
 
-        delay(200);
+        delay(100);
 
 //        Serial.println(uxTaskGetStackHighWaterMark(NULL));
     }

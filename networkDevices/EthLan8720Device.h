@@ -4,7 +4,7 @@
 #include <WiFiClientSecure.h>
 #include <Preferences.h>
 #include "NetworkDevice.h"
-#include "espMqttClient.h"
+#include "espMqttClientAsync.h"
 
 class EthLan8720Device : public NetworkDevice
 {
@@ -54,8 +54,8 @@ public:
 private:
     void onDisconnected();
 
-    espMqttClient* _mqttClient = nullptr;
-    espMqttClientSecure* _mqttClientSecure = nullptr;
+    espMqttClientAsync* _mqttClient = nullptr;
+    espMqttClientSecureAsync* _mqttClientSecure = nullptr;
 
     bool _restartOnDisconnect = false;
     bool _startAp = false;
