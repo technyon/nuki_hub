@@ -6,3 +6,8 @@ espMqttClientW5500::espMqttClientW5500(uint8_t priority, uint8_t core)
 {
     _transport = &_client;
 }
+
+void espMqttClientW5500::update()
+{
+    loop();
+}

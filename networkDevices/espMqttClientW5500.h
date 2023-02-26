@@ -11,6 +11,8 @@ public:
     espMqttClient();
 #endif
 
+    void update();
+
 protected:
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
     espMqttClientInternals::ClientSyncW5500 _client;

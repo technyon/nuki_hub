@@ -43,6 +43,8 @@ void test_connect() {
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_TRUE(onConnectCalledTest);
   TEST_ASSERT_FALSE(sessionPresentTest);
+
+  mqttClient.onConnect(nullptr);
 }
 
 /*
@@ -93,6 +95,8 @@ void test_subscribe() {
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_TRUE(subscribeTest);
+
+  mqttClient.onSubscribe(nullptr);
 }
 
 /*
@@ -133,6 +137,9 @@ void test_publish() {
   TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos2Test);
   TEST_ASSERT_EQUAL_INT(2, publishSendTest);
   TEST_ASSERT_EQUAL_INT(3, publishReceiveTest);
+
+  mqttClient.onPublish(nullptr);
+  mqttClient.onMessage(nullptr);
 }
 
 void test_publish_empty() {
@@ -165,6 +172,9 @@ void test_publish_empty() {
   TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos2Test);
   TEST_ASSERT_EQUAL_INT(2, publishSendEmptyTest);
   TEST_ASSERT_EQUAL_INT(3, publishReceiveEmptyTest);
+
+  mqttClient.onPublish(nullptr);
+  mqttClient.onMessage(nullptr);
 }
 
 /*
@@ -200,6 +210,9 @@ void test_receive1() {
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_GREATER_THAN_INT(0, publishReceive1Test);
+
+  mqttClient.onMessage(nullptr);
+  mqttClient.onSubscribe(nullptr);
 }
 
 /*
@@ -235,6 +248,9 @@ void test_receive2() {
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_EQUAL_INT(1, publishReceive2Test);
+
+  mqttClient.onMessage(nullptr);
+  mqttClient.onSubscribe(nullptr);
 }
 
 
@@ -261,6 +277,8 @@ void test_unsubscribe() {
 
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_TRUE(unsubscribeTest);
+
+  mqttClient.onUnsubscribe(nullptr);
 }
 
 /*
@@ -288,6 +306,71 @@ void test_disconnect() {
   TEST_ASSERT_TRUE(onDisconnectCalled);
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::DisconnectReason::USER_OK, reasonTest);
   TEST_ASSERT_TRUE(mqttClient.disconnected());
+
+  mqttClient.onDisconnect(nullptr);
+}
+
+void test_pub_before_connect() {
+  std::atomic<bool> onConnectCalledTest(false);
+  std::atomic<int> publishSendTest(0);
+  bool sessionPresentTest = true;
+  mqttClient.setServer(broker, broker_port)
+            .setCleanSession(true)
+            .setKeepAlive(5)
+            .onConnect([&](bool sessionPresent) mutable {
+              sessionPresentTest = sessionPresent;
+              onConnectCalledTest = true;
+            })
+            .onPublish([&](uint16_t packetId) mutable {
+              (void) packetId;
+              publishSendTest++;
+            });
+  uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, "test0");
+  uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, "test1");
+  uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, "test2");
+  mqttClient.connect();
+  uint32_t start = millis();
+  while (millis() - start < 2000) {
+    if (onConnectCalledTest) {
+      break;
+    }
+    std::this_thread::yield();
+  }
+  TEST_ASSERT_TRUE(mqttClient.connected());
+  TEST_ASSERT_TRUE(onConnectCalledTest);
+  TEST_ASSERT_FALSE(sessionPresentTest);
+  start = millis();
+  while (millis() - start < 10000) {
+    std::this_thread::yield();
+  }
+
+  TEST_ASSERT_EQUAL_UINT16(1, sendQos0Test);
+  TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos1Test);
+  TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos2Test);
+  TEST_ASSERT_EQUAL_INT(2, publishSendTest);
+
+  mqttClient.onConnect(nullptr);
+  mqttClient.onPublish(nullptr);
+}
+
+void final_disconnect() {
+  std::atomic<bool> onDisconnectCalled(false);
+  mqttClient.onDisconnect([&](espMqttClientTypes::DisconnectReason reason) mutable {
+    (void) reason;
+    onDisconnectCalled = true;
+  });
+  mqttClient.disconnect();
+  uint32_t start = millis();
+  while (millis() - start < 2000) {
+    if (onDisconnectCalled) {
+      break;
+    }
+    std::this_thread::yield();
+  }
+  if (mqttClient.connected()) {
+    mqttClient.disconnect(true);
+  }
+  mqttClient.onDisconnect(nullptr);
 }
 
 int main() {
@@ -307,6 +390,8 @@ int main() {
   RUN_TEST(test_receive2);
   RUN_TEST(test_unsubscribe);
   RUN_TEST(test_disconnect);
+  RUN_TEST(test_pub_before_connect);
+  final_disconnect();
   exitProgram = true;
   t.join();
   return UNITY_END();

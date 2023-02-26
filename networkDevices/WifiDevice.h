@@ -5,7 +5,7 @@
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #include "WiFiManager.h"
-#include "espMqttClientAsync.h"
+#include "espMqttClientWifi.h"
 
 class WifiDevice : public NetworkDevice
 {
@@ -58,8 +58,8 @@ private:
     void onDisconnected();
 
     WiFiManager _wm;
-    espMqttClientAsync* _mqttClient = nullptr;
-    espMqttClientSecureAsync* _mqttClientSecure = nullptr;
+    espMqttClientWifi* _mqttClient = nullptr;
+    espMqttClientWifiSecure* _mqttClientSecure = nullptr;
 
     bool _restartOnDisconnect = false;
     bool _startAp = false;

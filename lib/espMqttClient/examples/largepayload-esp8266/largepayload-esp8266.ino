@@ -1,5 +1,4 @@
 #include <ESP8266WiFi.h>
-#include <Ticker.h>
 #include <espMqttClient.h>
 
 #define WIFI_SSID "yourSSID"
@@ -11,7 +10,6 @@
 WiFiEventHandler wifiConnectHandler;
 WiFiEventHandler wifiDisconnectHandler;
 espMqttClient mqttClient;
-Ticker reconnectTimer;
 
 size_t fetchPayload(uint8_t* dest, size_t len, size_t index) {
   Serial.printf("filling buffer at index %zu\n", index);
@@ -45,8 +43,6 @@ void onWiFiConnect(const WiFiEventStationModeGotIP& event) {
 
 void onWiFiDisconnect(const WiFiEventStationModeDisconnected& event) {
   Serial.println("Disconnected from Wi-Fi.");
-  reconnectTimer.detach(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
-  reconnectTimer.once(5, connectToWiFi);
 }
 
 void onMqttConnect(bool sessionPresent) {
@@ -60,7 +56,7 @@ void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
   Serial.printf("Disconnected from MQTT: %u.\n", static_cast<uint8_t>(reason));
 
   if (WiFi.isConnected()) {
-    reconnectTimer.once(5, connectToMqtt);
+    connectToMqtt();
   }
 }
 
@@ -75,6 +71,8 @@ void setup() {
   Serial.println();
   Serial.println();
 
+  WiFi.setAutoConnect(false);
+  WiFi.setAutoReconnect(true);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWiFiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWiFiDisconnect);
 

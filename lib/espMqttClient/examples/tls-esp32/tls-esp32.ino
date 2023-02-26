@@ -1,5 +1,4 @@
 #include <WiFi.h>
-#include <Ticker.h>
 #include <espMqttClient.h>
 
 #define WIFI_SSID "yourSSID"
@@ -16,7 +15,6 @@ const char rootCA[] = \
   "-----END CERTIFICATE-----\n";
 
 espMqttClientSecure mqttClient;
-Ticker reconnectTimer;
 
 void connectToWiFi() {
   Serial.println("Connecting to Wi-Fi...");
@@ -39,7 +37,6 @@ void WiFiEvent(WiFiEvent_t event) {
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
       Serial.println("WiFi lost connection");
-      reconnectTimer.once(5, connectToWiFi);
       break;
     default:
       break;
@@ -64,7 +61,7 @@ void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
   Serial.printf("Disconnected from MQTT: %u.\n", static_cast<uint8_t>(reason));
 
   if (WiFi.isConnected()) {
-    reconnectTimer.once(5, connectToMqtt);
+    connectToMqtt();
   }
 }
 
@@ -113,6 +110,8 @@ void setup() {
   Serial.println();
   Serial.println();
 
+  WiFi.setAutoConnect(false);
+  WiFi.setAutoReconnect(true);
   WiFi.onEvent(WiFiEvent);
 
   //mqttClient.setInsecure();

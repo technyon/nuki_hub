@@ -197,7 +197,7 @@ void W5500Device::initializeMacAddress(byte *mac)
 void W5500Device::update()
 {
     _maintainResult = Ethernet.maintain();
-    _mqttClient.loop();
+    _mqttClient.update();
 }
 
 int8_t W5500Device::signalStrength()
