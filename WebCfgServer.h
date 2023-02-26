@@ -7,6 +7,10 @@
 #include "NukiOpenerWrapper.h"
 #include "Ota.h"
 
+extern TaskHandle_t networkTaskHandle;
+extern TaskHandle_t nukiTaskHandle;
+extern TaskHandle_t presenceDetectionTaskHandle;
+
 enum class TokenType
 {
     None,

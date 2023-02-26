@@ -785,6 +785,14 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(esp_get_free_heap_size());
     response.concat("\n");
 
+    response.concat("Stack watermarks: nw: ");
+    response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
+    response.concat(", nuki: ");
+    response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
+    response.concat(", pd: ");
+    response.concat(uxTaskGetStackHighWaterMark(presenceDetectionTaskHandle));
+    response.concat("\n");
+
     response.concat("Restart reason FW: ");
     response.concat(getRestartReason());
     response.concat( "\n");
