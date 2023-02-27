@@ -25,7 +25,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
     {
         Log->println(F("MQTT over TLS."));
         Log->println(_ca);
-        _mqttClientSecure = new espMqttClientSecure();
+        _mqttClientSecure = new espMqttClientSecure(false);
         _mqttClientSecure->setCACert(_ca);
         if(crtLength > 1 && keyLength > 1) // length is 1 when empty
         {
@@ -38,7 +38,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
     } else
     {
         Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClient();
+        _mqttClient = new espMqttClient(false);
     }
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
