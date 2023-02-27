@@ -1113,7 +1113,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
 {
     std::vector<std::pair<String, String>> options;
 
-    options.push_back(std::make_pair("1", "Disable W5500 (Wifi only)"));
+    options.push_back(std::make_pair("1", "Wifi only"));
     options.push_back(std::make_pair("2", "Detect W5500 (GPIO CS=5; SCK=18; MISO=19; MOSI=23; RST=33)"));
     options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
     options.push_back(std::make_pair("4", "Olimex ESP32-POE / ESP-POE-ISO"));
