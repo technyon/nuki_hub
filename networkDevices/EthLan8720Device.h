@@ -72,6 +72,7 @@ private:
     char* _path;
     bool _useEncryption = false;
     bool _hardwareInitialized = false;
+    bool _lastConnected = false;
 
     uint8_t _phy_addr;
     int _power;
