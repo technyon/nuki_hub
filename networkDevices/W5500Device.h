@@ -71,6 +71,7 @@ private:
     bool _hasDHCPAddress = false;
     char* _path;
     W5500Variant _variant;
+    bool _lastConnected = false;
 
     byte _mac[6];
 };

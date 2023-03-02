@@ -107,7 +107,7 @@ bool EthLan8720Device::isConnected()
 
     if(_lastConnected == false && connected == true)
     {
-        Serial.print("Ethernet connected. IP address: ");
+        Serial.print(F("Ethernet connected. IP address: "));
         Serial.println(ETH.localIP().toString());
     }
 
