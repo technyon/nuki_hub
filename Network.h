@@ -10,7 +10,8 @@ enum class NetworkDeviceType
 {
     WiFi,
     W5500,
-    LAN8720
+    Olimex_LAN8720,
+    WT32_LAN8720
 };
 
 #define JSON_BUFFER_SIZE 1024

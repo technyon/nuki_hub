@@ -56,53 +56,55 @@ void Network::setupDevice()
     }
     else
     {
-        if(hardwareDetect == 1)
+        Log->print(F("Network device: "));
+        switch (hardwareDetect)
         {
-            Log->println(F("W5500 hardware is disabled, using Wifi."));
-            _networkDeviceType = NetworkDeviceType::WiFi;
-        }
-        else if(hardwareDetect == 2)
-        {
-            Log->print(F("Using PIN "));
-            Log->print(hardwareDetectGpio);
-            Log->println(F(" for network device selection"));
+            case 1:
+                Log->println(F("Wifi only"));
+                _networkDeviceType = NetworkDeviceType::WiFi;
+                break;
+            case 2:
+                Log->print(F("Using PIN "));
+                Log->print(hardwareDetectGpio);
+                Log->println(F(" for network device selection"));
 
-            pinMode(hardwareDetectGpio, INPUT_PULLUP);
-            _networkDeviceType = digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
-        }
-        else if(hardwareDetect == 3)
-        {
-            Log->println(F("W5500 on M5Stack Atom POE"));
-            _networkDeviceType = NetworkDeviceType::W5500;
-        }
-        else if(hardwareDetect == 4)
-        {
-            Log->println(F("Olimex ESP32-POE / ESP-POE-ISO"));
-            _networkDeviceType = NetworkDeviceType::LAN8720;
-        }
-        else
-        {
-            Log->println(F("Unknown hardware selected, falling back to Wifi."));
-            _networkDeviceType = NetworkDeviceType::WiFi;
+                pinMode(hardwareDetectGpio, INPUT_PULLUP);
+                _networkDeviceType = digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+                break;
+            case 3:
+                Log->println(F("W5500 on M5Stack Atom POE"));
+                _networkDeviceType = NetworkDeviceType::W5500;
+                break;
+            case 4:
+                Log->println(F("Olimex ESP32-POE / ESP-POE-ISO"));
+                _networkDeviceType = NetworkDeviceType::Olimex_LAN8720;
+                break;
+            case 5:
+                Log->println(F("WT32-ETH01"));
+                _networkDeviceType = NetworkDeviceType::WT32_LAN8720;
+                break;
+            default:
+                Log->println(F("Unknown hardware selected, falling back to Wifi."));
+                _networkDeviceType = NetworkDeviceType::WiFi;
+                break;
         }
     }
 
-    switch(_networkDeviceType)
+    switch (_networkDeviceType)
     {
         case NetworkDeviceType::W5500:
-            Log->println(F("Network device: W5500"));
             _device = new W5500Device(_hostname, _preferences, hardwareDetect);
             break;
-        case NetworkDeviceType::LAN8720:
-            Log->println(F("Network device: LAN8720"));
-            _device = new EthLan8720Device(_hostname, _preferences);
+        case NetworkDeviceType::Olimex_LAN8720:
+            _device = new EthLan8720Device(_hostname, _preferences, ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
+            break;
+        case NetworkDeviceType::WT32_LAN8720:
+            _device = new EthLan8720Device(_hostname, _preferences, 1, 16);
             break;
         case NetworkDeviceType::WiFi:
-            Log->println(F("Network device: Builtin WiFi"));
             _device = new WifiDevice(_hostname, _preferences);
             break;
         default:
-            Log->println(F("Unknown network device type, defaulting to WiFi"));
             _device = new WifiDevice(_hostname, _preferences);
             break;
     }

@@ -10,8 +10,15 @@
 #include "espMqttClient.h"
 #include "../RestartReason.h"
 
-EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _preferences)
-: NetworkDevice(hostname)
+EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _preferences, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
+: NetworkDevice(hostname),
+  _phy_addr(phy_addr),
+  _power(power),
+  _mdc(mdc),
+  _mdio(mdio),
+  _type(ethtype),
+  _clock_mode(clock_mode),
+  _use_mac_from_efuse(use_mac_from_efuse)
 {
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
 
@@ -62,7 +69,7 @@ void EthLan8720Device::initialize()
 {
     delay(250);
 
-    _hardwareInitialized = ETH.begin(ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
+    _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
 
     if(_restartOnDisconnect)
     {
