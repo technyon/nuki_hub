@@ -10,8 +10,9 @@
 #include "espMqttClient.h"
 #include "../RestartReason.h"
 
-EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _preferences, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
+EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
 : NetworkDevice(hostname),
+  _deviceName(deviceName),
   _phy_addr(phy_addr),
   _power(power),
   _mdc(mdc),
@@ -20,11 +21,11 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
   _clock_mode(clock_mode),
   _use_mac_from_efuse(use_mac_from_efuse)
 {
-    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+    _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
-    size_t caLength = _preferences->getString(preference_mqtt_ca,_ca,TLS_CA_MAX_SIZE);
-    size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
-    size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
+    size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
+    size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
+    size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
 
     _useEncryption = caLength > 1;  // length is 1 when empty
 
@@ -48,12 +49,12 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
         _mqttClient = new espMqttClient(false);
     }
 
-    if(_preferences->getBool(preference_mqtt_log_enabled))
+    if(preferences->getBool(preference_mqtt_log_enabled))
     {
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
-        String pathStr = _preferences->getString(preference_mqtt_lock_path);
+        String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
@@ -62,7 +63,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
 
 const String EthLan8720Device::deviceName() const
 {
-    return "Olimex LAN8720";
+    return _deviceName.c_str();
 }
 
 void EthLan8720Device::initialize()

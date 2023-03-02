@@ -96,10 +96,10 @@ void Network::setupDevice()
             _device = new W5500Device(_hostname, _preferences, hardwareDetect);
             break;
         case NetworkDeviceType::Olimex_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
+            _device = new EthLan8720Device(_hostname, _preferences, "Olimex (LAN8720)", ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
             break;
         case NetworkDeviceType::WT32_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, 1, 16);
+            _device = new EthLan8720Device(_hostname, _preferences, "WT32-ETH01", 1, 16);
             break;
         case NetworkDeviceType::WiFi:
             _device = new WifiDevice(_hostname, _preferences);
