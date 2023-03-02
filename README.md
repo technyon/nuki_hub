@@ -18,6 +18,7 @@ As an alternative to Wifi, the following ESP32 modules with wired ethernet are s
 [M5Stack Atom POE](https://docs.m5stack.com/en/atom/atom_poe)<br>
 [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)<br>
 [Olimex ESP32-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware)<br>
+[WT32-ETH01](http://www.wireless-tag.com/portfolio/wt32-eth01/)<br>
 
 ## Installation
 
@@ -34,7 +35,10 @@ https://github.com/technyon/nuki_hub/releases
 The firmware uses the Wifi Manager to configure the WiFi network. Power up the ESP32, a new Access Point should appear. Connect to this access point and in a browser navigate to "192.168.4.1". Use the web interface configure your Wifi network.
 
 After configuring the Wifi, the ESP should automatically connect to your network. Use the web interface to setup the MQTT broker; just navigate to the IP-Address assigned to the ESP32 via DHCP (often found in the web interface of the internet router).<br>
-To configure MQTT, enter the adress of your MQTT broker and eventually a username and a password if required. The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this. In that case leave all fields about "MQTT SSL" blank.
+To configure MQTT, enter the adress of your MQTT broker and eventually a username and a password if required. The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this. In that case leave all fields about "MQTT SSL" blank.<br>
+If a PIN has been configured using the smartphone app, it's recommended to supply this PIN to NUKI Hub.
+Certain functionality is not available without configuring the PIN, like changing the config or keypad coded.
+To do so, navigate to "Credentials" in the web interface. This will only supply the PIN to NUK Hub, it will on no way reconfigure the PIN on the lock.
 
 ## Pairing
 
