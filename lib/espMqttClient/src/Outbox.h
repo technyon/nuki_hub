@@ -138,6 +138,10 @@ class Outbox {
     return nullptr;
   }
 
+  void resetCurrent() {
+    _current = _first;
+  }
+
   Iterator front() const {
     Iterator it;
     it._node = _first;

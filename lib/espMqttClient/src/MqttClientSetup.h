@@ -68,6 +68,11 @@ class MqttClientSetup : public MqttClient {
     return static_cast<T&>(*this);
   }
 
+  T& setTimeout(uint16_t timeout) {
+    _timeout = timeout * 1000;  // s to ms conversion, will also do 16 to 32 bit conversion
+    return static_cast<T&>(*this);
+  }
+
   T& onConnect(espMqttClientTypes::OnConnectCallback callback) {
     _onConnectCallback = callback;
     return static_cast<T&>(*this);

@@ -32,6 +32,10 @@ unsigned long restartTs = (2^32) - 5 * 60000;
 RTC_NOINIT_ATTR int restartReason;
 RTC_NOINIT_ATTR uint64_t restartReasonValid;
 
+TaskHandle_t networkTaskHandle = nullptr;
+TaskHandle_t nukiTaskHandle = nullptr;
+TaskHandle_t presenceDetectionTaskHandle = nullptr;
+
 void networkTask(void *pvParameters)
 {
     while(true)
@@ -51,9 +55,14 @@ void networkTask(void *pvParameters)
             restartEsp(RestartReason::RestartTimer);
         }
 
-        delay(200);
+        delay(100);
 
-//        Serial.println(uxTaskGetStackHighWaterMark(NULL));
+//        if(wmts < millis())
+//        {
+//            Serial.print("# ");
+//            Serial.println(uxTaskGetStackHighWaterMark(NULL));
+//            wmts = millis() + 60000;
+//        }
     }
 }
 
@@ -96,9 +105,9 @@ void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
-    xTaskCreatePinnedToCore(networkTask, "ntw", 8192, NULL, 3, NULL, 1);
-    xTaskCreatePinnedToCore(nukiTask, "nuki", 4096, NULL, 2, NULL, 1);
-    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 768, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(networkTask, "ntw", 8192, NULL, 3, &networkTaskHandle, 1);
+    xTaskCreatePinnedToCore(nukiTask, "nuki", 3328, NULL, 2, &nukiTaskHandle, 1);
+    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 896, NULL, 5, &presenceDetectionTaskHandle, 1);
 }
 
 uint32_t getRandomId()

@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <Ticker.h>
+
 #include <espMqttClientAsync.h>
 
 #define WIFI_SSID "yourSSID"
@@ -9,7 +10,8 @@
 #define MQTT_PORT 1883
 
 espMqttClientAsync mqttClient;
-Ticker reconnectTimer;
+bool reconnectMqtt = false;
+uint32_t lastReconnect = 0;
 
 void connectToWiFi() {
   Serial.println("Connecting to Wi-Fi...");
@@ -18,7 +20,13 @@ void connectToWiFi() {
 
 void connectToMqtt() {
   Serial.println("Connecting to MQTT...");
-  mqttClient.connect();
+  if (!mqttClient.connect()) {
+    reconnectMqtt = true;
+    lastReconnect = millis();
+    Serial.println("Connecting failed.");
+  } else {
+    reconnectMqtt = false;
+  }
 }
 
 void WiFiEvent(WiFiEvent_t event) {
@@ -32,7 +40,6 @@ void WiFiEvent(WiFiEvent_t event) {
     break;
   case SYSTEM_EVENT_STA_DISCONNECTED:
     Serial.println("WiFi lost connection");
-    reconnectTimer.once(5, connectToWiFi);
     break;
   default:
     break;
@@ -60,7 +67,8 @@ void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
   Serial.printf("Disconnected from MQTT: %u.\n", static_cast<uint8_t>(reason));
 
   if (WiFi.isConnected()) {
-    reconnectTimer.once(5, connectToMqtt);
+    reconnectMqtt = true;
+    lastReconnect = millis();
   }
 }
 
@@ -109,6 +117,8 @@ void setup() {
   Serial.println();
   Serial.println();
 
+  WiFi.setAutoConnect(false);
+  WiFi.setAutoReconnect(true);
   WiFi.onEvent(WiFiEvent);
 
   mqttClient.onConnect(onMqttConnect);
@@ -123,5 +133,9 @@ void setup() {
 }
 
 void loop() {
-  // nothing to do here
+  static uint32_t currentMillis = millis();
+
+  if (reconnectMqtt && currentMillis - lastReconnect > 5000) {
+    connectToMqtt();
+  }
 }

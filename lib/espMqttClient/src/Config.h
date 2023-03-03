@@ -40,13 +40,17 @@ the LICENSE file.
 #define EMC_ALLOW_NOT_CONNECTED_PUBLISH 1
 #endif
 
+#ifndef EMC_WAIT_FOR_CONNACK
+#define EMC_WAIT_FOR_CONNACK 1
+#endif
+
 #ifndef EMC_CLIENTID_LENGTH
 // esp8266abc123 and esp32abcdef123456
 #define EMC_CLIENTID_LENGTH 23 + 1
 #endif
 
 #ifndef EMC_TASK_STACK_SIZE
-#define EMC_TASK_STACK_SIZE 5000
+#define EMC_TASK_STACK_SIZE 5120
 #endif
 
 #ifndef EMC_USE_WATCHDOG

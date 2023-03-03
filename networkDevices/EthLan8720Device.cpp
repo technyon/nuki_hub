@@ -10,14 +10,22 @@
 #include "espMqttClient.h"
 #include "../RestartReason.h"
 
-EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _preferences)
-: NetworkDevice(hostname)
+EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
+: NetworkDevice(hostname),
+  _deviceName(deviceName),
+  _phy_addr(phy_addr),
+  _power(power),
+  _mdc(mdc),
+  _mdio(mdio),
+  _type(ethtype),
+  _clock_mode(clock_mode),
+  _use_mac_from_efuse(use_mac_from_efuse)
 {
-    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+    _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
-    size_t caLength = _preferences->getString(preference_mqtt_ca,_ca,TLS_CA_MAX_SIZE);
-    size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
-    size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
+    size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
+    size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
+    size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
 
     _useEncryption = caLength > 1;  // length is 1 when empty
 
@@ -25,7 +33,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
     {
         Log->println(F("MQTT over TLS."));
         Log->println(_ca);
-        _mqttClientSecure = new espMqttClientSecure();
+        _mqttClientSecure = new espMqttClientSecure(false);
         _mqttClientSecure->setCACert(_ca);
         if(crtLength > 1 && keyLength > 1) // length is 1 when empty
         {
@@ -38,15 +46,15 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
     } else
     {
         Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClient();
+        _mqttClient = new espMqttClient(false);
     }
 
-    if(_preferences->getBool(preference_mqtt_log_enabled))
+    if(preferences->getBool(preference_mqtt_log_enabled))
     {
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
-        String pathStr = _preferences->getString(preference_mqtt_lock_path);
+        String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
@@ -55,14 +63,16 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* _prefere
 
 const String EthLan8720Device::deviceName() const
 {
-    return "Olimex LAN8720";
+    return _deviceName.c_str();
 }
 
 void EthLan8720Device::initialize()
 {
     delay(250);
 
-    _hardwareInitialized = ETH.begin(ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
+    WiFi.setHostname(_hostname.c_str());
+    _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
+    ETH.setHostname(_hostname.c_str());
 
     if(_restartOnDisconnect)
     {
@@ -95,7 +105,17 @@ bool EthLan8720Device::supportsEncryption()
 
 bool EthLan8720Device::isConnected()
 {
-    return ETH.linkUp();
+    bool connected = ETH.linkUp();
+
+    if(_lastConnected == false && connected == true)
+    {
+        Serial.print(F("Ethernet connected. IP address: "));
+        Serial.println(ETH.localIP().toString());
+    }
+
+    _lastConnected = connected;
+
+    return connected;
 }
 
 ReconnectStatus EthLan8720Device::reconnect()
@@ -104,13 +124,20 @@ ReconnectStatus EthLan8720Device::reconnect()
     {
         return ReconnectStatus::CriticalFailure;
     }
-    delay(3000);
+    delay(200);
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
 void EthLan8720Device::update()
 {
-
+    if(_useEncryption)
+    {
+        _mqttClientSecure->loop();
+    }
+    else
+    {
+        _mqttClient->loop();
+    }
 }
 
 void EthLan8720Device::onDisconnected()

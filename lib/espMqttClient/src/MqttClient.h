@@ -63,19 +63,15 @@ class MqttClient {
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, const char* payload);
   uint16_t publish(const char* topic, uint8_t qos, bool retain, espMqttClientTypes::PayloadCallback callback, size_t length);
-  void clearQueue(bool all = false);  // Not MQTT compliant and may cause unpredictable results when `all` = true!
+  void clearQueue(bool deleteSessionData = false);  // Not MQTT compliant and may cause unpredictable results when `deleteSessionData` = true!
   const char* getClientId() const;
-  #if defined(ARDUINO_ARCH_ESP32)
+  void loop();
 
  protected:
-  #endif
-  void loop();
   #if defined(ARDUINO_ARCH_ESP32)
   explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
   bool _useTask;
   #else
-
- protected:
   MqttClient();
   #endif
   espMqttClientInternals::Transport* _transport;
@@ -102,19 +98,20 @@ class MqttClient {
   uint16_t _willPayloadLength;
   uint8_t _willQos;
   bool _willRetain;
+  uint32_t _timeout;
 
   // state is protected to allow state changes by the transport system, defined in child classes
   // eg. to allow AsyncTCP
   enum class State {
-    disconnected,
-    connectingTcp1,
-    connectingTcp2,
-    connectingMqtt,
-    connected,
-    disconnectingMqtt1,
-    disconnectingMqtt2,
-    disconnectingTcp1,
-    disconnectingTcp2
+    disconnected =       0,
+    connectingTcp1 =     1,
+    connectingTcp2 =     2,
+    connectingMqtt =     3,
+    connected =          4,
+    disconnectingMqtt1 = 5,
+    disconnectingMqtt2 = 6,
+    disconnectingTcp1 =  7,
+    disconnectingTcp2 =  8
   };
   std::atomic<State> _state;
 
@@ -161,9 +158,12 @@ class MqttClient {
     return false;
   }
 
-  void _checkOutgoing();
+  void _checkOutbox();
+  int _sendPacket();
+  bool _advanceOutbox();
   void _checkIncoming();
   void _checkPing();
+  void _checkTimeout();
 
   void _onConnack();
   void _onPublish();
@@ -174,7 +174,9 @@ class MqttClient {
   void _onSuback();
   void _onUnsuback();
 
-  void _clearQueue(bool clearSession);
+  void _clearQueue(int clearData);  // 0: keep session,
+                                    // 1: keep only PUBLISH qos > 0
+                                    // 2: delete all
   void _onError(uint16_t packetId, espMqttClientTypes::Error error);
 
   #if defined(ARDUINO_ARCH_ESP32)

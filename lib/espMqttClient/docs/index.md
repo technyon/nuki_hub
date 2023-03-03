@@ -66,7 +66,7 @@ espMqttClientAsync()
 ```
 
 Instantiate a new espMqttClient or espMqttSecure object.
-On ESP32, two optional parameters are available: `espMqttClient(uint8_t priority = 1, uint8_t core = 1)`. This will change the priority of the MQTT client task and the core on which it runs (higher priority = more cpu-time).
+On ESP32, three optional parameters are available: `espMqttClient(bool internalTask = true, uint8_t priority = 1, uint8_t core = 1)`. By default, espMqttclient creates its own task to manage TCP. By setting `internalTask` to false, no task will be created and you will be responsible yourself to call `espMqttClient.loop()`. `priority` changes the priority of the MQTT client task and the core on which it runs (higher priority = more cpu-time).
 
 For the asynchronous version, use `espMqttClientAsync`.
 
@@ -149,6 +149,15 @@ Set the server.
 
 - **`host`**: Host of the server, expects a null-terminated char array (c-string)
 - **`port`**: Port of the server
+
+```cpp
+espMqttClient& setTimeout(uint16_t timeout)
+```
+
+Set the timeout for packets that need acknowledgement. Defaults to 10 seconds.
+When no acknowledgement has been received from the broker after sending a packet, the client will retransmit **all** the packets in the queue.
+
+* **`timeout`**: Timeout in seconds
 
 #### Options for TLS connections
 
@@ -312,17 +321,19 @@ Publish a packet with a callback for payload handling. Return the packet ID (or 
 The callback has the following signature: `size_t callback(uint8_t* data, size_t maxSize, size_t index)`. When the library needs payload data, the callback will be invoked. It is the callback's job to write data indo `data` with a maximum of `maxSize` bytes, according the `index` and return the amount of bytes written.
 
 ```cpp
-void clearQueue()
+void clearQueue(bool deleteSessionData = false)
 ```
 
-When disconnected, clears all queued messages.
-Keep in mind that this also deletes any session data and therefore is no MQTT compliant.
+Clears all queued messages.
+Keep in mind that this may also delete any session data and therefore is not MQTT compliant.
+
+- **`deleteSessionData`**: When true, delete all outgoing messages. Not MQTT compliant!
 
 ```cpp
 void loop()
 ```
 
-This is the worker function of the MQTT client. For ESP8266 you must call this function in the Arduino loop. For ESP32 this function is only used internally and is not available in the API.
+This is the worker function of the MQTT client. For ESP8266 you must call this function in the Arduino loop. For ESP32 you have to call this function yourself **only if you have disabled the internal task** (see the constructors).
 
 ```cpp
 const char* getClientId() const
@@ -361,12 +372,19 @@ Set this to 1 if you use the async version on ESP8266. For the regular client th
 ### EMC_ALLOW_NOT_CONNECTED_PUBLISH 1
 
 By default, you can publish when the client is not connected. If you don't want this, set this to 0.
+Regardless of this setting, after you called `disconnect()`, no messages can be published until fully disconnected.
+
+### EMC_WAIT_FOR_CONNACK 1
+
+espMqttClient waits for the CONNACK (connection acknowledge) packet before starting to send other packets.
+The MQTT specification allows to start sending before the broker acknowledges the connection but some brokers
+don't allow this (AWS for example doesn't).
 
 ### EMC_CLIENTID_LENGTH 18 + 1
 
 The (maximum) length of the client ID. (Keep in mind that this is a c-string. You need to have 1 position available for the null-termination.)
 
-### EMC_TASK_STACK_SIZE 5000
+### EMC_TASK_STACK_SIZE 5120
 
 Only used on ESP32. Sets the stack size (in words) of the MQTT client worker task.
 
