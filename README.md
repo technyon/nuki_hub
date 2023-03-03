@@ -229,11 +229,19 @@ https://github.com/technyon/nuki_hub/issues/39
 <br><br>
 Also, check that pairing is allowed. In the smartphone app, go to Settings --> Features & Configuration --> Button & LED and make sure "Bluetooh Pairing" is enabled.
 
+## FAQ
+
+### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
+Some functionality is restricted by the lock (or opener) firmware and is only accessible when
+the PIN is provided. When setting up the lock (or opener), you have to set a PIN in the smartphone.
+Navigate to the credentials page, enter this PIN and click save.
 
 ### Authorization data isn't published
-Reading the authorization data from the access log is protected by the configured PIN.
-If you don't get any published data try setting the PIN or try reentering it to make
-sure it's correct.
+See previous point, this needs the correct PIN to be configured.
+
+### Using home assistant, it's only possible to lock or unlock the door, but not to unlatch it
+Unlatching can be triggered using the lock.open service.
+
 
 ## Development VM
 
