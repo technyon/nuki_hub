@@ -556,7 +556,7 @@ void WebCfgServer::buildCredHtml(String &response)
 
     if(_nuki != nullptr)
     {
-        response.concat("<br><br><FORM ACTION=method=get >");
+        response.concat("<br><br><FORM method=\"post\" ACTION=savecfg >");
         response.concat("<h3>NUKI Lock PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, true);
@@ -567,7 +567,7 @@ void WebCfgServer::buildCredHtml(String &response)
 
     if(_nukiOpener != nullptr)
     {
-        response.concat("<br><br><FORM ACTION=method=get >");
+        response.concat("<br><br><FORM method=\"posst\" ACTION=savecfg >");
         response.concat("<h3>NUKI Opener PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, true);
@@ -580,7 +580,7 @@ void WebCfgServer::buildCredHtml(String &response)
     if(_nuki != nullptr)
     {
         response.concat("<br><br><h3>Unpair NUKI Lock</h3>");
-        response.concat("<form method=\"get\" action=\"/unpairlock\">");
+        response.concat("<form method=\"post\" action=\"/unpairlock\">");
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
@@ -591,7 +591,7 @@ void WebCfgServer::buildCredHtml(String &response)
     if(_nukiOpener != nullptr)
     {
         response.concat("<br><br><h3>Unpair NUKI Opener</h3>");
-        response.concat("<form method=\"get\" action=\"/unpairopener\">");
+        response.concat("<form method=\"post\" action=\"/unpairopener\">");
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
