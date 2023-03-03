@@ -58,6 +58,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     {
         _preferences->putInt(preference_command_nr_of_retries, 3);
         _preferences->putInt(preference_command_retry_delay, 1000);
+        _preferences->putInt(preference_restart_ble_beacon_lost, 60);
     }
 
     if(_retryDelay <= 100)
