@@ -333,7 +333,8 @@ void NukiOpenerWrapper::updateConfig()
     readConfig();
     readAdvancedConfig();
     _configRead = true;
-    _hasKeypad = _nukiConfig.hasKeypad > 0;
+    _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2;
+
     if(_nukiConfigValid)
     {
         _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
