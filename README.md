@@ -15,7 +15,7 @@ NUKI Opener<br>
 NUKI Keypad 1.0<br>
 NUKI Keypad 2.0
 
-As an alternative to Wifi, the following ESP32 modules with wired ethernet are supported (For Wifi any other EP32 should work).<br>
+As an alternative to Wifi, the following ESP32 modules with wired ethernet are supported (For Wifi any other ESP32 should work).<br>
 [M5Stack Atom POE](https://docs.m5stack.com/en/atom/atom_poe)<br>
 [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)<br>
 [Olimex ESP32-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware)<br>
