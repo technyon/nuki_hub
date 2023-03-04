@@ -207,7 +207,10 @@ void W5500Device::initializeMacAddress(byte *mac)
 void W5500Device::update()
 {
     _maintainResult = Ethernet.maintain();
-    _mqttClient.loop();
+    if(_mqttEnabled)
+    {
+        _mqttClient.loop();
+    }
 }
 
 int8_t W5500Device::signalStrength()
@@ -278,4 +281,10 @@ uint16_t W5500Device::mqttSubscribe(const char *topic, uint8_t qos)
 uint16_t W5500Device::mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length)
 {
     return _mqttClient.publish(topic, qos, retain, payload, length);
+}
+
+void W5500Device::disableMqtt()
+{
+    _mqttClient.disconnect();
+    _mqttEnabled = false;
 }

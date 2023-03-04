@@ -681,3 +681,8 @@ std::string NukiOpenerWrapper::hardwareVersion() const
 {
     return _hardwareVersion;
 }
+
+void NukiOpenerWrapper::disableWatchdog()
+{
+    _restartBeaconTimeout = -1;
+}

@@ -52,6 +52,8 @@ public:
 
     uint16_t mqttSubscribe(const char *topic, uint8_t qos) override;
 
+    void disableMqtt() override;
+
 private:
     static void clearRtcInitVar(WiFiManager*);
 
@@ -65,6 +67,7 @@ private:
     bool _startAp = false;
     char* _path;
     bool _useEncryption = false;
+    bool _mqttEnabled = true;
 
     char _ca[TLS_CA_MAX_SIZE] = {0};
     char _cert[TLS_CERT_MAX_SIZE] = {0};

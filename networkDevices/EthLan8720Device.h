@@ -62,6 +62,8 @@ public:
 
     uint16_t mqttSubscribe(const char *topic, uint8_t qos) override;
 
+    void disableMqtt() override;
+
 private:
     void onDisconnected();
 
@@ -83,6 +85,7 @@ private:
     eth_phy_type_t _type;
     eth_clock_mode_t _clock_mode;
     bool _use_mac_from_efuse;
+    bool _mqttEnabled = true;
 
     char _ca[TLS_CA_MAX_SIZE] = {0};
     char _cert[TLS_CERT_MAX_SIZE] = {0};

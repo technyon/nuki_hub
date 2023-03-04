@@ -59,6 +59,8 @@ public:
 
     uint16_t mqttSubscribe(const char *topic, uint8_t qos) override;
 
+    void disableMqtt() override;
+
 private:
     void resetDevice();
     void initializeMacAddress(byte* mac);
@@ -72,6 +74,7 @@ private:
     char* _path;
     W5500Variant _variant;
     bool _lastConnected = false;
+    bool _mqttEnabled = true;
 
     byte _mac[6];
 };

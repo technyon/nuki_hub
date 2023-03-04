@@ -142,13 +142,15 @@ ReconnectStatus WifiDevice::reconnect()
 
 void WifiDevice::update()
 {
-    if(_useEncryption)
+    if(_mqttEnabled)
     {
-        _mqttClientSecure->loop();
-    }
-    else
-    {
-        _mqttClient->loop();
+        if (_useEncryption)
+        {
+            _mqttClientSecure->loop();
+        } else
+        {
+            _mqttClient->loop();
+        }
     }
 }
 
@@ -326,4 +328,17 @@ uint16_t WifiDevice::mqttSubscribe(const char *topic, uint8_t qos)
     {
         return _mqttClient->subscribe(topic, qos);
     }
+}
+
+void WifiDevice::disableMqtt()
+{
+    if (_useEncryption)
+    {
+        _mqttClientSecure->disconnect();
+    } else
+    {
+        _mqttClient->disconnect();
+    }
+
+    _mqttEnabled = false;
 }

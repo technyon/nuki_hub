@@ -1071,6 +1071,15 @@ void WebCfgServer::handleOtaUpload()
         _otaStartTs = millis();
         esp_task_wdt_init(30, false);
         _network->disableAutoRestarts();
+        _network->disableMqtt();
+        if(_nuki != nullptr)
+        {
+            _nuki->disableWatchdog();
+        }
+        if(_nukiOpener != nullptr)
+        {
+            _nukiOpener->disableWatchdog();
+        }
         Log->print("handleFileUpload Name: "); Log->println(filename);
     }
     else if (upload.status == UPLOAD_FILE_WRITE)

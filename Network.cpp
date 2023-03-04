@@ -196,6 +196,11 @@ bool Network::update()
 
     _device->update();
 
+    if(!_mqttEnabled)
+    {
+        return true;
+    }
+
     if(!_device->isConnected())
     {
         if(_restartOnDisconnect && millis() > 60000)
@@ -1072,4 +1077,10 @@ void Network::addReconnectedCallback(std::function<void()> reconnectedCallback)
 void Network::clearWifiFallback()
 {
     memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
+}
+
+void Network::disableMqtt()
+{
+    _device->disableMqtt();
+    _mqttEnabled = false;
 }

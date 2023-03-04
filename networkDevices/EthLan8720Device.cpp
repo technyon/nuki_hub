@@ -130,13 +130,15 @@ ReconnectStatus EthLan8720Device::reconnect()
 
 void EthLan8720Device::update()
 {
-    if(_useEncryption)
+    if(_mqttEnabled)
     {
-        _mqttClientSecure->loop();
-    }
-    else
-    {
-        _mqttClient->loop();
+        if (_useEncryption)
+        {
+            _mqttClientSecure->loop();
+        } else
+        {
+            _mqttClient->loop();
+        }
     }
 }
 
@@ -309,4 +311,17 @@ uint16_t EthLan8720Device::mqttSubscribe(const char *topic, uint8_t qos)
     {
         return _mqttClient->subscribe(topic, qos);
     }
+}
+
+void EthLan8720Device::disableMqtt()
+{
+    if (_useEncryption)
+    {
+        _mqttClientSecure->disconnect();
+    } else
+    {
+        _mqttClient->disconnect();
+    }
+
+    _mqttEnabled = false;
 }

@@ -25,6 +25,8 @@ public:
     
     void disableHASS();
 
+    void disableWatchdog();
+
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired();
     const bool hasKeypad();

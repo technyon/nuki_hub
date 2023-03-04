@@ -27,6 +27,7 @@ public:
     void reconfigureDevice();
     void setMqttPresencePath(char* path);
     void disableAutoRestarts(); // disable on OTA start
+    void disableMqtt();
 
     void subscribe(const char* prefix, const char* path);
     void initTopic(const char* prefix, const char* path, const char* value);
@@ -115,6 +116,7 @@ private:
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastRssiTs = 0;
+    bool _mqttEnabled = true;
     static unsigned long _ignoreSubscriptionsTs;
     long _rssiPublishInterval = 0;
     std::function<void()> _keepAliveCallback = nullptr;

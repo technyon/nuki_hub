@@ -42,6 +42,7 @@ public:
     virtual void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback) = 0;
     virtual void mqttOnConnect(espMqttClientTypes::OnConnectCallback callback) = 0;
     virtual void mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback) = 0;
+    virtual void disableMqtt() = 0;
 
     virtual uint16_t mqttSubscribe(const char* topic, uint8_t qos) = 0;
 

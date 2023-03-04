@@ -22,6 +22,8 @@ public:
     
     void disableHASS();
 
+    void disableWatchdog();
+
     const NukiOpener::OpenerState& keyTurnerState();
     const bool isPaired();
     const bool hasKeypad();
