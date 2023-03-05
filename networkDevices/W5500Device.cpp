@@ -6,8 +6,8 @@
 #include "../Logger.h"
 #include "../MqttTopics.h"
 
-W5500Device::W5500Device(const String &hostname, Preferences* preferences, int variant)
-: NetworkDevice(hostname),
+W5500Device::W5500Device(const String &hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, int variant)
+: NetworkDevice(hostname, ipConfiguration),
   _preferences(preferences),
   _variant((W5500Variant)variant)
 {

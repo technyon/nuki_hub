@@ -327,6 +327,31 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "DHCPENA")
+        {
+            _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "IPADDR")
+        {
+            _preferences->putString(preference_ip_address, value);
+            configChanged = true;
+        }
+        else if(key == "IPSUB")
+        {
+            _preferences->putString(preference_ip_subnet, value);
+            configChanged = true;
+        }
+        else if(key == "IPGTW")
+        {
+            _preferences->putString(preference_ip_gateway, value);
+            configChanged = true;
+        }
+        else if(key == "DNSSRV")
+        {
+            _preferences->putString(preference_ip_dns_server, value);
+            configChanged = true;
+        }
         else if(key == "LSTINT")
         {
             _preferences->putInt(preference_query_interval_lockstate, value.toInt());
@@ -657,6 +682,15 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br>");
+
+    response.concat("<h3>IP Address assignment</h3>");
+    response.concat("<table>");
+    printCheckBox(response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled));
+    printInputField(response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15);
+    printInputField(response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15);
+    printInputField(response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15);
+    printInputField(response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15);
+    response.concat("</table>");
 
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");

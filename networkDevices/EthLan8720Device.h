@@ -13,6 +13,7 @@ class EthLan8720Device : public NetworkDevice
 public:
     EthLan8720Device(const String& hostname,
                      Preferences* preferences,
+                     const IPConfiguration* ipConfiguration,
                      const std::string& deviceName,
                      uint8_t phy_addr = ETH_PHY_ADDR,
                      int power = ETH_PHY_POWER,

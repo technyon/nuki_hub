@@ -5,6 +5,7 @@
 #include <map>
 #include "networkDevices/NetworkDevice.h"
 #include "MqttReceiver.h"
+#include "networkDevices/IPConfiguration.h"
 
 enum class NetworkDeviceType
 {
@@ -19,7 +20,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(Preferences* preferences, const String& maintenancePathPrefix);
+    explicit Network(Preferences* preferences, const String& maintenancePathPrefix, const bool& firstStart);
 
     void initialize();
     bool update();
@@ -66,7 +67,7 @@ public:
 private:
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
-    void setupDevice();
+    void setupDevice(const bool& firstStart);
     bool reconnect();
 
     void publishHassTopic(const String& mqttDeviceType,
@@ -92,6 +93,7 @@ private:
 
     static Network* _inst;
     Preferences* _preferences;
+    IPConfiguration* _ipConfiguration = nullptr;
     String _hostname;
     char _hostnameArr[101] = {0};
     NetworkDevice* _device = nullptr;

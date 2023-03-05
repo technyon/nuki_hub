@@ -10,8 +10,8 @@
 #include "espMqttClient.h"
 #include "../RestartReason.h"
 
-EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
-: NetworkDevice(hostname),
+EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
+: NetworkDevice(hostname, ipConfiguration),
   _deviceName(deviceName),
   _phy_addr(phy_addr),
   _power(power),

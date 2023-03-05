@@ -14,7 +14,7 @@ unsigned long Network::_ignoreSubscriptionsTs = 0;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(Preferences *preferences, const String& maintenancePathPrefix)
+Network::Network(Preferences *preferences, const String& maintenancePathPrefix, const bool& firstStart)
 : _preferences(preferences)
 {
     _inst = this;
@@ -27,11 +27,13 @@ Network::Network(Preferences *preferences, const String& maintenancePathPrefix)
     {
         _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
     }
-    setupDevice();
+    setupDevice(firstStart);
 }
 
-void Network::setupDevice()
+void Network::setupDevice(const bool& firstStart)
 {
+    _ipConfiguration = new IPConfiguration(_preferences, firstStart);
+
     int hardwareDetect = _preferences->getInt(preference_network_hardware);
     int hardwareDetectGpio = _preferences->getInt(preference_network_hardware_gpio);
 
@@ -93,19 +95,19 @@ void Network::setupDevice()
     switch (_networkDeviceType)
     {
         case NetworkDeviceType::W5500:
-            _device = new W5500Device(_hostname, _preferences, hardwareDetect);
+            _device = new W5500Device(_hostname, _preferences, _ipConfiguration, hardwareDetect);
             break;
         case NetworkDeviceType::Olimex_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, "Olimex (LAN8720)", ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "Olimex (LAN8720)", ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
             break;
         case NetworkDeviceType::WT32_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, "WT32-ETH01", 1, 16);
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "WT32-ETH01", 1, 16);
             break;
         case NetworkDeviceType::WiFi:
-            _device = new WifiDevice(_hostname, _preferences);
+            _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
             break;
         default:
-            _device = new WifiDevice(_hostname, _preferences);
+            _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
             break;
     }
 
