@@ -71,16 +71,7 @@ void WifiDevice::initialize()
 
     if(!_ipConfiguration->dhcpEnabled())
     {
-        IPAddress address;
-        address.fromString(_ipConfiguration->ipAddress());
-        IPAddress gateway;
-        gateway.fromString(_ipConfiguration->defaultGateway());
-        IPAddress subnet;
-        subnet.fromString(_ipConfiguration->subnet());
-        IPAddress dns;
-        dns.fromString(_ipConfiguration->dnsServer());
-
-        _wm.setSTAStaticIPConfig(address, gateway, subnet, dns);
+        _wm.setSTAStaticIPConfig(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
     }
 
     _wm.setAPCallback(clearRtcInitVar);

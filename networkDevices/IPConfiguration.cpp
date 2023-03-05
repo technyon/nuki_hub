@@ -10,6 +10,11 @@ IPConfiguration::IPConfiguration(Preferences *preferences, const bool& firstStar
         _preferences->putBool(preference_ip_dhcp_enabled, true);
     }
 
+    _ipAddress.fromString(_preferences->getString(preference_ip_address));
+    _subnet.fromString(_preferences->getString(preference_ip_subnet));
+    _gateway.fromString(_preferences->getString(preference_ip_gateway));
+    _dnsServer.fromString(_preferences->getString(preference_ip_dns_server));
+
     Log->print(F("IP configuration: "));
     if(dhcpEnabled())
     {
@@ -29,22 +34,22 @@ bool IPConfiguration::dhcpEnabled() const
     return _preferences->getBool(preference_ip_dhcp_enabled);
 }
 
-String IPConfiguration::ipAddress() const
+const IPAddress IPConfiguration::ipAddress() const
 {
-    return _preferences->getString(preference_ip_address);
+    return _ipAddress;
 }
 
-String IPConfiguration::subnet() const
+const IPAddress IPConfiguration::subnet() const
 {
-    return _preferences->getString(preference_ip_subnet);
+    return _subnet;
 }
 
-String IPConfiguration::defaultGateway() const
+const IPAddress IPConfiguration::defaultGateway() const
 {
-    return _preferences->getString(preference_ip_gateway);
+    return _gateway;
 }
 
-String IPConfiguration::dnsServer() const
+const IPAddress IPConfiguration::dnsServer() const
 {
-    return _preferences->getString(preference_ip_dns_server);
+    return _dnsServer;
 }

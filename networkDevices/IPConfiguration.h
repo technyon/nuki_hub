@@ -8,12 +8,17 @@ public:
     explicit IPConfiguration(Preferences* preferences, const bool& firstStart);
 
     bool dhcpEnabled() const;
-    String ipAddress() const;
-    String subnet() const;
-    String defaultGateway() const;
-    String dnsServer() const;
+    const IPAddress ipAddress() const;
+    const IPAddress subnet() const;
+    const IPAddress defaultGateway() const;
+    const IPAddress dnsServer() const;
 
 private:
     Preferences* _preferences = nullptr;
+
+    IPAddress _ipAddress;
+    IPAddress _subnet;
+    IPAddress _gateway;
+    IPAddress _dnsServer;
 };
 
