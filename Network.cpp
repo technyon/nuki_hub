@@ -14,7 +14,7 @@ unsigned long Network::_ignoreSubscriptionsTs = 0;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(Preferences *preferences, const String& maintenancePathPrefix, const bool& firstStart)
+Network::Network(Preferences *preferences, const String& maintenancePathPrefix)
 : _preferences(preferences)
 {
     _inst = this;
@@ -27,12 +27,12 @@ Network::Network(Preferences *preferences, const String& maintenancePathPrefix, 
     {
         _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
     }
-    setupDevice(firstStart);
+    setupDevice();
 }
 
-void Network::setupDevice(const bool& firstStart)
+void Network::setupDevice()
 {
-    _ipConfiguration = new IPConfiguration(_preferences, firstStart);
+    _ipConfiguration = new IPConfiguration(_preferences);
 
     int hardwareDetect = _preferences->getInt(preference_network_hardware);
     int hardwareDetectGpio = _preferences->getInt(preference_network_hardware_gpio);

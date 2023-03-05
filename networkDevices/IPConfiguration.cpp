@@ -2,11 +2,12 @@
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 
-IPConfiguration::IPConfiguration(Preferences *preferences, const bool& firstStart)
+IPConfiguration::IPConfiguration(Preferences *preferences)
 : _preferences(preferences)
 {
-    if(firstStart)
+    if(_preferences->getString(preference_ip_address).length() <= 0)
     {
+        Log->println("IP address empty, falling back to DHCP.");
         _preferences->putBool(preference_ip_dhcp_enabled, true);
     }
 
@@ -23,9 +24,9 @@ IPConfiguration::IPConfiguration(Preferences *preferences, const bool& firstStar
     else
     {
         Log->print(F("IP address: ")); Log->print(ipAddress());
-        Log->print(F("Subnet: ")); Log->print(subnet());
-        Log->print(F("Gateway: ")); Log->print(defaultGateway());
-        Log->print(F("DNS: ")); Log->println(dnsServer());
+        Log->print(F(", Subnet: ")); Log->print(subnet());
+        Log->print(F(", Gateway: ")); Log->print(defaultGateway());
+        Log->print(F(", DNS: ")); Log->println(dnsServer());
     }
 }
 

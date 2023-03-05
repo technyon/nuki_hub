@@ -117,8 +117,19 @@ ReconnectStatus W5500Device::reconnect()
         {
             _hasDHCPAddress = true;
             dhcpRetryCnt = 1000;
-            Log->print(F("  DHCP assigned IP "));
-            Log->println(Ethernet.localIP());
+            if(_ipConfiguration->dhcpEnabled())
+            {
+                Log->print(F("  DHCP assigned IP "));
+                Log->println(Ethernet.localIP());
+            }
+        }
+
+        if(!_ipConfiguration->dhcpEnabled())
+        {
+            Ethernet.setLocalIP(_ipConfiguration->ipAddress());
+            Ethernet.setSubnetMask(_ipConfiguration->subnet());
+            Ethernet.setGatewayIP(_ipConfiguration->defaultGateway());
+            Ethernet.setDnsServerIP(_ipConfiguration->dnsServer());
         }
     }
 

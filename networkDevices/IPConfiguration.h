@@ -5,7 +5,7 @@
 class IPConfiguration
 {
 public:
-    explicit IPConfiguration(Preferences* preferences, const bool& firstStart);
+    explicit IPConfiguration(Preferences* preferences);
 
     bool dhcpEnabled() const;
     const IPAddress ipAddress() const;

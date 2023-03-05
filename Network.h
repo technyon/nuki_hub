@@ -20,7 +20,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(Preferences* preferences, const String& maintenancePathPrefix, const bool& firstStart);
+    explicit Network(Preferences* preferences, const String& maintenancePathPrefix);
 
     void initialize();
     bool update();
@@ -67,7 +67,7 @@ public:
 private:
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
-    void setupDevice(const bool& firstStart);
+    void setupDevice();
     bool reconnect();
 
     void publishHassTopic(const String& mqttDeviceType,
