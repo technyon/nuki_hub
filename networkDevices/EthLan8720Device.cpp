@@ -73,6 +73,10 @@ void EthLan8720Device::initialize()
     WiFi.setHostname(_hostname.c_str());
     _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
     ETH.setHostname(_hostname.c_str());
+    if(!_ipConfiguration->dhcpEnabled())
+    {
+        ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+    }
 
     if(_restartOnDisconnect)
     {
