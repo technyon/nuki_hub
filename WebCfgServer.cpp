@@ -32,6 +32,19 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Net
         const char *pass = str.c_str();
         memcpy(&_credPassword, pass, str.length());
     }
+
+    _pinsConfigured = true;
+
+    if(_nuki != nullptr)
+    {
+        _pinsConfigured = _pinsConfigured && _nuki->isPinSet();
+    }
+    if(_nukiOpener != nullptr)
+    {
+        _pinsConfigured = _pinsConfigured && _nukiOpener->isPinSet();
+    }
+
+    _brokerConfigured = _preferences->getString(preference_mqtt_broker).length() > 0 && _preferences->getInt(preference_mqtt_broker_port) > 0;
 }
 
 void WebCfgServer::initialize()
@@ -544,13 +557,13 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("</table><br><br>");
 
     response.concat("<h3>MQTT and Network Configuration</h3>");
-    buildNavigationButton(response, "Edit", "/mqttconfig");
+    buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
 
     response.concat("<BR><BR><h3>NUKI Configuration</h3>");
     buildNavigationButton(response, "Edit", "/nukicfg");
 
     response.concat("<BR><BR><h3>Credentials</h3>");
-    buildNavigationButton(response, "Edit", "/cred");
+    buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");
 
     response.concat("<BR><BR><h3>Firmware update</h3>");
     buildNavigationButton(response, "Open", "/ota");
@@ -681,7 +694,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
     response.concat("</table>");
-    response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br>");
+    response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br><br>");
 
     response.concat("<h3>IP Address assignment</h3>");
     response.concat("<table>");
@@ -1017,14 +1030,15 @@ void WebCfgServer::printDropDown(String &response, const char *token, const char
     response.concat("</td></tr>");
 }
 
-void WebCfgServer::buildNavigationButton(String &response, const char *caption, const char *targetPath)
+void WebCfgServer::buildNavigationButton(String &response, const char *caption, const char *targetPath, const char* labelText)
 {
     response.concat("<form method=\"get\" action=\"");
     response.concat(targetPath);
     response.concat("\">");
     response.concat("<button type=\"submit\">");
     response.concat(caption);
-    response.concat("</button>");
+    response.concat("</button> ");
+    response.concat(labelText);
     response.concat("</form>");
 }
 
