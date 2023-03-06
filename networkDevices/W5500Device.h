@@ -15,7 +15,7 @@ enum class W5500Variant
 class W5500Device : public NetworkDevice
 {
 public:
-    explicit W5500Device(const String& hostname, Preferences* _preferences, int variant);
+    explicit W5500Device(const String& hostname, Preferences* _preferences, const IPConfiguration* ipConfiguration, int variant);
     ~W5500Device();
 
     const String deviceName() const override;

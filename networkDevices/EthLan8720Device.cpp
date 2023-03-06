@@ -10,8 +10,8 @@
 #include "espMqttClient.h"
 #include "../RestartReason.h"
 
-EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
-: NetworkDevice(hostname),
+EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
+: NetworkDevice(hostname, ipConfiguration),
   _deviceName(deviceName),
   _phy_addr(phy_addr),
   _power(power),
@@ -73,6 +73,10 @@ void EthLan8720Device::initialize()
     WiFi.setHostname(_hostname.c_str());
     _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
     ETH.setHostname(_hostname.c_str());
+    if(!_ipConfiguration->dhcpEnabled())
+    {
+        ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+    }
 
     if(_restartOnDisconnect)
     {

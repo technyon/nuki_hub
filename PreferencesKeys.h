@@ -19,6 +19,11 @@
 #define preference_mqtt_crt "mqttcrt"
 #define preference_mqtt_key "mqttkey"
 #define preference_mqtt_hass_discovery "hassdiscovery"
+#define preference_ip_dhcp_enabled "dhcpena"
+#define preference_ip_address "ipaddr"
+#define preference_ip_subnet "ipsub"
+#define preference_ip_gateway "ipgtw"
+#define preference_ip_dns_server "dnssrv"
 #define preference_network_hardware "nwhw"
 #define preference_network_hardware_gpio "nwhwdt"
 #define preference_rssi_publish_interval "rssipb"
@@ -51,7 +56,20 @@ class DebugPreferences
 private:
     std::vector<char*> _keys =
     {
-            preference_started_before, preference_deviceId, preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled, preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_network_hardware, preference_network_hardware_gpio, preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_restart_timer, preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata, preference_gpio_locking_enabled, preference_publish_debug_info, preference_presence_detection_timeout, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,
+            preference_started_before, preference_deviceId, preference_mqtt_broker, preference_mqtt_broker_port,
+            preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled,
+            preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path,
+            preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_mqtt_ca,
+            preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery,
+            preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
+            preference_network_hardware, preference_network_hardware_gpio, preference_rssi_publish_interval,
+            preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
+            preference_restart_timer, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
+            preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
+            preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries,
+            preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
+            preference_gpio_locking_enabled, preference_publish_debug_info, preference_presence_detection_timeout,
+            preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,
     };
     std::vector<char*> _redact =
     {
@@ -62,7 +80,7 @@ private:
     std::vector<char*> _boolPrefs =
     {
             preference_started_before, preference_mqtt_log_enabled, preference_lock_enabled, preference_opener_enabled,
-            preference_restart_on_disconnect, preference_keypad_control_enabled, preference_register_as_app,
+            preference_restart_on_disconnect, preference_keypad_control_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_gpio_locking_enabled, preference_has_mac_saved, preference_publish_debug_info
     };
 

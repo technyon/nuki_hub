@@ -52,7 +52,7 @@ private:
     void printCheckBox(String& response, const char* token, const char* description, const bool value);
     void printTextarea(String& response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(String &response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options);
-    void buildNavigationButton(String& response, const char* caption, const char* targetPath);
+    void buildNavigationButton(String& response, const char* caption, const char* targetPath, const char* labelText = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getNetworkGpioOptions() const;
@@ -74,6 +74,8 @@ private:
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;
+    bool _pinsConfigured = false;
+    bool _brokerConfigured = false;
     uint32_t _transferredSize = 0;
     unsigned long _otaStartTs = 0;
     String _hostname;

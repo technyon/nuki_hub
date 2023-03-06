@@ -8,8 +8,8 @@
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
-WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences)
-: NetworkDevice(hostname)
+WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences, const IPConfiguration* ipConfiguration)
+: NetworkDevice(hostname, ipConfiguration)
 {
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
 
@@ -68,6 +68,11 @@ void WifiDevice::initialize()
     _wm.setShowInfoUpdate(false);
     _wm.setMenu(wm_menu);
     _wm.setHostname(_hostname);
+
+    if(!_ipConfiguration->dhcpEnabled())
+    {
+        _wm.setSTAStaticIPConfig(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+    }
 
     _wm.setAPCallback(clearRtcInitVar);
 

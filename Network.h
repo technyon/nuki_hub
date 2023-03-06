@@ -5,6 +5,7 @@
 #include <map>
 #include "networkDevices/NetworkDevice.h"
 #include "MqttReceiver.h"
+#include "networkDevices/IPConfiguration.h"
 
 enum class NetworkDeviceType
 {
@@ -92,6 +93,7 @@ private:
 
     static Network* _inst;
     Preferences* _preferences;
+    IPConfiguration* _ipConfiguration = nullptr;
     String _hostname;
     char _hostnameArr[101] = {0};
     NetworkDevice* _device = nullptr;

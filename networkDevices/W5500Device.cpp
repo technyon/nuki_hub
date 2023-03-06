@@ -6,8 +6,8 @@
 #include "../Logger.h"
 #include "../MqttTopics.h"
 
-W5500Device::W5500Device(const String &hostname, Preferences* preferences, int variant)
-: NetworkDevice(hostname),
+W5500Device::W5500Device(const String &hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, int variant)
+: NetworkDevice(hostname, ipConfiguration),
   _preferences(preferences),
   _variant((W5500Variant)variant)
 {
@@ -117,8 +117,19 @@ ReconnectStatus W5500Device::reconnect()
         {
             _hasDHCPAddress = true;
             dhcpRetryCnt = 1000;
-            Log->print(F("  DHCP assigned IP "));
-            Log->println(Ethernet.localIP());
+            if(_ipConfiguration->dhcpEnabled())
+            {
+                Log->print(F("  DHCP assigned IP "));
+                Log->println(Ethernet.localIP());
+            }
+        }
+
+        if(!_ipConfiguration->dhcpEnabled())
+        {
+            Ethernet.setLocalIP(_ipConfiguration->ipAddress());
+            Ethernet.setSubnetMask(_ipConfiguration->subnet());
+            Ethernet.setGatewayIP(_ipConfiguration->defaultGateway());
+            Ethernet.setDnsServerIP(_ipConfiguration->dnsServer());
         }
     }
 
