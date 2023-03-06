@@ -272,6 +272,12 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 {
     Log->print(F("Querying opener state: "));
     Nuki::CmdResult result =_nukiOpener.requestOpenerState(&_keyTurnerState);
+
+    char resultStr[15];
+    memset(&resultStr, 0, sizeof(resultStr));
+    NukiOpener::cmdResultToString(result, resultStr);
+    _network->publishLockstateCommandResult(resultStr);
+
     if(result != Nuki::CmdResult::Success)
     {
         _retryLockstateCount++;

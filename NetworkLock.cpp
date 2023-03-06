@@ -398,6 +398,11 @@ void NetworkLock::publishCommandResult(const char *resultStr)
     publishString(mqtt_topic_lock_action_command_result, resultStr);
 }
 
+void NetworkLock::publishLockstateCommandResult(const char *resultStr)
+{
+    publishString(mqtt_topic_query_lockstate_command_result, resultStr);
+}
+
 void NetworkLock::publishBatteryReport(const NukiLock::BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);

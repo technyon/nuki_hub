@@ -288,6 +288,12 @@ void NukiWrapper::updateKeyTurnerState()
 {
     Log->print(F("Querying lock state: "));
     Nuki::CmdResult result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
+
+    char resultStr[15];
+    memset(&resultStr, 0, sizeof(resultStr));
+    NukiLock::cmdResultToString(result, resultStr);
+    _network->publishLockstateCommandResult(resultStr);
+
     if(result != Nuki::CmdResult::Success)
     {
         _retryLockstateCount++;

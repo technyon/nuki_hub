@@ -443,6 +443,11 @@ void NetworkOpener::publishCommandResult(const char *resultStr)
     publishString(mqtt_topic_lock_action_command_result, resultStr);
 }
 
+void NetworkOpener::publishLockstateCommandResult(const char *resultStr)
+{
+    publishString(mqtt_topic_query_lockstate_command_result, resultStr);
+}
+
 void NetworkOpener::publishBatteryReport(const NukiOpener::BatteryReport& batteryReport)
 {
     publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);

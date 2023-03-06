@@ -24,6 +24,7 @@ public:
     void publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries);
     void clearAuthorizationInfo();
     void publishCommandResult(const char* resultStr);
+    void publishLockstateCommandResult(const char* resultStr);
     void publishBatteryReport(const NukiLock::BatteryReport& batteryReport);
     void publishConfig(const NukiLock::Config& config);
     void publishAdvancedConfig(const NukiLock::AdvancedConfig& config);
