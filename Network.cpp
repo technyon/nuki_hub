@@ -135,7 +135,7 @@ void Network::initialize()
     }
     if(_rssiPublishInterval == 0)
     {
-        _rssiPublishInterval = -1;
+        _rssiPublishInterval = 60;
         _preferences->putInt(preference_rssi_publish_interval, _rssiPublishInterval);
     }
     strcpy(_hostnameArr, _hostname.c_str());
