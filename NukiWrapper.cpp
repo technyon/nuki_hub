@@ -671,7 +671,6 @@ bool NukiWrapper::hasDoorSensor()
 {
     return _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
-           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorStateUnknown ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating;;
 }
 
