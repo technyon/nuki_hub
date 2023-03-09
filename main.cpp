@@ -31,6 +31,7 @@ unsigned long restartTs = (2^32) - 5 * 60000;
 
 RTC_NOINIT_ATTR int restartReason;
 RTC_NOINIT_ATTR uint64_t restartReasonValid;
+RestartReason currentRestartReason = RestartReason::NotApplicable;
 
 TaskHandle_t networkTaskHandle = nullptr;
 TaskHandle_t nukiTaskHandle = nullptr;
@@ -167,6 +168,7 @@ void setup()
     Log->print(F("NUKI Hub version ")); Log->println(NUKI_HUB_VERSION);
 
     bool firstStart = initPreferences();
+    initializeRestartReason();
 
     if(preferences->getInt(preference_restart_timer) > 0)
     {

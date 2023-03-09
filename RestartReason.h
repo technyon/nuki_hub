@@ -18,12 +18,15 @@ enum class RestartReason
     OTAAborted,
     OTAUnknownState,
     DeviceUnpaired,
+    NotApplicable
 };
 
 #define RESTART_REASON_VALID_DETECT 0xa00ab00bc00bd00d;
 
 extern int restartReason;
 extern uint64_t restartReasonValid;
+
+extern RestartReason currentRestartReason;
 
 inline static void restartEsp(RestartReason reason)
 {
@@ -32,15 +35,19 @@ inline static void restartEsp(RestartReason reason)
     ESP.restart();
 }
 
-inline static String getRestartReason()
+inline static void initializeRestartReason()
 {
     uint64_t cmp = RESTART_REASON_VALID_DETECT;
-    if(restartReasonValid != cmp)
+    if(restartReasonValid == cmp)
     {
-        return "UnknownNoRestartRegistered";
+        currentRestartReason = (RestartReason)restartReason;
+        memset(&restartReasonValid, 0, sizeof(restartReasonValid));
     }
+}
 
-    switch((RestartReason)restartReason)
+inline static String getRestartReason()
+{
+    switch(currentRestartReason)
     {
         case RestartReason::RequestedViaMqtt:
             return "RequestedViaMqtt";
@@ -74,6 +81,8 @@ inline static String getRestartReason()
             return "OTAUnknownState";
         case RestartReason::DeviceUnpaired:
             return "DeviceUnpaired";
+        case RestartReason::NotApplicable:
+            return "NotApplicable";
         default:
             return "Unknown: " + restartReason;
     }
