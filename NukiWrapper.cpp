@@ -275,7 +275,7 @@ bool NukiWrapper::isPinSet()
 
 void NukiWrapper::setPin(const uint16_t pin)
 {
-        _nukiLock.saveSecurityPincode(pin);
+    _nukiLock.saveSecurityPincode(pin);
 }
 
 void NukiWrapper::unpair()

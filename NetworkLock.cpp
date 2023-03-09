@@ -3,7 +3,6 @@
 #include "Arduino.h"
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
-#include "Pins.h"
 #include "Logger.h"
 #include "RestartReason.h"
 
