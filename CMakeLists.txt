@@ -40,7 +40,7 @@ include_directories(${PROJECT_NAME}
         lib/ArduinoJson/src
 )
 
-file(GLOB SRCFILES
+set(SRCFILES
         Pins.h
         Config.h
         Network.cpp

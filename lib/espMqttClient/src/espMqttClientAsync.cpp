@@ -10,17 +10,10 @@ the LICENSE file.
 
 #include "espMqttClientAsync.h"
 
-#if defined(ARDUINO_ARCH_ESP32)
-espMqttClientAsync::espMqttClientAsync(uint8_t priority, uint8_t core)
-: MqttClientSetup(false, priority, core)
-, _clientAsync() {
-#else
 espMqttClientAsync::espMqttClientAsync()
-: _clientAsync() {
-#endif
+: MqttClientSetup(espMqttClientTypes::UseInternalTask::NO)
+, _clientAsync() {
   _transport = &_clientAsync;
-  // _onConnectHook = reinterpret_cast<MqttClient::OnConnectHook>(_setupClient);
-  // _onConnectHookArg = this;
   _clientAsync.client.onConnect(onConnectCb, this);
   _clientAsync.client.onDisconnect(onDisconnectCb, this);
   _clientAsync.client.onData(onDataCb, this);

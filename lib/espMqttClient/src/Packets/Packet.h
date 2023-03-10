@@ -33,8 +33,6 @@ class Packet {
   MQTTPacketType packetType() const;
   bool removable() const;
 
-  void* token;  // native typeless variable to store any additional data
-
  protected:
   uint16_t _packetId;  // save as separate variable: will be accessed frequently
   uint8_t* _data;
@@ -92,8 +90,7 @@ class Packet {
          const char* topic2,
          uint8_t qos2,
          Args&& ... args)
-  : token(nullptr)
-  , _packetId(packetId)
+  : _packetId(packetId)
   , _data(nullptr)
   , _size(0)
   , _payloadIndex(0)
@@ -115,8 +112,7 @@ class Packet {
          const char* topic1,
          const char* topic2,
          Args&& ... args)
-  : token(nullptr)
-  , _packetId(packetId)
+  : _packetId(packetId)
   , _data(nullptr)
   , _size(0)
   , _payloadIndex(0)

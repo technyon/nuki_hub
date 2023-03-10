@@ -65,4 +65,9 @@ typedef std::function<void(uint16_t packetId)> OnPublishCallback;
 typedef std::function<size_t(uint8_t* data, size_t maxSize, size_t index)> PayloadCallback;
 typedef std::function<void(uint16_t packetId, Error error)> OnErrorCallback;
 
+enum class UseInternalTask {
+  NO = 0,
+  YES = 1,
+};
+
 }  // end namespace espMqttClientTypes

@@ -1,5 +1,4 @@
 #include <WiFi.h>
-#include <Ticker.h>
 
 #include <espMqttClient.h>
 
@@ -16,7 +15,8 @@ const char rootCA[] = \
   " add your certificate here \n" \
   "-----END CERTIFICATE-----\n";
 
-espMqttClientSecure mqttClient;
+espMqttClientSecure mqttClient(espMqttClientTypes::UseInternalTask::NO);
+static TaskHandle_t taskHandle;
 bool reconnectMqtt = false;
 uint32_t lastReconnect = 0;
 
@@ -93,6 +93,7 @@ void onMqttUnsubscribe(uint16_t packetId) {
 }
 
 void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
+  (void) payload;
   Serial.println("Publish received.");
   Serial.print("  topic: ");
   Serial.println(topic);
@@ -116,6 +117,12 @@ void onMqttPublish(uint16_t packetId) {
   Serial.println(packetId);
 }
 
+void networkingTask() {
+  for (;;) {
+    mqttClient.loop();
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println();
@@ -136,6 +143,8 @@ void setup() {
   mqttClient.onPublish(onMqttPublish);
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   mqttClient.setCleanSession(true);
+
+  xTaskCreatePinnedToCore((TaskFunction_t)networkingTask, "mqttclienttask", 5120, nullptr, 1, &taskHandle, 0);
 
   connectToWiFi();
 }

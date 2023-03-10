@@ -503,3 +503,47 @@ void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, cons
 // attach callback to MQTT client
 mqttClient.onMessage(onMqttMessage);
 ```
+
+### onMessage callbacks per topic
+
+espMqttClient allows only one callback for incoming messages. You might want to have specific ones per topic. This example shows one way on how to achieve this.
+
+Limitations of this code sample: only the first match is served and no wildcard topics allowed.
+
+```cpp
+#include <map>
+#include <cstring>
+
+// definitions of the std::map where we will store the topic/callback combinations
+struct MatchTopic {
+  bool operator()(const char* a, const char* b) const {
+    return strcmp(a, b) < 0;
+  }
+};
+std::map<const char*, espMqttClientTypes::OnMessageCallback, MatchTopic> topicCallbacks;
+
+// callbacks per topic
+void onTopic1(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
+  // received a packet on topic 1
+}
+void onTopic2(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
+  // received a packet on topic 2
+}
+
+// general callback to dispatch to specific handlers
+void onMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
+  auto it = topicCallbacks.find(topic);
+  if (it != topicCallbacks.end()) {
+    // if found, run specific callback
+    (it->second)(properties, topic, payload, len, index, total);
+  } else {
+    // or handle it here
+  }
+}
+
+// in your Arduino setup() function:
+topicCallbacks.emplace("base/topic1", onTopic1);
+topicCallbacks.emplace("base/topic2", onTopic2);
+
+mqttClient.onMessage(onMessage);
+```

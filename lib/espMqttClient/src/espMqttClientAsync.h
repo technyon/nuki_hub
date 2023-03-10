@@ -19,11 +19,7 @@ the LICENSE file.
 
 class espMqttClientAsync : public MqttClientSetup<espMqttClientAsync> {
  public:
-#if defined(ARDUINO_ARCH_ESP32)
-  explicit espMqttClientAsync(uint8_t priority = 1, uint8_t core = 1);
-#else
   espMqttClientAsync();
-#endif
   bool connect();
 
  protected:

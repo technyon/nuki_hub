@@ -1,5 +1,4 @@
 #include <WiFi.h>
-#include <Ticker.h>
 
 #include <espMqttClientAsync.h>
 
@@ -89,6 +88,7 @@ void onMqttUnsubscribe(uint16_t packetId) {
 }
 
 void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
+  (void) payload;
   Serial.println("Publish received.");
   Serial.print("  topic: ");
   Serial.println(topic);

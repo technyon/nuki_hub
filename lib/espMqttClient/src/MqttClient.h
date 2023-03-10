@@ -68,12 +68,8 @@ class MqttClient {
   void loop();
 
  protected:
-  #if defined(ARDUINO_ARCH_ESP32)
-  explicit MqttClient(bool useTask, uint8_t priority = 1, uint8_t core = 1);
-  bool _useTask;
-  #else
-  MqttClient();
-  #endif
+  explicit MqttClient(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1);
+  espMqttClientTypes::UseInternalTask _useInternalTask;
   espMqttClientInternals::Transport* _transport;
 
   espMqttClientTypes::OnConnectCallback _onConnectCallback;
@@ -130,7 +126,15 @@ class MqttClient {
 #endif
 
   uint8_t _rxBuffer[EMC_RX_BUFFER_SIZE];
-  espMqttClientInternals::Outbox<espMqttClientInternals::Packet> _outbox;
+  struct OutgoingPacket {
+    uint32_t timeSent;
+    espMqttClientInternals::Packet packet;
+    template <typename... Args>
+    OutgoingPacket(uint32_t t, espMqttClientTypes::Error error, Args&&... args) :
+      timeSent(t),
+      packet(error, std::forward<Args>(args) ...) {}
+  };
+  espMqttClientInternals::Outbox<OutgoingPacket> _outbox;
   size_t _bytesSent;
   espMqttClientInternals::Parser _parser;
   uint32_t _lastClientActivity;
@@ -142,8 +146,8 @@ class MqttClient {
 
   template <typename... Args>
   bool _addPacket(Args&&... args) {
-    espMqttClientTypes::Error error;
-    espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.emplace(error, std::forward<Args>(args) ...);
+    espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
+    espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplace(0, error, std::forward<Args>(args) ...);
     if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
     _outbox.remove(it);
     return false;
@@ -151,8 +155,8 @@ class MqttClient {
 
   template <typename... Args>
   bool _addPacketFront(Args&&... args) {
-    espMqttClientTypes::Error error;
-    espMqttClientInternals::Outbox<espMqttClientInternals::Packet>::Iterator it = _outbox.emplaceFront(error, std::forward<Args>(args) ...);
+    espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
+    espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplaceFront(0, error, std::forward<Args>(args) ...);
     if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
     _outbox.remove(it);
     return false;

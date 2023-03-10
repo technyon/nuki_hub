@@ -6,7 +6,7 @@
 class espMqttClientW5500 : public MqttClientSetup<espMqttClientW5500> {
 public:
 #if defined(ARDUINO_ARCH_ESP32)
-    explicit espMqttClientW5500(uint8_t priority = 1, uint8_t core = 1);
+    explicit espMqttClientW5500();
 #else
     espMqttClient();
 #endif

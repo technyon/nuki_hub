@@ -1,6 +1,5 @@
 #include <ESP8266WiFi.h>
 #include <Updater.h>
-#include <Ticker.h>
 
 #include <espMqttClient.h>
 
@@ -37,11 +36,13 @@ void connectToMqtt() {
 }
 
 void onWiFiConnect(const WiFiEventStationModeGotIP& event) {
+  (void) event;
   Serial.println("Connected to Wi-Fi.");
   connectToMqtt();
 }
 
 void onWiFiDisconnect(const WiFiEventStationModeDisconnected& event) {
+  (void) event;
   Serial.println("Disconnected from Wi-Fi.");
 }
 
@@ -109,6 +110,7 @@ void handleUpdate(const uint8_t* payload, size_t length, size_t index, size_t to
 }
 
 void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
+  (void) properties;
   if (strcmp(UPDATE_TOPIC, topic) != 0) {
     Serial.println("Topic mismatch");
     return;

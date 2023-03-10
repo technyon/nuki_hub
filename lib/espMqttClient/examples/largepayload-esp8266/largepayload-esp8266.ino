@@ -1,5 +1,4 @@
 #include <ESP8266WiFi.h>
-#include <Ticker.h>
 
 #include <espMqttClient.h>
 
@@ -47,11 +46,13 @@ void connectToMqtt() {
 }
 
 void onWiFiConnect(const WiFiEventStationModeGotIP& event) {
+  (void) event;
   Serial.println("Connected to Wi-Fi.");
   connectToMqtt();
 }
 
 void onWiFiDisconnect(const WiFiEventStationModeDisconnected& event) {
+  (void) event;
   Serial.println("Disconnected from Wi-Fi.");
 }
 

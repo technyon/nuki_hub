@@ -66,8 +66,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
                uint16_t willPayloadLength,
                uint16_t keepAlive,
                const char* clientId)
-: token(nullptr)
-, _packetId(0)
+: _packetId(0)
 , _data(nullptr)
 , _size(0)
 , _payloadIndex(0)
@@ -162,8 +161,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
                size_t payloadLength,
                uint8_t qos,
                bool retain)
-: token(nullptr)
-, _packetId(packetId)
+: _packetId(packetId)
 , _data(nullptr)
 , _size(0)
 , _payloadIndex(0)
@@ -200,8 +198,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
                size_t payloadLength,
                uint8_t qos,
                bool retain)
-: token(nullptr)
-, _packetId(packetId)
+: _packetId(packetId)
 , _data(nullptr)
 , _size(0)
 , _payloadIndex(0)
@@ -235,8 +232,7 @@ Packet::Packet(espMqttClientTypes::Error& error,
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* topic, uint8_t qos)
-: token(nullptr)
-, _packetId(packetId)
+: _packetId(packetId)
 , _data(nullptr)
 , _size(0)
 , _payloadIndex(0)
@@ -248,8 +244,7 @@ Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* 
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t packetId)
-: token(nullptr)
-, _packetId(packetId)
+: _packetId(packetId)
 , _data(nullptr)
 , _size(0)
 , _payloadIndex(0)
@@ -276,8 +271,7 @@ Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type, uint16_t p
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* topic)
-: token(nullptr)
-, _packetId(packetId)
+: _packetId(packetId)
 , _data(nullptr)
 , _size(0)
 , _payloadIndex(0)
@@ -289,8 +283,7 @@ Packet::Packet(espMqttClientTypes::Error& error, uint16_t packetId, const char* 
 }
 
 Packet::Packet(espMqttClientTypes::Error& error, MQTTPacketType type)
-: token(nullptr)
-, _packetId(0)
+: _packetId(0)
 , _data(nullptr)
 , _size(0)
 , _payloadIndex(0)

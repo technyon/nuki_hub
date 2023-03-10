@@ -111,11 +111,6 @@ class MqttClientSetup : public MqttClient {
   */
 
  protected:
-#if defined(ESP32)
-  explicit MqttClientSetup(bool useTask, uint8_t priority = 1, uint8_t core = 1)
-  : MqttClient(useTask, priority, core) {}
-#else
-  MqttClientSetup()
-  : MqttClient() {}
-#endif
+  explicit MqttClientSetup(espMqttClientTypes::UseInternalTask useInternalTask, uint8_t priority = 1, uint8_t core = 1)
+  : MqttClient(useInternalTask, priority, core) {}
 };
