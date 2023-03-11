@@ -808,6 +808,10 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat(_nuki->isPaired() ? "Yes\n" : "No\n");
         response.concat("Lock PIN set: ");
         response.concat(_nuki->isPaired() ? _nuki->isPinSet() ? "Yes\n" : "No\n" : "-\n");
+        response.concat("Lock has door sensor: ");
+        response.concat(_nuki->hasDoorSensor() ? "Yes\n" : "No\n");
+        response.concat("Lock has keypad: ");
+        response.concat(_nuki->hasKeypad() ? "Yes\n" : "No\n");
     }
     if(_nukiOpener != nullptr)
     {
@@ -818,6 +822,8 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat(_nukiOpener->isPaired() ? "Yes\n" : "No\n");
         response.concat("Opener PIN set: ");
         response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinSet() ? "Yes\n" : "No\n" : "-\n");
+        response.concat("Opener has keypad: ");
+        response.concat(_nukiOpener->hasKeypad() ? "Yes\n" : "No\n");
     }
 
     response.concat("Network device: ");

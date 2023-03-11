@@ -615,12 +615,12 @@ const NukiLock::KeyTurnerState &NukiWrapper::keyTurnerState()
     return _keyTurnerState;
 }
 
-const bool NukiWrapper::isPaired()
+const bool NukiWrapper::isPaired() const
 {
     return _paired;
 }
 
-const bool NukiWrapper::hasKeypad()
+const bool NukiWrapper::hasKeypad() const
 {
     return _hasKeypad;
 }
@@ -667,7 +667,7 @@ void NukiWrapper::setupHASS()
     Log->println("HASS setup for lock completed.");
 }
 
-bool NukiWrapper::hasDoorSensor()
+bool NukiWrapper::hasDoorSensor() const
 {
     return _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||

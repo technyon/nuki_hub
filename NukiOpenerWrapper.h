@@ -25,8 +25,8 @@ public:
     void disableWatchdog();
 
     const NukiOpener::OpenerState& keyTurnerState();
-    const bool isPaired();
-    const bool hasKeypad();
+    const bool isPaired() const;
+    const bool hasKeypad() const;
     const BLEAddress getBleAddress() const;
 
     std::string firmwareVersion() const;

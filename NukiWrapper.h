@@ -28,8 +28,9 @@ public:
     void disableWatchdog();
 
     const NukiLock::KeyTurnerState& keyTurnerState();
-    const bool isPaired();
-    const bool hasKeypad();
+    const bool isPaired() const;
+    const bool hasKeypad() const;
+    bool hasDoorSensor() const;
     const BLEAddress getBleAddress() const;
 
     std::string firmwareVersion() const;
@@ -55,7 +56,6 @@ private:
     void readAdvancedConfig();
     
     void setupHASS();
-    bool hasDoorSensor();
 
     void printCommandResult(Nuki::CmdResult result);
 

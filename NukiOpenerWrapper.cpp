@@ -589,12 +589,12 @@ const NukiOpener::OpenerState &NukiOpenerWrapper::keyTurnerState()
     return _keyTurnerState;
 }
 
-const bool NukiOpenerWrapper::isPaired()
+const bool NukiOpenerWrapper::isPaired() const
 {
     return _paired;
 }
 
-const bool NukiOpenerWrapper::hasKeypad()
+const bool NukiOpenerWrapper::hasKeypad() const
 {
     return _hasKeypad;
 }
