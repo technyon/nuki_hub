@@ -49,6 +49,7 @@ public:
     void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
+    void removeHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
 
     void clearWifiFallback();
 
@@ -86,6 +87,8 @@ private:
                           const String& commandTopic = "",
                           std::vector<std::pair<char*, char*>> additionalEntries = {}
                           );
+
+    void removeHassTopic(const String& mqttDeviceType, const String& mattDeviceName, const String& uidString);
 
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);

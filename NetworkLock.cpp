@@ -525,6 +525,10 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
     {
         _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
     }
+    else
+    {
+        _network->removeHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
+    }
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
 }

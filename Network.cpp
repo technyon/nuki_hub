@@ -996,6 +996,27 @@ void Network::publishHassTopic(const String& mqttDeviceType,
     }
 }
 
+
+void Network::removeHassTopic(const String& mqttDeviceType, const String& mattDeviceName, const String& uidString)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        String path = discoveryTopic;
+        path.concat("/");
+        path.concat(mqttDeviceType);
+        path.concat("/");
+        path.concat(uidString);
+        path.concat("/");
+        path.concat(mattDeviceName);
+        path.concat("/config");
+
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+    }
+}
+
+
 void Network::removeHASSConfig(char* uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
@@ -1056,6 +1077,11 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/bluetooth_signal_strength/config");
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
     }
+}
+
+void Network::removeHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    removeHassTopic("binary_sensor", "door_sensor", uidString);
 }
 
 void Network::publishPresenceDetection(char *csv)
