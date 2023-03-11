@@ -85,6 +85,10 @@ void Network::setupDevice()
                 Log->println(F("WT32-ETH01"));
                 _networkDeviceType = NetworkDeviceType::WT32_LAN8720;
                 break;
+            case 6:
+                Log->println(F("M5STACK PoESP32 Unit"));
+                _networkDeviceType = NetworkDeviceType::M5STACK_PoESP32_Unit;
+                break;
             default:
                 Log->println(F("Unknown hardware selected, falling back to Wifi."));
                 _networkDeviceType = NetworkDeviceType::WiFi;
@@ -102,6 +106,9 @@ void Network::setupDevice()
             break;
         case NetworkDeviceType::WT32_LAN8720:
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "WT32-ETH01", 1, 16);
+            break;
+        case NetworkDeviceType::M5STACK_PoESP32_Unit:
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_IP101);
             break;
         case NetworkDeviceType::WiFi:
             _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);

@@ -1175,6 +1175,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
     options.push_back(std::make_pair("4", "Olimex ESP32-POE / ESP-POE-ISO"));
     options.push_back(std::make_pair("5", "WT32-ETH01"));
+    options.push_back(std::make_pair("6", "M5STACK PoESP32 Unit"));
 
     return options;
 }

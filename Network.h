@@ -12,7 +12,8 @@ enum class NetworkDeviceType
     WiFi,
     W5500,
     Olimex_LAN8720,
-    WT32_LAN8720
+    WT32_LAN8720,
+    M5STACK_PoESP32_Unit
 };
 
 #define JSON_BUFFER_SIZE 1024
