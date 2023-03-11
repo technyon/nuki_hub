@@ -1,11 +1,13 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-using namespace ARDUINOJSON_NAMESPACE;
+#include <sstream>
+
+using namespace ArduinoJson::detail;
 
 TEST_CASE("deserializeMsgPack() filter") {
   StaticJsonDocument<4096> doc;

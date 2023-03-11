@@ -1,9 +1,11 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
+
+#include <sstream>
 
 TEST_CASE("deserializeMsgPack() returns EmptyInput") {
   StaticJsonDocument<100> doc;

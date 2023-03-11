@@ -1,12 +1,10 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <stdint.h>
 #include <catch.hpp>
-
-static const char* null = 0;
 
 TEST_CASE("JsonVariant::containsKey()") {
   DynamicJsonDocument doc(4096);

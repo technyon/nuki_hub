@@ -1,11 +1,11 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-using ARDUINOJSON_NAMESPACE::addPadding;
+using ArduinoJson::detail::addPadding;
 
 static void REQUIRE_JSON(JsonDocument& doc, const std::string& expected) {
   std::string json;

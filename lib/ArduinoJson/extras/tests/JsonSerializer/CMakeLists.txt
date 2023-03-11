@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2022, Benoit BLANCHON
+# Copyright © 2014-2023, Benoit BLANCHON
 # MIT License
 
 add_executable(JsonSerializerTests
@@ -18,5 +18,5 @@ add_test(JsonSerializer JsonSerializerTests)
 
 set_tests_properties(JsonSerializer
 	PROPERTIES
-		LABELS 		"Catch"
+		LABELS "Catch"
 )

@@ -1,11 +1,13 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-using namespace ARDUINOJSON_NAMESPACE;
+#include <sstream>
+
+using namespace ArduinoJson::detail;
 
 class EmptyClass {};
 enum EmptyEnum {};
@@ -19,9 +21,9 @@ TEST_CASE("Polyfills/type_traits") {
   }
 
   SECTION("is_array") {
-    REQUIRE_FALSE((is_array<const char*>::value));
-    REQUIRE((is_array<const char[]>::value));
-    REQUIRE((is_array<const char[10]>::value));
+    REQUIRE_FALSE(is_array<const char*>::value);
+    REQUIRE(is_array<const char[]>::value);
+    REQUIRE(is_array<const char[10]>::value);
   }
 
   SECTION("is_const") {
@@ -172,36 +174,35 @@ TEST_CASE("Polyfills/type_traits") {
   }
 
   SECTION("is_convertible") {
-    CHECK((is_convertible<short, int>::value == true));
-    CHECK((is_convertible<int, int>::value == true));
-    CHECK((is_convertible<EmptyEnum, int>::value == true));
-    CHECK((is_convertible<int*, int>::value == false));
-    CHECK((is_convertible<EmptyClass, int>::value == false));
+    CHECK(is_convertible<short, int>::value == true);
+    CHECK(is_convertible<int, int>::value == true);
+    CHECK(is_convertible<EmptyEnum, int>::value == true);
+    CHECK(is_convertible<int*, int>::value == false);
+    CHECK(is_convertible<EmptyClass, int>::value == false);
 
-    CHECK((is_convertible<DeserializationError, JsonVariantConst>::value ==
-           false));
-    CHECK((is_convertible<JsonPair, JsonVariantConst>::value == false));
-    CHECK((is_convertible<JsonVariant, JsonVariantConst>::value == true));
-    CHECK((is_convertible<JsonVariantConst, JsonVariantConst>::value == true));
-    CHECK((is_convertible<JsonArray, JsonVariantConst>::value == true));
-    CHECK((is_convertible<ElementProxy<JsonArray>, JsonVariantConst>::value ==
-           true));
-    CHECK((is_convertible<JsonArrayConst, JsonVariantConst>::value == true));
-    CHECK((is_convertible<JsonObject, JsonVariantConst>::value == true));
-    CHECK((is_convertible<MemberProxy<JsonObject, const char*>,
-                          JsonVariantConst>::value == true));
-    CHECK((is_convertible<JsonObjectConst, JsonVariantConst>::value == true));
-    CHECK(
-        (is_convertible<DynamicJsonDocument, JsonVariantConst>::value == true));
-    CHECK((is_convertible<StaticJsonDocument<10>, JsonVariantConst>::value ==
-           true));
+    CHECK(is_convertible<DeserializationError, JsonVariantConst>::value ==
+          false);
+    CHECK(is_convertible<JsonPair, JsonVariantConst>::value == false);
+    CHECK(is_convertible<JsonVariant, JsonVariantConst>::value == true);
+    CHECK(is_convertible<JsonVariantConst, JsonVariantConst>::value == true);
+    CHECK(is_convertible<JsonArray, JsonVariantConst>::value == true);
+    CHECK(is_convertible<ElementProxy<JsonArray>, JsonVariantConst>::value ==
+          true);
+    CHECK(is_convertible<JsonArrayConst, JsonVariantConst>::value == true);
+    CHECK(is_convertible<JsonObject, JsonVariantConst>::value == true);
+    CHECK(is_convertible<MemberProxy<JsonObject, const char*>,
+                         JsonVariantConst>::value == true);
+    CHECK(is_convertible<JsonObjectConst, JsonVariantConst>::value == true);
+    CHECK(is_convertible<DynamicJsonDocument, JsonVariantConst>::value == true);
+    CHECK(is_convertible<StaticJsonDocument<10>, JsonVariantConst>::value ==
+          true);
   }
 
   SECTION("is_class") {
-    CHECK((is_class<int>::value == false));
-    CHECK((is_class<EmptyEnum>::value == false));
-    CHECK((is_class<int*>::value == false));
-    CHECK((is_class<EmptyClass>::value == true));
+    CHECK(is_class<int>::value == false);
+    CHECK(is_class<EmptyEnum>::value == false);
+    CHECK(is_class<int*>::value == false);
+    CHECK(is_class<EmptyClass>::value == true);
   }
 
   SECTION("is_enum") {

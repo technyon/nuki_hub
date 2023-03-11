@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2022, Benoit BLANCHON
+# Copyright © 2014-2023, Benoit BLANCHON
 # MIT License
 
 add_executable(MixedConfigurationTests
@@ -19,6 +19,8 @@ add_executable(MixedConfigurationTests
 	issue1707.cpp
 	use_double_0.cpp
 	use_double_1.cpp
+	use_long_long_0.cpp
+	use_long_long_1.cpp
 )
 
 set_target_properties(MixedConfigurationTests PROPERTIES UNITY_BUILD OFF)
@@ -27,5 +29,5 @@ add_test(MixedConfiguration MixedConfigurationTests)
 
 set_tests_properties(MixedConfiguration
 	PROPERTIES
-		LABELS 		"Catch"
+		LABELS "Catch"
 )

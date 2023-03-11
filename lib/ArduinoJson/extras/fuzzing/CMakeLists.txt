@@ -1,6 +1,9 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2022, Benoit BLANCHON
+# Copyright © 2014-2023, Benoit BLANCHON
 # MIT License
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(MSVC)
 	add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
@@ -22,7 +25,7 @@ target_link_libraries(json_reproducer
 	ArduinoJson
 )
 
-macro(add_fuzzer name)	
+macro(add_fuzzer name)
 	set(FUZZER "${name}_fuzzer")
 	set(CORPUS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${name}_corpus")
 	set(SEED_CORPUS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${name}_seed_corpus")
@@ -33,27 +36,23 @@ macro(add_fuzzer name)
 		ArduinoJson
 	)
 	set_target_properties("${FUZZER}"
-		PROPERTIES 
-			COMPILE_FLAGS  
-				"-fprofile-instr-generate -fcoverage-mapping -fsanitize=fuzzer -fno-sanitize-recover=all"
-			LINK_FLAGS
-				"-fprofile-instr-generate -fcoverage-mapping -fsanitize=fuzzer -fno-sanitize-recover=all"
+		PROPERTIES
+			COMPILE_FLAGS "-fprofile-instr-generate -fcoverage-mapping -fsanitize=fuzzer -fno-sanitize-recover=all"
+			LINK_FLAGS "-fprofile-instr-generate -fcoverage-mapping -fsanitize=fuzzer -fno-sanitize-recover=all"
 	)
 
 	add_test(
-		NAME
-			"${FUZZER}"
-		COMMAND
-			"${FUZZER}" "${CORPUS_DIR}" "${SEED_CORPUS_DIR}" -max_total_time=5 -timeout=1
+		NAME "${FUZZER}"
+		COMMAND "${FUZZER}" "${CORPUS_DIR}" "${SEED_CORPUS_DIR}" -max_total_time=5 -timeout=1
 	)
 
 	set_tests_properties("${FUZZER}"
 		PROPERTIES
-			LABELS 		"Fuzzing"
+		LABELS "Fuzzing"
 	)
 endmacro()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 6)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 6)
 	add_fuzzer(json)
 	add_fuzzer(msgpack)
 endif()

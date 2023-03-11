@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson/Memory/MemoryPool.hpp>
 #include <ArduinoJson/Strings/StringAdapters.hpp>
 #include <catch.hpp>
 
-using namespace ARDUINOJSON_NAMESPACE;
+using namespace ArduinoJson::detail;
 
 static const char* saveString(MemoryPool& pool, const char* s) {
   return pool.saveString(adaptString(const_cast<char*>(s)));

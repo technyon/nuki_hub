@@ -1,9 +1,11 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
+
+#include <sstream>
 
 void testStringification(DeserializationError error, std::string expected) {
   REQUIRE(error.c_str() == expected);

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -8,12 +8,11 @@
 #include <sstream>
 #include <utility>
 
-using ARDUINOJSON_NAMESPACE::addPadding;
-
 class SpyingAllocator {
  public:
   SpyingAllocator(const SpyingAllocator& src) : _log(src._log) {}
   SpyingAllocator(std::ostream& log) : _log(log) {}
+  SpyingAllocator& operator=(const SpyingAllocator& src) = delete;
 
   void* allocate(size_t n) {
     _log << "A" << n;
@@ -25,8 +24,6 @@ class SpyingAllocator {
   }
 
  private:
-  SpyingAllocator& operator=(const SpyingAllocator& src);
-
   std::ostream& _log;
 };
 
@@ -72,7 +69,6 @@ TEST_CASE("BasicJsonDocument") {
     REQUIRE(log.str() == "A4096A4096FF");
   }
 
-#if ARDUINOJSON_HAS_RVALUE_REFERENCES
   SECTION("Move construct") {
     {
       BasicJsonDocument<SpyingAllocator> doc1(4096, log);
@@ -87,7 +83,6 @@ TEST_CASE("BasicJsonDocument") {
     }
     REQUIRE(log.str() == "A4096F");
   }
-#endif
 
   SECTION("Copy assign larger") {
     {
@@ -134,7 +129,6 @@ TEST_CASE("BasicJsonDocument") {
     REQUIRE(log.str() == "A1024A1024FF");
   }
 
-#if ARDUINOJSON_HAS_RVALUE_REFERENCES
   SECTION("Move assign") {
     {
       BasicJsonDocument<SpyingAllocator> doc1(4096, log);
@@ -150,7 +144,6 @@ TEST_CASE("BasicJsonDocument") {
     }
     REQUIRE(log.str() == "A4096A8FF");
   }
-#endif
 
   SECTION("garbageCollect()") {
     BasicJsonDocument<ControllableAllocator> doc(4096);

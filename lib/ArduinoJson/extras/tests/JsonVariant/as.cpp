@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,7 +7,7 @@
 #include <catch.hpp>
 
 namespace my {
-using ARDUINOJSON_NAMESPACE::isinf;
+using ArduinoJson::detail::isinf;
 }  // namespace my
 
 enum MY_ENUM { ONE = 1, TWO = 2 };

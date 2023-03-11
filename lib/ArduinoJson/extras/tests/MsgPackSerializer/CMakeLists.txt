@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2022, Benoit BLANCHON
+# Copyright © 2014-2023, Benoit BLANCHON
 # MIT License
 
 add_executable(MsgPackSerializerTests
@@ -15,5 +15,5 @@ add_test(MsgPackSerializer MsgPackSerializerTests)
 
 set_tests_properties(MsgPackSerializer
 	PROPERTIES
-		LABELS 		"Catch"
+		LABELS "Catch"
 )

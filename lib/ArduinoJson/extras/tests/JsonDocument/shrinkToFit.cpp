@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,8 +7,6 @@
 
 #include <stdlib.h>  // malloc, free
 #include <string>
-
-using ARDUINOJSON_NAMESPACE::addPadding;
 
 class ArmoredAllocator {
  public:

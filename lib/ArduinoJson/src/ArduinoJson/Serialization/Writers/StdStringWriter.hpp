@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,13 +9,13 @@
 
 #include <string>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <class T>
 struct is_std_string : false_type {};
 
 template <class TCharTraits, class TAllocator>
-struct is_std_string<std::basic_string<char, TCharTraits, TAllocator> >
+struct is_std_string<std::basic_string<char, TCharTraits, TAllocator>>
     : true_type {};
 
 template <typename TDestination>
@@ -37,4 +37,5 @@ class Writer<TDestination,
  private:
   TDestination* _str;
 };
-}  // namespace ARDUINOJSON_NAMESPACE
+
+ARDUINOJSON_END_PRIVATE_NAMESPACE

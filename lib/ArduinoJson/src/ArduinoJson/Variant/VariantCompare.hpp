@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -10,7 +10,7 @@
 #include <ArduinoJson/Strings/StringAdapters.hpp>
 #include <ArduinoJson/Variant/Visitor.hpp>
 
-namespace ARDUINOJSON_NAMESPACE {
+ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 class CollectionData;
 
@@ -75,12 +75,10 @@ struct NullComparer : ComparerBase {
   }
 };
 
-#if ARDUINOJSON_HAS_NULLPTR
 template <>
 struct Comparer<decltype(nullptr), void> : NullComparer {
   explicit Comparer(decltype(nullptr)) : NullComparer() {}
 };
-#endif
 
 struct ArrayComparer : ComparerBase {
   const CollectionData* _rhs;
@@ -193,17 +191,17 @@ struct VariantComparer : ComparerBase {
 };
 
 template <typename T>
-struct Comparer<
-    T, typename enable_if<is_convertible<T, JsonVariantConst>::value>::type>
+struct Comparer<T, typename enable_if<is_convertible<
+                       T, ArduinoJson::JsonVariantConst>::value>::type>
     : VariantComparer {
   explicit Comparer(const T& value)
       : VariantComparer(VariantAttorney::getData(value)) {}
 };
 
 template <typename T>
-CompareResult compare(JsonVariantConst lhs, const T& rhs) {
+CompareResult compare(ArduinoJson::JsonVariantConst lhs, const T& rhs) {
   Comparer<T> comparer(rhs);
   return variantAccept(VariantAttorney::getData(lhs), comparer);
 }
 
-}  // namespace ARDUINOJSON_NAMESPACE
+ARDUINOJSON_END_PRIVATE_NAMESPACE

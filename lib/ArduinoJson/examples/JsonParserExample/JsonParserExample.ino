@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2022, Benoit BLANCHON
+// Copyright © 2014-2023, Benoit BLANCHON
 // MIT License
 //
 // This example shows how to deserialize a JSON document with ArduinoJson.
@@ -18,7 +18,8 @@ void setup() {
   // Inside the brackets, 200 is the capacity of the memory pool in bytes.
   // Don't forget to change this value to match your JSON document.
   // Use https://arduinojson.org/v6/assistant to compute the capacity.
-c
+  StaticJsonDocument<200> doc;
+
   // StaticJsonDocument<N> allocates memory on the stack, it can be
   // replaced by DynamicJsonDocument which allocates in the heap.
   //
