@@ -646,6 +646,10 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              {{"pl_on", "1"},
                               {"pl_off", "0"}});
         }
+        else
+        {
+            removeHassTopic("binary_sensor", "keypad_battery_low", uidString);
+        }
 
         // Battery voltage
         publishHassTopic("sensor",
