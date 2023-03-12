@@ -20,7 +20,7 @@ As an alternative to Wifi, the following ESP32 modules with wired ethernet are s
 [Olimex ESP32-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware)<br>
 [WT32-ETH01](http://www.wireless-tag.com/portfolio/wt32-eth01/)<br>
 [M5Stack Atom POE](https://docs.m5stack.com/en/atom/atom_poe)<br>
-[M5STACK PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)<br>
+[M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)<br>
 
 ## Installation
 
