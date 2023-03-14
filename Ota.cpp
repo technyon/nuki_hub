@@ -26,8 +26,7 @@ void Ota::updateFirmware(uint8_t* buf, size_t size)
         Log->println("EndOTA");
         if (ESP_OK == esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL)))
         {
-            delay(2000);
-            restartEsp(RestartReason::OTACompleted);
+            _updateCompleted = true;
         }
         else
         {
@@ -39,4 +38,15 @@ void Ota::updateFirmware(uint8_t* buf, size_t size)
 bool Ota::updateStarted()
 {
     return _updateStarted;
+}
+
+bool Ota::updateCompleted()
+{
+    return _updateCompleted;
+}
+
+bool Ota::restart()
+{
+    _updateCompleted = false;
+    _updateStarted = false;
 }

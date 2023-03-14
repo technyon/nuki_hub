@@ -157,7 +157,7 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
         String response = "";
-        buildOtaHtml(response);
+        buildOtaHtml(response, _server.arg("errored") != "");
         _server.send(200, "text/html", response);
     });
     _server.on("/uploadota", HTTP_POST, [&]() {
@@ -165,7 +165,17 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
 
-        _server.send(200, "text/html", "");
+        if (_ota->updateStarted() && _ota->updateCompleted()) {
+            String response = "";
+            buildOtaCompletedHtml(response);
+            _server.send(200, "text/html", response);
+            delay(2000);
+            restartEsp(RestartReason::OTACompleted);
+        } else {
+            ota->restart();
+            _server.sendHeader("Location", "/ota?errored=true");
+            _server.send(302, "text/plain", "");
+        }
     }, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -639,7 +649,7 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("</BODY></HTML>");
 }
 
-void WebCfgServer::buildOtaHtml(String &response)
+void WebCfgServer::buildOtaHtml(String &response, bool errored)
 {
     buildHtmlHeader(response);
 
@@ -648,6 +658,10 @@ void WebCfgServer::buildOtaHtml(String &response)
         response.concat("OTA functionality not ready. Please wait a moment and reload.");
         response.concat("</BODY></HTML>");
         return;
+    }
+
+    if (errored) {
+        response.concat("<div>Over-the-air update errored. Please check the logs for more info</div><br/>");
     }
 
     response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
@@ -660,8 +674,20 @@ void WebCfgServer::buildOtaHtml(String &response)
     response.concat("	function hideshow() {");
     response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
     response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response.concat("		setTimeout(\"location.href = '/';\",120000);");
     response.concat("	}");
+    response.concat("});");
+    response.concat("</script>");
+    response.concat("</BODY></HTML>");
+}
+
+void WebCfgServer::buildOtaCompletedHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<div>Over-the-air update completed.<br>You will be forwarded automatically.</div>");
+    response.concat("<script type=\"text/javascript\">");
+    response.concat("window.addEventListener('load', function () {");
+    response.concat("   setTimeout(\"location.href = '/';\",10000);");
     response.concat("});");
     response.concat("</script>");
     response.concat("</BODY></HTML>");
