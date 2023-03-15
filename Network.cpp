@@ -89,6 +89,10 @@ void Network::setupDevice()
                 Log->println(F("M5STACK PoESP32 Unit"));
                 _networkDeviceType = NetworkDeviceType::M5STACK_PoESP32_Unit;
                 break;
+            case 7:
+                Log->println(F("LilyGO T-ETH-POE"));
+                _networkDeviceType = NetworkDeviceType::LilyGO_T_ETH_POE;
+                break;
             default:
                 Log->println(F("Unknown hardware selected, falling back to Wifi."));
                 _networkDeviceType = NetworkDeviceType::WiFi;
@@ -109,6 +113,9 @@ void Network::setupDevice()
             break;
         case NetworkDeviceType::M5STACK_PoESP32_Unit:
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_IP101);
+            break;
+        case NetworkDeviceType::LilyGO_T_ETH_POE:
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
             break;
         case NetworkDeviceType::WiFi:
             _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
