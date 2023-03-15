@@ -189,9 +189,9 @@ The Pin configuration is:<br>
 
 If you prefer to connect to the MQTT Broker via LAN instead of WiFi, you either use one of the supported ESP32 modules (see about section above),
 or wire a seperate Wiznet W5x00 Module (W5100, W5200, W5500 are supported). To use a supported module, flash the firmware, connect via Wifi and
-select the correct network hardware in the MQTT and network settings section.<br><br>
+select the correct network hardware in the MQTT and network settings section.<br>
 
-To wire an external W5x00 module to the ESP, use this wiring scheme:<br><br>
+To wire an external W5x00 module to the ESP, use this wiring scheme:<br>
 
 - Connect W5x00 to ESP32 SPI0:<br>
 W5x00 SCK to GPIO18<br>
