@@ -165,14 +165,14 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
 
-        if (_ota->updateStarted() && _ota->updateCompleted()) {
+        if (_ota.updateStarted() && _ota.updateCompleted()) {
             String response = "";
             buildOtaCompletedHtml(response);
             _server.send(200, "text/html", response);
             delay(2000);
             restartEsp(RestartReason::OTACompleted);
         } else {
-            ota->restart();
+            _ota.restart();
             _server.sendHeader("Location", "/ota?errored=true");
             _server.send(302, "text/plain", "");
         }
