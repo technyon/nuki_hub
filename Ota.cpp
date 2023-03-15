@@ -45,7 +45,7 @@ bool Ota::updateCompleted()
     return _updateCompleted;
 }
 
-bool Ota::restart()
+void Ota::restart()
 {
     _updateCompleted = false;
     _updateStarted = false;
