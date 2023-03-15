@@ -36,7 +36,8 @@ private:
     bool processArgs(String& message);
     void buildHtml(String& response);
     void buildCredHtml(String& response);
-    void buildOtaHtml(String& response);
+    void buildOtaHtml(String& response, bool errored);
+    void buildOtaCompletedHtml(String& response);
     void buildMqttConfigHtml(String& response);
     void buildNukiConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
