@@ -856,7 +856,7 @@ void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseT
 
 void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
-    publishHassTopic("number",
+    publishHassTopic("sensor",
                      "sound_level",
                      uidString,
                      "_sound_level",
@@ -873,6 +873,25 @@ void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopi
                        { "min", "0" },
                        { "max", "255" }});
 }
+
+
+void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    publishHassTopic("sensor",
+                     "last_action_authorization",
+                     uidString,
+                     "_last_action_authorization",
+                     "Last action authorization",
+                     name,
+                     baseTopic,
+                     mqtt_topic_lock_log,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { "value_template", "{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first).authorizationName }}" }});}
+
 
 void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
@@ -1083,9 +1102,9 @@ void Network::removeHASSConfig(char* uidString)
     }
 }
 
-void Network::removeHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void Network::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)
 {
-    removeHassTopic("binary_sensor", "door_sensor", uidString);
+    removeHassTopic(deviceType, name, uidString);
 }
 
 void Network::publishPresenceDetection(char *csv)

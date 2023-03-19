@@ -515,7 +515,7 @@ bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
-void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, char *lockAction,
+void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
                                char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
@@ -527,10 +527,19 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
     }
     else
     {
-        _network->removeHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
+        _network->removeHASSConfigTopic("binary_sensor", "door_sensor", uidString);
     }
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
+
+    if(publishAuthData)
+    {
+        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        _network->removeHASSConfigTopic("sensor", "last_action_authorization", uidString);
+    }
 }
 
 void NetworkLock::removeHASSConfig(char *uidString)

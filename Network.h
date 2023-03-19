@@ -46,10 +46,11 @@ public:
     void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigLedBrightness(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigSoundLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
-    void removeHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void removeHASSConfigTopic(char* deviceType, char* name, char* uidString);
 
     void clearWifiFallback();
 

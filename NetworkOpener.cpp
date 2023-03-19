@@ -481,12 +481,21 @@ void NetworkOpener::publishBleAddress(const std::string &address)
     publishString(mqtt_topic_lock_address, address);
 }
 
-void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& publishAuthData, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, false, lockAction, unlockAction, openAction, lockedState, unlockedState);
     _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigSoundLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
+
+    if(publishAuthData)
+    {
+        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        _network->removeHASSConfigTopic("sensor", "last_action_authorization", uidString);
+    }
 }
 
 void NetworkOpener::removeHASSConfig(char* uidString)

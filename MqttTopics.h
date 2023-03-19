@@ -36,6 +36,7 @@
 #define mqtt_topic_config_auto_lock "/configuration/autoLock"
 #define mqtt_topic_config_single_lock "/configuration/singleLock"
 #define mqtt_topic_config_sound_level "/configuration/soundLevel"
+#define mqtt_topic_config_last_action_authorization "/configuration/lastActionAuthorizaton"
 
 #define mqtt_topic_info_hardware_version "/info/hardwareVersion"
 #define mqtt_topic_info_firmware_version "/info/firmwareVersion"
