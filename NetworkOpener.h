@@ -84,7 +84,7 @@ private:
     uint8_t _queryCommands = 0;
 
     char* _buffer;
-    size_t _bufferSize;
+    const size_t _bufferSize;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;

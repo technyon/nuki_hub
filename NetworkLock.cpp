@@ -5,7 +5,6 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "RestartReason.h"
-#include "CharBuffer.h"
 #include <ArduinoJson.h>
 
 NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffer, size_t bufferSize)
@@ -364,7 +363,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
         }
     }
 
-    serializeJson(json, reinterpret_cast<char(&)[CHAR_BUFFER_SIZE]>(*_buffer));
+    serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_log, _buffer);
 
     if(authFound)

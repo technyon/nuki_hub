@@ -8,7 +8,6 @@
 #include <ArduinoJson.h>
 #include "RestartReason.h"
 #include "networkDevices/EthLan8720Device.h"
-#include "CharBuffer.h"
 
 Network* Network::_inst = nullptr;
 unsigned long Network::_ignoreSubscriptionsTs = 0;
@@ -601,7 +600,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["stat_unlocked"] = unlockedState;
         json["opt"] = "false";
 
-        serializeJson(json, reinterpret_cast<char(&)[CHAR_BUFFER_SIZE]>(*_buffer));
+        serializeJson(json, _buffer, _bufferSize);
 
         String path = discoveryTopic;
         path.concat("/lock/");
@@ -984,7 +983,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
 
     if (discoveryTopic != "")
     {
-        DynamicJsonDocument json(CHAR_BUFFER_SIZE);
+        DynamicJsonDocument json(_bufferSize);
 
         // Battery level
         json.clear();
@@ -1021,7 +1020,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
             json[entry.first] = entry.second;
         }
 
-        serializeJson(json, reinterpret_cast<char (&)[JSON_BUFFER_SIZE]>(*_buffer));
+        serializeJson(json, _buffer, _bufferSize);
 
         String path = discoveryTopic;
         path.concat("/");

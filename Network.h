@@ -129,7 +129,7 @@ private:
     long _rssiPublishInterval = 0;
 
     char* _buffer;
-    size_t _bufferSize;
+    const size_t _bufferSize;
 
     std::function<void()> _keepAliveCallback = nullptr;
     std::vector<std::function<void()>> _reconnectedCallbacks;

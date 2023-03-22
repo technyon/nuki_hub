@@ -4,7 +4,6 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "Config.h"
-#include "CharBuffer.h"
 #include <ArduinoJson.h>
 
 NetworkOpener::NetworkOpener(Network* network, Preferences* preferences, char* buffer, size_t bufferSize)
@@ -272,7 +271,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     char authName[33];
     memset(authName, 0, sizeof(authName));
 
-    DynamicJsonDocument json(CHAR_BUFFER_SIZE);
+    DynamicJsonDocument json(_bufferSize);
 
     for(const auto& log : logEntries)
     {
@@ -375,7 +374,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         }
     }
 
-    serializeJson(json, reinterpret_cast<char(&)[CHAR_BUFFER_SIZE]>(*_buffer));
+    serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_log, _buffer);
 
     if(authFound)
