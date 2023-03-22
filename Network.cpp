@@ -890,8 +890,28 @@ void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic
                      "",
                      "diagnostic",
                      "",
-                     { { "value_template", "{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first).authorizationName }}" }});}
+                     { { "ic", "mdi:format-list-bulleted" },
+                                      { "value_template", "{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first).authorizationName }}" }});
+}
 
+void Network::publishHASSConfigKeypadAttemptInfo(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    publishHassTopic("sensor",
+                     "keypad_status",
+                     uidString,
+                     "_keypad_stats",
+                     "Keypad status",
+                     name,
+                     baseTopic,
+                     mqtt_topic_lock_log,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { "ic", "mdi:drag-vertical" },
+                                      { "value_template", "{% for state in value_json %} {% if state.type == 'KeypadAction' %} {{ state.completionStatus }} {% endif %} {% endfor %}" }});
+}
 
 void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {

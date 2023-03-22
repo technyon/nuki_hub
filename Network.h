@@ -47,6 +47,7 @@ public:
     void publishHASSConfigLedBrightness(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigSoundLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigKeypadAttemptInfo(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);

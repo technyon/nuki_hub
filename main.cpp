@@ -13,6 +13,7 @@
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
+#include "CharBuffer.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -170,6 +171,8 @@ void setup()
     bool firstStart = initPreferences();
     initializeRestartReason();
 
+    CharBuffer::initialize();
+
     if(preferences->getInt(preference_restart_timer) > 0)
     {
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
@@ -182,7 +185,7 @@ void setup()
     network = new Network(preferences, mqttLockPath);
     network->initialize();
 
-    networkLock = new NetworkLock(network, preferences);
+    networkLock = new NetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
     networkLock->initialize();
 
     if(openerEnabled)
@@ -226,7 +229,7 @@ void setup()
     webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
-    presenceDetection = new PresenceDetection(preferences, bleScanner, network);
+    presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
     presenceDetection->initialize();
 
     setupTasks();

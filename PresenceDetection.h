@@ -13,12 +13,10 @@ struct PdDevice
     bool hasRssi = false;
 };
 
-#define presence_detection_buffer_size 4096
-
 class PresenceDetection : public BleScanner::Subscriber
 {
 public:
-    PresenceDetection(Preferences* preferences, BleScanner::Scanner* bleScanner, Network* network);
+    PresenceDetection(Preferences* preferences, BleScanner::Scanner* bleScanner, Network* network, char* buffer, size_t bufferSize);
     virtual ~PresenceDetection();
 
     void initialize();
@@ -33,6 +31,7 @@ private:
     BleScanner::Scanner* _bleScanner;
     Network* _network;
     char* _csv = {0};
+    size_t _bufferSize = 0;
     std::map<long long, PdDevice> _devices;
     int _timeout = 20000;
     int _csvIndex = 0;

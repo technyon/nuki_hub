@@ -1,14 +1,15 @@
 #include "PresenceDetection.h"
 #include "PreferencesKeys.h"
 #include "Logger.h"
+#include "CharBuffer.h"
 
-PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, Network* network)
+PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, Network* network, char* buffer, size_t bufferSize)
 : _preferences(preferences),
   _bleScanner(bleScanner),
-  _network(network)
+  _network(network),
+  _csv(buffer),
+  _bufferSize(bufferSize)
 {
-    _csv = new char[presence_detection_buffer_size];
-
     _timeout = _preferences->getInt(preference_presence_detection_timeout) * 1000;
     if(_timeout == 0)
     {
@@ -41,7 +42,7 @@ void PresenceDetection::update()
     delay(3000);
 
     if(_timeout < 0) return;
-    memset(_csv, 0, presence_detection_buffer_size);
+    memset(_csv, 0, _bufferSize);
 
     if(_devices.size() == 0)
     {
@@ -60,7 +61,7 @@ void PresenceDetection::update()
         }
 
         // Prevent csv buffer overflow
-        if(_csvIndex > presence_detection_buffer_size - (sizeof(it.second.name) + sizeof(it.second.address) + 10))
+        if(_csvIndex > _bufferSize - (sizeof(it.second.name) + sizeof(it.second.address) + 10))
         {
             break;
         }

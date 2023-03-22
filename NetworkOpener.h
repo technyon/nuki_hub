@@ -9,6 +9,8 @@
 #include "NukiOpenerConstants.h"
 #include "NetworkLock.h"
 
+#define OPENER_LOG_JSON_BUFFER_SIZE 2048
+
 class NetworkOpener : public MqttReceiver
 {
 public:
