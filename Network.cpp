@@ -11,6 +11,7 @@
 
 Network* Network::_inst = nullptr;
 unsigned long Network::_ignoreSubscriptionsTs = 0;
+bool _versionPublished = false;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
@@ -288,6 +289,10 @@ bool Network::update()
             publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
             publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_fw, getRestartReason().c_str());
             publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_esp, getEspRestartReason().c_str());
+        }
+        if (!_versionPublished) {
+            publishString(mqtt_topic_info_nuki_hub_version, NUKI_HUB_VERSION);
+            _versionPublished = true;
         }
         _lastMaintenanceTs = ts;
     }
@@ -709,6 +714,23 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          name,
                          baseTopic,
                          mqtt_topic_info_hardware_version,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         { { "enabled_by_default", "true" },
+                           {"ic", "mdi:counter"}});
+
+        // NUKI Hub version
+        publishHassTopic("sensor",
+                         "nuki_hub_version",
+                         uidString,
+                         "_nuki_hub__version",
+                         "NUKI Hub version",
+                         name,
+                         baseTopic,
+                         mqtt_topic_info_nuki_hub_version,
                          deviceType,
                          "",
                          "",
