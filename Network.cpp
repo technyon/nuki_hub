@@ -8,14 +8,17 @@
 #include <ArduinoJson.h>
 #include "RestartReason.h"
 #include "networkDevices/EthLan8720Device.h"
+#include "CharBuffer.h"
 
 Network* Network::_inst = nullptr;
 unsigned long Network::_ignoreSubscriptionsTs = 0;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(Preferences *preferences, const String& maintenancePathPrefix)
-: _preferences(preferences)
+Network::Network(Preferences *preferences, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
+: _preferences(preferences),
+  _buffer(buffer),
+  _bufferSize(bufferSize)
 {
     _inst = this;
     _hostname = _preferences->getString(preference_hostname);
@@ -578,7 +581,6 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 
     if (discoveryTopic != "")
     {
-        char* jsonOut = new char[JSON_BUFFER_SIZE];
         DynamicJsonDocument json(JSON_BUFFER_SIZE);
 
         auto dev = json.createNestedObject("dev");
@@ -599,16 +601,14 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["stat_unlocked"] = unlockedState;
         json["opt"] = "false";
 
-        serializeJson(json, reinterpret_cast<char(&)[JSON_BUFFER_SIZE]>(*jsonOut));
+        serializeJson(json, reinterpret_cast<char(&)[CHAR_BUFFER_SIZE]>(*_buffer));
 
         String path = discoveryTopic;
         path.concat("/lock/");
         path.concat(uidString);
         path.concat("/smartlock/config");
 
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
-
-        delete jsonOut;
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
 
         // Battery critical
         publishHassTopic("binary_sensor",
@@ -910,7 +910,7 @@ void Network::publishHASSConfigKeypadAttemptInfo(char *deviceType, const char *b
                      "diagnostic",
                      "",
                      { { "ic", "mdi:drag-vertical" },
-                                      { "value_template", "{% for state in value_json %} {% if state.type == 'KeypadAction' %} {{ state.completionStatus }} {% endif %} {% endfor %}" }});
+                                      { "value_template", "{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first).completionStatus }}" }});
 }
 
 void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
@@ -984,8 +984,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
 
     if (discoveryTopic != "")
     {
-        char *jsonOut = new char[JSON_BUFFER_SIZE];
-        DynamicJsonDocument json(JSON_BUFFER_SIZE);
+        DynamicJsonDocument json(CHAR_BUFFER_SIZE);
 
         // Battery level
         json.clear();
@@ -1022,7 +1021,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
             json[entry.first] = entry.second;
         }
 
-        serializeJson(json, reinterpret_cast<char (&)[JSON_BUFFER_SIZE]>(*jsonOut));
+        serializeJson(json, reinterpret_cast<char (&)[JSON_BUFFER_SIZE]>(*_buffer));
 
         String path = discoveryTopic;
         path.concat("/");
@@ -1033,9 +1032,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         path.concat(mattDeviceName);
         path.concat("/config");
 
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, jsonOut);
-
-        delete jsonOut;
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
     }
 }
 

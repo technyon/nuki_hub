@@ -182,7 +182,7 @@ void setup()
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(preferences, mqttLockPath);
+    network = new Network(preferences, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
     network->initialize();
 
     networkLock = new NetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
@@ -190,7 +190,7 @@ void setup()
 
     if(openerEnabled)
     {
-        networkOpener = new NetworkOpener(network, preferences);
+        networkOpener = new NetworkOpener(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
         networkOpener->initialize();
     }
 
