@@ -293,7 +293,7 @@ bool Network::update()
             publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_esp, getEspRestartReason().c_str());
         }
         if (!_versionPublished) {
-            publishString(mqtt_topic_info_nuki_hub_version, NUKI_HUB_VERSION);
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_version, NUKI_HUB_VERSION);
             _versionPublished = true;
         }
         _lastMaintenanceTs = ts;
