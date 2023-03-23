@@ -403,6 +403,7 @@ bool Network::reconnect()
             if(_firstConnect)
             {
                 _firstConnect = false;
+                publishString(_maintenancePathPrefix, mqtt_topic_network_device, _device->deviceName().c_str());
                 for(const auto& it : _initTopics)
                 {
                     _device->mqttPublish(it.first.c_str(), MQTT_QOS_LEVEL, true, it.second.c_str());

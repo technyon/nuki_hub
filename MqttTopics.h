@@ -59,3 +59,4 @@
 #define mqtt_topic_freeheap "/maintenance/freeHeap"
 #define mqtt_topic_restart_reason_fw "/maintenance/restartReasonNukiHub"
 #define mqtt_topic_restart_reason_esp "/maintenance/restartReasonNukiEsp"
+#define mqtt_topic_network_device "/maintenance/networkDevice"
