@@ -115,6 +115,7 @@ ReconnectStatus W5500Device::reconnect()
         }
         else
         {
+            hardwareFound = true;
             _hasDHCPAddress = true;
             dhcpRetryCnt = 1000;
             if(_ipConfiguration->dhcpEnabled())

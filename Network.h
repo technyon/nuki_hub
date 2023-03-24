@@ -22,7 +22,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(Preferences* preferences, const String& maintenancePathPrefix);
+    explicit Network(Preferences* preferences, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void initialize();
     bool update();
@@ -47,10 +47,12 @@ public:
     void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigLedBrightness(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigSoundLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigKeypadAttemptInfo(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
-    void removeHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void removeHASSConfigTopic(char* deviceType, char* name, char* uidString);
 
     void clearWifiFallback();
 
@@ -126,6 +128,10 @@ private:
     bool _mqttEnabled = true;
     static unsigned long _ignoreSubscriptionsTs;
     long _rssiPublishInterval = 0;
+
+    char* _buffer;
+    const size_t _bufferSize;
+
     std::function<void()> _keepAliveCallback = nullptr;
     std::vector<std::function<void()>> _reconnectedCallbacks;
 

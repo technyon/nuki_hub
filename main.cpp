@@ -13,6 +13,7 @@
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
+#include "CharBuffer.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -170,6 +171,8 @@ void setup()
     bool firstStart = initPreferences();
     initializeRestartReason();
 
+    CharBuffer::initialize();
+
     if(preferences->getInt(preference_restart_timer) > 0)
     {
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
@@ -179,15 +182,15 @@ void setup()
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(preferences, mqttLockPath);
+    network = new Network(preferences, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
     network->initialize();
 
-    networkLock = new NetworkLock(network, preferences);
+    networkLock = new NetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
     networkLock->initialize();
 
     if(openerEnabled)
     {
-        networkOpener = new NetworkOpener(network, preferences);
+        networkOpener = new NetworkOpener(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
         networkOpener->initialize();
     }
 
@@ -226,7 +229,7 @@ void setup()
     webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
-    presenceDetection = new PresenceDetection(preferences, bleScanner, network);
+    presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
     presenceDetection->initialize();
 
     setupTasks();

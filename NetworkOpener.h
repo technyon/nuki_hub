@@ -12,7 +12,7 @@
 class NetworkOpener : public MqttReceiver
 {
 public:
-    explicit NetworkOpener(Network* network, Preferences* preferences);
+    explicit NetworkOpener(Network* network, Preferences* preferences, char* buffer, size_t bufferSize);
     virtual ~NetworkOpener() = default;
 
     void initialize();
@@ -82,6 +82,9 @@ private:
     int _keypadCommandEnabled = 1;
     unsigned long _resetLockStateTs = 0;
     uint8_t _queryCommands = 0;
+
+    char* _buffer;
+    const size_t _bufferSize;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;

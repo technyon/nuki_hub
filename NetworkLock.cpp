@@ -5,10 +5,13 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "RestartReason.h"
+#include <ArduinoJson.h>
 
-NetworkLock::NetworkLock(Network* network, Preferences* preferences)
+NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffer, size_t bufferSize)
 : _network(network),
-  _preferences(preferences)
+  _preferences(preferences),
+  _buffer(buffer),
+  _bufferSize(bufferSize)
 {
     _configTopics.reserve(5);
     _configTopics.push_back(mqtt_topic_config_button_enabled);
@@ -273,7 +276,6 @@ void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
     }
 }
 
-
 void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries)
 {
     char str[50];
@@ -283,7 +285,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     char authName[33];
     memset(authName, 0, sizeof(authName));
 
-    String json = "[\n";
+    DynamicJsonDocument json(_bufferSize);
 
     for(const auto& log : logEntries)
     {
@@ -294,90 +296,75 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
             memcpy(authName, log.name, sizeof(log.name));
         }
 
-        json.concat("{\n");
+        auto entry = json.add();
 
-        json.concat("\"index\": "); json.concat(log.index); json.concat(",\n");
-        json.concat("\"authorizationId\": "); json.concat(log.authId); json.concat(",\n");
-
-        memset(str, 0, sizeof(str));
-        memcpy(str, log.name, sizeof(log.name));
-        json.concat("\"authorizationName\": \""); json.concat(str); json.concat("\",\n");
-
-        json.concat("\"timeYear\": "); json.concat(log.timeStampYear); json.concat(",\n");
-        json.concat("\"timeMonth\": "); json.concat(log.timeStampMonth); json.concat(",\n");
-        json.concat("\"timeDay\": "); json.concat(log.timeStampDay); json.concat(",\n");
-        json.concat("\"timeHour\": "); json.concat(log.timeStampHour); json.concat(",\n");
-        json.concat("\"timeMinute\": "); json.concat(log.timeStampMinute); json.concat(",\n");
-        json.concat("\"timeSecond\": "); json.concat(log.timeStampSecond); json.concat(",\n");
+        entry["index"] = log.index;
+        entry["authorizationId"] = log.authId;
+        entry["authorizationName"] = log.name;
+        entry["timeYear"] = log.timeStampYear;
+        entry["timeMonth"] = log.timeStampMonth;
+        entry["timeDay"] = log.timeStampDay;
+        entry["timeHour"] = log.timeStampHour;
+        entry["timeMinute"] = log.timeStampMinute;
+        entry["timeSecond"] = log.timeStampSecond;
 
         memset(str, 0, sizeof(str));
         loggingTypeToString(log.loggingType, str);
-        json.concat("\"type\": \""); json.concat(str); json.concat("\",\n");
+        entry["type"] = str;
 
         switch(log.loggingType)
         {
             case NukiLock::LoggingType::LockAction:
                 memset(str, 0, sizeof(str));
                 NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
-                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+                entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
                 NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
-                json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
+                entry["trigger"] = str;
 
                 memset(str, 0, sizeof(str));
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
-                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                entry["completionStatus"] = str;
                 break;
             case NukiLock::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
                 NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
-                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+                entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
-                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                entry["completionStatus"] = str;
                 break;
             case NukiLock::LoggingType::DoorSensor:
                 memset(str, 0, sizeof(str));
                 NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
-                json.concat("\"action\": \"");
+
                 switch(log.data[0])
                 {
                     case 0:
-                        json.concat("DoorOpened");
+                        entry["action"] = "DoorOpened";
                         break;
                     case 1:
-                        json.concat("DoorClosed");
+                        entry["action"] = "DoorClosed";
                         break;
                     case 2:
-                        json.concat("SensorJammed");
+                        entry["action"] = "SensorJammed";
                         break;
                     default:
-                        json.concat("Unknown");
+                        entry["action"] = "Unknown";
                         break;
                 }
-                json.concat("\",\n");
 
                 memset(str, 0, sizeof(str));
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
-                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                entry["completionStatus"] = str;
                 break;
-        }
-
-        json.concat("}");
-        if(&log == &logEntries.back())
-        {
-            json.concat("\n");
-        }
-        else
-        {
-            json.concat(",\n");
         }
     }
 
-    json.concat("]");
-    publishString(mqtt_topic_lock_log, json);
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_lock_log, _buffer);
 
     if(authFound)
     {
@@ -515,7 +502,7 @@ bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
-void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, char *lockAction,
+void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
                                char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
@@ -527,10 +514,28 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
     }
     else
     {
-        _network->removeHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
+        _network->removeHASSConfigTopic("binary_sensor", "door_sensor", uidString);
     }
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
+
+    if(publishAuthData)
+    {
+        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        _network->removeHASSConfigTopic("sensor", "last_action_authorization", uidString);
+    }
+
+    if(hasKeypad)
+    {
+        _network->publishHASSConfigKeypadAttemptInfo(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        _network->removeHASSConfigTopic("sensor", "keypad_status", uidString);
+    }
 }
 
 void NetworkLock::removeHASSConfig(char *uidString)

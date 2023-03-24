@@ -43,6 +43,7 @@ include_directories(${PROJECT_NAME}
 set(SRCFILES
         Pins.h
         Config.h
+        CharBuffer.cpp
         Network.cpp
         MqttReceiver.h
         NetworkLock.cpp

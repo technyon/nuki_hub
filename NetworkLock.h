@@ -11,10 +11,12 @@
 #include "Network.h"
 #include "QueryCommand.h"
 
+#define LOCK_LOG_JSON_BUFFER_SIZE 2048
+
 class NetworkLock : public MqttReceiver
 {
 public:
-    explicit NetworkLock(Network* network, Preferences* preferences);
+    explicit NetworkLock(Network* network, Preferences* preferences, char* buffer, size_t bufferSize);
     virtual ~NetworkLock();
 
     void initialize();
@@ -31,7 +33,7 @@ public:
     void publishRssi(const int& rssi);
     void publishRetry(const std::string& message);
     void publishBleAddress(const std::string& address);
-    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasDoorSensor, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
+    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishKeypadCommandResult(const char* result);
@@ -78,6 +80,9 @@ private:
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
     uint8_t _queryCommands = 0;
+
+    char* _buffer;
+    size_t _bufferSize;
 
     bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;

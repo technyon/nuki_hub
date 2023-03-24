@@ -4,10 +4,13 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "Config.h"
+#include <ArduinoJson.h>
 
-NetworkOpener::NetworkOpener(Network* network, Preferences* preferences)
+NetworkOpener::NetworkOpener(Network* network, Preferences* preferences, char* buffer, size_t bufferSize)
         : _preferences(preferences),
-          _network(network)
+          _network(network),
+          _buffer(buffer),
+          _bufferSize(bufferSize)
 {
     _configTopics.reserve(5);
     _configTopics.push_back(mqtt_topic_config_button_enabled);
@@ -268,130 +271,111 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     char authName[33];
     memset(authName, 0, sizeof(authName));
 
-    String json = "[\n";
+    DynamicJsonDocument json(_bufferSize);
 
     for(const auto& log : logEntries)
     {
-        if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction || log.loggingType == NukiOpener::LoggingType::DoorbellRecognition) && ! authFound)
+        if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction) && ! authFound)
         {
             authFound = true;
             authId = log.authId;
             memcpy(authName, log.name, sizeof(log.name));
         }
 
-        json.concat("{\n");
+        auto entry = json.add();
 
-        json.concat("\"index\": "); json.concat(log.index); json.concat(",\n");
-        json.concat("\"authorizationId\": "); json.concat(log.authId); json.concat(",\n");
-
-        memset(str, 0, sizeof(str));
-        memcpy(str, log.name, sizeof(log.name));
-        json.concat("\"authorizationName\": \""); json.concat(str); json.concat("\",\n");
-
-        json.concat("\"timeYear\": "); json.concat(log.timeStampYear); json.concat(",\n");
-        json.concat("\"timeMonth\": "); json.concat(log.timeStampMonth); json.concat(",\n");
-        json.concat("\"timeDay\": "); json.concat(log.timeStampDay); json.concat(",\n");
-        json.concat("\"timeHour\": "); json.concat(log.timeStampHour); json.concat(",\n");
-        json.concat("\"timeMinute\": "); json.concat(log.timeStampMinute); json.concat(",\n");
-        json.concat("\"timeSecond\": "); json.concat(log.timeStampSecond); json.concat(",\n");
+        entry["index"] = log.index;
+        entry["authorizationId"] = log.authId;
+        entry["authorizationName"] = log.name;
+        entry["timeYear"] = log.timeStampYear;
+        entry["timeMonth"] = log.timeStampMonth;
+        entry["timeDay"] = log.timeStampDay;
+        entry["timeHour"] = log.timeStampHour;
+        entry["timeMinute"] = log.timeStampMinute;
+        entry["timeSecond"] = log.timeStampSecond;
 
         memset(str, 0, sizeof(str));
         loggingTypeToString(log.loggingType, str);
-        json.concat("\"type\": \""); json.concat(str); json.concat("\",\n");
+        entry["type"] = str;
 
         switch(log.loggingType)
         {
             case NukiOpener::LoggingType::LockAction:
                 memset(str, 0, sizeof(str));
-                lockactionToString((NukiOpener::LockAction)log.data[0], str);
-                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
-                triggerToString((NukiOpener::Trigger)log.data[1], str);
-                json.concat("\"trigger\": \""); json.concat(str); json.concat("\",\n");
+                NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
+                entry["trigger"] = str;
 
                 memset(str, 0, sizeof(str));
-                logactionCompletionStatusToString(log.data[3], str);
-                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+                entry["completionStatus"] = str;
                 break;
             case NukiOpener::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
-                lockactionToString((NukiOpener::LockAction)log.data[0], str);
-                json.concat("\"action\": \""); json.concat(str); json.concat("\",\n");
+                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
-                completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
-                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                entry["completionStatus"] = str;
                 break;
             case NukiOpener::LoggingType::DoorbellRecognition:
-                json.concat("\"mode\": \"");
                 switch(log.data[0] & 3)
                 {
                     case 0:
-                        json.concat("None");
+                        entry["mode"] = "None";
                         break;
                     case 1:
-                        json.concat("RTO");
+                        entry["mode"] = "RTO";
                         break;
                     case 2:
-                        json.concat("CM");
+                        entry["mode"] = "CM";
                         break;
                     default:
-                        json.concat("Unknown");
+                        entry["mode"] = "Unknown";
                         break;
                 }
-                json.concat("\",\n");
 
-                json.concat("\"source\": \"");
                 switch(log.data[1])
                 {
                     case 0:
-                        json.concat("Doorbell");
+                        entry["source"] = "Doorbell";
                         break;
                     case 1:
-                        json.concat("Timecontrol");
+                        entry["source"] = "Timecontrol";
                         break;
                     case 2:
-                        json.concat("App");
+                        entry["source"] = "App";
                         break;
                     case 3:
-                        json.concat("Button");
+                        entry["source"] = "Button";
                         break;
                     case 4:
-                        json.concat("Fob");
+                        entry["source"] = "Fob";
                         break;
                     case 5:
-                        json.concat("Bridge");
+                        entry["source"] = "Bridge";
                         break;
                     case 6:
-                        json.concat("Keypad");
+                        entry["source"] = "Keypad";
                         break;
-                }
-                json.concat("\",\n");
+                    default:
+                        entry["source"] = "Unknown";
+                        break;                }
 
-                json.concat("\"geofence\": \""); json.concat(log.data[2] == 1 ? "active" : "inactive"); json.concat("\",\n");
-                json.concat("\"doorbellSuppression\": \""); json.concat(log.data[3] == 1 ? "active" : "inactive"); json.concat("\",\n");
-
-                memset(str, 0, sizeof(str));
-                logactionCompletionStatusToString(log.data[5], str);
-                json.concat("\"completionStatus\": \""); json.concat(str); json.concat("\"\n");
+                entry["geofence"] = log.data[2] == 1 ? "active" : "inactive";
+                entry["doorbellSuppression"] = log.data[3] == 1 ? "active" : "inactive";
+                entry["completionStatus"] = str;
 
                 break;
         }
-
-        json.concat("}");
-        if(&log == &logEntries.back())
-        {
-            json.concat("\n");
-        }
-        else
-        {
-            json.concat(",\n");
-        }
     }
 
-    json.concat("]");
-    publishString(mqtt_topic_lock_log, json);
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_lock_log, _buffer);
 
     if(authFound)
     {
