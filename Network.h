@@ -13,7 +13,8 @@ enum class NetworkDeviceType
     W5500,
     Olimex_LAN8720,
     WT32_LAN8720,
-    M5STACK_PoESP32_Unit
+    M5STACK_PoESP32_Unit,
+    LilyGO_T_ETH_POE
 };
 
 #define JSON_BUFFER_SIZE 1024
