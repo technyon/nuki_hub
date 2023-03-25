@@ -21,6 +21,8 @@ As an alternative to Wifi, the following ESP32 modules with wired ethernet are s
 [WT32-ETH01](http://www.wireless-tag.com/portfolio/wt32-eth01/)<br>
 [M5Stack Atom POE](https://docs.m5stack.com/en/atom/atom_poe)<br>
 [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)<br>
+[LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)<br>
+
 
 ## Installation
 
