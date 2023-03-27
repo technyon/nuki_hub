@@ -6,6 +6,7 @@
 #include "networkDevices/NetworkDevice.h"
 #include "MqttReceiver.h"
 #include "networkDevices/IPConfiguration.h"
+#include "MqttTopics.h"
 
 enum class NetworkDeviceType
 {
@@ -99,6 +100,10 @@ private:
     void buildMqttPath(const char* prefix, const char* path, char* outPath);
 
     static Network* _inst;
+
+    const char* _mqttConnectionStateTopic = mqtt_topic_mqtt_connection_state;
+    const char* _lastWillPayload = "offline";
+
     Preferences* _preferences;
     IPConfiguration* _ipConfiguration = nullptr;
     String _hostname;

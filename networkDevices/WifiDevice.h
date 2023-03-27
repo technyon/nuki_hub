@@ -43,6 +43,8 @@ public:
 
     bool mqttDisonnect(bool force) override;
 
+    void setWill(const char *topic, uint8_t qos, bool retain, const char *payload) override;
+
     void mqttSetCredentials(const char *username, const char *password) override;
 
     void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback) override;

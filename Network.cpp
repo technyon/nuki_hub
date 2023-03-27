@@ -1,6 +1,5 @@
 #include "Network.h"
 #include "PreferencesKeys.h"
-#include "MqttTopics.h"
 #include "networkDevices/W5500Device.h"
 #include "networkDevices/WifiDevice.h"
 #include "Logger.h"
@@ -369,19 +368,20 @@ bool Network::reconnect()
         Log->println(F("Attempting MQTT connection"));
 
         _connectReplyReceived = false;
+
         if(strlen(_mqttUser) == 0)
         {
             Log->println(F("MQTT: Connecting without credentials"));
-            _device->mqttSetServer(_mqttBrokerAddr, port);
-            _device->mqttConnect();
         }
         else
         {
             Log->print(F("MQTT: Connecting with user: ")); Log->println(_mqttUser);
             _device->mqttSetCredentials(_mqttUser, _mqttPass);
-            _device->mqttSetServer(_mqttBrokerAddr, port);
-            _device->mqttConnect();
         }
+
+        _device->setWill(_mqttConnectionStateTopic, 1, true, _lastWillPayload);
+        _device->mqttSetServer(_mqttBrokerAddr, port);
+        _device->mqttConnect();
 
         unsigned long timeout = millis() + 60000;
 
@@ -416,6 +416,9 @@ bool Network::reconnect()
                     _device->mqttPublish(it.first.c_str(), MQTT_QOS_LEVEL, true, it.second.c_str());
                 }
             }
+
+            publishString(_maintenancePathPrefix, _mqttConnectionStateTopic, "online");
+
             _mqttConnectionState = 2;
             for(const auto& callback : _reconnectedCallbacks)
             {

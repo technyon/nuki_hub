@@ -255,6 +255,18 @@ bool EthLan8720Device::mqttDisonnect(bool force)
     }
 }
 
+void EthLan8720Device::setWill(const char *topic, uint8_t qos, bool retain, const char *payload)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->setWill(topic, qos, retain, payload);
+    }
+    else
+    {
+        _mqttClient->setWill(topic, qos, retain, payload);
+    }
+}
+
 void EthLan8720Device::mqttSetCredentials(const char *username, const char *password)
 {
     if(_useEncryption)
@@ -329,3 +341,4 @@ void EthLan8720Device::disableMqtt()
 
     _mqttEnabled = false;
 }
+

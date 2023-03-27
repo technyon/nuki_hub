@@ -273,6 +273,18 @@ bool WifiDevice::mqttDisonnect(bool force)
     }
 }
 
+void WifiDevice::setWill(const char *topic, uint8_t qos, bool retain, const char *payload)
+{
+    if(_useEncryption)
+    {
+        _mqttClientSecure->setWill(topic, qos, retain, payload);
+    }
+    else
+    {
+        _mqttClient->setWill(topic, qos, retain, payload);
+    }
+}
+
 void WifiDevice::mqttSetCredentials(const char *username, const char *password)
 {
     if(_useEncryption)
