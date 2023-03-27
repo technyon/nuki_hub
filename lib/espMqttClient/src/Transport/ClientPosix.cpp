@@ -62,12 +62,6 @@ size_t ClientPosix::write(const uint8_t* buf, size_t size) {
   return ::send(_sockfd, buf, size, 0);
 }
 
-int ClientPosix::available() {
-  uint8_t buf[EMC_POSIX_PEEK_SIZE];
-  int ret = ::recv(_sockfd, &buf, EMC_POSIX_PEEK_SIZE, MSG_DONTWAIT|MSG_PEEK);
-  return ret;
-}
-
 int ClientPosix::read(uint8_t* buf, size_t size) {
   int ret = ::recv(_sockfd, buf, size, MSG_DONTWAIT);
   /*

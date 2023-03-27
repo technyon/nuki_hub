@@ -31,10 +31,6 @@ size_t ClientAsync::write(const uint8_t* buf, size_t size) {
   return client.write(reinterpret_cast<const char*>(buf), size);
 }
 
-int ClientAsync::available() {
-  return static_cast<int>(availableData);  // availableData will never be large enough to cause an overflow
-}
-
 int ClientAsync::read(uint8_t* buf, size_t size) {
   size_t willRead = std::min(size, availableData);
   memcpy(buf, bufData, std::min(size, availableData));

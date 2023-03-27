@@ -149,7 +149,6 @@ class MqttClient {
     espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
     espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplace(0, error, std::forward<Args>(args) ...);
     if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
-    _outbox.remove(it);
     return false;
   }
 
@@ -158,7 +157,6 @@ class MqttClient {
     espMqttClientTypes::Error error(espMqttClientTypes::Error::SUCCESS);
     espMqttClientInternals::Outbox<OutgoingPacket>::Iterator it = _outbox.emplaceFront(0, error, std::forward<Args>(args) ...);
     if (it && error == espMqttClientTypes::Error::SUCCESS) return true;
-    _outbox.remove(it);
     return false;
   }
 

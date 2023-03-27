@@ -121,6 +121,7 @@ class Outbox {
 
   // remove node at iterator, iterator points to next
   void remove(Iterator& it) {  // NOLINT(runtime/references)
+    if (!it) return;
     Node* node = it._node;
     Node* prev = it._prev;
     ++it;

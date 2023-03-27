@@ -50,10 +50,6 @@ size_t ClientSync::write(const uint8_t* buf, size_t size) {
   return client.write(buf, size);
 }
 
-int ClientSync::available() {
-  return client.available();
-}
-
 int ClientSync::read(uint8_t* buf, size_t size) {
   return client.read(buf, size);
 }

@@ -54,10 +54,6 @@ namespace espMqttClientInternals {
         return client.write(buf, size);
     }
 
-    int ClientSyncW5500::available() {
-        return client.available();
-    }
-
     int ClientSyncW5500::read(uint8_t* buf, size_t size) {
         return client.read(buf, size);
     }
