@@ -1050,7 +1050,18 @@ void Network::publishHassTopic(const String& mqttDeviceType,
 
         for(const auto& entry : additionalEntries)
         {
-            json[entry.first] = entry.second;
+            if(strcmp(entry.second, "true") == 0)
+            {
+                json[entry.first] = true;
+            }
+            else if(strcmp(entry.second, "false") == 0)
+            {
+                json[entry.first] = false;
+            }
+            else
+            {
+                json[entry.first] = entry.second;
+            }
         }
 
         serializeJson(json, _buffer, _bufferSize);
