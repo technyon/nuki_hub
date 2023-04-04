@@ -725,6 +725,26 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                           {"pl_off", "offline"},
                           {"ic", "mdi:lan-connect"}});
 
+        // Reset
+        publishHassTopic("switch",
+                         "reset",
+                         uidString,
+                         "_reset",
+                         "Reset",
+                         name,
+                         baseTopic,
+                         mqtt_topic_reset,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         mqtt_topic_reset,
+                         { { "ic", "mdi:restart" },
+                           { "pl_on", "1" },
+                           { "pl_off", "0" },
+                           { "state_on", "1" },
+                           { "state_off", "0" }});
+
         // Firmware version
         publishHassTopic("sensor",
                          "firmware_version",
@@ -742,7 +762,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          { { "enabled_by_default", "true" },
                            {"ic", "mdi:counter"}});
 
-        // Firmware version
+        // Hardware version
         publishHassTopic("sensor",
                          "hardware_version",
                          uidString,
