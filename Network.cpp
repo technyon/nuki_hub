@@ -23,12 +23,21 @@ Network::Network(Preferences *preferences, const String& maintenancePathPrefix, 
     _hostname = _preferences->getString(preference_hostname);
 
     memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
-
     size_t len = maintenancePathPrefix.length();
     for(int i=0; i < len; i++)
     {
         _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
     }
+
+    String connectionStateTopic = _preferences->getString(preference_mqtt_lock_path) + mqtt_topic_mqtt_connection_state;
+
+    memset(_mqttConnectionStateTopic, 0, sizeof(_mqttConnectionStateTopic));
+    len = connectionStateTopic.length();
+    for(int i=0; i < len; i++)
+    {
+        _mqttConnectionStateTopic[i] = connectionStateTopic.charAt(i);
+    }
+
     setupDevice();
 }
 
@@ -417,7 +426,7 @@ bool Network::reconnect()
                 }
             }
 
-            publishString(_maintenancePathPrefix, _mqttConnectionStateTopic, "online");
+            publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
 
             _mqttConnectionState = 2;
             for(const auto& callback : _reconnectedCallbacks)
@@ -697,6 +706,24 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "diagnostic",
                          "",
                          { { "enabled_by_default", "true" } });
+
+        // MQTT Connected
+        publishHassTopic("binary_sensor",
+                         "mqtt_connected",
+                         uidString,
+                         "_mqtt_connected",
+                         "MQTT connected",
+                         name,
+                         baseTopic,
+                         mqtt_topic_mqtt_connection_state,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         {{"pl_on", "online"},
+                          {"pl_off", "offline"},
+                          {"ic", "mdi:lan-connect"}});
 
         // Firmware version
         publishHassTopic("sensor",

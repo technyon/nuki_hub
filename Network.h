@@ -101,8 +101,8 @@ private:
 
     static Network* _inst;
 
-    const char* _mqttConnectionStateTopic = mqtt_topic_mqtt_connection_state;
     const char* _lastWillPayload = "offline";
+    char _mqttConnectionStateTopic[211] = {0};
 
     Preferences* _preferences;
     IPConfiguration* _ipConfiguration = nullptr;
