@@ -230,7 +230,7 @@ void setup()
     Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
     if(openerEnabled)
     {
-        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, preferences);
+        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, gpio, preferences);
         nukiOpener->initialize();
     }
 

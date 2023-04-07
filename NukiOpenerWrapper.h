@@ -5,15 +5,21 @@
 #include "NukiOpenerConstants.h"
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
+#include "Gpio.h"
 
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
-    NukiOpenerWrapper(const std::string& deviceName,  uint32_t id,  BleScanner::Scanner* scanner, NetworkOpener* network, Preferences* preferences);
+    NukiOpenerWrapper(const std::string& deviceName,  uint32_t id,  BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences);
     virtual ~NukiOpenerWrapper();
 
     void initialize();
     void update();
+
+    void electricStrikeActuation();
+    void activateRTO();
+    void activateCM();
+    void deactivateRtoCm();
 
     bool isPinSet();
     void setPin(const uint16_t pin);
@@ -40,6 +46,7 @@ private:
     static bool onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
+    static void gpioActionCallback(const GpioAction& action);
     void onConfigUpdateReceived(const char* topic, const char* value);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
 
@@ -61,9 +68,10 @@ private:
 
     std::string _deviceName;
     NukiOpener::NukiOpener _nukiOpener;
-    BleScanner::Scanner* _bleScanner;
-    NetworkOpener* _network;
-    Preferences* _preferences;
+    BleScanner::Scanner* _bleScanner = nullptr;
+    NetworkOpener* _network = nullptr;
+    Gpio* _gpio = nullptr;
+    Preferences* _preferences = nullptr;
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds

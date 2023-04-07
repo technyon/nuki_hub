@@ -36,13 +36,13 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Net
 
     _pinsConfigured = true;
 
-    if(_nuki != nullptr)
+    if(_nuki != nullptr && !_nuki->isPinSet())
     {
-        _pinsConfigured = _pinsConfigured && _nuki->isPinSet();
+        _pinsConfigured = false;
     }
-    if(_nukiOpener != nullptr)
+    if(_nukiOpener != nullptr && !_nukiOpener->isPinSet())
     {
-        _pinsConfigured = _pinsConfigured && _nukiOpener->isPinSet();
+        _pinsConfigured = false;
     }
 
     _brokerConfigured = _preferences->getString(preference_mqtt_broker).length() > 0 && _preferences->getInt(preference_mqtt_broker_port) > 0;

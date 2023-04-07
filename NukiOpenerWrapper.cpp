@@ -8,11 +8,12 @@
 
 NukiOpenerWrapper* nukiOpenerInst;
 
-NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  NetworkOpener* network, Preferences* preferences)
+NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  NetworkOpener* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
   _nukiOpener(deviceName, id),
   _bleScanner(scanner),
   _network(network),
+  _gpio(gpio),
   _preferences(preferences)
 {
     nukiOpenerInst = this;
@@ -26,6 +27,8 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id,
     network->setLockActionReceivedCallback(nukiOpenerInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiOpenerInst->onConfigUpdateReceivedCallback);
     network->setKeypadCommandReceivedCallback(nukiOpenerInst->onKeypadCommandReceivedCallback);
+
+    _gpio->addCallback(NukiOpenerWrapper::gpioActionCallback);
 }
 
 
@@ -252,6 +255,36 @@ void NukiOpenerWrapper::update()
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiOpener::OpenerState));
 }
 
+
+void NukiOpenerWrapper::electricStrikeActuation()
+{
+    _nextLockAction = NukiOpener::LockAction::ElectricStrikeActuation;
+}
+
+void NukiOpenerWrapper::activateRTO()
+{
+    _nextLockAction = NukiOpener::LockAction::ActivateRTO;
+}
+
+void NukiOpenerWrapper::activateCM()
+{
+    _nextLockAction = NukiOpener::LockAction::ActivateCM;
+}
+
+void NukiOpenerWrapper::deactivateRtoCm()
+{
+    if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
+    {
+        _nextLockAction = NukiOpener::LockAction::DeactivateCM;
+        return;
+    }
+
+    if(_keyTurnerState.lockState == NukiOpener::LockState::RTOactive)
+    {
+        _nextLockAction = NukiOpener::LockAction::DeactivateRTO;
+    }
+}
+
 bool NukiOpenerWrapper::isPinSet()
 {
     return _nukiOpener.getSecurityPincode() != 0;
@@ -446,6 +479,25 @@ void NukiOpenerWrapper::onConfigUpdateReceivedCallback(const char *topic, const 
 void NukiOpenerWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
     nukiOpenerInst->onKeypadCommandReceived(command, id, name, code, enabled);
+}
+
+void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action)
+{
+    switch(action)
+    {
+        case GpioAction::ElectricStrikeActuation:
+            nukiOpenerInst->electricStrikeActuation();
+            break;
+        case GpioAction::ActivateRTO:
+            nukiOpenerInst->activateRTO();
+            break;
+        case GpioAction::ActivateCM:
+            nukiOpenerInst->activateCM();
+            break;
+        case GpioAction::DeactivateRtoCm:
+            nukiOpenerInst->deactivateRtoCm();
+            break;
+    }
 }
 
 void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *value)
