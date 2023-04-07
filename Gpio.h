@@ -17,6 +17,9 @@ enum class PinRole
     OutputHighLocked,
     OutputHighUnlocked,
     OutputHighMotorBlocked,
+    OutputHighRtoActive,
+    OutputHighCmActive,
+    OutputHighRtoOrCmActive
 };
 
 enum class GpioAction
@@ -72,7 +75,10 @@ private:
             PinRole::InputActivateCM,
             PinRole::InputDeactivateRtoCm,
             PinRole::OutputHighLocked,
-            PinRole::OutputHighUnlocked
+            PinRole::OutputHighUnlocked,
+            PinRole::OutputHighRtoActive,
+            PinRole::OutputHighCmActive,
+            PinRole::OutputHighRtoOrCmActive,
         };
 
     std::vector<PinEntry> _pinConfiguration;

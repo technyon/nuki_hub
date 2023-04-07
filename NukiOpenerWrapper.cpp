@@ -334,6 +334,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     else
     {
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+        updateGpioOutputs();
 
         if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
         {
@@ -743,4 +744,32 @@ std::string NukiOpenerWrapper::hardwareVersion() const
 void NukiOpenerWrapper::disableWatchdog()
 {
     _restartBeaconTimeout = -1;
+}
+
+void NukiOpenerWrapper::updateGpioOutputs()
+{
+    using namespace NukiOpener;
+
+    const auto& pinConfiguration = _gpio->pinConfiguration();
+
+    const LockState& lockState = _keyTurnerState.lockState;
+
+    bool rtoActive = _keyTurnerState.lockState == LockState::RTOactive;
+    bool cmActive = _keyTurnerState.nukiState == State::ContinuousMode;
+
+    for(const auto& entry : pinConfiguration)
+    {
+        switch(entry.role)
+        {
+            case PinRole::OutputHighRtoActive:
+                _gpio->setPinOutput(entry.pin, rtoActive ? HIGH : LOW);
+                break;
+            case PinRole::OutputHighCmActive:
+                _gpio->setPinOutput(entry.pin, cmActive ? HIGH : LOW);
+                break;
+            case PinRole::OutputHighRtoOrCmActive:
+                _gpio->setPinOutput(entry.pin, rtoActive || cmActive ? HIGH : LOW);
+                break;
+        }
+    }
 }

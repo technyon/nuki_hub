@@ -157,6 +157,12 @@ String Gpio::getRoleDescription(PinRole role) const
             return "Output: High when unlocked";
         case PinRole::OutputHighMotorBlocked:
             return "Output: High when motor blocked";
+        case PinRole::OutputHighRtoActive:
+            return "Output: High when RTO active";
+        case PinRole::OutputHighCmActive:
+            return "Output: High when CM active";
+        case PinRole::OutputHighRtoOrCmActive:
+            return "Output: High when RTO or CM active";
         default:
             return "Unknown";
     }

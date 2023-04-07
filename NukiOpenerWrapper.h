@@ -57,6 +57,8 @@ private:
     void updateKeypad();
     void postponeBleWatchdog();
 
+    void updateGpioOutputs();
+
     void readConfig();
     void readAdvancedConfig();
     
