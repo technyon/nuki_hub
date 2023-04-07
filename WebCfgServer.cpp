@@ -451,11 +451,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_publish_authdata, (value == "1"));
             configChanged = true;
         }
-        else if(key == "GPLCK")
-        {
-            _preferences->putBool(preference_gpio_locking_enabled, (value == "1"));
-            configChanged = true;
-        }
         else if(key == "REGAPP")
         {
             _preferences->putBool(preference_register_as_app, (value == "1"));
@@ -826,7 +821,6 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
-    printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
     response.concat("</table>");

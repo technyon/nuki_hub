@@ -170,6 +170,7 @@ void setup()
     Log->print(F("NUKI Hub version ")); Log->println(NUKI_HUB_VERSION);
 
     bool firstStart = initPreferences();
+
     initializeRestartReason();
 
     CharBuffer::initialize();

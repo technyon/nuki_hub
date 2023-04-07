@@ -4,6 +4,7 @@
 #include "Pins.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
+#include "RestartReason.h"
 
 Gpio* Gpio::_inst = nullptr;
 unsigned long Gpio::_debounceTs = 0;
@@ -14,6 +15,11 @@ Gpio::Gpio(Preferences* preferences)
 {
     _inst = this;
     loadPinConfiguration();
+
+    if(_preferences->getBool(preference_gpio_locking_enabled))
+    {
+        migrateObsoleteSetting();
+    }
 
     _inst->init();
 }
@@ -108,7 +114,7 @@ void Gpio::loadPinConfiguration()
 
 void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
 {
-    int8_t serialized[pinConfiguration.size() * 2];
+    int8_t serialized[std::max(pinConfiguration.size() * 2, _preferences->getBytesLength(preference_gpio_configuration))];
     memset(serialized, 0, sizeof(serialized));
 
     int len = pinConfiguration.size();
@@ -122,6 +128,13 @@ void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
             serialized[i * 2 + 1] = (int8_t) entry.role;
         }
     }
+
+    for(int8_t v : serialized)
+    {
+        Serial.print((int)v);
+        Serial.print(" ");
+    }
+    Serial.println();
 
     _preferences->putBytes(preference_gpio_configuration, serialized, sizeof(serialized));
 }
@@ -259,4 +272,36 @@ void Gpio::isrDeactivateRtoCm()
 void Gpio::setPinOutput(const uint8_t& pin, const uint8_t& state)
 {
     digitalWrite(pin, state);
+}
+
+#define TRIGGER_LOCK_PIN 32
+#define TRIGGER_UNLOCK_PIN 33
+#define TRIGGER_UNLATCH_PIN 27
+
+void Gpio::migrateObsoleteSetting()
+{
+    _pinConfiguration.clear();
+
+    PinEntry entry1;
+    entry1.pin = 27;
+    entry1.role = PinRole::InputUnlatch;
+
+    PinEntry entry2;
+    entry2.pin = 32;
+    entry2.role = PinRole::InputLock;
+
+    PinEntry entry3;
+    entry3.pin = 33;
+    entry3.role = PinRole::InputUnlock;
+
+    _pinConfiguration.push_back(entry1);
+    _pinConfiguration.push_back(entry2);
+    _pinConfiguration.push_back(entry3);
+
+    savePinConfiguration(_pinConfiguration);
+
+    _preferences->remove(preference_gpio_locking_enabled);
+    Log->println("Migrated gpio control setting");
+    delay(200);
+    restartEsp(RestartReason::GpioConfigurationUpdated);
 }

@@ -69,7 +69,7 @@ private:
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
             preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries,
             preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
-            preference_gpio_locking_enabled, preference_publish_debug_info, preference_presence_detection_timeout,
+            preference_publish_debug_info, preference_presence_detection_timeout,
             preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,
     };
     std::vector<char*> _redact =
@@ -82,7 +82,7 @@ private:
     {
             preference_started_before, preference_mqtt_log_enabled, preference_lock_enabled, preference_opener_enabled,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
-            preference_publish_authdata, preference_gpio_locking_enabled, preference_has_mac_saved, preference_publish_debug_info
+            preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info
     };
 
     const bool isRedacted(const char* key) const
