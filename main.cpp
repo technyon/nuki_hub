@@ -211,7 +211,7 @@ void setup()
 
     gpio = new Gpio(preferences);
     String gpioDesc;
-    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration());
+    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
     Serial.print(gpioDesc.c_str());
 
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));

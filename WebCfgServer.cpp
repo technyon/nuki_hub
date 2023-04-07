@@ -938,6 +938,8 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(uxTaskGetStackHighWaterMark(presenceDetectionTaskHandle));
     response.concat("\n");
 
+    _gpio->getConfigurationText(response, _gpio->pinConfiguration());
+
     response.concat("Restart reason FW: ");
     response.concat(getRestartReason());
     response.concat( "\n");

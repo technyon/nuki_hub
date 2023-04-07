@@ -56,7 +56,7 @@ public:
     const std::vector<PinEntry>& pinConfiguration() const;
 
     String getRoleDescription(PinRole role) const;
-    void getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration) const;
+    void getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration, const String& linebreak = "\n") const;
 
     const std::vector<PinRole>& getAllRoles() const;
 

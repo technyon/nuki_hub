@@ -174,10 +174,8 @@ String Gpio::getRoleDescription(PinRole role) const
     }
 }
 
-void Gpio::getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration) const
+void Gpio::getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration, const String& linebreak) const
 {
-    text.clear();
-
     for(const auto& entry : pinConfiguration)
     {
         if(entry.role != PinRole::Disabled)
@@ -190,7 +188,7 @@ void Gpio::getConfigurationText(String& text, const std::vector<PinEntry>& pinCo
             }
             text.concat(": ");
             text.concat(getRoleDescription(entry.role));
-            text.concat("\n\r");
+            text.concat(linebreak);
         }
     }
 }
