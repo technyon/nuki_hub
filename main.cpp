@@ -25,6 +25,7 @@ NukiOpenerWrapper* nukiOpener = nullptr;
 PresenceDetection* presenceDetection = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
+Gpio* gpio = nullptr;
 
 bool lockEnabled = false;
 bool openerEnabled = false;
@@ -213,10 +214,12 @@ void setup()
         nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, preferences);
         nuki->initialize(firstStart);
 
-        if(preferences->getBool(preference_gpio_locking_enabled))
-        {
-            Gpio::init(nuki);
-        }
+        gpio = new Gpio(preferences, nuki);
+
+//        if(preferences->getBool(preference_gpio_locking_enabled))
+//        {
+//            Gpio::init(nuki);
+//        }
     }
 
     Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));

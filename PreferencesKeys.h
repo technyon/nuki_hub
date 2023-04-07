@@ -44,6 +44,7 @@
 #define preference_cred_password "crdpass"
 #define preference_publish_authdata "pubauth"
 #define preference_gpio_locking_enabled "gpiolck"
+#define preference_gpio_configuration "gpiocfg"
 #define preference_publish_debug_info "pubdbg"
 #define preference_presence_detection_timeout "prdtimeout"
 #define preference_has_mac_saved "hasmac"
