@@ -208,16 +208,18 @@ void setup()
     bleScanner->initialize("NukiHub");
     bleScanner->setScanDuration(10);
 
+    gpio = new Gpio(preferences);
+    String gpioDesc;
+    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration());
+    Serial.print(gpioDesc.c_str());
+
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, gpio, preferences);
         nuki->initialize(firstStart);
 
-        gpio = new Gpio(preferences, nuki);
-        String gpioDesc;
-        gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration());
-        Serial.print(gpioDesc.c_str());
+
 
 //        if(preferences->getBool(preference_gpio_locking_enabled))
 //        {

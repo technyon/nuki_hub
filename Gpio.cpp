@@ -6,23 +6,20 @@
 #include "PreferencesKeys.h"
 
 Gpio* Gpio::_inst = nullptr;
-NukiWrapper* Gpio::_nuki = nullptr;
-unsigned long Gpio::_lockedTs = 0;
+unsigned long Gpio::_debounceTs = 0;
 const uint Gpio::_debounceTime = 1000;
 
-Gpio::Gpio(Preferences* preferences, NukiWrapper* nuki)
+Gpio::Gpio(Preferences* preferences)
 : _preferences(preferences)
 {
     _inst = this;
     loadPinConfiguration();
 
-    _inst->init(nuki);
+    _inst->init();
 }
 
-void Gpio::init(NukiWrapper* nuki)
+void Gpio::init()
 {
-    _nuki = nuki;
-
     for(const auto& entry : _inst->_pinConfiguration)
     {
         const auto it = std::find(_inst->availablePins().begin(), _inst->availablePins().end(), entry.pin);
@@ -118,6 +115,19 @@ const std::vector<PinEntry> &Gpio::pinConfiguration() const
     return _pinConfiguration;
 }
 
+PinRole Gpio::getPinRole(uint8_t pin)
+{
+    for(const auto& entry : _pinConfiguration)
+    {
+        if(entry.pin == pin)
+        {
+            return entry.role;
+        }
+    }
+
+    return PinRole::Disabled;
+}
+
 String Gpio::getRoleDescription(PinRole role) const
 {
     switch(role)
@@ -147,6 +157,7 @@ void Gpio::getConfigurationText(String& text, const std::vector<PinEntry>& pinCo
     {
         if(entry.role != PinRole::Disabled)
         {
+            text.concat("GPIO ");
             text.concat(entry.pin);
             if(entry.pin < 10)
             {
@@ -164,23 +175,41 @@ const std::vector<PinRole>& Gpio::getAllRoles() const
     return _allRoles;
 }
 
+void Gpio::notify(const GpioAction &action)
+{
+    for(auto& callback : _callbacks)
+    {
+        callback(action);
+    }
+}
+
+void Gpio::addCallback(std::function<void(const GpioAction&)> callback)
+{
+    _callbacks.push_back(callback);
+}
+
 void Gpio::isrLock()
 {
-    if(millis() < _lockedTs) return;
-    _nuki->lock();
-    _lockedTs = millis() + _debounceTime;
+    if(millis() < _debounceTs) return;
+    _inst->notify(GpioAction::Lock);
+    _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrUnlock()
 {
-    if(millis() < _lockedTs) return;
-    _nuki->unlock();
-    _lockedTs = millis() + _debounceTime;
+    if(millis() < _debounceTs) return;
+    _inst->notify(GpioAction::Unlock);
+    _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrUnlatch()
 {
-    if(millis() < _lockedTs) return;
-    _nuki->unlatch();
-    _lockedTs = millis() + _debounceTime;
+    if(millis() < _debounceTs) return;
+    _inst->notify(GpioAction::Unlatch);
+    _debounceTs = millis() + _debounceTime;
+}
+
+void Gpio::setPinOutput(const uint8_t& pin, const uint8_t& state)
+{
+    digitalWrite(pin, state);
 }
