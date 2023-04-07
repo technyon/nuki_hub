@@ -13,9 +13,9 @@ const uint Gpio::_debounceTime = 1000;
 Gpio::Gpio(Preferences* preferences, NukiWrapper* nuki)
 : _preferences(preferences)
 {
+    _inst = this;
     loadPinConfiguration();
 
-    _inst = this;
     _inst->init(nuki);
 }
 
@@ -25,6 +25,13 @@ void Gpio::init(NukiWrapper* nuki)
 
     for(const auto& entry : _inst->_pinConfiguration)
     {
+        const auto it = std::find(_inst->availablePins().begin(), _inst->availablePins().end(), entry.pin);
+
+        if(it == _inst->availablePins().end())
+        {
+            continue;
+        }
+
         switch(entry.role)
         {
             case PinRole::InputLock:
@@ -46,6 +53,117 @@ void Gpio::init(NukiWrapper* nuki)
     }
 }
 
+const std::vector<uint8_t>& Gpio::availablePins() const
+{
+    return _availablePins;
+}
+
+void Gpio::loadPinConfiguration()
+{
+    size_t storedLength = _preferences->getBytesLength(preference_gpio_configuration);
+    if(storedLength == 0)
+    {
+        return;
+    }
+
+    uint8_t serialized[storedLength];
+    memset(serialized, 0, sizeof(serialized));
+
+    size_t size = _preferences->getBytes(preference_gpio_configuration, serialized, sizeof(serialized));
+
+    if(size == 0)
+    {
+        return;
+    }
+
+    size_t numEntries = size / 2;
+
+    _pinConfiguration.clear();
+    _pinConfiguration.reserve(numEntries);
+
+    for(int i=0; i < numEntries; i++)
+    {
+        PinEntry entry;
+        entry.pin = serialized[i * 2];
+        entry.role = (PinRole) serialized[(i * 2 + 1)];
+        if(entry.role != PinRole::Disabled)
+        {
+            _pinConfiguration.push_back(entry);
+        }
+    }
+}
+
+void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
+{
+    int8_t serialized[pinConfiguration.size() * 2];
+    memset(serialized, 0, sizeof(serialized));
+
+    int len = pinConfiguration.size();
+    for(int i=0; i < len; i++)
+    {
+        const auto& entry = pinConfiguration[i];
+
+        if(entry.role != PinRole::Disabled)
+        {
+            serialized[i * 2] = entry.pin;
+            serialized[i * 2 + 1] = (int8_t) entry.role;
+        }
+    }
+
+    _preferences->putBytes(preference_gpio_configuration, serialized, sizeof(serialized));
+}
+
+const std::vector<PinEntry> &Gpio::pinConfiguration() const
+{
+    return _pinConfiguration;
+}
+
+String Gpio::getRoleDescription(PinRole role) const
+{
+    switch(role)
+    {
+        case PinRole::Disabled:
+            return "Disabled";
+        case PinRole::InputLock:
+            return "Input: Lock";
+        case PinRole::InputUnlock:
+            return "Input: Unlock";
+        case PinRole::InputUnlatch:
+            return "Input: Unlatch";
+        case PinRole::OutputHighLocked:
+            return "Output: High when locked";
+        case PinRole::OutputHighUnlocked:
+            return "Output: High when unlocked";
+        default:
+            return "Unknown";
+    }
+}
+
+void Gpio::getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration) const
+{
+    text.clear();
+
+    for(const auto& entry : pinConfiguration)
+    {
+        if(entry.role != PinRole::Disabled)
+        {
+            text.concat(entry.pin);
+            if(entry.pin < 10)
+            {
+                text.concat(' ');
+            }
+            text.concat(": ");
+            text.concat(getRoleDescription(entry.role));
+            text.concat("\n\r");
+        }
+    }
+}
+
+const std::vector<PinRole>& Gpio::getAllRoles() const
+{
+    return _allRoles;
+}
+
 void Gpio::isrLock()
 {
     if(millis() < _lockedTs) return;
@@ -65,47 +183,4 @@ void Gpio::isrUnlatch()
     if(millis() < _lockedTs) return;
     _nuki->unlatch();
     _lockedTs = millis() + _debounceTime;
-}
-
-const std::vector<uint8_t>& Gpio::availablePins() const
-{
-    return _availablePins;
-}
-
-void Gpio::loadPinConfiguration()
-{
-    uint8_t serialized[_availablePins.size() * 2];
-
-    size_t size = _preferences->getBytes(preference_gpio_configuration, serialized, _availablePins.size() * 2);
-    if(size == 0)
-    {
-        return;
-    }
-
-    size_t numEntries = size / 2;
-
-    _pinConfiguration.clear();
-    _pinConfiguration.reserve(numEntries);
-    for(int i=0; i < numEntries; i++)
-    {
-        PinEntry entry;
-        entry.pin = i * 2;
-        entry.role = (PinRole)(i * 2 +1);
-        _pinConfiguration.push_back(entry);
-    }
-}
-
-void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
-{
-    uint8_t serialized[pinConfiguration.size() * 2];
-
-    int len = pinConfiguration.size();
-    for(int i=0; i < len; i++)
-    {
-        const auto& entry = pinConfiguration[i];
-        serialized[i * 2] = entry.pin;
-        serialized[i * 2 + 1] = (int8_t)entry.role;
-    }
-
-    _preferences->putBytes(preference_gpio_configuration, serialized, sizeof(serialized));
 }

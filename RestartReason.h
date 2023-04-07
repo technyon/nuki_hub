@@ -12,6 +12,7 @@ enum class RestartReason
     ReconfigureLAN8720,
     NetworkDeviceCriticalFailure,
     ConfigurationUpdated,
+    GpioConfigurationUpdated,
     RestartTimer,
     OTACompleted,
     OTATimeout,
@@ -69,6 +70,8 @@ inline static String getRestartReason()
             return "NetworkDeviceCriticalFailure";
         case RestartReason::ConfigurationUpdated:
             return "ConfigurationUpdated";
+        case RestartReason::GpioConfigurationUpdated:
+            return "GpioConfigurationUpdated";
         case RestartReason::RestartTimer:
             return "RestartTimer";
         case RestartReason::OTACompleted:

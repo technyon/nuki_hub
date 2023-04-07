@@ -215,6 +215,9 @@ void setup()
         nuki->initialize(firstStart);
 
         gpio = new Gpio(preferences, nuki);
+        String gpioDesc;
+        gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration());
+        Serial.print(gpioDesc.c_str());
 
 //        if(preferences->getBool(preference_gpio_locking_enabled))
 //        {
@@ -229,7 +232,7 @@ void setup()
         nukiOpener->initialize();
     }
 
-    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
+    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
     presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);

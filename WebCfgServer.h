@@ -6,6 +6,7 @@
 #include "NetworkLock.h"
 #include "NukiOpenerWrapper.h"
 #include "Ota.h"
+#include "Gpio.h"
 
 extern TaskHandle_t networkTaskHandle;
 extern TaskHandle_t nukiTaskHandle;
@@ -26,7 +27,7 @@ enum class TokenType
 class WebCfgServer
 {
 public:
-    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
+    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal);
     ~WebCfgServer() = default;
 
     void initialize();
@@ -34,12 +35,14 @@ public:
 
 private:
     bool processArgs(String& message);
+    void processGpioArgs();
     void buildHtml(String& response);
     void buildCredHtml(String& response);
     void buildOtaHtml(String& response, bool errored);
     void buildOtaCompletedHtml(String& response);
     void buildMqttConfigHtml(String& response);
     void buildNukiConfigHtml(String& response);
+    void buildGpioConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);
     void buildConfigureWifiHtml(String& response);
     void buildInfoHtml(String& response);
@@ -57,6 +60,8 @@ private:
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getNetworkGpioOptions() const;
+    const std::vector<std::pair<String, String>> getGpioOptions() const;
+    String getPreselectionForGpio(const uint8_t& pin);
 
     void printParameter(String& response, const char* description, const char* value, const char *link = "");
 
@@ -65,10 +70,11 @@ private:
     void handleOtaUpload();
 
     WebServer _server;
-    NukiWrapper* _nuki;
-    NukiOpenerWrapper* _nukiOpener;
-    Network* _network;
-    Preferences* _preferences;
+    NukiWrapper* _nuki = nullptr;
+    NukiOpenerWrapper* _nukiOpener = nullptr;
+    Network* _network = nullptr;
+    Gpio* _gpio = nullptr;
+    Preferences* _preferences = nullptr;
     Ota _ota;
 
     bool _hasCredentials = false;
