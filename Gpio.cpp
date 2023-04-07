@@ -129,13 +129,6 @@ void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
         }
     }
 
-    for(int8_t v : serialized)
-    {
-        Serial.print((int)v);
-        Serial.print(" ");
-    }
-    Serial.println();
-
     _preferences->putBytes(preference_gpio_configuration, serialized, sizeof(serialized));
 }
 

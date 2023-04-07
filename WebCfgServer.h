@@ -59,7 +59,6 @@ private:
     void buildNavigationButton(String& response, const char* caption, const char* targetPath, const char* labelText = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
-    const std::vector<std::pair<String, String>> getNetworkGpioOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
     String getPreselectionForGpio(const uint8_t& pin);
 

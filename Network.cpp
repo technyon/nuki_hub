@@ -46,20 +46,13 @@ void Network::setupDevice()
     _ipConfiguration = new IPConfiguration(_preferences);
 
     int hardwareDetect = _preferences->getInt(preference_network_hardware);
-    int hardwareDetectGpio = _preferences->getInt(preference_network_hardware_gpio);
 
     Log->print(F("Hardware detect     : ")); Log->println(hardwareDetect);
-    Log->print(F("Hardware detect GPIO: ")); Log->println(hardwareDetectGpio);
 
     if(hardwareDetect == 0)
     {
-        hardwareDetect = 2;
+        hardwareDetect = 1;
         _preferences->putInt(preference_network_hardware, hardwareDetect);
-    }
-    if(hardwareDetectGpio == 0)
-    {
-        hardwareDetectGpio = 26;
-        _preferences->putInt(preference_network_hardware_gpio, hardwareDetectGpio);
     }
 
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
@@ -77,12 +70,8 @@ void Network::setupDevice()
                 _networkDeviceType = NetworkDeviceType::WiFi;
                 break;
             case 2:
-                Log->print(F("Using PIN "));
-                Log->print(hardwareDetectGpio);
-                Log->println(F(" for network device selection"));
-
-                pinMode(hardwareDetectGpio, INPUT_PULLUP);
-                _networkDeviceType = digitalRead(hardwareDetectGpio) == HIGH ? NetworkDeviceType::WiFi : NetworkDeviceType::W5500;
+                Log->print(F("Generic W5500"));
+                _networkDeviceType = NetworkDeviceType::W5500;
                 break;
             case 3:
                 Log->println(F("W5500 on M5Stack Atom POE"));

@@ -198,11 +198,10 @@ W5x00 SCK to GPIO18<br>
 W5x00 MISO to GPIOGPIO19<br>
 W5x00 MOSI to GPIO23<br>
 W5x00 CS/SS to GPIO5
-- Additionally connect:<br>
+- Optionally connect:<br>
 W5x00 reset to GPIO33
-- Last but not least, on the ESP32 bridge GPIO26 and GND. This let's the firmware know that a LAN Module is connected
 
-Wifi is now disabled, and the module doesn't boot into WifiManager anymore.<br>
+Now connect via Wifi and change the network hardware to "Generic W5500". If the W5500 hwardware isn't detected, Wifi is used as a fallback.<br>
 Note: Encrypted MQTT is only available for Wifi and LAN8720 modules, W5x00 modules don't support encryption 
 (that leaves Olimex, WT32-ETH01 and M5Stack PoESP32 Unit if encryption is desired). If encryption is needed, Olimex
 is the easiest option, since it has USB for flashing onboard.

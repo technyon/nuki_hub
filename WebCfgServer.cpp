@@ -324,11 +324,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_network_hardware, value.toInt());
             configChanged = true;
         }
-        else if(key == "NWHWDT")
-        {
-            _preferences->putInt(preference_network_hardware_gpio, value.toInt());
-            configChanged = true;
-        }
         else if(key == "RSSI")
         {
             _preferences->putInt(preference_rssi_publish_interval, value.toInt());
@@ -763,7 +758,6 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
-    printDropDown(response, "NWHWDT", "Network hardware detection", String(_preferences->getInt(preference_network_hardware_gpio)), getNetworkGpioOptions());
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
@@ -1275,26 +1269,12 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     std::vector<std::pair<String, String>> options;
 
     options.push_back(std::make_pair("1", "Wifi only"));
-    options.push_back(std::make_pair("2", "Detect W5500 (GPIO CS=5; SCK=18; MISO=19; MOSI=23; RST=33)"));
+    options.push_back(std::make_pair("2", "Generic W5500"));
     options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
     options.push_back(std::make_pair("4", "Olimex ESP32-POE / ESP-POE-ISO"));
     options.push_back(std::make_pair("5", "WT32-ETH01"));
     options.push_back(std::make_pair("6", "M5STACK PoESP32 Unit"));
     options.push_back(std::make_pair("7", "LilyGO T-ETH-POE"));
-
-    return options;
-}
-
-const std::vector<std::pair<String, String>> WebCfgServer::getNetworkGpioOptions() const
-{
-    std::vector<std::pair<String, String>> options;
-
-    for(int i=16; i <= 33; i++)
-    {
-        String txt = "Detect W5500 via GPIO ";
-        txt.concat(i);
-        options.push_back(std::make_pair(String(i),  txt));
-    }
 
     return options;
 }
