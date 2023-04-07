@@ -12,6 +12,7 @@ enum class PinRole
     InputUnlatch,
     OutputHighLocked,
     OutputHighUnlocked,
+    OutputHighMotorBlocked,
 };
 
 enum class GpioAction

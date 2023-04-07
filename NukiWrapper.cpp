@@ -758,6 +758,9 @@ void NukiWrapper::updateGpioOutputs()
             case PinRole::OutputHighUnlocked:
                 _gpio->setPinOutput(entry.pin, lockState == LockState::Locked || lockState == LockState::Locking ? LOW : HIGH);
                 break;
+            case PinRole::OutputHighMotorBlocked:
+                _gpio->setPinOutput(entry.pin, lockState == LockState::MotorBlocked  ? HIGH : LOW);
+                break;
         }
     }
 }
