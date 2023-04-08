@@ -25,6 +25,7 @@ NukiOpenerWrapper* nukiOpener = nullptr;
 PresenceDetection* presenceDetection = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
+Gpio* gpio = nullptr;
 
 bool lockEnabled = false;
 bool openerEnabled = false;
@@ -169,6 +170,7 @@ void setup()
     Log->print(F("NUKI Hub version ")); Log->println(NUKI_HUB_VERSION);
 
     bool firstStart = initPreferences();
+
     initializeRestartReason();
 
     CharBuffer::initialize();
@@ -207,26 +209,33 @@ void setup()
     bleScanner->initialize("NukiHub");
     bleScanner->setScanDuration(10);
 
+    gpio = new Gpio(preferences);
+    String gpioDesc;
+    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
+    Serial.print(gpioDesc.c_str());
+
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, gpio, preferences);
         nuki->initialize(firstStart);
 
-        if(preferences->getBool(preference_gpio_locking_enabled))
-        {
-            Gpio::init(nuki);
-        }
+
+
+//        if(preferences->getBool(preference_gpio_locking_enabled))
+//        {
+//            Gpio::init(nuki);
+//        }
     }
 
     Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
     if(openerEnabled)
     {
-        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, preferences);
+        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, gpio, preferences);
         nukiOpener->initialize();
     }
 
-    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
+    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
     webCfgServer->initialize();
 
     presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);

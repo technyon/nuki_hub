@@ -8,11 +8,12 @@
 
 NukiWrapper* nukiInst;
 
-NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, NetworkLock* network, Preferences* preferences)
+NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, NetworkLock* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
   _bleScanner(scanner),
   _nukiLock(deviceName, id),
   _network(network),
+  _gpio(gpio),
   _preferences(preferences)
 {
     nukiInst = this;
@@ -26,6 +27,8 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner:
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
     network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
+
+    _gpio->addCallback(NukiWrapper::gpioActionCallback);
 }
 
 
@@ -307,6 +310,7 @@ void NukiWrapper::updateKeyTurnerState()
     _retryLockstateCount = 0;
 
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+    updateGpioOutputs();
 
     char lockStateStr[20];
     lockstateToString(_keyTurnerState.lockState, lockStateStr);
@@ -444,6 +448,22 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *
 void NukiWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
     nukiInst->onKeypadCommandReceived(command, id, name, code, enabled);
+}
+
+void NukiWrapper::gpioActionCallback(const GpioAction &action)
+{
+    switch(action)
+    {
+        case GpioAction::Lock:
+            nukiInst->lock();
+            break;
+        case GpioAction::Unlock:
+            nukiInst->unlock();
+            break;
+        case GpioAction::Unlatch:
+            nukiInst->unlatch();
+            break;
+    }
 }
 
 void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
@@ -719,3 +739,29 @@ void NukiWrapper::disableWatchdog()
 {
     _restartBeaconTimeout = -1;
 }
+
+void NukiWrapper::updateGpioOutputs()
+{
+    using namespace NukiLock;
+
+    const auto& pinConfiguration = _gpio->pinConfiguration();
+
+    const LockState& lockState = _keyTurnerState.lockState;
+
+    for(const auto& entry : pinConfiguration)
+    {
+        switch(entry.role)
+        {
+            case PinRole::OutputHighLocked:
+                _gpio->setPinOutput(entry.pin, lockState == LockState::Locked || lockState == LockState::Locking ? HIGH : LOW);
+                break;
+            case PinRole::OutputHighUnlocked:
+                _gpio->setPinOutput(entry.pin, lockState == LockState::Locked || lockState == LockState::Locking ? LOW : HIGH);
+                break;
+            case PinRole::OutputHighMotorBlocked:
+                _gpio->setPinOutput(entry.pin, lockState == LockState::MotorBlocked  ? HIGH : LOW);
+                break;
+        }
+    }
+}
+

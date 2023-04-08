@@ -7,11 +7,12 @@
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
   _nuki(nuki),
   _nukiOpener(nukiOpener),
   _network(network),
+  _gpio(gpio),
   _preferences(preferences),
   _allowRestartToPortal(allowRestartToPortal)
 {
@@ -35,13 +36,13 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Net
 
     _pinsConfigured = true;
 
-    if(_nuki != nullptr)
+    if(_nuki != nullptr && !_nuki->isPinSet())
     {
-        _pinsConfigured = _pinsConfigured && _nuki->isPinSet();
+        _pinsConfigured = false;
     }
-    if(_nukiOpener != nullptr)
+    if(_nukiOpener != nullptr && !_nukiOpener->isPinSet())
     {
-        _pinsConfigured = _pinsConfigured && _nukiOpener->isPinSet();
+        _pinsConfigured = false;
     }
 
     _brokerConfigured = _preferences->getString(preference_mqtt_broker).length() > 0 && _preferences->getInt(preference_mqtt_broker_port) > 0;
@@ -93,6 +94,14 @@ void WebCfgServer::initialize()
         buildNukiConfigHtml(response);
         _server.send(200, "text/html", response);
     });
+    _server.on("/gpiocfg", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildGpioConfigHtml(response);
+        _server.send(200, "text/html", response);
+    });
     _server.on("/wifi", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -128,7 +137,8 @@ void WebCfgServer::initialize()
             _network->reconfigureDevice();
         }
     });
-    _server.on("/savecfg", [&]() {
+    _server.on("/savecfg", [&]()
+    {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
@@ -152,6 +162,22 @@ void WebCfgServer::initialize()
             waitAndProcess(false, 1000);
         }
     });
+    _server.on("/savegpiocfg", [&]()
+    {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        processGpioArgs();
+
+        String response = "";
+        buildConfirmHtml(response, "");
+        _server.send(200, "text/html", response);
+        Log->println(F("Restarting"));
+
+        waitAndProcess(true, 1000);
+        restartEsp(RestartReason::GpioConfigurationUpdated);
+    });
+
     _server.on("/ota", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -298,11 +324,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_network_hardware, value.toInt());
             configChanged = true;
         }
-        else if(key == "NWHWDT")
-        {
-            _preferences->putInt(preference_network_hardware_gpio, value.toInt());
-            configChanged = true;
-        }
         else if(key == "RSSI")
         {
             _preferences->putInt(preference_rssi_publish_interval, value.toInt());
@@ -425,11 +446,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_publish_authdata, (value == "1"));
             configChanged = true;
         }
-        else if(key == "GPLCK")
-        {
-            _preferences->putBool(preference_gpio_locking_enabled, (value == "1"));
-            configChanged = true;
-        }
         else if(key == "REGAPP")
         {
             _preferences->putBool(preference_register_as_app, (value == "1"));
@@ -523,6 +539,32 @@ bool WebCfgServer::processArgs(String& message)
     return configChanged;
 }
 
+
+void WebCfgServer::processGpioArgs()
+{
+    int count = _server.args();
+
+    std::vector<PinEntry> pinConfiguration;
+
+    for(int index = 0; index < count; index++)
+    {
+        String key = _server.argName(index);
+        String value = _server.arg(index);
+
+        PinRole role = (PinRole)value.toInt();
+        if(role != PinRole::Disabled)
+        {
+            PinEntry entry;
+            entry.pin = key.toInt();
+            entry.role = role;
+            pinConfiguration.push_back(entry);
+        }
+    }
+
+    _gpio->savePinConfiguration(pinConfiguration);
+}
+
+
 void WebCfgServer::update()
 {
     if(_otaStartTs > 0 && (millis() - _otaStartTs) > 120000)
@@ -574,6 +616,9 @@ void WebCfgServer::buildHtml(String& response)
 
     response.concat("<BR><BR><h3>Credentials</h3>");
     buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");
+
+    response.concat("<BR><BR><h3>GPIO Configuration</h3>");
+    buildNavigationButton(response, "Edit", "/gpiocfg");
 
     response.concat("<BR><BR><h3>Firmware update</h3>");
     buildNavigationButton(response, "Open", "/ota");
@@ -713,7 +758,6 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
-    printDropDown(response, "NWHWDT", "Network hardware detection", String(_preferences->getInt(preference_network_hardware_gpio)), getNetworkGpioOptions());
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
@@ -771,9 +815,31 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
-    printCheckBox(response, "GPLCK", "Enable control via GPIO", _preferences->getBool(preference_gpio_locking_enabled));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
+    response.concat("</table>");
+    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
+    response.concat("</FORM>");
+    response.concat("</BODY></HTML>");
+}
+
+void WebCfgServer::buildGpioConfigHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<FORM ACTION=savegpiocfg method='POST'>");
+    response.concat("<h3>GPIO Configuration</h3>");
+    response.concat("<table>");
+
+    const auto& availablePins = _gpio->availablePins();
+    for(const auto& pin : availablePins)
+    {
+        String pinStr = String(pin);
+        String pinDesc = "Gpio " + pinStr;
+
+        printDropDown(response, pinStr.c_str(), pinDesc.c_str(), getPreselectionForGpio(pin), getGpioOptions());
+    }
+
     response.concat("</table>");
     response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
     response.concat("</FORM>");
@@ -871,6 +937,8 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(", pd: ");
     response.concat(uxTaskGetStackHighWaterMark(presenceDetectionTaskHandle));
     response.concat("\n");
+
+    _gpio->getConfigurationText(response, _gpio->pinConfiguration());
 
     response.concat("Restart reason FW: ");
     response.concat(getRestartReason());
@@ -1203,7 +1271,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     std::vector<std::pair<String, String>> options;
 
     options.push_back(std::make_pair("1", "Wifi only"));
-    options.push_back(std::make_pair("2", "Detect W5500 (GPIO CS=5; SCK=18; MISO=19; MOSI=23; RST=33)"));
+    options.push_back(std::make_pair("2", "Generic W5500"));
     options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
     options.push_back(std::make_pair("4", "Olimex ESP32-POE / ESP-POE-ISO"));
     options.push_back(std::make_pair("5", "WT32-ETH01"));
@@ -1213,16 +1281,31 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     return options;
 }
 
-const std::vector<std::pair<String, String>> WebCfgServer::getNetworkGpioOptions() const
+const std::vector<std::pair<String, String>> WebCfgServer::getGpioOptions() const
 {
     std::vector<std::pair<String, String>> options;
 
-    for(int i=16; i <= 33; i++)
+    const auto& roles = _gpio->getAllRoles();
+
+    for(const auto& role : roles)
     {
-        String txt = "Detect W5500 via GPIO ";
-        txt.concat(i);
-        options.push_back(std::make_pair(String(i),  txt));
+        options.push_back( std::make_pair(String((int)role), _gpio->getRoleDescription(role)));
     }
 
     return options;
+}
+
+String WebCfgServer::getPreselectionForGpio(const uint8_t &pin)
+{
+    const std::vector<PinEntry>& pinConfiguration = _gpio->pinConfiguration();
+
+    for(const auto& entry : pinConfiguration)
+    {
+        if(pin == entry.pin)
+        {
+            return String((int8_t)entry.role);
+        }
+    }
+
+    return String((int8_t)PinRole::Disabled);
 }
