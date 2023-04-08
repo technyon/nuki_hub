@@ -1,7 +1,6 @@
 #include <esp32-hal.h>
 #include "Gpio.h"
 #include "Arduino.h"
-#include "Pins.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"

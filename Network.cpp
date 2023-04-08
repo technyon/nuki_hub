@@ -19,6 +19,12 @@ Network::Network(Preferences *preferences, const String& maintenancePathPrefix, 
   _buffer(buffer),
   _bufferSize(bufferSize)
 {
+    // Remove obsolete W5500 hardware detection configuration
+    if(_preferences->getInt(preference_network_hardware_gpio) != 0)
+    {
+        _preferences->remove(preference_network_hardware_gpio);
+    }
+
     _inst = this;
     _hostname = _preferences->getString(preference_hostname);
 
@@ -719,7 +725,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "reset",
                          uidString,
                          "_reset",
-                         "Reset",
+                         "Restart NUKI Hub",
                          name,
                          baseTopic,
                          mqtt_topic_reset,

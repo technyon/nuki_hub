@@ -1,5 +1,4 @@
 #include "Arduino.h"
-#include "Pins.h"
 #include "NukiWrapper.h"
 #include "NetworkLock.h"
 #include "WebCfgServer.h"

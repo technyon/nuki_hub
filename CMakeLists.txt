@@ -40,7 +40,6 @@ include_directories(${PROJECT_NAME}
 )
 
 set(SRCFILES
-        Pins.h
         Config.h
         CharBuffer.cpp
         Network.cpp

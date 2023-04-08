@@ -23,6 +23,9 @@ As an alternative to Wifi, the following ESP32 modules with wired ethernet are s
 [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)<br>
 [LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)<br>
 
+<br>
+<b>Note for users upgrading from 8.21 or lower:</b> Please go to "MQTT and Network Configuration" and select
+"Wifi only" as the network device (unless you use other network hardware).
 
 ## Installation
 
@@ -176,14 +179,27 @@ For example, to add a code:
 
 ## GPIO lock control (optional)
 
-The lock can be controlled via GPIO. For security reasons, this has to be enabled in
-the configuration portal (check "Enable control via GPIO" in the NUKI configuration
-section). The Pins use pullup configuration, so they have to be connected to ground to
-trigger the action.<br><br>
-The Pin configuration is:<br>
-32: Lock<br>
-33: Unlock<br>
-27: Unlatch
+The lock can be controlled via GPIO. To enable GPIO control, go the the "GPIO Configuration" page where each GPIO
+can be configured for a specific role:
+
+- Disabled: The GPIO is disabled
+- Input: Lock: When connect to Ground, a lock command is sent to the lock
+- Input: Unlock: When connect to Ground, an unlock command is sent to the lock
+- Input: Unlatch: When connect to Ground, an unlatch command is sent to the lock 
+- Input: Electric strike actuation: When connect to Ground, an electric strike actuation command is sent to the opener (open door for configured amount of time)
+- Input: Activate RTO: When connect to Ground, Ring-to-open is activated (opener)
+- Input: Activate CM: When connect to Ground, Continuous mode is activated (opener)
+- Input: Deactivate RTO/CM: Disable RTO or CM, depending on which is active
+- Output: High when locked: Outputs a high signal when the door is locked
+- Output: High when unlocked: Outputs a high signal when the door is unlocked
+- Output: High when motor blocked: Outputs a high signal when the motor is blocked (lock)
+- Output: High when RTO active: Outputs a high signal when ring-to-open is active (opener)
+- Output: High when CM active: Outputs a high signal when continuous mode is active (opener)
+- Output: High when RTO or CM active: Outputs a high signal when either ring-to-open or continuous mode is active (opener)
+
+Note: The old setting "Enable control via GPIO" is removed. If you had enabled this setting before upgrading to 8.22, the PINs are automatically configured to be
+compatible with the previously hard-coded PINs.
+
 
 ## Connecting via LAN (Optional)
 

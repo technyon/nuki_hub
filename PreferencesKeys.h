@@ -25,6 +25,7 @@
 #define preference_ip_gateway "ipgtw"
 #define preference_ip_dns_server "dnssrv"
 #define preference_network_hardware "nwhw"
+#define preference_network_hardware_gpio "nwhwdt" // obsolete
 #define preference_rssi_publish_interval "rssipb"
 #define preference_hostname "hostname"
 #define preference_network_timeout "nettmout"
@@ -42,7 +43,7 @@
 #define preference_cred_user "crdusr"
 #define preference_cred_password "crdpass"
 #define preference_publish_authdata "pubauth"
-#define preference_gpio_locking_enabled "gpiolck"
+#define preference_gpio_locking_enabled "gpiolck" // obsolete
 #define preference_gpio_configuration "gpiocfg"
 #define preference_publish_debug_info "pubdbg"
 #define preference_presence_detection_timeout "prdtimeout"
