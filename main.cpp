@@ -153,11 +153,6 @@ bool initPreferences()
         preferences->putBool(preference_lock_enabled, true);
     }
 
-    if(preferences->getInt(preference_restart_timer) == 0)
-    {
-        preferences->putInt(preference_restart_timer, -1);
-    }
-
     return firstStart;
 }
 
@@ -174,9 +169,9 @@ void setup()
 
     CharBuffer::initialize();
 
-    if(preferences->getInt(preference_restart_timer) > 0)
+    if(preferences->getInt(preference_restart_timer) != 0)
     {
-        restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
+        preferences->remove(preference_restart_timer);
     }
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
