@@ -55,10 +55,6 @@ Note: It is possible to run NUKI Hub alongside a NUKI Bridge. This is not recomm
 
 ## Support
 
-If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFXQ847A4ZDG<br>
-This will also give you a 30€ discount for your order.
-
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1IDUBV)
