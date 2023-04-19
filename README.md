@@ -235,7 +235,8 @@ If this still doesn't fix the disconnects and the ESP becomes unreachable, the
 after a configured amount of time.
 
 ### Pairing with the Lock (or Opener) doesn't work
-First, try erasing the flash and then (re-)flash the firmware. To erase the flash, use the espressif download tool and click the "Erase" button.
+First, make sure the firmware version of the NUKI device is up-to-date, older versions have issues pairing<br>
+Next, try erasing the flash and then (re-)flash the firmware. To erase the flash, use the espressif download tool and click the "Erase" button.
 Afterwards flash the firmware as described in the readme within the 7z file.
 <br><br>
 Also, there are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.
