@@ -263,6 +263,10 @@ See previous point, this needs the correct PIN to be configured.
 ### Using home assistant, it's only possible to lock or unlock the door, but not to unlatch it
 Unlatching can be triggered using the lock.open service.
 
+### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
+
+When using multiple NUKI devices, different paths for each device have to be configured. Navigate to "NUKI Configuration" and change the "MQTT NUKI Smartlock Path"
+or "MQTT NUKI Opener Path" under "Basic NUKI Configuration" for at least one of the devices.
 
 ## Development VM
 
