@@ -59,12 +59,6 @@ void PresenceDetection::update()
         {
             buildCsv(it.second);
         }
-
-        // Prevent csv buffer overflow
-        if(_csvIndex > _bufferSize - (sizeof(it.second.name) + sizeof(it.second.address) + 10))
-        {
-            break;
-        }
     }
 
     _csv[_csvIndex-1] = 0x00;
@@ -75,43 +69,84 @@ void PresenceDetection::update()
 }
 
 
+int appendInt(char * dst, int value, char prefix = 0){
+    char* ptr = dst;
+    if(prefix!=0){
+        *ptr = prefix;        
+        ptr++;
+    }
+    itoa(value, ptr, 10);    
+    return strlen(dst);    
+}
+
+int appendFloat(char * dst, float value, unsigned char prec=1, char prefix = 0){
+    char* ptr = dst;
+    if(prefix!=0){
+        *ptr = prefix;        
+        ptr++;
+    }
+    dtostrf(value,2,prec,ptr);
+    return strlen(dst);
+}
+
+int appendString(char * dst, const char* src, char prefix = 0){
+    char* ptr = dst;
+    if(prefix!=0){
+        *ptr = prefix;        
+        ptr++;
+    }
+    strcpy(ptr,src);    
+    return strlen(dst);
+}
+
 void PresenceDetection::buildCsv(const PdDevice &device)
-{
-    for(int i = 0; i < 17; i++)
-    {
-        _csv[_csvIndex] = device.address[i];
-        ++_csvIndex;
-    }
-    _csv[_csvIndex] = ';';
-    ++_csvIndex;
+{    
+    int maxexpectedsize = 27 + strlen(device.name) + device.hasEnvironmentalSensingService ?(23) :0;
 
-    int i=0;
-    while(device.name[i] != 0x00 && i < 30)
-    {
-        _csv[_csvIndex] = device.name[i];
-        ++_csvIndex;
-        ++i;
+    // check space
+    if(_bufferSize-_csvIndex <= maxexpectedsize){
+        return;
     }
 
-    _csv[_csvIndex] = ';';
-    ++_csvIndex;
+    // add device address
+    memcpy(_csv+_csvIndex,device.address,17);
+    _csvIndex+=17;
 
-    if(device.hasRssi)
-    {
-        char rssiStr[20] = {0};
-        itoa(device.rssi, rssiStr, 10);
+    // add device name
+    _csvIndex+=appendString(_csv+_csvIndex,device.name,';'); 
 
-        int i=0;
-        while(rssiStr[i] != 0x00 && i < 20)
-        {
-            _csv[_csvIndex] = rssiStr[i];
-            ++_csvIndex;
-            ++i;
-        }
+    // add rssi
+    _csvIndex+=appendInt(_csv+_csvIndex,device.hasRssi?device.rssi:0,';');  
+
+
+    // add optional environmental informations (temperature;humidity;voltage;batt_level)
+    if(device.hasEnvironmentalSensingService){         
+        _csvIndex+=appendFloat(_csv+_csvIndex,device.temperature/100.0,2,';');
+        _csvIndex+=appendFloat(_csv+_csvIndex,device.humidity/100.0,2,';');
+        _csvIndex+=appendFloat(_csv+_csvIndex,device.voltage/1000.0,3,';');
+        _csvIndex+=appendInt(_csv+_csvIndex,device.batt_level,';');               
     }
-
     _csv[_csvIndex] = '\n';
-    _csvIndex++;
+    _csvIndex++;          
+}
+
+int16_t readInt16(const char * data, int offset){
+    int msb = data[offset+1];
+    int lsb = data[offset];
+    return (msb << 8) | lsb;
+}
+
+void updateDevice(NimBLEAdvertisedDevice *device, PdDevice *pdDevice){
+     if (BLEUUID((uint16_t)0x181a).equals(device->getServiceDataUUID())){
+            const char * data = device->getServiceData().c_str();
+            pdDevice->temperature=readInt16(data,6);  // temperature x 100°C -> temperature/100.0
+            pdDevice->humidity=readInt16(data,8);  // humidity x 100%   -> humidity/100.0
+            pdDevice->voltage=readInt16(data,10); // battery voltage [mv] -> voltage/1000.0
+            pdDevice->batt_level=data[12];
+            pdDevice->hasEnvironmentalSensingService = true;
+     }else{
+        pdDevice->hasEnvironmentalSensingService = false;
+     }
 }
 
 void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
@@ -139,10 +174,13 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
     auto it = _devices.find(addr);
     if(it == _devices.end())
     {
+        
 
         PdDevice pdDevice;
+        
 
-        int i=0;
+        int i=0
+        ;
         size_t len = addressStr.length();
         while(i < len)
         {
@@ -167,10 +205,14 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
             {
                 pdDevice.name[i] = nameStr.at(i);
                 ++i;
+            
             }
 
-            pdDevice.timestamp = millis();
+            pdDevice.timestamp = millis()
+            ;
+            
 
+            updateDevice(device,&pdDevice);
             _devices[addr] = pdDevice;
         }
     }
@@ -178,9 +220,12 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
     {
         it->second.timestamp = millis();
         if(device->haveRSSI())
+        
         {
             it->second.hasRssi = true;
             it->second.rssi = device->getRSSI();
+            updateDevice(device,&it->second)
+            ;
         }
     }
 

@@ -11,6 +11,12 @@ struct PdDevice
     unsigned long timestamp = 0;
     int rssi = 0;
     bool hasRssi = false;
+
+    bool hasEnvironmentalSensingService = false;
+    int16_t temperature;
+    int16_t humidity;
+    int16_t voltage;
+    uint8_t batt_level;
 };
 
 class PresenceDetection : public BleScanner::Subscriber
