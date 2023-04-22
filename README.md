@@ -55,10 +55,6 @@ Note: It is possible to run NUKI Hub alongside a NUKI Bridge. This is not recomm
 
 ## Support
 
-If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFXQ847A4ZDG<br>
-This will also give you a 30€ discount for your order.
-
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1IDUBV)
@@ -235,7 +231,8 @@ If this still doesn't fix the disconnects and the ESP becomes unreachable, the
 after a configured amount of time.
 
 ### Pairing with the Lock (or Opener) doesn't work
-First, try erasing the flash and then (re-)flash the firmware. To erase the flash, use the espressif download tool and click the "Erase" button.
+First, make sure the firmware version of the NUKI device is up-to-date, older versions have issues pairing<br>
+Next, try erasing the flash and then (re-)flash the firmware. To erase the flash, use the espressif download tool and click the "Erase" button.
 Afterwards flash the firmware as described in the readme within the 7z file.
 <br><br>
 Also, there are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.
@@ -262,6 +259,10 @@ See previous point, this needs the correct PIN to be configured.
 ### Using home assistant, it's only possible to lock or unlock the door, but not to unlatch it
 Unlatching can be triggered using the lock.open service.
 
+### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
+
+When using multiple NUKI devices, different paths for each device have to be configured. Navigate to "NUKI Configuration" and change the "MQTT NUKI Smartlock Path"
+or "MQTT NUKI Opener Path" under "Basic NUKI Configuration" for at least one of the devices.
 
 ## Development VM
 
