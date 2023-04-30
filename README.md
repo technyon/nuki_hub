@@ -10,7 +10,7 @@ Supported devices:<br>
 NUKI Smart Lock 1.0<br>
 NUKI Smart Lock 2.0<br>
 NUKI Smart Lock 3.0<br>
-NUKI Smart Lock 3.0 Pro<br>
+NUKI Smart Lock 3.0 Pro (read FAQ below)<br>
 NUKI Opener<br>
 NUKI Keypad 1.0<br>
 NUKI Keypad 2.0
@@ -247,6 +247,11 @@ https://github.com/technyon/nuki_hub/issues/39
 Also, check that pairing is allowed. In the smartphone app, go to Settings --> Features & Configuration --> Button & LED and make sure "Bluetooh Pairing" is enabled.
 
 ## FAQ
+
+### NUKI Hub doesn't work when the Wifi on my NUKI Smartlock Pro 3.0 is turned on.
+
+This is by design and according to NUKI part of the specification of the Pro lock: You can user either the built-in Wifi or a Bridge (whic NUKI Hub registers as).
+Using both at the same time doesn't work.
 
 ### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
 Some functionality is restricted by the lock (or opener) firmware and is only accessible when
