@@ -190,11 +190,26 @@ void setup()
         networkOpener->initialize();
     }
 
-    uint32_t deviceId = preferences->getUInt(preference_deviceId);
-    if(deviceId == 0)
+    uint32_t deviceIdLock = preferences->getUInt(preference_device_id_lock);
+    uint32_t deviceIdOpener = preferences->getUInt(preference_device_id_opener);
+
+    delay(1000);
+    Serial.print("### ");
+    Serial.print(deviceIdLock);
+    Serial.print(" | ");
+    Serial.println(deviceIdOpener);
+
+    if(deviceIdLock == 0 && deviceIdOpener == 0)
     {
-        deviceId = getRandomId();
-        preferences->putUInt(preference_deviceId, deviceId);
+        deviceIdLock = getRandomId();
+        preferences->putUInt(preference_device_id_lock, deviceIdLock);
+        deviceIdOpener = getRandomId();
+        preferences->putUInt(preference_device_id_opener, deviceIdOpener);
+    }
+    else if(deviceIdLock != 0 && deviceIdOpener == 0)
+    {
+        deviceIdOpener = deviceIdLock;
+        preferences->putUInt(preference_device_id_opener, deviceIdOpener);
     }
 
     initEthServer(network->networkDeviceType());
@@ -211,21 +226,14 @@ void setup()
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, gpio, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, gpio, preferences);
         nuki->initialize(firstStart);
-
-
-
-//        if(preferences->getBool(preference_gpio_locking_enabled))
-//        {
-//            Gpio::init(nuki);
-//        }
     }
 
     Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
     if(openerEnabled)
     {
-        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, gpio, preferences);
+        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences);
         nukiOpener->initialize();
     }
 
