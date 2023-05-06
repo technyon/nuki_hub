@@ -1000,6 +1000,8 @@ void WebCfgServer::buildHtmlHeader(String &response)
 //    response.concat("</style>");
     response.concat("<link rel='stylesheet' href='/style.css'>");
     response.concat("<TITLE>NUKI Hub</TITLE></HEAD><BODY>");
+
+    srand(millis());
 }
 
 void WebCfgServer::printInputField(String& response,

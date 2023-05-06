@@ -121,7 +121,7 @@ void NukiWrapper::update()
 {
     if (!_paired)
     {
-        Log->println(F("Nuki start pairing"));
+        Log->println(F("Nuki lock start pairing"));
         _network->publishBleAddress("");
 
         Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
