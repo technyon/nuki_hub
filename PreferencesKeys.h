@@ -37,6 +37,7 @@
 #define preference_query_interval_battery "batInterval"
 #define preference_query_interval_keypad "kpInterval"
 #define preference_keypad_control_enabled "kpEnabled"
+#define preference_access_level "accLvl"
 #define preference_register_as_app "regAsApp" // true = register as hub; false = register as app
 #define preference_command_nr_of_retries "nrRetry"
 #define preference_command_retry_delay "rtryDelay"
@@ -67,7 +68,8 @@ private:
             preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
             preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
-            preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries,
+            preference_keypad_control_enabled, preference_access_level,
+            preference_register_as_app, preference_command_nr_of_retries,
             preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
             preference_publish_debug_info, preference_presence_detection_timeout,
             preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,

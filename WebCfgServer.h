@@ -60,6 +60,7 @@ private:
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
+    const std::vector<std::pair<String, String>> getAccessLevelOptions() const;
     String getPreselectionForGpio(const uint8_t& pin);
 
     void printParameter(String& response, const char* description, const char* value, const char *link = "");

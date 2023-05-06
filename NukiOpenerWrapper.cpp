@@ -7,6 +7,7 @@
 #include <NukiOpenerUtils.h>
 
 NukiOpenerWrapper* nukiOpenerInst;
+AccessLevel NukiOpenerWrapper::_accessLevel = AccessLevel::ReadOnly;
 
 NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  NetworkOpener* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
@@ -55,6 +56,7 @@ void NukiOpenerWrapper::initialize()
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
+    _accessLevel = (AccessLevel)_preferences->getInt(preference_access_level);
 
     if(_retryDelay <= 100)
     {
@@ -465,11 +467,33 @@ NukiOpener::LockAction NukiOpenerWrapper::lockActionToEnum(const char *str)
     return (NukiOpener::LockAction)0xff;
 }
 
-bool NukiOpenerWrapper::onLockActionReceivedCallback(const char *value)
+LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *value)
 {
     NukiOpener::LockAction action = nukiOpenerInst->lockActionToEnum(value);
-    nukiOpenerInst->_nextLockAction = action;
-    return (int)action != 0xff;
+    if((int)action == 0xff)
+    {
+        return LockActionResult::UnknownAction;
+    }
+
+    switch(_accessLevel)
+    {
+        case AccessLevel::Full:
+            nukiOpenerInst->_nextLockAction = action;
+            return LockActionResult::Success;
+            break;
+        case AccessLevel::LockOnly:
+            if(action == NukiOpener::LockAction::DeactivateRTO || action == NukiOpener::LockAction::DeactivateCM)
+            {
+                nukiOpenerInst->_nextLockAction = action;
+                return LockActionResult::Success;
+            }
+            return LockActionResult::AccessDenied;
+            break;
+        case AccessLevel::ReadOnly:
+        default:
+            return LockActionResult::AccessDenied;
+            break;
+    }
 }
 
 void NukiOpenerWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
@@ -503,6 +527,8 @@ void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action)
 
 void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
+    if(_accessLevel != AccessLevel::Full) return;
+
     if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
     {
         bool newValue = atoi(value) > 0;
@@ -528,6 +554,8 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *va
 
 void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
+    if(_accessLevel != AccessLevel::Full) return;
+
     if(!_hasKeypad)
     {
         if(_configRead)

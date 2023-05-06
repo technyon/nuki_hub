@@ -7,6 +7,7 @@
 #include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
+AccessLevel NukiWrapper::_accessLevel = AccessLevel::ReadOnly;
 
 NukiWrapper::NukiWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner, NetworkLock* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
@@ -56,6 +57,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
+    _accessLevel = (AccessLevel)_preferences->getInt(preference_access_level);
 
     if(firstStart)
     {
@@ -433,11 +435,34 @@ NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
     return (NukiLock::LockAction)0xff;
 }
 
-bool NukiWrapper::onLockActionReceivedCallback(const char *value)
+LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
     NukiLock::LockAction action = nukiInst->lockActionToEnum(value);
-    nukiInst->_nextLockAction = action;
-    return (int)action != 0xff;
+
+    if((int)action == 0xff)
+    {
+        return LockActionResult::UnknownAction;
+    }
+
+    switch(_accessLevel)
+    {
+        case AccessLevel::Full:
+            nukiInst->_nextLockAction = action;
+            return LockActionResult::Success;
+            break;
+        case AccessLevel::LockOnly:
+            if(action == NukiLock::LockAction::Lock)
+            {
+                nukiInst->_nextLockAction = action;
+                return LockActionResult::Success;
+            }
+            return LockActionResult::AccessDenied;
+            break;
+        case AccessLevel::ReadOnly:
+        default:
+            return LockActionResult::AccessDenied;
+            break;
+    }
 }
 
 void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
@@ -468,6 +493,8 @@ void NukiWrapper::gpioActionCallback(const GpioAction &action)
 
 void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
+    if(_accessLevel != AccessLevel::Full) return;
+
     if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
     {
         bool newValue = atoi(value) > 0;
@@ -521,6 +548,8 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 
 void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
+    if(_accessLevel != AccessLevel::Full) return;
+
     if(!_hasKeypad)
     {
         if(_configRead)

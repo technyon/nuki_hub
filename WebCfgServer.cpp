@@ -5,6 +5,7 @@
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
+#include "AccessLevel.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -406,6 +407,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_query_interval_battery, value.toInt());
             configChanged = true;
         }
+        else if(key == "ACCLVL")
+        {
+            _preferences->putInt(preference_access_level, value.toInt());
+            configChanged = true;
+        }
         else if(key == "KPINT")
         {
             _preferences->putInt(preference_query_interval_keypad, value.toInt());
@@ -801,6 +807,8 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    printDropDown(response, "ACCLVL", "Access level", String(_preferences->getInt(preference_access_level)), getAccessLevelOptions());
+
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
@@ -1285,6 +1293,17 @@ const std::vector<std::pair<String, String>> WebCfgServer::getGpioOptions() cons
     {
         options.push_back( std::make_pair(String((int)role), _gpio->getRoleDescription(role)));
     }
+
+    return options;
+}
+
+const std::vector<std::pair<String, String>> WebCfgServer::getAccessLevelOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+
+    options.push_back(std::make_pair(std::to_string((int)AccessLevel::Full).c_str(), "Full"));
+    options.push_back(std::make_pair(std::to_string((int)AccessLevel::LockOnly).c_str(), "Lock operation only"));
+    options.push_back(std::make_pair(std::to_string((int)AccessLevel::ReadOnly).c_str(), "Read only"));
 
     return options;
 }

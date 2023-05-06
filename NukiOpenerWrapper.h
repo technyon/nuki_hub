@@ -6,6 +6,7 @@
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
 #include "Gpio.h"
+#include "AccessLevel.h"
 
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
@@ -43,7 +44,7 @@ public:
     void notify(NukiOpener::EventType eventType) override;
 
 private:
-    static bool onLockActionReceivedCallback(const char* value);
+    static LockActionResult onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void gpioActionCallback(const GpioAction& action);
@@ -85,6 +86,7 @@ private:
     int _retryDelay = 0;
     int _retryCount = 0;
     int _retryLockstateCount = 0;
+    static AccessLevel _accessLevel;
     unsigned long _nextRetryTs = 0;
     std::vector<uint16_t> _keypadCodeIds;
 
