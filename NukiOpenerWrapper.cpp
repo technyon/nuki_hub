@@ -9,14 +9,18 @@
 NukiOpenerWrapper* nukiOpenerInst;
 AccessLevel NukiOpenerWrapper::_accessLevel = AccessLevel::ReadOnly;
 
-NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, uint32_t id, BleScanner::Scanner* scanner,  NetworkOpener* network, Gpio* gpio, Preferences* preferences)
+NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
-  _nukiOpener(deviceName, id),
+  _deviceId(deviceId),
+  _nukiOpener(deviceName, _deviceId->get()),
   _bleScanner(scanner),
   _network(network),
   _gpio(gpio),
   _preferences(preferences)
 {
+    Log->print("Device id opener: ");
+    Log->println(_deviceId->get());
+
     nukiOpenerInst = this;
 
     memset(&_lastKeyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
@@ -300,6 +304,7 @@ void NukiOpenerWrapper::setPin(const uint16_t pin)
 void NukiOpenerWrapper::unpair()
 {
     _nukiOpener.unPairNuki();
+    _deviceId->assignNewId();
     _paired = false;
 }
 

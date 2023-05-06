@@ -13,6 +13,7 @@
 #include "Config.h"
 #include "RestartReason.h"
 #include "CharBuffer.h"
+#include "NukiDeviceId.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -22,6 +23,8 @@ BleScanner::Scanner* bleScanner = nullptr;
 NukiWrapper* nuki = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
 PresenceDetection* presenceDetection = nullptr;
+NukiDeviceId* deviceIdLock = nullptr;
+NukiDeviceId* deviceIdOpener = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
 Gpio* gpio = nullptr;
@@ -112,18 +115,6 @@ void setupTasks()
     xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 896, NULL, 5, &presenceDetectionTaskHandle, 1);
 }
 
-uint32_t getRandomId()
-{
-    uint8_t rnd[4];
-    for(int i=0; i<4; i++)
-    {
-        rnd[i] = random(255);
-    }
-    uint32_t deviceId;
-    memcpy(&deviceId, &rnd, sizeof(deviceId));
-    return deviceId;
-}
-
 void initEthServer(const NetworkDeviceType device)
 {
     switch (device)
@@ -167,6 +158,17 @@ void setup()
 
     initializeRestartReason();
 
+
+    uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
+
+    deviceIdLock = new NukiDeviceId(preferences, preference_device_id_lock);
+    deviceIdOpener = new NukiDeviceId(preferences, preference_device_id_opener);
+
+    if(deviceIdLock->get() != 0 && devIdOpener == 0)
+    {
+        deviceIdOpener->assignId(deviceIdLock->get());
+    }
+
     CharBuffer::initialize();
 
     if(preferences->getInt(preference_restart_timer) != 0)
@@ -188,28 +190,6 @@ void setup()
     {
         networkOpener = new NetworkOpener(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
         networkOpener->initialize();
-    }
-
-    uint32_t deviceIdLock = preferences->getUInt(preference_device_id_lock);
-    uint32_t deviceIdOpener = preferences->getUInt(preference_device_id_opener);
-
-    delay(1000);
-    Serial.print("### ");
-    Serial.print(deviceIdLock);
-    Serial.print(" | ");
-    Serial.println(deviceIdOpener);
-
-    if(deviceIdLock == 0 && deviceIdOpener == 0)
-    {
-        deviceIdLock = getRandomId();
-        preferences->putUInt(preference_device_id_lock, deviceIdLock);
-        deviceIdOpener = getRandomId();
-        preferences->putUInt(preference_device_id_opener, deviceIdOpener);
-    }
-    else if(deviceIdLock != 0 && deviceIdOpener == 0)
-    {
-        deviceIdOpener = deviceIdLock;
-        preferences->putUInt(preference_device_id_opener, deviceIdOpener);
     }
 
     initEthServer(network->networkDeviceType());
@@ -247,4 +227,6 @@ void setup()
 }
 
 void loop()
-{}
+{
+    delay(60000);
+}

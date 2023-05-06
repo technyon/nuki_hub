@@ -41,6 +41,7 @@ include_directories(${PROJECT_NAME}
 
 set(SRCFILES
         Config.h
+        NukiDeviceId.cpp
         CharBuffer.cpp
         Network.cpp
         MqttReceiver.h
@@ -87,7 +88,7 @@ set(SRCFILES
         lib/BleScanner/src/BleScanner.cpp
         lib/MqttLogger/src/MqttLogger.cpp
         lib/AsyncTCP/src/AsyncTCP.cpp
-)
+        )
 
 file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c

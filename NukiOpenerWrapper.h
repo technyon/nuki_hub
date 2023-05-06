@@ -7,11 +7,12 @@
 #include "BleScanner.h"
 #include "Gpio.h"
 #include "AccessLevel.h"
+#include "NukiDeviceId.h"
 
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
-    NukiOpenerWrapper(const std::string& deviceName,  uint32_t id,  BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences);
+    NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences);
     virtual ~NukiOpenerWrapper();
 
     void initialize();
@@ -70,6 +71,7 @@ private:
     NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     std::string _deviceName;
+    NukiDeviceId* _deviceId = nullptr;
     NukiOpener::NukiOpener _nukiOpener;
     BleScanner::Scanner* _bleScanner = nullptr;
     NetworkOpener* _network = nullptr;
