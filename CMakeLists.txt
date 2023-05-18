@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-set(ARDUINO_BOARD "ESP32 Dev Module [esp32.esp32]")
+if(NOT ARDUINO_BOARD)
+    set(ARDUINO_BOARD "ESP32 Dev Module [esp32.esp32]")
+endif()
 
 project(nuki_hub CXX)
 
