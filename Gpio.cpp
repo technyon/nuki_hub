@@ -264,10 +264,6 @@ void Gpio::setPinOutput(const uint8_t& pin, const uint8_t& state)
     digitalWrite(pin, state);
 }
 
-#define TRIGGER_LOCK_PIN 32
-#define TRIGGER_UNLOCK_PIN 33
-#define TRIGGER_UNLATCH_PIN 27
-
 void Gpio::migrateObsoleteSetting()
 {
     _pinConfiguration.clear();
