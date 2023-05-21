@@ -238,7 +238,7 @@ Afterwards flash the firmware as described in the readme within the 7z file.
 Also, there are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.
 <br><br>
 Reported as working are:<br>
-[M5Stack ATOM Lite](https://www.berrybase.de/m5stack-atom-lite-esp32-iot-dev-kit)<br>
+[M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)<br>
 ESP32-WROOM-32D (DEVKIT V4)<br>
 ESP32-WROOM-32E<br>
 <br>
