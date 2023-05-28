@@ -279,7 +279,7 @@ or "MQTT NUKI Opener Path" under "Basic NUKI Configuration" for at least one of 
 Since setting up the toolchain can be difficult, I've uploaded a virtual machine (vmware image) that is
 setup to compile NUKI Hub:
 
-https://drive.google.com/file/d/1rcAgx54FEMQmXibgW-Y0EYXEdrShJuBA/view?usp=share_link
+https://drive.google.com/file/d/1fUVYHDtxXAZOAfQ321iRNIwkqFwuDsBp/view?usp=share_link
 
 User and password for the VM are both "nuki" and "nuki". The source is checked out at ~/projects/nuki_hub,
 the cmake build directory is build. So to compile, run the following commands:
