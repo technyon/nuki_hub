@@ -7,6 +7,8 @@
 #include "MqttReceiver.h"
 #include "networkDevices/IPConfiguration.h"
 #include "MqttTopics.h"
+#include "Gpio.h"
+#include "NetworkGpio.h"
 
 enum class NetworkDeviceType
 {
@@ -23,7 +25,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(Preferences* preferences, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+    explicit Network(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void initialize();
     bool update();
@@ -70,6 +72,8 @@ public:
     void setKeepAliveCallback(std::function<void()> reconnectTick);
     void addReconnectedCallback(std::function<void()> reconnectedCallback);
 
+    NetworkDevice* device();
+
 private:
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
@@ -105,6 +109,7 @@ private:
     char _mqttConnectionStateTopic[211] = {0};
 
     Preferences* _preferences;
+    Gpio* _gpio;
     IPConfiguration* _ipConfiguration = nullptr;
     String _hostname;
     char _hostnameArr[101] = {0};

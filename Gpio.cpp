@@ -5,6 +5,7 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
+#include "lib/gpio2go/src/Gpio2Go.h"
 
 Gpio* Gpio::_inst = nullptr;
 unsigned long Gpio::_debounceTs = 0;
@@ -65,10 +66,24 @@ void Gpio::init()
                 pinMode(entry.pin, INPUT_PULLUP);
                 attachInterrupt(entry.pin, isrDeactivateRtoCm, FALLING);
                 break;
+            case PinRole::OutputHighLocked:
+            case PinRole::OutputHighUnlocked:
+            case PinRole::OutputHighMotorBlocked:
+            case PinRole::OutputHighRtoActive:
+            case PinRole::OutputHighCmActive:
+            case PinRole::OutputHighRtoOrCmActive:
+            case PinRole::GeneralOutput:
+                pinMode(entry.pin, OUTPUT);
+                break;
+            case PinRole::GeneralInput:
+                Gpio2Go::configurePin(entry.pin, PinMode::InputPullup, InterruptMode::Change, 300);
+                break;
             default:
                 pinMode(entry.pin, OUTPUT);
                 break;
         }
+
+        Gpio2Go::subscribe(Gpio::inputCallback);
     }
 }
 
@@ -169,6 +184,10 @@ String Gpio::getRoleDescription(PinRole role) const
             return "Output: High when CM active";
         case PinRole::OutputHighRtoOrCmActive:
             return "Output: High when RTO or CM active";
+        case PinRole::GeneralOutput:
+            return "General output";
+        case PinRole::GeneralInput:
+            return "General input (Pull-up)";
         default:
             return "Unknown";
     }
@@ -198,15 +217,20 @@ const std::vector<PinRole>& Gpio::getAllRoles() const
     return _allRoles;
 }
 
-void Gpio::notify(const GpioAction &action)
+void Gpio::notify(const GpioAction &action, const int& pin)
 {
     for(auto& callback : _callbacks)
     {
-        callback(action);
+        callback(action, pin);
     }
 }
 
-void Gpio::addCallback(std::function<void(const GpioAction&)> callback)
+void Gpio::inputCallback(const int &pin)
+{
+    _inst->notify(GpioAction::GeneralInput, pin);
+}
+
+void Gpio::addCallback(std::function<void(const GpioAction&, const int&)> callback)
 {
     _callbacks.push_back(callback);
 }
@@ -214,49 +238,49 @@ void Gpio::addCallback(std::function<void(const GpioAction&)> callback)
 void Gpio::isrLock()
 {
     if(millis() < _debounceTs) return;
-    _inst->notify(GpioAction::Lock);
+    _inst->notify(GpioAction::Lock, -1);
     _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrUnlock()
 {
     if(millis() < _debounceTs) return;
-    _inst->notify(GpioAction::Unlock);
+    _inst->notify(GpioAction::Unlock, -1);
     _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrUnlatch()
 {
     if(millis() < _debounceTs) return;
-    _inst->notify(GpioAction::Unlatch);
+    _inst->notify(GpioAction::Unlatch, -1);
     _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrElectricStrikeActuation()
 {
     if(millis() < _debounceTs) return;
-    _inst->notify(GpioAction::ElectricStrikeActuation);
+    _inst->notify(GpioAction::ElectricStrikeActuation, -1);
     _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrActivateRTO()
 {
     if(millis() < _debounceTs) return;
-    _inst->notify(GpioAction::ActivateRTO);
+    _inst->notify(GpioAction::ActivateRTO, -1);
     _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrActivateCM()
 {
     if(millis() < _debounceTs) return;
-    _inst->notify(GpioAction::ActivateCM);
+    _inst->notify(GpioAction::ActivateCM, -1);
     _debounceTs = millis() + _debounceTime;
 }
 
 void Gpio::isrDeactivateRtoCm()
 {
     if(millis() < _debounceTs) return;
-    _inst->notify(GpioAction::DeactivateRtoCm);
+    _inst->notify(GpioAction::DeactivateRtoCm, -1);
     _debounceTs = millis() + _debounceTime;
 }
 

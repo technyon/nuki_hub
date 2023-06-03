@@ -14,8 +14,9 @@ bool _versionPublished = false;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(Preferences *preferences, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
+Network::Network(Preferences *preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
 : _preferences(preferences),
+  _gpio(gpio),
   _buffer(buffer),
   _bufferSize(bufferSize)
 {
@@ -137,6 +138,9 @@ void Network::setupDevice()
 
 void Network::initialize()
 {
+    _networkGpio->initialize();
+    registerMqttReceiver(_networkGpio);
+
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
@@ -204,6 +208,20 @@ void Network::initialize()
     }
 
     _publishDebugInfo = _preferences->getBool(preference_publish_debug_info);
+
+    for(const auto& pinEntry : _gpio->pinConfiguration())
+    {
+        switch(pinEntry.role)
+        {
+            case PinRole::GeneralInput:
+                String inp = "input_";
+                inp.concat(pinEntry.pin);
+                initTopic(mqtt_topic_gpio_prefix, inp.c_str(), )
+                break;
+            case PinRole::GeneralOutput:
+                break;
+        }
+    }
 }
 
 bool Network::update()
@@ -302,6 +320,8 @@ bool Network::update()
         }
         _lastMaintenanceTs = ts;
     }
+
+    _networkGpio->update();
 
     return true;
 }
@@ -1237,4 +1257,9 @@ void Network::disableMqtt()
 {
     _device->disableMqtt();
     _mqttEnabled = false;
+}
+
+NetworkDevice *Network::device()
+{
+    return _device;
 }

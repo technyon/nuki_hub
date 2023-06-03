@@ -82,6 +82,9 @@ set(SRCFILES
         lib/nuki_ble/src/NukiUtils.cpp
         lib/nuki_ble/src/NukiLockUtils.cpp
         lib/nuki_ble/src/NukiOpenerUtils.cpp
+        lib/gpio2go/src/Gpio2Go.cpp
+        lib/gpio2go/src/InterruptMode.h
+        lib/gpio2go/src/PinMode.h
         lib/BleScanner/src/BleInterfaces.h
         lib/BleScanner/src/BleScanner.cpp
         lib/MqttLogger/src/MqttLogger.cpp

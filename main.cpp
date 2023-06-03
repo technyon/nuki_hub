@@ -180,11 +180,16 @@ void setup()
         restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
     }
 
+    gpio = new Gpio(preferences);
+    String gpioDesc;
+    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
+    Serial.print(gpioDesc.c_str());
+
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(preferences, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
+    network = new Network(preferences, gpio, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
     network->initialize();
 
     networkLock = new NetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
@@ -208,11 +213,6 @@ void setup()
     bleScanner = new BleScanner::Scanner();
     bleScanner->initialize("NukiHub");
     bleScanner->setScanDuration(10);
-
-    gpio = new Gpio(preferences);
-    String gpioDesc;
-    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
-    Serial.print(gpioDesc.c_str());
 
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
