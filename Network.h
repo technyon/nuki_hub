@@ -8,7 +8,6 @@
 #include "networkDevices/IPConfiguration.h"
 #include "MqttTopics.h"
 #include "Gpio.h"
-#include "NetworkGpio.h"
 
 enum class NetworkDeviceType
 {
@@ -101,12 +100,13 @@ private:
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
 
-    void buildMqttPath(const char* prefix, const char* path, char* outPath);
+    void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
 
     static Network* _inst;
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
+    String _lockPath;
 
     Preferences* _preferences;
     Gpio* _gpio;

@@ -85,6 +85,8 @@ private:
             PinRole::OutputHighRtoActive,
             PinRole::OutputHighCmActive,
             PinRole::OutputHighRtoOrCmActive,
+            PinRole::GeneralInput,
+            PinRole::GeneralOutput
         };
 
     std::vector<PinEntry> _pinConfiguration;
