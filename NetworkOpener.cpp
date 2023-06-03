@@ -93,16 +93,36 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
-        if(strcmp((char*)payload, "") == 0 || strcmp(value, "--") == 0 || strcmp(value, "ack") == 0 || strcmp(value, "unknown_action") == 0) return;
+        if(strcmp(value, "") == 0 ||
+           strcmp(value, "--") == 0 ||
+           strcmp(value, "ack") == 0 ||
+           strcmp(value, "unknown_action") == 0 ||
+           strcmp(value, "denied") == 0 ||
+           strcmp(value, "error") == 0) return;
 
-        Log->print(F("Opener lock action received: "));
+        Log->print(F("Lock action received: "));
         Log->println(value);
-        bool success = false;
+        LockActionResult lockActionResult = LockActionResult::Failed;
         if(_lockActionReceivedCallback != NULL)
         {
-            success = _lockActionReceivedCallback(value);
+            lockActionResult = _lockActionReceivedCallback(value);
         }
-        publishString(mqtt_topic_lock_action, success ? "ack" : "unknown_action");
+
+        switch(lockActionResult)
+        {
+            case LockActionResult::Success:
+                publishString(mqtt_topic_lock_action, "ack");
+                break;
+            case LockActionResult::UnknownAction:
+                publishString(mqtt_topic_lock_action, "unknown_action");
+                break;
+            case LockActionResult::AccessDenied:
+                publishString(mqtt_topic_lock_action, "denied");
+                break;
+            case LockActionResult::Failed:
+                publishString(mqtt_topic_lock_action, "error");
+                break;
+        }
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
@@ -508,7 +528,7 @@ void NetworkOpener::publishKeypadCommandResult(const char* result)
     publishString(mqtt_topic_keypad_command_result, result);
 }
 
-void NetworkOpener::setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char *))
+void NetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }

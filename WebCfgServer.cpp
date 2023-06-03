@@ -5,6 +5,7 @@
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
+#include "AccessLevel.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -361,11 +362,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
             configChanged = true;
         }
-        else if(key == "RSTTMR")
-        {
-            _preferences->putInt(preference_restart_timer, value.toInt());
-            configChanged = true;
-        }
         else if(key == "MQTTLOG")
         {
             _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
@@ -409,6 +405,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "BATINT")
         {
             _preferences->putInt(preference_query_interval_battery, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "ACCLVL")
+        {
+            _preferences->putInt(preference_access_level, value.toInt());
             configChanged = true;
         }
         else if(key == "KPINT")
@@ -761,7 +762,6 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
-    printInputField(response, "RSTTMR", "Restart timer (minutes; -1 to disable)", _preferences->getInt(preference_restart_timer), 10);
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br><br>");
@@ -803,10 +803,11 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     response.concat("<h3>Advanced NUKI Configuration</h3>");
     response.concat("<table>");
 
-    printCheckBox(response, "REGAPP", "Register as app (on: register as app, off: register as bridge; needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    printDropDown(response, "ACCLVL", "Access level", String(_preferences->getInt(preference_access_level)), getAccessLevelOptions());
+
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
@@ -815,6 +816,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
+    printCheckBox(response, "REGAPP", "Register as app (on: register as app, off: register as bridge; needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
     response.concat("</table>");
@@ -998,6 +1000,8 @@ void WebCfgServer::buildHtmlHeader(String &response)
 //    response.concat("</style>");
     response.concat("<link rel='stylesheet' href='/style.css'>");
     response.concat("<TITLE>NUKI Hub</TITLE></HEAD><BODY>");
+
+    srand(millis());
 }
 
 void WebCfgServer::printInputField(String& response,
@@ -1291,6 +1295,17 @@ const std::vector<std::pair<String, String>> WebCfgServer::getGpioOptions() cons
     {
         options.push_back( std::make_pair(String((int)role), _gpio->getRoleDescription(role)));
     }
+
+    return options;
+}
+
+const std::vector<std::pair<String, String>> WebCfgServer::getAccessLevelOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+
+    options.push_back(std::make_pair(std::to_string((int)AccessLevel::Full).c_str(), "Full"));
+    options.push_back(std::make_pair(std::to_string((int)AccessLevel::LockOnly).c_str(), "Lock operation only"));
+    options.push_back(std::make_pair(std::to_string((int)AccessLevel::ReadOnly).c_str(), "Read only"));
 
     return options;
 }

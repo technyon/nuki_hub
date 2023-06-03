@@ -3,7 +3,8 @@
 #include <vector>
 
 #define preference_started_before "run"
-#define preference_deviceId "deviceId"
+#define preference_device_id_lock "deviceId"
+#define preference_device_id_opener "deviceIdOp"
 #define preference_mqtt_broker "mqttbroker"
 #define preference_mqtt_broker_port "mqttport"
 #define preference_mqtt_user "mqttuser"
@@ -25,6 +26,7 @@
 #define preference_ip_gateway "ipgtw"
 #define preference_ip_dns_server "dnssrv"
 #define preference_network_hardware "nwhw"
+#define preference_network_hardware_gpio "nwhwdt" // obsolete
 #define preference_rssi_publish_interval "rssipb"
 #define preference_hostname "hostname"
 #define preference_network_timeout "nettmout"
@@ -36,13 +38,14 @@
 #define preference_query_interval_battery "batInterval"
 #define preference_query_interval_keypad "kpInterval"
 #define preference_keypad_control_enabled "kpEnabled"
+#define preference_access_level "accLvl"
 #define preference_register_as_app "regAsApp" // true = register as hub; false = register as app
 #define preference_command_nr_of_retries "nrRetry"
 #define preference_command_retry_delay "rtryDelay"
 #define preference_cred_user "crdusr"
 #define preference_cred_password "crdpass"
 #define preference_publish_authdata "pubauth"
-#define preference_gpio_locking_enabled "gpiolck"
+#define preference_gpio_locking_enabled "gpiolck" // obsolete
 #define preference_gpio_configuration "gpiocfg"
 #define preference_publish_debug_info "pubdbg"
 #define preference_presence_detection_timeout "prdtimeout"
@@ -56,7 +59,7 @@ class DebugPreferences
 private:
     std::vector<char*> _keys =
     {
-            preference_started_before, preference_deviceId, preference_mqtt_broker, preference_mqtt_broker_port,
+            preference_started_before, preference_device_id_lock, preference_device_id_opener, preference_mqtt_broker, preference_mqtt_broker_port,
             preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled,
             preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path,
             preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_mqtt_ca,
@@ -64,9 +67,10 @@ private:
             preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
             preference_network_hardware, preference_rssi_publish_interval,
             preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
-            preference_restart_timer, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
+            preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
-            preference_keypad_control_enabled, preference_register_as_app, preference_command_nr_of_retries,
+            preference_keypad_control_enabled, preference_access_level,
+            preference_register_as_app, preference_command_nr_of_retries,
             preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
             preference_publish_debug_info, preference_presence_detection_timeout,
             preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,

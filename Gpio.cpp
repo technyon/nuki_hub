@@ -1,7 +1,6 @@
 #include <esp32-hal.h>
 #include "Gpio.h"
 #include "Arduino.h"
-#include "Pins.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
@@ -288,10 +287,6 @@ void Gpio::setPinOutput(const uint8_t& pin, const uint8_t& state)
 {
     digitalWrite(pin, state);
 }
-
-#define TRIGGER_LOCK_PIN 32
-#define TRIGGER_UNLOCK_PIN 33
-#define TRIGGER_UNLATCH_PIN 27
 
 void Gpio::migrateObsoleteSetting()
 {

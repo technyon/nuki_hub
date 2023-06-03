@@ -10,6 +10,7 @@
 #include "NukiLockConstants.h"
 #include "Network.h"
 #include "QueryCommand.h"
+#include "LockActionResult.h"
 
 #define LOCK_LOG_JSON_BUFFER_SIZE 2048
 
@@ -38,7 +39,7 @@ public:
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishKeypadCommandResult(const char* result);
 
-    void setLockActionReceivedCallback(bool (*lockActionReceivedCallback)(const char* value));
+    void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
 
@@ -84,7 +85,7 @@ private:
     char* _buffer;
     size_t _bufferSize;
 
-    bool (*_lockActionReceivedCallback)(const char* value) = nullptr;
+    LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
 };

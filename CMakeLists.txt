@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-set(ARDUINO_BOARD "ESP32 Dev Module [esp32.esp32]")
+if(NOT ARDUINO_BOARD)
+    set(ARDUINO_BOARD "ESP32 Dev Module [esp32.esp32]")
+endif()
 
 project(nuki_hub CXX)
 
@@ -40,8 +42,8 @@ include_directories(${PROJECT_NAME}
 )
 
 set(SRCFILES
-        Pins.h
         Config.h
+        NukiDeviceId.cpp
         CharBuffer.cpp
         Network.cpp
         MqttReceiver.h
@@ -54,6 +56,8 @@ set(SRCFILES
         networkDevices/ClientSyncW5500.cpp
         networkDevices/espMqttClientW5500.cpp
         networkDevices/IPConfiguration.cpp
+        AccessLevel.h
+        LockActionResult.h
         QueryCommand.h
         NukiWrapper.cpp
         NukiOpenerWrapper.cpp
@@ -89,7 +93,7 @@ set(SRCFILES
         lib/BleScanner/src/BleScanner.cpp
         lib/MqttLogger/src/MqttLogger.cpp
         lib/AsyncTCP/src/AsyncTCP.cpp
-)
+        )
 
 file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c

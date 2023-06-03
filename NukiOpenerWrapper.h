@@ -6,11 +6,13 @@
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
 #include "Gpio.h"
+#include "AccessLevel.h"
+#include "NukiDeviceId.h"
 
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
-    NukiOpenerWrapper(const std::string& deviceName,  uint32_t id,  BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences);
+    NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences);
     virtual ~NukiOpenerWrapper();
 
     void initialize();
@@ -43,7 +45,7 @@ public:
     void notify(NukiOpener::EventType eventType) override;
 
 private:
-    static bool onLockActionReceivedCallback(const char* value);
+    static LockActionResult onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* topic, const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
@@ -69,6 +71,7 @@ private:
     NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
 
     std::string _deviceName;
+    NukiDeviceId* _deviceId = nullptr;
     NukiOpener::NukiOpener _nukiOpener;
     BleScanner::Scanner* _bleScanner = nullptr;
     NetworkOpener* _network = nullptr;
@@ -85,6 +88,7 @@ private:
     int _retryDelay = 0;
     int _retryCount = 0;
     int _retryLockstateCount = 0;
+    static AccessLevel _accessLevel;
     unsigned long _nextRetryTs = 0;
     std::vector<uint16_t> _keypadCodeIds;
 

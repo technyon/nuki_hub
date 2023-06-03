@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "W5500Device.h"
-#include "../Pins.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../MqttTopics.h"

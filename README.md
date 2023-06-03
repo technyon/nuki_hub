@@ -10,7 +10,7 @@ Supported devices:<br>
 NUKI Smart Lock 1.0<br>
 NUKI Smart Lock 2.0<br>
 NUKI Smart Lock 3.0<br>
-NUKI Smart Lock 3.0 Pro<br>
+NUKI Smart Lock 3.0 Pro (read FAQ below)<br>
 NUKI Opener<br>
 NUKI Keypad 1.0<br>
 NUKI Keypad 2.0
@@ -23,6 +23,9 @@ As an alternative to Wifi, the following ESP32 modules with wired ethernet are s
 [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)<br>
 [LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)<br>
 
+<br>
+<b>Note for users upgrading from 8.21 or lower:</b> Please go to "MQTT and Network Configuration" and select
+"Wifi only" as the network device (unless you use other network hardware).
 
 ## Installation
 
@@ -53,8 +56,8 @@ Note: It is possible to run NUKI Hub alongside a NUKI Bridge. This is not recomm
 ## Support
 
 If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
-REFXQ847A4ZDG<br>
-This will also give you a 30€ discount for your order.
+REFW628ZPQW3R<br>
+This will also give you a 10% discount on your order.
 
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:
 
@@ -176,14 +179,27 @@ For example, to add a code:
 
 ## GPIO lock control (optional)
 
-The lock can be controlled via GPIO. For security reasons, this has to be enabled in
-the configuration portal (check "Enable control via GPIO" in the NUKI configuration
-section). The Pins use pullup configuration, so they have to be connected to ground to
-trigger the action.<br><br>
-The Pin configuration is:<br>
-32: Lock<br>
-33: Unlock<br>
-27: Unlatch
+The lock can be controlled via GPIO. To enable GPIO control, go the the "GPIO Configuration" page where each GPIO
+can be configured for a specific role:
+
+- Disabled: The GPIO is disabled
+- Input: Lock: When connect to Ground, a lock command is sent to the lock
+- Input: Unlock: When connect to Ground, an unlock command is sent to the lock
+- Input: Unlatch: When connect to Ground, an unlatch command is sent to the lock 
+- Input: Electric strike actuation: When connect to Ground, an electric strike actuation command is sent to the opener (open door for configured amount of time)
+- Input: Activate RTO: When connect to Ground, Ring-to-open is activated (opener)
+- Input: Activate CM: When connect to Ground, Continuous mode is activated (opener)
+- Input: Deactivate RTO/CM: Disable RTO or CM, depending on which is active
+- Output: High when locked: Outputs a high signal when the door is locked
+- Output: High when unlocked: Outputs a high signal when the door is unlocked
+- Output: High when motor blocked: Outputs a high signal when the motor is blocked (lock)
+- Output: High when RTO active: Outputs a high signal when ring-to-open is active (opener)
+- Output: High when CM active: Outputs a high signal when continuous mode is active (opener)
+- Output: High when RTO or CM active: Outputs a high signal when either ring-to-open or continuous mode is active (opener)
+
+Note: The old setting "Enable control via GPIO" is removed. If you had enabled this setting before upgrading to 8.22, the PINs are automatically configured to be
+compatible with the previously hard-coded PINs.
+
 
 ## Connecting via LAN (Optional)
 
@@ -219,12 +235,14 @@ If this still doesn't fix the disconnects and the ESP becomes unreachable, the
 after a configured amount of time.
 
 ### Pairing with the Lock (or Opener) doesn't work
-First, try erasing the flash and then (re-)flash the firmware. To erase the flash, use the espressif download tool and click the "Erase" button.
+First, make sure the firmware version of the NUKI device is up-to-date, older versions have issues pairing<br>
+Next, try erasing the flash and then (re-)flash the firmware. To erase the flash, use the espressif download tool and click the "Erase" button.
 Afterwards flash the firmware as described in the readme within the 7z file.
 <br><br>
 Also, there are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.
 <br><br>
 Reported as working are:<br>
+[M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)<br>
 ESP32-WROOM-32D (DEVKIT V4)<br>
 ESP32-WROOM-32E<br>
 <br>
@@ -234,6 +252,11 @@ https://github.com/technyon/nuki_hub/issues/39
 Also, check that pairing is allowed. In the smartphone app, go to Settings --> Features & Configuration --> Button & LED and make sure "Bluetooh Pairing" is enabled.
 
 ## FAQ
+
+### NUKI Hub doesn't work when the Wifi on my NUKI Smartlock Pro 3.0 is turned on.
+
+This is by design and according to NUKI part of the specification of the Pro lock: You can user either the built-in Wifi or a Bridge (whic NUKI Hub registers as).
+Using both at the same time doesn't work.
 
 ### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
 Some functionality is restricted by the lock (or opener) firmware and is only accessible when
@@ -246,13 +269,17 @@ See previous point, this needs the correct PIN to be configured.
 ### Using home assistant, it's only possible to lock or unlock the door, but not to unlatch it
 Unlatching can be triggered using the lock.open service.
 
+### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
+
+When using multiple NUKI devices, different paths for each device have to be configured. Navigate to "NUKI Configuration" and change the "MQTT NUKI Smartlock Path"
+or "MQTT NUKI Opener Path" under "Basic NUKI Configuration" for at least one of the devices.
 
 ## Development VM
 
 Since setting up the toolchain can be difficult, I've uploaded a virtual machine (vmware image) that is
 setup to compile NUKI Hub:
 
-https://mega.nz/file/8uRkDKyS#F0FNVJZTsUdcTMhiJIB47Fm-7YqKuyQs15E5zznmroc
+https://drive.google.com/file/d/1fUVYHDtxXAZOAfQ321iRNIwkqFwuDsBp/view?usp=share_link
 
 User and password for the VM are both "nuki" and "nuki". The source is checked out at ~/projects/nuki_hub,
 the cmake build directory is build. So to compile, run the following commands:

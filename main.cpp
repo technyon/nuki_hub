@@ -1,5 +1,4 @@
 #include "Arduino.h"
-#include "Pins.h"
 #include "NukiWrapper.h"
 #include "NetworkLock.h"
 #include "WebCfgServer.h"
@@ -14,6 +13,7 @@
 #include "Config.h"
 #include "RestartReason.h"
 #include "CharBuffer.h"
+#include "NukiDeviceId.h"
 
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
@@ -23,6 +23,8 @@ BleScanner::Scanner* bleScanner = nullptr;
 NukiWrapper* nuki = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
 PresenceDetection* presenceDetection = nullptr;
+NukiDeviceId* deviceIdLock = nullptr;
+NukiDeviceId* deviceIdOpener = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
 Gpio* gpio = nullptr;
@@ -113,18 +115,6 @@ void setupTasks()
     xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 896, NULL, 5, &presenceDetectionTaskHandle, 1);
 }
 
-uint32_t getRandomId()
-{
-    uint8_t rnd[4];
-    for(int i=0; i<4; i++)
-    {
-        rnd[i] = random(255);
-    }
-    uint32_t deviceId;
-    memcpy(&deviceId, &rnd, sizeof(deviceId));
-    return deviceId;
-}
-
 void initEthServer(const NetworkDeviceType device)
 {
     switch (device)
@@ -154,11 +144,6 @@ bool initPreferences()
         preferences->putBool(preference_lock_enabled, true);
     }
 
-    if(preferences->getInt(preference_restart_timer) == 0)
-    {
-        preferences->putInt(preference_restart_timer, -1);
-    }
-
     return firstStart;
 }
 
@@ -173,11 +158,22 @@ void setup()
 
     initializeRestartReason();
 
+
+    uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
+
+    deviceIdLock = new NukiDeviceId(preferences, preference_device_id_lock);
+    deviceIdOpener = new NukiDeviceId(preferences, preference_device_id_opener);
+
+    if(deviceIdLock->get() != 0 && devIdOpener == 0)
+    {
+        deviceIdOpener->assignId(deviceIdLock->get());
+    }
+
     CharBuffer::initialize();
 
-    if(preferences->getInt(preference_restart_timer) > 0)
+    if(preferences->getInt(preference_restart_timer) != 0)
     {
-        restartTs = preferences->getInt(preference_restart_timer) * 60 * 1000;
+        preferences->remove(preference_restart_timer);
     }
 
     gpio = new Gpio(preferences);
@@ -201,13 +197,6 @@ void setup()
         networkOpener->initialize();
     }
 
-    uint32_t deviceId = preferences->getUInt(preference_deviceId);
-    if(deviceId == 0)
-    {
-        deviceId = getRandomId();
-        preferences->putUInt(preference_deviceId, deviceId);
-    }
-
     initEthServer(network->networkDeviceType());
 
     bleScanner = new BleScanner::Scanner();
@@ -217,21 +206,14 @@ void setup()
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceId, bleScanner, networkLock, gpio, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, gpio, preferences);
         nuki->initialize(firstStart);
-
-
-
-//        if(preferences->getBool(preference_gpio_locking_enabled))
-//        {
-//            Gpio::init(nuki);
-//        }
     }
 
     Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
     if(openerEnabled)
     {
-        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceId, bleScanner, networkOpener, gpio, preferences);
+        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences);
         nukiOpener->initialize();
     }
 
@@ -245,4 +227,6 @@ void setup()
 }
 
 void loop()
-{}
+{
+    delay(60000);
+}
