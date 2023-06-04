@@ -224,7 +224,8 @@ void Network::initialize()
     {
         switch (pinEntry.role)
         {
-            case PinRole::GeneralInput:
+            case PinRole::GeneralInputPullDown:
+            case PinRole::GeneralInputPullUp:
                 if(rebGpio)
                 {
                     buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});

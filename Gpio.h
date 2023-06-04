@@ -21,7 +21,8 @@ enum class PinRole
     OutputHighCmActive,
     OutputHighRtoOrCmActive,
     GeneralOutput,
-    GeneralInput
+    GeneralInputPullDown,
+    GeneralInputPullUp
 };
 
 enum class GpioAction
@@ -86,7 +87,8 @@ private:
             PinRole::OutputHighRtoActive,
             PinRole::OutputHighCmActive,
             PinRole::OutputHighRtoOrCmActive,
-            PinRole::GeneralInput,
+            PinRole::GeneralInputPullDown,
+            PinRole::GeneralInputPullUp,
             PinRole::GeneralOutput
         };
 

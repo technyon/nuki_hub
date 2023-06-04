@@ -75,7 +75,10 @@ void Gpio::init()
             case PinRole::GeneralOutput:
                 pinMode(entry.pin, OUTPUT);
                 break;
-            case PinRole::GeneralInput:
+            case PinRole::GeneralInputPullDown:
+                Gpio2Go::configurePin(entry.pin, PinMode::InputPullDown, InterruptMode::Change, 300);
+                break;
+            case PinRole::GeneralInputPullUp:
                 Gpio2Go::configurePin(entry.pin, PinMode::InputPullup, InterruptMode::Change, 300);
                 break;
             default:
@@ -198,7 +201,9 @@ String Gpio::getRoleDescription(PinRole role) const
             return "Output: High when RTO or CM active";
         case PinRole::GeneralOutput:
             return "General output";
-        case PinRole::GeneralInput:
+        case PinRole::GeneralInputPullDown:
+            return "General input (Pull-down)";
+        case PinRole::GeneralInputPullUp:
             return "General input (Pull-up)";
         default:
             return "Unknown";
