@@ -246,6 +246,10 @@ void Network::initialize()
                 break;
         }
     }
+    _gpio->addCallback([this](const GpioAction& action, const int& pin)
+    {
+        gpioActionCallback(action, pin);
+    });
 }
 
 bool Network::update()
@@ -343,6 +347,26 @@ bool Network::update()
             _versionPublished = true;
         }
         _lastMaintenanceTs = ts;
+    }
+
+    for(const auto& gpioTs : _gpioTs)
+    {
+        uint8_t pin = gpioTs.first;
+        unsigned long ts = gpioTs.second;
+        if(ts != 0 && ((millis() - ts) >= GPIO_DEBOUNCE_TIME))
+        {
+            _gpioTs[pin] = 0;
+
+            uint8_t pinState = digitalRead(pin) == HIGH ? 1 : 0;
+            char gpioPath[250];
+            buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pin)).c_str(), mqtt_topic_gpio_state});
+            publishInt(_lockPath.c_str(), gpioPath, pinState);
+
+            Log->print(F("GPIO "));
+            Log->print(pin);
+            Log->print(F(" (Input) --> "));
+            Log->println(pinState);
+        }
     }
 
     return true;
@@ -581,6 +605,10 @@ void Network::parseGpioTopics(const espMqttClientTypes::MessageProperties &prope
     }
 }
 
+void Network::gpioActionCallback(const GpioAction &action, const int &pin)
+{
+    _gpioTs[pin] = millis();
+}
 
 void Network::reconfigureDevice()
 {

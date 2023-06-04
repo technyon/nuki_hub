@@ -77,6 +77,7 @@ private:
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
+    void gpioActionCallback(const GpioAction& action, const int& pin);
     void setupDevice();
     bool reconnect();
 
@@ -139,6 +140,7 @@ private:
     bool _mqttEnabled = true;
     static unsigned long _ignoreSubscriptionsTs;
     long _rssiPublishInterval = 0;
+    std::map<uint8_t, unsigned long> _gpioTs;
 
     char* _buffer;
     const size_t _bufferSize;

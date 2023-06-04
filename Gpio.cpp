@@ -1,5 +1,6 @@
 #include <esp32-hal.h>
 #include "Gpio.h"
+#include "Config.h"
 #include "Arduino.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
@@ -8,7 +9,7 @@
 
 Gpio* Gpio::_inst = nullptr;
 unsigned long Gpio::_debounceTs = 0;
-const uint Gpio::_debounceTime = 1000;
+const uint Gpio::_debounceTime = GPIO_DEBOUNCE_TIME;
 
 Gpio::Gpio(Preferences* preferences)
 : _preferences(preferences)
