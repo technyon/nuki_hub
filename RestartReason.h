@@ -25,24 +25,37 @@ enum class RestartReason
 #define RESTART_REASON_VALID_DETECT 0xa00ab00bc00bd00d;
 
 extern int restartReason;
-extern uint64_t restartReasonValid;
+extern uint64_t restartReasonValidDetect;
+extern bool rebuildGpioRequested;
 
 extern RestartReason currentRestartReason;
 
+extern bool restartReason_isValid;
+
+
 inline static void restartEsp(RestartReason reason)
 {
+    if(reason == RestartReason::GpioConfigurationUpdated)
+    {
+        rebuildGpioRequested = true;
+    }
     restartReason = (int)reason;
-    restartReasonValid = RESTART_REASON_VALID_DETECT;
+    restartReasonValidDetect = RESTART_REASON_VALID_DETECT;
     ESP.restart();
 }
 
 inline static void initializeRestartReason()
 {
     uint64_t cmp = RESTART_REASON_VALID_DETECT;
-    if(restartReasonValid == cmp)
+    restartReason_isValid = (restartReasonValidDetect == cmp);
+    if(restartReason_isValid)
     {
         currentRestartReason = (RestartReason)restartReason;
-        memset(&restartReasonValid, 0, sizeof(restartReasonValid));
+        memset(&restartReasonValidDetect, 0, sizeof(restartReasonValidDetect));
+    }
+    else
+    {
+        rebuildGpioRequested = false;
     }
 }
 
@@ -121,4 +134,11 @@ inline static String getEspRestartReason()
         default:
             return "Unknown: " + (int)reason;
     }
+}
+
+inline bool rebuildGpio()
+{
+    bool rebGpio = rebuildGpioRequested;
+    rebuildGpioRequested = false;
+    return restartReason_isValid && rebGpio;
 }

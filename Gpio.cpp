@@ -151,6 +151,18 @@ const std::vector<PinEntry> &Gpio::pinConfiguration() const
     return _pinConfiguration;
 }
 
+const PinRole Gpio::getPinRole(const int &pin) const
+{
+    for(const auto& pinEntry : _pinConfiguration)
+    {
+        if(pinEntry.pin == pin)
+        {
+            return pinEntry.role;
+        }
+    }
+    return PinRole::Disabled;
+}
+
 String Gpio::getRoleDescription(PinRole role) const
 {
     switch(role)
@@ -315,3 +327,4 @@ void Gpio::migrateObsoleteSetting()
     delay(200);
     restartEsp(RestartReason::GpioConfigurationUpdated);
 }
+

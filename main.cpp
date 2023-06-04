@@ -34,7 +34,9 @@ bool openerEnabled = false;
 unsigned long restartTs = (2^32) - 5 * 60000;
 
 RTC_NOINIT_ATTR int restartReason;
-RTC_NOINIT_ATTR uint64_t restartReasonValid;
+RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
+RTC_NOINIT_ATTR bool rebuildGpioRequested;
+bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
 
 TaskHandle_t networkTaskHandle = nullptr;

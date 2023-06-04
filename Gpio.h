@@ -57,6 +57,7 @@ public:
 
     const std::vector<uint8_t>& availablePins() const;
     const std::vector<PinEntry>& pinConfiguration() const;
+    const PinRole getPinRole(const int& pin) const;
 
     String getRoleDescription(PinRole role) const;
     void getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration, const String& linebreak = "\n") const;

@@ -213,21 +213,36 @@ void Network::initialize()
 
     _publishDebugInfo = _preferences->getBool(preference_publish_debug_info);
 
-    char gpioPath[200];
+    char gpioPath[250];
+    bool rebGpio = rebuildGpio();
 
-    for(const auto& pinEntry : _gpio->pinConfiguration())
+    if(rebGpio)
     {
-        switch(pinEntry.role)
+        Log->println(F("Rebuild MQTT GPIO structure"));
+    }
+    for (const auto &pinEntry: _gpio->pinConfiguration())
+    {
+        switch (pinEntry.role)
         {
             case PinRole::GeneralInput:
-                memset(gpioPath, 0, sizeof(gpioPath));
-                buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_input + std::to_string(pinEntry.pin)).c_str(), "role" });
-                publishString(_lockPath.c_str(), gpioPath, "input");
+                if(rebGpio)
+                {
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                    publishString(_lockPath.c_str(), gpioPath, "input");
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                    publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str());
+                }
                 break;
             case PinRole::GeneralOutput:
-                memset(gpioPath, 0, sizeof(gpioPath));
-                buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_input + std::to_string(pinEntry.pin)).c_str(), "role" });
-                publishString(_lockPath.c_str(), gpioPath, "output");
+                if(rebGpio)
+                {
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                    publishString(_lockPath.c_str(), gpioPath, "output");
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                    publishString(_lockPath.c_str(), gpioPath, "0");
+                }
+                buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                subscribe(_lockPath.c_str(), gpioPath);
                 break;
         }
     }
@@ -509,11 +524,6 @@ void Network::registerMqttReceiver(MqttReceiver* receiver)
 
 void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
-    if(millis() < _ignoreSubscriptionsTs)
-    {
-        return;
-    }
-
     uint8_t value[50] = {0};
     size_t l = min(len, sizeof(value)-1);
 
@@ -525,13 +535,52 @@ void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProper
     _inst->onMqttDataReceived(properties, topic, value, len, index, total);
 }
 
-void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
+void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)
 {
+    parseGpioTopics(properties, topic, payload, len, index, total);
+
+    if(millis() < _ignoreSubscriptionsTs)
+    {
+        return;
+    }
+
     for(auto receiver : _mqttReceivers)
     {
         receiver->onMqttDataReceived(topic, (byte*)payload, index);
     }
 }
+
+
+void Network::parseGpioTopics(const espMqttClientTypes::MessageProperties &properties, const char *topic, const uint8_t *payload, size_t& len, size_t& index, size_t& total)
+{
+    char gpioPath[250];
+    buildMqttPath(gpioPath, {_lockPath.c_str(), mqtt_topic_gpio_prefix, mqtt_topic_gpio_pin});
+//    /nuki_t/gpio/pin_17/state
+    size_t gpioLen = strlen(gpioPath);
+    if(strncmp(gpioPath, topic, gpioLen) == 0)
+    {
+        char pinStr[3] = {0};
+        pinStr[0] = topic[gpioLen];
+        if(topic[gpioLen+1] != '/')
+        {
+            pinStr[1] = topic[gpioLen+1];
+        }
+
+        int pin = std::atoi(pinStr);
+
+        if(_gpio->getPinRole(pin) == PinRole::GeneralOutput)
+        {
+            const uint8_t pinState = strcmp((const char*)payload, "1") == 0 ? HIGH : LOW;
+            Log->print(F("GPIO "));
+            Log->print(pin);
+            Log->print(F(" (Output) --> "));
+            Log->println(pinState);
+            digitalWrite(pin, pinState);
+        }
+
+    }
+}
+
 
 void Network::reconfigureDevice()
 {
