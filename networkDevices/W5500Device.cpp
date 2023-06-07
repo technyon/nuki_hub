@@ -56,7 +56,8 @@ void W5500Device::initialize()
 
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
-        String pathStr = _preferences->getString(preference_mqtt_lock_path);
+        String pathStr = "/";
+        pathStr.concat(_preferences->getString(preference_mqtt_lock_path));
         pathStr.concat(mqtt_topic_log);
         _path = new char[pathStr.length() + 1];
         memset(_path, 0, sizeof(_path));

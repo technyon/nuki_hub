@@ -54,7 +54,8 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
-        String pathStr = preferences->getString(preference_mqtt_lock_path);
+        String pathStr = "/";
+        pathStr.concat(preferences->getString(preference_mqtt_lock_path));
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
