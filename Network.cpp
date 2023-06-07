@@ -521,10 +521,11 @@ void Network::initTopic(const char *prefix, const char *path, const char *value)
 void Network::buildMqttPath(char* outPath, std::initializer_list<const char*> paths)
 {
     int offset = 0;
+    int pathCount = 0;
 
     for(const char* path : paths)
     {
-        if(path[0] != '/')
+        if(pathCount > 0 && path[0] != '/')
         {
             outPath[offset] = '/';
             ++offset;
@@ -537,6 +538,7 @@ void Network::buildMqttPath(char* outPath, std::initializer_list<const char*> pa
             ++offset;
             ++i;
         }
+        ++pathCount;
     }
 
     outPath[offset] = 0x00;
