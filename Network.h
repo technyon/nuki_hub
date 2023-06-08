@@ -7,6 +7,7 @@
 #include "MqttReceiver.h"
 #include "networkDevices/IPConfiguration.h"
 #include "MqttTopics.h"
+#include "Gpio.h"
 
 enum class NetworkDeviceType
 {
@@ -23,7 +24,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(Preferences* preferences, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+    explicit Network(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void initialize();
     bool update();
@@ -70,9 +71,13 @@ public:
     void setKeepAliveCallback(std::function<void()> reconnectTick);
     void addReconnectedCallback(std::function<void()> reconnectedCallback);
 
+    NetworkDevice* device();
+
 private:
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
-    void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
+    void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
+    void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
+    void gpioActionCallback(const GpioAction& action, const int& pin);
     void setupDevice();
     bool reconnect();
 
@@ -97,14 +102,16 @@ private:
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
 
-    void buildMqttPath(const char* prefix, const char* path, char* outPath);
+    void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
 
     static Network* _inst;
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
+    String _lockPath;
 
     Preferences* _preferences;
+    Gpio* _gpio;
     IPConfiguration* _ipConfiguration = nullptr;
     String _hostname;
     char _hostnameArr[101] = {0};
@@ -133,6 +140,7 @@ private:
     bool _mqttEnabled = true;
     static unsigned long _ignoreSubscriptionsTs;
     long _rssiPublishInterval = 0;
+    std::map<uint8_t, unsigned long> _gpioTs;
 
     char* _buffer;
     const size_t _bufferSize;

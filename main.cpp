@@ -34,7 +34,9 @@ bool openerEnabled = false;
 unsigned long restartTs = (2^32) - 5 * 60000;
 
 RTC_NOINIT_ATTR int restartReason;
-RTC_NOINIT_ATTR uint64_t restartReasonValid;
+RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
+RTC_NOINIT_ATTR bool rebuildGpioRequested;
+bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
 
 TaskHandle_t networkTaskHandle = nullptr;
@@ -176,11 +178,16 @@ void setup()
         preferences->remove(preference_restart_timer);
     }
 
+    gpio = new Gpio(preferences);
+    String gpioDesc;
+    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
+    Serial.print(gpioDesc.c_str());
+
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(preferences, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
+    network = new Network(preferences, gpio, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
     network->initialize();
 
     networkLock = new NetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
@@ -197,11 +204,6 @@ void setup()
     bleScanner = new BleScanner::Scanner();
     bleScanner->initialize("NukiHub");
     bleScanner->setScanDuration(10);
-
-    gpio = new Gpio(preferences);
-    String gpioDesc;
-    gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
-    Serial.print(gpioDesc.c_str());
 
     Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
     if(lockEnabled)

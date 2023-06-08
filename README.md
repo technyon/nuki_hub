@@ -196,6 +196,9 @@ can be configured for a specific role:
 - Output: High when RTO active: Outputs a high signal when ring-to-open is active (opener)
 - Output: High when CM active: Outputs a high signal when continuous mode is active (opener)
 - Output: High when RTO or CM active: Outputs a high signal when either ring-to-open or continuous mode is active (opener)
+- General input (pull-down): The pin is configured in pull-down configuration and its state is published to the "gpio/pin_x/state" topic
+- General input (pull-up): The pin is configured in pull-up configuration and its state is published to the "gpio/pin_x/state" topic
+- Genral output: The pin is set to high or low depending on the "gpio/pin/x/state" topic
 
 Note: The old setting "Enable control via GPIO" is removed. If you had enabled this setting before upgrading to 8.22, the PINs are automatically configured to be
 compatible with the previously hard-coded PINs.

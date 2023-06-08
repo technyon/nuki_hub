@@ -50,7 +50,6 @@ public:
     virtual uint16_t mqttSubscribe(const char* topic, uint8_t qos) = 0;
 
 protected:
-    const uint16_t _mqttMaxBufferSize = 6144;
     const String _hostname;
     const IPConfiguration* _ipConfiguration = nullptr;
 };

@@ -61,3 +61,8 @@
 #define mqtt_topic_restart_reason_esp "/maintenance/restartReasonNukiEsp"
 #define mqtt_topic_mqtt_connection_state "/maintenance/mqttConnectionState"
 #define mqtt_topic_network_device "/maintenance/networkDevice"
+
+#define mqtt_topic_gpio_prefix "/gpio"
+#define mqtt_topic_gpio_pin "/pin_"
+#define mqtt_topic_gpio_role "/role"
+#define mqtt_topic_gpio_state "/state"

@@ -36,6 +36,8 @@ void Scanner::update() {
     return;
   }
 
+  bleScan->clearResults();
+
   bool result = bleScan->start(scanDuration, nullptr, false);
   if (!result) {
     scanErrors++;

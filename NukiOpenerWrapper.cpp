@@ -511,7 +511,7 @@ void NukiOpenerWrapper::onKeypadCommandReceivedCallback(const char *command, con
     nukiOpenerInst->onKeypadCommandReceived(command, id, name, code, enabled);
 }
 
-void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action)
+void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
 {
     switch(action)
     {

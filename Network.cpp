@@ -14,8 +14,9 @@ bool _versionPublished = false;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(Preferences *preferences, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
+Network::Network(Preferences *preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
 : _preferences(preferences),
+  _gpio(gpio),
   _buffer(buffer),
   _bufferSize(bufferSize)
 {
@@ -35,7 +36,8 @@ Network::Network(Preferences *preferences, const String& maintenancePathPrefix, 
         _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
     }
 
-    String connectionStateTopic = _preferences->getString(preference_mqtt_lock_path) + mqtt_topic_mqtt_connection_state;
+    _lockPath = _preferences->getString(preference_mqtt_lock_path);
+    String connectionStateTopic = _lockPath + mqtt_topic_mqtt_connection_state;
 
     memset(_mqttConnectionStateTopic, 0, sizeof(_mqttConnectionStateTopic));
     len = connectionStateTopic.length();
@@ -210,6 +212,45 @@ void Network::initialize()
     }
 
     _publishDebugInfo = _preferences->getBool(preference_publish_debug_info);
+
+    char gpioPath[250];
+    bool rebGpio = rebuildGpio();
+
+    if(rebGpio)
+    {
+        Log->println(F("Rebuild MQTT GPIO structure"));
+    }
+    for (const auto &pinEntry: _gpio->pinConfiguration())
+    {
+        switch (pinEntry.role)
+        {
+            case PinRole::GeneralInputPullDown:
+            case PinRole::GeneralInputPullUp:
+                if(rebGpio)
+                {
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                    publishString(_lockPath.c_str(), gpioPath, "input");
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                    publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str());
+                }
+                break;
+            case PinRole::GeneralOutput:
+                if(rebGpio)
+                {
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                    publishString(_lockPath.c_str(), gpioPath, "output");
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                    publishString(_lockPath.c_str(), gpioPath, "0");
+                }
+                buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                subscribe(_lockPath.c_str(), gpioPath);
+                break;
+        }
+    }
+    _gpio->addCallback([this](const GpioAction& action, const int& pin)
+    {
+        gpioActionCallback(action, pin);
+    });
 }
 
 bool Network::update()
@@ -307,6 +348,26 @@ bool Network::update()
             _versionPublished = true;
         }
         _lastMaintenanceTs = ts;
+    }
+
+    for(const auto& gpioTs : _gpioTs)
+    {
+        uint8_t pin = gpioTs.first;
+        unsigned long ts = gpioTs.second;
+        if(ts != 0 && ((millis() - ts) >= GPIO_DEBOUNCE_TIME))
+        {
+            _gpioTs[pin] = 0;
+
+            uint8_t pinState = digitalRead(pin) == HIGH ? 1 : 0;
+            char gpioPath[250];
+            buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pin)).c_str(), mqtt_topic_gpio_state});
+            publishInt(_lockPath.c_str(), gpioPath, pinState);
+
+            Log->print(F("GPIO "));
+            Log->print(pin);
+            Log->print(F(" (Input) --> "));
+            Log->println(pinState);
+        }
     }
 
     return true;
@@ -444,36 +505,40 @@ bool Network::reconnect()
 void Network::subscribe(const char* prefix, const char *path)
 {
     char prefixedPath[500];
-    buildMqttPath(prefix, path, prefixedPath);
+    buildMqttPath(prefixedPath, { prefix, path });
     _subscribedTopics.push_back(prefixedPath);
 }
 
 void Network::initTopic(const char *prefix, const char *path, const char *value)
 {
     char prefixedPath[500];
-    buildMqttPath(prefix, path, prefixedPath);
+    buildMqttPath(prefixedPath, { prefix, path });
     String pathStr = prefixedPath;
     String valueStr = value;
     _initTopics[pathStr] = valueStr;
 }
 
-void Network::buildMqttPath(const char* prefix, const char* path, char* outPath)
+void Network::buildMqttPath(char* outPath, std::initializer_list<const char*> paths)
 {
     int offset = 0;
-    int i=0;
-    while(prefix[i] != 0x00)
-    {
-        outPath[offset] = prefix[i];
-        ++offset;
-        ++i;
-    }
+    int pathCount = 0;
 
-    i=0;
-    while(path[i] != 0x00)
+    for(const char* path : paths)
     {
-        outPath[offset] = path[i];
-        ++i;
-        ++offset;
+        if(pathCount > 0 && path[0] != '/')
+        {
+            outPath[offset] = '/';
+            ++offset;
+        }
+
+        int i = 0;
+        while(path[i] != 0)
+        {
+            outPath[offset] = path[i];
+            ++offset;
+            ++i;
+        }
+        ++pathCount;
     }
 
     outPath[offset] = 0x00;
@@ -486,11 +551,6 @@ void Network::registerMqttReceiver(MqttReceiver* receiver)
 
 void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
-    if(millis() < _ignoreSubscriptionsTs)
-    {
-        return;
-    }
-
     uint8_t value[50] = {0};
     size_t l = min(len, sizeof(value)-1);
 
@@ -502,12 +562,55 @@ void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProper
     _inst->onMqttDataReceived(properties, topic, value, len, index, total);
 }
 
-void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
+void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)
 {
+    parseGpioTopics(properties, topic, payload, len, index, total);
+
+    if(millis() < _ignoreSubscriptionsTs)
+    {
+        return;
+    }
+
     for(auto receiver : _mqttReceivers)
     {
         receiver->onMqttDataReceived(topic, (byte*)payload, index);
     }
+}
+
+
+void Network::parseGpioTopics(const espMqttClientTypes::MessageProperties &properties, const char *topic, const uint8_t *payload, size_t& len, size_t& index, size_t& total)
+{
+    char gpioPath[250];
+    buildMqttPath(gpioPath, {_lockPath.c_str(), mqtt_topic_gpio_prefix, mqtt_topic_gpio_pin});
+//    /nuki_t/gpio/pin_17/state
+    size_t gpioLen = strlen(gpioPath);
+    if(strncmp(gpioPath, topic, gpioLen) == 0)
+    {
+        char pinStr[3] = {0};
+        pinStr[0] = topic[gpioLen];
+        if(topic[gpioLen+1] != '/')
+        {
+            pinStr[1] = topic[gpioLen+1];
+        }
+
+        int pin = std::atoi(pinStr);
+
+        if(_gpio->getPinRole(pin) == PinRole::GeneralOutput)
+        {
+            const uint8_t pinState = strcmp((const char*)payload, "1") == 0 ? HIGH : LOW;
+            Log->print(F("GPIO "));
+            Log->print(pin);
+            Log->print(F(" (Output) --> "));
+            Log->println(pinState);
+            digitalWrite(pin, pinState);
+        }
+
+    }
+}
+
+void Network::gpioActionCallback(const GpioAction &action, const int &pin)
+{
+    _gpioTs[pin] = millis();
 }
 
 void Network::reconfigureDevice()
@@ -547,7 +650,7 @@ void Network::publishFloat(const char* prefix, const char* topic, const float va
     char str[30];
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
-    buildMqttPath(prefix, topic, path);
+    buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
@@ -556,7 +659,7 @@ void Network::publishInt(const char* prefix, const char *topic, const int value)
     char str[30];
     itoa(value, str, 10);
     char path[200] = {0};
-    buildMqttPath(prefix, topic, path);
+    buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
@@ -565,7 +668,7 @@ void Network::publishUInt(const char* prefix, const char *topic, const unsigned 
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
-    buildMqttPath(prefix, topic, path);
+    buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
@@ -574,7 +677,7 @@ void Network::publishULong(const char* prefix, const char *topic, const unsigned
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
-    buildMqttPath(prefix, topic, path);
+    buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
@@ -583,14 +686,14 @@ void Network::publishBool(const char* prefix, const char *topic, const bool valu
     char str[2] = {0};
     str[0] = value ? '1' : '0';
     char path[200] = {0};
-    buildMqttPath(prefix, topic, path);
+    buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
 }
 
 bool Network::publishString(const char* prefix, const char *topic, const char *value)
 {
     char path[200] = {0};
-    buildMqttPath(prefix, topic, path);
+    buildMqttPath(path, { prefix, topic });
     return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
 }
 
@@ -1243,4 +1346,9 @@ void Network::disableMqtt()
 {
     _device->disableMqtt();
     _mqttEnabled = false;
+}
+
+NetworkDevice *Network::device()
+{
+    return _device;
 }
