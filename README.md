@@ -1,10 +1,15 @@
 ## About
 
-The NUKI Hub software runs on any ESP32 module and acts as a bridge between a NUKI Lock and a smart home system.
-It connects to the NUKI device via bluetooth, a NUKI Bridge isn't required.
+***The scope of NUKI Hub is to have an efficient way to integrate NUKI Lock in a local Home Automation platform.***
+
+The NUKI Hub software runs on any ESP32 module and acts as a bridge between a NUKI Lock and a Home Automation platform.
+It communicates with the Nuki Lock via Bluetooth (BLE) and then uses MQTT to integrate with other systems.
 
 It exposes the lock state (and more) via MQTT, and allows to execute commands like locking and unlocking.
 Optionally, a NUKI Opener is also supported.
+
+***NUKI Hub does not integrate with the NUKI mobile app, it can't register itself as a bridge in the official NUKI mobile app. ***
+
 
 Supported devices:<br>
 NUKI Smart Lock 1.0<br>
