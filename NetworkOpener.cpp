@@ -82,7 +82,7 @@ void NetworkOpener::update()
         char str[50];
         memset(str, 0, sizeof(str));
         _resetLockStateTs = 0;
-        lockstateToString(NukiOpener::LockState::Locked, str);
+        lockstateToString(_currentLockState, str);
         publishString(mqtt_topic_lock_state, str);
     }
 }
@@ -199,6 +199,8 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
 
 void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState)
 {
+    _currentLockState = keyTurnerState.lockState;
+
     char str[50];
 
     if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState || keyTurnerState.nukiState != lastKeyTurnerState.nukiState) && keyTurnerState.lockState != NukiOpener::LockState::Undefined)

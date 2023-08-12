@@ -82,6 +82,7 @@ private:
     int _keypadCommandEnabled = 1;
     unsigned long _resetLockStateTs = 0;
     uint8_t _queryCommands = 0;
+    NukiOpener::LockState _currentLockState = NukiOpener::LockState::Undefined;
 
     char* _buffer;
     const size_t _bufferSize;
