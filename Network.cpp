@@ -1172,7 +1172,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         json["dev"]["mdl"] = deviceType;
         json["dev"]["name"] = name;
         json["~"] = baseTopic;
-        json["name"] = name + String(" " + displayName);
+        json["name"] = displayName;
         json["unique_id"] = String(uidString) + uidStringPostfix;
         if(deviceClass != "")
         {
