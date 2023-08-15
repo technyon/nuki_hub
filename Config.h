@@ -1,6 +1,6 @@
 #pragma once
 
-#define NUKI_HUB_VERSION "8.26-pre-2"
+#define NUKI_HUB_VERSION "8.27"
 
 #define MQTT_QOS_LEVEL 1
 #define MQTT_CLEAN_SESSIONS false
