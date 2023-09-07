@@ -282,6 +282,12 @@ Unlatching can be triggered using the lock.open service.
 When using multiple NUKI devices, different paths for each device have to be configured. Navigate to "NUKI Configuration" and change the "MQTT NUKI Smartlock Path"
 or "MQTT NUKI Opener Path" under "Basic NUKI Configuration" for at least one of the devices.
 
+### The battery is draining quickly.
+This often is a result of enabling "Register as app" without using a NUKI Bridge together with NUKI Hub.
+Doing so will cause NUKI Hub to constantly query the lock, and thus draining the battery.
+To fix this, unpair NUKI Hub, disable "Register as app", and re-pair.<br>
+Never enable "Register as app" unless you intend to use a NUKI Bridge in addition to NUKI Hub!
+
 ## Development VM
 
 Since setting up the toolchain can be difficult, I've uploaded a virtual machine (vmware image) that is
