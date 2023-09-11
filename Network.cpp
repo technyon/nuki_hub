@@ -710,7 +710,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         ids.add(String("nuki_") + uidString);
         json["dev"]["mf"] = "Nuki";
         json["dev"]["mdl"] = deviceType;
-        json["dev"]["mdl"] = name;
+        json["dev"]["name"] = name;
         json["~"] = baseTopic;
         json["name"] = null;
         json["unique_id"] = String(uidString) + "_lock";
