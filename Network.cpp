@@ -712,7 +712,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["dev"]["mdl"] = deviceType;
         json["dev"]["name"] = name;
         json["~"] = baseTopic;
-        json["name"] = null;
+        json["name"] = nullptr;
         json["unique_id"] = String(uidString) + "_lock";
         json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
         json["pl_lock"] = lockAction;
