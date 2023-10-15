@@ -525,7 +525,7 @@ bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
 void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
                                char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
 {
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
     _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigLedBrightness(deviceType, baseTopic, name, uidString);
     if(hasDoorSensor)

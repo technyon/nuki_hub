@@ -697,7 +697,7 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
     return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
 }
 
-void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -715,6 +715,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["name"] = nullptr;
         json["unique_id"] = String(uidString) + "_lock";
         json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
+        json["avty"]["t"] = availabilityTopic;
         json["pl_lock"] = lockAction;
         json["pl_unlk"] = unlockAction;
         json["pl_open"] = openAction;
@@ -1068,7 +1069,7 @@ void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic
                      "diagnostic",
                      "",
                      { { "ic", "mdi:format-list-bulleted" },
-                                      { "value_template", "{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first).authorizationName }}" }});
+                                      { "value_template", "{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first|default).authorizationName|default }}" }});
 }
 
 void Network::publishHASSConfigKeypadAttemptInfo(char *deviceType, const char *baseTopic, char *name, char *uidString)
