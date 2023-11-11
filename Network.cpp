@@ -1045,7 +1045,7 @@ void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopi
                      deviceType,
                      "",
                      "",
-                     "config",
+                     "diagnostic",
                      mqtt_topic_config_sound_level,
                      { { "ic", "mdi:volume-source" },
                        { "min", "0" },
