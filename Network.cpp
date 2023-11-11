@@ -1088,7 +1088,7 @@ void Network::publishHASSConfigKeypadAttemptInfo(char *deviceType, const char *b
                      "diagnostic",
                      "",
                      { { "ic", "mdi:drag-vertical" },
-                                      { "value_template", "{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first).completionStatus }}" }});
+                                      { "value_template", "{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first|default).completionStatus|default }}" }});
 }
 
 void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
