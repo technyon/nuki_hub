@@ -259,6 +259,12 @@ https://github.com/technyon/nuki_hub/issues/39
 <br><br>
 Also, check that pairing is allowed. In the smartphone app, go to Settings --> Features & Configuration --> Button & LED and make sure "Bluetooh Pairing" is enabled.
 
+### In Home Assistant, the lock is shown as unavailable
+
+Make sure you are using at least version 2023.8.0 of home assistant. 
+The HA developers have changes to the MQTT auto discovery which break support for older version, and NUKI Hub
+has adopted these changes. That unfortunately means that older versions of HA are not supported anymore.
+
 ## FAQ
 
 ### NUKI Hub doesn't work when the Wifi on my NUKI Smartlock Pro 3.0 is turned on.
