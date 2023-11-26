@@ -675,22 +675,26 @@ void WebCfgServer::buildCredHtml(String &response)
     {
         response.concat("<br><br><h3>Unpair NUKI Lock</h3>");
         response.concat("<form method=\"post\" action=\"/unpairlock\">");
+        response.concat("<table>");
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
         printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
-        response.concat("<br><br><button type=\"submit\">OK</button></form>");
+        response.concat("</table>");
+        response.concat("<br><button type=\"submit\">OK</button></form>");
     }
 
     if(_nukiOpener != nullptr)
     {
         response.concat("<br><br><h3>Unpair NUKI Opener</h3>");
         response.concat("<form method=\"post\" action=\"/unpairopener\">");
+        response.concat("<table>");
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
         printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
-        response.concat("<br><br><button type=\"submit\">OK</button></form>");
+        response.concat("</table>");
+        response.concat("<br><button type=\"submit\">OK</button></form>");
     }
     response.concat("</BODY></HTML>");
 }
@@ -1035,8 +1039,8 @@ void WebCfgServer::printInputField(String& response,
     response.concat(token);
     response.concat("\" SIZE=\"25\" MAXLENGTH=\"");
     response.concat(maxLengthStr);
-    response.concat("\\\"/>");
-    response.concat("</td></tr>\"");
+    response.concat("\"/>");
+    response.concat("</td></tr>");
 }
 
 void WebCfgServer::printInputField(String& response,
@@ -1098,7 +1102,7 @@ void WebCfgServer::printTextarea(String& response,
     response.concat(token);
     response.concat("\" MAXLENGTH=\"");
     response.concat(maxLengthStr);
-    response.concat("\\\">");
+    response.concat("\">");
     response.concat(value);
     response.concat("</TEXTAREA>");
     response.concat("</td></tr>");
@@ -1262,7 +1266,7 @@ void WebCfgServer::handleOtaUpload()
 void WebCfgServer::sendCss()
 {
     // escaped by https://www.cescaper.com/
-    _server.send(200, "text/plain", stylecss, sizeof(stylecss));
+    _server.send(200, "text/css", stylecss, sizeof(stylecss));
 }
 
 void WebCfgServer::sendFavicon()
