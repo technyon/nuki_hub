@@ -243,7 +243,7 @@ bool EthLan8720Device::mqttConnect()
     }
 }
 
-bool EthLan8720Device::mqttDisonnect(bool force)
+bool EthLan8720Device::mqttDisconnect(bool force)
 {
     if(_useEncryption)
     {

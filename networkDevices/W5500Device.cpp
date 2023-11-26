@@ -259,7 +259,7 @@ bool W5500Device::mqttConnect()
     return _mqttClient.connect();
 }
 
-bool W5500Device::mqttDisonnect(bool force)
+bool W5500Device::mqttDisconnect(bool force)
 {
     return _mqttClient.disconnect(force);
 }

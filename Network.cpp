@@ -496,7 +496,7 @@ bool Network::reconnect()
             _device->printError();
             _mqttConnectionState = 0;
             _nextReconnect = millis() + 5000;
-            _device->mqttDisonnect(true);
+            _device->mqttDisconnect(true);
         }
     }
     return _mqttConnectionState > 0;

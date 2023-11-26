@@ -261,7 +261,7 @@ bool WifiDevice::mqttConnect()
     }
 }
 
-bool WifiDevice::mqttDisonnect(bool force)
+bool WifiDevice::mqttDisconnect(bool force)
 {
     if(_useEncryption)
     {

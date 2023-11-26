@@ -725,7 +725,7 @@ bool NukiWrapper::hasDoorSensor() const
 {
     return _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
-           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating;;
+           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating;
 }
 
 void NukiWrapper::disableHASS()
