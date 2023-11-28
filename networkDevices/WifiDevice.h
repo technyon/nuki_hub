@@ -41,7 +41,7 @@ public:
 
     bool mqttConnect() override;
 
-    bool mqttDisonnect(bool force) override;
+    bool mqttDisconnect(bool force) override;
 
     void setWill(const char *topic, uint8_t qos, bool retain, const char *payload) override;
 
