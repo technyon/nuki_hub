@@ -820,7 +820,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
-    printCheckBox(response, "REGAPP", "Register as app (on: register as app, off: register as bridge; needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
+    printCheckBox(response, "REGAPP", "NUKI Bridge is running alongside NUKI Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
     response.concat("</table>");
