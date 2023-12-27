@@ -16,6 +16,8 @@ NUKI Smart Lock 1.0<br>
 NUKI Smart Lock 2.0<br>
 NUKI Smart Lock 3.0<br>
 NUKI Smart Lock 3.0 Pro (read FAQ below)<br>
+NUKI Smart Lock 4.0<br>
+NUKI Smart Lock 4.0 Pro (read FAQ below)<br>
 NUKI Opener<br>
 NUKI Keypad 1.0<br>
 NUKI Keypad 2.0
