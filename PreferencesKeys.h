@@ -96,11 +96,11 @@ private:
     {
         return s == "" ? "" : "***";
     }
-    const String redact(const int i) const
+    const String redact(const int32_t i) const
     {
         return i == 0 ? "" : "***";
     }
-    const String redact(const uint i) const
+    const String redact(const uint32_t i) const
     {
         return i == 0 ? "" : "***";
     }
