@@ -7,7 +7,7 @@
 struct PdDevice
 {
     char address[18] = {0};
-    char name[30] = {0};
+    char name[37] = {0};
     unsigned long timestamp = 0;
     int rssi = 0;
     bool hasRssi = false;

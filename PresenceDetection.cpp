@@ -90,7 +90,7 @@ void PresenceDetection::buildCsv(const PdDevice &device)
     ++_csvIndex;
 
     int i=0;
-    while(device.name[i] != 0x00 && i < 30)
+    while(device.name[i] != 0x00 && i < sizeof(device.name))
     {
         _csv[_csvIndex] = device.name[i];
         ++_csvIndex;
@@ -192,6 +192,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
                 if(ENDIAN_CHANGE_U16(oBeacon.getMinor()) == 40004)
                 {
                     pdDevice.timestamp = millis();
+                    strcpy(pdDevice.name, oBeacon.getProximityUUID().toString().c_str());
                     _devices[addr] = pdDevice;
                 }
             }
