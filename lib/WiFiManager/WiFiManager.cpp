@@ -212,8 +212,19 @@ WiFiManager::WiFiManager(Print& consolePort):_debugPort(consolePort){
   WiFiManagerInit();
 }
 
+WiFiManager::WiFiManager(const char* user, const char* password) {
+    WiFiManagerInit();
+
+    if(strlen(user) > 0)
+    {
+        strcpy(_credUser, user);
+        strcpy(_credPassword, password);
+        _hasCredentials = true;
+    }
+}
+
 WiFiManager::WiFiManager() {
-  WiFiManagerInit();  
+  WiFiManagerInit();
 }
 
 void WiFiManager::WiFiManagerInit(){
@@ -1329,6 +1340,9 @@ void WiFiManager::handleRoot() {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP Root"));
   #endif
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
   if (captivePortal()) return; // If captive portal redirect instead of displaying the page
   handleRequest();
   String page = getHTTPHead(_title); // @token options @todo replace options with title
@@ -1355,6 +1369,11 @@ void WiFiManager::handleWifi(boolean scan) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP Wifi"));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titlewifi)); // @token titlewifi
   if (scan) {
@@ -1411,6 +1430,11 @@ void WiFiManager::handleParam(){
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP Param"));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleparam)); // @token titlewifi
 
@@ -1790,6 +1814,11 @@ void WiFiManager::handleWiFiStatus(){
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP WiFi status "));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
   String page;
   // String page = "{\"result\":true,\"count\":1}";
@@ -1807,6 +1836,11 @@ void WiFiManager::handleWifiSave() {
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP WiFi save "));
   DEBUG_WM(DEBUG_DEV,F("Method:"),server->method() == HTTP_GET  ? (String)FPSTR(S_GET) : (String)FPSTR(S_POST));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
 
   //SAVE/connect here
@@ -1882,6 +1916,11 @@ void WiFiManager::handleParamSave() {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_DEV,F("Method:"),server->method() == HTTP_GET  ? (String)FPSTR(S_GET) : (String)FPSTR(S_POST));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
 
   doParamSave();
@@ -1951,6 +1990,11 @@ void WiFiManager::handleInfo() {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP Info"));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleinfo)); // @token titleinfo
   reportStatus(page);
@@ -2296,6 +2340,11 @@ void WiFiManager::handleExit() {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP Exit"));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleexit)); // @token titleexit
   page += FPSTR(S_exiting); // @token exiting
@@ -2313,6 +2362,11 @@ void WiFiManager::handleReset() {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP Reset"));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titlereset)); //@token titlereset
   page += FPSTR(S_resetting); //@token resetting
@@ -2338,6 +2392,11 @@ void WiFiManager::handleErase(boolean opt) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_NOTIFY,F("<- HTTP Erase"));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleerase)); // @token titleerase
 
@@ -2424,6 +2483,11 @@ void WiFiManager::stopCaptivePortal(){
 // HTTPD CALLBACK, handle close,  stop captive portal, if not enabled undefined
 void WiFiManager::handleClose(){
   DEBUG_WM(DEBUG_VERBOSE,F("Disabling Captive Portal"));
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
   stopCaptivePortal();
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(DEBUG_VERBOSE,F("<- HTTP close"));
@@ -3815,6 +3879,11 @@ void WiFiManager::handleUpdate() {
   #ifdef WM_DEBUG_LEVEL
 	DEBUG_WM(DEBUG_VERBOSE,F("<- Handle update"));
   #endif
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
+
 	if (captivePortal()) return; // If captive portal redirect instead of displaying the page
 	String page = getHTTPHead(_title); // @token options
 	String str = FPSTR(HTTP_ROOT_MAIN);
@@ -3925,6 +3994,10 @@ void WiFiManager::handleUpdating(){
 void WiFiManager::handleUpdateDone() {
 	DEBUG_WM(DEBUG_VERBOSE, F("<- Handle update done"));
 	// if (captivePortal()) return; // If captive portal redirect instead of displaying the page
+
+    if (_hasCredentials && !server->authenticate(_credUser, _credPassword)) {
+        return server->requestAuthentication();
+    }
 
 	String page = getHTTPHead(FPSTR(S_options)); // @token options
 	String str  = FPSTR(HTTP_ROOT_MAIN);

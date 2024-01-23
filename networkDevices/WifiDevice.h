@@ -11,7 +11,7 @@
 class WifiDevice : public NetworkDevice
 {
 public:
-    WifiDevice(const String& hostname, Preferences* _preferences, const IPConfiguration* ipConfiguration);
+    WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration);
 
     const String deviceName() const override;
 

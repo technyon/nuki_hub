@@ -8,16 +8,17 @@
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
-WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences, const IPConfiguration* ipConfiguration)
-: NetworkDevice(hostname, ipConfiguration)
+WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
+: NetworkDevice(hostname, ipConfiguration),
+  _wm(preferences->getString(preference_cred_user).c_str(), preferences->getString(preference_cred_password).c_str())
 {
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
 
-    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+    _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
-    size_t caLength = _preferences->getString(preference_mqtt_ca,_ca,TLS_CA_MAX_SIZE);
-    size_t crtLength = _preferences->getString(preference_mqtt_crt,_cert,TLS_CERT_MAX_SIZE);
-    size_t keyLength = _preferences->getString(preference_mqtt_key,_key,TLS_KEY_MAX_SIZE);
+    size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
+    size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
+    size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
 
     _useEncryption = caLength > 1;  // length is 1 when empty
 
@@ -41,12 +42,12 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* _preferences, const 
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 
-    if(_preferences->getBool(preference_mqtt_log_enabled))
+    if(preferences->getBool(preference_mqtt_log_enabled))
     {
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
-        String pathStr = _preferences->getString(preference_mqtt_lock_path);
+        String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);

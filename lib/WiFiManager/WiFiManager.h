@@ -239,6 +239,7 @@ class WiFiManager
 {
   public:
     WiFiManager(Print& consolePort);
+    WiFiManager(const char* user, const char* password);
     WiFiManager();
     ~WiFiManager();
     void WiFiManagerInit();
@@ -819,6 +820,10 @@ class WiFiManager
     std::function<void()> _resetcallback;
     std::function<void()> _preotaupdatecallback;
     std::function<void()> _configportaltimeoutcallback;
+
+    bool _hasCredentials = false;
+    char _credUser[31] = {0};
+    char _credPassword[31] = {0};
 
     template <class T>
     auto optionalIPFromString(T *obj, const char *s) -> decltype(  obj->fromString(s)  ) {
