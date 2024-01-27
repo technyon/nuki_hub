@@ -140,7 +140,8 @@ CA, CERT and KEY are filled -> Encrypted MQTT with client vaildation<br>
 
 Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/).
 
-For a simpler integration, this software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/). To enable autodiscovery, supply the discovery topic that is configured in your Home Assistant instance (typically "homeassistant") in the MQTT Configuration page. Once enabled, Smartlock and/or Opener should automatically appear on Home Assistant.
+For a simpler integration, this software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/). To enable autodiscovery, supply the discovery topic that is configured in your Home Assistant instance (default is "homeassistant", that is the default topic HA looks for, unless you changed it also in HA) in the MQTT Configuration page. Once enabled, Smartlock and/or Opener should automatically appear on Home Assistant.
+NOTE: _this is the root HA autodiscovery topic, don't put subtopics under that_
 
 The following mapping between Home Assistant services and Nuki commands is setup when enabling autodiscovery:
 |             | Smartlock | Opener                    |
