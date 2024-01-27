@@ -307,8 +307,14 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
 
     DynamicJsonDocument json(_bufferSize);
 
+    int i = 5;
     for(const auto& log : logEntries)
     {
+        if(i <= 0)
+        {
+            break;
+        }
+        --i;
         if((log.loggingType == NukiLock::LoggingType::LockAction || log.loggingType == NukiLock::LoggingType::KeypadAction) && ! authFound)
         {
             authFound = true;

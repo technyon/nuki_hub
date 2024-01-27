@@ -295,8 +295,15 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 
     DynamicJsonDocument json(_bufferSize);
 
+    int i = 5;
     for(const auto& log : logEntries)
     {
+        if(i <= 0)
+        {
+            break;
+        }
+        --i;
+
         if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction) && ! authFound)
         {
             authFound = true;
