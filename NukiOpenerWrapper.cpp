@@ -486,6 +486,14 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
             nukiOpenerInst->_nextLockAction = action;
             return LockActionResult::Success;
             break;
+        case AccessLevel::LockAndUnlock:
+            if(action == NukiOpener::LockAction::ActivateRTO || action == NukiOpener::LockAction::ActivateCM || action == NukiOpener::LockAction::DeactivateRTO || action == NukiOpener::LockAction::DeactivateCM)
+            {
+                nukiOpenerInst->_nextLockAction = action;
+                return LockActionResult::Success;
+            }
+            return LockActionResult::AccessDenied;
+            break;
         case AccessLevel::LockOnly:
             if(action == NukiOpener::LockAction::DeactivateRTO || action == NukiOpener::LockAction::DeactivateCM)
             {

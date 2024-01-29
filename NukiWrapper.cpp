@@ -455,6 +455,14 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
             nukiInst->_nextLockAction = action;
             return LockActionResult::Success;
             break;
+        case AccessLevel::LockAndUnlock:
+            if(action == NukiLock::LockAction::Lock || action == NukiLock::LockAction::Unlock || action == NukiLock::LockAction::LockNgo || action == NukiLock::LockAction::FullLock)
+            {
+                nukiInst->_nextLockAction = action;
+                return LockActionResult::Success;
+            }
+            return LockActionResult::AccessDenied;
+            break;
         case AccessLevel::LockOnly:
             if(action == NukiLock::LockAction::Lock)
             {
