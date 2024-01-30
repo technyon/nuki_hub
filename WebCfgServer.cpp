@@ -1314,6 +1314,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getAccessLevelOptions
     std::vector<std::pair<String, String>> options;
 
     options.push_back(std::make_pair(std::to_string((int)AccessLevel::Full).c_str(), "Full"));
+    options.push_back(std::make_pair(std::to_string((int)AccessLevel::LockAndUnlock).c_str(), "Lock and unlock operation only"));
     options.push_back(std::make_pair(std::to_string((int)AccessLevel::LockOnly).c_str(), "Lock operation only"));
     options.push_back(std::make_pair(std::to_string((int)AccessLevel::ReadOnly).c_str(), "Read only"));
 
