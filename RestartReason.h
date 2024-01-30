@@ -11,6 +11,7 @@ enum class RestartReason
     ReconfigureWifi,
     ReconfigureLAN8720,
     NetworkDeviceCriticalFailure,
+    NetworkDeviceCriticalFailureNoWifiFallback,
     ConfigurationUpdated,
     GpioConfigurationUpdated,
     RestartTimer,
@@ -81,6 +82,8 @@ inline static String getRestartReason()
             return "ReconfigureLAN8720";
         case RestartReason::NetworkDeviceCriticalFailure:
             return "NetworkDeviceCriticalFailure";
+        case RestartReason::NetworkDeviceCriticalFailureNoWifiFallback:
+            return "NetworkDeviceCriticalFailureNoWifiFallback";
         case RestartReason::ConfigurationUpdated:
             return "ConfigurationUpdated";
         case RestartReason::GpioConfigurationUpdated:

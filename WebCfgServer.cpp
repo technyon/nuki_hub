@@ -325,6 +325,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_network_hardware, value.toInt());
             configChanged = true;
         }
+        else if(key == "NWHWWIFIFB")
+        {
+            _preferences->putBool(preference_network_wifi_fallback_disabled, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "RSSI")
         {
             _preferences->putInt(preference_rssi_publish_interval, value.toInt());
@@ -763,6 +768,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
+    printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wifi / WiFi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled));
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));

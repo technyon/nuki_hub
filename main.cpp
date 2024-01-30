@@ -138,6 +138,8 @@ bool initPreferences()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
 
+//    preferences->putBool(preference_network_wifi_fallback_disabled, false);
+
     bool firstStart = !preferences->getBool(preference_started_before);
 
     if(firstStart)

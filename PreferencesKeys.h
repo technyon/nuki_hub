@@ -27,6 +27,7 @@
 #define preference_ip_dns_server "dnssrv"
 #define preference_network_hardware "nwhw"
 #define preference_network_hardware_gpio "nwhwdt" // obsolete
+#define preference_network_wifi_fallback_disabled "nwwififb"
 #define preference_rssi_publish_interval "rssipb"
 #define preference_hostname "hostname"
 #define preference_network_timeout "nettmout"

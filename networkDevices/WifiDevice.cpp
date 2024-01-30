@@ -10,6 +10,7 @@ RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
 WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
 : NetworkDevice(hostname, ipConfiguration),
+  _preferences(preferences),
   _wm(preferences->getString(preference_cred_user).c_str(), preferences->getString(preference_cred_password).c_str())
 {
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
@@ -64,6 +65,7 @@ void WifiDevice::initialize()
     std::vector<const char *> wm_menu;
     wm_menu.push_back("wifi");
     wm_menu.push_back("exit");
+    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
     // reduced tieout if ESP is set to restart on disconnect
     _wm.setConfigPortalTimeout(_restartOnDisconnect ? 60 * 3 : 60 * 30);
     _wm.setShowInfoUpdate(false);

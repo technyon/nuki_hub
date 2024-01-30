@@ -65,6 +65,14 @@ void Network::setupDevice()
 
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
     {
+        if(_preferences->getBool(preference_network_wifi_fallback_disabled))
+        {
+            Log->println(F("Failed to connect to network. Wifi fallback is disable, rebooting."));
+            memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
+            sleep(5);
+            restartEsp(RestartReason::NetworkDeviceCriticalFailureNoWifiFallback);
+        }
+
         Log->println(F("Switching to WiFi device as fallback."));
         _networkDeviceType = NetworkDeviceType::WiFi;
     }

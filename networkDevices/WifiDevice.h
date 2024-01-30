@@ -65,6 +65,7 @@ private:
     WiFiManager _wm;
     espMqttClient* _mqttClient = nullptr;
     espMqttClientSecure* _mqttClientSecure = nullptr;
+    Preferences* _preferences = nullptr;
 
     bool _restartOnDisconnect = false;
     bool _startAp = false;
