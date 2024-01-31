@@ -91,7 +91,12 @@ void WifiDevice::initialize()
         res = _wm.autoConnect(); // password protected ap
     }
 
-    if(!res) {
+    if(!res)
+    {
+        esp_wifi_disconnect ();
+        esp_wifi_stop ();
+        esp_wifi_deinit ();
+
         Log->println(F("Failed to connect. Wait for ESP restart."));
         delay(1000);
         restartEsp(RestartReason::WifiInitFailed);
