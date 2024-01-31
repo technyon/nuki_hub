@@ -193,7 +193,9 @@ can be configured for a specific role:
 - Disabled: The GPIO is disabled
 - Input: Lock: When connect to Ground, a lock command is sent to the lock
 - Input: Unlock: When connect to Ground, an unlock command is sent to the lock
-- Input: Unlatch: When connect to Ground, an unlatch command is sent to the lock 
+- Input: Unlatch: When connect to Ground, an unlatch command is sent to the lock
+- Input: Lock n Go: When connect to Ground, a Lock n Go command is sent to the lock
+- Input: Lock n Go and unlatch: When connect to Ground, a Lock n Go and unlatch command is sent to the lock 
 - Input: Electric strike actuation: When connect to Ground, an electric strike actuation command is sent to the opener (open door for configured amount of time)
 - Input: Activate RTO: When connect to Ground, Ring-to-open is activated (opener)
 - Input: Activate CM: When connect to Ground, Continuous mode is activated (opener)
@@ -285,6 +287,7 @@ See previous point, this needs the correct PIN to be configured.
 
 ### Using home assistant, it's only possible to lock or unlock the door, but not to unlatch it
 Unlatching can be triggered using the lock.open service.
+Also make sure "Access level" under "Advanced NUKI Configuration" is set to "Full"
 
 ### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
 

@@ -277,6 +277,16 @@ void NukiWrapper::unlatch()
     _nextLockAction = NukiLock::LockAction::Unlatch;
 }
 
+void NukiWrapper::lockngo()
+{
+    _nextLockAction = NukiLock::LockAction::LockNgo;
+}
+
+void NukiWrapper::lockngounlatch()
+{
+    _nextLockAction = NukiLock::LockAction::LockNgoUnlatch;
+}
+
 bool NukiWrapper::isPinSet()
 {
     return _nukiLock.getSecurityPincode() != 0;
@@ -500,6 +510,12 @@ void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
             break;
         case GpioAction::Unlatch:
             nukiInst->unlatch();
+            break;
+        case GpioAction::LockNgo:
+            nukiInst->lockngo();
+            break;
+        case GpioAction::LockNgoUnlatch:
+            nukiInst->lockngounlatch();
             break;
     }
 }

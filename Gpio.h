@@ -10,6 +10,8 @@ enum class PinRole
     InputLock,
     InputUnlock,
     InputUnlatch,
+    InputLockNgo,
+    InputLockNgoUnlatch,
     InputElectricStrikeActuation,
     InputActivateRTO,
     InputActivateCM,
@@ -30,6 +32,8 @@ enum class GpioAction
     Lock,
     Unlock,
     Unlatch,
+    LockNgo,
+    LockNgoUnlatch,
     ElectricStrikeActuation,
     ActivateRTO,
     ActivateCM,
@@ -78,6 +82,8 @@ private:
             PinRole::InputLock,
             PinRole::InputUnlock,
             PinRole::InputUnlatch,
+            PinRole::InputLockNgo,
+            PinRole::InputLockNgoUnlatch,
             PinRole::InputElectricStrikeActuation,
             PinRole::InputActivateRTO,
             PinRole::InputActivateCM,
@@ -98,6 +104,8 @@ private:
     static void IRAM_ATTR isrLock();
     static void IRAM_ATTR isrUnlock();
     static void IRAM_ATTR isrUnlatch();
+    static void IRAM_ATTR isrLockNgo();
+    static void IRAM_ATTR isrLockNgoUnlatch();
     static void IRAM_ATTR isrElectricStrikeActuation();
     static void IRAM_ATTR isrActivateRTO();
     static void IRAM_ATTR isrActivateCM();
