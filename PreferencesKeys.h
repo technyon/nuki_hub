@@ -66,7 +66,7 @@ private:
             preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_mqtt_ca,
             preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery,
             preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
-            preference_network_hardware, preference_rssi_publish_interval,
+            preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval,
             preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
             preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
@@ -86,7 +86,7 @@ private:
     {
             preference_started_before, preference_mqtt_log_enabled, preference_lock_enabled, preference_opener_enabled,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
-            preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info
+            preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled
     };
 
     const bool isRedacted(const char* key) const
