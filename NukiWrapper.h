@@ -22,6 +22,8 @@ public:
     void lock();
     void unlock();
     void unlatch();
+    void lockngo();
+    void lockngounlatch();
 
     bool isPinSet();
     void setPin(const uint16_t pin);
