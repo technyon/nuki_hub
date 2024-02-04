@@ -32,6 +32,8 @@ public:
     virtual bool isConnected();
 
     int8_t signalStrength() override;
+    
+    String localIP() override;
 
     void mqttSetClientId(const char *clientId) override;
 

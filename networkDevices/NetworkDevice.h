@@ -31,6 +31,8 @@ public:
 
     virtual bool isConnected() = 0;
     virtual int8_t signalStrength() = 0;
+    
+    virtual String localIP() = '';
 
     virtual void mqttSetClientId(const char* clientId) = 0;
     virtual void mqttSetCleanSession(bool cleanSession) = 0;
