@@ -719,6 +719,18 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["dev"]["mf"] = "Nuki";
         json["dev"]["mdl"] = deviceType;
         json["dev"]["name"] = name;
+        
+        String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url);
+
+        if (cuUrl != "")
+        {
+            json["dev"]["cu"] = cuUrl;
+        }
+        else
+        {
+            json["dev"]["cu"] = "http://" + _device->localIP();
+        }
+        
         json["~"] = baseTopic;
         json["name"] = nullptr;
         json["unique_id"] = String(uidString) + "_lock";

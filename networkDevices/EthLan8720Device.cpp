@@ -159,6 +159,11 @@ int8_t EthLan8720Device::signalStrength()
     return -1;
 }
 
+String EthLan8720Device::localIP()
+{
+    return Ethernet.localIP().toString();
+}
+
 void EthLan8720Device::mqttSetClientId(const char *clientId)
 {
     if(_useEncryption)
