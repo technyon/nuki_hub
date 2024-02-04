@@ -61,6 +61,7 @@ private:
     static void clearRtcInitVar(WiFiManager*);
 
     void onDisconnected();
+    MqttClient *getMqttClient() const;
 
     WiFiManager _wm;
     espMqttClient* _mqttClient = nullptr;

@@ -51,7 +51,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
         String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
 }
 
@@ -366,4 +366,16 @@ void WifiDevice::disableMqtt()
     }
 
     _mqttEnabled = false;
+}
+
+MqttClient *WifiDevice::getMqttClient() const
+{
+    if (_useEncryption)
+    {
+        return _mqttClientSecure;
+    }
+    else
+    {
+        return _mqttClient;
+    }
 }

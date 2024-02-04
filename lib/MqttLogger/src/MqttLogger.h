@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include <Print.h>
-#include "../../../networkDevices/NetworkDevice.h"
+#include <espMqttClient.h>
 
 #define MQTT_MAX_PACKET_SIZE 1024
 
@@ -29,16 +29,16 @@ private:
     uint8_t* buffer;
     uint8_t* bufferEnd;
     uint16_t bufferCnt = 0, bufferSize = 0;
-    NetworkDevice* client;
+    MqttClient* client;
     MqttLoggerMode mode;
     void sendBuffer();
 
 public:
     MqttLogger(MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
-    MqttLogger(NetworkDevice* client, const char* topic, MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
+    MqttLogger(MqttClient& client, const char* topic, MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
     ~MqttLogger();
 
-    void setClient(NetworkDevice* client);
+    void setClient(MqttClient& client);
     void setTopic(const char* topic);
     void setMode(MqttLoggerMode mode);
     void setRetained(boolean retained);

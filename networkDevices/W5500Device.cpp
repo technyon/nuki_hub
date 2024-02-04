@@ -61,7 +61,7 @@ void W5500Device::initialize()
         _path = new char[pathStr.length() + 1];
         memset(_path, 0, sizeof(_path));
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(_mqttClient, _path, MqttLoggerMode::MqttAndSerial);
     }
 
     reconnect();

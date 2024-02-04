@@ -69,6 +69,7 @@ public:
 
 private:
     void onDisconnected();
+    MqttClient *getMqttClient() const;
 
     espMqttClient* _mqttClient = nullptr;
     espMqttClientSecure* _mqttClientSecure = nullptr;

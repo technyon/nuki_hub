@@ -57,7 +57,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
 }
 
@@ -342,3 +342,14 @@ void EthLan8720Device::disableMqtt()
     _mqttEnabled = false;
 }
 
+MqttClient *EthLan8720Device::getMqttClient() const
+{
+    if (_useEncryption)
+    {
+        return _mqttClientSecure;
+    }
+    else
+    {
+        return _mqttClient;
+    }
+}
