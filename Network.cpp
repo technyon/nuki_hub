@@ -942,40 +942,6 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                            { "pl_off", "0" },
                            { "state_on", "1" },
                            { "state_off", "0" }});
-
-        // Lock 'n' Go
-        publishHassTopic("button",
-                         "lockngo",
-                         uidString,
-                         "_lock_n_go_button",
-                         "Lock 'n' Go",
-                         name,
-                         baseTopic,
-                         mqtt_topic_mqtt_connection_state,
-                         deviceType,
-                         "",
-                         "",
-                         "",
-                         mqtt_topic_lock_action,
-                         { { "enabled_by_default", "false" },
-                           { "pl_prs", "lockNgo" }});
-                         
-        // Lock 'n' Go with unlatch
-        publishHassTopic("button",
-                         "lockngounlatch",
-                         uidString,
-                         "_lock_n_go_unlatch_button",
-                         "Lock 'n' Go with unlatch",
-                         name,
-                         baseTopic,
-                         mqtt_topic_mqtt_connection_state,
-                         deviceType,
-                         "",
-                         "",
-                         "",
-                         mqtt_topic_lock_action,
-                         { { "enabled_by_default", "false" },
-                           { "pl_prs", "lockNgoUnlatch" }});
  
         // Unlatch
         publishHassTopic("button",
@@ -996,6 +962,46 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          
     }
 }
+
+
+void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *baseTopic, char *name, char *uidString, const char *availabilityTopic, const bool &hasKeypad, char *lockAction, char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
+{
+    // Lock 'n' Go
+    publishHassTopic("button",
+                     "lockngo",
+                     uidString,
+                     "_lock_n_go_button",
+                     "Lock 'n' Go",
+                     name,
+                     baseTopic,
+                     mqtt_topic_mqtt_connection_state,
+                     deviceType,
+                     "",
+                     "",
+                     "",
+                     mqtt_topic_lock_action,
+                     { { "enabled_by_default", "false" },
+                       { "pl_prs", "lockNgo" }});
+
+    // Lock 'n' Go with unlatch
+    publishHassTopic("button",
+                     "lockngounlatch",
+                     uidString,
+                     "_lock_n_go_unlatch_button",
+                     "Lock 'n' Go with unlatch",
+                     name,
+                     baseTopic,
+                     mqtt_topic_mqtt_connection_state,
+                     deviceType,
+                     "",
+                     "",
+                     "",
+                     mqtt_topic_lock_action,
+                     { { "enabled_by_default", "false" },
+                       { "pl_prs", "lockNgoUnlatch" }});
+}
+
+
 //json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
 void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {

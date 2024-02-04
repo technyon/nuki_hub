@@ -532,6 +532,7 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
                                char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfigAdditionalButtons(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
     _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigLedBrightness(deviceType, baseTopic, name, uidString);
     if(hasDoorSensor)
