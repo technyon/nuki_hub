@@ -957,7 +957,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          "",
                          mqtt_topic_lock_action,
-                         { { "enabled_by_default", "true" },
+                         { { "enabled_by_default", "false" },
                            { "pl_prs", "lockNgo" }});
                          
         // Lock 'n' Go with unlatch
@@ -974,7 +974,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          "",
                          mqtt_topic_lock_action,
-                         { { "enabled_by_default", "true" },
+                         { { "enabled_by_default", "false" },
                            { "pl_prs", "lockNgoUnlatch" }});
  
         // Unlatch
@@ -991,7 +991,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          "",
                          mqtt_topic_lock_action,
-                         { { "enabled_by_default", "true" },
+                         { { "enabled_by_default", "false" },
                            { "pl_prs", "unlatch" }}); 
                          
     }
