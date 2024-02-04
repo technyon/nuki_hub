@@ -942,6 +942,58 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                            { "pl_off", "0" },
                            { "state_on", "1" },
                            { "state_off", "0" }});
+
+        // Lock 'n' Go
+        publishHassTopic("button",
+                         "lockngo",
+                         uidString,
+                         "_lock_n_go_button",
+                         "Lock 'n' Go",
+                         name,
+                         baseTopic,
+                         mqtt_topic_mqtt_connection_state,
+                         deviceType,
+                         "",
+                         "",
+                         "",
+                         mqtt_topic_lock_action,
+                         { { "enabled_by_default", "false" },
+                           { "pl_prs", "lockNgo" }});
+                         
+        // Lock 'n' Go with unlatch
+        publishHassTopic("button",
+                         "lockngounlatch",
+                         uidString,
+                         "_lock_n_go_unlatch_button",
+                         "Lock 'n' Go with unlatch",
+                         name,
+                         baseTopic,
+                         mqtt_topic_mqtt_connection_state,
+                         deviceType,
+                         "",
+                         "",
+                         "",
+                         mqtt_topic_lock_action,
+                         { { "enabled_by_default", "false" },
+                           { "pl_prs", "lockNgoUnlatch" }});
+ 
+        // Unlatch
+        publishHassTopic("button",
+                         "unlatch",
+                         uidString,
+                         "_unlatch_button",
+                         "Unlatch",
+                         name,
+                         baseTopic,
+                         mqtt_topic_mqtt_connection_state,
+                         deviceType,
+                         "",
+                         "",
+                         "",
+                         mqtt_topic_lock_action,
+                         { { "enabled_by_default", "false" },
+                           { "pl_prs", "unlatch" }}); 
+                         
     }
 }
 //json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
@@ -1270,6 +1322,24 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/binary_sensor/");
         path.concat(uidString);
         path.concat("/battery_low/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        
+        path = discoveryTopic;
+        path.concat("/button/");
+        path.concat(uidString);
+        path.concat("/lockngo/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        
+        path = discoveryTopic;
+        path.concat("/button/");
+        path.concat(uidString);
+        path.concat("/lockngounlatch/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        
+        path = discoveryTopic;
+        path.concat("/button/");
+        path.concat(uidString);
+        path.concat("/unlatch/config");
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
