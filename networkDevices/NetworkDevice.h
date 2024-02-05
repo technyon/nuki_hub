@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MqttClient.h"
+#include "espMqttClient.h"
 #include "MqttClientSetup.h"
 #include "IPConfiguration.h"
 
@@ -24,32 +24,40 @@ public:
     virtual void initialize() = 0;
     virtual ReconnectStatus reconnect() = 0;
     virtual void reconfigure() = 0;
-    virtual void printError() = 0;
+    virtual void printError();
     virtual bool supportsEncryption() = 0;
 
-    virtual void update() = 0;
+    virtual void update();
 
     virtual bool isConnected() = 0;
     virtual int8_t signalStrength() = 0;
 
-    virtual void mqttSetClientId(const char* clientId) = 0;
-    virtual void mqttSetCleanSession(bool cleanSession) = 0;
-    virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const char* payload) = 0;
-    virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length) = 0;
-    virtual bool mqttConnected() const = 0;
-    virtual void mqttSetServer(const char* host, uint16_t port) = 0;
-    virtual bool mqttConnect() = 0;
-    virtual bool mqttDisconnect(bool force) = 0;
-    virtual void setWill(const char* topic, uint8_t qos, bool retain, const char* payload) = 0;
-    virtual void mqttSetCredentials(const char* username, const char* password) = 0;
-    virtual void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback) = 0;
-    virtual void mqttOnConnect(espMqttClientTypes::OnConnectCallback callback) = 0;
-    virtual void mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback) = 0;
-    virtual void disableMqtt() = 0;
+    virtual void mqttSetClientId(const char* clientId);
+    virtual void mqttSetCleanSession(bool cleanSession);
+    virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const char* payload);
+    virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
+    virtual bool mqttConnected() const;
+    virtual void mqttSetServer(const char* host, uint16_t port);
+    virtual bool mqttConnect();
+    virtual bool mqttDisconnect(bool force);
+    virtual void setWill(const char* topic, uint8_t qos, bool retain, const char* payload);
+    virtual void mqttSetCredentials(const char* username, const char* password);
+    virtual void mqttOnMessage(espMqttClientTypes::OnMessageCallback callback);
+    virtual void mqttOnConnect(espMqttClientTypes::OnConnectCallback callback);
+    virtual void mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback);
+    virtual void disableMqtt();
 
-    virtual uint16_t mqttSubscribe(const char* topic, uint8_t qos) = 0;
+    virtual uint16_t mqttSubscribe(const char* topic, uint8_t qos);
 
 protected:
+    espMqttClient *_mqttClient = nullptr;
+    espMqttClientSecure *_mqttClientSecure = nullptr;
+
+    bool _useEncryption = false;
+    bool _mqttEnabled = true;
+
     const String _hostname;
     const IPConfiguration* _ipConfiguration = nullptr;
+
+    MqttClient *getMqttClient() const;
 };
