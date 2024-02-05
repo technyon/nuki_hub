@@ -50,6 +50,7 @@ set(SRCFILES
         NetworkLock.cpp
         NetworkOpener.cpp
         networkDevices/NetworkDevice.h
+        networkDevices/NetworkDevice.cpp
         networkDevices/WifiDevice.cpp
         networkDevices/W5500Device.cpp
         networkDevices/EthLan8720Device.cpp
