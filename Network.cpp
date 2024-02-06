@@ -951,7 +951,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "Unlatch",
                          name,
                          baseTopic,
-                         _lockPath + mqtt_topic_mqtt_connection_state,
+                         "",
                          deviceType,
                          "",
                          "",
@@ -974,7 +974,7 @@ void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *b
                      "Lock 'n' Go",
                      name,
                      baseTopic,
-                     _lockPath + mqtt_topic_mqtt_connection_state,
+                     "",
                      deviceType,
                      "",
                      "",
@@ -991,7 +991,7 @@ void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *b
                      "Lock 'n' Go with unlatch",
                      name,
                      baseTopic,
-                     _lockPath + mqtt_topic_mqtt_connection_state,
+                     "",
                      deviceType,
                      "",
                      "",
@@ -1245,8 +1245,12 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         {
             json["dev_cla"] = deviceClass;
         }
-        json["stat_t"] = stateTopic;
-
+        
+        if(stateTopic != "")
+        {
+            json["stat_t"] = stateTopic;
+        }
+        
         if(stateClass != "")
         {
             json["stat_cla"] = stateClass;
@@ -1259,6 +1263,8 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         {
             json["cmd_t"] = commandTopic;
         }
+        
+        json["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
 
         for(const auto& entry : additionalEntries)
         {
