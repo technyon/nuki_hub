@@ -11,6 +11,7 @@
 Network* Network::_inst = nullptr;
 unsigned long Network::_ignoreSubscriptionsTs = 0;
 bool _versionPublished = false;
+const char* headerKeys[] = {"location"};
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
@@ -371,7 +372,7 @@ bool Network::update()
         if (httpResponseCode==302) {
             _latestVersion = https.header("location");
             _latestVersion.replace(GITHUB_RELEASE_TAG_URL, "");
-            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion.c_str());
         }
 
         https.end();

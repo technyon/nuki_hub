@@ -112,7 +112,6 @@ private:
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
 
-    const char* headerKeys[] = {"location"};
     String _latestVersion;
     HTTPClient https;
 
