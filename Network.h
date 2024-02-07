@@ -8,6 +8,7 @@
 #include "networkDevices/IPConfiguration.h"
 #include "MqttTopics.h"
 #include "Gpio.h"
+#include <HTTPClient.h>
 
 enum class NetworkDeviceType
 {
@@ -111,6 +112,10 @@ private:
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
 
+    const char* headerKeys[] = {"location"};
+    String _latestVersion;
+    HTTPClient https;
+
     Preferences* _preferences;
     Gpio* _gpio;
     IPConfiguration* _ipConfiguration = nullptr;
@@ -137,6 +142,7 @@ private:
 
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
+    unsigned long _lastUpdateCheckTs = 0;
     unsigned long _lastRssiTs = 0;
     bool _mqttEnabled = true;
     static unsigned long _ignoreSubscriptionsTs;

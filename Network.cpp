@@ -357,7 +357,26 @@ bool Network::update()
         }
         _lastMaintenanceTs = ts;
     }
+    
+    if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
+    {
+        _lastUpdateCheckTs = ts;
+        
+        https.collectHeaders(headerKeys, 1);
+        https.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
+        https.begin(GITHUB_LATEST_RELEASE_URL);
 
+        int httpResponseCode = https.GET();
+
+        if (httpResponseCode==302) {
+            _latestVersion = https.header("location");
+            _latestVersion.replace(GITHUB_RELEASE_TAG_URL, "");
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
+        }
+
+        https.end();
+    }
+    
     for(const auto& gpioTs : _gpioTs)
     {
         uint8_t pin = gpioTs.first;
