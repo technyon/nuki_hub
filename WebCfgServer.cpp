@@ -612,6 +612,13 @@ void WebCfgServer::buildHtml(String& response)
         printParameter(response, "NUKI Opener state", lockstateArr);
     }
     printParameter(response, "Firmware", version.c_str(), "/info");
+    
+    String _latestVersion = _network->latestHubVersion();
+    
+    //if (_latestVersion.toFloat() > atof(NUKI_HUB_VERSION) || (_latestVersion.toFloat() == atof(NUKI_HUB_VERSION) && _latestVersion.c_str() != NUKI_HUB_VERSION)) {
+    printParameter(response, "Latest Firmware", _latestVersion.c_str(), GITHUB_LATEST_RELEASE_URL);
+    //}
+    
     response.concat("</table><br><br>");
 
     response.concat("<h3>MQTT and Network Configuration</h3>");

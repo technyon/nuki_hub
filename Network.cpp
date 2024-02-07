@@ -663,6 +663,11 @@ int Network::mqttConnectionState()
     return _mqttConnectionState;
 }
 
+String Network::latestHubVersion()
+{
+    return _latestVersion;
+}
+
 bool Network::encryptionSupported()
 {
     return _device->supportsEncryption();
