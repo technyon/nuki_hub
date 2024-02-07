@@ -491,6 +491,7 @@ bool Network::reconnect()
             }
 
             publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_ip, _device->localIP().c_str());
 
             _mqttConnectionState = 2;
             for(const auto& callback : _reconnectedCallbacks)
@@ -902,7 +903,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         publishHassTopic("sensor",
                          "nuki_hub_version",
                          uidString,
-                         "_nuki_hub__version",
+                         "_nuki_hub_version",
                          "NUKI Hub version",
                          name,
                          baseTopic,
@@ -914,6 +915,23 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          { { "enabled_by_default", "true" },
                            {"ic", "mdi:counter"}});
+
+        // NUKI Hub IP Address
+        publishHassTopic("sensor",
+                         "nuki_hub_ip",
+                         uidString,
+                         "_nuki_hub_ip",
+                         "NUKI Hub IP",
+                         name,
+                         baseTopic,
+                         _lockPath + mqtt_topic_info_nuki_hub_ip,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         { { "enabled_by_default", "true" },
+                           {"ic", "mdi:ip"}});
 
         // LED enabled
         publishHassTopic("switch",
@@ -1390,6 +1408,12 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/sound_level/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/nuki_hub_ip/config");
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
