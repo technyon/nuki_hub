@@ -1100,7 +1100,7 @@ void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseT
 
 void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
-    publishHassTopic("sensor",
+    publishHassTopic("number",
                      "sound_level",
                      uidString,
                      "_sound_level",
@@ -1111,11 +1111,13 @@ void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopi
                      deviceType,
                      "",
                      "",
-                     "diagnostic",
+                     "config",
                      mqtt_topic_config_sound_level,
                      { { "ic", "mdi:volume-source" },
                        { "min", "0" },
-                       { "max", "255" }});
+                       { "max", "255" },
+                       { "mode", "slider" },
+                       { "step", "25.5" }});
 }
 
 
@@ -1364,6 +1366,18 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/battery_level/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/sound_level/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+
+        path = discoveryTopic;
+        path.concat("/number/");
+        path.concat(uidString);
+        path.concat("/sound_level/config");
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;
