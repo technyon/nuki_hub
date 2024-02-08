@@ -42,6 +42,7 @@
 #define mqtt_topic_info_firmware_version "/info/firmwareVersion"
 #define mqtt_topic_info_nuki_hub_version "/info/nukiHubVersion"
 #define mqtt_topic_info_nuki_hub_latest "/info/nukiHubLatest"
+#define mqtt_topic_info_nuki_hub_ip "/info/nukiHubIp"
 
 #define mqtt_topic_keypad "/keypad"
 #define mqtt_topic_keypad_command_action "/keypad/command/action"
