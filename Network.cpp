@@ -11,7 +11,6 @@
 Network* Network::_inst = nullptr;
 unsigned long Network::_ignoreSubscriptionsTs = 0;
 bool _versionPublished = false;
-const char* headerKeys[] = {"location"};
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
@@ -363,16 +362,20 @@ bool Network::update()
     {
         _lastUpdateCheckTs = ts;
         
-        https.collectHeaders(headerKeys, 1);
-        https.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
-        https.begin(GITHUB_LATEST_RELEASE_URL);
+        https.useHTTP10(true);
+        https.begin(GITHUB_LATEST_RELEASE_API_URL);
 
         int httpResponseCode = https.GET();
 
-        if (httpResponseCode==302) {
-            _latestVersion = https.header("location");
-            _latestVersion.replace(GITHUB_RELEASE_TAG_URL, "");
-            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion.c_str());
+        if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY) {
+            DynamicJsonDocument doc(6144);
+            DeserializationError jsonError = deserializeJson(doc, https.getStream());
+
+            if (!jsonError) {    
+                _latestVersion = doc["tag_name"];
+                _latestVersionUrl = doc["assets"][0]["browser_download_url"];
+                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
+            }            
         }
 
         https.end();
@@ -663,9 +666,14 @@ int Network::mqttConnectionState()
     return _mqttConnectionState;
 }
 
-String Network::latestHubVersion()
+const char* Network::latestHubVersion()
 {
     return _latestVersion;
+}
+
+const char* Network::latestHubVersionUrl()
+{
+    return _latestVersionUrl;
 }
 
 bool Network::encryptionSupported()
@@ -1043,8 +1051,6 @@ void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *b
                        { "pl_prs", "lockNgoUnlatch" }});
 }
 
-
-//json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
 void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
