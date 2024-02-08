@@ -990,7 +990,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              "",
                              "",
                              { { "enabled_by_default", "true" },
-                               { "entity_picture", "https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/icon-192x192.png" },
+                               { "entity_picture", "https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
                                { "release_url", GITHUB_LATEST_RELEASE_URL },
                                { "latest_version_topic", latest_version_topic }});                               
         }
