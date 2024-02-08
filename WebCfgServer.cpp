@@ -613,8 +613,10 @@ void WebCfgServer::buildHtml(String& response)
     }
     printParameter(response, "Firmware", version.c_str(), "/info");
     
+    const char* _latestVersion = _network->latestHubVersion();
+    
     //if (_latestVersion.toFloat() > atof(NUKI_HUB_VERSION) || (_latestVersion.toFloat() == atof(NUKI_HUB_VERSION) && _latestVersion.c_str() != NUKI_HUB_VERSION)) {
-    printParameter(response, "Latest Firmware", _network->latestHubVersion(), GITHUB_LATEST_RELEASE_URL);
+    printParameter(response, "Latest Firmware", _latestVersion, GITHUB_LATEST_RELEASE_URL);
     //}
     
     response.concat("</table><br><br>");
