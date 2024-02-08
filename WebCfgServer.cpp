@@ -352,6 +352,11 @@ bool WebCfgServer::processArgs(String& message)
                 configChanged = true;
             }
         }
+        else if(key == "HASSCUURL")
+        {
+            _preferences->putString(preference_mqtt_hass_cu_url, value);
+            configChanged = true;
+        }        
         else if(key == "HOSTNAME")
         {
             _preferences->putString(preference_hostname, value);
@@ -764,6 +769,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
+    printInputField(response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261);
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);

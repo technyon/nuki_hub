@@ -20,6 +20,7 @@
 #define preference_mqtt_crt "mqttcrt"
 #define preference_mqtt_key "mqttkey"
 #define preference_mqtt_hass_discovery "hassdiscovery"
+#define preference_mqtt_hass_cu_url "hassConfigUrl"
 #define preference_ip_dhcp_enabled "dhcpena"
 #define preference_ip_address "ipaddr"
 #define preference_ip_subnet "ipsub"
@@ -64,7 +65,7 @@ private:
             preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled,
             preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path,
             preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_mqtt_ca,
-            preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery,
+            preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url,
             preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
             preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval,
             preference_hostname, preference_network_timeout, preference_restart_on_disconnect,

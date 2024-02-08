@@ -229,6 +229,11 @@ int8_t W5500Device::signalStrength()
     return 127;
 }
 
+String W5500Device::localIP()
+{
+    return Ethernet.localIP().toString();
+}
+
 void W5500Device::mqttSetClientId(const char *clientId)
 {
     _mqttClient.setClientId(clientId);
