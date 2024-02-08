@@ -971,7 +971,11 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              { { "enabled_by_default", "true" },
                                {"ic", "mdi:counter"}});
                                
-            // NUKI Hub update          
+            // NUKI Hub update
+            char latest_version_topic[250];
+            _lockPath.toCharArray(latest_version_topic,_lockPath.length() + 1);
+            strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
+
             publishHassTopic("update", 
                              "nuki_hub_update",
                              uidString,
@@ -988,7 +992,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              { { "enabled_by_default", "true" },
                                { "entity_picture", "https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/icon-192x192.png" },
                                { "release_url", GITHUB_LATEST_RELEASE_URL },
-                               { "latest_version_topic", _lockPath + mqtt_topic_info_nuki_hub_latest }});                               
+                               { "latest_version_topic", latest_version_topic }});                               
         }
         else
         {
