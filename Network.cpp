@@ -358,27 +358,30 @@ bool Network::update()
         _lastMaintenanceTs = ts;
     }
     
-    if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
+    if(_preferences->getBool(preference_check_updates))
     {
-        _lastUpdateCheckTs = ts;
-        
-        https.useHTTP10(true);
-        https.begin(GITHUB_LATEST_RELEASE_API_URL);
+        if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
+        {
+            _lastUpdateCheckTs = ts;
+            
+            https.useHTTP10(true);
+            https.begin(GITHUB_LATEST_RELEASE_API_URL);
 
-        int httpResponseCode = https.GET();
+            int httpResponseCode = https.GET();
 
-        if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY) {
-            DynamicJsonDocument doc(6144);
-            DeserializationError jsonError = deserializeJson(doc, https.getStream());
+            if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY) {
+                DynamicJsonDocument doc(6144);
+                DeserializationError jsonError = deserializeJson(doc, https.getStream());
 
-            if (!jsonError) {    
-                _latestVersion = doc["tag_name"];
-                _latestVersionUrl = doc["assets"][0]["browser_download_url"];
-                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
-            }            
+                if (!jsonError) {    
+                    _latestVersion = doc["tag_name"];
+                    _latestVersionUrl = doc["assets"][0]["browser_download_url"];
+                    publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
+                }            
+            }
+
+            https.end();
         }
-
-        https.end();
     }
     
     for(const auto& gpioTs : _gpioTs)
@@ -948,23 +951,50 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          { { "enabled_by_default", "true" },
                            {"ic", "mdi:counter"}});
-                           
-        // NUKI Hub latest
-        publishHassTopic("sensor", 
-                         "nuki_hub_latest",
-                         uidString,
-                         "_nuki_hub_latest",
-                         "NUKI Hub latest",
-                         name,
-                         baseTopic,
-                         _lockPath + mqtt_topic_info_nuki_hub_latest,
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         "",
-                         { { "enabled_by_default", "true" },
-                           {"ic", "mdi:counter"}});
+                      
+        if(_preferences->getBool(preference_check_updates))
+        {
+            // NUKI Hub latest
+            publishHassTopic("sensor", 
+                             "nuki_hub_latest",
+                             uidString,
+                             "_nuki_hub_latest",
+                             "NUKI Hub latest",
+                             name,
+                             baseTopic,
+                             _lockPath + mqtt_topic_info_nuki_hub_latest,
+                             deviceType,
+                             "",
+                             "",
+                             "diagnostic",
+                             "",
+                             { { "enabled_by_default", "true" },
+                               {"ic", "mdi:counter"}});
+                               
+            // NUKI Hub update          
+            publishHassTopic("update", 
+                             "nuki_hub_update",
+                             uidString,
+                             "_nuki_hub_update",
+                             "NUKI Hub Firmware Update",
+                             name,
+                             baseTopic,
+                             _lockPath + mqtt_topic_info_nuki_hub_version,
+                             deviceType,
+                             "firmware",
+                             "",
+                             "",
+                             "",
+                             { { "enabled_by_default", "true" },
+                               { "entity_picture", "https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/icon-192x192.png" },
+                               { "release_url", GITHUB_LATEST_RELEASE_URL },
+                               { "latest_version_topic", _lockPath + mqtt_topic_info_nuki_hub_latest }});                               
+        }
+        else
+        {
+            removeHassTopic("sensor", "nuki_hub_latest", uidString);
+            removeHassTopic("update", "nuki_hub_update", uidString);
+        }
 
         // NUKI Hub IP Address
         publishHassTopic("sensor",
@@ -1404,95 +1434,34 @@ void Network::removeHASSConfig(char* uidString)
 
     if(discoveryTopic != "")
     {
-        String path = discoveryTopic;
-        path.concat("/lock/");
-        path.concat(uidString);
-        path.concat("/smartlock/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/binary_sensor/");
-        path.concat(uidString);
-        path.concat("/battery_low/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-        
-        path = discoveryTopic;
-        path.concat("/button/");
-        path.concat(uidString);
-        path.concat("/lockngo/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-        
-        path = discoveryTopic;
-        path.concat("/button/");
-        path.concat(uidString);
-        path.concat("/lockngounlatch/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-        
-        path = discoveryTopic;
-        path.concat("/button/");
-        path.concat(uidString);
-        path.concat("/unlatch/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/battery_voltage/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/trigger/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/battery_level/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/sound_level/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-        
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/nuki_hub_ip/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/number/");
-        path.concat(uidString);
-        path.concat("/sound_level/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/binary_sensor/");
-        path.concat(uidString);
-        path.concat("/door_sensor/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/binary_sensor/");
-        path.concat(uidString);
-        path.concat("/ring/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/wifi_signal_strength/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
-
-        path = discoveryTopic;
-        path.concat("/sensor/");
-        path.concat(uidString);
-        path.concat("/bluetooth_signal_strength/config");
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        removeHassTopic("lock", "smartlock", uidString);
+        removeHassTopic("binary_sensor", "battery_low", uidString);
+        removeHassTopic("binary_sensor", "keypad_battery_low", uidString);
+        removeHassTopic("sensor", "battery_voltage", uidString);        
+        removeHassTopic("sensor", "trigger", uidString);
+        removeHassTopic("binary_sensor", "mqtt_connected", uidString);
+        removeHassTopic("switch", "reset", uidString);        
+        removeHassTopic("sensor", "firmware_version", uidString);
+        removeHassTopic("sensor", "hardware_version", uidString);
+        removeHassTopic("sensor", "nuki_hub_version", uidString);
+        removeHassTopic("sensor", "nuki_hub_latest", uidString);
+        removeHassTopic("update", "nuki_hub_update", uidString);
+        removeHassTopic("sensor", "nuki_hub_ip", uidString);
+        removeHassTopic("switch", "led_enabled", uidString);  
+        removeHassTopic("switch", "button_enabled", uidString);  
+        removeHassTopic("button", "unlatch", uidString);
+        removeHassTopic("button", "lockngo", uidString);
+        removeHassTopic("button", "lockngounlatch", uidString);
+        removeHassTopic("sensor", "battery_level", uidString);
+        removeHassTopic("binary_sensor", "door_sensor", uidString);
+        removeHassTopic("binary_sensor", "ring", uidString);
+        removeHassTopic("number", "led_brightness", uidString);
+        removeHassTopic("sensor", "sound_level", uidString);        
+        removeHassTopic("number", "sound_level", uidString);
+        removeHassTopic("sensor", "last_action_authorization", uidString);
+        removeHassTopic("sensor", "keypad_status", uidString);
+        removeHassTopic("sensor", "wifi_signal_strength", uidString);
+        removeHassTopic("sensor", "bluetooth_signal_strength", uidString);
     }
 }
 

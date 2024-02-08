@@ -377,6 +377,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "CHECKUPDATE")
+        {
+            _preferences->putBool(preference_check_updates, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "DHCPENA")
         {
             _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
@@ -620,9 +625,12 @@ void WebCfgServer::buildHtml(String& response)
     
     const char* _latestVersion = _network->latestHubVersion();
     
-    //if (_latestVersion.toFloat() > atof(NUKI_HUB_VERSION) || (_latestVersion.toFloat() == atof(NUKI_HUB_VERSION) && _latestVersion.c_str() != NUKI_HUB_VERSION)) {
-    printParameter(response, "Latest Firmware", _latestVersion, GITHUB_LATEST_RELEASE_URL);
-    //}
+    if(_preferences->getBool(preference_check_updates))
+    {
+        //if(atof(_latestVersion) > atof(NUKI_HUB_VERSION) || (atof(_latestVersion) == atof(NUKI_HUB_VERSION) && _latestVersion != NUKI_HUB_VERSION)) {
+        printParameter(response, "Latest Firmware", _latestVersion, GITHUB_LATEST_RELEASE_URL);
+        //}
+    }
     
     response.concat("</table><br><br>");
 
@@ -786,6 +794,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
+    printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br><br>");
 
