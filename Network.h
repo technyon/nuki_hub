@@ -63,8 +63,8 @@ public:
     void publishPresenceDetection(char* csv);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
-    const char* _latestVersion;
-    const char* _latestVersionUrl;
+    const char* latestHubVersion;
+    const char* latestHubVersionUrl;
     bool encryptionSupported();
     const String networkDeviceName() const;
 
@@ -114,7 +114,8 @@ private:
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
 
-    String _latestVersion;
+    const char* _latestVersion;
+    const char* _latestVersionUrl;
     HTTPClient https;
 
     Preferences* _preferences;
