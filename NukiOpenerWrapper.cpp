@@ -740,7 +740,16 @@ void NukiOpenerWrapper::setupHASS()
     String baseTopic = _preferences->getString(preference_mqtt_opener_path);
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
-    _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateRTO","activateRTO","electricStrikeActuation");
+    
+    if (_preferences->getBool(preference_opener_continuous_mode)) 
+    {
+        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateCM","activateCM","electricStrikeActuation");
+    }
+    else 
+    {
+        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateRTO","activateRTO","electricStrikeActuation");
+    }
+    
     _hassSetupCompleted = true;
 
     Log->println("HASS setup for opener completed.");
