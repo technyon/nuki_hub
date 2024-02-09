@@ -219,7 +219,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 
         if(_haEnabled)
         {
-            publishBinaryState(keyTurnerState);
+            publishState(keyTurnerState);
         }
     }
 
@@ -260,10 +260,11 @@ void NetworkOpener::publishRing()
     _resetLockStateTs = millis() + 2000;
 }
 
-void NetworkOpener::publishBinaryState(NukiOpener::OpenerState lockState)
+void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
 {
     if(lockState.nukiState == NukiOpener::State::ContinuousMode)
     {
+        publishString(mqtt_topic_lock_ha_state, "unlocked");
         publishString(mqtt_topic_lock_binary_state, "unlocked");
     }
     else
@@ -271,12 +272,21 @@ void NetworkOpener::publishBinaryState(NukiOpener::OpenerState lockState)
         switch (lockState.lockState)
         {
             case NukiOpener::LockState::Locked:
+                publishString(mqtt_topic_lock_ha_state, "locked");
                 publishString(mqtt_topic_lock_binary_state, "locked");
                 break;
             case NukiOpener::LockState::RTOactive:
             case NukiOpener::LockState::Open:
-            case NukiOpener::LockState::Opening:
+                publishString(mqtt_topic_lock_ha_state, "unlocked");
                 publishString(mqtt_topic_lock_binary_state, "unlocked");
+                break; 
+                case NukiOpener::LockState::Opening:
+                publishString(mqtt_topic_lock_ha_state, "unlocking");
+                publishString(mqtt_topic_lock_binary_state, "unlocked");
+                break;
+            case NukiOpener::LockState::Undefined:
+            case NukiOpener::LockState::Uncalibrated:
+                publishString(mqtt_topic_lock_ha_state, "jammed");
                 break;
             default:
                 break;

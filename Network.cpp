@@ -740,7 +740,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["pl_lock"] = lockAction;
         json["pl_unlk"] = unlockAction;
         json["pl_open"] = openAction;
-        json["stat_t"] = String("~") + mqtt_topic_lock_state;
+        json["stat_t"] = String("~") + mqtt_topic_lock_ha_state;
         json["stat_jammed"] = "jammed";
         json["stat_locked"] = "locked";
         json["stat_locking"] = "locking";

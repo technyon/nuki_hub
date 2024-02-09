@@ -23,7 +23,7 @@ public:
     void initialize();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
-    void publishBinaryState(NukiLock::LockState lockState);
+    void publishState(NukiLock::LockState lockState);
     void publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries);
     void clearAuthorizationInfo();
     void publishCommandResult(const char* resultStr);
