@@ -43,10 +43,10 @@ public:
     void publishBool(const char* prefix, const char* topic, const bool value);
     bool publishString(const char* prefix, const char* topic, const char* value);
 
-    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
-    void publishHASSConfigAdditionalButtons(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
+    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
+    void publishHASSConfigAdditionalButtons(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigBatLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState);
+    void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigLedBrightness(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigSoundLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);

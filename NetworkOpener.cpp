@@ -274,9 +274,13 @@ void NetworkOpener::publishBinaryState(NukiOpener::OpenerState lockState)
                 publishString(mqtt_topic_lock_binary_state, "locked");
                 break;
             case NukiOpener::LockState::RTOactive:
-            case NukiOpener::LockState::Open:
-            case NukiOpener::LockState::Opening:
                 publishString(mqtt_topic_lock_binary_state, "unlocked");
+                break;
+            case NukiOpener::LockState::Open:
+                publishString(mqtt_topic_lock_binary_state, "unlocked");
+                break;
+            case NukiOpener::LockState::Opening:
+                publishString(mqtt_topic_lock_binary_state, "unlocking");
                 break;
             default:
                 break;
@@ -494,12 +498,12 @@ void NetworkOpener::publishBleAddress(const std::string &address)
     publishString(mqtt_topic_lock_address, address);
 }
 
-void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction)
 {
     String availabilityTopic = _preferences->getString("mqttpath");
     availabilityTopic.concat("/maintenance/mqttConnectionState");
 
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), false, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), false, lockAction, unlockAction, openAction);
     _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigSoundLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);

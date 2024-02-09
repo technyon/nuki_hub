@@ -706,7 +706,7 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
     return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
 }
 
-void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -741,8 +741,11 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["pl_unlk"] = unlockAction;
         json["pl_open"] = openAction;
         json["stat_t"] = String("~") + mqtt_topic_lock_binary_state;
-        json["stat_locked"] = lockedState;
-        json["stat_unlocked"] = unlockedState;
+        json["stat_jammed"] = "jammed";
+        json["stat_locked"] = "locked";
+        json["stat_locking"] = "locking";
+        json["stat_unlocked"] = "unlocked";
+        json["stat_unlocking"] = "unlocking";
         json["opt"] = "false";
 
         serializeJson(json, _buffer, _bufferSize);
@@ -994,7 +997,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 }
 
 
-void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *baseTopic, char *name, char *uidString, const char *availabilityTopic, const bool &hasKeypad, char *lockAction, char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
+void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     // Lock 'n' Go
     publishHassTopic("button",
@@ -1056,9 +1059,7 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
     }
 }
 
-void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString,
-                                        char *lockAction, char *unlockAction, char *openAction, char *lockedState,
-                                        char *unlockedState)
+void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 

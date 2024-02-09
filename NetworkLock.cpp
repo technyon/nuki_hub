@@ -281,15 +281,28 @@ void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
     switch(lockState)
     {
         case NukiLock::LockState::Locked:
-        case NukiLock::LockState::Locking:
             publishString(mqtt_topic_lock_binary_state, "locked");
             break;
+        case NukiLock::LockState::Locking:
+            publishString(mqtt_topic_lock_binary_state, "locking");
+            break;
         case NukiLock::LockState::Unlocked:
+            publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
         case NukiLock::LockState::Unlocking:
+            publishString(mqtt_topic_lock_binary_state, "unlocking");
+            break;
         case NukiLock::LockState::Unlatched:
+            publishString(mqtt_topic_lock_binary_state, "unlatched");
+            break;
         case NukiLock::LockState::Unlatching:
+            publishString(mqtt_topic_lock_binary_state, "unlatching");
+            break;
         case NukiLock::LockState::UnlockedLnga:
             publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
+        case NukiLock::LockState::MotorBlocked:
+            publishString(mqtt_topic_lock_binary_state, "jammed");
             break;
         default:
             break;
@@ -529,15 +542,15 @@ bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
 }
 
 void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
-                               char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
+                               char *unlockAction, char *openAction)
 {
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
-    _network->publishHASSConfigAdditionalButtons(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction);
+    _network->publishHASSConfigAdditionalButtons(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigLedBrightness(deviceType, baseTopic, name, uidString);
     if(hasDoorSensor)
     {
-        _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+        _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
     }
     else
     {
