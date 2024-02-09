@@ -281,28 +281,15 @@ void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
     switch(lockState)
     {
         case NukiLock::LockState::Locked:
+        case NukiLock::LockState::Locking:
             publishString(mqtt_topic_lock_binary_state, "locked");
             break;
-        case NukiLock::LockState::Locking:
-            publishString(mqtt_topic_lock_binary_state, "locking");
-            break;
         case NukiLock::LockState::Unlocked:
-            publishString(mqtt_topic_lock_binary_state, "unlocked");
-            break;
         case NukiLock::LockState::Unlocking:
-            publishString(mqtt_topic_lock_binary_state, "unlocking");
-            break;
         case NukiLock::LockState::Unlatched:
-            publishString(mqtt_topic_lock_binary_state, "unlatched");
-            break;
         case NukiLock::LockState::Unlatching:
-            publishString(mqtt_topic_lock_binary_state, "unlatching");
-            break;
         case NukiLock::LockState::UnlockedLnga:
             publishString(mqtt_topic_lock_binary_state, "unlocked");
-            break;
-        case NukiLock::LockState::MotorBlocked:
-            publishString(mqtt_topic_lock_binary_state, "jammed");
             break;
         default:
             break;

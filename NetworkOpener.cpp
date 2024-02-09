@@ -274,13 +274,9 @@ void NetworkOpener::publishBinaryState(NukiOpener::OpenerState lockState)
                 publishString(mqtt_topic_lock_binary_state, "locked");
                 break;
             case NukiOpener::LockState::RTOactive:
-                publishString(mqtt_topic_lock_binary_state, "unlocked");
-                break;
             case NukiOpener::LockState::Open:
-                publishString(mqtt_topic_lock_binary_state, "unlocked");
-                break;
             case NukiOpener::LockState::Opening:
-                publishString(mqtt_topic_lock_binary_state, "unlocking");
+                publishString(mqtt_topic_lock_binary_state, "unlocked");
                 break;
             default:
                 break;
