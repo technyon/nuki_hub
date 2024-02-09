@@ -48,6 +48,7 @@ public:
     void publishHASSConfigBatLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigContinuousMode(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigLedBrightness(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigSoundLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);

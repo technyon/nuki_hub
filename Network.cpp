@@ -1084,6 +1084,30 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
     }
 }
 
+void Network::publishHASSConfigContinuousMode(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        publishHassTopic("binary_sensor",
+                         "continuous_mode",
+                         uidString,
+                         "_continuous_mode",
+                         "Continuous mode",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_lock_continous_mode,
+                         deviceType,
+                         "lock",
+                         "",
+                         "",
+                         "",
+                         {{"pl_on", "on"},
+                          {"pl_off", "off"}});
+    }
+}
+
 void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
@@ -1107,7 +1131,6 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                           {"pl_off", "locked"}});
     }
 }
-
 
 void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {

@@ -266,9 +266,12 @@ void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
     {
         publishString(mqtt_topic_lock_ha_state, "unlocked");
         publishString(mqtt_topic_lock_binary_state, "unlocked");
+        publishString(mqtt_topic_lock_continous_mode, "on");
     }
     else
     {
+        publishString(mqtt_topic_lock_continous_mode, "off");
+        
         switch (lockState.lockState)
         {
             case NukiOpener::LockState::Locked:
@@ -511,6 +514,7 @@ void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, c
 
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), false, lockAction, unlockAction, openAction);
     _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString);
+    _network->publishHASSConfigContinuousMode(deviceType, baseTopic, name, uidString);    
     _network->publishHASSConfigSoundLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
 }
