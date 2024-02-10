@@ -83,7 +83,7 @@ private:
     bool reconnect();
 
     void publishHassTopic(const String& mqttDeviceType,
-                          const String& mattDeviceName,
+                          const String& mqttDeviceName,
                           const String& uidString,
                           const String& uidStringPostfix,
                           const String& displayName,
@@ -98,7 +98,7 @@ private:
                           std::vector<std::pair<char*, char*>> additionalEntries = {}
                           );
 
-    void removeHassTopic(const String& mqttDeviceType, const String& mattDeviceName, const String& uidString);
+    void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
 
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);

@@ -1104,6 +1104,33 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                          "",
                          {{"pl_on", "ring"},
                           {"pl_off", "locked"}});
+
+        DynamicJsonDocument ringjson(_bufferSize);
+        ringjson.clear();
+        auto ringdev = ringjson.createNestedObject("dev");
+        auto ringids = ringdev.createNestedArray("ids");
+        ringids.add(String("nuki_") + uidString);
+        ringjson["dev"]["mf"] = "Nuki";
+        ringjson["dev"]["mdl"] = deviceType;
+        ringjson["dev"]["name"] = name;
+        ringjson["~"] = baseTopic;
+        ringjson["name"] = "Ring";
+        ringjson["unique_id"] = String(uidString) + "_ring_event";
+        ringjson["dev_cla"] = "doorbell";        
+        ringjson["stat_t"] = String("~") + mqtt_topic_lock_state;       
+        ringjson["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
+        ringjson["event_types"][0] = "ring";
+        ringjson["value_template"] = "{ \"event_type\": \"{{ value }}\" }";
+        
+        serializeJson(ringjson, _buffer, _bufferSize);
+
+        String ringpath = discoveryTopic;
+        ringpath.concat("/event/");
+        ringpath.concat(uidString);
+        ringpath.concat("/ring/config");
+
+        _device->mqttPublish(ringpath.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+
     }
 }
 
@@ -1241,7 +1268,7 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
 }
 
 void Network::publishHassTopic(const String& mqttDeviceType,
-                               const String& mattDeviceName,
+                               const String& mqttDeviceName,
                                const String& uidString,
                                const String& uidStringPostfix,
                                const String& displayName,
@@ -1262,7 +1289,6 @@ void Network::publishHassTopic(const String& mqttDeviceType,
     {
         DynamicJsonDocument json(_bufferSize);
 
-        // Battery level
         json.clear();
         auto dev = json.createNestedObject("dev");
         auto ids = dev.createNestedArray("ids");
@@ -1322,7 +1348,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         path.concat("/");
         path.concat(uidString);
         path.concat("/");
-        path.concat(mattDeviceName);
+        path.concat(mqttDeviceName);
         path.concat("/config");
 
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
@@ -1330,7 +1356,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
 }
 
 
-void Network::removeHassTopic(const String& mqttDeviceType, const String& mattDeviceName, const String& uidString)
+void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -1342,7 +1368,7 @@ void Network::removeHassTopic(const String& mqttDeviceType, const String& mattDe
         path.concat("/");
         path.concat(uidString);
         path.concat("/");
-        path.concat(mattDeviceName);
+        path.concat(mqttDeviceName);
         path.concat("/config");
 
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
