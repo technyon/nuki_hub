@@ -491,6 +491,7 @@ bool Network::reconnect()
             }
 
             publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_ip, _device->localIP().c_str());
 
             _mqttConnectionState = 2;
             for(const auto& callback : _reconnectedCallbacks)
@@ -719,6 +720,18 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["dev"]["mf"] = "Nuki";
         json["dev"]["mdl"] = deviceType;
         json["dev"]["name"] = name;
+        
+        String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url);
+
+        if (cuUrl != "")
+        {
+            json["dev"]["cu"] = cuUrl;
+        }
+        else
+        {
+            json["dev"]["cu"] = "http://" + _device->localIP();
+        }
+        
         json["~"] = baseTopic;
         json["name"] = nullptr;
         json["unique_id"] = String(uidString) + "_lock";
@@ -746,10 +759,10 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "battery_low",
                          uidString,
                          "_battery_low",
-                         "battery low",
+                         "Battery low",
                          name,
                          baseTopic,
-                         mqtt_topic_battery_critical,
+                         String("~") + mqtt_topic_battery_critical,
                          deviceType,
                          "battery",
                          "",
@@ -765,10 +778,10 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              "keypad_battery_low",
                              uidString,
                              "_keypad_battery_low",
-                             "keypad battery low",
+                             "Keypad battery low",
                              name,
                              baseTopic,
-                             mqtt_topic_battery_keypad_critical,
+                             String("~") + mqtt_topic_battery_keypad_critical,
                              deviceType,
                              "battery",
                              "",
@@ -787,10 +800,10 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "battery_voltage",
                          uidString,
                          "_battery_voltage",
-                         "battery voltage",
+                         "Battery voltage",
                          name,
                          baseTopic,
-                         mqtt_topic_battery_voltage,
+                         String("~") + mqtt_topic_battery_voltage,
                          deviceType,
                          "voltage",
                          "measurement",
@@ -803,10 +816,10 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "trigger",
                          uidString,
                          "_trigger",
-                         "trigger",
+                         "Trigger",
                          name,
                          baseTopic,
-                         mqtt_topic_lock_trigger,
+                         String("~") + mqtt_topic_lock_trigger,
                          deviceType,
                          "",
                          "",
@@ -822,7 +835,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "MQTT connected",
                          name,
                          baseTopic,
-                         mqtt_topic_mqtt_connection_state,
+                         _lockPath + mqtt_topic_mqtt_connection_state,
                          deviceType,
                          "",
                          "",
@@ -837,15 +850,15 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "reset",
                          uidString,
                          "_reset",
-                         "Restart NUKI Hub",
+                         "Restart Nuki Hub",
                          name,
                          baseTopic,
-                         mqtt_topic_reset,
+                         String("~") + mqtt_topic_reset,
                          deviceType,
                          "",
                          "",
                          "diagnostic",
-                         mqtt_topic_reset,
+                         String("~") + mqtt_topic_reset,
                          { { "ic", "mdi:restart" },
                            { "pl_on", "1" },
                            { "pl_off", "0" },
@@ -860,7 +873,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "Firmware version",
                          name,
                          baseTopic,
-                         mqtt_topic_info_firmware_version,
+                         String("~") + mqtt_topic_info_firmware_version,
                          deviceType,
                          "",
                          "",
@@ -877,7 +890,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "Hardware version",
                          name,
                          baseTopic,
-                         mqtt_topic_info_hardware_version,
+                         String("~") + mqtt_topic_info_hardware_version,
                          deviceType,
                          "",
                          "",
@@ -890,11 +903,11 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         publishHassTopic("sensor",
                          "nuki_hub_version",
                          uidString,
-                         "_nuki_hub__version",
-                         "NUKI Hub version",
+                         "_nuki_hub_version",
+                         "Nuki Hub version",
                          name,
                          baseTopic,
-                         mqtt_topic_info_nuki_hub_version,
+                         _lockPath + mqtt_topic_info_nuki_hub_version,
                          deviceType,
                          "",
                          "",
@@ -902,6 +915,23 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          { { "enabled_by_default", "true" },
                            {"ic", "mdi:counter"}});
+
+        // NUKI Hub IP Address
+        publishHassTopic("sensor",
+                         "nuki_hub_ip",
+                         uidString,
+                         "_nuki_hub_ip",
+                         "Nuki Hub IP",
+                         name,
+                         baseTopic,
+                         _lockPath + mqtt_topic_info_nuki_hub_ip,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         { { "enabled_by_default", "true" },
+                           {"ic", "mdi:ip"}});
 
         // LED enabled
         publishHassTopic("switch",
@@ -911,12 +941,12 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "LED enabled",
                          name,
                          baseTopic,
-                         mqtt_topic_config_led_enabled,
+                         String("~") + mqtt_topic_config_led_enabled,
                          deviceType,
                          "",
                          "",
                          "config",
-                         mqtt_topic_config_led_enabled,
+                         String("~") + mqtt_topic_config_led_enabled,
                          { { "ic", "mdi:led-variant-on" },
                                           { "pl_on", "1" },
                                           { "pl_off", "0" },
@@ -931,12 +961,12 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "Button enabled",
                          name,
                          baseTopic,
-                         mqtt_topic_config_button_enabled,
+                         String("~") + mqtt_topic_config_button_enabled,
                          deviceType,
                          "",
                          "",
                          "config",
-                         mqtt_topic_config_button_enabled,
+                         String("~") + mqtt_topic_config_button_enabled,
                          { { "ic", "mdi:radiobox-marked" },
                            { "pl_on", "1" },
                            { "pl_off", "0" },
@@ -951,12 +981,12 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "Unlatch",
                          name,
                          baseTopic,
-                         mqtt_topic_mqtt_connection_state,
+                         "",
                          deviceType,
                          "",
                          "",
                          "",
-                         mqtt_topic_lock_action,
+                         String("~") + mqtt_topic_lock_action,
                          { { "enabled_by_default", "false" },
                            { "pl_prs", "unlatch" }}); 
                          
@@ -974,12 +1004,12 @@ void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *b
                      "Lock 'n' Go",
                      name,
                      baseTopic,
-                     mqtt_topic_mqtt_connection_state,
+                     "",
                      deviceType,
                      "",
                      "",
                      "",
-                     mqtt_topic_lock_action,
+                     String("~") + mqtt_topic_lock_action,
                      { { "enabled_by_default", "false" },
                        { "pl_prs", "lockNgo" }});
 
@@ -991,12 +1021,12 @@ void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *b
                      "Lock 'n' Go with unlatch",
                      name,
                      baseTopic,
-                     mqtt_topic_mqtt_connection_state,
+                     "",
                      deviceType,
                      "",
                      "",
                      "",
-                     mqtt_topic_lock_action,
+                     String("~") + mqtt_topic_lock_action,
                      { { "enabled_by_default", "false" },
                        { "pl_prs", "lockNgoUnlatch" }});
 }
@@ -1013,10 +1043,10 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
                          "battery_level",
                          uidString,
                          "_battery_level",
-                         "battery level",
+                         "Battery level",
                          name,
                          baseTopic,
-                         mqtt_topic_battery_level,
+                         String("~") + mqtt_topic_battery_level,
                          deviceType,
                          "battery",
                          "measurement",
@@ -1038,10 +1068,10 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
                          "door_sensor",
                          uidString,
                          "_door_sensor",
-                         "door sensor",
+                         "Door sensor",
                          name,
                          baseTopic,
-                         mqtt_topic_lock_door_sensor_state,
+                         String("~") + mqtt_topic_lock_door_sensor_state,
                          deviceType,
                          "door",
                          "",
@@ -1063,10 +1093,10 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                          "ring",
                          uidString,
                          "_ring_detect",
-                         "ring detect",
+                         "Ring detect",
                          name,
                          baseTopic,
-                         mqtt_topic_lock_state,
+                         String("~") + mqtt_topic_lock_state,
                          deviceType,
                          "sound",
                          "",
@@ -1087,12 +1117,12 @@ void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseT
                      "LED brightness",
                      name,
                      baseTopic,
-                     mqtt_topic_config_led_brightness,
+                     String("~") + mqtt_topic_config_led_brightness,
                      deviceType,
                      "",
                      "",
                      "config",
-                     mqtt_topic_config_led_brightness,
+                     String("~") + mqtt_topic_config_led_brightness,
                      { { "ic", "mdi:brightness-6" },
                        { "min", "0" },
                        { "max", "5" }});
@@ -1100,22 +1130,24 @@ void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseT
 
 void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
-    publishHassTopic("sensor",
+    publishHassTopic("number",
                      "sound_level",
                      uidString,
                      "_sound_level",
                      "Sound level",
                      name,
                      baseTopic,
-                     mqtt_topic_config_sound_level,
+                     String("~") + mqtt_topic_config_sound_level,
                      deviceType,
                      "",
                      "",
-                     "diagnostic",
-                     mqtt_topic_config_sound_level,
+                     "config",
+                     String("~") + mqtt_topic_config_sound_level,
                      { { "ic", "mdi:volume-source" },
                        { "min", "0" },
-                       { "max", "255" }});
+                       { "max", "255" },
+                       { "mode", "slider" },
+                       { "step", "25.5" }});
 }
 
 
@@ -1128,7 +1160,7 @@ void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic
                      "Last action authorization",
                      name,
                      baseTopic,
-                     mqtt_topic_lock_log,
+                     String("~") + mqtt_topic_lock_log,
                      deviceType,
                      "",
                      "",
@@ -1147,7 +1179,7 @@ void Network::publishHASSConfigKeypadAttemptInfo(char *deviceType, const char *b
                      "Keypad status",
                      name,
                      baseTopic,
-                     mqtt_topic_lock_log,
+                     String("~") + mqtt_topic_lock_log,
                      deviceType,
                      "",
                      "",
@@ -1172,10 +1204,10 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
                          "wifi_signal_strength",
                          uidString,
                          "_wifi_signal_strength",
-                         "wifi signal strength",
+                         "WIFI signal strength",
                          name,
                          baseTopic,
-                         mqtt_topic_wifi_rssi,
+                         _lockPath + mqtt_topic_wifi_rssi,
                          deviceType,
                          "signal_strength",
                          "measurement",
@@ -1195,10 +1227,10 @@ void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, 
                          "bluetooth_signal_strength",
                          uidString,
                          "_bluetooth_signal_strength",
-                         "bluetooth signal strength",
+                         "Bluetooth signal strength",
                          name,
                          baseTopic,
-                         mqtt_topic_lock_rssi,
+                         String("~") + mqtt_topic_lock_rssi,
                          deviceType,
                          "signal_strength",
                          "measurement",
@@ -1245,8 +1277,12 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         {
             json["dev_cla"] = deviceClass;
         }
-        json["stat_t"] = String("~") + stateTopic;
-
+        
+        if(stateTopic != "")
+        {
+            json["stat_t"] = stateTopic;
+        }
+        
         if(stateClass != "")
         {
             json["stat_cla"] = stateClass;
@@ -1257,8 +1293,10 @@ void Network::publishHassTopic(const String& mqttDeviceType,
         }
         if(commandTopic != "")
         {
-            json["cmd_t"] = String("~") + commandTopic;
+            json["cmd_t"] = commandTopic;
         }
+        
+        json["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
 
         for(const auto& entry : additionalEntries)
         {
@@ -1364,6 +1402,24 @@ void Network::removeHASSConfig(char* uidString)
         path.concat("/sensor/");
         path.concat(uidString);
         path.concat("/battery_level/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/sound_level/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        
+        path = discoveryTopic;
+        path.concat("/sensor/");
+        path.concat(uidString);
+        path.concat("/nuki_hub_ip/config");
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+
+        path = discoveryTopic;
+        path.concat("/number/");
+        path.concat(uidString);
+        path.concat("/sound_level/config");
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
 
         path = discoveryTopic;

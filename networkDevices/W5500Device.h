@@ -31,6 +31,8 @@ public:
     virtual bool isConnected();
 
     int8_t signalStrength() override;
+    
+    String localIP() override;
 
 private:
     void resetDevice();

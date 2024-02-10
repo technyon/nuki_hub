@@ -154,6 +154,11 @@ int8_t WifiDevice::signalStrength()
     return WiFi.RSSI();
 }
 
+String WifiDevice::localIP()
+{
+    return WiFi.localIP().toString();
+}
+
 void WifiDevice::clearRtcInitVar(WiFiManager *)
 {
     memset(WiFiDevice_reconfdetect, 0, sizeof WiFiDevice_reconfdetect);

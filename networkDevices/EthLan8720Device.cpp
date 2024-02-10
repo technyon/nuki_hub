@@ -138,3 +138,8 @@ int8_t EthLan8720Device::signalStrength()
 {
     return -1;
 }
+
+String EthLan8720Device::localIP()
+{
+    return ETH.localIP().toString();
+}
