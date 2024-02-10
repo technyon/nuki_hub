@@ -496,12 +496,12 @@ bool WebCfgServer::processArgs(String& message)
         {
             if(value == "#")
             {
-                message = "NUKI Lock PIN cleared";
+                message = "Nuki Lock PIN cleared";
                 _nuki->setPin(0xffff);
             }
             else
             {
-                message = "NUKI Lock PIN saved";
+                message = "Nuki Lock PIN saved";
                 _nuki->setPin(value.toInt());
             }
         }
@@ -509,12 +509,12 @@ bool WebCfgServer::processArgs(String& message)
         {
             if(value == "#")
             {
-                message = "NUKI Opener PIN cleared";
+                message = "Nuki Opener PIN cleared";
                 _nukiOpener->setPin(0xffff);
             }
             else
             {
-                message = "NUKI Opener PIN saved";
+                message = "Nuki Opener PIN saved";
                 _nukiOpener->setPin(value.toInt());
             }
         }
@@ -606,15 +606,15 @@ void WebCfgServer::buildHtml(String& response)
     {
         char lockstateArr[20];
         NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
-        printParameter(response, "NUKI Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No");
-        printParameter(response, "NUKI Lock state", lockstateArr);
+        printParameter(response, "Nuki Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No");
+        printParameter(response, "Nuki Lock state", lockstateArr);
     }
     if(_nukiOpener != nullptr)
     {
         char lockstateArr[20];
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
-        printParameter(response, "NUKI Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
-        printParameter(response, "NUKI Opener state", lockstateArr);
+        printParameter(response, "Nuki Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
+        printParameter(response, "Nuki Opener state", lockstateArr);
     }
     printParameter(response, "Firmware", version.c_str(), "/info");
     response.concat("</table><br><br>");
@@ -622,7 +622,7 @@ void WebCfgServer::buildHtml(String& response)
     response.concat("<h3>MQTT and Network Configuration</h3>");
     buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
 
-    response.concat("<BR><BR><h3>NUKI Configuration</h3>");
+    response.concat("<BR><BR><h3>Nuki Configuration</h3>");
     buildNavigationButton(response, "Edit", "/nukicfg");
 
     response.concat("<BR><BR><h3>Credentials</h3>");
@@ -661,7 +661,7 @@ void WebCfgServer::buildCredHtml(String &response)
     if(_nuki != nullptr)
     {
         response.concat("<br><br><FORM method=\"post\" ACTION=savecfg >");
-        response.concat("<h3>NUKI Lock PIN</h3>");
+        response.concat("<h3>Nuki Lock PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, true);
         response.concat("</table>");
@@ -672,7 +672,7 @@ void WebCfgServer::buildCredHtml(String &response)
     if(_nukiOpener != nullptr)
     {
         response.concat("<br><br><FORM method=\"posst\" ACTION=savecfg >");
-        response.concat("<h3>NUKI Opener PIN</h3>");
+        response.concat("<h3>Nuki Opener PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, true);
         response.concat("</table>");
@@ -683,7 +683,7 @@ void WebCfgServer::buildCredHtml(String &response)
     _confirmCode = generateConfirmCode();
     if(_nuki != nullptr)
     {
-        response.concat("<br><br><h3>Unpair NUKI Lock</h3>");
+        response.concat("<br><br><h3>Unpair Nuki Lock</h3>");
         response.concat("<form method=\"post\" action=\"/unpairlock\">");
         response.concat("<table>");
         String message = "Type ";
@@ -696,7 +696,7 @@ void WebCfgServer::buildCredHtml(String &response)
 
     if(_nukiOpener != nullptr)
     {
-        response.concat("<br><br><h3>Unpair NUKI Opener</h3>");
+        response.concat("<br><br><h3>Unpair Nuki Opener</h3>");
         response.concat("<form method=\"post\" action=\"/unpairopener\">");
         response.concat("<table>");
         String message = "Type ";
@@ -802,21 +802,21 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     buildHtmlHeader(response);
 
     response.concat("<FORM ACTION=savecfg method='POST'>");
-    response.concat("<h3>Basic NUKI Configuration</h3>");
+    response.concat("<h3>Basic Nuki Configuration</h3>");
     response.concat("<table>");
-    printCheckBox(response, "LOCKENA", "NUKI Smartlock enabled", _preferences->getBool(preference_lock_enabled));
+    printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled));
     if(_preferences->getBool(preference_lock_enabled))
     {
-        printInputField(response, "MQTTPATH", "MQTT NUKI Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
+        printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
     }
-    printCheckBox(response, "OPENA", "NUKI Opener enabled", _preferences->getBool(preference_opener_enabled));
+    printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled));
     if(_preferences->getBool(preference_opener_enabled))
     {
-        printInputField(response, "MQTTOPPATH", "MQTT NUKI Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
+        printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
     }
     response.concat("</table><br>");
 
-    response.concat("<h3>Advanced NUKI Configuration</h3>");
+    response.concat("<h3>Advanced Nuki Configuration</h3>");
     response.concat("<table>");
 
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
@@ -832,7 +832,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
     printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
-    printCheckBox(response, "REGAPP", "NUKI Bridge is running alongside NUKI Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
+    printCheckBox(response, "REGAPP", "Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
     response.concat("</table>");
@@ -870,7 +870,7 @@ void WebCfgServer::buildConfirmHtml(String &response, const String &message, uin
 
     response.concat("<HTML>\n");
     response.concat("<HEAD>\n");
-    response.concat("<TITLE>NUKI Hub</TITLE>\n");
+    response.concat("<TITLE>Nuki Hub</TITLE>\n");
     response.concat("<meta http-equiv=\"Refresh\" content=\"");
     response.concat(redirectDelay);
     response.concat("; url=/\" />");
@@ -899,7 +899,7 @@ void WebCfgServer::buildInfoHtml(String &response)
     buildHtmlHeader(response);
     response.concat("<h3>System Information</h3> <pre>");
 
-    response.concat("NUKI Hub version: ");
+    response.concat("Nuki Hub version: ");
     response.concat(NUKI_HUB_VERSION);
     response.concat("\n");
 
@@ -991,7 +991,7 @@ void WebCfgServer::processUnpair(bool opener)
         }
     }
 
-    buildConfirmHtml(response, opener ? "Unpairing NUKI Opener and restarting." : "Unpairing NUKI Lock and restarting.", 3);
+    buildConfirmHtml(response, opener ? "Unpairing Nuki Opener and restarting." : "Unpairing Nuki Lock and restarting.", 3);
     _server.send(200, "text/html", response);
     if(!opener && _nuki != nullptr)
     {
@@ -1015,7 +1015,7 @@ void WebCfgServer::buildHtmlHeader(String &response)
 //    response.concat(stylecss);
 //    response.concat("</style>");
     response.concat("<link rel='stylesheet' href='/style.css'>");
-    response.concat("<TITLE>NUKI Hub</TITLE></HEAD><BODY>");
+    response.concat("<TITLE>Nuki Hub</TITLE></HEAD><BODY>");
 
     srand(millis());
 }
