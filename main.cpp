@@ -156,7 +156,7 @@ void setup()
     Serial.begin(115200);
     Log = &Serial;
 
-    Log->print(F("NUKI Hub version ")); Log->println(NUKI_HUB_VERSION);
+    Log->print(F("Nuki Hub version ")); Log->println(NUKI_HUB_VERSION);
 
     bool firstStart = initPreferences();
 
@@ -207,14 +207,14 @@ void setup()
     bleScanner->initialize("NukiHub");
     bleScanner->setScanDuration(10);
 
-    Log->println(lockEnabled ? F("NUKI Lock enabled") : F("NUKI Lock disabled"));
+    Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
     {
         nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, gpio, preferences);
         nuki->initialize(firstStart);
     }
 
-    Log->println(openerEnabled ? F("NUKI Opener enabled") : F("NUKI Opener disabled"));
+    Log->println(openerEnabled ? F("Nuki Opener enabled") : F("Nuki Opener disabled"));
     if(openerEnabled)
     {
         nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences);
