@@ -1,26 +1,26 @@
 ## About
 
-***The scope of NUKI Hub is to have an efficient way to integrate NUKI Lock in a local Home Automation platform.***
+***The scope of Nuki Hub is to have an efficient way to integrate Nuki Lock in a local Home Automation platform.***
 
-The NUKI Hub software runs on any ESP32 module and acts as a bridge between a NUKI Lock and a Home Automation platform.
+The Nuki Hub software runs on any ESP32 module and acts as a bridge between a Nuki Lock and a Home Automation platform.
 It communicates with the Nuki Lock via Bluetooth (BLE) and then uses MQTT to integrate with other systems.
 
 It exposes the lock state (and more) via MQTT, and allows to execute commands like locking and unlocking.
-Optionally, a NUKI Opener is also supported.
+Optionally, a Nuki Opener is also supported.
 
-***NUKI Hub does not integrate with the NUKI mobile app, it can't register itself as a bridge in the official NUKI mobile app. ***
+***Nuki Hub does not integrate with the Nuki mobile app, it can't register itself as a bridge in the official Nuki mobile app. ***
 
 
 Supported devices:<br>
-NUKI Smart Lock 1.0<br>
-NUKI Smart Lock 2.0<br>
-NUKI Smart Lock 3.0<br>
-NUKI Smart Lock 3.0 Pro (read FAQ below)<br>
-NUKI Smart Lock 4.0<br>
-NUKI Smart Lock 4.0 Pro (read FAQ below)<br>
-NUKI Opener<br>
-NUKI Keypad 1.0<br>
-NUKI Keypad 2.0
+Nuki Smart Lock 1.0<br>
+Nuki Smart Lock 2.0<br>
+Nuki Smart Lock 3.0<br>
+Nuki Smart Lock 3.0 Pro (read FAQ below)<br>
+Nuki Smart Lock 4.0<br>
+Nuki Smart Lock 4.0 Pro (read FAQ below)<br>
+Nuki Opener<br>
+Nuki Keypad 1.0<br>
+Nuki Keypad 2.0
 
 As an alternative to Wifi, the following ESP32 modules with wired ethernet are supported (For Wifi any other ESP32 should work).<br>
 [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)<br>
@@ -50,19 +50,19 @@ The firmware uses the Wifi Manager to configure the WiFi network. Power up the E
 
 After configuring the Wifi, the ESP should automatically connect to your network. Use the web interface to setup the MQTT broker; just navigate to the IP-Address assigned to the ESP32 via DHCP (often found in the web interface of the internet router).<br>
 To configure MQTT, enter the adress of your MQTT broker and eventually a username and a password if required. The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this. In that case leave all fields about "MQTT SSL" blank.<br>
-If a PIN has been configured using the smartphone app, it's recommended to supply this PIN to NUKI Hub.
+If a PIN has been configured using the smartphone app, it's recommended to supply this PIN to Nuki Hub.
 Certain functionality is not available without configuring the PIN, like changing the config or keypad coded.
 To do so, navigate to "Credentials" in the web interface. This will only supply the PIN to NUK Hub, it will on no way reconfigure the PIN on the lock.
 
 ## Pairing
 
-Just enable pairing mode on the NUKI lock (press button for a few seconds) and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
+Just enable pairing mode on the Nuki lock (press button for a few seconds) and power on the ESP32. Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser). MQTT nodes like lock state and battery level should now reflect the reported values from the lock.
 
-Note: It is possible to run NUKI Hub alongside a NUKI Bridge. This is not recommended and can lead to either device missing updates. Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the NUKI Hub.
+Note: It is possible to run Nuki Hub alongside a Nuki Bridge. This is not recommended and can lead to either device missing updates. Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.
 
 ## Support
 
-If you haven't ordered your NUKI product yet, you can support me by using my referrer code when placing your order:<br>
+If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
 REFVSU6HN9HWK<br>
 This will also give you a 10% discount on your order.
 
@@ -77,10 +77,10 @@ This project is free to use for everyone. However if you feel like donating, you
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
 - lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
-- lock/completionStatus: Status of the last action as reported by NUKI lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
+- lock/completionStatus: Status of the last action as reported by Nuki lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
 - lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
-- lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
+- lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
 - query/lockstate: Set to 1 to trigger query lockstage. Auto-resets to 0.
 - query/config: Set to 1 to trigger query config. Auto-resets to 0.
@@ -105,10 +105,10 @@ This project is free to use for everyone. However if you feel like donating, you
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3
 - lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, ring, open, opening, uncalibrated
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
-- lock/completionStatus: Status of the last action as reported by NUKI lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
+- lock/completionStatus: Status of the last action as reported by Nuki lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
 - lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
-- lock/commandResult: Result of the last action as reported by NUKI library: success, failed, timeOut, working, notPaired, error, undefined
+- lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
 - query/lockstate: Set to 1 to trigger query lockstage. Auto-resets to 0.
 - query/config: Set to 1 to trigger query config. Auto-resets to 0.
@@ -248,7 +248,7 @@ If this still doesn't fix the disconnects and the ESP becomes unreachable, the
 after a configured amount of time.
 
 ### Pairing with the Lock (or Opener) doesn't work
-First, make sure the firmware version of the NUKI device is up-to-date, older versions have issues pairing<br>
+First, make sure the firmware version of the Nuki device is up-to-date, older versions have issues pairing<br>
 Next, try erasing the flash and then (re-)flash the firmware. To erase the flash, use the espressif download tool and click the "Erase" button.
 Afterwards flash the firmware as described in the readme within the 7z file.
 <br><br>
@@ -267,14 +267,14 @@ Also, check that pairing is allowed. In the smartphone app, go to Settings --> F
 ### In Home Assistant, the lock is shown as unavailable
 
 Make sure you are using at least version 2023.8.0 of home assistant. 
-The HA developers have changes to the MQTT auto discovery which break support for older version, and NUKI Hub
+The HA developers have changes to the MQTT auto discovery which break support for older version, and Nuki Hub
 has adopted these changes. That unfortunately means that older versions of HA are not supported anymore.
 
 ## FAQ
 
-### NUKI Hub doesn't work when the Wifi on my NUKI Smartlock Pro 3.0 is turned on.
+### Nuki Hub doesn't work when the Wifi on my Nuki Smartlock Pro 3.0 is turned on.
 
-This is by design and according to NUKI part of the specification of the Pro lock: You can user either the built-in Wifi or a Bridge (whic NUKI Hub registers as).
+This is by design and according to Nuki part of the specification of the Pro lock: You can user either the built-in Wifi or a Bridge (whic Nuki Hub registers as).
 Using both at the same time doesn't work.
 
 ### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
@@ -287,23 +287,23 @@ See previous point, this needs the correct PIN to be configured.
 
 ### Using home assistant, it's only possible to lock or unlock the door, but not to unlatch it
 Unlatching can be triggered using the lock.open service.
-Also make sure "Access level" under "Advanced NUKI Configuration" is set to "Full"
+Also make sure "Access level" under "Advanced Nuki Configuration" is set to "Full"
 
 ### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
 
-When using multiple NUKI devices, different paths for each device have to be configured. Navigate to "NUKI Configuration" and change the "MQTT NUKI Smartlock Path"
-or "MQTT NUKI Opener Path" under "Basic NUKI Configuration" for at least one of the devices.
+When using multiple Nuki devices, different paths for each device have to be configured. Navigate to "Nuki Configuration" and change the "MQTT Nuki Smartlock Path"
+or "MQTT Nuki Opener Path" under "Basic Nuki Configuration" for at least one of the devices.
 
 ### The battery is draining quickly.
-This often is a result of enabling "Register as app" without using a NUKI Bridge together with NUKI Hub.
-Doing so will cause NUKI Hub to constantly query the lock, and thus draining the battery.
-To fix this, unpair NUKI Hub, disable "Register as app", and re-pair.<br>
-Never enable "Register as app" unless you intend to use a NUKI Bridge in addition to NUKI Hub!
+This often is a result of enabling "Register as app" without using a Nuki Bridge together with Nuki Hub.
+Doing so will cause Nuki Hub to constantly query the lock, and thus draining the battery.
+To fix this, unpair Nuki Hub, disable "Register as app", and re-pair.<br>
+Never enable "Register as app" unless you intend to use a Nuki Bridge in addition to Nuki Hub!
 
 ## Development VM
 
 Since setting up the toolchain can be difficult, I've uploaded a virtual machine (vmware image) that is
-setup to compile NUKI Hub:
+setup to compile Nuki Hub:
 
 https://drive.google.com/file/d/1fUVYHDtxXAZOAfQ321iRNIwkqFwuDsBp/view?usp=share_link
 
@@ -318,7 +318,7 @@ To upload the image via serial port, run "ninja upload-nuki_hub". The serial dev
 
 ## Disclaimer
 
-This is a third party software for NUKI smart door locks. This project or any of it's authors aren't associated with Nuki Home Solutions GmbH. Please refer for official products and offical support to their website:
+This is a third party software for Nuki smart door locks. This project or any of it's authors aren't associated with Nuki Home Solutions GmbH. Please refer for official products and offical support to their website:
 
 https://nuki.io/
 
