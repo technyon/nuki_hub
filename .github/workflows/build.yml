@@ -29,6 +29,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
+          touch file_opts
           cmake -D CMAKE_TOOLCHAIN_FILE=../arduino-toolchain/Arduino-toolchain.cmake ..
           echo "# Espressif ESP32 Partition Table" > partitions.csv
           echo "# Name, Type, SubType, Offset, Size, Flags" >> partitions.csv
