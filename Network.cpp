@@ -902,7 +902,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          { { "enabled_by_default", "true" },
                            {"ic", "mdi:counter"}});
 
-        // NUKI Hub version
+        // Nuki Hub version
         publishHassTopic("sensor",
                          "nuki_hub_version",
                          uidString,
@@ -919,7 +919,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          { { "enabled_by_default", "true" },
                            {"ic", "mdi:counter"}});
 
-        // NUKI Hub IP Address
+        // Nuki Hub IP Address
         publishHassTopic("sensor",
                          "nuki_hub_ip",
                          uidString,
