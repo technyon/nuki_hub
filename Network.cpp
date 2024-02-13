@@ -1105,32 +1105,12 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                          {{"pl_on", "ring"},
                           {"pl_off", "locked"}});
 
-        DynamicJsonDocument ringjson(_bufferSize);
-        ringjson.clear();
-        auto ringdev = ringjson.createNestedObject("dev");
-        auto ringids = ringdev.createNestedArray("ids");
-        ringids.add(String("nuki_") + uidString);
-        ringjson["dev"]["mf"] = "Nuki";
-        ringjson["dev"]["mdl"] = deviceType;
-        ringjson["dev"]["name"] = name;
-        ringjson["~"] = baseTopic;
-        ringjson["name"] = "Ring";
-        ringjson["unique_id"] = String(uidString) + "_ring_event";
-        ringjson["dev_cla"] = "doorbell";        
-        ringjson["stat_t"] = String("~") + mqtt_topic_lock_state;       
-        ringjson["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
-        ringjson["event_types"][0] = "ring";
-        ringjson["value_template"] = "{ \"event_type\": \"{{ value }}\" }";
-        
-        serializeJson(ringjson, _buffer, _bufferSize);
-
-        String ringpath = discoveryTopic;
-        ringpath.concat("/event/");
-        ringpath.concat(uidString);
-        ringpath.concat("/ring/config");
-
-        _device->mqttPublish(ringpath.c_str(), MQTT_QOS_LEVEL, true, _buffer);
-
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_state, deviceType, "doorbell", "", "", "", {{"value_template", "{ \"event_type\": \"{{ value }}\" }"}});
+        json["event_types"][0] = "ring";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("event", "ring", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
     }
 }
 
@@ -1288,73 +1268,27 @@ void Network::publishHassTopic(const String& mqttDeviceType,
     if (discoveryTopic != "")
     {
         DynamicJsonDocument json(_bufferSize);
-
-        json.clear();
-        auto dev = json.createNestedObject("dev");
-        auto ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
-        json["~"] = baseTopic;
-        json["name"] = displayName;
-        json["unique_id"] = String(uidString) + uidStringPostfix;
-        if(deviceClass != "")
-        {
-            json["dev_cla"] = deviceClass;
-        }
-        
-        if(stateTopic != "")
-        {
-            json["stat_t"] = stateTopic;
-        }
-        
-        if(stateClass != "")
-        {
-            json["stat_cla"] = stateClass;
-        }
-        if(entityCat != "")
-        {
-            json["ent_cat"] = entityCat;
-        }
-        if(commandTopic != "")
-        {
-            json["cmd_t"] = commandTopic;
-        }
-        
-        json["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
-
-        for(const auto& entry : additionalEntries)
-        {
-            if(strcmp(entry.second, "true") == 0)
-            {
-                json[entry.first] = true;
-            }
-            else if(strcmp(entry.second, "false") == 0)
-            {
-                json[entry.first] = false;
-            }
-            else
-            {
-                json[entry.first] = entry.second;
-            }
-        }
-
+        json = createHassJson(uidString, uidStringPostfix, displayName, name, baseTopic, stateTopic, deviceType, deviceClass, stateClass, entityCat, commandTopic, additionalEntries);
         serializeJson(json, _buffer, _bufferSize);
-
-        String path = discoveryTopic;
-        path.concat("/");
-        path.concat(mqttDeviceType);
-        path.concat("/");
-        path.concat(uidString);
-        path.concat("/");
-        path.concat(mqttDeviceName);
-        path.concat("/config");
-
+        String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
     }
 }
 
+String Network::createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+    String path = discoveryTopic;
+    path.concat("/");
+    path.concat(mqttDeviceType);
+    path.concat("/");
+    path.concat(uidString);
+    path.concat("/");
+    path.concat(mqttDeviceName);
+    path.concat("/config");
+    
+    return path;
+}
 
 void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
@@ -1362,15 +1296,7 @@ void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDe
 
     if (discoveryTopic != "")
     {
-        String path = discoveryTopic;
-        path.concat("/");
-        path.concat(mqttDeviceType);
-        path.concat("/");
-        path.concat(uidString);
-        path.concat("/");
-        path.concat(mqttDeviceName);
-        path.concat("/config");
-
+        String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
     }
 }
@@ -1477,6 +1403,79 @@ void Network::removeHASSConfig(char* uidString)
 void Network::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)
 {
     removeHassTopic(deviceType, name, uidString);
+}
+
+DynamicJsonDocument Network::createHassJson(const String& uidString,
+                             const String& uidStringPostfix,
+                             const String& displayName,
+                             const String& name,
+                             const String& baseTopic,
+                             const String& stateTopic,
+                             const String& deviceType,
+                             const String& deviceClass,
+                             const String& stateClass,
+                             const String& entityCat,
+                             const String& commandTopic,
+                             std::vector<std::pair<char*, char*>> additionalEntries
+)
+{
+    DynamicJsonDocument json(_bufferSize);
+
+    json.clear();
+    auto dev = json.createNestedObject("dev");
+    auto ids = dev.createNestedArray("ids");
+    ids.add(String("nuki_") + uidString);
+    json["dev"]["mf"] = "Nuki";
+    json["dev"]["mdl"] = deviceType;
+    json["dev"]["name"] = name;
+    json["~"] = baseTopic;
+    json["name"] = displayName;
+    json["unique_id"] = String(uidString) + uidStringPostfix;
+
+    if(deviceClass != "")
+    {
+        json["dev_cla"] = deviceClass;
+    }
+    
+    if(stateTopic != "")
+    {
+        json["stat_t"] = stateTopic;
+    }
+    
+    if(stateClass != "")
+    {
+        json["stat_cla"] = stateClass;
+    }
+    
+    if(entityCat != "")
+    {
+        json["ent_cat"] = entityCat;
+    }
+
+    if(commandTopic != "")
+    {
+        json["cmd_t"] = commandTopic;
+    }
+    
+    json["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
+
+    for(const auto& entry : additionalEntries)
+    {
+        if(strcmp(entry.second, "true") == 0)
+        {
+            json[entry.first] = true;
+        }
+        else if(strcmp(entry.second, "false") == 0)
+        {
+            json[entry.first] = false;
+        }
+        else
+        {
+            json[entry.first] = entry.second;
+        }
+    }
+    
+    return json;
 }
 
 void Network::publishPresenceDetection(char *csv)
