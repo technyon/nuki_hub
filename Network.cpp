@@ -375,7 +375,6 @@ bool Network::update()
 
                 if (!jsonError) {    
                     _latestVersion = doc["tag_name"];
-                    _latestVersionUrl = doc["assets"][0]["browser_download_url"];
                     publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
                 }            
             }
@@ -673,11 +672,6 @@ int Network::mqttConnectionState()
 const char* Network::latestHubVersion()
 {
     return _latestVersion;
-}
-
-const char* Network::latestHubVersionUrl()
-{
-    return _latestVersionUrl;
 }
 
 bool Network::encryptionSupported()
