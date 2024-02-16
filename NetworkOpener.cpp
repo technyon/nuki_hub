@@ -202,18 +202,20 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     _currentLockState = keyTurnerState.lockState;
 
     char str[50];
+    memset(&str, 0, sizeof(str));    
+
+    DynamicJsonDocument json(_bufferSize);
+
+    lockstateToString(keyTurnerState.lockState, str);
 
     if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState || keyTurnerState.nukiState != lastKeyTurnerState.nukiState) && keyTurnerState.lockState != NukiOpener::LockState::Undefined)
-    {
-        memset(&str, 0, sizeof(str));
-
+    {        
         if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
         {
             publishString(mqtt_topic_lock_state, "ContinuousMode");
         }
         else
         {
-            lockstateToString(keyTurnerState.lockState, str);
             publishString(mqtt_topic_lock_state, str);
         }
 
@@ -222,34 +224,57 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
             publishBinaryState(keyTurnerState);
         }
     }
+    
+    json["lock_state"] = str;
+    
+    if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
+    {
+        json["continuous_mode"] = true;
+    } else {
+        json["continuous_mode"] = false;
+    }
+
+    memset(&str, 0, sizeof(str));
+    triggerToString(keyTurnerState.trigger, str);
 
     if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
     {
-        memset(&str, 0, sizeof(str));
-        triggerToString(keyTurnerState.trigger, str);
         publishString(mqtt_topic_lock_trigger, str);
     }
+    
+    json["trigger"] = str;
 
+    memset(&str, 0, sizeof(str));
+    completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
 
     if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
-        memset(&str, 0, sizeof(str));
-        completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
         publishString(mqtt_topic_lock_completionStatus, str);
     }
+    
+    json["lock_completion_status"] = str;
+
+    memset(&str, 0, sizeof(str));
+    NukiOpener::doorSensorStateToString(keyTurnerState.doorSensorState, str);
 
     if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
     {
-        memset(&str, 0, sizeof(str));
-        NukiOpener::doorSensorStateToString(keyTurnerState.doorSensorState, str);
         publishString(mqtt_topic_lock_door_sensor_state, str);
     }
+    
+    json["door_sensor_state"] = str;
+
+    bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
 
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
     {
-        bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
         publishBool(mqtt_topic_battery_critical, critical);
     }
+
+    json["battery_critical"] = critical;    
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_lock_json, _buffer);
 
     _firstTunerStatePublish = false;
 }
