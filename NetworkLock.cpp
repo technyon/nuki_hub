@@ -286,7 +286,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     bool keypadBatteryCritical;
 
     if ((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
-        keypadBatteryCritical = (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
+        keypadBatteryCritical = ((keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
     }
     else
     {
