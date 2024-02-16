@@ -15,6 +15,7 @@
 #define preference_mqtt_lock_path "mqttpath"
 #define preference_opener_enabled "openerena"
 #define preference_mqtt_opener_path "mqttoppath"
+#define preference_check_updates "checkupdates"
 #define preference_lock_max_keypad_code_count "maxkpad"
 #define preference_opener_max_keypad_code_count "opmaxkpad"
 #define preference_mqtt_ca "mqttca"
@@ -63,7 +64,7 @@ private:
     std::vector<char*> _keys =
     {
             preference_started_before, preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_mqtt_broker, 
-            preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled,
+            preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled,
             preference_mqtt_lock_path, preference_opener_enabled, preference_mqtt_opener_path,
             preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_mqtt_ca,
             preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url,
@@ -86,7 +87,7 @@ private:
     };
     std::vector<char*> _boolPrefs =
     {
-            preference_started_before, preference_mqtt_log_enabled, preference_lock_enabled, preference_opener_enabled,
+            preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled
     };
