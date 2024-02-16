@@ -271,7 +271,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
         publishBool(mqtt_topic_battery_critical, critical);
     }
 
-    json["battery_critical"] = critical;    
+    json["battery_critical"] = critical;
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
