@@ -356,7 +356,7 @@ bool WebCfgServer::processArgs(String& message)
         {
             _preferences->putString(preference_mqtt_hass_cu_url, value);
             configChanged = true;
-        }        
+        }
         else if(key == "HOSTNAME")
         {
             _preferences->putString(preference_hostname, value);
@@ -375,6 +375,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "MQTTLOG")
         {
             _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "CHECKUPDATE")
+        {
+            _preferences->putBool(preference_check_updates, (value == "1"));
             configChanged = true;
         }
         else if(key == "DHCPENA")
@@ -617,6 +622,16 @@ void WebCfgServer::buildHtml(String& response)
         printParameter(response, "Nuki Opener state", lockstateArr);
     }
     printParameter(response, "Firmware", version.c_str(), "/info");
+
+    const char* _latestVersion = _network->latestHubVersion();
+
+    if(_preferences->getBool(preference_check_updates))
+    {
+        //if(atof(_latestVersion) > atof(NUKI_HUB_VERSION) || (atof(_latestVersion) == atof(NUKI_HUB_VERSION) && _latestVersion != NUKI_HUB_VERSION)) {
+        printParameter(response, "Latest Firmware", _latestVersion, "/ota");
+        //}
+    }
+
     response.concat("</table><br><br>");
 
     response.concat("<h3>MQTT and Network Configuration</h3>");
@@ -726,6 +741,18 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
 
     response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
+
+    if(_preferences->getBool(preference_check_updates))
+    {
+        response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+        response.concat(GITHUB_LATEST_RELEASE_URL);
+        response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
+
+        response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
+        response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
+        response.concat("'); return false;\">Download latest binary from GitHub</button>");
+    }
+
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");
@@ -779,6 +806,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
+    printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates));
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br><br>");
 

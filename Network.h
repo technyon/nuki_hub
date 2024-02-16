@@ -9,6 +9,7 @@
 #include "MqttTopics.h"
 #include "Gpio.h"
 #include <ArduinoJson.h>
+#include <HTTPClient.h>
 
 enum class NetworkDeviceType
 {
@@ -63,6 +64,7 @@ public:
     void publishPresenceDetection(char* csv);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
+    const char* latestHubVersion();
     bool encryptionSupported();
     const String networkDeviceName() const;
 
@@ -126,6 +128,9 @@ private:
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
 
+    const char* _latestVersion;
+    HTTPClient https;
+
     Preferences* _preferences;
     Gpio* _gpio;
     IPConfiguration* _ipConfiguration = nullptr;
@@ -152,6 +157,7 @@ private:
 
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
+    unsigned long _lastUpdateCheckTs = 0;
     unsigned long _lastRssiTs = 0;
     bool _mqttEnabled = true;
     static unsigned long _ignoreSubscriptionsTs;
