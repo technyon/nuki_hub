@@ -299,6 +299,8 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     }
 
     json["keypad_battery_critical"] = keypadBatteryCritical;
+    json["auth_id"] = authId;
+    json["auth_name"] = authName;
 
     _firstTunerStatePublish = false;
 }
@@ -328,8 +330,6 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     char str[50];
 
     bool authFound = false;
-    uint32_t authId = 0;
-    char authName[33];
     memset(authName, 0, sizeof(authName));
 
     DynamicJsonDocument json(_bufferSize);

@@ -272,6 +272,8 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     }
 
     json["battery_critical"] = critical;
+    json["auth_id"] = authId;
+    json["auth_name"] = authName;    
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
@@ -314,8 +316,6 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     char str[50];
 
     bool authFound = false;
-    uint32_t authId = 0;
-    char authName[33];
     memset(authName, 0, sizeof(authName));
 
     DynamicJsonDocument json(_bufferSize);
