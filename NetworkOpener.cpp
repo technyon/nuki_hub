@@ -202,18 +202,20 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     _currentLockState = keyTurnerState.lockState;
 
     char str[50];
+    memset(&str, 0, sizeof(str));
+
+    DynamicJsonDocument json(_bufferSize);
+
+    lockstateToString(keyTurnerState.lockState, str);
 
     if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState || keyTurnerState.nukiState != lastKeyTurnerState.nukiState) && keyTurnerState.lockState != NukiOpener::LockState::Undefined)
     {
-        memset(&str, 0, sizeof(str));
-
         if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
         {
             publishString(mqtt_topic_lock_state, "ContinuousMode");
         }
         else
         {
-            lockstateToString(keyTurnerState.lockState, str);
             publishString(mqtt_topic_lock_state, str);
         }
 
@@ -223,33 +225,56 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
         }
     }
 
+    json["lock_state"] = str;
+
+    if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
+    {
+        json["continuous_mode"] = 1;
+    } else {
+        json["continuous_mode"] = 0;
+    }
+
+    memset(&str, 0, sizeof(str));
+    triggerToString(keyTurnerState.trigger, str);
+
     if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
     {
-        memset(&str, 0, sizeof(str));
-        triggerToString(keyTurnerState.trigger, str);
         publishString(mqtt_topic_lock_trigger, str);
     }
 
+    json["trigger"] = str;
+
+    memset(&str, 0, sizeof(str));
+    completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
 
     if(_firstTunerStatePublish || keyTurnerState.lastLockActionCompletionStatus != lastKeyTurnerState.lastLockActionCompletionStatus)
     {
-        memset(&str, 0, sizeof(str));
-        completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
         publishString(mqtt_topic_lock_completionStatus, str);
     }
 
+    json["lock_completion_status"] = str;
+
+    memset(&str, 0, sizeof(str));
+    NukiOpener::doorSensorStateToString(keyTurnerState.doorSensorState, str);
+
     if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
     {
-        memset(&str, 0, sizeof(str));
-        NukiOpener::doorSensorStateToString(keyTurnerState.doorSensorState, str);
         publishString(mqtt_topic_lock_door_sensor_state, str);
     }
+
+    json["door_sensor_state"] = str;
 
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
     {
         bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
         publishBool(mqtt_topic_battery_critical, critical);
     }
+
+    json["auth_id"] = authId;
+    json["auth_name"] = authName;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_lock_json, _buffer);
 
     _firstTunerStatePublish = false;
 }
@@ -289,8 +314,6 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     char str[50];
 
     bool authFound = false;
-    uint32_t authId = 0;
-    char authName[33];
     memset(authName, 0, sizeof(authName));
 
     DynamicJsonDocument json(_bufferSize);
@@ -513,15 +536,35 @@ void NetworkOpener::removeHASSConfig(char* uidString)
 void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
 {
     uint index = 0;
+
+    DynamicJsonDocument json(_bufferSize);
+
     for(const auto& entry : entries)
     {
         String basePath = mqtt_topic_keypad;
         basePath.concat("/code_");
         basePath.concat(std::to_string(index).c_str());
         publishKeypadEntry(basePath, entry);
+        
+        auto jsonEntry = json.add();
+
+        jsonEntry["id"] = entry.codeId;
+        jsonEntry["enabled"] = entry.enabled;
+        jsonEntry["name"] = entry.name;
+        jsonEntry["createdYear"] = entry.dateCreatedYear;
+        jsonEntry["createdMonth"] = entry.dateCreatedMonth;
+        jsonEntry["createdDay"] = entry.dateCreatedDay;
+        jsonEntry["createdHour"] = entry.dateCreatedHour;
+        jsonEntry["createdMin"] = entry.dateCreatedMin;
+        jsonEntry["createdSec"] = entry.dateCreatedSec;
+        jsonEntry["lockCount"] = entry.lockCount;
 
         ++index;
     }
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_keypad_json, _buffer);
+
     while(index < maxKeypadCodeCount)
     {
         NukiLock::KeypadEntry entry;

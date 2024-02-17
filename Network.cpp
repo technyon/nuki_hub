@@ -357,13 +357,13 @@ bool Network::update()
         }
         _lastMaintenanceTs = ts;
     }
-    
+
     if(_preferences->getBool(preference_check_updates))
     {
         if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
         {
             _lastUpdateCheckTs = ts;
-            
+
             https.useHTTP10(true);
             https.begin(GITHUB_LATEST_RELEASE_API_URL);
 
@@ -373,16 +373,16 @@ bool Network::update()
                 DynamicJsonDocument doc(6144);
                 DeserializationError jsonError = deserializeJson(doc, https.getStream());
 
-                if (!jsonError) {    
+                if (!jsonError) {
                     _latestVersion = doc["tag_name"];
                     publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
-                }            
+                }
             }
 
             https.end();
         }
     }
-    
+
     for(const auto& gpioTs : _gpioTs)
     {
         uint8_t pin = gpioTs.first;
@@ -750,7 +750,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["dev"]["mf"] = "Nuki";
         json["dev"]["mdl"] = deviceType;
         json["dev"]["name"] = name;
-        
+
         String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url);
 
         if (cuUrl != "")
@@ -761,7 +761,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         {
             json["dev"]["cu"] = "http://" + _device->localIP();
         }
-        
+
         json["~"] = baseTopic;
         json["name"] = nullptr;
         json["unique_id"] = String(uidString) + "_lock";
@@ -945,11 +945,11 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          { { "enabled_by_default", "true" },
                            {"ic", "mdi:counter"}});
-                      
+
         if(_preferences->getBool(preference_check_updates))
         {
             // NUKI Hub latest
-            publishHassTopic("sensor", 
+            publishHassTopic("sensor",
                              "nuki_hub_latest",
                              uidString,
                              "_nuki_hub_latest",
@@ -964,13 +964,13 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              "",
                              { { "enabled_by_default", "true" },
                                {"ic", "mdi:counter"}});
-                               
+
             // NUKI Hub update
             char latest_version_topic[250];
             _lockPath.toCharArray(latest_version_topic,_lockPath.length() + 1);
             strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
 
-            publishHassTopic("update", 
+            publishHassTopic("update",
                              "nuki_hub_update",
                              uidString,
                              "_nuki_hub_update",
@@ -986,7 +986,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                              { { "enabled_by_default", "true" },
                                { "entity_picture", "https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
                                { "release_url", GITHUB_LATEST_RELEASE_URL },
-                               { "latest_version_topic", latest_version_topic }});                               
+                               { "latest_version_topic", latest_version_topic }});
         }
         else
         {
@@ -1050,7 +1050,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                            { "pl_off", "0" },
                            { "state_on", "1" },
                            { "state_off", "0" }});
- 
+
         // Unlatch
         publishHassTopic("button",
                          "unlatch",
@@ -1066,8 +1066,8 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          String("~") + mqtt_topic_lock_action,
                          { { "enabled_by_default", "false" },
-                           { "pl_prs", "unlatch" }}); 
-                         
+                           { "pl_prs", "unlatch" }});
+
     }
 }
 
@@ -1362,7 +1362,7 @@ String Network::createHassTopicPath(const String& mqttDeviceType, const String& 
     path.concat("/");
     path.concat(mqttDeviceName);
     path.concat("/config");
-    
+
     return path;
 }
 
@@ -1387,18 +1387,18 @@ void Network::removeHASSConfig(char* uidString)
         removeHassTopic("lock", "smartlock", uidString);
         removeHassTopic("binary_sensor", "battery_low", uidString);
         removeHassTopic("binary_sensor", "keypad_battery_low", uidString);
-        removeHassTopic("sensor", "battery_voltage", uidString);        
+        removeHassTopic("sensor", "battery_voltage", uidString);
         removeHassTopic("sensor", "trigger", uidString);
         removeHassTopic("binary_sensor", "mqtt_connected", uidString);
-        removeHassTopic("switch", "reset", uidString);        
+        removeHassTopic("switch", "reset", uidString);
         removeHassTopic("sensor", "firmware_version", uidString);
         removeHassTopic("sensor", "hardware_version", uidString);
         removeHassTopic("sensor", "nuki_hub_version", uidString);
         removeHassTopic("sensor", "nuki_hub_latest", uidString);
         removeHassTopic("update", "nuki_hub_update", uidString);
         removeHassTopic("sensor", "nuki_hub_ip", uidString);
-        removeHassTopic("switch", "led_enabled", uidString);  
-        removeHassTopic("switch", "button_enabled", uidString);  
+        removeHassTopic("switch", "led_enabled", uidString);
+        removeHassTopic("switch", "button_enabled", uidString);
         removeHassTopic("button", "unlatch", uidString);
         removeHassTopic("button", "lockngo", uidString);
         removeHassTopic("button", "lockngounlatch", uidString);
@@ -1406,7 +1406,7 @@ void Network::removeHASSConfig(char* uidString)
         removeHassTopic("binary_sensor", "door_sensor", uidString);
         removeHassTopic("binary_sensor", "ring", uidString);
         removeHassTopic("number", "led_brightness", uidString);
-        removeHassTopic("sensor", "sound_level", uidString);        
+        removeHassTopic("sensor", "sound_level", uidString);
         removeHassTopic("number", "sound_level", uidString);
         removeHassTopic("sensor", "last_action_authorization", uidString);
         removeHassTopic("sensor", "keypad_status", uidString);
@@ -1451,17 +1451,17 @@ DynamicJsonDocument Network::createHassJson(const String& uidString,
     {
         json["dev_cla"] = deviceClass;
     }
-    
+
     if(stateTopic != "")
     {
         json["stat_t"] = stateTopic;
     }
-    
+
     if(stateClass != "")
     {
         json["stat_cla"] = stateClass;
     }
-    
+
     if(entityCat != "")
     {
         json["ent_cat"] = entityCat;
@@ -1471,7 +1471,7 @@ DynamicJsonDocument Network::createHassJson(const String& uidString,
     {
         json["cmd_t"] = commandTopic;
     }
-    
+
     json["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
 
     for(const auto& entry : additionalEntries)
@@ -1489,7 +1489,7 @@ DynamicJsonDocument Network::createHassJson(const String& uidString,
             json[entry.first] = entry.second;
         }
     }
-    
+
     return json;
 }
 
