@@ -268,39 +268,34 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     json["door_sensor_state"] = str;
 
-    bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
-    bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
-    uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
-
     if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
     {
+        bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
         publishBool(mqtt_topic_battery_critical, critical);
+
+        bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
         publishBool(mqtt_topic_battery_charging, charging);
+
+        uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
         publishInt(mqtt_topic_battery_level, level);
-    }
-
-    json["battery_critical"] = critical;
-    json["battery_charging"] = charging;
-    json["battery_level"] = level;
-
-    bool keypadBatteryCritical;
-
-    if ((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
-        keypadBatteryCritical = ((keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
-    }
-    else
-    {
-        keypadBatteryCritical = false;
     }
 
     if(_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState)
     {
-        publishBool(mqtt_topic_battery_keypad_critical, keypadBatteryCritical);
+        if ((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
+            publishBool(mqtt_topic_battery_keypad_critical, (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
+        }
+        else
+        {
+            publishBool(mqtt_topic_battery_keypad_critical, false);
+        }
     }
 
-    json["keypad_battery_critical"] = keypadBatteryCritical;
     json["auth_id"] = authId;
     json["auth_name"] = authName;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_lock_json, _buffer);
 
     _firstTunerStatePublish = false;
 }
@@ -484,15 +479,35 @@ void NetworkLock::publishBleAddress(const std::string &address)
 void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
 {
     uint index = 0;
+
+    DynamicJsonDocument json(_bufferSize);
+
     for(const auto& entry : entries)
     {
         String basePath = mqtt_topic_keypad;
         basePath.concat("/code_");
         basePath.concat(std::to_string(index).c_str());
         publishKeypadEntry(basePath, entry);
+        
+        auto jsonEntry = json.add();
 
+        jsonEntry["id"] = entry.codeId;
+        jsonEntry["enabled"] = entry.enabled;
+        jsonEntry["name"] = entry.name;
+        jsonEntry["createdYear"] = entry.dateCreatedYear;
+        jsonEntry["createdMonth"] = entry.dateCreatedMonth;
+        jsonEntry["createdDay"] = entry.dateCreatedDay;
+        jsonEntry["createdHour"] = entry.dateCreatedHour;
+        jsonEntry["createdMin"] = entry.dateCreatedMin;
+        jsonEntry["createdSec"] = entry.dateCreatedSec;
+        jsonEntry["lockCount"] = entry.lockCount;
+        
         ++index;
     }
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_keypad_json, _buffer);
+
     while(index < maxKeypadCodeCount)
     {
         NukiLock::KeypadEntry entry;
