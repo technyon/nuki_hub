@@ -8,6 +8,7 @@
 #include "networkDevices/IPConfiguration.h"
 #include "MqttTopics.h"
 #include "Gpio.h"
+#include <ArduinoJson.h>
 #include <HTTPClient.h>
 
 enum class NetworkDeviceType
@@ -86,7 +87,7 @@ private:
     bool reconnect();
 
     void publishHassTopic(const String& mqttDeviceType,
-                          const String& mattDeviceName,
+                          const String& mqttDeviceName,
                           const String& uidString,
                           const String& uidStringPostfix,
                           const String& displayName,
@@ -100,9 +101,23 @@ private:
                           const String& commandTopic = "",
                           std::vector<std::pair<char*, char*>> additionalEntries = {}
                           );
-
-    void removeHassTopic(const String& mqttDeviceType, const String& mattDeviceName, const String& uidString);
-
+    
+    String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
+    void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
+    DynamicJsonDocument createHassJson(const String& uidString,
+                        const String& uidStringPostfix,
+                        const String& displayName,
+                        const String& name,
+                        const String& baseTopic,
+                        const String& stateTopic,
+                        const String& deviceType,
+                        const String& deviceClass,
+                        const String& stateClass = "",
+                        const String& entityCat = "",
+                        const String& commandTopic = "",
+                        std::vector<std::pair<char*, char*>> additionalEntries = {}
+                        );
+                          
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
 

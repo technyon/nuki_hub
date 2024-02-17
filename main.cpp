@@ -147,6 +147,21 @@ bool initPreferences()
         preferences->putBool(preference_started_before, true);
         preferences->putBool(preference_lock_enabled, true);
     }
+    else
+    {
+        int configVer = preferences->getInt(preference_config_version);
+
+        if(configVer < (atof(NUKI_HUB_VERSION) * 100))
+        {
+            //Example
+            //if (configVer < 833)
+            //{
+                //MIGRATE SETTINGS
+            //}
+
+            preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);
+        }
+    }
 
     return firstStart;
 }

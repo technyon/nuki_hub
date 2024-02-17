@@ -3,6 +3,7 @@
 #include <vector>
 
 #define preference_started_before "run"
+#define preference_config_version "confVersion"
 #define preference_device_id_lock "deviceId"
 #define preference_device_id_opener "deviceIdOp"
 #define preference_mqtt_broker "mqttbroker"
@@ -63,10 +64,8 @@ class DebugPreferences
 private:
     std::vector<char*> _keys =
     {
-            preference_started_before, preference_device_id_lock, preference_device_id_opener, preference_mqtt_broker, preference_mqtt_broker_port,
-            preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_lock_enabled,
-            preference_mqtt_lock_path, preference_opener_enabled, preference_opener_continuous_mode, preference_mqtt_opener_path,
-            preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled,
+            preference_started_before, preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_mqtt_broker, 
+            preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled,
             preference_mqtt_lock_path, preference_opener_enabled, preference_opener_continuous_mode, preference_mqtt_opener_path,
             preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_mqtt_ca,
             preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url,
