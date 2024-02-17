@@ -26,6 +26,8 @@ W5500Device::W5500Device(const String &hostname, Preferences* preferences, const
         }
     }
     Log->println();
+
+    _mqttClient = new espMqttClientW5500();
 }
 
 W5500Device::~W5500Device()
@@ -61,7 +63,7 @@ void W5500Device::initialize()
         _path = new char[pathStr.length() + 1];
         memset(_path, 0, sizeof(_path));
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
 
     reconnect();
@@ -161,13 +163,6 @@ void W5500Device::resetDevice()
     delay(50);
 }
 
-
-void W5500Device::printError()
-{
-    Log->print(F("Free Heap: "));
-    Log->println(ESP.getFreeHeap());
-}
-
 bool W5500Device::supportsEncryption()
 {
     return false;
@@ -218,10 +213,7 @@ void W5500Device::initializeMacAddress(byte *mac)
 void W5500Device::update()
 {
     _maintainResult = Ethernet.maintain();
-    if(_mqttEnabled)
-    {
-        _mqttClient.loop();
-    }
+    NetworkDevice::update();
 }
 
 int8_t W5500Device::signalStrength()
@@ -232,80 +224,4 @@ int8_t W5500Device::signalStrength()
 String W5500Device::localIP()
 {
     return Ethernet.localIP().toString();
-}
-
-void W5500Device::mqttSetClientId(const char *clientId)
-{
-    _mqttClient.setClientId(clientId);
-}
-
-void W5500Device::mqttSetCleanSession(bool cleanSession)
-{
-    _mqttClient.setCleanSession(cleanSession);
-}
-
-uint16_t W5500Device::mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload)
-{
-    return _mqttClient.publish(topic, qos, retain, payload);
-}
-
-bool W5500Device::mqttConnected() const
-{
-    return _mqttClient.connected();
-}
-
-void W5500Device::mqttSetServer(const char *host, uint16_t port)
-{
-    _mqttClient.setServer(host, port);
-}
-
-bool W5500Device::mqttConnect()
-{
-    return _mqttClient.connect();
-}
-
-bool W5500Device::mqttDisconnect(bool force)
-{
-    return _mqttClient.disconnect(force);
-}
-
-void W5500Device::setWill(const char *topic, uint8_t qos, bool retain, const char *payload)
-{
-    _mqttClient.setWill(topic, qos, retain, payload);
-}
-
-void W5500Device::mqttSetCredentials(const char *username, const char *password)
-{
-    _mqttClient.setCredentials(username, password);
-}
-
-void W5500Device::mqttOnMessage(espMqttClientTypes::OnMessageCallback callback)
-{
-    _mqttClient.onMessage(callback);
-}
-
-void W5500Device::mqttOnConnect(espMqttClientTypes::OnConnectCallback callback)
-{
-    _mqttClient.onConnect(callback);
-}
-
-void W5500Device::mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback)
-{
-    _mqttClient.onDisconnect(callback);
-}
-
-uint16_t W5500Device::mqttSubscribe(const char *topic, uint8_t qos)
-{
-    return _mqttClient.subscribe(topic, qos);
-}
-
-uint16_t W5500Device::mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length)
-{
-    return _mqttClient.publish(topic, qos, retain, payload, length);
-}
-
-void W5500Device::disableMqtt()
-{
-    _mqttClient.disconnect();
-    _mqttEnabled = false;
 }
