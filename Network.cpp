@@ -1166,6 +1166,23 @@ void Network::publishHASSConfigContinuousMode(char *deviceType, const char *base
 
     if (discoveryTopic != "")
     {
+        
+        publishHassTopic("binary_sensor",
+                         "continuous_mode",
+                         uidString,
+                         "_continuous_mode",
+                         "Continuous mode",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_lock_continuous_mode,
+                         deviceType,
+                         "lock",
+                         "",
+                         "",
+                         "",
+                         {{"pl_on", "on"},
+                          {"pl_off", "off"}});
+        
         publishHassTopic("switch",
                          "continuous_mode",
                          uidString,
