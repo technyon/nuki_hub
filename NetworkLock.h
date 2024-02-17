@@ -73,14 +73,16 @@ private:
 
     bool _firstTunerStatePublish = true;
     unsigned long _lastMaintenanceTs = 0;
-    bool _haEnabled= false;
+    bool _haEnabled = false;
     bool _reconnected = false;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
-    uint8_t _queryCommands = 0;
+    uint8_t _queryCommands = 0;    
+    uint32_t authId = 0;
+    char authName[33];
 
     char* _buffer;
     size_t _bufferSize;

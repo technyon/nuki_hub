@@ -1,7 +1,7 @@
 #include "espMqttClientW5500.h"
 
 espMqttClientW5500::espMqttClientW5500()
-: MqttClientSetup(espMqttClientTypes::UseInternalTask::NO),
+: espMqttClient(espMqttClientTypes::UseInternalTask::NO),
   _client()
 {
     _transport = &_client;

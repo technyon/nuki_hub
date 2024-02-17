@@ -57,7 +57,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(this, _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
 }
 
@@ -96,12 +96,6 @@ void EthLan8720Device::reconfigure()
     restartEsp(RestartReason::ReconfigureLAN8720);
 }
 
-void EthLan8720Device::printError()
-{
-    Log->print(F("Free Heap: "));
-    Log->println(ESP.getFreeHeap());
-}
-
 bool EthLan8720Device::supportsEncryption()
 {
     return true;
@@ -132,20 +126,6 @@ ReconnectStatus EthLan8720Device::reconnect()
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
-void EthLan8720Device::update()
-{
-    if(_mqttEnabled)
-    {
-        if (_useEncryption)
-        {
-            _mqttClientSecure->loop();
-        } else
-        {
-            _mqttClient->loop();
-        }
-    }
-}
-
 void EthLan8720Device::onDisconnected()
 {
     if(millis() > 60000)
@@ -163,187 +143,3 @@ String EthLan8720Device::localIP()
 {
     return ETH.localIP().toString();
 }
-
-void EthLan8720Device::mqttSetClientId(const char *clientId)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->setClientId(clientId);
-    }
-    else
-    {
-        _mqttClient->setClientId(clientId);
-    }
-}
-
-void EthLan8720Device::mqttSetCleanSession(bool cleanSession)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->setCleanSession(cleanSession);
-    }
-    else
-    {
-        _mqttClient->setCleanSession(cleanSession);
-    }
-}
-
-uint16_t EthLan8720Device::mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload)
-{
-    if(_useEncryption)
-    {
-        return _mqttClientSecure->publish(topic, qos, retain, payload);
-    }
-    else
-    {
-        return _mqttClient->publish(topic, qos, retain, payload);
-    }
-}
-
-uint16_t EthLan8720Device::mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length)
-{
-    if(_useEncryption)
-    {
-        return _mqttClientSecure->publish(topic, qos, retain, payload, length);
-    }
-    else
-    {
-        return _mqttClient->publish(topic, qos, retain, payload, length);
-    }
-}
-
-bool EthLan8720Device::mqttConnected() const
-{
-    if(_useEncryption)
-    {
-        return _mqttClientSecure->connected();
-    }
-    else
-    {
-        return _mqttClient->connected();
-    }
-}
-
-void EthLan8720Device::mqttSetServer(const char *host, uint16_t port)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->setServer(host, port);
-    }
-    else
-    {
-        _mqttClient->setServer(host, port);
-    }
-}
-
-bool EthLan8720Device::mqttConnect()
-{
-    if(_useEncryption)
-    {
-        return _mqttClientSecure->connect();
-    }
-    else
-    {
-        return _mqttClient->connect();
-    }
-}
-
-bool EthLan8720Device::mqttDisconnect(bool force)
-{
-    if(_useEncryption)
-    {
-        return _mqttClientSecure->disconnect(force);
-    }
-    else
-    {
-        return _mqttClient->disconnect(force);
-    }
-}
-
-void EthLan8720Device::setWill(const char *topic, uint8_t qos, bool retain, const char *payload)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->setWill(topic, qos, retain, payload);
-    }
-    else
-    {
-        _mqttClient->setWill(topic, qos, retain, payload);
-    }
-}
-
-void EthLan8720Device::mqttSetCredentials(const char *username, const char *password)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->setCredentials(username, password);
-    }
-    else
-    {
-        _mqttClient->setCredentials(username, password);
-    }
-}
-
-void EthLan8720Device::mqttOnMessage(espMqttClientTypes::OnMessageCallback callback)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->onMessage(callback);
-    }
-    else
-    {
-        _mqttClient->onMessage(callback);
-    }
-}
-
-
-void EthLan8720Device::mqttOnConnect(espMqttClientTypes::OnConnectCallback callback)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->onConnect(callback);
-    }
-    else
-    {
-        _mqttClient->onConnect(callback);
-    }
-}
-
-void EthLan8720Device::mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback callback)
-{
-    if(_useEncryption)
-    {
-        _mqttClientSecure->onDisconnect(callback);
-    }
-    else
-    {
-        _mqttClient->onDisconnect(callback);
-    }
-}
-
-
-uint16_t EthLan8720Device::mqttSubscribe(const char *topic, uint8_t qos)
-{
-    if(_useEncryption)
-    {
-        return _mqttClientSecure->subscribe(topic, qos);
-    }
-    else
-    {
-        return _mqttClient->subscribe(topic, qos);
-    }
-}
-
-void EthLan8720Device::disableMqtt()
-{
-    if (_useEncryption)
-    {
-        _mqttClientSecure->disconnect();
-    } else
-    {
-        _mqttClient->disconnect();
-    }
-
-    _mqttEnabled = false;
-}
-

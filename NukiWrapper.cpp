@@ -324,7 +324,13 @@ void NukiWrapper::updateKeyTurnerState()
         }
         return;
     }
+    
     _retryLockstateCount = 0;
+
+    if(_publishAuthData)
+    {
+        updateAuthData();
+    }
 
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
     updateGpioOutputs();
@@ -332,11 +338,6 @@ void NukiWrapper::updateKeyTurnerState()
     char lockStateStr[20];
     lockstateToString(_keyTurnerState.lockState, lockStateStr);
     Log->println(lockStateStr);
-
-    if(_publishAuthData)
-    {
-        updateAuthData();
-    }
 
     postponeBleWatchdog();
 }

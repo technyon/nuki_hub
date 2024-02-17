@@ -749,13 +749,13 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
 
     if(_preferences->getBool(preference_check_updates))
     {
-        response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+        response.concat("<div id=\"gitdiv\"><button title=\"Open latest release on GitHub\" onclick=\" window.open('");
         response.concat(GITHUB_LATEST_RELEASE_URL);
         response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
 
         response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
         response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
-        response.concat("'); return false;\">Download latest binary from GitHub</button>");
+        response.concat("'); return false;\">Download latest binary from GitHub</button></div>");
     }
 
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
@@ -765,6 +765,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("	button.addEventListener('click',hideshow,false);");
     response.concat("	function hideshow() {");
     response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");    
     response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
     response.concat("	}");
     response.concat("});");

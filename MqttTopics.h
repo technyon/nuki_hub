@@ -11,6 +11,7 @@
 
 #define mqtt_topic_lock_state "/lock/state"
 #define mqtt_topic_lock_ha_state "/lock/hastate"
+#define mqtt_topic_lock_json "/lock/json"
 #define mqtt_topic_query_config "/lock/query/config"
 #define mqtt_topic_query_lockstate "/lock/query/lockstate"
 #define mqtt_topic_query_keypad "/lock/query/keypad"
@@ -53,6 +54,7 @@
 #define mqtt_topic_keypad_command_code "/keypad/command/code"
 #define mqtt_topic_keypad_command_enabled "/keypad/command/enabled"
 #define mqtt_topic_keypad_command_result "/keypad/command/commandResult"
+#define mqtt_topic_keypad_json "/keypad/json"
 
 #define mqtt_topic_presence "/presence/devices"
 
