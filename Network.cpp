@@ -1456,6 +1456,8 @@ void Network::removeHASSConfig(char* uidString)
         removeHassTopic("sensor", "keypad_status", uidString);
         removeHassTopic("sensor", "wifi_signal_strength", uidString);
         removeHassTopic("sensor", "bluetooth_signal_strength", uidString);
+        removeHassTopic("binary_sensor", "continuous_mode", uidString);
+        removeHassTopic("switch", "continuous_mode", uidString);
     }
 }
 
