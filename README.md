@@ -199,7 +199,9 @@ can be configured for a specific role:
 - Input: Electric strike actuation: When connect to Ground, an electric strike actuation command is sent to the opener (open door for configured amount of time)
 - Input: Activate RTO: When connect to Ground, Ring-to-open is activated (opener)
 - Input: Activate CM: When connect to Ground, Continuous mode is activated (opener)
-- Input: Deactivate RTO/CM: Disable RTO or CM, depending on which is active
+- Input: Deactivate RTO/CM: Disable RTO or CM, depending on which is active (opener)
+- Input: Dectivate RTO: When connect to Ground, Ring-to-open is deactivated (opener)
+- Input: Dectivate CM: When connect to Ground, Continuous mode is deactivated (opener)
 - Output: High when locked: Outputs a high signal when the door is locked
 - Output: High when unlocked: Outputs a high signal when the door is unlocked
 - Output: High when motor blocked: Outputs a high signal when the motor is blocked (lock)

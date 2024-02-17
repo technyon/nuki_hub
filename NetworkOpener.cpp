@@ -210,14 +210,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 
     if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState || keyTurnerState.nukiState != lastKeyTurnerState.nukiState) && keyTurnerState.lockState != NukiOpener::LockState::Undefined)
     {
-        if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
-        {
-            publishString(mqtt_topic_lock_state, "ContinuousMode");
-        }
-        else
-        {
-            publishString(mqtt_topic_lock_state, str);
-        }
+        publishString(mqtt_topic_lock_state, str);
 
         if(_haEnabled)
         {
@@ -229,8 +222,10 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 
     if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
     {
+        publishString(mqtt_topic_lock_continuous_mode, "on");
         json["continuous_mode"] = 1;
     } else {
+        publishString(mqtt_topic_lock_continuous_mode, "off");
         json["continuous_mode"] = 0;
     }
 
@@ -291,12 +286,9 @@ void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
     {
         publishString(mqtt_topic_lock_ha_state, "unlocked");
         publishString(mqtt_topic_lock_binary_state, "unlocked");
-        publishString(mqtt_topic_lock_continous_mode, "on");
     }
     else
     {
-        publishString(mqtt_topic_lock_continous_mode, "off");
-        
         switch (lockState.lockState)
         {
             case NukiOpener::LockState::Locked:
@@ -307,7 +299,7 @@ void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
             case NukiOpener::LockState::Open:
                 publishString(mqtt_topic_lock_ha_state, "unlocked");
                 publishString(mqtt_topic_lock_binary_state, "unlocked");
-                break; 
+                break;
             case NukiOpener::LockState::Opening:
                 publishString(mqtt_topic_lock_ha_state, "unlocking");
                 publishString(mqtt_topic_lock_binary_state, "unlocked");
@@ -537,7 +529,7 @@ void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, c
 
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), false, lockAction, unlockAction, openAction);
     _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString);
-    _network->publishHASSConfigContinuousMode(deviceType, baseTopic, name, uidString);    
+    _network->publishHASSConfigContinuousMode(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigSoundLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
 }
@@ -559,7 +551,7 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
         basePath.concat("/code_");
         basePath.concat(std::to_string(index).c_str());
         publishKeypadEntry(basePath, entry);
-        
+
         auto jsonEntry = json.add();
 
         jsonEntry["id"] = entry.codeId;

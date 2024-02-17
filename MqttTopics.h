@@ -18,7 +18,7 @@
 #define mqtt_topic_query_battery "/lock/query/battery"
 #define mqtt_topic_query_lockstate_command_result "/lock/query/lockstateCommandResult"
 #define mqtt_topic_lock_binary_state "/lock/binaryState"
-#define mqtt_topic_lock_continous_mode "/lock/continousMode"
+#define mqtt_topic_lock_continuous_mode "/lock/continuousMode"
 #define mqtt_topic_lock_trigger "/lock/trigger"
 #define mqtt_topic_lock_last_lock_action "/lock/lastLockAction"
 #define mqtt_topic_lock_log "/lock/log"
