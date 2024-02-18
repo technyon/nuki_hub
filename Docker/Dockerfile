@@ -10,7 +10,7 @@ RUN tar -xf /tmp/arduino-ide.tar.xz --directory ~/
 RUN cd ~/arduino* && \
     ./install.sh && \
     ./arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json" --save-prefs && \
-    ./arduino --install-boards esp32:esp32:2.0.9
+    ./arduino --install-boards esp32:esp32:2.0.14
 
 RUN git clone --recurse-submodules https://github.com/technyon/Arduino-CMake-Toolchain.git ~/Arduino-CMake-Toolchain
 
@@ -36,6 +36,7 @@ RUN cd /usr/src/nuki_hub/build && \
 
 RUN set -ex && \
     cd /usr/src/nuki_hub/build && \
+    touch file_opts && \
     cmake -D CMAKE_TOOLCHAIN_FILE=~/Arduino-CMake-Toolchain/Arduino-toolchain.cmake .. && \
     make
 
@@ -43,6 +44,6 @@ FROM builder AS runtime
 
 COPY --from=builder /usr/src/nuki_hub/build/nuki_hub.bin /usr/src/nuki_hub/build/release/nuki_hub.bin
 COPY --from=builder /usr/src/nuki_hub/build/nuki_hub.partitions.bin /usr/src/nuki_hub/build/release/nuki_hub.partitions.bin
-COPY --from=builder /root/.arduino15/packages/esp32/hardware/esp32/2.0.9/tools/partitions/boot_app0.bin /usr/src/nuki_hub/build/release/boot_app0.bin
+COPY --from=builder /root/.arduino15/packages/esp32/hardware/esp32/2.0.14/tools/partitions/boot_app0.bin /usr/src/nuki_hub/build/release/boot_app0.bin
 
 CMD ["/bin/bash"]
