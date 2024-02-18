@@ -404,6 +404,8 @@ void NukiOpenerWrapper::updateConfig()
 
 void NukiOpenerWrapper::updateAuthData()
 {
+    if(_nukiOpener.getSecurityPincode() == 0) return;    
+    
     Nuki::CmdResult result = _nukiOpener.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {

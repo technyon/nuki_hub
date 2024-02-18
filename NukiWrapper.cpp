@@ -374,6 +374,8 @@ void NukiWrapper::updateConfig()
 
 void NukiWrapper::updateAuthData()
 {
+    if(_nukiLock.getSecurityPincode() == 0) return;
+    
     Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {
