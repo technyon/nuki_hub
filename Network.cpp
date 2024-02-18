@@ -736,7 +736,7 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
     return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
 }
 
-void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction, char* lockedState, char* unlockedState)
+void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -770,9 +770,12 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         json["pl_lock"] = lockAction;
         json["pl_unlk"] = unlockAction;
         json["pl_open"] = openAction;
-        json["stat_t"] = String("~") + mqtt_topic_lock_binary_state;
-        json["stat_locked"] = lockedState;
-        json["stat_unlocked"] = unlockedState;
+        json["stat_t"] = String("~") + mqtt_topic_lock_ha_state;
+        json["stat_jammed"] = "jammed";
+        json["stat_locked"] = "locked";
+        json["stat_locking"] = "locking";
+        json["stat_unlocked"] = "unlocked";
+        json["stat_unlocking"] = "unlocking";
         json["opt"] = "false";
 
         serializeJson(json, _buffer, _bufferSize);
@@ -1072,7 +1075,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 }
 
 
-void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *baseTopic, char *name, char *uidString, const char *availabilityTopic, const bool &hasKeypad, char *lockAction, char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
+void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     // Lock 'n' Go
     publishHassTopic("button",
@@ -1132,9 +1135,7 @@ void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic,
     }
 }
 
-void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString,
-                                        char *lockAction, char *unlockAction, char *openAction, char *lockedState,
-                                        char *unlockedState)
+void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -1156,6 +1157,50 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
                          {{"pl_on", "doorOpened"},
                           {"pl_off", "doorClosed"},
                           {"pl_not_avail", "unavailable"}});
+    }
+}
+
+void Network::publishHASSConfigContinuousMode(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+
+    if (discoveryTopic != "")
+    {
+        
+        publishHassTopic("binary_sensor",
+                         "continuous_mode",
+                         uidString,
+                         "_continuous_mode",
+                         "Continuous mode",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_lock_continuous_mode,
+                         deviceType,
+                         "lock",
+                         "",
+                         "",
+                         "",
+                         {{"pl_on", "on"},
+                          {"pl_off", "off"}});
+        
+        publishHassTopic("switch",
+                         "continuous_mode",
+                         uidString,
+                         "_continuous_mode",
+                         "Continuous mode",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_lock_continuous_mode,
+                         deviceType,
+                         "lock",
+                         "",
+                         "",
+                         String("~") + mqtt_topic_lock_action,
+                         {{ "enabled_by_default", "false" },
+                          {"state_on", "on"},
+                          {"state_on", "off"},
+                          {"pl_on", "activateCM"},
+                          {"pl_off", "deactivateCM"}});
     }
 }
 
@@ -1189,7 +1234,6 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
     }
 }
-
 
 void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
@@ -1412,6 +1456,8 @@ void Network::removeHASSConfig(char* uidString)
         removeHassTopic("sensor", "keypad_status", uidString);
         removeHassTopic("sensor", "wifi_signal_strength", uidString);
         removeHassTopic("sensor", "bluetooth_signal_strength", uidString);
+        removeHassTopic("binary_sensor", "continuous_mode", uidString);
+        removeHassTopic("switch", "continuous_mode", uidString);
     }
 }
 

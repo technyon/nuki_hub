@@ -291,6 +291,16 @@ void NukiOpenerWrapper::deactivateRtoCm()
     }
 }
 
+void NukiOpenerWrapper::deactivateRTO()
+{
+    _nextLockAction = NukiOpener::LockAction::DeactivateRTO;
+}
+
+void NukiOpenerWrapper::deactivateCM()
+{
+    _nextLockAction = NukiOpener::LockAction::DeactivateCM;
+}
+
 bool NukiOpenerWrapper::isPinSet()
 {
     return _nukiOpener.getSecurityPincode() != 0;
@@ -347,12 +357,10 @@ void NukiOpenerWrapper::updateKeyTurnerState()
         {
             Log->println(F("Continuous Mode"));
         }
-        else
-        {
-            char lockStateStr[20];
-            lockstateToString(_keyTurnerState.lockState, lockStateStr);
-            Log->println(lockStateStr);
-        }
+
+        char lockStateStr[20];
+        lockstateToString(_keyTurnerState.lockState, lockStateStr);
+        Log->println(lockStateStr);
     }
 
     if(_publishAuthData)
@@ -534,6 +542,12 @@ void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action, const int& 
             break;
         case GpioAction::DeactivateRtoCm:
             nukiOpenerInst->deactivateRtoCm();
+            break;
+        case GpioAction::DeactivateRTO:
+            nukiOpenerInst->deactivateRTO();
+            break;
+        case GpioAction::DeactivateCM:
+            nukiOpenerInst->deactivateCM();
             break;
     }
 }
@@ -740,7 +754,16 @@ void NukiOpenerWrapper::setupHASS()
     String baseTopic = _preferences->getString(preference_mqtt_opener_path);
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
-    _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateRTO","activateRTO","electricStrikeActuation","locked","unlocked");
+
+    if (_preferences->getBool(preference_opener_continuous_mode))
+    {
+        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateCM","activateCM","electricStrikeActuation");
+    }
+    else
+    {
+        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateRTO","activateRTO","electricStrikeActuation");
+    }
+
     _hassSetupCompleted = true;
 
     Log->println("HASS setup for opener completed.");

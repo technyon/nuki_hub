@@ -22,12 +22,14 @@ public:
     void activateRTO();
     void activateCM();
     void deactivateRtoCm();
+    void deactivateRTO();
+    void deactivateCM();
 
     bool isPinSet();
     void setPin(const uint16_t pin);
 
     void unpair();
-    
+
     void disableHASS();
 
     void disableWatchdog();
@@ -63,7 +65,7 @@ private:
 
     void readConfig();
     void readAdvancedConfig();
-    
+
     void setupHASS();
 
     void printCommandResult(Nuki::CmdResult result);

@@ -222,7 +222,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
         if(_haEnabled)
         {
-            publishBinaryState(keyTurnerState.lockState);
+            publishState(keyTurnerState.lockState);
         }
     }
 
@@ -300,20 +300,34 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     _firstTunerStatePublish = false;
 }
 
-void NetworkLock::publishBinaryState(NukiLock::LockState lockState)
+void NetworkLock::publishState(NukiLock::LockState lockState)
 {
     switch(lockState)
     {
         case NukiLock::LockState::Locked:
-        case NukiLock::LockState::Locking:
+            publishString(mqtt_topic_lock_ha_state, "locked");
             publishString(mqtt_topic_lock_binary_state, "locked");
             break;
-        case NukiLock::LockState::Unlocked:
+        case NukiLock::LockState::Locking:
+            publishString(mqtt_topic_lock_ha_state, "locking");
+            publishString(mqtt_topic_lock_binary_state, "locked");
+            break;
         case NukiLock::LockState::Unlocking:
+            publishString(mqtt_topic_lock_ha_state, "unlocking");
+            publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
+        case NukiLock::LockState::Unlocked:
         case NukiLock::LockState::Unlatched:
         case NukiLock::LockState::Unlatching:
         case NukiLock::LockState::UnlockedLnga:
+            publishString(mqtt_topic_lock_ha_state, "unlocked");
             publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
+        case NukiLock::LockState::Uncalibrated:
+        case NukiLock::LockState::Calibration:
+        case NukiLock::LockState::BootRun:
+        case NukiLock::LockState::MotorBlocked:
+            publishString(mqtt_topic_lock_ha_state, "jammed");
             break;
         default:
             break;
@@ -571,15 +585,15 @@ bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
 }
 
 void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
-                               char *unlockAction, char *openAction, char *lockedState, char *unlockedState)
+                               char *unlockAction, char *openAction)
 {
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
-    _network->publishHASSConfigAdditionalButtons(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction, lockedState, unlockedState);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction);
+    _network->publishHASSConfigAdditionalButtons(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString);
     _network->publishHASSConfigLedBrightness(deviceType, baseTopic, name, uidString);
     if(hasDoorSensor)
     {
-        _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString, lockAction, unlockAction, openAction, lockedState, unlockedState);
+        _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
     }
     else
     {
