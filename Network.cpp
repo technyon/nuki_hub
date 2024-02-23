@@ -1227,7 +1227,7 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                           {"pl_off", "locked"}});
 
         DynamicJsonDocument json(_bufferSize);
-        json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_state, deviceType, "doorbell", "", "", "", {{"value_template", "{ \"event_type\": \"{{ value }}\" }"}});
+        json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{"value_template", "{ \"event_type\": \"{{ value }}\" }, \"duration\": 2"}});
         json["event_types"][0] = "ring";
         serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("event", "ring", uidString);
