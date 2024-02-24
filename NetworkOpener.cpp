@@ -277,6 +277,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 void NetworkOpener::publishRing()
 {
     publishString(mqtt_topic_lock_state, "ring");
+    publishString(mqtt_topic_lock_ring, "ring");
     _resetLockStateTs = millis() + 2000;
 }
 
