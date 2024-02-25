@@ -2,7 +2,7 @@ FROM eclipse-temurin:11-jdk-jammy AS builder
 
 RUN set -ex &&         \
     apt-get update &&  \
-    apt-get install -y git cmake xz-utils python3 python3-serial
+    apt-get install -y git cmake xz-utils python3 python3-serial ninja-build
 
 RUN curl -L "https://downloads.arduino.cc/arduino-1.8.19-linux64.tar.xz" -o /tmp/arduino-ide.tar.xz
 RUN tar -xf /tmp/arduino-ide.tar.xz --directory ~/
@@ -37,8 +37,8 @@ RUN cd /usr/src/nuki_hub/build && \
 RUN set -ex && \
     cd /usr/src/nuki_hub/build && \
     touch file_opts && \
-    cmake -D CMAKE_TOOLCHAIN_FILE=~/Arduino-CMake-Toolchain/Arduino-toolchain.cmake .. && \
-    make
+    cmake -G Ninja -D CMAKE_TOOLCHAIN_FILE=~/Arduino-CMake-Toolchain/Arduino-toolchain.cmake .. && \
+    ninja
 
 FROM builder AS runtime
 
