@@ -1192,7 +1192,7 @@ void Network::publishHASSConfigContinuousMode(char *deviceType, const char *base
                          baseTopic,
                          String("~") + mqtt_topic_lock_continuous_mode,
                          deviceType,
-                         "lock",
+                         "",
                          "",
                          "",
                          String("~") + mqtt_topic_lock_action,
