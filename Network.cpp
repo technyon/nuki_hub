@@ -1192,13 +1192,13 @@ void Network::publishHASSConfigContinuousMode(char *deviceType, const char *base
                          baseTopic,
                          String("~") + mqtt_topic_lock_continuous_mode,
                          deviceType,
-                         "lock",
+                         "",
                          "",
                          "",
                          String("~") + mqtt_topic_lock_action,
                          {{ "enabled_by_default", "false" },
                           {"state_on", "on"},
-                          {"state_on", "off"},
+                          {"state_off", "off"},
                           {"pl_on", "activateCM"},
                           {"pl_off", "deactivateCM"}});
     }
