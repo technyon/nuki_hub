@@ -40,8 +40,7 @@ Please go to "MQTT and Network Configuration" and select "WIFI only" as the netw
 
 ## Installation
 
-Flash the firmware to an ESP32.<br>
-The easiest way to install is to use the web installer using a compatible browser like Chrome/Opera/Edge:<br>
+Flash the firmware to an ESP32. The easiest way to install is to use the web installer using a compatible browser like Chrome/Opera/Edge:<br>
 https://technyon.github.io/nuki_hub/<br>
 <br>
 Alternatively download the latest release from https://github.com/technyon/nuki_hub/releases<br>
@@ -50,29 +49,26 @@ Unpack the 7z archive and read the included readme.txt for installation instruct
 ## Initial setup (Network and MQTT)
 
 Power up the ESP32 and a new WIFI access point named "ESP32_(8 CHARACTER ALPHANUMERIC)" should appear.<br>
-Connect to this access point and in a browser navigate to "http://192.168.4.1".<br>
-Use the web interface to connect the ESP to your WIFI network.<br>
+Connect a client device to this access point and in a browser navigate to "http://192.168.4.1".<br>
+Use the web interface to connect the ESP to your preferred WIFI network.<br>
 <br>
-After configuring the WIFI, the ESP should automatically connect to your network.<br>
+After configuring WIFI, the ESP should automatically connect to your network.<br>
 <br>
 To configure the connection to the MQTT broker first connect your client device to the same WIFI network the ESP32 is connected to.<br>
-In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router).<br>
+In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router).<br><br>
 Next click on "Edit" below "MQTT and Network Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required.<br>
 <br>
 The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this.<br>
-In that case leave all fields starting with "MQTT SSL" blank.<br>
-Otherwise see the "MQTT Encryption" section of this README.
+In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "MQTT Encryption" section of this README.
 
 ## Pairing with a Nuki Lock or Opener
 
 Enable pairing mode on the Nuki Lock or Opener (press the button on the Nuki device for a few seconds) and power on the ESP32.<br>
-Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (reload page in browser).<br>
+Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (it might be necessary to reload the page in your browser).<br>
 MQTT nodes like lock state and battery level should now reflect the reported values from the lock.<br>
 <br>
-Note: It is possible to run Nuki Hub alongside a Nuki Bridge.<br>
-This is not recommended and can lead to either device missing updates.<br>
-Enable "Register as app" before pairing to allow this.<br>
-Otherwise the Bridge will be unregistered when pairing the Nuki Hub.
+<b>Note: It is possible to run Nuki Hub alongside a Nuki Bridge. This is not recommended and can lead to either device missing updates.<br>
+Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
 
 ## Support
 
@@ -89,23 +85,21 @@ This project is free to use for everyone. However if you feel like donating, you
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
 - lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
+- lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed
+- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data
+- lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
-- lock/completionStatus: Status of the last action as reported by Nuki lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
+- lock/lastLockAction: Reports the last lock action as a string. Possible values are: Unlock, Lock, Unlatch, LockNgo, LockNgoUnlatch, FullLock, FobAction1, FobAction2, FobAction3, Unknown
+- lock/log: If "MQTT logging" is enabled in the web interface, this topic will be filled with debug information
+- lock/completionStatus: Status of the last action as reported by Nuki Lock: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
 - lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-- query/lockstate: Set to 1 to trigger query lockstage. Auto-resets to 0.
-- query/config: Set to 1 to trigger query config. Auto-resets to 0.
-- query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
+- lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm
+- lock/address: The BLE address of the Nuki Lock
+- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries
 <br><br>
-- battery/level: Battery level in percent
-- battery/critical: 1 if battery level is critical, otherwise 0
-- battery/charging: 1 if charging, otherwise 0
-- battery/voltage: Current Battery voltage (V)
-- battery/drain: The drain of the last lock action in Milliwattseconds (mWs)
-- battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A)
-  <br><br>
 - configuration/autoLock: enable or disable autoLock (0 = disabled; 1 = enabled). Maps to "Auto lock enabled" in the bluetooth API.
 - configuration/autoUnlock: enable or disable autoLock in general (0 = disabled; 1 = enabled). Maps to "Auto unlock disabled" in the bluetooth API.
 - configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
@@ -117,22 +111,50 @@ This project is free to use for everyone. However if you feel like donating, you
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3
 - lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, ring, open, opening, uncalibrated
+- lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed
+- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data
+- lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked
+- lock/continuousMode: Reports the current state of Continuous mode (0 = disabled; 1 = enabled)
+- lock/ring: The string "ring" is published to this topic when a doorbell ring is detected, for use by the related Home Assistant event.
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
-- lock/completionStatus: Status of the last action as reported by Nuki lock (needs bluetooth connection): success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
-- lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
-- lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
+- lock/lastLockAction: Reports the last lock action as a string. Possible values are: ActivateRTO, DeactivateRTO, ElectricStrikeActuation, ActivateCM, DeactivateCM, FobAction1, FobAction2, FobAction3, Unknown
+- lock/log: If "MQTT logging" is enabled in the web interface, this topic will be filled with debug information
+- lock/completionStatus: Status of the last action as reported by Nuki Opener: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
+- lock/authorizationId: If enabled in the web interface, this topic is set to the authorization id of the last lock action
+- lock/authorizationName: If enabled in the web interface, this topic is set to the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-- query/lockstate: Set to 1 to trigger query lockstage. Auto-resets to 0.
-- query/config: Set to 1 to trigger query config. Auto-resets to 0.
-- query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
-  <br><br>
-- battery/voltage: Reports the current battery voltage in Volts.
-- battery/critical: 1 if battery level is critical, otherwise 0
-  <br><br>
+- lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm
+- lock/address: The BLE address of the Nuki Lock
+- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries
+<br><br>
 - configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
 - configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled)
 - configuration/soundLevel: configures the volume of sounds the opener plays back (0 = min; 255 = max)
+
+### Query
+
+- lock/query/lockstate: Set to 1 to trigger query lockstate. Auto-resets to 0.
+- lock/query/config: Set to 1 to trigger query config. Auto-resets to 0.
+- lock/query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
+- lock/query/battery: Set to 1 to trigger query battery. Auto-resets to 0.
+- lock/query/lockstateCommandResult: Set to 1 to trigger query lockstate command result. Auto-resets to 0.
+  
+### Battery
+
+- battery/level: Battery level in percent (Lock only)
+- battery/critical: 1 if battery level is critical, otherwise 0
+- battery/charging: 1 if charging, otherwise 0 (Lock only)
+- battery/voltage: Current Battery voltage (V)
+- battery/drain: The drain of the last lock action in Milliwattseconds (mWs) (Lock only)
+- battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only)
+- battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only)
+- battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0
+
+### Keypad
+-See the "Keypad control (optional)" section of this README.
+
+### Info/ Maintanence
 
 ### Misc
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
@@ -155,19 +177,19 @@ CA, CERT and KEY are filled -> Encrypted MQTT with client vaildation
 
 ## Home Assistant Discovery (optional)
 
-Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/).
-
-For a simpler integration, this software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/). To enable autodiscovery, supply the discovery topic that is configured in your Home Assistant instance (default is "homeassistant", that is the default topic HA looks for, unless you changed it also in HA) in the MQTT Configuration page. Once enabled, Smartlock and/or Opener should automatically appear on Home Assistant.
-NOTE: _this is the root HA autodiscovery topic, don't put subtopics under that_
+This software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/) for integrating Nuki Hub with Home Assistant.<br>
+To enable autodiscovery, supply the discovery topic that is configured in your Home Assistant instance (If you have not changed this setting in Home Assistant the default is "homeassistant") in the MQTT Configuration page.<br>
+Once enabled, the Nuki Lock and/or Opener and related entities should automatically appear in your Home Assistant MQTT devices.
 
 The following mapping between Home Assistant services and Nuki commands is setup when enabling autodiscovery:
-|             | Smartlock | Opener                    |
-|-------------|-----------|---------------------------|
-| lock.lock   | Lock      | Disable Ring To Open               |
-| lock.unlock | Unlock    | Enable Ring To Open                |
-| lock.open   | Unlatch   | Electric Strike Actuation |
+|             | Smartlock | Opener (default)          | Opener (alternative)      |
+|-------------|-----------|---------------------------|---------------------------|
+| lock.lock   | Lock      | Disable Ring To Open      | Disable Continuous Mode   |
+| lock.unlock | Unlock    | Enable Ring To Open       | Enable Continuous Mode    |
+| lock.open   | Unlatch   | Electric Strike Actuation | Electric Strike Actuation |
 
-NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.
+NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
+NOTE2: Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/), but this is not recommended
 
 ## Keypad control (optional)
 
@@ -249,6 +271,7 @@ To wire an external W5x00 module to the ESP, use this wiring scheme:
 
 Now connect via WIFI and change the network hardware to "Generic W5500".<br>
 If the W5500 hwardware isn't detected, WIFI is used as a fallback.<br>
+<br>
 Note: Encrypted MQTT is only available for WIFI and LAN8720 modules, W5x00 modules don't support encryption<br>
 (that leaves Olimex, WT32-ETH01 and M5Stack PoESP32 Unit if encryption is desired).<br>
 <br>
@@ -272,44 +295,43 @@ Afterwards flash the firmware as described in the readme within the 7z file.<br>
 <br>
 Also, there are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.<br>
 <br>
-Reported as working are:<br>
-[M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)<br>
-ESP32-WROOM-32D (DEVKIT V4)<br>
-ESP32-WROOM-32E<br>
-<br>
-For more information check the related issue:<br>
-https://github.com/technyon/nuki_hub/issues/39
+Reported as working are:
+- [M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)
+- ESP32-WROOM-32D (DEVKIT V4)
+- ESP32-WROOM-32E
+
+For more information check the related issue: https://github.com/technyon/nuki_hub/issues/39
 
 Also, check that pairing is allowed. In the Nuki smartphone app, go to "Settings" --> "Features & Configuration" --> "Button & LED" and make sure "Bluetooh Pairing" is enabled.
 
 ### In Home Assistant, the lock/opener is shown as unavailable
 
 Make sure you are using at least version 2023.8.0 of Home Assistant.<br>
-The Home Assistant developers have made changes to the MQTT auto discovery which break support for older version and Nuki Hub has adopted these changes.<br>
+The Home Assistant developers have made changes to MQTT auto discovery which break support for older version and Nuki Hub has adopted these changes.<br>
 This unfortunately means that older versions of Home Assistant are not supported by the Nuki Hub discovery implemenation anymore.
 
 ## FAQ
 
 ### Nuki Hub doesn't work when WIFI on a Nuki Smartlock Pro (3.0 / 4.0) is turned on.
 
-This is by design and according to Nuki part of the specification of the Pro lock.<br>
+According to Nuki this is by design and part of the specification of the Pro lock.<br>
 You can use either the built-in WIFI or a Bridge (which Nuki Hub registers as).<br>
 Using both at the same time is not supported.
 
 ### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
 Some functionality is restricted by the Lock (or Opener) firmware and is only accessible when the PIN is provided.<br>
 When setting up the lock (or opener), you have to set a PIN in the Nuki smartphone app.<br>
-Navigate to the credentials page, enter this PIN and click save.
+Navigate to the Nuki Hub Credentials page, enter this PIN and click save.
 
 ### Authorization data isn't published
-See previous point, this functionality needs the correct PIN to be configured.
+See the previous point, this functionality needs the correct PIN to be configured.
 
 ### Using Home Assistant, it's only possible to lock or unlock the door, but not to unlatch it
 Make sure "Access level" under "Advanced Nuki Configuration" is set to "Full".<br>
 <br>
 Unlatching can be triggered using the lock.open service.<br>
 <br>
-Alternatively a "Unlatch" button is exposed through Home Assistant discovery.<br>
+Alternatively an "Unlatch" button is exposed through Home Assistant discovery.<br>
 This button is disabled by default, but can be enabled in the Home Assistant UI.
 
 ### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
