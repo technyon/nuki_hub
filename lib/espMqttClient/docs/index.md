@@ -10,7 +10,7 @@
 - TCP and TCP/TLS using standard WiFiClient and WiFiClientSecure connections
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
-- Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported)
+- Fully async clients available via [AsyncTCP](https://github.com/esphome/AsyncTCP) or [ESPAsnycTCP](https://github.com/esphome/ESPAsyncTCP) (no TLS supported)
 - Supported platforms:
   - Espressif ESP8266 and ESP32 using the Arduino framework
 - Basic Linux compatibility*. This includes WSL on Windows
@@ -232,25 +232,25 @@ Add a publish acknowledged event handler. Function signature: `void(uint16_t pac
 bool connected()
 ```
 
-Returns if the client is currently fully connected to the broker or not. During connecting or disconnecting, it will return false.
+Returns `true` if the client is currently fully connected to the broker. During connecting or disconnecting, it will return `false`.
 
 ```cpp
 bool disconnected()
 ```
 
-Returns if the client is currently disconnected to the broker or not. During disconnecting or connecting, it will return false.
+Returns `true` if the client is currently disconnected from the broker. During disconnecting or connecting, it will return `false`.
 
 ```cpp
-void connect()
+bool connect()
 ```
 
-Connect to the server.
+Start the connect procedure. Returns `true` if successful. A positive return value doesn not mean the client is already connected.
 
 ```cpp
-void disconnect(bool force = false)
+bool disconnect(bool force = false)
 ```
 
-Disconnect from the server.
+Start the disconnect procedure, return `true` if successful. A positive return value doesn not mean the client is already disconnected.
 When disconnecting with `force` false, the client first tries to handle all the outgoing messages in the queue and disconnect cleanly afterwards. During this time, no incoming PUBLISH messages are handled.
 
 - **`force`**: Whether to force the disconnection. Defaults to `false` (clean disconnection).
@@ -341,9 +341,19 @@ const char* getClientId() const
 
 Retuns the client ID.
 
+```cpp
+size_t queueSize();
+```
+
+Returns the amount of elements, regardless of type, in the queue.
+
 # Compile time configuration
 
 A number of constants which influence the behaviour of the client can be set at compile time. You can set these options in the `Config.h` file or pass the values as compiler flags. Because these options are compile-time constants, they are used for all instances of `espMqttClient` you create in your program.
+
+### EMC_TX_TIMEOUT 10000
+
+Timeout in milliseconds before a (qos > 0) message will be retransmitted.
 
 ### EMC_RX_BUFFER_SIZE 1440
 
@@ -387,6 +397,10 @@ The (maximum) length of the client ID. (Keep in mind that this is a c-string. Yo
 ### EMC_TASK_STACK_SIZE 5120
 
 Only used on ESP32. Sets the stack size (in words) of the MQTT client worker task.
+
+### EMC_MULTIPLE_CALLBACKS
+
+This macro is by default not enabled so you can add a single callbacks to an event. Assigning a second will overwrite the existing callback. When enabling multiple callbacks, multiple callbacks (with uint32_t id) can be assigned. Removing is done by referencing the id.
 
 ### EMC_USE_WATCHDOG 0
 

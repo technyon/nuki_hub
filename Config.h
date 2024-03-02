@@ -1,6 +1,6 @@
 #pragma once
 
-#define NUKI_HUB_VERSION "8.32"
+#define NUKI_HUB_VERSION "8.33-pre-6"
 
 #define GITHUB_LATEST_RELEASE_URL "https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_LATEST_RELEASE_API_URL "https://api.github.com/repos/technyon/nuki_hub/releases/latest"
