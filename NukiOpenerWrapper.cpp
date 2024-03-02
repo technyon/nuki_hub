@@ -759,11 +759,11 @@ void NukiOpenerWrapper::setupHASS()
 
     if (_preferences->getBool(preference_opener_continuous_mode))
     {
-        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateCM","activateCM","electricStrikeActuation");
+        _network->publishHASSConfig("Opener", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, _hasKeypad, "deactivateCM","activateCM","electricStrikeActuation");
     }
     else
     {
-        _network->publishHASSConfig("Opener",baseTopic.c_str(),(char*)_nukiConfig.name,uidString, "deactivateRTO","activateRTO","electricStrikeActuation");
+        _network->publishHASSConfig("Opener", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, _hasKeypad, "deactivateRTO","activateRTO","electricStrikeActuation");
     }
 
     _hassSetupCompleted = true;
