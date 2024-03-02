@@ -10,6 +10,8 @@ the LICENSE file.
 
 #if defined(ARDUINO_ARCH_ESP32)
   #include <esp32-hal-log.h>
+  #include "freertos/FreeRTOS.h"
+  #include "freertos/task.h"
   #if defined(DEBUG_ESP_MQTT_CLIENT)
   // Logging is en/disabled by Arduino framework macros
     #define emc_log_i(...) log_i(__VA_ARGS__)

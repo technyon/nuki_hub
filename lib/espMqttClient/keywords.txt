@@ -44,6 +44,7 @@ publish	KEYWORD2
 clearQueue	KEYWORD2
 loop	KEYWORD2
 getClientId	KEYWORD2
+queueSize KEYWORD2
 
 # Structures (KEYWORD3)
 espMqttClientTypes	KEYWORD3

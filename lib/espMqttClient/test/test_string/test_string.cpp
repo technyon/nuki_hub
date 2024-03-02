@@ -2,7 +2,7 @@
 
 #include <unity.h>
 
-#include <Packets/String.h>
+#include <Packets/StringUtil.h>
 
 void setUp() {}
 void tearDown() {}
