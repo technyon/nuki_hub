@@ -381,7 +381,7 @@ bool Network::update()
                     
                     if (_latestVersion != _preferences->getString(preference_latest_version).c_str()) 
                     {
-                        _preferences->setString(_latestVersion); 
+                        _preferences->putString(preference_latest_version, _latestVersion); 
                     }
                 }
             }
