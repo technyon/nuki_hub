@@ -58,6 +58,7 @@
 #define preference_has_mac_byte_0 "macb0"
 #define preference_has_mac_byte_1 "macb1"
 #define preference_has_mac_byte_2 "macb2"
+#define preference_latest_version "latest"
 
 class DebugPreferences
 {
@@ -78,7 +79,7 @@ private:
             preference_register_as_app, preference_command_nr_of_retries,
             preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
             preference_publish_debug_info, preference_presence_detection_timeout,
-            preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2,
+            preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version,
     };
     std::vector<char*> _redact =
     {

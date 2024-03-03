@@ -65,7 +65,6 @@ public:
     void publishPresenceDetection(char* csv);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
-    const char* latestHubVersion();
     bool encryptionSupported();
     const String networkDeviceName() const;
 
