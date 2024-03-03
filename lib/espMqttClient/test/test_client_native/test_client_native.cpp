@@ -7,6 +7,12 @@ void setUp() {}
 void tearDown() {}
 
 espMqttClient mqttClient;
+uint32_t onConnectCbId = 1;
+uint32_t onDisconnectCbId = 2;
+uint32_t onSubscribeCbId = 3;
+uint32_t onUnsubscribeCbId = 4;
+uint32_t onMessageCbId = 5;
+uint32_t onPublishCbId = 6;
 std::atomic_bool exitProgram(false);
 std::thread t;
 
@@ -30,7 +36,7 @@ void test_connect() {
             .onConnect([&](bool sessionPresent) mutable {
               sessionPresentTest = sessionPresent;
               onConnectCalledTest = true;
-            });
+            }, onConnectCbId);
   mqttClient.connect();
   uint32_t start = millis();
   while (millis() - start < 2000) {
@@ -44,7 +50,7 @@ void test_connect() {
   TEST_ASSERT_TRUE(onConnectCalledTest);
   TEST_ASSERT_FALSE(sessionPresentTest);
 
-  mqttClient.onConnect(nullptr);
+  mqttClient.removeOnConnect(onConnectCbId);
 }
 
 /*
@@ -83,7 +89,7 @@ void test_subscribe() {
     if (len == 1 && returncodes[0] == espMqttClientTypes::SubscribeReturncode::QOS0) {
       subscribeTest = true;
     }
-  });
+  }, onSubscribeCbId);
   mqttClient.subscribe("test/test", 0);
   uint32_t start = millis();
   while (millis() - start < 2000) {
@@ -96,7 +102,7 @@ void test_subscribe() {
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_TRUE(subscribeTest);
 
-  mqttClient.onSubscribe(nullptr);
+  mqttClient.removeOnSubscribe(onSubscribeCbId);
 }
 
 /*
@@ -112,7 +118,7 @@ void test_publish() {
   mqttClient.onPublish([&](uint16_t packetId) mutable {
     (void) packetId;
     publishSendTest++;
-  });
+  }, onPublishCbId);
   std::atomic<int> publishReceiveTest(0);
   mqttClient.onMessage([&](const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) mutable {
     (void) properties;
@@ -122,7 +128,7 @@ void test_publish() {
     (void) index;
     (void) total;
     publishReceiveTest++;
-  });
+  }, onMessageCbId);
   uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, "test0");
   uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, "test1");
   uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, "test2");
@@ -138,8 +144,8 @@ void test_publish() {
   TEST_ASSERT_EQUAL_INT(2, publishSendTest);
   TEST_ASSERT_EQUAL_INT(3, publishReceiveTest);
 
-  mqttClient.onPublish(nullptr);
-  mqttClient.onMessage(nullptr);
+  mqttClient.removeOnPublish(onPublishCbId);
+  mqttClient.removeOnMessage(onMessageCbId);
 }
 
 void test_publish_empty() {
@@ -147,7 +153,7 @@ void test_publish_empty() {
   mqttClient.onPublish([&](uint16_t packetId) mutable {
     (void) packetId;
     publishSendEmptyTest++;
-  });
+  }, onPublishCbId);
   std::atomic<int> publishReceiveEmptyTest(0);
   mqttClient.onMessage([&](const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) mutable {
     (void) properties;
@@ -157,7 +163,7 @@ void test_publish_empty() {
     (void) index;
     (void) total;
     publishReceiveEmptyTest++;
-  });
+  }, onMessageCbId);
   uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, nullptr, 0);
   uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, nullptr, 0);
   uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, nullptr, 0);
@@ -173,8 +179,8 @@ void test_publish_empty() {
   TEST_ASSERT_EQUAL_INT(2, publishSendEmptyTest);
   TEST_ASSERT_EQUAL_INT(3, publishReceiveEmptyTest);
 
-  mqttClient.onPublish(nullptr);
-  mqttClient.onMessage(nullptr);
+  mqttClient.removeOnPublish(onPublishCbId);
+  mqttClient.removeOnMessage(onMessageCbId);
 }
 
 /*
@@ -195,13 +201,13 @@ void test_receive1() {
     (void) index;
     (void) total;
     publishReceive1Test++;
-  });
+  }, onMessageCbId);
   mqttClient.onSubscribe([&](uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len) mutable {
     (void) packetId;
     if (len == 1 && returncodes[0] == espMqttClientTypes::SubscribeReturncode::QOS1) {
       mqttClient.publish("test/test", 1, false, "");
     }
-  });
+  }, onSubscribeCbId);
   mqttClient.subscribe("test/test", 1);
   uint32_t start = millis();
   while (millis() - start < 6000) {
@@ -211,8 +217,8 @@ void test_receive1() {
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_GREATER_THAN_INT(0, publishReceive1Test);
 
-  mqttClient.onMessage(nullptr);
-  mqttClient.onSubscribe(nullptr);
+  mqttClient.removeOnMessage(onMessageCbId);
+  mqttClient.removeOnSubscribe(onSubscribeCbId);
 }
 
 /*
@@ -233,13 +239,13 @@ void test_receive2() {
     (void) index;
     (void) total;
     publishReceive2Test++;
-  });
+  }, onMessageCbId);
   mqttClient.onSubscribe([&](uint16_t packetId, const espMqttClientTypes::SubscribeReturncode* returncodes, size_t len) mutable {
     (void) packetId;
     if (len == 1 && returncodes[0] == espMqttClientTypes::SubscribeReturncode::QOS2) {
       mqttClient.publish("test/test", 2, false, "");
     }
-  });
+  }, onSubscribeCbId);
   mqttClient.subscribe("test/test", 2);
   uint32_t start = millis();
   while (millis() - start < 6000) {
@@ -249,8 +255,8 @@ void test_receive2() {
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_EQUAL_INT(1, publishReceive2Test);
 
-  mqttClient.onMessage(nullptr);
-  mqttClient.onSubscribe(nullptr);
+  mqttClient.removeOnMessage(onMessageCbId);
+  mqttClient.removeOnSubscribe(onSubscribeCbId);
 }
 
 
@@ -265,7 +271,7 @@ void test_unsubscribe() {
   mqttClient.onUnsubscribe([&](uint16_t packetId) mutable {
     (void) packetId;
     unsubscribeTest = true;
-  });
+  }, onUnsubscribeCbId);
   mqttClient.unsubscribe("test/test");
   uint32_t start = millis();
   while (millis() - start < 2000) {
@@ -278,7 +284,7 @@ void test_unsubscribe() {
   TEST_ASSERT_TRUE(mqttClient.connected());
   TEST_ASSERT_TRUE(unsubscribeTest);
 
-  mqttClient.onUnsubscribe(nullptr);
+  mqttClient.removeOnUnsubscribe(onUnsubscribeCbId);
 }
 
 /*
@@ -293,7 +299,7 @@ void test_disconnect() {
   mqttClient.onDisconnect([&](espMqttClientTypes::DisconnectReason reason) mutable {
     reasonTest = reason;
     onDisconnectCalled = true;
-  });
+  }, onDisconnectCbId);
   mqttClient.disconnect();
   uint32_t start = millis();
   while (millis() - start < 2000) {
@@ -307,7 +313,7 @@ void test_disconnect() {
   TEST_ASSERT_EQUAL_UINT8(espMqttClientTypes::DisconnectReason::USER_OK, reasonTest);
   TEST_ASSERT_TRUE(mqttClient.disconnected());
 
-  mqttClient.onDisconnect(nullptr);
+  mqttClient.removeOnDisconnect(onDisconnectCbId);
 }
 
 void test_pub_before_connect() {
@@ -320,11 +326,11 @@ void test_pub_before_connect() {
             .onConnect([&](bool sessionPresent) mutable {
               sessionPresentTest = sessionPresent;
               onConnectCalledTest = true;
-            })
+            }, onConnectCbId)
             .onPublish([&](uint16_t packetId) mutable {
               (void) packetId;
               publishSendTest++;
-            });
+            }, onPublishCbId);
   uint16_t sendQos0Test = mqttClient.publish("test/test", 0, false, "test0");
   uint16_t sendQos1Test = mqttClient.publish("test/test", 1, false, "test1");
   uint16_t sendQos2Test = mqttClient.publish("test/test", 2, false, "test2");
@@ -349,8 +355,8 @@ void test_pub_before_connect() {
   TEST_ASSERT_GREATER_THAN_UINT16(0, sendQos2Test);
   TEST_ASSERT_EQUAL_INT(2, publishSendTest);
 
-  mqttClient.onConnect(nullptr);
-  mqttClient.onPublish(nullptr);
+  mqttClient.removeOnConnect(onConnectCbId);
+  mqttClient.removeOnPublish(onPublishCbId);
 }
 
 void final_disconnect() {
@@ -358,7 +364,7 @@ void final_disconnect() {
   mqttClient.onDisconnect([&](espMqttClientTypes::DisconnectReason reason) mutable {
     (void) reason;
     onDisconnectCalled = true;
-  });
+  }, onDisconnectCbId);
   mqttClient.disconnect();
   uint32_t start = millis();
   while (millis() - start < 2000) {
@@ -370,7 +376,7 @@ void final_disconnect() {
   if (mqttClient.connected()) {
     mqttClient.disconnect(true);
   }
-  mqttClient.onDisconnect(nullptr);
+  mqttClient.removeOnDisconnect(onDisconnectCbId);
 }
 
 int main() {
