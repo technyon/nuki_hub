@@ -50,7 +50,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     _nukiLock.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
-    _intervalConfig = _preferences->getInt(preference_query_interval_battery);
+    _intervalConfig = _preferences->getInt(preference_query_interval_configuration);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
     _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
     _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
