@@ -369,13 +369,20 @@ bool Network::update()
 
             int httpResponseCode = https.GET();
 
-            if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY) {
+            if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY) 
+            {
                 DynamicJsonDocument doc(6144);
                 DeserializationError jsonError = deserializeJson(doc, https.getStream());
 
-                if (!jsonError) {
+                if (!jsonError) 
+                {
                     _latestVersion = doc["tag_name"];
                     publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
+                    
+                    if (_latestVersion != _preferences->getString(preference_latest_version).c_str()) 
+                    {
+                        _preferences->putString(preference_latest_version, _latestVersion); 
+                    }
                 }
             }
 
@@ -667,11 +674,6 @@ void Network::disableAutoRestarts()
 int Network::mqttConnectionState()
 {
     return _mqttConnectionState;
-}
-
-const char* Network::latestHubVersion()
-{
-    return _latestVersion;
 }
 
 bool Network::encryptionSupported()
