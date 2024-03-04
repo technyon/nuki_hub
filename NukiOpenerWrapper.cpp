@@ -350,6 +350,15 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     }
     else
     {
+        if(_statusUpdated &&
+        _keyTurnerState.lockState != _lastKeyTurnerState.lockState &&
+        _keyTurnerState.lockState == NukiOpener::LockState::Open &&
+        _keyTurnerState.trigger == NukiOpener::Trigger::Manual)
+        {
+            Log->println(F("Nuki opener: Ring detected"));
+            _network->publishRing();
+        }        
+        
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         updateGpioOutputs();
 
