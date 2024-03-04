@@ -20,8 +20,8 @@ COPY lib /usr/src/nuki_hub/lib
 COPY networkDevices /usr/src/nuki_hub/networkDevices
 COPY CMakeLists.txt /usr/src/nuki_hub
 COPY index.html /usr/src/nuki_hub
-COPY *.h /usr/src/nuki_hub
-COPY *.cpp /usr/src/nuki_hub
+COPY *.h /usr/src/nuki_hub/
+COPY *.cpp /usr/src/nuki_hub/
 
 RUN mkdir -p /usr/src/nuki_hub/build
 
