@@ -264,7 +264,9 @@ ESP32-WROOM-32E<br>
 For more information check the related issue:<br>
 https://github.com/technyon/nuki_hub/issues/39
 <br><br>
-Also, check that pairing is allowed. In the smartphone app, go to Settings --> Features & Configuration --> Button & LED and make sure "Bluetooh Pairing" is enabled.
+Also, check that pairing is allowed. In the smartphone app, go to Settings --> Features & Configuration --> Button & LED and make sure "Bluetooh Pairing" is enabled.<br>
+
+A note about the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32). Here the initial Bluetooth reception is very poor (range less than one meter). The reason is that the module does not have an antenna on the PCB, but only an IPEX connector. By retrofitting an external SMA antenna (IPEX, or other names U.FL, IPAX, IPX, AMC, MHF, UMCC), bluetooth/Wifi works over several meters.<br><br>
 
 ### In Home Assistant, the lock is shown as unavailable
 
