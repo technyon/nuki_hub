@@ -636,12 +636,10 @@ void WebCfgServer::buildHtml(String& response)
     }
     printParameter(response, "Firmware", version.c_str(), "/info");
 
-    const char* _latestVersion = _network->latestHubVersion();
-
     if(_preferences->getBool(preference_check_updates))
     {
         //if(atof(_latestVersion) > atof(NUKI_HUB_VERSION) || (atof(_latestVersion) == atof(NUKI_HUB_VERSION) && _latestVersion != NUKI_HUB_VERSION)) {
-        printParameter(response, "Latest Firmware", _latestVersion, "/ota");
+        printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota");
         //}
     }
 
