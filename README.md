@@ -10,6 +10,8 @@ It exposes the lock state (and much more) through MQTT and allows executing comm
 
 ***Nuki Hub does not integrate with the Nuki mobile app, it can't register itself as a bridge in the official Nuki mobile app.***
 
+Feel free to join us on Discord: https://discord.gg/feB9FnMY
+
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
@@ -79,6 +81,27 @@ This will also give you a 10% discount on your order.<br>
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:<br>
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1IDUBV)
 
+## Configuration
+
+In a browser navigate to the IP address assigned to the ESP32<br><br>
+
+### MQTT and Network Configuration (Basic)
+
+- Host name: Set the hostname for the Nuki Hub ESP
+- MQTT Broker: Set to the IP address of the MQTT broker
+- MQTT Broker port: Set to the Port of the MQTT broker (usually 1883)
+- MQTT User: If using authentication on the MQTT broker set to a username with read/write rights on the MQTT broker, set to # to clear
+- MQTT Password : If using authentication on the MQTT broker set to the password belonging to a username with read/write rights on the MQTT broker, set to # to clear
+
+### MQTT and Network Configuration (Advanced)
+
+- Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
+- Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
+- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
+- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
+- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "MQTT Encryption" section of this README.
+
+
 ## Exposed MQTT Topics
 
 ### Lock
@@ -124,7 +147,7 @@ This project is free to use for everyone. However if you feel like donating, you
 - lock/authorizationName: If enabled in the web interface, this topic is set to the authorization name of the last lock action
 - lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-- lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm
+- lock/rssi: The bluetooth signal strength of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm
 - lock/address: The BLE address of the Nuki Lock
 - lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries
 <br><br>
@@ -139,7 +162,7 @@ This project is free to use for everyone. However if you feel like donating, you
 - lock/query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
 - lock/query/battery: Set to 1 to trigger query battery. Auto-resets to 0.
 - lock/query/lockstateCommandResult: Set to 1 to trigger query lockstate command result. Auto-resets to 0.
-  
+
 ### Battery
 
 - battery/level: Battery level in percent (Lock only)
@@ -152,14 +175,31 @@ This project is free to use for everyone. However if you feel like donating, you
 - battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0
 
 ### Keypad
--See the "Keypad control (optional)" section of this README.
 
-### Info/ Maintanence
+- See the "Keypad control (optional)" section of this README.
+
+### Info
+
+- info/nukiHubVersion: Set to the current version number of the Nuki Hub firmware
+- info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware
+- info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener
+- info/nukiHubIp: Set to the IP of the Nuki Hub
+- info/nukiHubLatest: Set the latest available Nuki Hub firmware version number (if update checking is enabled in the settings)
+
+### Maintanence
+
+- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using WIFI will be set to "Built-in Wifi". If using Ethernet will be set to "Wiznet W5500", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit" or "LilyGO T-ETH-POE"
+- maintenance/reset: Set to 1 to trigger a reboot of the ESP. Auto-resets to 0.
+- maintenance/mqttConnectionState: Last Will and Testament (LWT) topic. "online" when Nuki Hub is connected to the MQTT broker, "offline" if Nuki Hub is not connected to the MQTT broker.
+- maintenance/uptime: Uptime in minutes.
+- maintenance/wifiRssi: The WIFI signal strength of the WIFI Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm
 
 ### Misc
+
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
 
 ## Over-the-air Update (OTA)
+
 After the initial installation of the Nuki Hub firmware via serial connection, further updates can be deployed via OTA update from a browser.<br>
 In the configuration portal, scroll down to "Firmware update" and click "Open".<br>
 Then Click "Browse" and select the new "nuki_hub.bin" file and select "Upload file".<br>
@@ -280,6 +320,7 @@ If encryption is needed, Olimex is the easiest option, since it has USB for flas
 ## Troubleshooting
 
 ### Random WiFi disconnects
+
 Unfortunately the ESP32 has problems with some access points and reconnecting fails.<br>
 As a workaround you can navigate to "MQTT and Network Configuration" and enable "Restart on disconnect".<br>
 This will reboot the ESP as soon as it gets disconnected from WiFi.<br>
@@ -288,6 +329,7 @@ If this still doesn't fix the disconnects and the ESP becomes unreachable, the "
 It will restart the ESP after a configured amount of time.
 
 ### Pairing with the lock (or opener) doesn't work
+
 First, make sure the firmware version of the Nuki device is up-to-date, older versions have issues pairing.<br>
 Next, try erasing the ESP32 flash and then (re-)flash the firmware.<br>
 To erase the flash, use the espressif download tool and click the "Erase" button.<br>
@@ -319,14 +361,17 @@ You can use either the built-in WIFI or a Bridge (which Nuki Hub registers as).<
 Using both at the same time is not supported.
 
 ### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
+
 Some functionality is restricted by the Lock (or Opener) firmware and is only accessible when the PIN is provided.<br>
 When setting up the lock (or opener), you have to set a PIN in the Nuki smartphone app.<br>
 Navigate to the Nuki Hub Credentials page, enter this PIN and click save.
 
 ### Authorization data isn't published
+
 See the previous point, this functionality needs the correct PIN to be configured.
 
 ### Using Home Assistant, it's only possible to lock or unlock the door, but not to unlatch it
+
 Make sure "Access level" under "Advanced Nuki Configuration" is set to "Full".<br>
 <br>
 Unlatching can be triggered using the lock.open service.<br>
@@ -340,6 +385,7 @@ When using multiple Nuki devices, different paths for each device have to be con
 Navigate to "Nuki Configuration" and change the "MQTT Nuki Smartlock Path" or "MQTT Nuki Opener Path" under "Basic Nuki Configuration" for at least one of the devices.<br>
 
 ### The Nuki battery is draining quickly.
+
 This often is a result of enabling "Register as app".<br>
 Doing so will cause Nuki Hub to constantly query the lock and as such cause excessive battery drain.<br>
 To prevent this behaviour, unpair Nuki Hub, disable "Register as app", and re-pair.<br>
