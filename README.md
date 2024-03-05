@@ -83,11 +83,11 @@ This project is free to use for everyone. However if you feel like donating, you
 
 ## Configuration
 
-In a browser navigate to the IP address assigned to the ESP32<br><br>
+In a browser navigate to the IP address assigned to the ESP32.
 
 ### MQTT and Network Configuration 
 
-#### Basic
+#### Basic MQTT and Network Configuration
 
 - Host name: Set the hostname for the Nuki Hub ESP
 - MQTT Broker: Set to the IP address of the MQTT broker
@@ -95,14 +95,15 @@ In a browser navigate to the IP address assigned to the ESP32<br><br>
 - MQTT User: If using authentication on the MQTT broker set to a username with read/write rights on the MQTT broker, set to # to clear
 - MQTT Password : If using authentication on the MQTT broker set to the password belonging to a username with read/write rights on the MQTT broker, set to # to clear
 
-### MQTT and Network Configuration (Advanced)
+#### Advanced MQTT and Network Configuration
 
 - Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
+- Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): 
 - MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "MQTT Encryption" section of this README.
-- Network hardware: "Wifi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" section of this README.
+- Network hardware: "Wifi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "Connecting via Ethernet" section of this README.
 - Disable fallback to Wifi / WiFi config portal:
 - RSSI Publish interval:
 - Network Timeout until restart:
@@ -110,24 +111,56 @@ In a browser navigate to the IP address assigned to the ESP32<br><br>
 - Enable MQTT logging:
 - Check for Firmware Updates every 24h:
 
-### MQTT and Network Configuration (IP Address assignment)
+#### IP Address assignment
+
 - Enable DHCP:
 - Static IP address:
 - Subnet:
 - Default gateway:
 - DNS Server:
 
-### Credentials (Credentials)
+### Nuki Configuration
+
+#### Basic Nuki Configuration
+
+- Nuki Smartlock enabled: 
+- MQTT Nuki Smartlock Path: 
+- Nuki Opener enabled:
+- MQTT Nuki Opener Path:
+
+#### Advanced Nuki Configuration
+
+- Query interval lock state:
+- Query interval configuration:
+- Query interval battery:
+- Access level:
+- Query interval keypad:
+- Enabled keypad control via MQTT:
+- Number of retries if command failed:
+- Delay between retries:
+- Publish auth data:
+- Nuki Bridge is running alongside Nuki Hub:
+- Presence detection timeout:
+- Restart if bluetooth beacons not received:
+
+### Credentials
+
+#### Credentials
 
 - User:
 - Password/Retype password: 
 
-### Credentials (Nuki Lock PIN / Nuki Opener PIN)
+#### Nuki Lock PIN / Nuki Opener PIN
+
 - PIN Code: Fill with the Nuki Security Code of the Nuki Lock and/or Nuki Opener. Required for functions that require the security code to be sent to the lock/opener such as setting lock permissions, viewing the activity log or changing the Nuki device configuration. Set to "#" to remove the security code from the Nuki Hub configuration.
 
-### Credentials (Unpair Nuki Lock / Unpair Nuki Opener)
+#### Unpair Nuki Lock / Unpair Nuki Opener
 
 - Type [4 DIGIT CODE] to confirm unpair: Set to the shown randomly generated code to unpair the Nuki Lock or Opener from the Nuki Hub.
+
+### GPIO Configuration
+
+- Gpio [2-33]: See the "GPIO lock control" section of this README.
 
 ## Exposed MQTT Topics
 
@@ -140,7 +173,7 @@ In a browser navigate to the IP address assigned to the ESP32<br><br>
 - lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
 - lock/lastLockAction: Reports the last lock action as a string. Possible values are: Unlock, Lock, Unlatch, LockNgo, LockNgoUnlatch, FullLock, FobAction1, FobAction2, FobAction3, Unknown
-- lock/log: If "MQTT logging" is enabled in the web interface, this topic will be filled with debug information
+- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data
 - lock/completionStatus: Status of the last action as reported by Nuki Lock: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
 - lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
@@ -168,7 +201,7 @@ In a browser navigate to the IP address assigned to the ESP32<br><br>
 - lock/ring: The string "ring" is published to this topic when a doorbell ring is detected, for use by the related Home Assistant event.
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
 - lock/lastLockAction: Reports the last lock action as a string. Possible values are: ActivateRTO, DeactivateRTO, ElectricStrikeActuation, ActivateCM, DeactivateCM, FobAction1, FobAction2, FobAction3, Unknown
-- lock/log: If "MQTT logging" is enabled in the web interface, this topic will be filled with debug information
+- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data
 - lock/completionStatus: Status of the last action as reported by Nuki Opener: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
 - lock/authorizationId: If enabled in the web interface, this topic is set to the authorization id of the last lock action
 - lock/authorizationName: If enabled in the web interface, this topic is set to the authorization name of the last lock action
@@ -203,7 +236,7 @@ In a browser navigate to the IP address assigned to the ESP32<br><br>
 
 ### Keypad
 
-- See the "Keypad control (optional)" section of this README.
+- See the "Keypad control" section of this README.
 
 ### Info
 
@@ -211,7 +244,7 @@ In a browser navigate to the IP address assigned to the ESP32<br><br>
 - info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware
 - info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener
 - info/nukiHubIp: Set to the IP of the Nuki Hub
-- info/nukiHubLatest: Set the latest available Nuki Hub firmware version number (if update checking is enabled in the settings)
+- info/nukiHubLatest: Set to the latest available Nuki Hub firmware version number (if update checking is enabled in the settings)
 
 ### Maintanence
 
