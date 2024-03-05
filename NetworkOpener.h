@@ -80,7 +80,7 @@ private:
     String _keypadCommandCode = "";
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
-    unsigned long _resetLockStateTs = 0;
+    unsigned long _resetRingStateTs = 0;
     uint8_t _queryCommands = 0;
     uint32_t authId = 0;
     char authName[33];    
