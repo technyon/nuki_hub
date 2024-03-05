@@ -345,18 +345,17 @@ void NukiOpenerWrapper::updateKeyTurnerState()
         _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked &&
         _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState)
     {
-        Log->println(F("Nuki opener: Ring detected"));
-        _network->publishRing();
+        Log->println(F("Nuki opener: Ring detected (Locked)"));
+        _network->publishRing(true);
     }
     else
     {
-        if(_statusUpdated &&
-        _keyTurnerState.lockState != _lastKeyTurnerState.lockState &&
+        if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState &&
         _keyTurnerState.lockState == NukiOpener::LockState::Open &&
         _keyTurnerState.trigger == NukiOpener::Trigger::Manual)
         {
-            Log->println(F("Nuki opener: Ring detected"));
-            _network->publishRing();
+            Log->println(F("Nuki opener: Ring detected (Open)"));
+            _network->publishRing(false);
         }        
         
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);

@@ -274,11 +274,18 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     _firstTunerStatePublish = false;
 }
 
-void NetworkOpener::publishRing()
+void NetworkOpener::publishRing(const bool locked)
 {
-    publishString(mqtt_topic_lock_state, "ring");
-    publishString(mqtt_topic_lock_ring, "ring");
-    _resetLockStateTs = millis() + 2000;
+    if (locked)
+    {
+        publishString(mqtt_topic_lock_state, "ring");
+        publishString(mqtt_topic_lock_ring, "ringlocked");
+        _resetLockStateTs = millis() + 2000;
+    }
+    else
+    {
+        publishString(mqtt_topic_lock_ring, "ring");
+    }
 }
 
 void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
