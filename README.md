@@ -85,7 +85,9 @@ This project is free to use for everyone. However if you feel like donating, you
 
 In a browser navigate to the IP address assigned to the ESP32<br><br>
 
-### MQTT and Network Configuration (Basic)
+### MQTT and Network Configuration 
+
+#### Basic
 
 - Host name: Set the hostname for the Nuki Hub ESP
 - MQTT Broker: Set to the IP address of the MQTT broker
@@ -100,7 +102,32 @@ In a browser navigate to the IP address assigned to the ESP32<br><br>
 - MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "MQTT Encryption" section of this README.
+- Network hardware: "Wifi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" section of this README.
+- Disable fallback to Wifi / WiFi config portal:
+- RSSI Publish interval:
+- Network Timeout until restart:
+- Restart on disconnect:
+- Enable MQTT logging:
+- Check for Firmware Updates every 24h:
 
+### MQTT and Network Configuration (IP Address assignment)
+- Enable DHCP:
+- Static IP address:
+- Subnet:
+- Default gateway:
+- DNS Server:
+
+### Credentials (Credentials)
+
+- User:
+- Password/Retype password: 
+
+### Credentials (Nuki Lock PIN / Nuki Opener PIN)
+- PIN Code: Fill with the Nuki Security Code of the Nuki Lock and/or Nuki Opener. Required for functions that require the security code to be sent to the lock/opener such as setting lock permissions, viewing the activity log or changing the Nuki device configuration. Set to "#" to remove the security code from the Nuki Hub configuration.
+
+### Credentials (Unpair Nuki Lock / Unpair Nuki Opener)
+
+- Type [4 DIGIT CODE] to confirm unpair: Set to the shown randomly generated code to unpair the Nuki Lock or Opener from the Nuki Hub.
 
 ## Exposed MQTT Topics
 
