@@ -57,7 +57,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
 
 const String WifiDevice::deviceName() const
 {
-    return "Built-in Wifi";
+    return "Built-in Wi-Fi";
 }
 
 void WifiDevice::initialize()
@@ -83,7 +83,7 @@ void WifiDevice::initialize()
 
     if(_startAp)
     {
-        Log->println(F("Opening WiFi configuration portal."));
+        Log->println(F("Opening Wi-Fi configuration portal."));
         res = _wm.startConfigPortal();
     }
     else
@@ -102,7 +102,7 @@ void WifiDevice::initialize()
         restartEsp(RestartReason::WifiInitFailed);
     }
     else {
-        Log->print(F("WiFi connected: "));
+        Log->print(F("Wi-Fi connected: "));
         Log->println(WiFi.localIP().toString());
     }
 
