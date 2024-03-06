@@ -107,11 +107,11 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "MQTT Encryption" section of this README.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "Connecting via Ethernet" section of this README.
-- Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi when an ethernet connection fails. Enable this setting to disable this fallback.
+- Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60. 
 - Network Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
 - Restart on disconnect: Enable to restart the Nuki Hub after 60 seconds without a connection to a network.
-- Enable MQTT logging: Enabled to fill the maintenance/log MQTT topic with debug log information.
+- Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 
 #### IP Address assignment
@@ -133,12 +133,12 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Advanced Nuki Configuration
 
-- Query interval lock state:
-- Query interval configuration:
-- Query interval battery:
-- Access level:
-- Query interval keypad (Only available when a Keypad is detected):
-- Enable keypad control via MQTT (Only available when a Keypad is detected):
+- Query interval lock state: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current lock state, default 1800.
+- Query interval configuration: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current configuration, default 3600.
+- Query interval battery: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current battery state, default 1800.
+- Access level: Allows restricting the allowed lock actions through MQTT. Set to "Full" to enable  all lock actions including unlatch/ESA, set to "Lock and unlock operation only" to disable unlatch/ESA, set to "Lock operation only" to disable unlatch/ESA and unlock and set to "Read only" to disable changing lock state completely. Note: GPIO control is not restricted through this setting.
+- Query interval keypad (Only available when a Keypad is detected): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current keypad state, default 1800.
+- Enable keypad control via MQTT (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "Keypad control" section of this README
 - Number of retries if command failed: Set to a positive integer to define the amount of times the Nuki Hub retries sending commands to the Nuki Lock or Opener when commands are not acknowledged by the device, default 3.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
 - Publish auth data: Enable to publish authorization date to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
@@ -150,8 +150,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Credentials
 
-- User: 
-- Password/Retype password: 
+- User: Pick a username to enable HTTP Basic authentication for the Web Configuration, Set to "#" to disable authentication. 
+- Password/Retype password: Pick a password to enable HTTP Basic authentication for the Web Configuration.
 
 #### Nuki Lock PIN / Nuki Opener PIN
 
