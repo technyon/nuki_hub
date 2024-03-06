@@ -137,8 +137,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Query interval configuration:
 - Query interval battery:
 - Access level:
-- Query interval keypad:
-- Enabled keypad control via MQTT:
+- Query interval keypad (Only available when a Keypad is detected):
+- Enable keypad control via MQTT (Only available when a Keypad is detected):
 - Number of retries if command failed:
 - Delay between retries:
 - Publish auth data:
@@ -150,12 +150,12 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Credentials
 
-- User:
+- User: 
 - Password/Retype password: 
 
 #### Nuki Lock PIN / Nuki Opener PIN
 
-- PIN Code: Fill with the Nuki Security Code of the Nuki Lock and/or Nuki Opener. Required for functions that require the security code to be sent to the lock/opener such as setting lock permissions, viewing the activity log or changing the Nuki device configuration. Set to "#" to remove the security code from the Nuki Hub configuration.
+- PIN Code: Fill with the Nuki Security Code of the Nuki Lock and/or Nuki Opener. Required for functions that require the security code to be sent to the lock/opener such as setting lock permissions/adding keypad codes, viewing the activity log or changing the Nuki device configuration. Set to "#" to remove the security code from the Nuki Hub configuration.
 
 #### Unpair Nuki Lock / Unpair Nuki Opener
 
@@ -169,54 +169,54 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Lock
 
-- lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3
-- lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked
-- lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed
-- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data
-- lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked
-- lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
-- lock/lastLockAction: Reports the last lock action as a string. Possible values are: Unlock, Lock, Unlatch, LockNgo, LockNgoUnlatch, FullLock, FobAction1, FobAction2, FobAction3, Unknown
-- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data
-- lock/completionStatus: Status of the last action as reported by Nuki Lock: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
-- lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action
-- lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action
-- lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined
-- lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-- lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm
-- lock/address: The BLE address of the Nuki Lock
-- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries
+- lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3.
+- lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked.
+- lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed.
+- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
+- lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked.
+- lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system.
+- lock/lastLockAction: Reports the last lock action as a string. Possible values are: Unlock, Lock, Unlatch, LockNgo, LockNgoUnlatch, FullLock, FobAction1, FobAction2, FobAction3, Unknown.
+- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data.
+- lock/completionStatus: Status of the last action as reported by Nuki Lock: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown.
+- lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action.
+- lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action.
+- lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined.
+- lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating.
+- lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm.
+- lock/address: The BLE address of the Nuki Lock.
+- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
 <br><br>
 - configuration/autoLock: enable or disable autoLock (0 = disabled; 1 = enabled). Maps to "Auto lock enabled" in the bluetooth API.
 - configuration/autoUnlock: enable or disable autoLock in general (0 = disabled; 1 = enabled). Maps to "Auto unlock disabled" in the bluetooth API.
-- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
-- configuration/ledBrightness: Set the brightness of the LED on the lock (0=min; 5=max)
-- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled)
-- configuration/singleLock: configures wether to single- or double-lock the door (1 = single; 2 = double)
+- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled).
+- configuration/ledBrightness: Set the brightness of the LED on the lock (0=min; 5=max).
+- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled).
+- configuration/singleLock: configures wether to single- or double-lock the door (1 = single; 2 = double).
 
 ### Opener
 
-- lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3
-- lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, ring, open, opening, uncalibrated
-- lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed
-- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data
-- lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked
-- lock/continuousMode: Reports the current state of Continuous mode (0 = disabled; 1 = enabled)
+- lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3.
+- lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, ring, open, opening, uncalibrated.
+- lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed.
+- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
+- lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked.
+- lock/continuousMode: Reports the current state of Continuous mode (0 = disabled; 1 = enabled).
 - lock/ring: The string "ring" is published to this topic when a doorbell ring is detected, for use by the related Home Assistant event.
-- lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system
-- lock/lastLockAction: Reports the last lock action as a string. Possible values are: ActivateRTO, DeactivateRTO, ElectricStrikeActuation, ActivateCM, DeactivateCM, FobAction1, FobAction2, FobAction3, Unknown
-- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data
-- lock/completionStatus: Status of the last action as reported by Nuki Opener: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown
-- lock/authorizationId: If enabled in the web interface, this topic is set to the authorization id of the last lock action
-- lock/authorizationName: If enabled in the web interface, this topic is set to the authorization name of the last lock action
-- lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined
-- lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating
-- lock/rssi: The bluetooth signal strength of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm
-- lock/address: The BLE address of the Nuki Lock
-- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries
+- lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system.
+- lock/lastLockAction: Reports the last lock action as a string. Possible values are: ActivateRTO, DeactivateRTO, ElectricStrikeActuation, ActivateCM, DeactivateCM, FobAction1, FobAction2, FobAction3, Unknown.
+- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data.
+- lock/completionStatus: Status of the last action as reported by Nuki Opener: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown.
+- lock/authorizationId: If enabled in the web interface, this topic is set to the authorization id of the last lock action.
+- lock/authorizationName: If enabled in the web interface, this topic is set to the authorization name of the last lock action.
+- lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined.
+- lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating.
+- lock/rssi: The bluetooth signal strength of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm.
+- lock/address: The BLE address of the Nuki Lock.
+- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
 <br><br>
-- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled)
-- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled)
-- configuration/soundLevel: configures the volume of sounds the opener plays back (0 = min; 255 = max)
+- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled).
+- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled).
+- configuration/soundLevel: configures the volume of sounds the opener plays back (0 = min; 255 = max).
 
 ### Query
 
@@ -228,14 +228,14 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Battery
 
-- battery/level: Battery level in percent (Lock only)
-- battery/critical: 1 if battery level is critical, otherwise 0
-- battery/charging: 1 if charging, otherwise 0 (Lock only)
-- battery/voltage: Current Battery voltage (V)
-- battery/drain: The drain of the last lock action in Milliwattseconds (mWs) (Lock only)
-- battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only)
-- battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only)
-- battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0
+- battery/level: Battery level in percent (Lock only).
+- battery/critical: 1 if battery level is critical, otherwise 0.
+- battery/charging: 1 if charging, otherwise 0 (Lock only).
+- battery/voltage: Current Battery voltage (V).
+- battery/drain: The drain of the last lock action in Milliwattseconds (mWs) (Lock only).
+- battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
+- battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
+- battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0.
 
 ### Keypad
 
@@ -243,23 +243,26 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Info
 
-- info/nukiHubVersion: Set to the current version number of the Nuki Hub firmware
-- info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware
-- info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener
-- info/nukiHubIp: Set to the IP of the Nuki Hub
-- info/nukiHubLatest: Set to the latest available Nuki Hub firmware version number (if update checking is enabled in the settings)
+- info/nukiHubVersion: Set to the current version number of the Nuki Hub firmware.
+- info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware.
+- info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener.
+- info/nukiHubIp: Set to the IP of the Nuki Hub.
+- info/nukiHubLatest: Set to the latest available Nuki Hub firmware version number (if update checking is enabled in the settings).
 
 ### Maintanence
 
-- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using WIFI will be set to "Built-in Wifi". If using Ethernet will be set to "Wiznet W5500", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit" or "LilyGO T-ETH-POE"
+- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using WIFI will be set to "Built-in Wifi". If using Ethernet will be set to "Wiznet W5500", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit" or "LilyGO T-ETH-POE".
 - maintenance/reset: Set to 1 to trigger a reboot of the ESP. Auto-resets to 0.
 - maintenance/mqttConnectionState: Last Will and Testament (LWT) topic. "online" when Nuki Hub is connected to the MQTT broker, "offline" if Nuki Hub is not connected to the MQTT broker.
 - maintenance/uptime: Uptime in minutes.
-- maintenance/wifiRssi: The WIFI signal strength of the WIFI Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm
-
+- maintenance/wifiRssi: The WIFI signal strength of the WIFI Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm.
+- maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
+- maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See RestartReason.h for possible values
+- maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See RestartReason.h for possible values
+ 
 ### Misc
 
-- presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection
+- presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection.
 
 ## Over-the-air Update (OTA)
 
