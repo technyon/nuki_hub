@@ -15,7 +15,7 @@ Feel free to join us on Discord: https://discord.gg/feB9FnMY
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Any dual-core ESP32, except the ESP32-S3
+- Any dual-core ESP32, except the ESP32-S3 (because of compilation issues)
 
 <b>Supported Nuki devices:</b>
 - Nuki Smart Lock 1.0
@@ -58,7 +58,7 @@ After configuring WIFI, the ESP should automatically connect to your network.<br
 <br>
 To configure the connection to the MQTT broker first connect your client device to the same WIFI network the ESP32 is connected to.<br>
 In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router).<br><br>
-Next click on "Edit" below "MQTT and Network Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required.<br>
+Next click on "Edit" below "MQTT and Network Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required by your MQTT broker.<br>
 <br>
 The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this.<br>
 In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "MQTT Encryption" section of this README.
@@ -66,10 +66,13 @@ In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the 
 ## Pairing with a Nuki Lock or Opener
 
 Enable pairing mode on the Nuki Lock or Opener (press the button on the Nuki device for a few seconds) and power on the ESP32.<br>
-Pairing should be automatic. When pairing is successful, the web interface should show "Paired: Yes" (it might be necessary to reload the page in your browser).<br>
+Pairing should be automatic.<br>
+<br>
+When pairing is successful, the web interface should show "Paired: Yes" (it might be necessary to reload the page in your browser).<br>
 MQTT nodes like lock state and battery level should now reflect the reported values from the lock.<br>
 <br>
-<b>Note: It is possible to run Nuki Hub alongside a Nuki Bridge. This is not recommended and can lead to either device missing updates.<br>
+<b>Note: It is possible to run Nuki Hub alongside a Nuki Bridge. 
+This is not recommended and will lead to excessive battery drain and can lead to either device missing updates.
 Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
 
 ## Support
@@ -99,7 +102,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 - Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
-- Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): 
+- Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "Home Assistant Discovery" section of this README. 
 - MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "MQTT Encryption" section of this README.
@@ -113,20 +116,20 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### IP Address assignment
 
-- Enable DHCP:
-- Static IP address:
-- Subnet:
-- Default gateway:
-- DNS Server:
+- Enable DHCP: Enable to use DHCP for obtaining an IP address, disable to use the static IP settings below
+- Static IP address: When DHCP is disabled set to the preferred static IP address for the Nuki Hub to use
+- Subnet: When DHCP is disabled set to the preferred subnet for the Nuki Hub to use
+- Default gateway: When DHCP is disabled set to the preferred gateway IP address for the Nuki Hub to use
+- DNS Server: When DHCP is disabled set to the preferred DNS server IP address for the Nuki Hub to use
 
 ### Nuki Configuration
 
 #### Basic Nuki Configuration
 
-- Nuki Smartlock enabled: 
-- MQTT Nuki Smartlock Path: 
-- Nuki Opener enabled:
-- MQTT Nuki Opener Path:
+- Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0)
+- MQTT Nuki Smartlock Path (Lock only): Set to the preferred MQTT root topic for the Nuki Lock, defaults to "nuki". Make sure this topic is not the same as the setting for the opener and is unique when using multiple Nuki Hub devices (when using multiple Nuki Locks)
+- Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
+- MQTT Nuki Opener Path (Opener only): Set to the preferred MQTT root topic for the Nuki Opener, defaults to "nukiopener". Make sure this topic is not the same as the setting for the lock and is unique when using multiple Nuki Hub devices (when using multiple Nuki Openers)
 
 #### Advanced Nuki Configuration
 
@@ -457,7 +460,7 @@ To prevent this behaviour, unpair Nuki Hub, disable "Register as app", and re-pa
 <b>Docker (Preferred)</b><br>
 See the [README](/Docker/README.md) in the Docker directory for instructions on building using Docker.<br>
 <br>
-<b>VMWare image</b><br>
+<b>VMWare image (Not preferred, not using the latest Arduino ESP32 release at this time)</b><br>
 A virtual machine (VMWare image) that is setup to compile Nuki Hub is available for download at:<br>
 https://drive.google.com/file/d/1fUVYHDtxXAZOAfQ321iRNIwkqFwuDsBp/view?usp=share_link<br>
 <br>
