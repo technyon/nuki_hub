@@ -110,9 +110,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Disable fallback to Wifi / WiFi config portal:
 - RSSI Publish interval:
 - Network Timeout until restart:
-- Restart on disconnect:
+- Restart on disconnect: 
 - Enable MQTT logging:
-- Check for Firmware Updates every 24h:
+- Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 
 #### IP Address assignment
 
@@ -139,12 +139,12 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Access level:
 - Query interval keypad (Only available when a Keypad is detected):
 - Enable keypad control via MQTT (Only available when a Keypad is detected):
-- Number of retries if command failed:
-- Delay between retries:
-- Publish auth data:
-- Nuki Bridge is running alongside Nuki Hub:
-- Presence detection timeout:
-- Restart if bluetooth beacons not received:
+- Number of retries if command failed: Set to a positive integer to define the amount of times the Nuki Hub retries sending commands to the Nuki Lock or Opener when commands are not acknowledged by the device, default 3.
+- Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
+- Publish auth data: Enable to publish authorization date to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
+- Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "Pairing with a Nuki Lock or Opener" section of this README
+- Presence detection timeout: Set to a positive integer to set the amount of seconds between updates to the presence/devices MQTT topic with the list of detected bluetooth devices, set to -1 to disable presence detection, default 60.
+- Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 
 ### Credentials
 
