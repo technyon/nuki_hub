@@ -29,7 +29,7 @@ Feel free to join us on Discord: https://discord.gg/feB9FnMY
 - Nuki Keypad 2.0
 
 <b>Supported Ethernet devices:</b><br>
-As an alternative to WIFI (which is available on any supported ESP32), the following ESP32 modules with wired ethernet are supported:
+As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with wired ethernet are supported:
 - [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)
 - [Olimex ESP32-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware)
 - [WT32-ETH01](http://en.wireless-tag.com/product-item-2.html)
@@ -38,7 +38,7 @@ As an alternative to WIFI (which is available on any supported ESP32), the follo
 - [LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)
 
 <b>Note for users upgrading from Nuki Hub 8.21 or lower:</b><br>
-Please go to "MQTT and Network Configuration" and select "WIFI only" as the network device (unless you use other network hardware).
+Please go to "MQTT and Network Configuration" and select "Wi-Fi only" as the network device (unless you use other network hardware).
 
 ## Installation
 
@@ -50,13 +50,13 @@ Unpack the 7z archive and read the included readme.txt for installation instruct
 
 ## Initial setup (Network and MQTT)
 
-Power up the ESP32 and a new WIFI access point named "ESP32_(8 CHARACTER ALPHANUMERIC)" should appear.<br>
+Power up the ESP32 and a new Wi-Fi access point named "ESP32_(8 CHARACTER ALPHANUMERIC)" should appear.<br>
 Connect a client device to this access point and in a browser navigate to "http://192.168.4.1".<br>
-Use the web interface to connect the ESP to your preferred WIFI network.<br>
+Use the web interface to connect the ESP to your preferred Wi-Fi network.<br>
 <br>
-After configuring WIFI, the ESP should automatically connect to your network.<br>
+After configuring Wi-Fi, the ESP should automatically connect to your network.<br>
 <br>
-To configure the connection to the MQTT broker first connect your client device to the same WIFI network the ESP32 is connected to.<br>
+To configure the connection to the MQTT broker first connect your client device to the same Wi-Fi network the ESP32 is connected to.<br>
 In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router).<br><br>
 Next click on "Edit" below "MQTT and Network Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required by your MQTT broker.<br>
 <br>
@@ -106,12 +106,12 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "MQTT Encryption" section of this README.
-- Network hardware: "Wifi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "Connecting via Ethernet" section of this README.
-- Disable fallback to Wifi / WiFi config portal:
-- RSSI Publish interval:
-- Network Timeout until restart:
-- Restart on disconnect: 
-- Enable MQTT logging:
+- Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "Connecting via Ethernet" section of this README.
+- Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi when an ethernet connection fails. Enable this setting to disable this fallback.
+- RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60. 
+- Network Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
+- Restart on disconnect: Enable to restart the Nuki Hub after 60 seconds without a connection to a network.
+- Enable MQTT logging: Enabled to fill the maintenance/log MQTT topic with debug log information.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 
 #### IP Address assignment
@@ -251,11 +251,12 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Maintanence
 
-- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using WIFI will be set to "Built-in Wifi". If using Ethernet will be set to "Wiznet W5500", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit" or "LilyGO T-ETH-POE".
+- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using Wi-Fi will be set to "Built-in Wi-Fi". If using Ethernet will be set to "Wiznet W5500", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit" or "LilyGO T-ETH-POE".
 - maintenance/reset: Set to 1 to trigger a reboot of the ESP. Auto-resets to 0.
 - maintenance/mqttConnectionState: Last Will and Testament (LWT) topic. "online" when Nuki Hub is connected to the MQTT broker, "offline" if Nuki Hub is not connected to the MQTT broker.
 - maintenance/uptime: Uptime in minutes.
-- maintenance/wifiRssi: The WIFI signal strength of the WIFI Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm.
+- maintenance/wifiRssi: The Wi-Fi signal strength of the Wi-Fi Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm.
+- maintenance/log: If "Enable MQTT logging" is enabled in the web interface, this topic will be filled with debug log information.
 - maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
 - maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See RestartReason.h for possible values
 - maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See RestartReason.h for possible values
@@ -271,7 +272,7 @@ In the configuration portal, scroll down to "Firmware update" and click "Open".<
 Then Click "Browse" and select the new "nuki_hub.bin" file and select "Upload file".<br>
 After about a minute the new firmware should be installed.
 
-## MQTT Encryption (optional; WiFi and LAN8720 only)
+## MQTT Encryption (optional; Wi-Fi and LAN8720 only)
 
 The communication via MQTT can be SSL encrypted.<br>
 To enable SSL encryption, supply the necessary information in the MQTT Configuration page.<br>
@@ -361,8 +362,8 @@ Note: The old setting "Enable control via GPIO" is removed. If you had enabled t
 
 ## Connecting via Ethernet (Optional)
 
-If you prefer to connect to the MQTT Broker via Ethernet instead of WiFi, you either use one of the supported ESP32 modules (see about section above),
-or wire a seperate Wiznet W5x00 Module (W5100, W5200, W5500 are supported). To use a supported module, flash the firmware, connect via WIFI and
+If you prefer to connect to the MQTT Broker via Ethernet instead of Wi-Fi, you either use one of the supported ESP32 modules (see about section above),
+or wire a seperate Wiznet W5x00 Module (W5100, W5200, W5500 are supported). To use a supported module, flash the firmware, connect via Wi-Fi and
 select the correct network hardware in the MQTT and network settings section.
 
 To wire an external W5x00 module to the ESP, use this wiring scheme:
@@ -375,21 +376,21 @@ To wire an external W5x00 module to the ESP, use this wiring scheme:
 - Optionally connect:<br>
   - W5x00 reset to GPIO33<br>
 
-Now connect via WIFI and change the network hardware to "Generic W5500".<br>
-If the W5500 hwardware isn't detected, WIFI is used as a fallback.<br>
+Now connect via Wi-Fi and change the network hardware to "Generic W5500".<br>
+If the W5500 hwardware isn't detected, Wi-Fi is used as a fallback.<br>
 <br>
-Note: Encrypted MQTT is only available for WIFI and LAN8720 modules, W5x00 modules don't support encryption<br>
+Note: Encrypted MQTT is only available for Wi-Fi and LAN8720 modules, W5x00 modules don't support encryption<br>
 (that leaves Olimex, WT32-ETH01 and M5Stack PoESP32 Unit if encryption is desired).<br>
 <br>
 If encryption is needed, Olimex is the easiest option, since it has USB for flashing onboard.
 
 ## Troubleshooting
 
-### Random WiFi disconnects
+### Random Wi-Fi disconnects
 
 Unfortunately the ESP32 has problems with some access points and reconnecting fails.<br>
 As a workaround you can navigate to "MQTT and Network Configuration" and enable "Restart on disconnect".<br>
-This will reboot the ESP as soon as it gets disconnected from WiFi.<br>
+This will reboot the ESP as soon as it gets disconnected from Wi-Fi.<br>
 Also, this reduces the config portal timeout to three minutes to prevent the ESP being stuck in config mode in case an access point is offline temporarily.<br>
 If this still doesn't fix the disconnects and the ESP becomes unreachable, the "Restart timer" option can be used as a last resort.<br>
 It will restart the ESP after a configured amount of time.
@@ -420,10 +421,10 @@ This unfortunately means that older versions of Home Assistant are not supported
 
 ## FAQ
 
-### Nuki Hub doesn't work when WIFI on a Nuki Smartlock Pro (3.0 / 4.0) is turned on.
+### Nuki Hub doesn't work when Wi-Fi on a Nuki Smartlock Pro (3.0 / 4.0) is turned on.
 
 According to Nuki this is by design and part of the specification of the Pro lock.<br>
-You can use either the built-in WIFI or a Bridge (which Nuki Hub registers as).<br>
+You can use either the built-in Wi-Fi or a Bridge (which Nuki Hub registers as).<br>
 Using both at the same time is not supported.
 
 ### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
