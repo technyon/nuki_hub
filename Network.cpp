@@ -1061,7 +1061,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "unlatch",
                          uidString,
                          "_unlatch_button",
-                         "Unlatch",
+                         "Open",
                          name,
                          baseTopic,
                          "",
@@ -1071,7 +1071,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          "",
                          String("~") + mqtt_topic_lock_action,
                          { { "enabled_by_default", "false" },
-                           { "pl_prs", "unlatch" }});
+                           { "pl_prs", openAction }});
 
     }
 }

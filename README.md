@@ -402,6 +402,7 @@ Next, try erasing the ESP32 flash and then (re-)flash the firmware.<br>
 To erase the flash, use the espressif download tool and click the "Erase" button.<br>
 Afterwards flash the firmware as described in the readme within the 7z file.<br>
 <br>
+
 Also, there are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.<br>
 <br>
 Reported as working are:
@@ -412,6 +413,8 @@ Reported as working are:
 For more information check the related issue: https://github.com/technyon/nuki_hub/issues/39
 
 Also, check that pairing is allowed. In the Nuki smartphone app, go to "Settings" --> "Features & Configuration" --> "Button & LED" and make sure "Bluetooh Pairing" is enabled.
+
+A note about the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32). Here the initial Bluetooth reception is very poor (range less than one meter). The reason is that the module does not have an antenna on the PCB, but only an IPEX connector. By retrofitting an external SMA antenna (IPEX, or other names U.FL, IPAX, IPX, AMC, MHF, UMCC), bluetooth/Wifi works over several meters.<br><br>
 
 ### In Home Assistant, the lock/opener is shown as unavailable
 
