@@ -414,7 +414,7 @@ For more information check the related issue: https://github.com/technyon/nuki_h
 
 Also, check that pairing is allowed. In the Nuki smartphone app, go to "Settings" --> "Features & Configuration" --> "Button & LED" and make sure "Bluetooh Pairing" is enabled.
 
-A note about the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32). Here the initial Bluetooth reception is very poor (range less than one meter). The reason is that the module does not have an antenna on the PCB, but only an IPEX connector. By retrofitting an external SMA antenna (IPEX, or other names U.FL, IPAX, IPX, AMC, MHF, UMCC), bluetooth/Wifi works over several meters.<br><br>
+A note about the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32). Here the initial Bluetooth reception is very poor (range less than one meter). The reason is that the module does not have an antenna on the PCB, but only an IPEX connector. By retrofitting an external SMA antenna (IPEX, or other names U.FL, IPAX, IPX, AMC, MHF, UMCC), bluetooth/Wifi works over several meters.
 
 ### In Home Assistant, the lock/opener is shown as unavailable
 
