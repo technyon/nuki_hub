@@ -1260,9 +1260,9 @@ void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *b
                      "config",
                      String("~") + mqtt_topic_config_single_lock,
                      { { "enabled_by_default", "false" },
-                       { "pl_on", "2" },
+                       { "pl_on", "0" },
                        { "pl_off", "1" },
-                       { "state_on", "2" },
+                       { "state_on", "0" },
                        { "state_off", "1" }});
 }
 

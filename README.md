@@ -191,7 +191,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled).
 - configuration/ledBrightness: Set the brightness of the LED on the lock (0=min; 5=max).
 - configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled).
-- configuration/singleLock: configures wether to single- or double-lock the door (1 = single; 2 = double).
+- configuration/singleLock: configures wether to single- or double-lock the door (0 = double; 1 = single).
 
 ### Opener
 
