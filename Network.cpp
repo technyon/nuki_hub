@@ -67,13 +67,13 @@ void Network::setupDevice()
     {
         if(_preferences->getBool(preference_network_wifi_fallback_disabled))
         {
-            Log->println(F("Failed to connect to network. Wifi fallback is disable, rebooting."));
+            Log->println(F("Failed to connect to network. Wi-Fi fallback is disabled, rebooting."));
             memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
             sleep(5);
             restartEsp(RestartReason::NetworkDeviceCriticalFailureNoWifiFallback);
         }
 
-        Log->println(F("Switching to WiFi device as fallback."));
+        Log->println(F("Switching to Wi-Fi device as fallback."));
         _networkDeviceType = NetworkDeviceType::WiFi;
     }
     else
@@ -82,7 +82,7 @@ void Network::setupDevice()
         switch (hardwareDetect)
         {
             case 1:
-                Log->println(F("Wifi only"));
+                Log->println(F("Wi-Fi only"));
                 _networkDeviceType = NetworkDeviceType::WiFi;
                 break;
             case 2:
@@ -110,7 +110,7 @@ void Network::setupDevice()
                 _networkDeviceType = NetworkDeviceType::LilyGO_T_ETH_POE;
                 break;
             default:
-                Log->println(F("Unknown hardware selected, falling back to Wifi."));
+                Log->println(F("Unknown hardware selected, falling back to Wi-Fi."));
                 _networkDeviceType = NetworkDeviceType::WiFi;
                 break;
         }
@@ -286,7 +286,7 @@ bool Network::update()
         {
             case ReconnectStatus::CriticalFailure:
                 strcpy(WiFi_fallbackDetect, "wifi_fallback");
-                Log->println("Network device has a critical failure, enable fallback to Wifi and reboot.");
+                Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
                 delay(200);
                 restartEsp(RestartReason::NetworkDeviceCriticalFailure);
                 break;

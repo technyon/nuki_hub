@@ -132,7 +132,7 @@ void WebCfgServer::initialize()
         if(_allowRestartToPortal)
         {
             String response = "";
-            buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure WiFi.", 0);
+            buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure Wi-Fi.", 0);
             _server.send(200, "text/html", response);
             waitAndProcess(true, 2000);
             _network->reconfigureDevice();
@@ -662,8 +662,8 @@ void WebCfgServer::buildHtml(String& response)
 
     if(_allowRestartToPortal)
     {
-        response.concat("<br><br><h3>WiFi</h3>");
-        buildNavigationButton(response, "Restart and configure wifi", "/wifi");
+        response.concat("<br><br><h3>Wi-Fi</h3>");
+        buildNavigationButton(response, "Restart and configure Wi-Fi", "/wifi");
     }
 
     response.concat("</BODY></HTML>");
@@ -814,14 +814,14 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
-    printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wifi / WiFi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled));
+    printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled));
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates));
     response.concat("</table>");
-    response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for WiFi connections.<br><br>");
+    response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
 
     response.concat("<h3>IP Address assignment</h3>");
     response.concat("<table>");
@@ -868,7 +868,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
-        printCheckBox(response, "KPENA", "Enabled keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
+        printCheckBox(response, "KPENA", "Enable keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
     }
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
@@ -926,8 +926,8 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<h3>WiFi</h3>");
-    response.concat("Click confirm to restart ESP into WiFi configuration mode. After restart, connect to ESP access point to reconfigure WiFI.<br><br>");
+    response.concat("<h3>Wi-Fi</h3>");
+    response.concat("Click confirm to restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
     buildNavigationButton(response, "Confirm", "/wifimanager");
 
     response.concat("</BODY></HTML>");
@@ -1331,7 +1331,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
 {
     std::vector<std::pair<String, String>> options;
 
-    options.push_back(std::make_pair("1", "Wifi only"));
+    options.push_back(std::make_pair("1", "Wi-Fi only"));
     options.push_back(std::make_pair("2", "Generic W5500"));
     options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
     options.push_back(std::make_pair("4", "Olimex ESP32-POE / ESP-POE-ISO"));
