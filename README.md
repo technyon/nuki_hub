@@ -196,12 +196,13 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Opener
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3.
-- lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, ring, open, opening, uncalibrated.
+- lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, open, opening, uncalibrated.
 - lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed.
 - lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
 - lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked.
-- lock/continuousMode: Reports the current state of Continuous mode (0 = disabled; 1 = enabled).
-- lock/ring: The string "ring" is published to this topic when a doorbell ring is detected, for use by the related Home Assistant event.
+- lock/continuousMode: Enable or disable continuous mode on the opener (0 = disabled; 1 = enabled).
+- lock/ring: The string "ring" is published to this topic when a doorbell ring is detected while RTO or continuous mode is active or "ringlocked" when both are inactive.
+- lock/binaryRing: The string "ring" is published to this topic when a doorbell ring is detected, the state will revert to "standby" after 2 seconds.
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system.
 - lock/lastLockAction: Reports the last lock action as a string. Possible values are: ActivateRTO, DeactivateRTO, ElectricStrikeActuation, ActivateCM, DeactivateCM, FobAction1, FobAction2, FobAction3, Unknown.
 - lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data.
@@ -214,8 +215,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/address: The BLE address of the Nuki Lock.
 - lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
 <br><br>
-- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled).
-- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled).
+- configuration/buttonEnabled: enable or disable the button on the opener (0 = disabled; 1 = enabled).
+- configuration/ledEnabled: enable or disable the LED on the opener (0 = disabled; 1 = enabled).
 - configuration/soundLevel: configures the volume of sounds the opener plays back (0 = min; 255 = max).
 
 ### Query
@@ -302,7 +303,8 @@ NOTE2: Home Assistant can be setup manually using the [MQTT Lock integration](ht
 
 If a keypad is connected to the lock, keypad codes can be added, updated and removed.
 This has to enabled first in the configuration portal. Check "Enable keypad control via MQTT" and save the configuration.
-After enabling keypad control, information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes.
+After enabling keypad control, information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes. 
+The same data is also published as JSON data to keypad/json.
 <br>
 For security reasons, the code itself is not published. To modify keypad codes, a command
 structure is setup under keypad/command:
