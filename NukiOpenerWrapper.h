@@ -6,7 +6,6 @@
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
 #include "Gpio.h"
-#include "AccessLevel.h"
 #include "NukiDeviceId.h"
 
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
@@ -70,7 +69,7 @@ private:
 
     void printCommandResult(Nuki::CmdResult result);
 
-    NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
+    NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 14 charactersz
 
     std::string _deviceName;
     NukiDeviceId* _deviceId = nullptr;
@@ -90,7 +89,6 @@ private:
     int _retryDelay = 0;
     int _retryCount = 0;
     int _retryLockstateCount = 0;
-    static AccessLevel _accessLevel;
     unsigned long _nextRetryTs = 0;
     std::vector<uint16_t> _keypadCodeIds;
 
@@ -106,7 +104,14 @@ private:
     bool _nukiAdvancedConfigValid = false;
     bool _hassEnabled = false;
     bool _hassSetupCompleted = false;
-
+    bool _aclActRTO = false;
+    bool _aclDeactRTO = false;
+    bool _aclESA = false;
+    bool _aclActCM = false;
+    bool _aclDeactCM = false;
+    bool _aclFob1 = false;
+    bool _aclFob2 = false;
+    bool _aclFob3 = false;
     bool _paired = false;
     bool _statusUpdated = false;
     bool _hasKeypad = false;

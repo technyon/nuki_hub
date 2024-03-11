@@ -136,15 +136,23 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Query interval lock state: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current lock state, default 1800.
 - Query interval configuration: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current configuration, default 3600.
 - Query interval battery: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current battery state, default 1800.
-- Access level: Allows restricting the allowed lock actions through MQTT. Set to "Full" to enable  all lock actions including unlatch/ESA, set to "Lock and unlock operation only" to disable unlatch/ESA, set to "Lock operation only" to disable unlatch/ESA and unlock and set to "Read only" to disable changing lock state completely. Note: GPIO control is not restricted through this setting.
 - Query interval keypad (Only available when a Keypad is detected): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current keypad state, default 1800.
-- Enable keypad control via MQTT (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "Keypad control" section of this README
 - Number of retries if command failed: Set to a positive integer to define the amount of times the Nuki Hub retries sending commands to the Nuki Lock or Opener when commands are not acknowledged by the device, default 3.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
-- Publish auth data: Enable to publish authorization date to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
 - Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "Pairing with a Nuki Lock or Opener" section of this README
 - Presence detection timeout: Set to a positive integer to set the amount of seconds between updates to the presence/devices MQTT topic with the list of detected bluetooth devices, set to -1 to disable presence detection, default 60.
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
+
+### Access Level Configuration
+
+#### Nuki General Access Control
+- Change Lock/Opener configuration: Allows changing the Nuki Lock/Opener configuration through MQTT.
+- Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "Keypad control" section of this README
+- Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "Keypad control" section of this README
+- Publish auth data: Enable to publish authorization data to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
+
+#### Nuki Lock/Opener Access Control
+- Enable or disable executing each available lock action for the Nuki Lock and Nuki Opener through MQTT. Note: GPIO control is not restricted through this setting.
 
 ### Credentials
 

@@ -7,7 +7,6 @@
 #include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
-AccessLevel NukiWrapper::_accessLevel = AccessLevel::ReadOnly;
 
 NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkLock* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
@@ -53,7 +52,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     _intervalConfig = _preferences->getInt(preference_query_interval_configuration);
     _intervalBattery = _preferences->getInt(preference_query_interval_battery);
     _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
-    _keypadEnabled = _preferences->getBool(preference_keypad_control_enabled);
+    _keypadEnabled = _preferences->getBool(preference_keypad_info_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _maxKeypadCodeCount = _preferences->getUInt(preference_lock_max_keypad_code_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
@@ -61,15 +60,32 @@ void NukiWrapper::initialize(const bool& firstStart)
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
-    _accessLevel = (AccessLevel)_preferences->getInt(preference_access_level);
 
     if(firstStart)
     {
         _preferences->putInt(preference_command_nr_of_retries, 3);
         _preferences->putInt(preference_command_retry_delay, 1000);
         _preferences->putInt(preference_restart_ble_beacon_lost, 60);
+        _preferences->putBool(preference_admin_config_enabled, true);
+        _preferences->putBool(preference_acl_lock, true);
+        _preferences->putBool(preference_acl_unlock, true);
+        _preferences->putBool(preference_acl_unlatch, true);
+        _preferences->putBool(preference_acl_lockngo, true);
+        _preferences->putBool(preference_acl_lockngo_unlatch, true);
+        _preferences->putBool(preference_acl_fulllock, true);
+        _preferences->putBool(preference_acl_lck_fob1, true);
+        _preferences->putBool(preference_acl_lck_fob2, true);
+        _preferences->putBool(preference_acl_lck_fob3, true);
+        _preferences->putBool(preference_acl_act_rto, true);
+        _preferences->putBool(preference_acl_deact_rto, true);
+        _preferences->putBool(preference_acl_act_esa, true);
+        _preferences->putBool(preference_acl_act_cm, true);
+        _preferences->putBool(preference_acl_deact_cm, true);
+        _preferences->putBool(preference_acl_opn_fob1, true);
+        _preferences->putBool(preference_acl_opn_fob2, true);
+        _preferences->putBool(preference_acl_opn_fob3, true);
     }
-
+    
     if(_retryDelay <= 100)
     {
         _retryDelay = 100;
@@ -324,7 +340,7 @@ void NukiWrapper::updateKeyTurnerState()
         }
         return;
     }
-    
+
     _retryLockstateCount = 0;
 
     if(_publishAuthData)
@@ -375,7 +391,7 @@ void NukiWrapper::updateConfig()
 void NukiWrapper::updateAuthData()
 {
     if(_nukiLock.getSecurityPincode() == 0) return;
-    
+
     Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
     {
@@ -404,6 +420,8 @@ void NukiWrapper::updateAuthData()
 
 void NukiWrapper::updateKeypad()
 {
+    if(_preferences->getBool(preference_keypad_info_enabled)) return;
+
     Log->print(F("Querying lock keypad: "));
     Nuki::CmdResult result = _nukiLock.retrieveKeypadEntries(0, 0xffff);
     printCommandResult(result);
@@ -462,33 +480,12 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
         return LockActionResult::UnknownAction;
     }
 
-    switch(_accessLevel)
+    if((action == NukiLock::LockAction::Lock && _aclLock) || (action == NukiLock::LockAction::Unlock && _aclUnlock) || (action == NukiLock::LockAction::Unlatch && _aclUnlatch) || (action == NukiLock::LockAction::LockNgo && _aclLockNGo) || (action == NukiLock::LockAction::LockNgoUnlatch && _aclLockNGoU) || (action == NukiLock::LockAction::FullLock && _aclFLock) || (action == NukiLock::LockAction::FobAction1 && _aclFob1) || (action == NukiLock::LockAction::FobAction2 && _aclFob2) || (action == NukiLock::LockAction::FobAction3 && _aclFob3))
     {
-        case AccessLevel::Full:
-            nukiInst->_nextLockAction = action;
-            return LockActionResult::Success;
-            break;
-        case AccessLevel::LockAndUnlock:
-            if(action == NukiLock::LockAction::Lock || action == NukiLock::LockAction::Unlock || action == NukiLock::LockAction::LockNgo || action == NukiLock::LockAction::FullLock)
-            {
-                nukiInst->_nextLockAction = action;
-                return LockActionResult::Success;
-            }
-            return LockActionResult::AccessDenied;
-            break;
-        case AccessLevel::LockOnly:
-            if(action == NukiLock::LockAction::Lock)
-            {
-                nukiInst->_nextLockAction = action;
-                return LockActionResult::Success;
-            }
-            return LockActionResult::AccessDenied;
-            break;
-        case AccessLevel::ReadOnly:
-        default:
-            return LockActionResult::AccessDenied;
-            break;
+        return LockActionResult::Success;
     }
+
+    return LockActionResult::AccessDenied;
 }
 
 void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
@@ -525,7 +522,7 @@ void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
 
 void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
-    if(_accessLevel != AccessLevel::Full) return;
+    if(!_preferences->getBool(preference_admin_config_enabled)) return;
 
     if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
     {
@@ -580,7 +577,11 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 
 void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
-    if(_accessLevel != AccessLevel::Full) return;
+    if(!_preferences->getBool(preference_keypad_control_enabled))
+    {
+        _network->publishKeypadCommandResult("KeypadControlDisabled");
+        return;
+    }
 
     if(!_hasKeypad)
     {
@@ -742,7 +743,7 @@ void NukiWrapper::setupHASS()
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
 
-    _network->publishHASSConfig("SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, hasDoorSensor(), _hasKeypad, _publishAuthData,"lock", "unlock", "unlatch");
+    _network->publishHASSConfig("SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, hasDoorSensor(), _hasKeypad, _publishAuthData, "lock", "unlock", "unlatch");
     _hassSetupCompleted = true;
 
     Log->println("HASS setup for lock completed.");

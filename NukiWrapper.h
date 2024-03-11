@@ -6,7 +6,6 @@
 #include "BleScanner.h"
 #include "NukiLock.h"
 #include "Gpio.h"
-#include "AccessLevel.h"
 #include "LockActionResult.h"
 #include "NukiDeviceId.h"
 
@@ -99,7 +98,15 @@ private:
     bool _nukiAdvancedConfigValid = false;
     bool _hassEnabled = false;
     bool _hassSetupCompleted = false;
-
+    bool _aclLock = false;
+    bool _aclUnlock = false;
+    bool _aclUnlatch = false;
+    bool _aclLockNGo = false;
+    bool _aclLockNGoU = false;
+    bool _aclFLock = false;
+    bool _aclFob1 = false;
+    bool _aclFob2 = false;
+    bool _aclFob3 = false;
     bool _paired = false;
     bool _statusUpdated = false;
     bool _hasKeypad = false;
@@ -111,7 +118,6 @@ private:
     int _retryCount = 0;
     int _retryLockstateCount = 0;
     long _rssiPublishInterval = 0;
-    static AccessLevel _accessLevel;
     unsigned long _nextRetryTs = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;

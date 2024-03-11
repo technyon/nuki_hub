@@ -5,7 +5,6 @@
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
-#include "AccessLevel.h"
 #include <esp_task_wdt.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
@@ -70,6 +69,14 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
         sendFavicon();
+    });
+    _server.on("/acclvl", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildAccLvlHtml(response);
+        _server.send(200, "text/html", response);
     });
     _server.on("/cred", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -427,11 +434,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_query_interval_battery, value.toInt());
             configChanged = true;
         }
-        else if(key == "ACCLVL")
-        {
-            _preferences->putInt(preference_access_level, value.toInt());
-            configChanged = true;
-        }
         else if(key == "KPINT")
         {
             _preferences->putInt(preference_query_interval_keypad, value.toInt());
@@ -465,6 +467,101 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "PUBAUTH")
         {
             _preferences->putBool(preference_publish_authdata, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLCONFIG")
+        {
+            _preferences->putBool(preference_admin_config_enabled, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "KPPUB")
+        {
+            _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKLCK")
+        {
+            _preferences->putBool(preference_acl_lock, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKUNLCK")
+        {
+            _preferences->putBool(preference_acl_unlock, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKUNLTCH")
+        {
+            _preferences->putBool(preference_acl_unlatch, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKLNG")
+        {
+            _preferences->putBool(preference_acl_lockngo, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKLNGU")
+        {
+            _preferences->putBool(preference_acl_lockngo_unlatch, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKFLLCK")
+        {
+            _preferences->putBool(preference_acl_fulllock, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKFOB1")
+        {
+            _preferences->putBool(preference_acl_lck_fob1, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKFOB2")
+        {
+            _preferences->putBool(preference_acl_lck_fob2, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLLCKFOB3")
+        {
+            _preferences->putBool(preference_acl_lck_fob3, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNUNLCK")
+        {
+            _preferences->putBool(preference_acl_act_rto, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNLCK")
+        {
+            _preferences->putBool(preference_acl_deact_rto, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNUNLTCH")
+        {
+            _preferences->putBool(preference_acl_act_esa, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNUNLCKCM")
+        {
+            _preferences->putBool(preference_acl_act_cm, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNLCKCM")
+        {
+            _preferences->putBool(preference_acl_deact_cm, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNFOB1")
+        {
+            _preferences->putBool(preference_acl_opn_fob1, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNFOB2")
+        {
+            _preferences->putBool(preference_acl_opn_fob2, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "ACLOPNFOB3")
+        {
+            _preferences->putBool(preference_acl_opn_fob3, (value == "1"));
             configChanged = true;
         }
         else if(key == "REGAPP")
@@ -624,7 +721,7 @@ void WebCfgServer::buildHtml(String& response)
         char lockstateArr[20];
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
         printParameter(response, "Nuki Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
-                
+
         if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode)
         {
             printParameter(response, "Nuki Opener state", "Open (Continuous Mode)");
@@ -643,30 +740,29 @@ void WebCfgServer::buildHtml(String& response)
         //}
     }
 
-    response.concat("</table><br><br>");
-
-    response.concat("<h3>MQTT and Network Configuration</h3>");
+    response.concat("</table><br><table id=\"tblnav\"><tbody>");
+    response.concat("<tr><td><h3>MQTT and Network Configuration</h3></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
-
-    response.concat("<BR><BR><h3>Nuki Configuration</h3>");
+    response.concat("</td></tr><tr><td><h3>Nuki Configuration</h3></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/nukicfg");
-
-    response.concat("<BR><BR><h3>Credentials</h3>");
+    response.concat("</td></tr><tr><td><h3>Access Level Configuration</h3></td><td class=\"tdbtn\">");
+    buildNavigationButton(response, "Edit", "/acclvl");
+    response.concat("</td></tr><tr><td><h3>Credentials</h3></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");
-
-    response.concat("<BR><BR><h3>GPIO Configuration</h3>");
+    response.concat("</td></tr><tr><td><h3>GPIO Configuration</h3></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/gpiocfg");
-
-    response.concat("<BR><BR><h3>Firmware update</h3>");
+    response.concat("</td></tr><tr><td><h3>Firmware update</h3></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Open", "/ota");
+    response.concat("</td></tr>");
 
     if(_allowRestartToPortal)
     {
-        response.concat("<br><br><h3>Wi-Fi</h3>");
+        response.concat("<tr><td><h3>Wi-Fi</h3></td><td class=\"tdbtn\">");
         buildNavigationButton(response, "Restart and configure Wi-Fi", "/wifi");
+        response.concat("</td></tr>");
     }
 
-    response.concat("</BODY></HTML>");
+    response.concat("</tbody></table></body></html>");
 }
 
 
@@ -674,36 +770,36 @@ void WebCfgServer::buildCredHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<FORM ACTION=savecfg method='POST'>");
+    response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
     printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, false, true);
     printInputField(response, "CREDPASS", "Password", "*", 30, true, true);
     printInputField(response, "CREDPASSRE", "Retype password", "*", 30, true);
     response.concat("</table>");
-    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-    response.concat("</FORM>");
+    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.concat("</form>");
 
     if(_nuki != nullptr)
     {
-        response.concat("<br><br><FORM method=\"post\" ACTION=savecfg >");
+        response.concat("<br><br><form method=\"post\" action=\"savecfg\">");
         response.concat("<h3>Nuki Lock PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, true);
         response.concat("</table>");
-        response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-        response.concat("</FORM>");
+        response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        response.concat("</form>");
     }
 
     if(_nukiOpener != nullptr)
     {
-        response.concat("<br><br><FORM method=\"posst\" ACTION=savecfg >");
+        response.concat("<br><br><form method=\"post\" action=\"savecfg\">");
         response.concat("<h3>Nuki Opener PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, true);
         response.concat("</table>");
-        response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-        response.concat("</FORM>");
+        response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        response.concat("</form>");
     }
 
     _confirmCode = generateConfirmCode();
@@ -732,7 +828,7 @@ void WebCfgServer::buildCredHtml(String &response)
         response.concat("</table>");
         response.concat("<br><button type=\"submit\">OK</button></form>");
     }
-    response.concat("</BODY></HTML>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildOtaHtml(String &response, bool errored)
@@ -742,7 +838,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     if(millis() < 60000)
     {
         response.concat("OTA functionality not ready. Please wait a moment and reload.");
-        response.concat("</BODY></HTML>");
+        response.concat("</body></html>");
         return;
     }
 
@@ -750,7 +846,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
         response.concat("<div>Over-the-air update errored. Please check the logs for more info</div><br/>");
     }
 
-    response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"POST\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+    response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
 
     if(_preferences->getBool(preference_check_updates))
@@ -771,12 +867,12 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("	button.addEventListener('click',hideshow,false);");
     response.concat("	function hideshow() {");
     response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");    
+    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
     response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
     response.concat("	}");
     response.concat("});");
     response.concat("</script>");
-    response.concat("</BODY></HTML>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildOtaCompletedHtml(String &response)
@@ -789,13 +885,13 @@ void WebCfgServer::buildOtaCompletedHtml(String &response)
     response.concat("   setTimeout(\"location.href = '/';\",10000);");
     response.concat("});");
     response.concat("</script>");
-    response.concat("</BODY></HTML>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     buildHtmlHeader(response);
-    response.concat("<FORM ACTION=savecfg method='POST'>");
+    response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Basic MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
@@ -832,17 +928,67 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15);
     response.concat("</table>");
 
-    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-    response.concat("</FORM>");
-    response.concat("</BODY></HTML>");
+    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.concat("</form>");
+    response.concat("</body></html>");
 }
 
+void WebCfgServer::buildAccLvlHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<h3>Nuki General Access Control</h3>");
+    response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
+    printCheckBox(response, "ACLCONFIG", "Change Lock/Opener configuration", _preferences->getBool(preference_admin_config_enabled));
+    if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
+    {
+        printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled));
+        printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled));
+    }
+    printCheckBox(response, "PUBAUTH", "Publish authorisation log (may reduce battery life)", _preferences->getBool(preference_publish_authdata));
+    response.concat("</table><br>");
+    if(_nuki != nullptr)
+    {
+        response.concat("<h3>Nuki Lock Access Control</h3>");
+        response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
+
+        printCheckBox(response, "ACLLCKLCK", "Lock", _preferences->getBool(preference_acl_lock));
+        printCheckBox(response, "ACLLCKUNLCK", "Unlock", _preferences->getBool(preference_acl_unlock));
+        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", _preferences->getBool(preference_acl_unlatch));
+        printCheckBox(response, "ACLLCKLNG", "Lock N Go", _preferences->getBool(preference_acl_lockngo));
+        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", _preferences->getBool(preference_acl_lockngo_unlatch));
+        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", _preferences->getBool(preference_acl_fulllock));
+        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", _preferences->getBool(preference_acl_lck_fob1));
+        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", _preferences->getBool(preference_acl_lck_fob2));
+        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", _preferences->getBool(preference_acl_lck_fob3));
+        response.concat("</table><br>");
+    }
+    if(_nukiOpener != nullptr)
+    {
+        response.concat("<h3>Nuki Opener Access Control</h3>");
+        response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
+
+        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", _preferences->getBool(preference_acl_act_rto));
+        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", _preferences->getBool(preference_acl_deact_rto));
+        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", _preferences->getBool(preference_acl_act_esa));
+        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", _preferences->getBool(preference_acl_act_cm));
+        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", _preferences->getBool(preference_acl_deact_cm));
+        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", _preferences->getBool(preference_acl_opn_fob1));
+        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", _preferences->getBool(preference_acl_opn_fob2));
+        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", _preferences->getBool(preference_acl_opn_fob3));
+        response.concat("</table><br>");
+    }
+    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.concat("</form>");
+    response.concat("</body></html>");
+}
 
 void WebCfgServer::buildNukiConfigHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<FORM ACTION=savecfg method='POST'>");
+    response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Basic Nuki Configuration</h3>");
     response.concat("<table>");
     printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled));
@@ -863,30 +1009,26 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
-    printDropDown(response, "ACCLVL", "Access level", String(_preferences->getInt(preference_access_level)), getAccessLevelOptions());
-
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
-        printCheckBox(response, "KPENA", "Enable keypad control via MQTT", _preferences->getBool(preference_keypad_control_enabled));
     }
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
-    printCheckBox(response, "PUBAUTH", "Publish auth data (May reduce battery life)", _preferences->getBool(preference_publish_authdata));
     printCheckBox(response, "REGAPP", "Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
     response.concat("</table>");
-    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-    response.concat("</FORM>");
-    response.concat("</BODY></HTML>");
+    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.concat("</form>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildGpioConfigHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<FORM ACTION=savegpiocfg method='POST'>");
+    response.concat("<form method=\"post\" action=\"savegpiocfg\">");
     response.concat("<h3>GPIO Configuration</h3>");
     response.concat("<table>");
 
@@ -900,26 +1042,26 @@ void WebCfgServer::buildGpioConfigHtml(String &response)
     }
 
     response.concat("</table>");
-    response.concat("<br><INPUT TYPE=SUBMIT NAME=\"submit\" VALUE=\"Save\">");
-    response.concat("</FORM>");
-    response.concat("</BODY></HTML>");
+    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.concat("</form>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
 {
     String delay(redirectDelay);
 
-    response.concat("<HTML>\n");
-    response.concat("<HEAD>\n");
-    response.concat("<TITLE>Nuki Hub</TITLE>\n");
+    response.concat("<html>\n");
+    response.concat("<head>\n");
+    response.concat("<title>Nuki Hub</title>\n");
     response.concat("<meta http-equiv=\"Refresh\" content=\"");
     response.concat(redirectDelay);
     response.concat("; url=/\" />");
-    response.concat("\n</HEAD>\n");
-    response.concat("<BODY>\n");
+    response.concat("\n</head>\n");
+    response.concat("<body>\n");
     response.concat(message);
 
-    response.concat("</BODY></HTML>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildConfigureWifiHtml(String &response)
@@ -930,7 +1072,7 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
     response.concat("Click confirm to restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
     buildNavigationButton(response, "Confirm", "/wifimanager");
 
-    response.concat("</BODY></HTML>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildInfoHtml(String &response)
@@ -1007,7 +1149,7 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(getEspRestartReason());
     response.concat("\n");
 
-    response.concat("</pre> </BODY></HTML>");
+    response.concat("</pre> </body></html>");
 }
 
 void WebCfgServer::processUnpair(bool opener)
@@ -1050,13 +1192,13 @@ void WebCfgServer::processUnpair(bool opener)
 
 void WebCfgServer::buildHtmlHeader(String &response)
 {
-    response.concat("<HTML><HEAD>");
+    response.concat("<html><head>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
 //    response.concat("<style>");
 //    response.concat(stylecss);
 //    response.concat("</style>");
     response.concat("<link rel='stylesheet' href='/style.css'>");
-    response.concat("<TITLE>Nuki Hub</TITLE></HEAD><BODY>");
+    response.concat("<title>Nuki Hub</title></head><body>");
 
     srand(millis());
 }
@@ -1084,13 +1226,13 @@ void WebCfgServer::printInputField(String& response,
     }
 
     response.concat("</td><td>");
-    response.concat("<INPUT TYPE=");
-    response.concat(isPassword ? "PASSWORD" : "TEXT");
-    response.concat(" VALUE=\"");
+    response.concat("<input type=");
+    response.concat(isPassword ? "password" : "text");
+    response.concat(" value=\"");
     response.concat(value);
-    response.concat("\" NAME=\"");
+    response.concat("\" name=\"");
     response.concat(token);
-    response.concat("\" SIZE=\"25\" MAXLENGTH=\"");
+    response.concat("\" size=\"25\" maxlength=\"");
     response.concat(maxLengthStr);
     response.concat("\"/>");
     response.concat("</td></tr>");
@@ -1113,12 +1255,12 @@ void WebCfgServer::printCheckBox(String &response, const char *token, const char
     response.concat(description);
     response.concat("</td><td>");
 
-    response.concat("<INPUT TYPE=hidden NAME=\"");
+    response.concat("<input type=hidden name=\"");
     response.concat(token);
     response.concat("\" value=\"0\"");
     response.concat("/>");
 
-    response.concat("<INPUT TYPE=checkbox NAME=\"");
+    response.concat("<input type=checkbox name=\"");
     response.concat(token);
     response.concat("\" value=\"1\"");
     response.concat(value ? " checked=\"checked\"" : "");
@@ -1146,18 +1288,18 @@ void WebCfgServer::printTextarea(String& response,
         response.concat(" characters)");
     }
     response.concat("</td><td>");
-    response.concat(" <TEXTAREA ");
+    response.concat(" <textarea ");
     if(!enabled)
     {
-        response.concat("DISABLED");
+        response.concat("disabled");
     }
-    response.concat(" NAME=\"");
+    response.concat(" name=\"");
     response.concat(token);
-    response.concat("\" MAXLENGTH=\"");
+    response.concat("\" maxlength=\"");
     response.concat(maxLengthStr);
     response.concat("\">");
     response.concat(value);
-    response.concat("</TEXTAREA>");
+    response.concat("</textarea>");
     response.concat("</td></tr>");
 }
 
@@ -1352,18 +1494,6 @@ const std::vector<std::pair<String, String>> WebCfgServer::getGpioOptions() cons
     {
         options.push_back( std::make_pair(String((int)role), _gpio->getRoleDescription(role)));
     }
-
-    return options;
-}
-
-const std::vector<std::pair<String, String>> WebCfgServer::getAccessLevelOptions() const
-{
-    std::vector<std::pair<String, String>> options;
-
-    options.push_back(std::make_pair(std::to_string((int)AccessLevel::Full).c_str(), "Full"));
-    options.push_back(std::make_pair(std::to_string((int)AccessLevel::LockAndUnlock).c_str(), "Lock and unlock operation only"));
-    options.push_back(std::make_pair(std::to_string((int)AccessLevel::LockOnly).c_str(), "Lock operation only"));
-    options.push_back(std::make_pair(std::to_string((int)AccessLevel::ReadOnly).c_str(), "Read only"));
 
     return options;
 }
