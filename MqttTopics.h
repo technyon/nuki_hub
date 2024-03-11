@@ -7,6 +7,7 @@
 #define mqtt_topic_lock_binary_state "/lock/binaryState"
 #define mqtt_topic_lock_continuous_mode "/lock/continuousMode"
 #define mqtt_topic_lock_ring "/lock/ring"
+#define mqtt_topic_lock_binary_ring "/lock/binaryRing"
 #define mqtt_topic_lock_trigger "/lock/trigger"
 #define mqtt_topic_lock_last_lock_action "/lock/lastLockAction"
 #define mqtt_topic_lock_log "/lock/log"
