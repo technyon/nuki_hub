@@ -6,7 +6,6 @@
 #include "BleScanner.h"
 #include "NukiLock.h"
 #include "Gpio.h"
-#include "AccessLevel.h"
 #include "LockActionResult.h"
 #include "NukiDeviceId.h"
 
@@ -111,7 +110,6 @@ private:
     int _retryCount = 0;
     int _retryLockstateCount = 0;
     long _rssiPublishInterval = 0;
-    static AccessLevel _accessLevel;
     unsigned long _nextRetryTs = 0;
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
