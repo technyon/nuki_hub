@@ -49,7 +49,6 @@ void NetworkOpener::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
-    _network->initTopic(_mqttPath, mqtt_topic_lock_binary_ring, "standby");
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
@@ -78,10 +77,13 @@ void NetworkOpener::initialize()
 
 void NetworkOpener::update()
 {
-    if(_resetRingStateTs != 0 && millis() >= _resetRingStateTs)
+    if(_resetLockStateTs != 0 && millis() >= _resetLockStateTs)
     {
-        _resetRingStateTs = 0;
-        publishString(mqtt_topic_lock_binary_ring, "standby");
+        char str[50];
+        memset(str, 0, sizeof(str));
+        _resetLockStateTs = 0;
+        lockstateToString(_currentLockState, str);
+        publishString(mqtt_topic_lock_state, str);
     }
 }
 
@@ -272,19 +274,11 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     _firstTunerStatePublish = false;
 }
 
-void NetworkOpener::publishRing(const bool locked)
+void NetworkOpener::publishRing()
 {
-    if (locked)
-    {
-        publishString(mqtt_topic_lock_ring, "ringlocked");
-    }
-    else
-    {
-        publishString(mqtt_topic_lock_ring, "ring");
-    }
-    
-    publishString(mqtt_topic_lock_binary_ring, "ring");
-    _resetRingStateTs = millis() + 2000;
+    publishString(mqtt_topic_lock_state, "ring");
+    publishString(mqtt_topic_lock_ring, "ring");
+    _resetLockStateTs = millis() + 2000;
 }
 
 void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
