@@ -459,9 +459,9 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
             configChanged = true;
         }
-        else if(key == "ACLCONFIG")
+        else if(key == "ACLCNF")
         {
-            _preferences->putBool(preference_admin_config_enabled, (value == "1"));
+            _preferences->putBool(preference_admin_enabled, (value == "1"));
             configChanged = true;
         }
         else if(key == "KPPUB")
@@ -940,7 +940,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
-    printCheckBox(response, "ACLCONFIG", "Change Nuki configuration", _preferences->getBool(preference_admin_config_enabled));
+    printCheckBox(response, "ACLCNF", "Change Nuki configuration", _preferences->getBool(preference_admin_enabled));
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled));

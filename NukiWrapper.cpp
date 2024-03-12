@@ -67,7 +67,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_command_nr_of_retries, 3);
         _preferences->putInt(preference_command_retry_delay, 1000);
         _preferences->putInt(preference_restart_ble_beacon_lost, 60);
-        _preferences->putBool(preference_admin_config_enabled, true);
+        _preferences->putBool(preference_admin_enabled, true);
         _preferences->putBool(preference_acl_lock, true);
         _preferences->putBool(preference_acl_unlock, true);
         _preferences->putBool(preference_acl_unlatch, true);
@@ -487,6 +487,7 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
     if((action == NukiLock::LockAction::Lock && nukiLockPreferences->getBool(preference_acl_lock)) || (action == NukiLock::LockAction::Unlock && nukiLockPreferences->getBool(preference_acl_unlock)) || (action == NukiLock::LockAction::Unlatch && nukiLockPreferences->getBool(preference_acl_unlatch)) || (action == NukiLock::LockAction::LockNgo && nukiLockPreferences->getBool(preference_acl_lockngo)) || (action == NukiLock::LockAction::LockNgoUnlatch && nukiLockPreferences->getBool(preference_acl_lockngo_unlatch)) || (action == NukiLock::LockAction::FullLock && nukiLockPreferences->getBool(preference_acl_fulllock)) || (action == NukiLock::LockAction::FobAction1 && nukiLockPreferences->getBool(preference_acl_lck_fob1)) || (action == NukiLock::LockAction::FobAction2 && nukiLockPreferences->getBool(preference_acl_lck_fob2)) || (action == NukiLock::LockAction::FobAction3 && nukiLockPreferences->getBool(preference_acl_lck_fob3)))
     {
         nukiLockPreferences->end();
+        nukiInst->_nextLockAction = action;
         return LockActionResult::Success;
     }
 
@@ -528,7 +529,7 @@ void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
 
 void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
-    if(!_preferences->getBool(preference_admin_config_enabled)) return;
+    if(!_preferences->getBool(preference_admin_enabled)) return;
 
     if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
     {

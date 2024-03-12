@@ -497,6 +497,7 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
     if((action == NukiOpener::LockAction::ActivateRTO && nukiOpenerPreferences->getBool(preference_acl_act_rto)) || (action == NukiOpener::LockAction::DeactivateRTO && nukiOpenerPreferences->getBool(preference_acl_deact_rto)) || (action == NukiOpener::LockAction::ElectricStrikeActuation && nukiOpenerPreferences->getBool(preference_acl_act_esa)) || (action == NukiOpener::LockAction::ActivateCM && nukiOpenerPreferences->getBool(preference_acl_act_cm)) || (action == NukiOpener::LockAction::DeactivateCM && nukiOpenerPreferences->getBool(preference_acl_deact_cm)) || (action == NukiOpener::LockAction::FobAction1 && nukiOpenerPreferences->getBool(preference_acl_opn_fob1)) || (action == NukiOpener::LockAction::FobAction2 && nukiOpenerPreferences->getBool(preference_acl_opn_fob2)) || (action == NukiOpener::LockAction::FobAction3 && nukiOpenerPreferences->getBool(preference_acl_opn_fob3)))
     {
         nukiOpenerPreferences->end();
+        nukiOpenerInst->_nextLockAction = action;
         return LockActionResult::Success;
     }
 
@@ -541,7 +542,7 @@ void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action, const int& 
 
 void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *value)
 {
-    if(!_preferences->getBool(preference_admin_config_enabled)) return;
+    if(!_preferences->getBool(preference_admin_enabled)) return;
 
     if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
     {

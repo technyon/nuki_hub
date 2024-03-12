@@ -168,7 +168,7 @@ bool initPreferences()
                 {
                     case 0:
                         preferences->putBool(preference_keypad_control_enabled, true);
-                        preferences->putBool(preference_admin_config_enabled, true);
+                        preferences->putBool(preference_admin_enabled, true);
                         preferences->putBool(preference_acl_lock, true);
                         preferences->putBool(preference_acl_unlock, true);
                         preferences->putBool(preference_acl_unlatch, true);
@@ -189,7 +189,7 @@ bool initPreferences()
                         break;
                     case 1:
                         preferences->putBool(preference_keypad_control_enabled, false);
-                        preferences->putBool(preference_admin_config_enabled, false);
+                        preferences->putBool(preference_admin_enabled, false);
                         preferences->putBool(preference_acl_lock, true);
                         preferences->putBool(preference_acl_unlock, false);
                         preferences->putBool(preference_acl_unlatch, false);
@@ -210,7 +210,7 @@ bool initPreferences()
                         break;
                     case 3:
                         preferences->putBool(preference_keypad_control_enabled, false);
-                        preferences->putBool(preference_admin_config_enabled, false);
+                        preferences->putBool(preference_admin_enabled, false);
                         preferences->putBool(preference_acl_lock, true);
                         preferences->putBool(preference_acl_unlock, true);
                         preferences->putBool(preference_acl_unlatch, false);

@@ -43,7 +43,7 @@
 #define preference_query_interval_battery "batInterval"
 #define preference_query_interval_keypad "kpInterval"
 #define preference_access_level "accLvl"
-#define preference_admin_config_enabled "aclConfigEnabled"
+#define preference_admin_enabled "aclConfig"
 #define preference_keypad_info_enabled "kpInfoEnabled"
 #define preference_keypad_control_enabled "kpCntrlEnabled"
 #define preference_publish_authdata "pubAuth"
@@ -94,7 +94,7 @@ private:
             preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
             preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
-            preference_keypad_control_enabled, preference_admin_config_enabled, preference_keypad_info_enabled, preference_acl_lock,
+            preference_keypad_control_enabled, preference_admin_enabled, preference_keypad_info_enabled, preference_acl_lock,
             preference_acl_unlock, preference_acl_unlatch, preference_acl_lockngo, preference_acl_lockngo_unlatch, preference_acl_fulllock,
             preference_acl_lck_fob1, preference_acl_lck_fob2, preference_acl_lck_fob3, preference_acl_act_rto, preference_acl_deact_rto,
             preference_acl_act_esa, preference_acl_act_cm, preference_acl_deact_cm, preference_acl_opn_fob1, preference_acl_opn_fob2, preference_acl_opn_fob3,
@@ -112,7 +112,7 @@ private:
     std::vector<char*> _boolPrefs =
     {
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
-            preference_restart_on_disconnect, preference_keypad_control_enabled, preference_admin_config_enabled, preference_keypad_info_enabled, preference_acl_lock,
+            preference_restart_on_disconnect, preference_keypad_control_enabled, preference_admin_enabled, preference_keypad_info_enabled, preference_acl_lock,
             preference_acl_unlock, preference_acl_unlatch, preference_acl_lockngo, preference_acl_lockngo_unlatch, preference_acl_fulllock,
             preference_acl_lck_fob1, preference_acl_lck_fob2, preference_acl_lck_fob3, preference_acl_act_rto, preference_acl_deact_rto,
             preference_acl_act_esa, preference_acl_act_cm, preference_acl_deact_cm, preference_acl_opn_fob1, preference_acl_opn_fob2, preference_acl_opn_fob3, 
