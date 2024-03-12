@@ -439,11 +439,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_query_interval_keypad, value.toInt());
             configChanged = true;
         }
-        else if(key == "KPENA")
-        {
-            _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
-            configChanged = true;
-        }
         else if(key == "NRTRY")
         {
             _preferences->putInt(preference_command_nr_of_retries, value.toInt());
@@ -464,11 +459,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
             configChanged = true;
         }
-        else if(key == "PUBAUTH")
-        {
-            _preferences->putBool(preference_publish_authdata, (value == "1"));
-            configChanged = true;
-        }
         else if(key == "ACLCONFIG")
         {
             _preferences->putBool(preference_admin_config_enabled, (value == "1"));
@@ -479,6 +469,16 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "KPENA")
+        {
+            _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
+            configChanged = true;
+        }        
+        else if(key == "PUBAUTH")
+        {
+            _preferences->putBool(preference_publish_authdata, (value == "1"));
+            configChanged = true;
+        }        
         else if(key == "ACLLCKLCK")
         {
             _preferences->putBool(preference_acl_lock, (value == "1"));
@@ -940,7 +940,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
-    printCheckBox(response, "ACLCONFIG", "Change Lock/Opener configuration", _preferences->getBool(preference_admin_config_enabled));
+    printCheckBox(response, "ACLCONFIG", "Change Nuki configuration", _preferences->getBool(preference_admin_config_enabled));
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled));
