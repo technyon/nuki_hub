@@ -7,7 +7,7 @@
 #include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
-Preferences* preferences = nullptr;
+Preferences* nukiLockPreferences = nullptr;
 
 NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkLock* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
@@ -481,11 +481,16 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
         return LockActionResult::UnknownAction;
     }
 
-    if((action == NukiLock::LockAction::Lock && _aclLock) || (action == NukiLock::LockAction::Unlock && _aclUnlock) || (action == NukiLock::LockAction::Unlatch && _aclUnlatch) || (action == NukiLock::LockAction::LockNgo && _aclLockNGo) || (action == NukiLock::LockAction::LockNgoUnlatch && _aclLockNGoU) || (action == NukiLock::LockAction::FullLock && _aclFLock) || (action == NukiLock::LockAction::FobAction1 && _aclFob1) || (action == NukiLock::LockAction::FobAction2 && _aclFob2) || (action == NukiLock::LockAction::FobAction3 && _aclFob3))
+    nukiLockPreferences = new Preferences();
+    nukiLockPreferences->begin("nukihub", true);
+    
+    if((action == NukiLock::LockAction::Lock && nukiLockPreferences->getBool(preference_acl_lock)) || (action == NukiLock::LockAction::Unlock && nukiLockPreferences->getBool(preference_acl_unlock)) || (action == NukiLock::LockAction::Unlatch && nukiLockPreferences->getBool(preference_acl_unlatch)) || (action == NukiLock::LockAction::LockNgo && nukiLockPreferences->getBool(preference_acl_lockngo)) || (action == NukiLock::LockAction::LockNgoUnlatch && nukiLockPreferences->getBool(preference_acl_lockngo_unlatch)) || (action == NukiLock::LockAction::FullLock && nukiLockPreferences->getBool(preference_acl_fulllock)) || (action == NukiLock::LockAction::FobAction1 && nukiLockPreferences->getBool(preference_acl_lck_fob1)) || (action == NukiLock::LockAction::FobAction2 && nukiLockPreferences->getBool(preference_acl_lck_fob2)) || (action == NukiLock::LockAction::FobAction3 && nukiLockPreferences->getBool(preference_acl_lck_fob3)))
     {
+        nukiLockPreferences->end();
         return LockActionResult::Success;
     }
 
+    nukiLockPreferences->end();
     return LockActionResult::AccessDenied;
 }
 
