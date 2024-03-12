@@ -104,14 +104,7 @@ private:
     bool _nukiAdvancedConfigValid = false;
     bool _hassEnabled = false;
     bool _hassSetupCompleted = false;
-    bool _aclActRTO = false;
-    bool _aclDeactRTO = false;
-    bool _aclESA = false;
-    bool _aclActCM = false;
-    bool _aclDeactCM = false;
-    bool _aclFob1 = false;
-    bool _aclFob2 = false;
-    bool _aclFob3 = false;
+
     bool _paired = false;
     bool _statusUpdated = false;
     bool _hasKeypad = false;

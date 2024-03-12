@@ -7,6 +7,7 @@
 #include <NukiOpenerUtils.h>
 
 NukiOpenerWrapper* nukiOpenerInst;
+Preferences* nukiOpenerPreferences = nullptr;
 
 NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
@@ -59,15 +60,6 @@ void NukiOpenerWrapper::initialize()
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
-
-    _aclActRTO = _preferences->getBool(preference_acl_act_rto);
-    _aclDeactRTO = _preferences->getBool(preference_acl_deact_rto);
-    _aclESA = _preferences->getBool(preference_acl_act_esa);
-    _aclActCM = _preferences->getBool(preference_acl_act_cm);
-    _aclDeactCM = _preferences->getBool(preference_acl_deact_cm);
-    _aclFob1 = _preferences->getBool(preference_acl_opn_fob1);
-    _aclFob2 = _preferences->getBool(preference_acl_opn_fob2);
-    _aclFob3 = _preferences->getBool(preference_acl_opn_fob3);
 
     if(_retryDelay <= 100)
     {
@@ -499,11 +491,16 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
         return LockActionResult::UnknownAction;
     }
     
-    if((action == NukiOpener::LockAction::ActivateRTO && _preferences->getBool(preference_acl_act_rto)) || (action == NukiOpener::LockAction::DeactivateRTO && _preferences->getBool(preference_acl_deact_rto)) || (action == NukiOpener::LockAction::ElectricStrikeActuation && _preferences->getBool(preference_acl_act_esa)) || (action == NukiOpener::LockAction::ActivateCM && _preferences->getBool(preference_acl_act_cm)) || (action == NukiOpener::LockAction::DeactivateCM && _preferences->getBool(preference_acl_deact_cm)) || (action == NukiOpener::LockAction::FobAction1 && _preferences->getBool(preference_acl_opn_fob1)) || (action == NukiOpener::LockAction::FobAction2 && _preferences->getBool(preference_acl_opn_fob2)) || (action == NukiOpener::LockAction::FobAction3 && _preferences->getBool(preference_acl_opn_fob3)))
+    nukiOpenerPreferences = new Preferences();
+    nukiOpenerPreferences->begin("nukihub", true);
+    
+    if((action == NukiOpener::LockAction::ActivateRTO && nukiOpenerPreferences->getBool(preferenceaclactrto)) || (action == NukiOpener::LockAction::DeactivateRTO && nukiOpenerPreferences->getBool(preferenceacldeactrto)) || (action == NukiOpener::LockAction::ElectricStrikeActuation && nukiOpenerPreferences->getBool(preferenceaclactesa)) || (action == NukiOpener::LockAction::ActivateCM && nukiOpenerPreferences->getBool(preferenceaclactcm)) || (action == NukiOpener::LockAction::DeactivateCM && nukiOpenerPreferences->getBool(preferenceacldeactcm)) || (action == NukiOpener::LockAction::FobAction1 && nukiOpenerPreferences->getBool(preferenceaclopnfob1)) || (action == NukiOpener::LockAction::FobAction2 && nukiOpenerPreferences->getBool(preferenceaclopnfob2)) || (action == NukiOpener::LockAction::FobAction3 && nukiOpenerPreferences->getBool(preferenceaclopnfob3)))
     {
+        nukiOpenerPreferences->end();
         return LockActionResult::Success;
     }
 
+    nukiOpenerPreferences->end();
     return LockActionResult::AccessDenied;
 }
 

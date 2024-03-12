@@ -7,6 +7,7 @@
 #include <NukiLockUtils.h>
 
 NukiWrapper* nukiInst;
+Preferences* preferences = nullptr;
 
 NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkLock* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),

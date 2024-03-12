@@ -98,15 +98,7 @@ private:
     bool _nukiAdvancedConfigValid = false;
     bool _hassEnabled = false;
     bool _hassSetupCompleted = false;
-    bool _aclLock = false;
-    bool _aclUnlock = false;
-    bool _aclUnlatch = false;
-    bool _aclLockNGo = false;
-    bool _aclLockNGoU = false;
-    bool _aclFLock = false;
-    bool _aclFob1 = false;
-    bool _aclFob2 = false;
-    bool _aclFob3 = false;
+
     bool _paired = false;
     bool _statusUpdated = false;
     bool _hasKeypad = false;
