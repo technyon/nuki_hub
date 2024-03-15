@@ -461,7 +461,7 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
             configChanged = true;
         }
-        else if(key == "aclLvlChanged")
+        else if(key == "ACLLVLCHANGED")
         {
             aclLvlChanged = true;
         }
@@ -638,7 +638,7 @@ bool WebCfgServer::processArgs(String& message)
     
     if(aclLvlChanged)
     {
-        preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+        _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
         configChanged = true;
     }
 
@@ -935,7 +935,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
     response.concat("<form method=\"post\" action=\"savecfg\">");
-    response.concat("<input type=\"hidden\" name=\"aclLvlChanged\" value=\"1\">");
+    response.concat("<input type=\"hidden\" name=\"ACLLVLCHANGED\" value=\"1\">");
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
     printCheckBox(response, "ACLCNF", "Change Nuki configuration", _preferences->getBool(preference_admin_enabled));
@@ -951,15 +951,15 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         response.concat("<h3>Nuki Lock Access Control</h3>");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLLCKLCK", "Lock", (aclPrefs[0] == "1"));
-        printCheckBox(response, "ACLLCKUNLCK", "Unlock", (aclPrefs[1] == "1"));
-        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", (aclPrefs[2] == "1"));
-        printCheckBox(response, "ACLLCKLNG", "Lock N Go", (aclPrefs[3] == "1"));
-        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", (aclPrefs[4] == "1"));
-        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", (aclPrefs[5] == "1"));
-        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", (aclPrefs[6] == "1"));
-        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", (aclPrefs[7] == "1"));
-        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", (aclPrefs[8] == "1"));
+        printCheckBox(response, "ACLLCKLCK", "Lock", ((int)aclPrefs[0] == 1));
+        printCheckBox(response, "ACLLCKUNLCK", "Unlock", ((int)aclPrefs[1] == 1));
+        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", ((int)aclPrefs[2] == 1));
+        printCheckBox(response, "ACLLCKLNG", "Lock N Go", ((int)aclPrefs[3] == 1));
+        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", ((int)aclPrefs[4] == 1));
+        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", ((int)aclPrefs[5] == 1));
+        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", ((int)aclPrefs[6] == 1));
+        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", ((int)aclPrefs[7] == 1));
+        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", ((int)aclPrefs[8] == 1));
         response.concat("</table><br>");
     }
     if(_nukiOpener != nullptr)
@@ -967,14 +967,14 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         response.concat("<h3>Nuki Opener Access Control</h3>");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", (aclPrefs[9] == "1"));
-        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", (aclPrefs[10] == "1"));
-        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", (aclPrefs[11] == "1"));
-        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", (aclPrefs[12] == "1"));
-        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", (aclPrefs[13] == "1"));
-        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", (aclPrefs[14] == "1"));
-        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", (aclPrefs[15] == "1"));
-        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", (aclPrefs[16] == "1"));
+        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", ((int)aclPrefs[9] == 1));
+        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", ((int)aclPrefs[10] == 1));
+        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", ((int)aclPrefs[11] == 1));
+        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", ((int)aclPrefs[12] == 1));
+        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", ((int)aclPrefs[13] == 1));
+        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", ((int)aclPrefs[14] == 1));
+        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", ((int)aclPrefs[15] == 1));
+        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", ((int)aclPrefs[16] == 1));
         response.concat("</table><br>");
     }
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");

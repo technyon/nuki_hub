@@ -502,9 +502,9 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
     nukiOpenerPreferences = new Preferences();
     nukiOpenerPreferences->begin("nukihub", true);
     uint32_t aclPrefs[17];
-    nukiLockPreferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    nukiOpenerPreferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
     
-    if((action == NukiOpener::LockAction::ActivateRTO && aclPrefs[9] == 1) || (action == NukiOpener::LockAction::DeactivateRTO && aclPrefs[10] == 1) || (action == NukiOpener::LockAction::ElectricStrikeActuation && aclPrefs[11] == 1) || (action == NukiOpener::LockAction::ActivateCM && aclPrefs[12] == 1) || (action == NukiOpener::LockAction::DeactivateCM && aclPrefs[13] == 1) || (action == NukiOpener::LockAction::FobAction1 && aclPrefs[14] == 1) || (action == NukiOpener::LockAction::FobAction2 && aclPrefs[15] == 1) || (action == NukiOpener::LockAction::FobAction3 && aclPrefs[16] == 1))
+    if((action == NukiOpener::LockAction::ActivateRTO && (int)aclPrefs[9] == 1) || (action == NukiOpener::LockAction::DeactivateRTO && (int)aclPrefs[10] == 1) || (action == NukiOpener::LockAction::ElectricStrikeActuation && (int)aclPrefs[11] == 1) || (action == NukiOpener::LockAction::ActivateCM && (int)aclPrefs[12] == 1) || (action == NukiOpener::LockAction::DeactivateCM && (int)aclPrefs[13] == 1) || (action == NukiOpener::LockAction::FobAction1 && (int)aclPrefs[14] == 1) || (action == NukiOpener::LockAction::FobAction2 && (int)aclPrefs[15] == 1) || (action == NukiOpener::LockAction::FobAction3 && (int)aclPrefs[16] == 1))
     {
         nukiOpenerPreferences->end();
         nukiOpenerInst->_nextLockAction = action;
