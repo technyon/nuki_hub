@@ -68,25 +68,10 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_command_retry_delay, 1000);
         _preferences->putInt(preference_restart_ble_beacon_lost, 60);
         _preferences->putBool(preference_admin_enabled, true);
-        _preferences->putBool(preference_acl_lock, true);
-        _preferences->putBool(preference_acl_unlock, true);
-        _preferences->putBool(preference_acl_unlatch, true);
-        _preferences->putBool(preference_acl_lockngo, true);
-        _preferences->putBool(preference_acl_lockngo_unlatch, true);
-        _preferences->putBool(preference_acl_fulllock, true);
-        _preferences->putBool(preference_acl_lck_fob1, true);
-        _preferences->putBool(preference_acl_lck_fob2, true);
-        _preferences->putBool(preference_acl_lck_fob3, true);
-        _preferences->putBool(preference_acl_act_rto, true);
-        _preferences->putBool(preference_acl_deact_rto, true);
-        _preferences->putBool(preference_acl_act_esa, true);
-        _preferences->putBool(preference_acl_act_cm, true);
-        _preferences->putBool(preference_acl_deact_cm, true);
-        _preferences->putBool(preference_acl_opn_fob1, true);
-        _preferences->putBool(preference_acl_opn_fob2, true);
-        _preferences->putBool(preference_acl_opn_fob3, true);
+        uint32_t aclPrefs[17] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
     }
-    
+
     if(_retryDelay <= 100)
     {
         _retryDelay = 100;
@@ -483,8 +468,10 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 
     nukiLockPreferences = new Preferences();
     nukiLockPreferences->begin("nukihub", true);
-    
-    if((action == NukiLock::LockAction::Lock && nukiLockPreferences->getBool(preference_acl_lock)) || (action == NukiLock::LockAction::Unlock && nukiLockPreferences->getBool(preference_acl_unlock)) || (action == NukiLock::LockAction::Unlatch && nukiLockPreferences->getBool(preference_acl_unlatch)) || (action == NukiLock::LockAction::LockNgo && nukiLockPreferences->getBool(preference_acl_lockngo)) || (action == NukiLock::LockAction::LockNgoUnlatch && nukiLockPreferences->getBool(preference_acl_lockngo_unlatch)) || (action == NukiLock::LockAction::FullLock && nukiLockPreferences->getBool(preference_acl_fulllock)) || (action == NukiLock::LockAction::FobAction1 && nukiLockPreferences->getBool(preference_acl_lck_fob1)) || (action == NukiLock::LockAction::FobAction2 && nukiLockPreferences->getBool(preference_acl_lck_fob2)) || (action == NukiLock::LockAction::FobAction3 && nukiLockPreferences->getBool(preference_acl_lck_fob3)))
+    uint32_t aclPrefs[17];
+    nukiLockPreferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+
+    if((action == NukiLock::LockAction::Lock && aclPrefs[0] == 1) || (action == NukiLock::LockAction::Unlock && aclPrefs[1] == 1) || (action == NukiLock::LockAction::Unlatch && aclPrefs[2] == 1) || (action == NukiLock::LockAction::LockNgo && aclPrefs[3] == 1) || (action == NukiLock::LockAction::LockNgoUnlatch && aclPrefs[4] == 1) || (action == NukiLock::LockAction::FullLock && aclPrefs[5] == 1) || (action == NukiLock::LockAction::FobAction1 && aclPrefs[6] == 1) || (action == NukiLock::LockAction::FobAction2 && aclPrefs[7] == 1) || (action == NukiLock::LockAction::FobAction3 && aclPrefs[8] == 1))
     {
         nukiLockPreferences->end();
         nukiInst->_nextLockAction = action;

@@ -493,8 +493,10 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
     
     nukiOpenerPreferences = new Preferences();
     nukiOpenerPreferences->begin("nukihub", true);
+    uint32_t aclPrefs[17];
+    nukiLockPreferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
     
-    if((action == NukiOpener::LockAction::ActivateRTO && nukiOpenerPreferences->getBool(preference_acl_act_rto)) || (action == NukiOpener::LockAction::DeactivateRTO && nukiOpenerPreferences->getBool(preference_acl_deact_rto)) || (action == NukiOpener::LockAction::ElectricStrikeActuation && nukiOpenerPreferences->getBool(preference_acl_act_esa)) || (action == NukiOpener::LockAction::ActivateCM && nukiOpenerPreferences->getBool(preference_acl_act_cm)) || (action == NukiOpener::LockAction::DeactivateCM && nukiOpenerPreferences->getBool(preference_acl_deact_cm)) || (action == NukiOpener::LockAction::FobAction1 && nukiOpenerPreferences->getBool(preference_acl_opn_fob1)) || (action == NukiOpener::LockAction::FobAction2 && nukiOpenerPreferences->getBool(preference_acl_opn_fob2)) || (action == NukiOpener::LockAction::FobAction3 && nukiOpenerPreferences->getBool(preference_acl_opn_fob3)))
+    if((action == NukiOpener::LockAction::ActivateRTO && aclPrefs[9] == 1) || (action == NukiOpener::LockAction::DeactivateRTO && aclPrefs[10] == 1) || (action == NukiOpener::LockAction::ElectricStrikeActuation && aclPrefs[11] == 1) || (action == NukiOpener::LockAction::ActivateCM && aclPrefs[12] == 1) || (action == NukiOpener::LockAction::DeactivateCM && aclPrefs[13] == 1) || (action == NukiOpener::LockAction::FobAction1 && aclPrefs[14] == 1) || (action == NukiOpener::LockAction::FobAction2 && aclPrefs[15] == 1) || (action == NukiOpener::LockAction::FobAction3 && aclPrefs[16] == 1))
     {
         nukiOpenerPreferences->end();
         nukiOpenerInst->_nextLockAction = action;

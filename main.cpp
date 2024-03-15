@@ -163,73 +163,38 @@ bool initPreferences()
                 {
                     preferences->putBool(preference_keypad_info_enabled, false);
                 }
-                
+
+                uint32_t aclPrefs[17];
+
                 switch(preferences->getInt(preference_access_level))
                 {
                     case 0:
                         preferences->putBool(preference_keypad_control_enabled, true);
                         preferences->putBool(preference_admin_enabled, true);
-                        preferences->putBool(preference_acl_lock, true);
-                        preferences->putBool(preference_acl_unlock, true);
-                        preferences->putBool(preference_acl_unlatch, true);
-                        preferences->putBool(preference_acl_lockngo, true);
-                        preferences->putBool(preference_acl_lockngo_unlatch, true);
-                        preferences->putBool(preference_acl_fulllock, true);
-                        preferences->putBool(preference_acl_lck_fob1, true);
-                        preferences->putBool(preference_acl_lck_fob2, true);
-                        preferences->putBool(preference_acl_lck_fob3, true);
-                        preferences->putBool(preference_acl_act_rto, true);
-                        preferences->putBool(preference_acl_deact_rto, true);
-                        preferences->putBool(preference_acl_act_esa, true);
-                        preferences->putBool(preference_acl_act_cm, true);
-                        preferences->putBool(preference_acl_deact_cm, true);
-                        preferences->putBool(preference_acl_opn_fob1, true);
-                        preferences->putBool(preference_acl_opn_fob2, true);
-                        preferences->putBool(preference_acl_opn_fob3, true);
+
+                        aclPrefs = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
                         break;
                     case 1:
                         preferences->putBool(preference_keypad_control_enabled, false);
                         preferences->putBool(preference_admin_enabled, false);
-                        preferences->putBool(preference_acl_lock, true);
-                        preferences->putBool(preference_acl_unlock, false);
-                        preferences->putBool(preference_acl_unlatch, false);
-                        preferences->putBool(preference_acl_lockngo, false);
-                        preferences->putBool(preference_acl_lockngo_unlatch, false);
-                        preferences->putBool(preference_acl_fulllock, true);
-                        preferences->putBool(preference_acl_lck_fob1, false);
-                        preferences->putBool(preference_acl_lck_fob2, false);
-                        preferences->putBool(preference_acl_lck_fob3, false);
-                        preferences->putBool(preference_acl_act_rto, false);
-                        preferences->putBool(preference_acl_deact_rto, true);
-                        preferences->putBool(preference_acl_act_esa, false);
-                        preferences->putBool(preference_acl_act_cm, false);
-                        preferences->putBool(preference_acl_deact_cm, true);
-                        preferences->putBool(preference_acl_opn_fob1, false);
-                        preferences->putBool(preference_acl_opn_fob2, false);
-                        preferences->putBool(preference_acl_opn_fob3, false);
+
+                        aclPrefs = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0};
+                        break;
+                    case 2:
+                        preferences->putBool(preference_keypad_control_enabled, false);
+                        preferences->putBool(preference_admin_enabled, false);
+
+                        aclPrefs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
                         break;
                     case 3:
                         preferences->putBool(preference_keypad_control_enabled, false);
                         preferences->putBool(preference_admin_enabled, false);
-                        preferences->putBool(preference_acl_lock, true);
-                        preferences->putBool(preference_acl_unlock, true);
-                        preferences->putBool(preference_acl_unlatch, false);
-                        preferences->putBool(preference_acl_lockngo, true);
-                        preferences->putBool(preference_acl_lockngo_unlatch, false);
-                        preferences->putBool(preference_acl_fulllock, true);
-                        preferences->putBool(preference_acl_lck_fob1, false);
-                        preferences->putBool(preference_acl_lck_fob2, false);
-                        preferences->putBool(preference_acl_lck_fob3, false);
-                        preferences->putBool(preference_acl_act_rto, true);
-                        preferences->putBool(preference_acl_deact_rto, true);
-                        preferences->putBool(preference_acl_act_esa, false);
-                        preferences->putBool(preference_acl_act_cm, true);
-                        preferences->putBool(preference_acl_deact_cm, true);
-                        preferences->putBool(preference_acl_opn_fob1, false);
-                        preferences->putBool(preference_acl_opn_fob2, false);
-                        preferences->putBool(preference_acl_opn_fob3, false);
+
+                        aclPrefs = {1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0};
                         break;
                 }
+
+                preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
             }
 
             preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);

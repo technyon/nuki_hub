@@ -259,8 +259,10 @@ void WebCfgServer::initialize()
 bool WebCfgServer::processArgs(String& message)
 {
     bool configChanged = false;
+    bool aclLvlChanged = false;
     bool clearMqttCredentials = false;
     bool clearCredentials = false;
+    uint32_t aclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     int count = _server.args();
 
@@ -459,6 +461,10 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
             configChanged = true;
         }
+        else if(key == "aclLvlChanged")
+        {
+            aclLvlChanged = true;
+        }
         else if(key == "ACLCNF")
         {
             _preferences->putBool(preference_admin_enabled, (value == "1"));
@@ -473,96 +479,79 @@ bool WebCfgServer::processArgs(String& message)
         {
             _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
             configChanged = true;
-        }        
+        }
         else if(key == "PUBAUTH")
         {
             _preferences->putBool(preference_publish_authdata, (value == "1"));
             configChanged = true;
-        }        
+        }
         else if(key == "ACLLCKLCK")
         {
-            _preferences->putBool(preference_acl_lock, (value == "1"));
-            configChanged = true;
+            aclPrefs[0] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKUNLCK")
         {
-            _preferences->putBool(preference_acl_unlock, (value == "1"));
-            configChanged = true;
+            aclPrefs[1] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKUNLTCH")
         {
-            _preferences->putBool(preference_acl_unlatch, (value == "1"));
-            configChanged = true;
+            aclPrefs[2] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKLNG")
         {
-            _preferences->putBool(preference_acl_lockngo, (value == "1"));
-            configChanged = true;
+            aclPrefs[3] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKLNGU")
         {
-            _preferences->putBool(preference_acl_lockngo_unlatch, (value == "1"));
-            configChanged = true;
+            aclPrefs[4] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKFLLCK")
         {
-            _preferences->putBool(preference_acl_fulllock, (value == "1"));
-            configChanged = true;
+            aclPrefs[5] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKFOB1")
         {
-            _preferences->putBool(preference_acl_lck_fob1, (value == "1"));
-            configChanged = true;
+            aclPrefs[6] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKFOB2")
         {
-            _preferences->putBool(preference_acl_lck_fob2, (value == "1"));
-            configChanged = true;
+            aclPrefs[7] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLLCKFOB3")
         {
-            _preferences->putBool(preference_acl_lck_fob3, (value == "1"));
-            configChanged = true;
+            aclPrefs[8] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNUNLCK")
         {
-            _preferences->putBool(preference_acl_act_rto, (value == "1"));
-            configChanged = true;
+            aclPrefs[9] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNLCK")
         {
-            _preferences->putBool(preference_acl_deact_rto, (value == "1"));
-            configChanged = true;
+            aclPrefs[10] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNUNLTCH")
         {
-            _preferences->putBool(preference_acl_act_esa, (value == "1"));
-            configChanged = true;
+            aclPrefs[11] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNUNLCKCM")
         {
-            _preferences->putBool(preference_acl_act_cm, (value == "1"));
-            configChanged = true;
+            aclPrefs[12] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNLCKCM")
         {
-            _preferences->putBool(preference_acl_deact_cm, (value == "1"));
-            configChanged = true;
+            aclPrefs[13] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNFOB1")
         {
-            _preferences->putBool(preference_acl_opn_fob1, (value == "1"));
-            configChanged = true;
+            aclPrefs[14] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNFOB2")
         {
-            _preferences->putBool(preference_acl_opn_fob2, (value == "1"));
-            configChanged = true;
+            aclPrefs[15] = ((value == "1") ? 1 : 0);
         }
         else if(key == "ACLOPNFOB3")
         {
-            _preferences->putBool(preference_acl_opn_fob3, (value == "1"));
-            configChanged = true;
+            aclPrefs[16] = ((value == "1") ? 1 : 0);
         }
         else if(key == "REGAPP")
         {
@@ -644,6 +633,12 @@ bool WebCfgServer::processArgs(String& message)
     {
         _preferences->putString(preference_cred_user, "");
         _preferences->putString(preference_cred_password, "");
+        configChanged = true;
+    }
+    
+    if(aclLvlChanged)
+    {
+        preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
         configChanged = true;
     }
 
@@ -936,8 +931,11 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
 void WebCfgServer::buildAccLvlHtml(String &response)
 {
     buildHtmlHeader(response);
+    uint32_t aclPrefs[17];
+    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
     response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<input type=\"hidden\" name=\"aclLvlChanged\" value=\"1\">");
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
     printCheckBox(response, "ACLCNF", "Change Nuki configuration", _preferences->getBool(preference_admin_enabled));
@@ -953,15 +951,15 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         response.concat("<h3>Nuki Lock Access Control</h3>");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLLCKLCK", "Lock", _preferences->getBool(preference_acl_lock));
-        printCheckBox(response, "ACLLCKUNLCK", "Unlock", _preferences->getBool(preference_acl_unlock));
-        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", _preferences->getBool(preference_acl_unlatch));
-        printCheckBox(response, "ACLLCKLNG", "Lock N Go", _preferences->getBool(preference_acl_lockngo));
-        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", _preferences->getBool(preference_acl_lockngo_unlatch));
-        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", _preferences->getBool(preference_acl_fulllock));
-        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", _preferences->getBool(preference_acl_lck_fob1));
-        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", _preferences->getBool(preference_acl_lck_fob2));
-        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", _preferences->getBool(preference_acl_lck_fob3));
+        printCheckBox(response, "ACLLCKLCK", "Lock", (aclPrefs[0] == "1"));
+        printCheckBox(response, "ACLLCKUNLCK", "Unlock", (aclPrefs[1] == "1"));
+        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", (aclPrefs[2] == "1"));
+        printCheckBox(response, "ACLLCKLNG", "Lock N Go", (aclPrefs[3] == "1"));
+        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", (aclPrefs[4] == "1"));
+        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", (aclPrefs[5] == "1"));
+        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", (aclPrefs[6] == "1"));
+        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", (aclPrefs[7] == "1"));
+        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", (aclPrefs[8] == "1"));
         response.concat("</table><br>");
     }
     if(_nukiOpener != nullptr)
@@ -969,14 +967,14 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         response.concat("<h3>Nuki Opener Access Control</h3>");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", _preferences->getBool(preference_acl_act_rto));
-        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", _preferences->getBool(preference_acl_deact_rto));
-        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", _preferences->getBool(preference_acl_act_esa));
-        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", _preferences->getBool(preference_acl_act_cm));
-        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", _preferences->getBool(preference_acl_deact_cm));
-        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", _preferences->getBool(preference_acl_opn_fob1));
-        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", _preferences->getBool(preference_acl_opn_fob2));
-        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", _preferences->getBool(preference_acl_opn_fob3));
+        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", (aclPrefs[9] == "1"));
+        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", (aclPrefs[10] == "1"));
+        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", (aclPrefs[11] == "1"));
+        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", (aclPrefs[12] == "1"));
+        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", (aclPrefs[13] == "1"));
+        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", (aclPrefs[14] == "1"));
+        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", (aclPrefs[15] == "1"));
+        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", (aclPrefs[16] == "1"));
         response.concat("</table><br>");
     }
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
