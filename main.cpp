@@ -153,11 +153,57 @@ bool initPreferences()
 
         if(configVer < (atof(NUKI_HUB_VERSION) * 100))
         {
-            //Example
-            //if (configVer < 833)
-            //{
-                //MIGRATE SETTINGS
-            //}
+            if (configVer < 834)
+            {
+                if(preferences->getInt(preference_keypad_control_enabled))
+                {
+                    preferences->putBool(preference_keypad_info_enabled, true);
+                }
+                else
+                {
+                    preferences->putBool(preference_keypad_info_enabled, false);
+                }
+
+                switch(preferences->getInt(preference_access_level))
+                {
+                    case 0:
+                        {
+                            preferences->putBool(preference_keypad_control_enabled, true);
+                            preferences->putBool(preference_admin_enabled, true);
+
+                            uint32_t aclPrefs[17] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+                            preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+                            break;
+                        }
+                    case 1:
+                        {
+                            preferences->putBool(preference_keypad_control_enabled, false);
+                            preferences->putBool(preference_admin_enabled, false);
+
+                            uint32_t aclPrefs[17] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0};
+                            preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+                            break;
+                        }
+                    case 2:
+                        {
+                            preferences->putBool(preference_keypad_control_enabled, false);
+                            preferences->putBool(preference_admin_enabled, false);
+
+                            uint32_t aclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                            preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+                            break;
+                        }
+                    case 3:
+                        {
+                            preferences->putBool(preference_keypad_control_enabled, false);
+                            preferences->putBool(preference_admin_enabled, false);
+
+                            uint32_t aclPrefs[17] = {1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0};
+                            preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+                            break;
+                        }
+                }                
+            }
 
             preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);
         }

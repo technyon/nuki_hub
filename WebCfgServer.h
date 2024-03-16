@@ -37,6 +37,7 @@ private:
     bool processArgs(String& message);
     void processGpioArgs();
     void buildHtml(String& response);
+    void buildAccLvlHtml(String& response);
     void buildCredHtml(String& response);
     void buildOtaHtml(String& response, bool errored);
     void buildOtaCompletedHtml(String& response);
@@ -60,7 +61,6 @@ private:
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
-    const std::vector<std::pair<String, String>> getAccessLevelOptions() const;
     String getPreselectionForGpio(const uint8_t& pin);
 
     void printParameter(String& response, const char* description, const char* value, const char *link = "");
