@@ -146,6 +146,10 @@ bool initPreferences()
     {
         preferences->putBool(preference_started_before, true);
         preferences->putBool(preference_lock_enabled, true);
+        preferences->putBool(preference_admin_enabled, true);
+
+        uint32_t aclPrefs[17] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
     }
     else
     {
