@@ -130,8 +130,11 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 - Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0)
 - MQTT Nuki Smartlock Path (Lock only): Set to the preferred MQTT root topic for the Nuki Lock, defaults to "nuki". Make sure this topic is not the same as the setting for the opener and is unique when using multiple Nuki Hub devices (when using multiple Nuki Locks)
+- Force Lock Keypad availability (Lock only): Enable to force availability of a Nuki Keypad connected to the lock. When disabled keypad can be considered not available (for a short period) and lead to removal from Home Assistant discovery in certain cases.
+- Force Lock Door Sensor availability (Lock only): Enable to force availability of a Nuki Door Sensor connected to the lock. When disabled door sensor can be considered not available (for a short period) and lead to removal from Home Assistant discovery in certain cases.
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
 - MQTT Nuki Opener Path (Opener only): Set to the preferred MQTT root topic for the Nuki Opener, defaults to "nukiopener". Make sure this topic is not the same as the setting for the lock and is unique when using multiple Nuki Hub devices (when using multiple Nuki Openers)
+- Force Opener Keypad availability (Opener only): Enable to force availability of a Nuki Keypad connected to the opener. When disabled keypad can be considered not available (for a short period) and lead to removal from Home Assistant discovery in certain cases.
 
 #### Advanced Nuki Configuration
 
