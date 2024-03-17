@@ -568,6 +568,21 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_opener_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "LCKFORCEDRSNSR")
+        {
+            _preferences->putBool(preference_lock_force_doorsensor, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "LCKFORCEKPAD")
+        {
+            _preferences->putBool(preference_lock_force_keypad, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "OPFORCEKPAD")
+        {
+            _preferences->putBool(preference_opener_force_keypad, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "CREDUSER")
         {
             if(value == "#")
