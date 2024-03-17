@@ -93,6 +93,7 @@ private:
         preference_mqtt_user, preference_mqtt_password,
         preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key,
         preference_cred_user, preference_cred_password,
+        preference_nuki_id_lock, preference_nuki_id_opener,
     };
     std::vector<char*> _boolPrefs =
     {
