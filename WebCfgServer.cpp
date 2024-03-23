@@ -568,21 +568,6 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_opener_enabled, (value == "1"));
             configChanged = true;
         }
-        else if(key == "LCKFORCEDRSNSR")
-        {
-            _preferences->putBool(preference_lock_force_doorsensor, (value == "1"));
-            configChanged = true;
-        }
-        else if(key == "LCKFORCEKPAD")
-        {
-            _preferences->putBool(preference_lock_force_keypad, (value == "1"));
-            configChanged = true;
-        }
-        else if(key == "OPFORCEKPAD")
-        {
-            _preferences->putBool(preference_opener_force_keypad, (value == "1"));
-            configChanged = true;
-        }
         else if(key == "CREDUSER")
         {
             if(value == "#")
@@ -954,7 +939,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
     printCheckBox(response, "ACLCNF", "Change Nuki configuration", _preferences->getBool(preference_admin_enabled));
-    if((_nuki != nullptr && (_preferences->getString(preference_lock_force_keypad) || _nuki->hasKeypad())) || (_nukiOpener != nullptr && (_preferences->getString(preference_opener_force_keypad) || _nukiOpener->hasKeypad())))
+    if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled));
         printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled));
@@ -1008,14 +993,11 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     if(_preferences->getBool(preference_lock_enabled))
     {
         printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
-        printCheckBox(response, "LCKFORCEKPAD", "Force Lock Keypad availability", _preferences->getBool(preference_lock_force_keypad));
-        printCheckBox(response, "LCKFORCEDRSNSR", "Force Lock Door Sensor availability", _preferences->getBool(preference_lock_force_doorsensor));
     }
     printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled));
     if(_preferences->getBool(preference_opener_enabled))
     {
         printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
-        printCheckBox(response, "OPFORCEKPAD", "Force Opener Keypad availability", _preferences->getBool(preference_opener_force_keypad));
     }
     response.concat("</table><br>");
 
@@ -1025,7 +1007,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
     printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10);
     printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
-    if((_nuki != nullptr && (_preferences->getString(preference_lock_force_keypad) || _nuki->hasKeypad())) || (_nukiOpener != nullptr && (_preferences->getString(preference_opener_force_keypad) || _nukiOpener->hasKeypad())))
+    if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
     }
