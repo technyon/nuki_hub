@@ -396,10 +396,11 @@ void NukiOpenerWrapper::updateConfig()
     readConfig();
     readAdvancedConfig();
     _configRead = true;
+    bool expectedConfig = true;
 
     if(_nukiConfigValid)
     {
-        if(_preferences->getUInt(preference_nuki_id_opener, 0) == 0)
+        if(_preferences->getUInt(preference_nuki_id_opener, 0) == 0 || _retryConfigCount == 10)
         {
             _preferences->putUInt(preference_nuki_id_opener, _nukiConfig.nukiId);
         }
@@ -410,11 +411,33 @@ void NukiOpenerWrapper::updateConfig()
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
             _network->publishConfig(_nukiConfig);
+            _retryConfigCount = 0;
         }
+        else
+        {
+            expectedConfig = false;
+            ++_retryConfigCount;
+        }
+    }
+    else
+    {
+        expectedConfig = false;
+        ++_retryConfigCount;
     }
     if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_opener, 0) == _nukiConfig.nukiId)
     {
         _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        _retryConfigCount = 0;
+    }
+    else
+    {
+        expectedConfig = false;
+        ++_retryConfigCount;
+    }
+    if(!expectedConfig && _retryConfigCount < 11)
+    {
+        unsigned long ts = millis();
+        _nextConfigUpdateTs = ts + 60000;
     }
 }
 
