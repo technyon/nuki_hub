@@ -15,7 +15,9 @@ Feel free to join us on Discord: https://discord.gg/feB9FnMY
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Any dual-core ESP32, except the ESP32-S3 (because of compilation issues)
+- All dual-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.14 should work, but builds are currently only provided for the ESP32 and not for the ESP32-S3 or ESP32-C3.
+- The ESP32-S2 has no BLE and as such can't run Nuki Hub.
+- The ESP32-C6 and ESP32-H2 are not supported by Arduino Core 2.0.14 as such can't run Nuki Hub (at this time).
 
 <b>Supported Nuki devices:</b>
 - Nuki Smart Lock 1.0
