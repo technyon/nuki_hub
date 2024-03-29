@@ -547,9 +547,56 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
     return LockActionResult::AccessDenied;
 }
 
-void NukiOpenerWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
+ConfigUpdateResult NukiOpenerWrapper::onConfigUpdateReceivedCallback(const char *value)
 {
-    nukiOpenerInst->onConfigUpdateReceived(topic, value);
+    nukiOpenerPreferences = new Preferences();
+    nukiOpenerPreferences->begin("nukihub", true);
+    uint32_t basicOpenerConfigAclPrefs[16];
+    nukiOpenerPreferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
+    uint32_t advancedOpenerConfigAclPrefs[22];
+    nukiOpenerPreferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
+
+    /*
+    if(!nukiOpenerPreferences->getBool(preference_admin_enabled))
+    {
+        nukiOpenerPreferences->end();
+        return ConfigUpdateResult::AccessDenied;
+    }
+    
+    if((action == NukiOpener::LockAction::ActivateRTO && (int)aclPrefs[9] == 1) || (action == NukiOpener::LockAction::DeactivateRTO && (int)aclPrefs[10] == 1) || (action == NukiOpener::LockAction::ElectricStrikeActuation && (int)aclPrefs[11] == 1) || (action == NukiOpener::LockAction::ActivateCM && (int)aclPrefs[12] == 1) || (action == NukiOpener::LockAction::DeactivateCM && (int)aclPrefs[13] == 1) || (action == NukiOpener::LockAction::FobAction1 && (int)aclPrefs[14] == 1) || (action == NukiOpener::LockAction::FobAction2 && (int)aclPrefs[15] == 1) || (action == NukiOpener::LockAction::FobAction3 && (int)aclPrefs[16] == 1))
+    {
+        nukiOpenerPreferences->end();
+        nukiOpenerInst->_nextLockAction = action;
+        return ConfigUpdateResult::Success;
+    }
+
+    if((int)action == 0xff)
+    {
+        return ConfigUpdateResult::UnknownAction;
+    }
+
+    if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
+    {
+        bool newValue = atoi(value) > 0;
+        if(!_nukiConfigValid || _nukiConfig.buttonEnabled == newValue) return;
+        _nukiOpener.enableButton(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
+    if(strcmp(topic, mqtt_topic_config_led_enabled) == 0)
+    {
+        bool newValue = atoi(value) > 0;
+        if(!_nukiConfigValid || _nukiConfig.ledFlashEnabled == newValue) return;
+        _nukiOpener.enableLedFlash(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
+    if(strcmp(topic, mqtt_topic_config_sound_level) == 0)
+    {
+        uint8_t newValue = atoi(value);
+        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.soundLevel == newValue) return;
+        _nukiOpener.setSoundLevel(newValue);
+        _nextConfigUpdateTs = millis() + 300;
+    }
+    */
 }
 
 void NukiOpenerWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
@@ -579,33 +626,6 @@ void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action, const int& 
         case GpioAction::DeactivateCM:
             nukiOpenerInst->deactivateCM();
             break;
-    }
-}
-
-void NukiOpenerWrapper::onConfigUpdateReceived(const char *topic, const char *value)
-{
-    if(!_preferences->getBool(preference_admin_enabled)) return;
-
-    if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
-    {
-        bool newValue = atoi(value) > 0;
-        if(!_nukiConfigValid || _nukiConfig.buttonEnabled == newValue) return;
-        _nukiOpener.enableButton(newValue);
-        _nextConfigUpdateTs = millis() + 300;
-    }
-    if(strcmp(topic, mqtt_topic_config_led_enabled) == 0)
-    {
-        bool newValue = atoi(value) > 0;
-        if(!_nukiConfigValid || _nukiConfig.ledFlashEnabled == newValue) return;
-        _nukiOpener.enableLedFlash(newValue);
-        _nextConfigUpdateTs = millis() + 300;
-    }
-    if(strcmp(topic, mqtt_topic_config_sound_level) == 0)
-    {
-        uint8_t newValue = atoi(value);
-        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.soundLevel == newValue) return;
-        _nukiOpener.setSoundLevel(newValue);
-        _nextConfigUpdateTs = millis() + 300;
     }
 }
 

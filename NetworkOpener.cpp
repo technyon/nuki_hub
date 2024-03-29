@@ -12,11 +12,6 @@ NetworkOpener::NetworkOpener(Network* network, Preferences* preferences, char* b
           _buffer(buffer),
           _bufferSize(bufferSize)
 {
-    _configTopics.reserve(5);
-    _configTopics.push_back(mqtt_topic_config_button_enabled);
-    _configTopics.push_back(mqtt_topic_config_led_enabled);
-    _configTopics.push_back(mqtt_topic_config_sound_level);
-
     _network->registerMqttReceiver(this);
 }
 
@@ -41,10 +36,9 @@ void NetworkOpener::initialize()
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
-    for(const auto& topic : _configTopics)
-    {
-        _network->subscribe(_mqttPath, topic);
-    }
+
+    _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
+    _network->subscribe(_mqttPath, mqtt_topic_config_action);
 
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
@@ -183,14 +177,37 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
         publishString(mqtt_topic_query_battery, "0");
     }
 
-    for(auto configTopic : _configTopics)
+    if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
-        if(comparePrefixedPath(topic, configTopic))
+        if(strcmp(value, "") == 0 ||
+           strcmp(value, "--") == 0 ||
+           strcmp(value, "ack") == 0 ||
+           strcmp(value, "unknown_action") == 0 ||
+           strcmp(value, "denied") == 0 ||
+           strcmp(value, "error") == 0) return;
+
+        Log->print(F("Config action received: "));
+        Log->println(value);
+        ConfigUpdateResult configUpdateResult = ConfigUpdateResult::Failed;
+        if(_configUpdateReceivedCallback != NULL)
         {
-            if(_configUpdateReceivedCallback != nullptr)
-            {
-                _configUpdateReceivedCallback(configTopic, value);
-            }
+            configUpdateResult = _configUpdateReceivedCallback(value);
+        }
+
+        switch(configUpdateResult)
+        {
+            case ConfigUpdateResult::Success:
+                publishString(mqtt_topic_config_action, "ack");
+                break;
+            case ConfigUpdateResult::UnknownAction:
+                publishString(mqtt_topic_config_action, "unknown_action");
+                break;
+            case ConfigUpdateResult::AccessDenied:
+                publishString(mqtt_topic_config_action, "denied");
+                break;
+            case ConfigUpdateResult::Failed:
+                publishString(mqtt_topic_config_action, "error");
+                break;
         }
     }
 }
@@ -282,7 +299,7 @@ void NetworkOpener::publishRing(const bool locked)
     {
         publishString(mqtt_topic_lock_ring, "ring");
     }
-    
+
     publishString(mqtt_topic_lock_binary_ring, "ring");
     _resetRingStateTs = millis() + 2000;
 }
@@ -503,6 +520,35 @@ void NetworkOpener::publishBatteryReport(const NukiOpener::BatteryReport& batter
 
 void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 {
+    DynamicJsonDocument json(_bufferSize);
+
+    char uidString[20];
+    itoa(config.nukiId, uidString, 16);
+    json["nukiID"] = uidString;
+    json["name"] = config.name;
+    json["latitude"] = config.latitide;
+    json["longitude"] = config.longitude;
+    json["capabilities"] = config.capabilities;    
+    json["pairingEnabled"] = config.pairingEnabled;
+    json["buttonEnabled"] = config.buttonEnabled;
+    json["currentTime"] = std::to_string(config.currentTimeYear) + "-" + std::to_string(config.currentTimeMonth) + "-" + std::to_string(config.currentTimeDay) + " " + std::to_string(config.currentTimeHour) + ":" + std::to_string(config.currentTimeMinute) + ":" + std::to_string(config.currentTimeSecond);
+    json["timeZoneOffset"] = config.timeZoneOffset;
+    json["dstMode"] = config.dstMode;
+    json["hasFob"] = config.hasFob;
+    json["fobAction1"] = config.fobAction1;
+    json["fobAction2"] = config.fobAction2;
+    json["fobAction3"] = config.fobAction3;
+    json["operatingMode"] = config.operatingMode;
+    json["advertisingMode"] = (int)config.advertisingMode;
+    json["hasKeypad"] = config.hasKeypad;
+    json["hasKeypadV2"] = config.hasKeypadV2;    
+    json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
+    json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
+    json["timeZoneId"] = (int)config.timeZoneId;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_config_basic_json, _buffer);
+
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledFlashEnabled == 1);
     publishString(mqtt_topic_info_firmware_version, std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]));
@@ -511,6 +557,32 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 
 void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &config)
 {
+    DynamicJsonDocument json(_bufferSize);
+
+    json["intercomID"] = config.intercomID;
+    json["busModeSwitch"] = config.busModeSwitch;
+    json["shortCircuitDaration"] = config.shortCircuitDaration;
+    json["electricStrikeDelay"] = config.electricStrikeDelay;
+    json["randomElectricStrikeDelay"] = config.randomElectricStrikeDelay;
+    json["electricStrikeDuration"] = config.electricStrikeDuration;
+    json["disableRtoAfterRing"] = config.disableRtoAfterRing;
+    json["rtoTimeout"] = config.rtoTimeout;
+    json["doorbellSuppression"] = config.doorbellSuppression;
+    json["doorbellSuppressionDuration"] = config.doorbellSuppressionDuration;
+    json["soundRing"] = config.soundRing;
+    json["soundOpen"] = config.soundOpen;
+    json["soundRto"] = config.soundRto;
+    json["soundCm"] = config.soundCm;
+    json["soundConfirmation"] = config.soundConfirmation;
+    json["soundLevel"] = config.soundLevel;
+    json["singleButtonPressAction"] = (int)config.singleButtonPressAction;
+    json["doubleButtonPressAction"] = (int)config.doubleButtonPressAction;
+    json["batteryType"] = (int)config.batteryType;
+    json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_config_advanced_json, _buffer);
+
     publishUInt(mqtt_topic_config_sound_level, config.soundLevel);
 }
 
@@ -601,7 +673,7 @@ void NetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionR
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }
 
-void NetworkOpener::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
+void NetworkOpener::setConfigUpdateReceivedCallback(ConfigUpdateResult (*configUpdateReceivedCallback)(const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }

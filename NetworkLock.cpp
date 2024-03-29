@@ -13,14 +13,6 @@ NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffe
   _buffer(buffer),
   _bufferSize(bufferSize)
 {
-    _configTopics.reserve(5);
-    _configTopics.push_back(mqtt_topic_config_button_enabled);
-    _configTopics.push_back(mqtt_topic_config_led_enabled);
-    _configTopics.push_back(mqtt_topic_config_led_brightness);
-    _configTopics.push_back(mqtt_topic_config_auto_unlock);
-    _configTopics.push_back(mqtt_topic_config_auto_lock);
-    _configTopics.push_back(mqtt_topic_config_single_lock);
-
     _network->registerMqttReceiver(this);
 }
 
@@ -51,10 +43,9 @@ void NetworkLock::initialize()
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
-    for(const auto& topic : _configTopics)
-    {
-        _network->subscribe(_mqttPath, topic);
-    }
+
+    _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
+    _network->subscribe(_mqttPath, mqtt_topic_config_action);
 
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
@@ -194,14 +185,37 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
         publishString(mqtt_topic_query_battery, "0");
     }
 
-    for(auto configTopic : _configTopics)
+    if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
-        if(comparePrefixedPath(topic, configTopic))
+        if(strcmp(value, "") == 0 ||
+           strcmp(value, "--") == 0 ||
+           strcmp(value, "ack") == 0 ||
+           strcmp(value, "unknown_action") == 0 ||
+           strcmp(value, "denied") == 0 ||
+           strcmp(value, "error") == 0) return;
+
+        Log->print(F("Config action received: "));
+        Log->println(value);
+        ConfigUpdateResult configUpdateResult = ConfigUpdateResult::Failed;
+        if(_configUpdateReceivedCallback != NULL)
         {
-            if(_configUpdateReceivedCallback != nullptr)
-            {
-                _configUpdateReceivedCallback(configTopic, value);
-            }
+            configUpdateResult = _configUpdateReceivedCallback(value);
+        }
+
+        switch(configUpdateResult)
+        {
+            case ConfigUpdateResult::Success:
+                publishString(mqtt_topic_config_action, "ack");
+                break;
+            case ConfigUpdateResult::UnknownAction:
+                publishString(mqtt_topic_config_action, "unknown_action");
+                break;
+            case ConfigUpdateResult::AccessDenied:
+                publishString(mqtt_topic_config_action, "denied");
+                break;
+            case ConfigUpdateResult::Failed:
+                publishString(mqtt_topic_config_action, "error");
+                break;
         }
     }
 }
@@ -461,6 +475,38 @@ void NetworkLock::publishBatteryReport(const NukiLock::BatteryReport& batteryRep
 
 void NetworkLock::publishConfig(const NukiLock::Config &config)
 {
+    DynamicJsonDocument json(_bufferSize);
+
+    char uidString[20];
+    itoa(config.nukiId, uidString, 16);
+    json["nukiID"] = uidString;
+    json["name"] = config.name;
+    json["latitude"] = config.latitide;
+    json["autoUnlatch"] = config.autoUnlatch;
+    json["longitude"] = config.longitude;
+    json["pairingEnabled"] = config.pairingEnabled;
+    json["buttonEnabled"] = config.buttonEnabled;
+    json["ledEnabled"] = config.ledEnabled;
+    json["ledBrightness"] = config.ledBrightness;
+    json["currentTime"] = std::to_string(config.currentTimeYear) + "-" + std::to_string(config.currentTimeMonth) + "-" + std::to_string(config.currentTimeDay) + " " + std::to_string(config.currentTimeHour) + ":" + std::to_string(config.currentTimeMinute) + ":" + std::to_string(config.currentTimeSecond);
+    json["timeZoneOffset"] = config.timeZoneOffset;
+    json["dstMode"] = config.dstMode;
+    json["hasFob"] = config.hasFob;
+    json["fobAction1"] = config.fobAction1;
+    json["fobAction2"] = config.fobAction2;
+    json["fobAction3"] = config.fobAction3;
+    json["singleLock"] = config.singleLock;
+    json["advertisingMode"] = (int)config.advertisingMode;
+    json["hasKeypad"] = config.hasKeypad;
+    json["hasKeypadV2"] = config.hasKeypadV2; 
+    json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
+    json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
+    json["homeKitStatus"] = config.homeKitStatus;
+    json["timeZoneId"] = (int)config.timeZoneId;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_config_basic_json, _buffer);
+
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
@@ -471,6 +517,35 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
 
 void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 {
+    DynamicJsonDocument json(_bufferSize);
+
+    json["totalDegrees"] = config.totalDegrees;
+    json["unlockedPositionOffsetDegrees"] = config.unlockedPositionOffsetDegrees;
+    json["lockedPositionOffsetDegrees"] = config.lockedPositionOffsetDegrees;
+    json["singleLockedPositionOffsetDegrees"] = config.singleLockedPositionOffsetDegrees;
+    json["unlockedToLockedTransitionOffsetDegrees"] = config.unlockedToLockedTransitionOffsetDegrees;
+    json["lockNgoTimeout"] = config.lockNgoTimeout;
+    json["singleButtonPressAction"] = (int)config.singleButtonPressAction;
+    json["doubleButtonPressAction"] = (int)config.doubleButtonPressAction;
+    json["detachedCylinder"] = config.detachedCylinder;
+    json["batteryType"] = (int)config.batteryType;
+    json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
+    json["unlatchDuration"] = config.unlatchDuration;
+    json["autoLockTimeOut"] = config.autoLockTimeOut;
+    json["autoUnLockDisabled"] = config.autoUnLockDisabled;
+    json["nightModeEnabled"] = config.nightModeEnabled;
+    json["nightModeStartTime"] = std::to_string(config.nightModeStartTime[0]) + ":" + std::to_string(config.nightModeStartTime[1]);
+    json["nightModeEndTime"] = std::to_string(config.nightModeEndTime[0]) + ":" + std::to_string(config.nightModeEndTime[1]);
+    json["nightModeAutoLockEnabled"] = config.nightModeAutoLockEnabled;
+    json["nightModeAutoUnlockDisabled"] = config.nightModeAutoUnlockDisabled;
+    json["nightModeImmediateLockOnStart"] = config.nightModeImmediateLockOnStart;
+    json["autoLockEnabled"] = config.autoLockEnabled;
+    json["immediateAutoLockEnabled"] = config.immediateAutoLockEnabled;
+    json["autoUpdateEnabled"] = config.autoUpdateEnabled;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_config_advanced_json, _buffer);
+
     publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
@@ -502,7 +577,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
         basePath.concat("/code_");
         basePath.concat(std::to_string(index).c_str());
         publishKeypadEntry(basePath, entry);
-        
+
         auto jsonEntry = json.add();
 
         jsonEntry["id"] = entry.codeId;
@@ -515,7 +590,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
         jsonEntry["createdMin"] = entry.dateCreatedMin;
         jsonEntry["createdSec"] = entry.dateCreatedSec;
         jsonEntry["lockCount"] = entry.lockCount;
-        
+
         ++index;
     }
 
@@ -545,7 +620,7 @@ void NetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActionRec
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }
 
-void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *, const char *))
+void NetworkLock::setConfigUpdateReceivedCallback(ConfigUpdateResult (*configUpdateReceivedCallback)(const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }

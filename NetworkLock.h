@@ -11,6 +11,7 @@
 #include "Network.h"
 #include "QueryCommand.h"
 #include "LockActionResult.h"
+#include "ConfigUpdateResult.h"
 
 #define LOCK_LOG_JSON_BUFFER_SIZE 2048
 
@@ -40,7 +41,7 @@ public:
     void publishKeypadCommandResult(const char* result);
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
-    void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
+    void setConfigUpdateReceivedCallback(ConfigUpdateResult (*configUpdateReceivedCallback)(const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
 
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
@@ -68,7 +69,6 @@ private:
     Network* _network;
     Preferences* _preferences;
 
-    std::vector<char*> _configTopics;
     char _mqttPath[181] = {0};
 
     bool _firstTunerStatePublish = true;
@@ -80,7 +80,7 @@ private:
     String _keypadCommandCode = "";
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
-    uint8_t _queryCommands = 0;    
+    uint8_t _queryCommands = 0;
     uint32_t authId = 0;
     char authName[33];
 
@@ -88,6 +88,6 @@ private:
     size_t _bufferSize;
 
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
-    void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+    ConfigUpdateResult (*_configUpdateReceivedCallback)(const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
 };

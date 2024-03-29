@@ -263,6 +263,10 @@ bool WebCfgServer::processArgs(String& message)
     bool clearMqttCredentials = false;
     bool clearCredentials = false;
     uint32_t aclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedLockConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedOpenerConfigAclPrefs[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     int count = _server.args();
 
@@ -465,11 +469,6 @@ bool WebCfgServer::processArgs(String& message)
         {
             aclLvlChanged = true;
         }
-        else if(key == "ACLCNF")
-        {
-            _preferences->putBool(preference_admin_enabled, (value == "1"));
-            configChanged = true;
-        }
         else if(key == "KPPUB")
         {
             _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
@@ -552,6 +551,294 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "ACLOPNFOB3")
         {
             aclPrefs[16] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKNAME")
+        {
+            basicLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKLAT")
+        {
+            basicLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKLONG")
+        {
+            basicLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKAUNL")
+        {
+            basicLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKPRENA")
+        {
+            basicLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKBTENA")
+        {
+            basicLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKLEDENA")
+        {
+            basicLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKLEDBR")
+        {
+            basicLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKTZOFF")
+        {
+            basicLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKDSTM")
+        {
+            basicLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKFOB1")
+        {
+            basicLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKFOB2")
+        {
+            basicLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKFOB3")
+        {
+            basicLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKSGLLCK")
+        {
+            basicLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKADVM")
+        {
+            basicLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKTZID")
+        {
+            basicLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKUPOD")
+        {
+            advancedLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKLPOD")
+        {
+            advancedLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKSLPOD")
+        {
+            advancedLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKUTLTOD")
+        {
+            advancedLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKLNGT")
+        {
+            advancedLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKSBPA")
+        {
+            advancedLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKDBPA")
+        {
+            advancedLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKDC")
+        {
+            advancedLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKBATT")
+        {
+            advancedLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKABTD")
+        {
+            advancedLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKUNLD")
+        {
+            advancedLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKALT")
+        {
+            advancedLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKAUNLD")
+        {
+            advancedLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKNMENA")
+        {
+            advancedLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKNMST")
+        {
+            advancedLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKNMET")
+        {
+            advancedLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKNMALENA")
+        {
+            advancedLockConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKNMAULD")
+        {
+            advancedLockConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKNMLOS")
+        {
+            advancedLockConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKALENA")
+        {
+            advancedLockConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKIALENA")
+        {
+            advancedLockConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKAUENA")
+        {
+            advancedLockConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNNAME")
+        {
+            basicOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNLAT")
+        {
+            basicOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNLONG")
+        {
+            basicOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNPRENA")
+        {
+            basicOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNBTENA")
+        {
+            basicOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNLEDENA")
+        {
+            basicOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNTZOFF")
+        {
+            basicOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNDSTM")
+        {
+            basicOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNFOB1")
+        {
+            basicOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNFOB2")
+        {
+            basicOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNFOB3")
+        {
+            basicOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNOPM")
+        {
+            basicOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNADVM")
+        {
+            basicOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNTZID")
+        {
+            basicOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNICID")
+        {
+            advancedOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNBUSMS")
+        {
+            advancedOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSCDUR")
+        {
+            advancedOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNESD")
+        {
+            advancedOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNRESD")
+        {
+            advancedOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNESDUR")
+        {
+            advancedOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNDRTOAR")
+        {
+            advancedOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNRTOT")
+        {
+            advancedOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNDRBSUP")
+        {
+            advancedOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNDRBSUPDUR")
+        {
+            advancedOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSRING")
+        {
+            advancedOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSOPN")
+        {
+            advancedOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSRTO")
+        {
+            advancedOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSCM")
+        {
+            advancedOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSCFRM")
+        {
+            advancedOpenerConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSLVL")
+        {
+            advancedOpenerConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNSBPA")
+        {
+            advancedOpenerConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNDBPA")
+        {
+            advancedOpenerConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNBATT")
+        {
+            advancedOpenerConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNABTD")
+        {
+            advancedOpenerConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
         }
         else if(key == "REGAPP")
         {
@@ -639,6 +926,10 @@ bool WebCfgServer::processArgs(String& message)
     if(aclLvlChanged)
     {
         _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+        _preferences->putBytes(preference_conf_lock_basic_acl, (byte*)(&basicLockConfigAclPrefs), sizeof(basicLockConfigAclPrefs));
+        _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
+        _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
+        _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
         configChanged = true;
     }
 
@@ -728,12 +1019,7 @@ void WebCfgServer::buildHtml(String& response)
     }
     printParameter(response, "Firmware", version.c_str(), "/info");
 
-    if(_preferences->getBool(preference_check_updates))
-    {
-        //if(atof(_latestVersion) > atof(NUKI_HUB_VERSION) || (atof(_latestVersion) == atof(NUKI_HUB_VERSION) && _latestVersion != NUKI_HUB_VERSION)) {
-        printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota");
-        //}
-    }
+    if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota");
 
     response.concat("</table><br><table id=\"tblnav\"><tbody>");
     response.concat("<tr><td><h3>MQTT and Network Configuration</h3></td><td class=\"tdbtn\">");
@@ -938,7 +1224,6 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<input type=\"hidden\" name=\"ACLLVLCHANGED\" value=\"1\">");
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
-    printCheckBox(response, "ACLCNF", "Change Nuki configuration", _preferences->getBool(preference_admin_enabled));
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled));
@@ -948,6 +1233,11 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("</table><br>");
     if(_nuki != nullptr)
     {
+        uint32_t basicLockConfigAclPrefs[16];
+        _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
+        uint32_t advancedLockConfigAclPrefs[22];
+        _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
+
         response.concat("<h3>Nuki Lock Access Control</h3>");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
@@ -961,9 +1251,58 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", ((int)aclPrefs[7] == 1));
         printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", ((int)aclPrefs[8] == 1));
         response.concat("</table><br>");
+
+        response.concat("<h3>Nuki Lock Config Control (Requires PIN to be set)</h3>");
+        response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
+
+        printCheckBox(response, "CONFLCKNAME", "Name", ((int)basicLockConfigAclPrefs[0] == 1));
+        printCheckBox(response, "CONFLCKLAT", "Latitude", ((int)basicLockConfigAclPrefs[1] == 1));
+        printCheckBox(response, "CONFLCKLONG", "Longitude", ((int)basicLockConfigAclPrefs[2] == 1));
+        printCheckBox(response, "CONFLCKAUNL", "Auto unlatch", ((int)basicLockConfigAclPrefs[3] == 1));
+        printCheckBox(response, "CONFLCKPRENA", "Pairing enabled", ((int)basicLockConfigAclPrefs[4] == 1));
+        printCheckBox(response, "CONFLCKBTENA", "Button enabled", ((int)basicLockConfigAclPrefs[5] == 1));
+        printCheckBox(response, "CONFLCKLEDENA", "LED flash enabled", ((int)basicLockConfigAclPrefs[6] == 1));
+        printCheckBox(response, "CONFLCKLEDBR", "LED brightness", ((int)basicLockConfigAclPrefs[7] == 1));
+        printCheckBox(response, "CONFLCKTZOFF", "Timezone offset", ((int)basicLockConfigAclPrefs[8] == 1));
+        printCheckBox(response, "CONFLCKDSTM", "DST mode", ((int)basicLockConfigAclPrefs[9] == 1));
+        printCheckBox(response, "CONFLCKFOB1", "Fob Action 1", ((int)basicLockConfigAclPrefs[10] == 1));
+        printCheckBox(response, "CONFLCKFOB2", "Fob Action 2", ((int)basicLockConfigAclPrefs[11] == 1));
+        printCheckBox(response, "CONFLCKFOB3", "Fob Action 3", ((int)basicLockConfigAclPrefs[12] == 1));
+        printCheckBox(response, "CONFLCKSGLLCK", "Single Lock", ((int)basicLockConfigAclPrefs[13] == 1));
+        printCheckBox(response, "CONFLCKADVM", "Advertising Mode", ((int)basicLockConfigAclPrefs[14] == 1));
+        printCheckBox(response, "CONFLCKTZID", "Timezone ID", ((int)basicLockConfigAclPrefs[15] == 1));
+
+        printCheckBox(response, "CONFLCKUPOD", "Unlocked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[0] == 1));
+        printCheckBox(response, "CONFLCKLPOD", "Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[1] == 1));
+        printCheckBox(response, "CONFLCKSLPOD", "Single Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[2] == 1));
+        printCheckBox(response, "CONFLCKUTLTOD", "Unlocked To Locked Transition Offset Degrees", ((int)advancedLockConfigAclPrefs[3] == 1));
+        printCheckBox(response, "CONFLCKLNGT", "Lock n Go timeout", ((int)advancedLockConfigAclPrefs[4] == 1));
+        printCheckBox(response, "CONFLCKSBPA", "Single button press action", ((int)advancedLockConfigAclPrefs[5] == 1));
+        printCheckBox(response, "CONFLCKDBPA", "Double button press action", ((int)advancedLockConfigAclPrefs[6] == 1));
+        printCheckBox(response, "CONFLCKDC", "Detached cylinder", ((int)advancedLockConfigAclPrefs[7] == 1));
+        printCheckBox(response, "CONFLCKBATT", "Battery type", ((int)advancedLockConfigAclPrefs[8] == 1));
+        printCheckBox(response, "CONFLCKABTD", "Automatic battery type detection", ((int)advancedLockConfigAclPrefs[9] == 1));
+        printCheckBox(response, "CONFLCKUNLD", "Unlatch duration", ((int)advancedLockConfigAclPrefs[10] == 1));
+        printCheckBox(response, "CONFLCKALT", "Auto lock timeout", ((int)advancedLockConfigAclPrefs[11] == 1));
+        printCheckBox(response, "CONFLCKAUNLD", "Auto unlock disabled", ((int)advancedLockConfigAclPrefs[12] == 1));
+        printCheckBox(response, "CONFLCKNMENA", "Nightmode enabled", ((int)advancedLockConfigAclPrefs[13] == 1));
+        printCheckBox(response, "CONFLCKNMST", "Nightmode start time", ((int)advancedLockConfigAclPrefs[14] == 1));
+        printCheckBox(response, "CONFLCKNMET", "Nightmode end time", ((int)advancedLockConfigAclPrefs[15] == 1));
+        printCheckBox(response, "CONFLCKNMALENA", "Nightmode auto lock enabled", ((int)advancedLockConfigAclPrefs[16] == 1));
+        printCheckBox(response, "CONFLCKNMAULD", "Nightmode auto unlock disabled", ((int)advancedLockConfigAclPrefs[17] == 1));
+        printCheckBox(response, "CONFLCKNMLOS", "Nightmode immediate lock on start", ((int)advancedLockConfigAclPrefs[18] == 1));
+        printCheckBox(response, "CONFLCKALENA", "Auto lock enabled", ((int)advancedLockConfigAclPrefs[19] == 1));
+        printCheckBox(response, "CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1));
+        printCheckBox(response, "CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1));
+        response.concat("</table><br>");
     }
     if(_nukiOpener != nullptr)
     {
+        uint32_t basicOpenerConfigAclPrefs[16];
+        _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
+        uint32_t advancedOpenerConfigAclPrefs[22];
+        _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
+
         response.concat("<h3>Nuki Opener Access Control</h3>");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
@@ -975,6 +1314,46 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", ((int)aclPrefs[14] == 1));
         printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", ((int)aclPrefs[15] == 1));
         printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", ((int)aclPrefs[16] == 1));
+        response.concat("</table><br>");
+
+        response.concat("<h3>Nuki Opener Config Control (Requires PIN to be set)</h3>");
+        response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
+
+        printCheckBox(response, "CONFOPNNAME", "Name", ((int)basicOpenerConfigAclPrefs[0] == 1));
+        printCheckBox(response, "CONFOPNLAT", "Latitude", ((int)basicOpenerConfigAclPrefs[1] == 1));
+        printCheckBox(response, "CONFOPNLONG", "Longitude", ((int)basicOpenerConfigAclPrefs[2] == 1));
+        printCheckBox(response, "CONFOPNPRENA", "Pairing enabled", ((int)basicOpenerConfigAclPrefs[3] == 1));
+        printCheckBox(response, "CONFOPNBTENA", "Button enabled", ((int)basicOpenerConfigAclPrefs[4] == 1));
+        printCheckBox(response, "CONFOPNLEDENA", "LED flash enabled", ((int)basicOpenerConfigAclPrefs[5] == 1));
+        printCheckBox(response, "CONFOPNTZOFF", "Timezone offset", ((int)basicOpenerConfigAclPrefs[6] == 1));
+        printCheckBox(response, "CONFOPNDSTM", "DST mode", ((int)basicOpenerConfigAclPrefs[7] == 1));
+        printCheckBox(response, "CONFOPNFOB1", "Fob Action 1", ((int)basicOpenerConfigAclPrefs[8] == 1));
+        printCheckBox(response, "CONFOPNFOB2", "Fob Action 2", ((int)basicOpenerConfigAclPrefs[9] == 1));
+        printCheckBox(response, "CONFOPNFOB3", "Fob Action 3", ((int)basicOpenerConfigAclPrefs[10] == 1));
+        printCheckBox(response, "CONFOPNOPM", "Operation Mode", ((int)basicOpenerConfigAclPrefs[11] == 1));
+        printCheckBox(response, "CONFOPNADVM", "Advertising Mode", ((int)basicOpenerConfigAclPrefs[12] == 1));
+        printCheckBox(response, "CONFOPNTZID", "Timezone ID", ((int)basicOpenerConfigAclPrefs[13] == 1));
+
+        printCheckBox(response, "CONFOPNICID", "Intercom ID", ((int)advancedOpenerConfigAclPrefs[0] == 1));
+        printCheckBox(response, "CONFOPNBUSMS", "BUS mode Switch", ((int)advancedOpenerConfigAclPrefs[1] == 1));
+        printCheckBox(response, "CONFOPNSCDUR", "Short Circuit Duration", ((int)advancedOpenerConfigAclPrefs[2] == 1));
+        printCheckBox(response, "CONFOPNESD", "Eletric Strike Delay", ((int)advancedOpenerConfigAclPrefs[3] == 1));
+        printCheckBox(response, "CONFOPNRESD", "Random Electric Strike Delay", ((int)advancedOpenerConfigAclPrefs[4] == 1));
+        printCheckBox(response, "CONFOPNESDUR", "Electric Strike Duration", ((int)advancedOpenerConfigAclPrefs[5] == 1));
+        printCheckBox(response, "CONFOPNDRTOAR", "disable RTO after ring", ((int)advancedOpenerConfigAclPrefs[6] == 1));
+        printCheckBox(response, "CONFOPNRTOT", "RTO timeout", ((int)advancedOpenerConfigAclPrefs[7] == 1));
+        printCheckBox(response, "CONFOPNDRBSUP", "Doorbell suppression", ((int)advancedOpenerConfigAclPrefs[8] == 1));
+        printCheckBox(response, "CONFOPNDRBSUPDUR", "Doorbell suppression duration", ((int)advancedOpenerConfigAclPrefs[9] == 1));
+        printCheckBox(response, "CONFOPNSRING", "Sound Ring", ((int)advancedOpenerConfigAclPrefs[10] == 1));
+        printCheckBox(response, "CONFOPNSOPN", "Sound Open", ((int)advancedOpenerConfigAclPrefs[11] == 1));
+        printCheckBox(response, "CONFOPNSRTO", "Sound RTO", ((int)advancedOpenerConfigAclPrefs[12] == 1));
+        printCheckBox(response, "CONFOPNSCM", "Sound CM", ((int)advancedOpenerConfigAclPrefs[13] == 1));
+        printCheckBox(response, "CONFOPNSCFRM", "Sound confirmation", ((int)advancedOpenerConfigAclPrefs[14] == 1));
+        printCheckBox(response, "CONFOPNSLVL", "Sound level", ((int)advancedOpenerConfigAclPrefs[15] == 1));
+        printCheckBox(response, "CONFOPNSBPA", "Single button press action", ((int)advancedOpenerConfigAclPrefs[16] == 1));
+        printCheckBox(response, "CONFOPNDBPA", "Double button press action", ((int)advancedOpenerConfigAclPrefs[17] == 1));
+        printCheckBox(response, "CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1));
+        printCheckBox(response, "CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1));
         response.concat("</table><br>");
     }
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -1094,6 +1473,11 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     if(_nuki != nullptr)
     {
+        uint32_t basicLockConfigAclPrefs[16];
+        _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
+        uint32_t advancedLockConfigAclPrefs[22];
+        _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
+
         response.concat("Lock firmware version: ");
         response.concat(_nuki->firmwareVersion().c_str());
         response.concat("\nLock hardware version: ");
@@ -1124,10 +1508,91 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)aclPrefs[7] ? "Allowed\n" : "Disallowed\n");
         response.concat("Lock ACL (Fob Action 3): ");
         response.concat((int)aclPrefs[8] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Name): ");
+        response.concat((int)basicLockConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Latitude): ");
+        response.concat((int)basicLockConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Longitude): ");
+        response.concat((int)basicLockConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Auto Unlatch): ");
+        response.concat((int)basicLockConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Pairing enabled): ");
+        response.concat((int)basicLockConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Button enabled): ");
+        response.concat((int)basicLockConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (LED flash enabled): ");
+        response.concat((int)basicLockConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (LED brightness): ");
+        response.concat((int)basicLockConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Timezone offset): ");
+        response.concat((int)basicLockConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (DST mode): ");
+        response.concat((int)basicLockConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Fob Action 1): ");
+        response.concat((int)basicLockConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Fob Action 2): ");
+        response.concat((int)basicLockConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Fob Action 3): ");
+        response.concat((int)basicLockConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Single Lock): ");
+        response.concat((int)basicLockConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Advertising Mode): ");
+        response.concat((int)basicLockConfigAclPrefs[14] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Timezone ID): ");
+        response.concat((int)basicLockConfigAclPrefs[15] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Unlocked Position Offset Degrees): ");
+        response.concat((int)advancedLockConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Locked Position Offset Degrees): ");
+        response.concat((int)advancedLockConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Single Locked Position Offset Degrees): ");
+        response.concat((int)advancedLockConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Unlocked To Locked Transition Offset Degrees): ");
+        response.concat((int)advancedLockConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Lock ‘n’ Go timeout): ");
+        response.concat((int)advancedLockConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Single button press action): ");
+        response.concat((int)advancedLockConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Double button press action): ");
+        response.concat((int)advancedLockConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Detached cylinder): ");
+        response.concat((int)advancedLockConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Battery type): ");
+        response.concat((int)advancedLockConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Automatic battery type detection): ");
+        response.concat((int)advancedLockConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Unlatch duration): ");
+        response.concat((int)advancedLockConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Auto lock timeout): ");
+        response.concat((int)advancedLockConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Auto unlock disabled): ");
+        response.concat((int)advancedLockConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Nightmode enabled): ");
+        response.concat((int)advancedLockConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Nightmode start time): ");
+        response.concat((int)advancedLockConfigAclPrefs[14] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Nightmode end time): ");
+        response.concat((int)advancedLockConfigAclPrefs[15] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Nightmode auto lock enabled): ");
+        response.concat((int)advancedLockConfigAclPrefs[16] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Nightmode auto unlock disabled): ");
+        response.concat((int)advancedLockConfigAclPrefs[17] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Nightmode immediate lock on start): ");
+        response.concat((int)advancedLockConfigAclPrefs[18] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Auto lock enabled): ");
+        response.concat((int)advancedLockConfigAclPrefs[19] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Immediate auto lock enabled): ");
+        response.concat((int)advancedLockConfigAclPrefs[20] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock config ACL (Auto update enabled): ");
+        response.concat((int)advancedLockConfigAclPrefs[21] ? "Allowed\n" : "Disallowed\n");
     }
 
     if(_nukiOpener != nullptr)
     {
+        uint32_t basicOpenerConfigAclPrefs[16];
+        _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
+        uint32_t advancedOpenerConfigAclPrefs[22];
+        _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
+
         response.concat("Opener firmware version: ");
         response.concat(_nukiOpener->firmwareVersion().c_str());
         response.concat("\nOpener hardware version: ");
@@ -1153,6 +1618,74 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)aclPrefs[15] ? "Allowed\n" : "Disallowed\n");
         response.concat("Opener ACL (Fob Action 3): ");
         response.concat((int)aclPrefs[16] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Name): ");
+        response.concat((int)basicOpenerConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Latitude): ");
+        response.concat((int)basicOpenerConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Longitude): ");
+        response.concat((int)basicOpenerConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Pairing enabled): ");
+        response.concat((int)basicOpenerConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Button enabled): ");
+        response.concat((int)basicOpenerConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (LED flash enabled): ");
+        response.concat((int)basicOpenerConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Timezone offset): ");
+        response.concat((int)basicOpenerConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (DST mode): ");
+        response.concat((int)basicOpenerConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Fob Action 1): ");
+        response.concat((int)basicOpenerConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Fob Action 2): ");
+        response.concat((int)basicOpenerConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Fob Action 3): ");
+        response.concat((int)basicOpenerConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Operation Mode): ");
+        response.concat((int)basicOpenerConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Advertising Mode): ");
+        response.concat((int)basicOpenerConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Timezone ID): ");
+        response.concat((int)basicOpenerConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Intercom ID): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (BUS mode Switch): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Short Circuit Duration): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Eletric Strike Delay): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Random Electric Strike Delay): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Electric Strike Duration): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (disable RTO after ring): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (RTO timeout): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Doorbell suppression): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Doorbell suppression duration): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Sound Ring): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Sound Open): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Sound RTO): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Sound CM): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Sound confirmation): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[14] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Sound level): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[15] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Single button press action): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[16] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Double button press action): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[17] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Battery type): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[18] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener config ACL (Automatic battery type detection): ");
+        response.concat((int)advancedOpenerConfigAclPrefs[19] ? "Allowed\n" : "Disallowed\n");
     }
 
     response.concat("Network device: ");

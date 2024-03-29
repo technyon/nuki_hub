@@ -67,9 +67,16 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_command_nr_of_retries, 3);
         _preferences->putInt(preference_command_retry_delay, 1000);
         _preferences->putInt(preference_restart_ble_beacon_lost, 60);
-        _preferences->putBool(preference_admin_enabled, true);
         uint32_t aclPrefs[17] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
         _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+        uint32_t basicLockConfigAclPrefs[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        _preferences->putBytes(preference_conf_lock_basic_acl, (byte*)(&basicLockConfigAclPrefs), sizeof(basicLockConfigAclPrefs));
+        uint32_t basicOpenerConfigAclPrefs[14] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
+        uint32_t advancedLockConfigAclPrefs[22] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
+        uint32_t advancedOpenerConfigAclPrefs[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
     }
 
     if(_retryDelay <= 100)
@@ -515,41 +522,33 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
     return LockActionResult::AccessDenied;
 }
 
-void NukiWrapper::onConfigUpdateReceivedCallback(const char *topic, const char *value)
+ConfigUpdateResult NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
 {
-    nukiInst->onConfigUpdateReceived(topic, value);
-}
-
-void NukiWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
-{
-    nukiInst->onKeypadCommandReceived(command, id, name, code, enabled);
-}
-
-void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
-{
-    switch(action)
+    nukiLockPreferences = new Preferences();
+    nukiLockPreferences->begin("nukihub", true);
+    uint32_t basicLockConfigAclPrefs[16];
+    nukiLockPreferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
+    uint32_t advancedLockConfigAclPrefs[22];
+    nukiLockPreferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
+    
+    /*
+    if(!nukiLockPreferences->getBool(preference_admin_enabled))
     {
-        case GpioAction::Lock:
-            nukiInst->lock();
-            break;
-        case GpioAction::Unlock:
-            nukiInst->unlock();
-            break;
-        case GpioAction::Unlatch:
-            nukiInst->unlatch();
-            break;
-        case GpioAction::LockNgo:
-            nukiInst->lockngo();
-            break;
-        case GpioAction::LockNgoUnlatch:
-            nukiInst->lockngounlatch();
-            break;
+        nukiLockPreferences->end();
+        return ConfigUpdateResult::AccessDenied;
     }
-}
 
-void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
-{
-    if(!_preferences->getBool(preference_admin_enabled)) return;
+    if((int)action == 0xff)
+    {
+        return LockActionResult::UnknownAction;
+    }
+
+    if((action == NukiLock::LockAction::Lock && (int)aclPrefs[0] == 1) || (action == NukiLock::LockAction::Unlock && (int)aclPrefs[1] == 1) || (action == NukiLock::LockAction::Unlatch && (int)aclPrefs[2] == 1) || (action == NukiLock::LockAction::LockNgo && (int)aclPrefs[3] == 1) || (action == NukiLock::LockAction::LockNgoUnlatch && (int)aclPrefs[4] == 1) || (action == NukiLock::LockAction::FullLock && (int)aclPrefs[5] == 1) || (action == NukiLock::LockAction::FobAction1 && (int)aclPrefs[6] == 1) || (action == NukiLock::LockAction::FobAction2 && (int)aclPrefs[7] == 1) || (action == NukiLock::LockAction::FobAction3 && (int)aclPrefs[8] == 1))
+    {
+        nukiLockPreferences->end();
+        nukiInst->_nextLockAction = action;
+        return LockActionResult::Success;
+    }
 
     if(strcmp(topic, mqtt_topic_config_button_enabled) == 0)
     {
@@ -592,6 +591,34 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
         if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
         _nukiLock.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
+    }
+    */
+}
+
+void NukiWrapper::onKeypadCommandReceivedCallback(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
+{
+    nukiInst->onKeypadCommandReceived(command, id, name, code, enabled);
+}
+
+void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
+{
+    switch(action)
+    {
+        case GpioAction::Lock:
+            nukiInst->lock();
+            break;
+        case GpioAction::Unlock:
+            nukiInst->unlock();
+            break;
+        case GpioAction::Unlatch:
+            nukiInst->unlatch();
+            break;
+        case GpioAction::LockNgo:
+            nukiInst->lockngo();
+            break;
+        case GpioAction::LockNgoUnlatch:
+            nukiInst->lockngounlatch();
+            break;
     }
 }
 
