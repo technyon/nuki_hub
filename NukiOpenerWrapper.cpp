@@ -314,6 +314,7 @@ void NukiOpenerWrapper::unpair()
 {
     _nukiOpener.unPairNuki();
     _deviceId->assignNewId();
+    _preferences->remove(preference_nuki_id_opener);
     _paired = false;
 }
 
@@ -355,8 +356,8 @@ void NukiOpenerWrapper::updateKeyTurnerState()
         {
             Log->println(F("Nuki opener: Ring detected (Open)"));
             _network->publishRing(false);
-        }        
-        
+        }
+
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         updateGpioOutputs();
 
@@ -395,17 +396,48 @@ void NukiOpenerWrapper::updateConfig()
     readConfig();
     readAdvancedConfig();
     _configRead = true;
-    _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2;
+    bool expectedConfig = true;
 
     if(_nukiConfigValid)
     {
-        _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
-        _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
-        _network->publishConfig(_nukiConfig);
+        if(_preferences->getUInt(preference_nuki_id_opener, 0) == 0 || _retryConfigCount == 10)
+        {
+            _preferences->putUInt(preference_nuki_id_opener, _nukiConfig.nukiId);
+        }
+
+        if(_preferences->getUInt(preference_nuki_id_opener, 0) == _nukiConfig.nukiId)
+        {
+            _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2;
+            _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
+            _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
+            _network->publishConfig(_nukiConfig);
+            _retryConfigCount = 0;
+        }
+        else
+        {
+            expectedConfig = false;
+            ++_retryConfigCount;
+        }
     }
-    if(_nukiAdvancedConfigValid)
+    else
+    {
+        expectedConfig = false;
+        ++_retryConfigCount;
+    }
+    if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_opener, 0) == _nukiConfig.nukiId)
     {
         _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        _retryConfigCount = 0;
+    }
+    else
+    {
+        expectedConfig = false;
+        ++_retryConfigCount;
+    }
+    if(!expectedConfig && _retryConfigCount < 11)
+    {
+        unsigned long ts = millis();
+        _nextConfigUpdateTs = ts + 60000;
     }
 }
 
@@ -442,7 +474,7 @@ void NukiOpenerWrapper::updateAuthData()
 void NukiOpenerWrapper::updateKeypad()
 {
     if(_preferences->getBool(preference_keypad_info_enabled)) return;
-    
+
     Log->print(F("Querying opener keypad: "));
     Nuki::CmdResult result = _nukiOpener.retrieveKeypadEntries(0, 0xffff);
     printCommandResult(result);
@@ -498,12 +530,12 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
     {
         return LockActionResult::UnknownAction;
     }
-    
+
     nukiOpenerPreferences = new Preferences();
     nukiOpenerPreferences->begin("nukihub", true);
     uint32_t aclPrefs[17];
     nukiOpenerPreferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
-    
+
     if((action == NukiOpener::LockAction::ActivateRTO && (int)aclPrefs[9] == 1) || (action == NukiOpener::LockAction::DeactivateRTO && (int)aclPrefs[10] == 1) || (action == NukiOpener::LockAction::ElectricStrikeActuation && (int)aclPrefs[11] == 1) || (action == NukiOpener::LockAction::ActivateCM && (int)aclPrefs[12] == 1) || (action == NukiOpener::LockAction::DeactivateCM && (int)aclPrefs[13] == 1) || (action == NukiOpener::LockAction::FobAction1 && (int)aclPrefs[14] == 1) || (action == NukiOpener::LockAction::FobAction2 && (int)aclPrefs[15] == 1) || (action == NukiOpener::LockAction::FobAction3 && (int)aclPrefs[16] == 1))
     {
         nukiOpenerPreferences->end();
@@ -752,6 +784,7 @@ void NukiOpenerWrapper::readAdvancedConfig()
 void NukiOpenerWrapper::setupHASS()
 {
     if(!_nukiConfigValid) return;
+    if(_preferences->getUInt(preference_nuki_id_opener, 0) != _nukiConfig.nukiId) return;
 
     String baseTopic = _preferences->getString(preference_mqtt_opener_path);
     char uidString[20];

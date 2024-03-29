@@ -303,6 +303,7 @@ void NukiWrapper::unpair()
 {
     _nukiLock.unPairNuki();
     _deviceId->assignNewId();
+    _preferences->remove(preference_nuki_id_lock);
     _paired = false;
 }
 
@@ -361,16 +362,48 @@ void NukiWrapper::updateConfig()
     readConfig();
     readAdvancedConfig();
     _configRead = true;
-    _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2;
+    bool expectedConfig = true;
+
     if(_nukiConfigValid)
     {
-        _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
-        _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
-        _network->publishConfig(_nukiConfig);
+        if(_preferences->getUInt(preference_nuki_id_lock, 0) == 0  || _retryConfigCount == 10)
+        {
+            _preferences->putUInt(preference_nuki_id_lock, _nukiConfig.nukiId);
+        }
+
+        if(_preferences->getUInt(preference_nuki_id_lock, 0) == _nukiConfig.nukiId)
+        {
+            _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2;
+            _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
+            _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
+            _network->publishConfig(_nukiConfig);
+            _retryConfigCount = 0;
+        }
+        else
+        {
+            expectedConfig = false;
+            ++_retryConfigCount;
+        }
     }
-    if(_nukiAdvancedConfigValid)
+    else
+    {
+        expectedConfig = false;
+        ++_retryConfigCount;
+    }
+    if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_lock, 0) == _nukiConfig.nukiId)
     {
         _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        _retryConfigCount = 0;
+    }
+    else
+    {
+        expectedConfig = false;
+        ++_retryConfigCount;
+    }
+    if(!expectedConfig && _retryConfigCount < 11)
+    {
+        unsigned long ts = millis();
+        _nextConfigUpdateTs = ts + 60000;
     }
 }
 
@@ -560,13 +593,6 @@ void NukiWrapper::onConfigUpdateReceived(const char *topic, const char *value)
         _nukiLock.enableAutoLock(newValue);
         _nextConfigUpdateTs = millis() + 300;
     }
-    else if(strcmp(topic, mqtt_topic_config_auto_lock) == 0)
-    {
-        bool newValue = atoi(value) > 0;
-        if(!_nukiAdvancedConfigValid || _nukiAdvancedConfig.autoLockEnabled == newValue) return;
-        _nukiLock.enableAutoLock(newValue);
-        _nextConfigUpdateTs = millis() + 300;
-    }
 }
 
 void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
@@ -732,6 +758,7 @@ void NukiWrapper::readAdvancedConfig()
 void NukiWrapper::setupHASS()
 {
     if(!_nukiConfigValid) return;
+    if(_preferences->getUInt(preference_nuki_id_lock, 0) != _nukiConfig.nukiId) return;
 
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
     char uidString[20];

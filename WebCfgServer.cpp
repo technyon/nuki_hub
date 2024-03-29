@@ -635,7 +635,7 @@ bool WebCfgServer::processArgs(String& message)
         _preferences->putString(preference_cred_password, "");
         configChanged = true;
     }
-    
+
     if(aclLvlChanged)
     {
         _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
@@ -1089,6 +1089,9 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat("MQTT connected: ");
     response.concat(_network->mqttConnectionState() > 0 ? "Yes\n" : "No\n");
 
+    uint32_t aclPrefs[17];
+    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+
     if(_nuki != nullptr)
     {
         response.concat("Lock firmware version: ");
@@ -1103,7 +1106,26 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat(_nuki->hasDoorSensor() ? "Yes\n" : "No\n");
         response.concat("Lock has keypad: ");
         response.concat(_nuki->hasKeypad() ? "Yes\n" : "No\n");
+        response.concat("Lock ACL (Lock): ");
+        response.concat((int)aclPrefs[0] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Unlock): ");
+        response.concat((int)aclPrefs[1] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Unlatch): ");
+        response.concat((int)aclPrefs[2] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Lock N Go): ");
+        response.concat((int)aclPrefs[3] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Lock N Go Unlatch): ");
+        response.concat((int)aclPrefs[4] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Full Lock): ");
+        response.concat((int)aclPrefs[5] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Fob Action 1): ");
+        response.concat((int)aclPrefs[6] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Fob Action 2): ");
+        response.concat((int)aclPrefs[7] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Lock ACL (Fob Action 3): ");
+        response.concat((int)aclPrefs[8] ? "Allowed\n" : "Disallowed\n");
     }
+
     if(_nukiOpener != nullptr)
     {
         response.concat("Opener firmware version: ");
@@ -1115,6 +1137,22 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinSet() ? "Yes\n" : "No\n" : "-\n");
         response.concat("Opener has keypad: ");
         response.concat(_nukiOpener->hasKeypad() ? "Yes\n" : "No\n");
+        response.concat("Opener ACL (Activate Ring-to-Open): ");
+        response.concat((int)aclPrefs[9] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener ACL (Deactivate Ring-to-Open): ");
+        response.concat((int)aclPrefs[10] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener ACL (Electric Strike Actuation): ");
+        response.concat((int)aclPrefs[11] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener ACL (Activate Continuous Mode): ");
+        response.concat((int)aclPrefs[12] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener ACL (Deactivate Continuous Mode): ");
+        response.concat((int)aclPrefs[13] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener ACL (Fob Action 1): ");
+        response.concat((int)aclPrefs[14] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener ACL (Fob Action 2): ");
+        response.concat((int)aclPrefs[15] ? "Allowed\n" : "Disallowed\n");
+        response.concat("Opener ACL (Fob Action 3): ");
+        response.concat((int)aclPrefs[16] ? "Allowed\n" : "Disallowed\n");
     }
 
     response.concat("Network device: ");
