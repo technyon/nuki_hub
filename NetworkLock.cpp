@@ -475,10 +475,14 @@ void NetworkLock::publishBatteryReport(const NukiLock::BatteryReport& batteryRep
 
 void NetworkLock::publishConfig(const NukiLock::Config &config)
 {
-    DynamicJsonDocument json(_bufferSize);
-
+    char str[50];
+    char curTime[20];
+    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", config.currentTimeYear, config.currentTimeMonth, config.currentTimeDay, config.currentTimeHour, config.currentTimeMinute, config.currentTimeSecond);
     char uidString[20];
     itoa(config.nukiId, uidString, 16);
+
+    DynamicJsonDocument json(_bufferSize);
+
     json["nukiID"] = uidString;
     json["name"] = config.name;
     json["latitude"] = config.latitide;
@@ -488,21 +492,33 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
     json["buttonEnabled"] = config.buttonEnabled;
     json["ledEnabled"] = config.ledEnabled;
     json["ledBrightness"] = config.ledBrightness;
-    json["currentTime"] = std::to_string(config.currentTimeYear) + "-" + std::to_string(config.currentTimeMonth) + "-" + std::to_string(config.currentTimeDay) + " " + std::to_string(config.currentTimeHour) + ":" + std::to_string(config.currentTimeMinute) + ":" + std::to_string(config.currentTimeSecond);
+    json["currentTime"] = curTime;
     json["timeZoneOffset"] = config.timeZoneOffset;
     json["dstMode"] = config.dstMode;
     json["hasFob"] = config.hasFob;
-    json["fobAction1"] = config.fobAction1;
-    json["fobAction2"] = config.fobAction2;
-    json["fobAction3"] = config.fobAction3;
+    memset(str, 0, sizeof(str));
+    fobActionToString(config.fobAction1, str);
+    json["fobAction1"] = str;
+    memset(str, 0, sizeof(str));
+    fobActionToString(config.fobAction2, str);
+    json["fobAction2"] = str;
+    memset(str, 0, sizeof(str));
+    fobActionToString(config.fobAction3, str);
+    json["fobAction3"] = str;
     json["singleLock"] = config.singleLock;
-    json["advertisingMode"] = (int)config.advertisingMode;
+    memset(str, 0, sizeof(str));
+    advertisingModeToString(config.advertisingMode, str);
+    json["advertisingMode"] = str;
     json["hasKeypad"] = config.hasKeypad;
-    json["hasKeypadV2"] = config.hasKeypadV2; 
+    json["hasKeypadV2"] = config.hasKeypadV2;
     json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
     json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
-    json["homeKitStatus"] = config.homeKitStatus;
-    json["timeZoneId"] = (int)config.timeZoneId;
+    memset(str, 0, sizeof(str));
+    homeKitStatusToString(config.homeKitStatus, str);
+    json["homeKitStatus"] = str;
+    memset(str, 0, sizeof(str));
+    timeZoneIdToString(config.timeZoneId, str);
+    json["timeZone"] = str;
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_basic_json, _buffer);
@@ -517,6 +533,12 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
 
 void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 {
+    char str[50];
+    char nmst[6];
+    sprintf(nmst, "%02d:%02d", config.nightModeStartTime[0], config.nightModeStartTime[1]);
+    char nmet[6];
+    sprintf(nmet, "%02d:%02d", config.nightModeEndTime[0], config.nightModeEndTime[1]);
+
     DynamicJsonDocument json(_bufferSize);
 
     json["totalDegrees"] = config.totalDegrees;
@@ -525,17 +547,23 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
     json["singleLockedPositionOffsetDegrees"] = config.singleLockedPositionOffsetDegrees;
     json["unlockedToLockedTransitionOffsetDegrees"] = config.unlockedToLockedTransitionOffsetDegrees;
     json["lockNgoTimeout"] = config.lockNgoTimeout;
-    json["singleButtonPressAction"] = (int)config.singleButtonPressAction;
-    json["doubleButtonPressAction"] = (int)config.doubleButtonPressAction;
+    memset(str, 0, sizeof(str));
+    buttonPressActionToString(config.singleButtonPressAction, str);
+    json["singleButtonPressAction"] = str;
+    memset(str, 0, sizeof(str));
+    buttonPressActionToString(config.doubleButtonPressAction, str);
+    json["doubleButtonPressAction"] = str;
     json["detachedCylinder"] = config.detachedCylinder;
-    json["batteryType"] = (int)config.batteryType;
+    memset(str, 0, sizeof(str));
+    batteryTypeToString(config.batteryType, str);
+    json["batteryType"] = str;
     json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
     json["unlatchDuration"] = config.unlatchDuration;
     json["autoLockTimeOut"] = config.autoLockTimeOut;
     json["autoUnLockDisabled"] = config.autoUnLockDisabled;
     json["nightModeEnabled"] = config.nightModeEnabled;
-    json["nightModeStartTime"] = std::to_string(config.nightModeStartTime[0]) + ":" + std::to_string(config.nightModeStartTime[1]);
-    json["nightModeEndTime"] = std::to_string(config.nightModeEndTime[0]) + ":" + std::to_string(config.nightModeEndTime[1]);
+    json["nightModeStartTime"] = nmst;
+    json["nightModeEndTime"] = nmet;
     json["nightModeAutoLockEnabled"] = config.nightModeAutoLockEnabled;
     json["nightModeAutoUnlockDisabled"] = config.nightModeAutoUnlockDisabled;
     json["nightModeImmediateLockOnStart"] = config.nightModeImmediateLockOnStart;
@@ -784,4 +812,262 @@ uint8_t NetworkLock::queryCommands()
     uint8_t qc = _queryCommands;
     _queryCommands = 0;
     return qc;
+}
+
+void NetworkLock::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
+  switch (battype) {
+    case Nuki::BatteryType::Alkali:
+      strcpy(str, "alkali");
+      break;
+    case Nuki::BatteryType::Accumulators:
+      strcpy(str, "accumulators");
+      break;
+    case Nuki::BatteryType::Lithium:
+      strcpy(str, "lithium");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkLock::buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str) {
+  switch (btnPressAction) {
+    case NukiLock::ButtonPressAction::NoAction:
+      strcpy(str, "noaction");
+      break;
+    case NukiLock::ButtonPressAction::Intelligent:
+      strcpy(str, "intelligent");
+      break;
+    case NukiLock::ButtonPressAction::Unlock:
+      strcpy(str, "unlock");
+      break;
+    case NukiLock::ButtonPressAction::Lock:
+      strcpy(str, "lock");
+      break;
+    case NukiLock::ButtonPressAction::Unlatch:
+      strcpy(str, "unlatch");
+      break;
+    case NukiLock::ButtonPressAction::LockNgo:
+      strcpy(str, "lockngo");
+      break;
+    case NukiLock::ButtonPressAction::ShowStatus:
+      strcpy(str, "showstatus");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkLock::advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str) {
+  switch (advmode) {
+    case Nuki::AdvertisingMode::Automatic:
+      strcpy(str, "automatic");
+      break;
+    case Nuki::AdvertisingMode::Normal:
+      strcpy(str, "normal");
+      break;
+    case Nuki::AdvertisingMode::Slow:
+      strcpy(str, "slow");
+      break;
+    case Nuki::AdvertisingMode::Slowest:
+      strcpy(str, "slowest");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkLock::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str) {
+  switch (timeZoneId) {
+    case Nuki::TimeZoneId::Africa_Cairo:
+      strcpy(str, "Africa/Cairo");
+      break;
+    case Nuki::TimeZoneId::Africa_Lagos:
+      strcpy(str, "Africa/Lagos");
+      break;
+    case Nuki::TimeZoneId::Africa_Maputo:
+      strcpy(str, "Africa/Maputo");
+      break;
+    case Nuki::TimeZoneId::Africa_Nairobi:
+      strcpy(str, "Africa/Nairobi");
+      break;
+    case Nuki::TimeZoneId::America_Anchorage:
+      strcpy(str, "America/Anchorage");
+      break;
+    case Nuki::TimeZoneId::America_Argentina_Buenos_Aires:
+      strcpy(str, "America/Argentina/Buenos_Aires");
+      break;
+    case Nuki::TimeZoneId::America_Chicago:
+      strcpy(str, "America/Chicago");
+      break;
+    case Nuki::TimeZoneId::America_Denver:
+      strcpy(str, "America/Denver");
+      break;
+    case Nuki::TimeZoneId::America_Halifax:
+      strcpy(str, "America/Halifax");
+      break;
+    case Nuki::TimeZoneId::America_Los_Angeles:
+      strcpy(str, "America/Los_Angeles");
+      break;
+    case Nuki::TimeZoneId::America_Manaus:
+      strcpy(str, "America/Manaus");
+      break;
+    case Nuki::TimeZoneId::America_Mexico_City:
+      strcpy(str, "America/Mexico_City");
+      break;
+    case Nuki::TimeZoneId::America_New_York:
+      strcpy(str, "America/New_York");
+      break;
+    case Nuki::TimeZoneId::America_Phoenix:
+      strcpy(str, "America/Phoenix");
+      break;
+    case Nuki::TimeZoneId::America_Regina:
+      strcpy(str, "America/Regina");
+      break;
+    case Nuki::TimeZoneId::America_Santiago:
+      strcpy(str, "America/Santiago");
+      break;
+    case Nuki::TimeZoneId::America_Sao_Paulo:
+      strcpy(str, "America/Sao_Paulo");
+      break;
+    case Nuki::TimeZoneId::America_St_Johns:
+      strcpy(str, "America/St_Johns");
+      break;
+    case Nuki::TimeZoneId::Asia_Bangkok:
+      strcpy(str, "Asia/Bangkok");
+      break;
+    case Nuki::TimeZoneId::Asia_Dubai:
+      strcpy(str, "Asia/Dubai");
+      break;
+    case Nuki::TimeZoneId::Asia_Hong_Kong:
+      strcpy(str, "Asia/Hong_Kong");
+      break;
+    case Nuki::TimeZoneId::Asia_Jerusalem:
+      strcpy(str, "Asia/Jerusalem");
+      break;
+    case Nuki::TimeZoneId::Asia_Karachi:
+      strcpy(str, "Asia/Karachi");
+      break;
+    case Nuki::TimeZoneId::Asia_Kathmandu:
+      strcpy(str, "Asia/Kathmandu");
+      break;
+    case Nuki::TimeZoneId::Asia_Kolkata:
+      strcpy(str, "Asia/Kolkata");
+      break;
+    case Nuki::TimeZoneId::Asia_Riyadh:
+      strcpy(str, "Asia/Riyadh");
+      break;
+    case Nuki::TimeZoneId::Asia_Seoul:
+      strcpy(str, "Asia/Seoul");
+      break;
+    case Nuki::TimeZoneId::Asia_Shanghai:
+      strcpy(str, "Asia/Shanghai");
+      break;
+    case Nuki::TimeZoneId::Asia_Tehran:
+      strcpy(str, "Asia/Tehran");
+      break;
+    case Nuki::TimeZoneId::Asia_Tokyo:
+      strcpy(str, "Asia/Tokyo");
+      break;
+    case Nuki::TimeZoneId::Asia_Yangon:
+      strcpy(str, "Asia/Yangon");
+      break;
+    case Nuki::TimeZoneId::Australia_Adelaide:
+      strcpy(str, "Australia/Adelaide");
+      break;
+    case Nuki::TimeZoneId::Australia_Brisbane:
+      strcpy(str, "Australia/Brisbane");
+      break;
+    case Nuki::TimeZoneId::Australia_Darwin:
+      strcpy(str, "Australia/Darwin");
+      break;
+    case Nuki::TimeZoneId::Australia_Hobart:
+      strcpy(str, "Australia/Hobart");
+      break;
+    case Nuki::TimeZoneId::Australia_Perth:
+      strcpy(str, "Australia/Perth");
+      break;
+    case Nuki::TimeZoneId::Australia_Sydney:
+      strcpy(str, "Australia/Sydney");
+      break;
+    case Nuki::TimeZoneId::Europe_Berlin:
+      strcpy(str, "Europe/Berlin");
+      break;
+    case Nuki::TimeZoneId::Europe_Helsinki:
+      strcpy(str, "Europe/Helsinki");
+      break;
+    case Nuki::TimeZoneId::Europe_Istanbul:
+      strcpy(str, "Europe/Istanbul");
+      break;
+    case Nuki::TimeZoneId::Europe_London:
+      strcpy(str, "Europe/London");
+      break;
+    case Nuki::TimeZoneId::Europe_Moscow:
+      strcpy(str, "Europe/Moscow");
+      break;
+    case Nuki::TimeZoneId::Pacific_Auckland:
+      strcpy(str, "Pacific/Auckland");
+      break;
+    case Nuki::TimeZoneId::Pacific_Guam:
+      strcpy(str, "	Pacific/Guam");
+      break;
+    case Nuki::TimeZoneId::Pacific_Honolulu:
+      strcpy(str, "Pacific/Honolulu");
+      break;
+    case Nuki::TimeZoneId::Pacific_Pago_Pago:
+      strcpy(str, "Pacific/Pago_Pago");
+      break;
+    case Nuki::TimeZoneId::None:
+      strcpy(str, "none");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkLock::homeKitStatusToString(const int hkstatus, char* str) {
+  switch (hkstatus) {
+    case 0:
+      strcpy(str, "notavailable");
+      break;
+    case 1:
+      strcpy(str, "disabled");
+      break;
+    case 2:
+      strcpy(str, "enabled");
+      break;
+    case 3:
+      strcpy(str, "enabledpaired");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkLock::fobActionToString(const int fobact, char* str) {
+  switch (fobact) {
+    case 0:
+      strcpy(str, "noaction");
+      break;
+    case 1:
+      strcpy(str, "unlock");
+      break;
+    case 2:
+      strcpy(str, "lock");
+      break;
+    case 3:
+      strcpy(str, "lockngo");
+      break;
+    case 4:
+      strcpy(str, "intelligent");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
 }

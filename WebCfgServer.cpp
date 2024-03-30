@@ -1548,7 +1548,7 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)advancedLockConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
         response.concat("Lock config ACL (Unlocked To Locked Transition Offset Degrees): ");
         response.concat((int)advancedLockConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Lock ‘n’ Go timeout): ");
+        response.concat("Lock config ACL (Lock n Go timeout): ");
         response.concat((int)advancedLockConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
         response.concat("Lock config ACL (Single button press action): ");
         response.concat((int)advancedLockConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");

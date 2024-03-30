@@ -520,31 +520,49 @@ void NetworkOpener::publishBatteryReport(const NukiOpener::BatteryReport& batter
 
 void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 {
-    DynamicJsonDocument json(_bufferSize);
-
+    char str[50];
+    char curTime[20];
+    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", config.currentTimeYear, config.currentTimeMonth, config.currentTimeDay, config.currentTimeHour, config.currentTimeMinute, config.currentTimeSecond);
     char uidString[20];
     itoa(config.nukiId, uidString, 16);
+
+    DynamicJsonDocument json(_bufferSize);
+
     json["nukiID"] = uidString;
     json["name"] = config.name;
     json["latitude"] = config.latitide;
     json["longitude"] = config.longitude;
-    json["capabilities"] = config.capabilities;    
+    memset(str, 0, sizeof(str));
+    capabilitiesToString(config.capabilities, str);
+    json["capabilities"] = str;
     json["pairingEnabled"] = config.pairingEnabled;
     json["buttonEnabled"] = config.buttonEnabled;
-    json["currentTime"] = std::to_string(config.currentTimeYear) + "-" + std::to_string(config.currentTimeMonth) + "-" + std::to_string(config.currentTimeDay) + " " + std::to_string(config.currentTimeHour) + ":" + std::to_string(config.currentTimeMinute) + ":" + std::to_string(config.currentTimeSecond);
+    json["currentTime"] = curTime;
     json["timeZoneOffset"] = config.timeZoneOffset;
     json["dstMode"] = config.dstMode;
     json["hasFob"] = config.hasFob;
-    json["fobAction1"] = config.fobAction1;
-    json["fobAction2"] = config.fobAction2;
-    json["fobAction3"] = config.fobAction3;
-    json["operatingMode"] = config.operatingMode;
-    json["advertisingMode"] = (int)config.advertisingMode;
+    memset(str, 0, sizeof(str));
+    fobActionToString(config.fobAction1, str);
+    json["fobAction1"] = str;
+    memset(str, 0, sizeof(str));
+    fobActionToString(config.fobAction2, str);
+    json["fobAction2"] = str;
+    memset(str, 0, sizeof(str));
+    fobActionToString(config.fobAction3, str);
+    json["fobAction3"] = str;
+    memset(str, 0, sizeof(str));
+    operatingModeToString(config.operatingMode, str);
+    json["operatingMode"] = str;
+    memset(str, 0, sizeof(str));
+    advertisingModeToString(config.advertisingMode, str);
+    json["advertisingMode"] = str;
     json["hasKeypad"] = config.hasKeypad;
-    json["hasKeypadV2"] = config.hasKeypadV2;    
+    json["hasKeypadV2"] = config.hasKeypadV2;
     json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
     json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
-    json["timeZoneId"] = (int)config.timeZoneId;
+    memset(str, 0, sizeof(str));
+    timeZoneIdToString(config.timeZoneId, str);
+    json["timeZone"] = str;
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_basic_json, _buffer);
@@ -557,6 +575,8 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 
 void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &config)
 {
+    char str[50];
+
     DynamicJsonDocument json(_bufferSize);
 
     json["intercomID"] = config.intercomID;
@@ -575,9 +595,15 @@ void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &conf
     json["soundCm"] = config.soundCm;
     json["soundConfirmation"] = config.soundConfirmation;
     json["soundLevel"] = config.soundLevel;
-    json["singleButtonPressAction"] = (int)config.singleButtonPressAction;
-    json["doubleButtonPressAction"] = (int)config.doubleButtonPressAction;
-    json["batteryType"] = (int)config.batteryType;
+    memset(str, 0, sizeof(str));
+    buttonPressActionToString(config.singleButtonPressAction, str);
+    json["singleButtonPressAction"] = str;
+    memset(str, 0, sizeof(str));
+    buttonPressActionToString(config.doubleButtonPressAction, str);
+    json["doubleButtonPressAction"] = str;
+    memset(str, 0, sizeof(str));
+    batteryTypeToString(config.batteryType, str);
+    json["batteryType"] = str;
     json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
 
     serializeJson(json, _buffer, _bufferSize);
@@ -798,4 +824,321 @@ uint8_t NetworkOpener::queryCommands()
     uint8_t qc = _queryCommands;
     _queryCommands = 0;
     return qc;
+}
+
+void NetworkOpener::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
+  switch (battype) {
+    case Nuki::BatteryType::Alkali:
+      strcpy(str, "alkali");
+      break;
+    case Nuki::BatteryType::Accumulators:
+      strcpy(str, "accumulators");
+      break;
+    case Nuki::BatteryType::Lithium:
+      strcpy(str, "lithium");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str) {
+  switch (btnPressAction) {
+    case NukiOpener::ButtonPressAction::NoAction:
+      strcpy(str, "noaction");
+      break;
+    case NukiOpener::ButtonPressAction::ToggleRTO:
+      strcpy(str, "togglerto");
+      break;
+    case NukiOpener::ButtonPressAction::ActivateRTO:
+      strcpy(str, "activaterto");
+      break;
+    case NukiOpener::ButtonPressAction::DeactivateRTO:
+      strcpy(str, "deactivaterto");
+      break;
+    case NukiOpener::ButtonPressAction::ToggleCM:
+      strcpy(str, "togglecm");
+      break;
+    case NukiOpener::ButtonPressAction::ActivateCM:
+      strcpy(str, "activatecm");
+      break;
+    case NukiOpener::ButtonPressAction::DectivateCM:
+      strcpy(str, "deactivatecm");
+      break;
+    case NukiOpener::ButtonPressAction::Open:
+      strcpy(str, "open");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str) {
+  switch (advmode) {
+    case Nuki::AdvertisingMode::Automatic:
+      strcpy(str, "automatic");
+      break;
+    case Nuki::AdvertisingMode::Normal:
+      strcpy(str, "normal");
+      break;
+    case Nuki::AdvertisingMode::Slow:
+      strcpy(str, "slow");
+      break;
+    case Nuki::AdvertisingMode::Slowest:
+      strcpy(str, "slowest");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str) {
+  switch (timeZoneId) {
+    case Nuki::TimeZoneId::Africa_Cairo:
+      strcpy(str, "Africa/Cairo");
+      break;
+    case Nuki::TimeZoneId::Africa_Lagos:
+      strcpy(str, "Africa/Lagos");
+      break;
+    case Nuki::TimeZoneId::Africa_Maputo:
+      strcpy(str, "Africa/Maputo");
+      break;
+    case Nuki::TimeZoneId::Africa_Nairobi:
+      strcpy(str, "Africa/Nairobi");
+      break;
+    case Nuki::TimeZoneId::America_Anchorage:
+      strcpy(str, "America/Anchorage");
+      break;
+    case Nuki::TimeZoneId::America_Argentina_Buenos_Aires:
+      strcpy(str, "America/Argentina/Buenos_Aires");
+      break;
+    case Nuki::TimeZoneId::America_Chicago:
+      strcpy(str, "America/Chicago");
+      break;
+    case Nuki::TimeZoneId::America_Denver:
+      strcpy(str, "America/Denver");
+      break;
+    case Nuki::TimeZoneId::America_Halifax:
+      strcpy(str, "America/Halifax");
+      break;
+    case Nuki::TimeZoneId::America_Los_Angeles:
+      strcpy(str, "America/Los_Angeles");
+      break;
+    case Nuki::TimeZoneId::America_Manaus:
+      strcpy(str, "America/Manaus");
+      break;
+    case Nuki::TimeZoneId::America_Mexico_City:
+      strcpy(str, "America/Mexico_City");
+      break;
+    case Nuki::TimeZoneId::America_New_York:
+      strcpy(str, "America/New_York");
+      break;
+    case Nuki::TimeZoneId::America_Phoenix:
+      strcpy(str, "America/Phoenix");
+      break;
+    case Nuki::TimeZoneId::America_Regina:
+      strcpy(str, "America/Regina");
+      break;
+    case Nuki::TimeZoneId::America_Santiago:
+      strcpy(str, "America/Santiago");
+      break;
+    case Nuki::TimeZoneId::America_Sao_Paulo:
+      strcpy(str, "America/Sao_Paulo");
+      break;
+    case Nuki::TimeZoneId::America_St_Johns:
+      strcpy(str, "America/St_Johns");
+      break;
+    case Nuki::TimeZoneId::Asia_Bangkok:
+      strcpy(str, "Asia/Bangkok");
+      break;
+    case Nuki::TimeZoneId::Asia_Dubai:
+      strcpy(str, "Asia/Dubai");
+      break;
+    case Nuki::TimeZoneId::Asia_Hong_Kong:
+      strcpy(str, "Asia/Hong_Kong");
+      break;
+    case Nuki::TimeZoneId::Asia_Jerusalem:
+      strcpy(str, "Asia/Jerusalem");
+      break;
+    case Nuki::TimeZoneId::Asia_Karachi:
+      strcpy(str, "Asia/Karachi");
+      break;
+    case Nuki::TimeZoneId::Asia_Kathmandu:
+      strcpy(str, "Asia/Kathmandu");
+      break;
+    case Nuki::TimeZoneId::Asia_Kolkata:
+      strcpy(str, "Asia/Kolkata");
+      break;
+    case Nuki::TimeZoneId::Asia_Riyadh:
+      strcpy(str, "Asia/Riyadh");
+      break;
+    case Nuki::TimeZoneId::Asia_Seoul:
+      strcpy(str, "Asia/Seoul");
+      break;
+    case Nuki::TimeZoneId::Asia_Shanghai:
+      strcpy(str, "Asia/Shanghai");
+      break;
+    case Nuki::TimeZoneId::Asia_Tehran:
+      strcpy(str, "Asia/Tehran");
+      break;
+    case Nuki::TimeZoneId::Asia_Tokyo:
+      strcpy(str, "Asia/Tokyo");
+      break;
+    case Nuki::TimeZoneId::Asia_Yangon:
+      strcpy(str, "Asia/Yangon");
+      break;
+    case Nuki::TimeZoneId::Australia_Adelaide:
+      strcpy(str, "Australia/Adelaide");
+      break;
+    case Nuki::TimeZoneId::Australia_Brisbane:
+      strcpy(str, "Australia/Brisbane");
+      break;
+    case Nuki::TimeZoneId::Australia_Darwin:
+      strcpy(str, "Australia/Darwin");
+      break;
+    case Nuki::TimeZoneId::Australia_Hobart:
+      strcpy(str, "Australia/Hobart");
+      break;
+    case Nuki::TimeZoneId::Australia_Perth:
+      strcpy(str, "Australia/Perth");
+      break;
+    case Nuki::TimeZoneId::Australia_Sydney:
+      strcpy(str, "Australia/Sydney");
+      break;
+    case Nuki::TimeZoneId::Europe_Berlin:
+      strcpy(str, "Europe/Berlin");
+      break;
+    case Nuki::TimeZoneId::Europe_Helsinki:
+      strcpy(str, "Europe/Helsinki");
+      break;
+    case Nuki::TimeZoneId::Europe_Istanbul:
+      strcpy(str, "Europe/Istanbul");
+      break;
+    case Nuki::TimeZoneId::Europe_London:
+      strcpy(str, "Europe/London");
+      break;
+    case Nuki::TimeZoneId::Europe_Moscow:
+      strcpy(str, "Europe/Moscow");
+      break;
+    case Nuki::TimeZoneId::Pacific_Auckland:
+      strcpy(str, "Pacific/Auckland");
+      break;
+    case Nuki::TimeZoneId::Pacific_Guam:
+      strcpy(str, "	Pacific/Guam");
+      break;
+    case Nuki::TimeZoneId::Pacific_Honolulu:
+      strcpy(str, "Pacific/Honolulu");
+      break;
+    case Nuki::TimeZoneId::Pacific_Pago_Pago:
+      strcpy(str, "Pacific/Pago_Pago");
+      break;
+    case Nuki::TimeZoneId::None:
+      strcpy(str, "none");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::fobActionToString(const int fobact, char* str) {
+  switch (fobact) {
+    case 0:
+      strcpy(str, "noaction");
+      break;
+    case 1:
+      strcpy(str, "togglerto");
+      break;
+    case 2:
+      strcpy(str, "activaterto");
+      break;
+    case 3:
+      strcpy(str, "deactivaterto");
+      break;
+    case 7:
+      strcpy(str, "open");
+      break;
+    case 8:
+      strcpy(str, "ring");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::capabilitiesToString(const int capabilities, char* str) {
+  switch (capabilities) {
+    case 0:
+      strcpy(str, "dooropener");
+      break;
+    case 1:
+      strcpy(str, "both");
+      break;
+    case 2:
+      strcpy(str, "rto");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::operatingModeToString(const int opmode, char* str) {
+  switch (opmode) {
+    case 0:
+      strcpy(str, "genericdooropener");
+      break;
+    case 1:
+      strcpy(str, "analogueintercom");
+      break;
+    case 2:
+      strcpy(str, "digitalintercom");
+      break;
+    case 3:
+      strcpy(str, "siedle");
+      break;
+    case 4:
+      strcpy(str, "tcs");
+      break;
+    case 5:
+      strcpy(str, "bticino");
+      break;
+    case 6:
+      strcpy(str, "siedlehts");
+      break;
+    case 7:
+      strcpy(str, "str");
+      break;
+    case 8:
+      strcpy(str, "ritto");
+      break;
+    case 9:
+      strcpy(str, "fermax");
+      break;
+    case 10:
+      strcpy(str, "comelit");
+      break;
+    case 11:
+      strcpy(str, "urmetbibus");
+      break;
+    case 12:
+      strcpy(str, "urmet2voice");
+      break;
+    case 13:
+      strcpy(str, "golmar");
+      break;
+    case 14:
+      strcpy(str, "sks");
+      break;
+    case 15:
+      strcpy(str, "spare");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
 }
