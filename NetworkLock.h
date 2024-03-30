@@ -11,7 +11,6 @@
 #include "Network.h"
 #include "QueryCommand.h"
 #include "LockActionResult.h"
-#include "ConfigUpdateResult.h"
 
 #define LOCK_LOG_JSON_BUFFER_SIZE 2048
 
@@ -38,10 +37,11 @@ public:
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char* lockAction, char* unlockAction, char* openAction);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
+    void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
-    void setConfigUpdateReceivedCallback(ConfigUpdateResult (*configUpdateReceivedCallback)(const char* value));
+    void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
 
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
@@ -67,7 +67,7 @@ private:
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
     void homeKitStatusToString(const int hkstatus, char* str);
     void fobActionToString(const int fobact, char* str);
-    
+
     String concat(String a, String b);
 
     void buildMqttPath(const char* path, char* outPath);
@@ -94,6 +94,6 @@ private:
     size_t _bufferSize;
 
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
-    ConfigUpdateResult (*_configUpdateReceivedCallback)(const char* value) = nullptr;
+    void (*_configUpdateReceivedCallback)(const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
 };

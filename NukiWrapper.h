@@ -7,7 +7,6 @@
 #include "NukiLock.h"
 #include "Gpio.h"
 #include "LockActionResult.h"
-#include "ConfigUpdateResult.h"
 #include "NukiDeviceId.h"
 
 class NukiWrapper : public Nuki::SmartlockEventHandler
@@ -46,11 +45,12 @@ public:
 
 private:
     static LockActionResult onLockActionReceivedCallback(const char* value);
-    static ConfigUpdateResult onConfigUpdateReceivedCallback(const char* value);
+    static void onConfigUpdateReceivedCallback(const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
-
+    void onConfigUpdateReceived(const char* value);
+    
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
@@ -68,6 +68,11 @@ private:
     void printCommandResult(Nuki::CmdResult result);
 
     NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
+    Nuki::AdvertisingMode advertisingModeToEnum(const char* str);
+    Nuki::TimeZoneId timeZoneToEnum(const char* str);
+    uint8_t fobActionToInt(const char *str);
+    NukiLock::ButtonPressAction buttonPressActionToEnum(const char* str);
+    Nuki::BatteryType batteryTypeToEnum(const char* str);
 
     std::string _deviceName;
     NukiDeviceId* _deviceId = nullptr;

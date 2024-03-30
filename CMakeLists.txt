@@ -57,7 +57,6 @@ set(SRCFILES
         networkDevices/ClientSyncW5500.cpp
         networkDevices/espMqttClientW5500.cpp
         networkDevices/IPConfiguration.cpp
-        ConfigUpdateResult.h
         LockActionResult.h
         QueryCommand.h
         NukiWrapper.cpp

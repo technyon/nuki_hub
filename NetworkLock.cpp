@@ -187,36 +187,15 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
 
     if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
-        if(strcmp(value, "") == 0 ||
-           strcmp(value, "--") == 0 ||
-           strcmp(value, "ack") == 0 ||
-           strcmp(value, "unknown_action") == 0 ||
-           strcmp(value, "denied") == 0 ||
-           strcmp(value, "error") == 0) return;
-
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
         Log->print(F("Config action received: "));
         Log->println(value);
-        ConfigUpdateResult configUpdateResult = ConfigUpdateResult::Failed;
         if(_configUpdateReceivedCallback != NULL)
         {
-            configUpdateResult = _configUpdateReceivedCallback(value);
+            _configUpdateReceivedCallback(value);
         }
-
-        switch(configUpdateResult)
-        {
-            case ConfigUpdateResult::Success:
-                publishString(mqtt_topic_config_action, "ack");
-                break;
-            case ConfigUpdateResult::UnknownAction:
-                publishString(mqtt_topic_config_action, "unknown_action");
-                break;
-            case ConfigUpdateResult::AccessDenied:
-                publishString(mqtt_topic_config_action, "denied");
-                break;
-            case ConfigUpdateResult::Failed:
-                publishString(mqtt_topic_config_action, "error");
-                break;
-        }
+        
+        publishString(mqtt_topic_config_action, "--");
     }
 }
 
@@ -296,7 +275,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     if(_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState)
     {
-        if ((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
+        if((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
             publishBool(mqtt_topic_battery_keypad_critical, (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
         }
         else
@@ -638,6 +617,11 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
     }
 }
 
+void NetworkLock::publishConfigCommandResult(const char* result)
+{
+    publishString(mqtt_topic_config_action_command_result, result);
+}
+
 void NetworkLock::publishKeypadCommandResult(const char* result)
 {
     publishString(mqtt_topic_keypad_command_result, result);
@@ -648,7 +632,7 @@ void NetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActionRec
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }
 
-void NetworkLock::setConfigUpdateReceivedCallback(ConfigUpdateResult (*configUpdateReceivedCallback)(const char *))
+void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
@@ -1012,7 +996,7 @@ void NetworkLock::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* st
       strcpy(str, "Pacific/Auckland");
       break;
     case Nuki::TimeZoneId::Pacific_Guam:
-      strcpy(str, "	Pacific/Guam");
+      strcpy(str, "Pacific/Guam");
       break;
     case Nuki::TimeZoneId::Pacific_Honolulu:
       strcpy(str, "Pacific/Honolulu");

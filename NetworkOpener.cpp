@@ -179,36 +179,15 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
 
     if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
-        if(strcmp(value, "") == 0 ||
-           strcmp(value, "--") == 0 ||
-           strcmp(value, "ack") == 0 ||
-           strcmp(value, "unknown_action") == 0 ||
-           strcmp(value, "denied") == 0 ||
-           strcmp(value, "error") == 0) return;
-
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
         Log->print(F("Config action received: "));
         Log->println(value);
-        ConfigUpdateResult configUpdateResult = ConfigUpdateResult::Failed;
         if(_configUpdateReceivedCallback != NULL)
         {
-            configUpdateResult = _configUpdateReceivedCallback(value);
+            _configUpdateReceivedCallback(value);
         }
-
-        switch(configUpdateResult)
-        {
-            case ConfigUpdateResult::Success:
-                publishString(mqtt_topic_config_action, "ack");
-                break;
-            case ConfigUpdateResult::UnknownAction:
-                publishString(mqtt_topic_config_action, "unknown_action");
-                break;
-            case ConfigUpdateResult::AccessDenied:
-                publishString(mqtt_topic_config_action, "denied");
-                break;
-            case ConfigUpdateResult::Failed:
-                publishString(mqtt_topic_config_action, "error");
-                break;
-        }
+        
+        publishString(mqtt_topic_config_action, "--");
     }
 }
 
@@ -291,7 +270,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 
 void NetworkOpener::publishRing(const bool locked)
 {
-    if (locked)
+    if(locked)
     {
         publishString(mqtt_topic_lock_ring, "ringlocked");
     }
@@ -537,6 +516,7 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
     json["capabilities"] = str;
     json["pairingEnabled"] = config.pairingEnabled;
     json["buttonEnabled"] = config.buttonEnabled;
+    json["ledFlashEnabled"] = config.ledFlashEnabled;
     json["currentTime"] = curTime;
     json["timeZoneOffset"] = config.timeZoneOffset;
     json["dstMode"] = config.dstMode;
@@ -689,6 +669,11 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
     }
 }
 
+void NetworkOpener::publishConfigCommandResult(const char* result)
+{
+    publishString(mqtt_topic_config_action_command_result, result);
+}
+
 void NetworkOpener::publishKeypadCommandResult(const char* result)
 {
     publishString(mqtt_topic_keypad_command_result, result);
@@ -699,7 +684,7 @@ void NetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionR
     _lockActionReceivedCallback = lockActionReceivedCallback;
 }
 
-void NetworkOpener::setConfigUpdateReceivedCallback(ConfigUpdateResult (*configUpdateReceivedCallback)(const char *))
+void NetworkOpener::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *))
 {
     _configUpdateReceivedCallback = configUpdateReceivedCallback;
 }
@@ -1027,7 +1012,7 @@ void NetworkOpener::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* 
       strcpy(str, "Pacific/Auckland");
       break;
     case Nuki::TimeZoneId::Pacific_Guam:
-      strcpy(str, "	Pacific/Guam");
+      strcpy(str, "Pacific/Guam");
       break;
     case Nuki::TimeZoneId::Pacific_Honolulu:
       strcpy(str, "Pacific/Honolulu");
