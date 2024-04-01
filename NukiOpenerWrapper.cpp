@@ -692,9 +692,6 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         return;
     }
 
-    //MISSING BASIC: "latitude", "longitude", "fobAction1",  "fobAction2",  "fobAction3", "operatingMode"
-    //MISSING ADVANCED: "intercomID", "busModeSwitch", "shortCircuitDaration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation"
-
     Nuki::CmdResult cmdResult;
     const char *basicKeys[] = {"name", "latitude", "longitude", "pairingEnabled", "buttonEnabled", "ledFlashEnabled", "timeZoneOffset", "dstMode", "fobAction1",  "fobAction2", "fobAction3", "operatingMode", "advertisingMode", "timeZone"};
     const char *advancedKeys[] = {"intercomID", "busModeSwitch", "shortCircuitDaration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection"};

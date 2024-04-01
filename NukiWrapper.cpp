@@ -633,7 +633,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         _network->publishConfigCommandResult(_resbuf);
         return;
     }
-    
+
     updateConfig();
 
     if(!_nukiConfigValid || !_nukiAdvancedConfigValid)
@@ -643,9 +643,6 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         _network->publishConfigCommandResult(_resbuf);
         return;
     }
-
-    //MISSING BASIC: "latitude", "longitude", "autoUnlatch", "fobAction1",  "fobAction2",  "fobAction3"
-    //MISSING ADVANCED: "unlockedPositionOffsetDegrees", "lockedPositionOffsetDegrees", "singleLockedPositionOffsetDegrees", "unlockedToLockedTransitionOffsetDegrees", "lockNgoTimeout", "detachedCylinder", "unlatchDuration", "autoLockTimeOut", "nightModeEnabled", "nightModeStartTime", "nightModeEndTime", "nightModeAutoLockEnabled", "nightModeAutoUnlockDisabled", "nightModeImmediateLockOnStart"
 
     Nuki::CmdResult cmdResult;
     const char *basicKeys[] = {"name", "latitude", "longitude", "autoUnlatch", "pairingEnabled", "buttonEnabled", "ledEnabled", "ledBrightness", "timeZoneOffset", "dstMode", "fobAction1",  "fobAction2", "fobAction3", "singleLock", "advertisingMode", "timeZone"};
