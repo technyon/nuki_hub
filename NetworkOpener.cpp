@@ -509,7 +509,7 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 
     json["nukiID"] = uidString;
     json["name"] = config.name;
-    json["latitude"] = config.latitide;
+    json["latitude"] = config.latitude;
     json["longitude"] = config.longitude;
     memset(str, 0, sizeof(str));
     capabilitiesToString(config.capabilities, str);
@@ -561,7 +561,7 @@ void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &conf
 
     json["intercomID"] = config.intercomID;
     json["busModeSwitch"] = config.busModeSwitch;
-    json["shortCircuitDaration"] = config.shortCircuitDaration;
+    json["shortCircuitDuration"] = config.shortCircuitDuration;
     json["electricStrikeDelay"] = config.electricStrikeDelay;
     json["randomElectricStrikeDelay"] = config.randomElectricStrikeDelay;
     json["electricStrikeDuration"] = config.electricStrikeDuration;
