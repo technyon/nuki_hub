@@ -1,4 +1,3 @@
 [submodule "lib/nuki_ble"]
 	path = lib/nuki_ble
-	url = https://github.com/iranl/NukiBleEsp32.git
-    branch = extend-config
+	url = https://github.com/technyon/nuki_ble.git

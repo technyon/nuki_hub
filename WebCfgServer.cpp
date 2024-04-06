@@ -1186,23 +1186,23 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("<table>");
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
     printInputField(response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261);
-    if(_nukiOpener != nullptr) printCheckBox(response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode));
+    if(_nukiOpener != nullptr) printCheckBox(response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
-    printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled));
+    printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled), "");
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
-    printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
-    printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled));
-    printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates));
+    printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
+    printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
+    printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
 
     response.concat("<h3>IP Address assignment</h3>");
     response.concat("<table>");
-    printCheckBox(response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled));
+    printCheckBox(response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
     printInputField(response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15);
     printInputField(response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15);
     printInputField(response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15);
@@ -1226,10 +1226,10 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
-        printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled));
-        printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled));
+        printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled), "");
+        printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
-    printCheckBox(response, "PUBAUTH", "Publish authorisation log (may reduce battery life)", _preferences->getBool(preference_publish_authdata));
+    printCheckBox(response, "PUBAUTH", "Publish authorisation log (may reduce battery life)", _preferences->getBool(preference_publish_authdata), "");
     response.concat("</table><br>");
     if(_nuki != nullptr)
     {
@@ -1239,61 +1239,69 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
 
         response.concat("<h3>Nuki Lock Access Control</h3>");
+        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLLCKLCK", "Lock", ((int)aclPrefs[0] == 1));
-        printCheckBox(response, "ACLLCKUNLCK", "Unlock", ((int)aclPrefs[1] == 1));
-        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", ((int)aclPrefs[2] == 1));
-        printCheckBox(response, "ACLLCKLNG", "Lock N Go", ((int)aclPrefs[3] == 1));
-        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", ((int)aclPrefs[4] == 1));
-        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", ((int)aclPrefs[5] == 1));
-        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", ((int)aclPrefs[6] == 1));
-        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", ((int)aclPrefs[7] == 1));
-        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", ((int)aclPrefs[8] == 1));
+        printCheckBox(response, "ACLLCKLCK", "Lock", ((int)aclPrefs[0] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKUNLCK", "Unlock", ((int)aclPrefs[1] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", ((int)aclPrefs[2] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKLNG", "Lock N Go", ((int)aclPrefs[3] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", ((int)aclPrefs[4] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", ((int)aclPrefs[5] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", ((int)aclPrefs[6] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", ((int)aclPrefs[7] == 1), "chk_access_lock");
+        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", ((int)aclPrefs[8] == 1), "chk_access_lock");
         response.concat("</table><br>");
 
         response.concat("<h3>Nuki Lock Config Control (Requires PIN to be set)</h3>");
+        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
         response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "CONFLCKNAME", "Name", ((int)basicLockConfigAclPrefs[0] == 1));
-        printCheckBox(response, "CONFLCKLAT", "Latitude", ((int)basicLockConfigAclPrefs[1] == 1));
-        printCheckBox(response, "CONFLCKLONG", "Longitude", ((int)basicLockConfigAclPrefs[2] == 1));
-        printCheckBox(response, "CONFLCKAUNL", "Auto unlatch", ((int)basicLockConfigAclPrefs[3] == 1));
-        printCheckBox(response, "CONFLCKPRENA", "Pairing enabled", ((int)basicLockConfigAclPrefs[4] == 1));
-        printCheckBox(response, "CONFLCKBTENA", "Button enabled", ((int)basicLockConfigAclPrefs[5] == 1));
-        printCheckBox(response, "CONFLCKLEDENA", "LED flash enabled", ((int)basicLockConfigAclPrefs[6] == 1));
-        printCheckBox(response, "CONFLCKLEDBR", "LED brightness", ((int)basicLockConfigAclPrefs[7] == 1));
-        printCheckBox(response, "CONFLCKTZOFF", "Timezone offset", ((int)basicLockConfigAclPrefs[8] == 1));
-        printCheckBox(response, "CONFLCKDSTM", "DST mode", ((int)basicLockConfigAclPrefs[9] == 1));
-        printCheckBox(response, "CONFLCKFOB1", "Fob Action 1", ((int)basicLockConfigAclPrefs[10] == 1));
-        printCheckBox(response, "CONFLCKFOB2", "Fob Action 2", ((int)basicLockConfigAclPrefs[11] == 1));
-        printCheckBox(response, "CONFLCKFOB3", "Fob Action 3", ((int)basicLockConfigAclPrefs[12] == 1));
-        printCheckBox(response, "CONFLCKSGLLCK", "Single Lock", ((int)basicLockConfigAclPrefs[13] == 1));
-        printCheckBox(response, "CONFLCKADVM", "Advertising Mode", ((int)basicLockConfigAclPrefs[14] == 1));
-        printCheckBox(response, "CONFLCKTZID", "Timezone ID", ((int)basicLockConfigAclPrefs[15] == 1));
+        printCheckBox(response, "CONFLCKNAME", "Name", ((int)basicLockConfigAclPrefs[0] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKLAT", "Latitude", ((int)basicLockConfigAclPrefs[1] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKLONG", "Longitude", ((int)basicLockConfigAclPrefs[2] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKAUNL", "Auto unlatch", ((int)basicLockConfigAclPrefs[3] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKPRENA", "Pairing enabled", ((int)basicLockConfigAclPrefs[4] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKBTENA", "Button enabled", ((int)basicLockConfigAclPrefs[5] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKLEDENA", "LED flash enabled", ((int)basicLockConfigAclPrefs[6] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKLEDBR", "LED brightness", ((int)basicLockConfigAclPrefs[7] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKTZOFF", "Timezone offset", ((int)basicLockConfigAclPrefs[8] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKDSTM", "DST mode", ((int)basicLockConfigAclPrefs[9] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKFOB1", "Fob Action 1", ((int)basicLockConfigAclPrefs[10] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKFOB2", "Fob Action 2", ((int)basicLockConfigAclPrefs[11] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKFOB3", "Fob Action 3", ((int)basicLockConfigAclPrefs[12] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKSGLLCK", "Single Lock", ((int)basicLockConfigAclPrefs[13] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKADVM", "Advertising Mode", ((int)basicLockConfigAclPrefs[14] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKTZID", "Timezone ID", ((int)basicLockConfigAclPrefs[15] == 1), "chk_config_lock");
 
-        printCheckBox(response, "CONFLCKUPOD", "Unlocked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[0] == 1));
-        printCheckBox(response, "CONFLCKLPOD", "Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[1] == 1));
-        printCheckBox(response, "CONFLCKSLPOD", "Single Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[2] == 1));
-        printCheckBox(response, "CONFLCKUTLTOD", "Unlocked To Locked Transition Offset Degrees", ((int)advancedLockConfigAclPrefs[3] == 1));
-        printCheckBox(response, "CONFLCKLNGT", "Lock n Go timeout", ((int)advancedLockConfigAclPrefs[4] == 1));
-        printCheckBox(response, "CONFLCKSBPA", "Single button press action", ((int)advancedLockConfigAclPrefs[5] == 1));
-        printCheckBox(response, "CONFLCKDBPA", "Double button press action", ((int)advancedLockConfigAclPrefs[6] == 1));
-        printCheckBox(response, "CONFLCKDC", "Detached cylinder", ((int)advancedLockConfigAclPrefs[7] == 1));
-        printCheckBox(response, "CONFLCKBATT", "Battery type", ((int)advancedLockConfigAclPrefs[8] == 1));
-        printCheckBox(response, "CONFLCKABTD", "Automatic battery type detection", ((int)advancedLockConfigAclPrefs[9] == 1));
-        printCheckBox(response, "CONFLCKUNLD", "Unlatch duration", ((int)advancedLockConfigAclPrefs[10] == 1));
-        printCheckBox(response, "CONFLCKALT", "Auto lock timeout", ((int)advancedLockConfigAclPrefs[11] == 1));
-        printCheckBox(response, "CONFLCKAUNLD", "Auto unlock disabled", ((int)advancedLockConfigAclPrefs[12] == 1));
-        printCheckBox(response, "CONFLCKNMENA", "Nightmode enabled", ((int)advancedLockConfigAclPrefs[13] == 1));
-        printCheckBox(response, "CONFLCKNMST", "Nightmode start time", ((int)advancedLockConfigAclPrefs[14] == 1));
-        printCheckBox(response, "CONFLCKNMET", "Nightmode end time", ((int)advancedLockConfigAclPrefs[15] == 1));
-        printCheckBox(response, "CONFLCKNMALENA", "Nightmode auto lock enabled", ((int)advancedLockConfigAclPrefs[16] == 1));
-        printCheckBox(response, "CONFLCKNMAULD", "Nightmode auto unlock disabled", ((int)advancedLockConfigAclPrefs[17] == 1));
-        printCheckBox(response, "CONFLCKNMLOS", "Nightmode immediate lock on start", ((int)advancedLockConfigAclPrefs[18] == 1));
-        printCheckBox(response, "CONFLCKALENA", "Auto lock enabled", ((int)advancedLockConfigAclPrefs[19] == 1));
-        printCheckBox(response, "CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1));
-        printCheckBox(response, "CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1));
+        printCheckBox(response, "CONFLCKUPOD", "Unlocked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[0] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKLPOD", "Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[1] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKSLPOD", "Single Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[2] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKUTLTOD", "Unlocked To Locked Transition Offset Degrees", ((int)advancedLockConfigAclPrefs[3] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKLNGT", "Lock n Go timeout", ((int)advancedLockConfigAclPrefs[4] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKSBPA", "Single button press action", ((int)advancedLockConfigAclPrefs[5] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKDBPA", "Double button press action", ((int)advancedLockConfigAclPrefs[6] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKDC", "Detached cylinder", ((int)advancedLockConfigAclPrefs[7] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKBATT", "Battery type", ((int)advancedLockConfigAclPrefs[8] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKABTD", "Automatic battery type detection", ((int)advancedLockConfigAclPrefs[9] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKUNLD", "Unlatch duration", ((int)advancedLockConfigAclPrefs[10] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKALT", "Auto lock timeout", ((int)advancedLockConfigAclPrefs[11] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKAUNLD", "Auto unlock disabled", ((int)advancedLockConfigAclPrefs[12] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKNMENA", "Nightmode enabled", ((int)advancedLockConfigAclPrefs[13] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKNMST", "Nightmode start time", ((int)advancedLockConfigAclPrefs[14] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKNMET", "Nightmode end time", ((int)advancedLockConfigAclPrefs[15] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKNMALENA", "Nightmode auto lock enabled", ((int)advancedLockConfigAclPrefs[16] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKNMAULD", "Nightmode auto unlock disabled", ((int)advancedLockConfigAclPrefs[17] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKNMLOS", "Nightmode immediate lock on start", ((int)advancedLockConfigAclPrefs[18] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKALENA", "Auto lock enabled", ((int)advancedLockConfigAclPrefs[19] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1), "chk_config_lock");
+        printCheckBox(response, "CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1), "chk_config_lock");
         response.concat("</table><br>");
     }
     if(_nukiOpener != nullptr)
@@ -1304,56 +1312,64 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
         response.concat("<h3>Nuki Opener Access Control</h3>");
+        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
         response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", ((int)aclPrefs[9] == 1));
-        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", ((int)aclPrefs[10] == 1));
-        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", ((int)aclPrefs[11] == 1));
-        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", ((int)aclPrefs[12] == 1));
-        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", ((int)aclPrefs[13] == 1));
-        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", ((int)aclPrefs[14] == 1));
-        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", ((int)aclPrefs[15] == 1));
-        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", ((int)aclPrefs[16] == 1));
+        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", ((int)aclPrefs[9] == 1), "chk_access_opener");
+        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", ((int)aclPrefs[10] == 1), "chk_access_opener");
+        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", ((int)aclPrefs[11] == 1), "chk_access_opener");
+        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", ((int)aclPrefs[12] == 1), "chk_access_opener");
+        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", ((int)aclPrefs[13] == 1), "chk_access_opener");
+        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", ((int)aclPrefs[14] == 1), "chk_access_opener");
+        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", ((int)aclPrefs[15] == 1), "chk_access_opener");
+        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", ((int)aclPrefs[16] == 1), "chk_access_opener");
         response.concat("</table><br>");
 
         response.concat("<h3>Nuki Opener Config Control (Requires PIN to be set)</h3>");
+        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
         response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "CONFOPNNAME", "Name", ((int)basicOpenerConfigAclPrefs[0] == 1));
-        printCheckBox(response, "CONFOPNLAT", "Latitude", ((int)basicOpenerConfigAclPrefs[1] == 1));
-        printCheckBox(response, "CONFOPNLONG", "Longitude", ((int)basicOpenerConfigAclPrefs[2] == 1));
-        printCheckBox(response, "CONFOPNPRENA", "Pairing enabled", ((int)basicOpenerConfigAclPrefs[3] == 1));
-        printCheckBox(response, "CONFOPNBTENA", "Button enabled", ((int)basicOpenerConfigAclPrefs[4] == 1));
-        printCheckBox(response, "CONFOPNLEDENA", "LED flash enabled", ((int)basicOpenerConfigAclPrefs[5] == 1));
-        printCheckBox(response, "CONFOPNTZOFF", "Timezone offset", ((int)basicOpenerConfigAclPrefs[6] == 1));
-        printCheckBox(response, "CONFOPNDSTM", "DST mode", ((int)basicOpenerConfigAclPrefs[7] == 1));
-        printCheckBox(response, "CONFOPNFOB1", "Fob Action 1", ((int)basicOpenerConfigAclPrefs[8] == 1));
-        printCheckBox(response, "CONFOPNFOB2", "Fob Action 2", ((int)basicOpenerConfigAclPrefs[9] == 1));
-        printCheckBox(response, "CONFOPNFOB3", "Fob Action 3", ((int)basicOpenerConfigAclPrefs[10] == 1));
-        printCheckBox(response, "CONFOPNOPM", "Operation Mode", ((int)basicOpenerConfigAclPrefs[11] == 1));
-        printCheckBox(response, "CONFOPNADVM", "Advertising Mode", ((int)basicOpenerConfigAclPrefs[12] == 1));
-        printCheckBox(response, "CONFOPNTZID", "Timezone ID", ((int)basicOpenerConfigAclPrefs[13] == 1));
+        printCheckBox(response, "CONFOPNNAME", "Name", ((int)basicOpenerConfigAclPrefs[0] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNLAT", "Latitude", ((int)basicOpenerConfigAclPrefs[1] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNLONG", "Longitude", ((int)basicOpenerConfigAclPrefs[2] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNPRENA", "Pairing enabled", ((int)basicOpenerConfigAclPrefs[3] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNBTENA", "Button enabled", ((int)basicOpenerConfigAclPrefs[4] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNLEDENA", "LED flash enabled", ((int)basicOpenerConfigAclPrefs[5] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNTZOFF", "Timezone offset", ((int)basicOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNDSTM", "DST mode", ((int)basicOpenerConfigAclPrefs[7] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNFOB1", "Fob Action 1", ((int)basicOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNFOB2", "Fob Action 2", ((int)basicOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNFOB3", "Fob Action 3", ((int)basicOpenerConfigAclPrefs[10] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNOPM", "Operation Mode", ((int)basicOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNADVM", "Advertising Mode", ((int)basicOpenerConfigAclPrefs[12] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNTZID", "Timezone ID", ((int)basicOpenerConfigAclPrefs[13] == 1), "chk_config_opener");
 
-        printCheckBox(response, "CONFOPNICID", "Intercom ID", ((int)advancedOpenerConfigAclPrefs[0] == 1));
-        printCheckBox(response, "CONFOPNBUSMS", "BUS mode Switch", ((int)advancedOpenerConfigAclPrefs[1] == 1));
-        printCheckBox(response, "CONFOPNSCDUR", "Short Circuit Duration", ((int)advancedOpenerConfigAclPrefs[2] == 1));
-        printCheckBox(response, "CONFOPNESD", "Eletric Strike Delay", ((int)advancedOpenerConfigAclPrefs[3] == 1));
-        printCheckBox(response, "CONFOPNRESD", "Random Electric Strike Delay", ((int)advancedOpenerConfigAclPrefs[4] == 1));
-        printCheckBox(response, "CONFOPNESDUR", "Electric Strike Duration", ((int)advancedOpenerConfigAclPrefs[5] == 1));
-        printCheckBox(response, "CONFOPNDRTOAR", "disable RTO after ring", ((int)advancedOpenerConfigAclPrefs[6] == 1));
-        printCheckBox(response, "CONFOPNRTOT", "RTO timeout", ((int)advancedOpenerConfigAclPrefs[7] == 1));
-        printCheckBox(response, "CONFOPNDRBSUP", "Doorbell suppression", ((int)advancedOpenerConfigAclPrefs[8] == 1));
-        printCheckBox(response, "CONFOPNDRBSUPDUR", "Doorbell suppression duration", ((int)advancedOpenerConfigAclPrefs[9] == 1));
-        printCheckBox(response, "CONFOPNSRING", "Sound Ring", ((int)advancedOpenerConfigAclPrefs[10] == 1));
-        printCheckBox(response, "CONFOPNSOPN", "Sound Open", ((int)advancedOpenerConfigAclPrefs[11] == 1));
-        printCheckBox(response, "CONFOPNSRTO", "Sound RTO", ((int)advancedOpenerConfigAclPrefs[12] == 1));
-        printCheckBox(response, "CONFOPNSCM", "Sound CM", ((int)advancedOpenerConfigAclPrefs[13] == 1));
-        printCheckBox(response, "CONFOPNSCFRM", "Sound confirmation", ((int)advancedOpenerConfigAclPrefs[14] == 1));
-        printCheckBox(response, "CONFOPNSLVL", "Sound level", ((int)advancedOpenerConfigAclPrefs[15] == 1));
-        printCheckBox(response, "CONFOPNSBPA", "Single button press action", ((int)advancedOpenerConfigAclPrefs[16] == 1));
-        printCheckBox(response, "CONFOPNDBPA", "Double button press action", ((int)advancedOpenerConfigAclPrefs[17] == 1));
-        printCheckBox(response, "CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1));
-        printCheckBox(response, "CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1));
+        printCheckBox(response, "CONFOPNICID", "Intercom ID", ((int)advancedOpenerConfigAclPrefs[0] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNBUSMS", "BUS mode Switch", ((int)advancedOpenerConfigAclPrefs[1] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSCDUR", "Short Circuit Duration", ((int)advancedOpenerConfigAclPrefs[2] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNESD", "Eletric Strike Delay", ((int)advancedOpenerConfigAclPrefs[3] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNRESD", "Random Electric Strike Delay", ((int)advancedOpenerConfigAclPrefs[4] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNESDUR", "Electric Strike Duration", ((int)advancedOpenerConfigAclPrefs[5] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNDRTOAR", "disable RTO after ring", ((int)advancedOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNRTOT", "RTO timeout", ((int)advancedOpenerConfigAclPrefs[7] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNDRBSUP", "Doorbell suppression", ((int)advancedOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNDRBSUPDUR", "Doorbell suppression duration", ((int)advancedOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSRING", "Sound Ring", ((int)advancedOpenerConfigAclPrefs[10] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSOPN", "Sound Open", ((int)advancedOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSRTO", "Sound RTO", ((int)advancedOpenerConfigAclPrefs[12] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSCM", "Sound CM", ((int)advancedOpenerConfigAclPrefs[13] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSCFRM", "Sound confirmation", ((int)advancedOpenerConfigAclPrefs[14] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSLVL", "Sound level", ((int)advancedOpenerConfigAclPrefs[15] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNSBPA", "Single button press action", ((int)advancedOpenerConfigAclPrefs[16] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNDBPA", "Double button press action", ((int)advancedOpenerConfigAclPrefs[17] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1), "chk_config_opener");
         response.concat("</table><br>");
     }
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -1368,12 +1384,12 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Basic Nuki Configuration</h3>");
     response.concat("<table>");
-    printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled));
+    printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled), "");
     if(_preferences->getBool(preference_lock_enabled))
     {
         printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
     }
-    printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled));
+    printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
     if(_preferences->getBool(preference_opener_enabled))
     {
         printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
@@ -1392,7 +1408,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     }
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
-    printCheckBox(response, "REGAPP", "Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app));
+    printCheckBox(response, "REGAPP", "Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
     response.concat("</table>");
@@ -1818,7 +1834,7 @@ void WebCfgServer::printInputField(String& response,
     printInputField(response, token, description, valueStr, maxLength);
 }
 
-void WebCfgServer::printCheckBox(String &response, const char *token, const char *description, const bool value)
+void WebCfgServer::printCheckBox(String &response, const char *token, const char *description, const bool value, const char *htmlClass)
 {
     response.concat("<tr><td>");
     response.concat(description);
@@ -1831,6 +1847,8 @@ void WebCfgServer::printCheckBox(String &response, const char *token, const char
 
     response.concat("<input type=checkbox name=\"");
     response.concat(token);
+    response.concat("\" class=\"");
+    response.concat(htmlClass);
     response.concat("\" value=\"1\"");
     response.concat(value ? " checked=\"checked\"" : "");
     response.concat("/></td></tr>");
