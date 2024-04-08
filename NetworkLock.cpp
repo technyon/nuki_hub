@@ -675,9 +675,7 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
                                char *unlockAction, char *openAction)
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigAdditionalButtons(deviceType, baseTopic, name, uidString);
-    _network->publishHASSConfigBatLevel(deviceType, baseTopic, name, uidString);
-    _network->publishHASSConfigLedBrightness(deviceType, baseTopic, name, uidString);
+    _network->publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
     if(hasDoorSensor)
     {
         _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
@@ -687,7 +685,6 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
         _network->removeHASSConfigTopic("binary_sensor", "door_sensor", uidString);
     }
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
-    _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
 
     if(publishAuthData)
     {
@@ -700,11 +697,12 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
 
     if(hasKeypad)
     {
-        _network->publishHASSConfigKeypadAttemptInfo(deviceType, baseTopic, name, uidString);
+        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
     }
     else
     {
         _network->removeHASSConfigTopic("sensor", "keypad_status", uidString);
+        _network->removeHASSConfigTopic("binary_sensor", "keypad_battery_low", uidString);
     }
 }
 
@@ -801,13 +799,13 @@ uint8_t NetworkLock::queryCommands()
 void NetworkLock::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
   switch (battype) {
     case Nuki::BatteryType::Alkali:
-      strcpy(str, "alkali");
+      strcpy(str, "Alkali");
       break;
     case Nuki::BatteryType::Accumulators:
-      strcpy(str, "accumulators");
+      strcpy(str, "Accumulators");
       break;
     case Nuki::BatteryType::Lithium:
-      strcpy(str, "lithium");
+      strcpy(str, "Lithium");
       break;
     default:
       strcpy(str, "undefined");
@@ -818,25 +816,25 @@ void NetworkLock::batteryTypeToString(const Nuki::BatteryType battype, char* str
 void NetworkLock::buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str) {
   switch (btnPressAction) {
     case NukiLock::ButtonPressAction::NoAction:
-      strcpy(str, "noaction");
+      strcpy(str, "No Action");
       break;
     case NukiLock::ButtonPressAction::Intelligent:
-      strcpy(str, "intelligent");
+      strcpy(str, "Intelligent");
       break;
     case NukiLock::ButtonPressAction::Unlock:
-      strcpy(str, "unlock");
+      strcpy(str, "Unlock");
       break;
     case NukiLock::ButtonPressAction::Lock:
-      strcpy(str, "lock");
+      strcpy(str, "Lock");
       break;
     case NukiLock::ButtonPressAction::Unlatch:
-      strcpy(str, "unlatch");
+      strcpy(str, "Unlatch");
       break;
     case NukiLock::ButtonPressAction::LockNgo:
-      strcpy(str, "lockngo");
+      strcpy(str, "Lock n Go");
       break;
     case NukiLock::ButtonPressAction::ShowStatus:
-      strcpy(str, "showstatus");
+      strcpy(str, "Show Status");
       break;
     default:
       strcpy(str, "undefined");
@@ -847,16 +845,16 @@ void NetworkLock::buttonPressActionToString(const NukiLock::ButtonPressAction bt
 void NetworkLock::advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str) {
   switch (advmode) {
     case Nuki::AdvertisingMode::Automatic:
-      strcpy(str, "automatic");
+      strcpy(str, "Automatic");
       break;
     case Nuki::AdvertisingMode::Normal:
-      strcpy(str, "normal");
+      strcpy(str, "Normal");
       break;
     case Nuki::AdvertisingMode::Slow:
-      strcpy(str, "slow");
+      strcpy(str, "Slow");
       break;
     case Nuki::AdvertisingMode::Slowest:
-      strcpy(str, "slowest");
+      strcpy(str, "Slowest");
       break;
     default:
       strcpy(str, "undefined");
@@ -1005,7 +1003,7 @@ void NetworkLock::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* st
       strcpy(str, "Pacific/Pago_Pago");
       break;
     case Nuki::TimeZoneId::None:
-      strcpy(str, "none");
+      strcpy(str, "None");
       break;
     default:
       strcpy(str, "undefined");
@@ -1016,16 +1014,16 @@ void NetworkLock::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* st
 void NetworkLock::homeKitStatusToString(const int hkstatus, char* str) {
   switch (hkstatus) {
     case 0:
-      strcpy(str, "notavailable");
+      strcpy(str, "Not Available");
       break;
     case 1:
-      strcpy(str, "disabled");
+      strcpy(str, "Disabled");
       break;
     case 2:
-      strcpy(str, "enabled");
+      strcpy(str, "Enabled");
       break;
     case 3:
-      strcpy(str, "enabledpaired");
+      strcpy(str, "Enabled & Paired");
       break;
     default:
       strcpy(str, "undefined");
@@ -1036,19 +1034,19 @@ void NetworkLock::homeKitStatusToString(const int hkstatus, char* str) {
 void NetworkLock::fobActionToString(const int fobact, char* str) {
   switch (fobact) {
     case 0:
-      strcpy(str, "noaction");
+      strcpy(str, "No Action");
       break;
     case 1:
-      strcpy(str, "unlock");
+      strcpy(str, "Unlock");
       break;
     case 2:
-      strcpy(str, "lock");
+      strcpy(str, "Lock");
       break;
     case 3:
-      strcpy(str, "lockngo");
+      strcpy(str, "Lock n Go");
       break;
     case 4:
-      strcpy(str, "intelligent");
+      strcpy(str, "Intelligent");
       break;
     default:
       strcpy(str, "undefined");

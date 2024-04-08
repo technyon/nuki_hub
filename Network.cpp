@@ -740,175 +740,200 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
 
 void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+    DynamicJsonDocument json(JSON_BUFFER_SIZE);
 
-    if (discoveryTopic != "")
+    auto dev = json.createNestedObject("dev");
+    auto ids = dev.createNestedArray("ids");
+    ids.add(String("nuki_") + uidString);
+    json["dev"]["mf"] = "Nuki";
+    json["dev"]["mdl"] = deviceType;
+    json["dev"]["name"] = name;
+
+    String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url);
+
+    if (cuUrl != "")
     {
-        DynamicJsonDocument json(JSON_BUFFER_SIZE);
+        json["dev"]["cu"] = cuUrl;
+    }
+    else
+    {
+        json["dev"]["cu"] = "http://" + _device->localIP();
+    }
 
-        auto dev = json.createNestedObject("dev");
-        auto ids = dev.createNestedArray("ids");
-        ids.add(String("nuki_") + uidString);
-        json["dev"]["mf"] = "Nuki";
-        json["dev"]["mdl"] = deviceType;
-        json["dev"]["name"] = name;
+    json["~"] = baseTopic;
+    json["name"] = nullptr;
+    json["unique_id"] = String(uidString) + "_lock";
+    json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
+    json["avty"]["t"] = availabilityTopic;
+    json["pl_lock"] = lockAction;
+    json["pl_unlk"] = unlockAction;
+    json["pl_open"] = openAction;
+    json["stat_t"] = String("~") + mqtt_topic_lock_ha_state;
+    json["stat_jammed"] = "jammed";
+    json["stat_locked"] = "locked";
+    json["stat_locking"] = "locking";
+    json["stat_unlocked"] = "unlocked";
+    json["stat_unlocking"] = "unlocking";
+    json["opt"] = "false";
 
-        String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url);
+    serializeJson(json, _buffer, _bufferSize);
 
-        if (cuUrl != "")
-        {
-            json["dev"]["cu"] = cuUrl;
-        }
-        else
-        {
-            json["dev"]["cu"] = "http://" + _device->localIP();
-        }
+    String path = _preferences->getString(preference_mqtt_hass_discovery);
+    path.concat("/lock/");
+    path.concat(uidString);
+    path.concat("/smartlock/config");
 
-        json["~"] = baseTopic;
-        json["name"] = nullptr;
-        json["unique_id"] = String(uidString) + "_lock";
-        json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
-        json["avty"]["t"] = availabilityTopic;
-        json["pl_lock"] = lockAction;
-        json["pl_unlk"] = unlockAction;
-        json["pl_open"] = openAction;
-        json["stat_t"] = String("~") + mqtt_topic_lock_ha_state;
-        json["stat_jammed"] = "jammed";
-        json["stat_locked"] = "locked";
-        json["stat_locking"] = "locking";
-        json["stat_unlocked"] = "unlocked";
-        json["stat_unlocking"] = "unlocking";
-        json["opt"] = "false";
+    _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
 
-        serializeJson(json, _buffer, _bufferSize);
+    // Battery critical
+    publishHassTopic("binary_sensor",
+                     "battery_low",
+                     uidString,
+                     "_battery_low",
+                     "Battery low",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_battery_critical,
+                     deviceType,
+                     "battery",
+                     "",
+                     "diagnostic",
+                     "",
+                     {{"pl_on", "1"},
+                      {"pl_off", "0"}});
 
-        String path = discoveryTopic;
-        path.concat("/lock/");
-        path.concat(uidString);
-        path.concat("/smartlock/config");
+    // Battery voltage
+    publishHassTopic("sensor",
+                     "battery_voltage",
+                     uidString,
+                     "_battery_voltage",
+                     "Battery voltage",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_battery_voltage,
+                     deviceType,
+                     "voltage",
+                     "measurement",
+                     "diagnostic",
+                     "",
+                     { {"unit_of_meas", "V"} });
 
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    // Trigger
+    publishHassTopic("sensor",
+                     "trigger",
+                     uidString,
+                     "_trigger",
+                     "Trigger",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_lock_trigger,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { "en", "true" } });
 
-        // Battery critical
-        publishHassTopic("binary_sensor",
-                         "battery_low",
-                         uidString,
-                         "_battery_low",
-                         "Battery low",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_battery_critical,
-                         deviceType,
-                         "battery",
-                         "",
-                         "diagnostic",
-                         "",
-                         {{"pl_on", "1"},
-                          {"pl_off", "0"}});
+    // MQTT Connected
+    publishHassTopic("binary_sensor",
+                     "mqtt_connected",
+                     uidString,
+                     "_mqtt_connected",
+                     "MQTT connected",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_mqtt_connection_state,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     {{"pl_on", "online"},
+                      {"pl_off", "offline"},
+                      {"ic", "mdi:lan-connect"}});
 
-        if(hasKeypad)
-        {
-            // Keypad battery critical
-            publishHassTopic("binary_sensor",
-                             "keypad_battery_low",
-                             uidString,
-                             "_keypad_battery_low",
-                             "Keypad battery low",
-                             name,
-                             baseTopic,
-                             String("~") + mqtt_topic_battery_keypad_critical,
-                             deviceType,
-                             "battery",
-                             "",
-                             "diagnostic",
-                             "",
-                             {{"pl_on", "1"},
-                              {"pl_off", "0"}});
-        }
-        else
-        {
-            removeHassTopic("binary_sensor", "keypad_battery_low", uidString);
-        }
+    // Reset
+    publishHassTopic("switch",
+                     "reset",
+                     uidString,
+                     "_reset",
+                     "Restart Nuki Hub",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_reset,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     String("~") + mqtt_topic_reset,
+                     { { "ic", "mdi:restart" },
+                       { "pl_on", "1" },
+                       { "pl_off", "0" },
+                       { "stat_on", "1" },
+                       { "stat_off", "0" }});
 
-        // Battery voltage
+    // Firmware version
+    publishHassTopic("sensor",
+                     "firmware_version",
+                     uidString,
+                     "_firmware_version",
+                     "Firmware version",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_info_firmware_version,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { "en", "true" },
+                       {"ic", "mdi:counter"}});
+
+    // Hardware version
+    publishHassTopic("sensor",
+                     "hardware_version",
+                     uidString,
+                     "_hardware_version",
+                     "Hardware version",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_info_hardware_version,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { "en", "true" },
+                       {"ic", "mdi:counter"}});
+
+    // Nuki Hub version
+    publishHassTopic("sensor",
+                     "nuki_hub_version",
+                     uidString,
+                     "_nuki_hub_version",
+                     "Nuki Hub version",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_info_nuki_hub_version,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { "en", "true" },
+                       {"ic", "mdi:counter"}});
+
+    if(_preferences->getBool(preference_check_updates))
+    {
+        // NUKI Hub latest
         publishHassTopic("sensor",
-                         "battery_voltage",
+                         "nuki_hub_latest",
                          uidString,
-                         "_battery_voltage",
-                         "Battery voltage",
+                         "_nuki_hub_latest",
+                         "NUKI Hub latest",
                          name,
                          baseTopic,
-                         String("~") + mqtt_topic_battery_voltage,
-                         deviceType,
-                         "voltage",
-                         "measurement",
-                         "diagnostic",
-                         "",
-                         { {"unit_of_meas", "V"} });
-
-        // Trigger
-        publishHassTopic("sensor",
-                         "trigger",
-                         uidString,
-                         "_trigger",
-                         "Trigger",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_lock_trigger,
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         "",
-                         { { "en", "true" } });
-
-        // MQTT Connected
-        publishHassTopic("binary_sensor",
-                         "mqtt_connected",
-                         uidString,
-                         "_mqtt_connected",
-                         "MQTT connected",
-                         name,
-                         baseTopic,
-                         _lockPath + mqtt_topic_mqtt_connection_state,
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         "",
-                         {{"pl_on", "online"},
-                          {"pl_off", "offline"},
-                          {"ic", "mdi:lan-connect"}});
-
-        // Reset
-        publishHassTopic("switch",
-                         "reset",
-                         uidString,
-                         "_reset",
-                         "Restart Nuki Hub",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_reset,
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         String("~") + mqtt_topic_reset,
-                         { { "ic", "mdi:restart" },
-                           { "pl_on", "1" },
-                           { "pl_off", "0" },
-                           { "stat_on", "1" },
-                           { "stat_off", "0" }});
-
-        // Firmware version
-        publishHassTopic("sensor",
-                         "firmware_version",
-                         uidString,
-                         "_firmware_version",
-                         "Firmware version",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_info_firmware_version,
+                         _lockPath + mqtt_topic_info_nuki_hub_latest,
                          deviceType,
                          "",
                          "",
@@ -917,105 +942,1219 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                          { { "en", "true" },
                            {"ic", "mdi:counter"}});
 
-        // Hardware version
-        publishHassTopic("sensor",
-                         "hardware_version",
-                         uidString,
-                         "_hardware_version",
-                         "Hardware version",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_info_hardware_version,
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         "",
-                         { { "en", "true" },
-                           {"ic", "mdi:counter"}});
+        // NUKI Hub update
+        char latest_version_topic[250];
+        _lockPath.toCharArray(latest_version_topic,_lockPath.length() + 1);
+        strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
 
-        // Nuki Hub version
-        publishHassTopic("sensor",
-                         "nuki_hub_version",
+        publishHassTopic("update",
+                         "nuki_hub_update",
                          uidString,
-                         "_nuki_hub_version",
-                         "Nuki Hub version",
+                         "_nuki_hub_update",
+                         "NUKI Hub firmware update",
                          name,
                          baseTopic,
                          _lockPath + mqtt_topic_info_nuki_hub_version,
                          deviceType,
-                         "",
+                         "firmware",
                          "",
                          "diagnostic",
                          "",
                          { { "en", "true" },
-                           {"ic", "mdi:counter"}});
+                           { "ent_pic", "https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
+                           { "rel_u", GITHUB_LATEST_RELEASE_URL },
+                           { "l_ver_t", latest_version_topic }});
+    }
+    else
+    {
+        removeHassTopic("sensor", "nuki_hub_latest", uidString);
+        removeHassTopic("update", "nuki_hub_update", uidString);
+    }
 
-        if(_preferences->getBool(preference_check_updates))
-        {
-            // NUKI Hub latest
-            publishHassTopic("sensor",
-                             "nuki_hub_latest",
-                             uidString,
-                             "_nuki_hub_latest",
-                             "NUKI Hub latest",
-                             name,
-                             baseTopic,
-                             _lockPath + mqtt_topic_info_nuki_hub_latest,
-                             deviceType,
-                             "",
-                             "",
-                             "diagnostic",
-                             "",
-                             { { "en", "true" },
-                               {"ic", "mdi:counter"}});
+    // Nuki Hub IP Address
+    publishHassTopic("sensor",
+                     "nuki_hub_ip",
+                     uidString,
+                     "_nuki_hub_ip",
+                     "Nuki Hub IP",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_info_nuki_hub_ip,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { "en", "true" },
+                       {"ic", "mdi:ip"}});
 
-            // NUKI Hub update
-            char latest_version_topic[250];
-            _lockPath.toCharArray(latest_version_topic,_lockPath.length() + 1);
-            strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
+    // Query Lock State
+    publishHassTopic("button",
+                     "query_lockstate",
+                     uidString,
+                     "_query_lockstate_button",
+                     "Query lock state",
+                     name,
+                     baseTopic,
+                     "",
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     String("~") + mqtt_topic_query_lockstate,
+                     { { "en", "false" },
+                       { "pl_prs", "1" }});
 
-            publishHassTopic("update",
-                             "nuki_hub_update",
-                             uidString,
-                             "_nuki_hub_update",
-                             "NUKI Hub firmware update",
-                             name,
-                             baseTopic,
-                             _lockPath + mqtt_topic_info_nuki_hub_version,
-                             deviceType,
-                             "firmware",
-                             "",
-                             "diagnostic",
-                             "",
-                             { { "en", "true" },
-                               { "ent_pic", "https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
-                               { "rel_u", GITHUB_LATEST_RELEASE_URL },
-                               { "l_ver_t", latest_version_topic }});
-        }
-        else
-        {
-            removeHassTopic("sensor", "nuki_hub_latest", uidString);
-            removeHassTopic("update", "nuki_hub_update", uidString);
-        }
+    // Query Config
+    publishHassTopic("button",
+                     "query_config",
+                     uidString,
+                     "_query_config_button",
+                     "Query config",
+                     name,
+                     baseTopic,
+                     "",
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     String("~") + mqtt_topic_query_config,
+                     { { "en", "false" },
+                       { "pl_prs", "1" }});
 
-        // Nuki Hub IP Address
-        publishHassTopic("sensor",
-                         "nuki_hub_ip",
+    // Query Lock State Command result
+    publishHassTopic("button",
+                     "query_commandresult",
+                     uidString,
+                     "_query_commandresult_button",
+                     "Query lock state command result",
+                     name,
+                     baseTopic,
+                     "",
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     String("~") + mqtt_topic_query_lockstate_command_result,
+                     { { "en", "false" },
+                       { "pl_prs", "1" }});
+
+    publishHassTopic("sensor",
+                     "bluetooth_signal_strength",
+                     uidString,
+                     "_bluetooth_signal_strength",
+                     "Bluetooth signal strength",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_lock_rssi,
+                     deviceType,
+                     "signal_strength",
+                     "measurement",
+                     "diagnostic",
+                     "",
+                     { {"unit_of_meas", "dBm"} });
+}
+
+
+void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    uint32_t aclPrefs[17];
+    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    uint32_t basicLockConfigAclPrefs[16];
+    _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
+    uint32_t advancedLockConfigAclPrefs[22];
+    _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
+
+    if((int)aclPrefs[2])
+    {
+        // Unlatch
+        publishHassTopic("button",
+                         "unlatch",
                          uidString,
-                         "_nuki_hub_ip",
-                         "Nuki Hub IP",
+                         "_unlatch_button",
+                         "Open",
                          name,
                          baseTopic,
-                         _lockPath + mqtt_topic_info_nuki_hub_ip,
+                         "",
                          deviceType,
                          "",
                          "",
-                         "diagnostic",
                          "",
-                         { { "en", "true" },
-                           {"ic", "mdi:ip"}});
+                         String("~") + mqtt_topic_lock_action,
+                         { { "en", "false" },
+                           { "pl_prs", "unlatch" }});
+    }
+    else
+    {
+        removeHassTopic("button", "unlatch", uidString);
+    }
 
+    if((int)aclPrefs[3])
+    {
+        // Lock 'n' Go
+        publishHassTopic("button",
+                         "lockngo",
+                         uidString,
+                         "_lock_n_go_button",
+                         "Lock 'n' Go",
+                         name,
+                         baseTopic,
+                         "",
+                         deviceType,
+                         "",
+                         "",
+                         "",
+                         String("~") + mqtt_topic_lock_action,
+                         { { "en", "false" },
+                           { "pl_prs", "lockNgo" }});
+    }
+    else
+    {
+        removeHassTopic("button", "lockngo", uidString);
+    }
+
+    if((int)aclPrefs[4])
+    {
+        // Lock 'n' Go with unlatch
+        publishHassTopic("button",
+                         "lockngounlatch",
+                         uidString,
+                         "_lock_n_go_unlatch_button",
+                         "Lock 'n' Go with unlatch",
+                         name,
+                         baseTopic,
+                         "",
+                         deviceType,
+                         "",
+                         "",
+                         "",
+                         String("~") + mqtt_topic_lock_action,
+                         { { "en", "false" },
+                           { "pl_prs", "lockNgoUnlatch" }});
+    }
+    else
+    {
+        removeHassTopic("button", "lockngounlatch", uidString);
+    }
+
+    // Query Battery
+    publishHassTopic("button",
+                     "query_battery",
+                     uidString,
+                     "_query_battery_button",
+                     "Query battery",
+                     name,
+                     baseTopic,
+                     "",
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     String("~") + mqtt_topic_query_battery,
+                     { { "en", "false" },
+                       { "pl_prs", "1" }});
+
+    if((int)basicLockConfigAclPrefs[6] == 1)
+    {
+        // LED enabled
+        publishHassTopic("switch",
+                         "led_enabled",
+                         uidString,
+                         "_led_enabled",
+                         "LED enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "ic", "mdi:led-variant-on" },
+                           { "pl_on", "{ \"ledEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"ledEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.ledEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "led_enabled", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[5] == 1)
+    {
+        // Button enabled
+        publishHassTopic("switch",
+                         "button_enabled",
+                         uidString,
+                         "_button_enabled",
+                         "Button enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "ic", "mdi:radiobox-marked" },
+                           { "pl_on", "{ \"buttonEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"buttonEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.buttonEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "button_enabled", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[19] == 1)
+    {
+        // Auto Lock
+        publishHassTopic("switch",
+                         "auto_lock",
+                         uidString,
+                         "_auto_lock",
+                         "Auto lock",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"autoLockEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"autoLockEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.autoLockEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "auto_lock", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[12] == 1)
+    {
+        // Auto Unlock
+        publishHassTopic("switch",
+                         "auto_unlock",
+                         uidString,
+                         "_auto_unlock",
+                         "Auto unlock",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"autoUnLockDisabled\": \"0\"}" },
+                           { "pl_off", "{ \"autoUnLockDisabled\": \"1\"}" },
+                           { "val_tpl", "{{value_json.autoUnLockDisabled}}" },
+                           { "stat_on", "0" },
+                           { "stat_off", "1" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "auto_unlock", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[13] == 1)
+    {
+        // Double lock
+        publishHassTopic("switch",
+                         "double_lock",
+                         uidString,
+                         "_double_lock",
+                         "Double lock",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"singleLock\": \"0\"}" },
+                           { "pl_off", "{ \"singleLock\": \"1\"}" },
+                           { "val_tpl", "{{value_json.singleLock}}" },
+                           { "stat_on", "0" },
+                           { "stat_off", "1" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "double_lock", uidString);
+    }
+
+    publishHassTopic("sensor",
+                     "battery_level",
+                     uidString,
+                     "_battery_level",
+                     "Battery level",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_battery_level,
+                     deviceType,
+                     "battery",
+                     "measurement",
+                     "diagnostic",
+                     "",
+                     { {"unit_of_meas", "%"} });
+
+    if((int)basicLockConfigAclPrefs[7] == 1)
+    {
+        publishHassTopic("number",
+                         "led_brightness",
+                         uidString,
+                         "_led_brightness",
+                         "LED brightness",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "ic", "mdi:brightness-6" },
+                           { "cmd_tpl", "{ \"ledBrightness\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.ledBrightness}}" },
+                           { "min", "0" },
+                           { "max", "5" }});
+    }
+    else
+    {
+        removeHassTopic("number", "led_brightness", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[3] == 1)
+    {
+        // Auto Unlatch
+        publishHassTopic("switch",
+                         "auto_unlatch",
+                         uidString,
+                         "_auto_unlatch",
+                         "Auto unlatch",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"autoUnlatch\": \"1\"}" },
+                           { "pl_off", "{ \"autoUnlatch\": \"0\"}" },
+                           { "val_tpl", "{{value_json.autoUnlatch}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "auto_unlatch", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[4] == 1)
+    {
+        // Pairing enabled
+        publishHassTopic("switch",
+                         "pairing_enabled",
+                         uidString,
+                         "_pairing_enabled",
+                         "Pairing enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"pairingEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"pairingEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.pairingEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "pairing_enabled", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[8] == 1)
+    {
+        publishHassTopic("number",
+                         "timezone_offset",
+                         uidString,
+                         "_timezone_offset",
+                         "Timezone offset",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "ic", "mdi:timer-cog-outline" },
+                           { "cmd_tpl", "{ \"timeZoneOffset\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.timeZoneOffset}}" },
+                           { "min", "0" },
+                           { "max", "60" }});
+    }
+    else
+    {
+        removeHassTopic("number", "timezone_offset", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[9] == 1)
+    {
+        // DST Mode
+        publishHassTopic("switch",
+                         "dst_mode",
+                         uidString,
+                         "_dst_mode",
+                         "DST mode European",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"dstMode\": \"1\"}" },
+                           { "pl_off", "{ \"dstMode\": \"0\"}" },
+                           { "val_tpl", "{{value_json.dstMode}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "dst_mode", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[10] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_fob_action_1", "Fob action 1", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction1}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction1\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Unlock";
+        json["options"][2] = "Lock";
+        json["options"][3] = "Lock n Go";
+        json["options"][4] = "Intelligent";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "fob_action_1", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "fob_action_1", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[11] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_fob_action_2", "Fob action 2", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction2}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction2\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Unlock";
+        json["options"][2] = "Lock";
+        json["options"][3] = "Lock n Go";
+        json["options"][4] = "Intelligent";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "fob_action_2", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "fob_action_2", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[12] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_fob_action_3", "Fob action 3", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction3}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction3\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Unlock";
+        json["options"][2] = "Lock";
+        json["options"][3] = "Lock n Go";
+        json["options"][4] = "Intelligent";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "fob_action_3", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "fob_action_3", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[14] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_advertising_mode", "Advertising mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.advertisingMode}}" }, { "en", "false" }, { "cmd_tpl", "{ \"advertisingMode\": \"{{ value }}\" }" }});
+        json["options"][0] = "Automatic";
+        json["options"][1] = "Normal";
+        json["options"][2] = "Slow";
+        json["options"][3] = "Slowest";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "advertising_mode", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "advertising_mode", uidString);
+    }
+
+    if((int)basicLockConfigAclPrefs[15] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_timezone", "Timezone", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.timeZone}}" }, { "en", "false" }, { "cmd_tpl", "{ \"timeZone\": \"{{ value }}\" }" }});
+        json["options"][0] = "Africa/Cairo";
+        json["options"][1] = "Africa/Lagos";
+        json["options"][2] = "Africa/Maputo";
+        json["options"][3] = "Africa/Nairobi";
+        json["options"][4] = "America/Anchorage";
+        json["options"][5] = "America/Argentina/Buenos_Aires";
+        json["options"][6] = "America/Chicago";
+        json["options"][7] = "America/Denver";
+        json["options"][8] = "America/Halifax";
+        json["options"][9] = "America/Los_Angeles";
+        json["options"][10] = "America/Manaus";
+        json["options"][11] = "America/Mexico_City";
+        json["options"][12] = "America/New_York";
+        json["options"][13] = "America/Phoenix";
+        json["options"][14] = "America/Regina";
+        json["options"][15] = "America/Santiago";
+        json["options"][16] = "America/Sao_Paulo";
+        json["options"][17] = "America/St_Johns";
+        json["options"][18] = "Asia/Bangkok";
+        json["options"][19] = "Asia/Dubai";
+        json["options"][20] = "Asia/Hong_Kong";
+        json["options"][21] = "Asia/Jerusalem";
+        json["options"][22] = "Asia/Karachi";
+        json["options"][23] = "Asia/Kathmandu";
+        json["options"][24] = "Asia/Kolkata";
+        json["options"][25] = "Asia/Riyadh";
+        json["options"][26] = "Asia/Seoul";
+        json["options"][27] = "Asia/Shanghai";
+        json["options"][28] = "Asia/Tehran";
+        json["options"][29] = "Asia/Tokyo";
+        json["options"][30] = "Asia/Yangon";
+        json["options"][31] = "Australia/Adelaide";
+        json["options"][32] = "Australia/Brisbane";
+        json["options"][33] = "Australia/Darwin";
+        json["options"][34] = "Australia/Hobart";
+        json["options"][35] = "Australia/Perth";
+        json["options"][36] = "Australia/Sydney";
+        json["options"][37] = "Europe/Berlin";
+        json["options"][38] = "Europe/Helsinki";
+        json["options"][39] = "Europe/Istanbul";
+        json["options"][40] = "Europe/London";
+        json["options"][41] = "Europe/Moscow";
+        json["options"][42] = "Pacific/Auckland";
+        json["options"][43] = "Pacific/Guam";
+        json["options"][44] = "Pacific/Honolulu";
+        json["options"][45] = "Pacific/Pago_Pago";
+        json["options"][46] = "None";
+
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "timezone", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "timezone", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[0] == 1)
+    {
+        publishHassTopic("number",
+                         "unlocked_position_offset_degrees",
+                         uidString,
+                         "_unlocked_position_offset_degrees",
+                         "Unlocked position offset degrees",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"unlockedPositionOffsetDegrees\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.unlockedPositionOffsetDegrees}}" },
+                           { "min", "-90" },
+                           { "max", "180" }});
+    }
+    else
+    {
+        removeHassTopic("number", "unlocked_position_offset_degrees", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[1] == 1)
+    {
+        publishHassTopic("number",
+                         "locked_position_offset_degrees",
+                         uidString,
+                         "_locked_position_offset_degrees",
+                         "Locked position offset degrees",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"lockedPositionOffsetDegrees\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.lockedPositionOffsetDegrees}}" },
+                           { "min", "-180" },
+                           { "max", "90" }});
+    }
+    else
+    {
+        removeHassTopic("number", "locked_position_offset_degrees", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[2] == 1)
+    {
+        publishHassTopic("number",
+                         "single_locked_position_offset_degrees",
+                         uidString,
+                         "_single_locked_position_offset_degrees",
+                         "Single locked position offset degrees",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"singleLockedPositionOffsetDegrees\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.singleLockedPositionOffsetDegrees}}" },
+                           { "min", "-180" },
+                           { "max", "180" }});
+    }
+    else
+    {
+        removeHassTopic("number", "single_locked_position_offset_degrees", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[3] == 1)
+    {
+        publishHassTopic("number",
+                         "unlocked_locked_transition_offset_degrees",
+                         uidString,
+                         "_unlocked_locked_transition_offset_degrees",
+                         "Unlocked to locked transition offset degrees",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"unlockedToLockedTransitionOffsetDegrees\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.unlockedToLockedTransitionOffsetDegrees}}" },
+                           { "min", "-180" },
+                           { "max", "180" }});
+    }
+    else
+    {
+        removeHassTopic("number", "unlocked_locked_transition_offset_degrees", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[4] == 1)
+    {
+        publishHassTopic("number",
+                         "lockngo_timeout",
+                         uidString,
+                         "_lockngo_timeout",
+                         "Lock n Go timeout",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"lockNgoTimeout\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.lockNgoTimeout}}" },
+                           { "min", "5" },
+                           { "max", "60" }});
+    }
+    else
+    {
+        removeHassTopic("number", "lockngo_timeout", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[5] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_single_button_press_action", "Single button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.singleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"singleButtonPressAction\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Intelligent";
+        json["options"][2] = "Unlock";
+        json["options"][3] = "Lock";
+        json["options"][4] = "Unlatch";
+        json["options"][5] = "Lock n Go";
+        json["options"][6] = "Show Status";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "single_button_press_action", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "single_button_press_action", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[6] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_double_button_press_action", "Double button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doubleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"doubleButtonPressAction\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Intelligent";
+        json["options"][2] = "Unlock";
+        json["options"][3] = "Lock";
+        json["options"][4] = "Unlatch";
+        json["options"][5] = "Lock n Go";
+        json["options"][6] = "Show Status";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "double_button_press_action", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "double_button_press_action", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[7] == 1)
+    {
+        // Detached cylinder
+        publishHassTopic("switch",
+                         "detached_cylinder",
+                         uidString,
+                         "_detached_cylinder",
+                         "Detached cylinder",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"detachedCylinder\": \"1\"}" },
+                           { "pl_off", "{ \"detachedCylinder\": \"0\"}" },
+                           { "val_tpl", "{{value_json.detachedCylinder}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "detached_cylinder", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[8] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.batteryType}}" }, { "en", "false" }, { "cmd_tpl", "{ \"batteryType\": \"{{ value }}\" }" }});
+        json["options"][0] = "Alkali";
+        json["options"][1] = "Accumulators";
+        json["options"][2] = "Lithium";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "battery_type", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "battery_type", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[9] == 1)
+    {
+        // Automatic battery type detection
+        publishHassTopic("switch",
+                         "automatic_battery_type_detection",
+                         uidString,
+                         "_automatic_battery_type_detection",
+                         "Automatic battery type detection",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"automaticBatteryTypeDetection\": \"1\"}" },
+                           { "pl_off", "{ \"automaticBatteryTypeDetection\": \"0\"}" },
+                           { "val_tpl", "{{value_json.automaticBatteryTypeDetection}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "automatic_battery_type_detection", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[10] == 1)
+    {
+        publishHassTopic("number",
+                         "unlatch_duration",
+                         uidString,
+                         "_unlatch_duration",
+                         "Unlatch duration",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"unlatchDuration\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.unlatchDuration}}" },
+                           { "min", "1" },
+                           { "max", "30" }});
+    }
+    else
+    {
+        removeHassTopic("number", "unlatch_duration", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[11] == 1)
+    {
+        publishHassTopic("number",
+                         "auto_lock_timeout",
+                         uidString,
+                         "_auto_lock_timeout",
+                         "Auto lock timeout",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"autoLockTimeOut\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.autoLockTimeOut}}" },
+                           { "min", "30" },
+                           { "max", "180" }});
+    }
+    else
+    {
+        removeHassTopic("number", "auto_lock_timeout", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[13] == 1)
+    {
+        // Nightmode enabled
+        publishHassTopic("switch",
+                         "nightmode_enabled",
+                         uidString,
+                         "_nightmode_enabled",
+                         "Nightmode enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"nightModeEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"nightModeEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.nightModeEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "nightmode_enabled", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[14] == 1)
+    {
+        // Nightmode start time
+        publishHassTopic("text",
+                         "nightmode_start_time",
+                         uidString,
+                         "_nightmode_start_time",
+                         "Nightmode start time",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pattern", "([0-1][0-9]|2[0-3]):[0-5][0-9]" },
+                           { "cmd_tpl", "{ \"nightModeStartTime\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.nightModeStartTime}}" },
+                           { "min", "5" },
+                           { "max", "5" }});
+    }
+    else
+    {
+        removeHassTopic("text", "nightmode_start_time", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[15] == 1)
+    {
+        // Nightmode end time
+        publishHassTopic("text",
+                         "nightmode_end_time",
+                         uidString,
+                         "_nightmode_end_time",
+                         "Nightmode end time",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pattern", "([0-1][0-9]|2[0-3]):[0-5][0-9]" },
+                           { "cmd_tpl", "{ \"nightModeEndTime\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.nightModeEndTime}}" },
+                           { "min", "5" },
+                           { "max", "5" }});
+    }
+    else
+    {
+        removeHassTopic("text", "nightmode_end_time", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[16] == 1)
+    {
+        // Nightmode Auto Lock
+        publishHassTopic("switch",
+                         "nightmode_auto_lock",
+                         uidString,
+                         "_nightmode_auto_lock",
+                         "Nightmode auto lock",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"nightModeAutoLockEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"nightModeAutoLockEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.nightModeAutoLockEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "nightmode_auto_lock", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[17] == 1)
+    {
+        // Nightmode Auto Unlock
+        publishHassTopic("switch",
+                         "nightmode_auto_unlock",
+                         uidString,
+                         "_nightmode_auto_unlock",
+                         "Nightmode auto unlock",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"nightModeAutoUnlockDisabled\": \"0\"}" },
+                           { "pl_off", "{ \"nightModeAutoUnlockDisabled\": \"1\"}" },
+                           { "val_tpl", "{{value_json.nightModeAutoUnlockDisabled}}" },
+                           { "stat_on", "0" },
+                           { "stat_off", "1" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "nightmode_auto_unlock", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[18] == 1)
+    {
+        // Nightmode immediate lock on start
+        publishHassTopic("switch",
+                         "nightmode_immediate_lock_start",
+                         uidString,
+                         "_nightmode_immediate_lock_start",
+                         "Nightmode immediate lock on start",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"nightModeImmediateLockOnStart\": \"1\"}" },
+                           { "pl_off", "{ \"nightModeImmediateLockOnStart\": \"0\"}" },
+                           { "val_tpl", "{{value_json.nightModeImmediateLockOnStart}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "nightmode_immediate_lock_start", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[20] == 1)
+    {
+        // Immediate auto lock enabled
+        publishHassTopic("switch",
+                         "immediate_auto_lock_enabled",
+                         uidString,
+                         "_immediate_auto_lock_enabled",
+                         "Immediate auto lock enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"immediateAutoLockEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"immediateAutoLockEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.immediateAutoLockEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "immediate_auto_lock_enabled", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[21] == 1)
+    {
+        // Auto update enabled
+        publishHassTopic("switch",
+                         "auto_update_enabled",
+                         uidString,
+                         "_auto_update_enabled",
+                         "Auto update enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"autoUpdateEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"autoUpdateEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.autoUpdateEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "auto_update_enabled", uidString);
+    }
+}
+
+void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    publishHassTopic("binary_sensor",
+                     "door_sensor",
+                     uidString,
+                     "_door_sensor",
+                     "Door sensor",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_lock_door_sensor_state,
+                     deviceType,
+                     "door",
+                     "",
+                     "",
+                     "",
+                     {{"pl_on", "doorOpened"},
+                      {"pl_off", "doorClosed"},
+                      {"pl_not_avail", "unavailable"}});
+}
+
+void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
+{
+    uint32_t aclPrefs[17];
+    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    uint32_t basicOpenerConfigAclPrefs[16];
+    _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
+    uint32_t advancedOpenerConfigAclPrefs[22];
+    _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
+
+    if((int)aclPrefs[11])
+    {
+        // Unlatch
+        publishHassTopic("button",
+                         "unlatch",
+                         uidString,
+                         "_unlatch_button",
+                         "Open",
+                         name,
+                         baseTopic,
+                         "",
+                         deviceType,
+                         "",
+                         "",
+                         "",
+                         String("~") + mqtt_topic_lock_action,
+                         { { "en", "false" },
+                           { "pl_prs", "electricStrikeActuation" }});
+    }
+    else
+    {
+        removeHassTopic("button", "unlatch", uidString);
+    }
+
+    if((int)basicOpenerConfigAclPrefs[5] == 1)
+    {
         // LED enabled
         publishHassTopic("switch",
                          "led_enabled",
@@ -1036,7 +2175,14 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                            { "val_tpl", "{{value_json.ledEnabled}}" },
                            { "stat_on", "1" },
                            { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "led_enabled", uidString);
+    }
 
+    if((int)basicOpenerConfigAclPrefs[4] == 1)
+    {
         // Button enabled
         publishHassTopic("switch",
                          "button_enabled",
@@ -1057,291 +2203,30 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                            { "val_tpl", "{{value_json.buttonEnabled}}" },
                            { "stat_on", "1" },
                            { "stat_off", "0" }});
-
-        // Unlatch
-        publishHassTopic("button",
-                         "unlatch",
-                         uidString,
-                         "_unlatch_button",
-                         "Open",
-                         name,
-                         baseTopic,
-                         "",
-                         deviceType,
-                         "",
-                         "",
-                         "",
-                         String("~") + mqtt_topic_lock_action,
-                         { { "en", "false" },
-                           { "pl_prs", openAction }});
-
-        // Query Lock State
-        publishHassTopic("button",
-                         "query_lockstate",
-                         uidString,
-                         "_query_lockstate_button",
-                         "Query lock state",
-                         name,
-                         baseTopic,
-                         "",
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         String("~") + mqtt_topic_query_lockstate,
-                         { { "en", "false" },
-                           { "pl_prs", "1" }});
-
-        // Query Config
-        publishHassTopic("button",
-                         "query_config",
-                         uidString,
-                         "_query_config_button",
-                         "Query config",
-                         name,
-                         baseTopic,
-                         "",
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         String("~") + mqtt_topic_query_config,
-                         { { "en", "false" },
-                           { "pl_prs", "1" }});
-
-       if(hasKeypad)
-        {
-            // Query Battery
-            publishHassTopic("button",
-                             "query_keypad",
-                             uidString,
-                             "_query_keypad_button",
-                             "Query keypad",
-                             name,
-                             baseTopic,
-                             "",
-                             deviceType,
-                             "",
-                             "",
-                             "diagnostic",
-                             String("~") + mqtt_topic_query_keypad,
-                             { { "en", "false" },
-                               { "pl_prs", "1" }});
-        }
-        else
-        {
-            removeHassTopic("button", "query_keypad", uidString);
-        }
-
-        // Query Lock State Command result
-        publishHassTopic("button",
-                         "query_commandresult",
-                         uidString,
-                         "_query_commandresult_button",
-                         "Query lock state command result",
-                         name,
-                         baseTopic,
-                         "",
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         String("~") + mqtt_topic_query_lockstate_command_result,
-                         { { "en", "false" },
-                           { "pl_prs", "1" }});
-
     }
-}
-
-
-void Network::publishHASSConfigAdditionalButtons(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    // Lock 'n' Go
-    publishHassTopic("button",
-                     "lockngo",
-                     uidString,
-                     "_lock_n_go_button",
-                     "Lock 'n' Go",
-                     name,
-                     baseTopic,
-                     "",
-                     deviceType,
-                     "",
-                     "",
-                     "",
-                     String("~") + mqtt_topic_lock_action,
-                     { { "en", "false" },
-                       { "pl_prs", "lockNgo" }});
-
-    // Lock 'n' Go with unlatch
-    publishHassTopic("button",
-                     "lockngounlatch",
-                     uidString,
-                     "_lock_n_go_unlatch_button",
-                     "Lock 'n' Go with unlatch",
-                     name,
-                     baseTopic,
-                     "",
-                     deviceType,
-                     "",
-                     "",
-                     "",
-                     String("~") + mqtt_topic_lock_action,
-                     { { "en", "false" },
-                       { "pl_prs", "lockNgoUnlatch" }});
-
-    // Query Battery
-    publishHassTopic("button",
-                     "query_battery",
-                     uidString,
-                     "_query_battery_button",
-                     "Query battery",
-                     name,
-                     baseTopic,
-                     "",
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     String("~") + mqtt_topic_query_battery,
-                     { { "en", "false" },
-                       { "pl_prs", "1" }});
-
-    // Auto Lock
-    publishHassTopic("switch",
-                     "auto_lock",
-                     uidString,
-                     "_auto_lock",
-                     "Auto lock",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_config_advanced_json,
-                     deviceType,
-                     "",
-                     "",
-                     "config",
-                     String("~") + mqtt_topic_config_action,
-                     { { "en", "false" },
-                       { "pl_on", "{ \"autoLockEnabled\": \"1\"}" },
-                       { "pl_off", "{ \"autoLockEnabled\": \"0\"}" },
-                       { "val_tpl", "{{value_json.autoLockEnabled}}" },
-                       { "stat_on", "1" },
-                       { "stat_off", "0" }});
-
-    // Auto Unlock
-    publishHassTopic("switch",
-                     "auto_unlock",
-                     uidString,
-                     "_auto_unlock",
-                     "Auto unlock",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_config_advanced_json,
-                     deviceType,
-                     "",
-                     "",
-                     "config",
-                     String("~") + mqtt_topic_config_action,
-                     { { "en", "false" },
-                       { "pl_on", "{ \"autoUnLockDisabled\": \"0\"}" },
-                       { "pl_off", "{ \"autoUnLockDisabled\": \"1\"}" },
-                       { "val_tpl", "{{value_json.autoUnLockDisabled}}" },
-                       { "stat_on", "1" },
-                       { "stat_off", "0" }});
-
-    // Double lock
-    publishHassTopic("switch",
-                     "double_lock",
-                     uidString,
-                     "_double_lock",
-                     "Double lock",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_config_basic_json,
-                     deviceType,
-                     "",
-                     "",
-                     "config",
-                     String("~") + mqtt_topic_config_action,
-                     { { "en", "false" },
-                       { "pl_on", "{ \"singleLock\": \"0\"}" },
-                       { "pl_off", "{ \"singleLock\": \"1\"}" },
-                       { "val_tpl", "{{value_json.singleLock}}" },
-                       { "stat_on", "0" },
-                       { "stat_off", "1" }});
-}
-
-void Network::publishHASSConfigBatLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
-
-    if (discoveryTopic != "")
+    else
     {
-        publishHassTopic("sensor",
-                         "battery_level",
-                         uidString,
-                         "_battery_level",
-                         "Battery level",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_battery_level,
-                         deviceType,
-                         "battery",
-                         "measurement",
-                         "diagnostic",
-                         "",
-                         { {"unit_of_meas", "%"} });
+        removeHassTopic("switch", "button_enabled", uidString);
     }
-}
 
-void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
+    publishHassTopic("binary_sensor",
+                     "continuous_mode",
+                     uidString,
+                     "_continuous_mode",
+                     "Continuous mode",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_lock_continuous_mode,
+                     deviceType,
+                     "lock",
+                     "",
+                     "",
+                     "",
+                     {{"pl_on", "on"},
+                      {"pl_off", "off"}});
 
-    if (discoveryTopic != "")
+    if((int)aclPrefs[12] == 1 && (int)aclPrefs[13] == 1)
     {
-        publishHassTopic("binary_sensor",
-                         "door_sensor",
-                         uidString,
-                         "_door_sensor",
-                         "Door sensor",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_lock_door_sensor_state,
-                         deviceType,
-                         "door",
-                         "",
-                         "",
-                         "",
-                         {{"pl_on", "doorOpened"},
-                          {"pl_off", "doorClosed"},
-                          {"pl_not_avail", "unavailable"}});
-    }
-}
-
-void Network::publishHASSConfigContinuousMode(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
-
-    if (discoveryTopic != "")
-    {
-
-        publishHassTopic("binary_sensor",
-                         "continuous_mode",
-                         uidString,
-                         "_continuous_mode",
-                         "Continuous mode",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_lock_continuous_mode,
-                         deviceType,
-                         "lock",
-                         "",
-                         "",
-                         "",
-                         {{"pl_on", "on"},
-                          {"pl_off", "off"}});
-
         publishHassTopic("switch",
                          "continuous_mode",
                          uidString,
@@ -1361,86 +2246,729 @@ void Network::publishHASSConfigContinuousMode(char *deviceType, const char *base
                           {"pl_on", "activateCM"},
                           {"pl_off", "deactivateCM"}});
     }
-}
-
-void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
-
-    if (discoveryTopic != "")
+    else
     {
-        publishHassTopic("binary_sensor",
-                         "ring",
+        removeHassTopic("switch", "continuous_mode", uidString);
+    }
+
+    publishHassTopic("binary_sensor",
+                     "ring",
+                     uidString,
+                     "_ring_detect",
+                     "Ring detect",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_lock_binary_ring,
+                     deviceType,
+                     "sound",
+                     "",
+                     "",
+                     "",
+                     {{"pl_on", "ring"},
+                      {"pl_off", "standby"}});
+
+    DynamicJsonDocument json(_bufferSize);
+    json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{"val_tpl", "{ \"event_type\": \"{{ value }}\" }"}});
+    json["event_types"][0] = "ring";
+    json["event_types"][1] = "ringlocked";
+    serializeJson(json, _buffer, _bufferSize);
+    String path = createHassTopicPath("event", "ring", uidString);
+    _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+
+    if((int)advancedOpenerConfigAclPrefs[15] == 1)
+    {
+        publishHassTopic("number",
+                         "sound_level",
                          uidString,
-                         "_ring_detect",
-                         "Ring detect",
+                         "_sound_level",
+                         "Sound level",
                          name,
                          baseTopic,
-                         String("~") + mqtt_topic_lock_binary_ring,
+                         String("~") + mqtt_topic_config_advanced_json,
                          deviceType,
-                         "sound",
                          "",
                          "",
-                         "",
-                         {{"pl_on", "ring"},
-                          {"pl_off", "standby"}});
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "ic", "mdi:volume-source" },
+                           { "cmd_tpl", "{ \"soundLevel\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.soundLevel}}" },
+                           { "min", "0" },
+                           { "max", "255" },
+                           { "mode", "slider" },
+                           { "step", "25.5" }});
+    }
+    else
+    {
+        removeHassTopic("number", "sound_level", uidString);
+    }
 
+    if((int)basicOpenerConfigAclPrefs[3] == 1)
+    {
+        // Pairing enabled
+        publishHassTopic("switch",
+                         "pairing_enabled",
+                         uidString,
+                         "_pairing_enabled",
+                         "Pairing enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"pairingEnabled\": \"1\"}" },
+                           { "pl_off", "{ \"pairingEnabled\": \"0\"}" },
+                           { "val_tpl", "{{value_json.pairingEnabled}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "pairing_enabled", uidString);
+    }
+
+    if((int)basicOpenerConfigAclPrefs[6] == 1)
+    {
+        publishHassTopic("number",
+                         "timezone_offset",
+                         uidString,
+                         "_timezone_offset",
+                         "Timezone offset",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "ic", "mdi:timer-cog-outline" },
+                           { "cmd_tpl", "{ \"timeZoneOffset\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.timeZoneOffset}}" },
+                           { "min", "0" },
+                           { "max", "60" }});
+    }
+    else
+    {
+        removeHassTopic("number", "timezone_offset", uidString);
+    }
+
+    if((int)basicOpenerConfigAclPrefs[7] == 1)
+    {
+        // DST Mode
+        publishHassTopic("switch",
+                         "dst_mode",
+                         uidString,
+                         "_dst_mode",
+                         "DST mode European",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"dstMode\": \"1\"}" },
+                           { "pl_off", "{ \"dstMode\": \"0\"}" },
+                           { "val_tpl", "{{value_json.dstMode}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "dst_mode", uidString);
+    }
+
+    if((int)basicOpenerConfigAclPrefs[8] == 1)
+    {
         DynamicJsonDocument json(_bufferSize);
-        json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{"val_tpl", "{ \"event_type\": \"{{ value }}\" }"}});
-        json["event_types"][0] = "ring";
-        json["event_types"][1] = "ringlocked";
+        json = createHassJson(uidString, "_fob_action_1", "Fob action 1", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction1}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction1\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Toggle RTO";
+        json["options"][2] = "Activate RTO";
+        json["options"][3] = "Deactivate RTO";
+        json["options"][4] = "Open";
+        json["options"][5] = "Ring";
         serializeJson(json, _buffer, _bufferSize);
-        String path = createHassTopicPath("event", "ring", uidString);
+        String path = createHassTopicPath("select", "fob_action_1", uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
     }
-}
+    else
+    {
+        removeHassTopic("select", "fob_action_1", uidString);
+    }
 
-void Network::publishHASSConfigLedBrightness(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    publishHassTopic("number",
-                     "led_brightness",
-                     uidString,
-                     "_led_brightness",
-                     "LED brightness",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_config_basic_json,
-                     deviceType,
-                     "",
-                     "",
-                     "config",
-                     String("~") + mqtt_topic_config_action,
-                     { { "ic", "mdi:brightness-6" },
-                       { "cmd_tpl", "{ \"ledBrightness\": {{ value }} }" },
-                       { "val_tpl", "{{value_json.ledBrightness}}" },
-                       { "min", "0" },
-                       { "max", "5" }});
-}
+    if((int)basicOpenerConfigAclPrefs[9] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_fob_action_2", "Fob action 2", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction2}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction2\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Toggle RTO";
+        json["options"][2] = "Activate RTO";
+        json["options"][3] = "Deactivate RTO";
+        json["options"][4] = "Open";
+        json["options"][5] = "Ring";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "fob_action_2", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "fob_action_2", uidString);
+    }
 
-void Network::publishHASSConfigSoundLevel(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    publishHassTopic("number",
-                     "sound_level",
-                     uidString,
-                     "_sound_level",
-                     "Sound level",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_config_advanced_json,
-                     deviceType,
-                     "",
-                     "",
-                     "config",
-                     String("~") + mqtt_topic_config_action,
-                     { { "ic", "mdi:volume-source" },
-                       { "cmd_tpl", "{ \"soundLevel\": {{ value }} }" },
-                       { "val_tpl", "{{value_json.soundLevel}}" },
-                       { "min", "0" },
-                       { "max", "255" },
-                       { "mode", "slider" },
-                       { "step", "25.5" }});
-}
+    if((int)basicOpenerConfigAclPrefs[10] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_fob_action_3", "Fob action 3", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction3}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction3\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Toggle RTO";
+        json["options"][2] = "Activate RTO";
+        json["options"][3] = "Deactivate RTO";
+        json["options"][4] = "Open";
+        json["options"][5] = "Ring";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "fob_action_3", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "fob_action_3", uidString);
+    }
 
+    if((int)basicOpenerConfigAclPrefs[12] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_advertising_mode", "Advertising mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.advertisingMode}}" }, { "en", "false" }, { "cmd_tpl", "{ \"advertisingMode\": \"{{ value }}\" }" }});
+        json["options"][0] = "Automatic";
+        json["options"][1] = "Normal";
+        json["options"][2] = "Slow";
+        json["options"][3] = "Slowest";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "advertising_mode", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "advertising_mode", uidString);
+    }
+
+    if((int)basicOpenerConfigAclPrefs[13] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_timezone", "Timezone", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.timeZone}}" }, { "en", "false" }, { "cmd_tpl", "{ \"timeZone\": \"{{ value }}\" }" }});
+        json["options"][0] = "Africa/Cairo";
+        json["options"][1] = "Africa/Lagos";
+        json["options"][2] = "Africa/Maputo";
+        json["options"][3] = "Africa/Nairobi";
+        json["options"][4] = "America/Anchorage";
+        json["options"][5] = "America/Argentina/Buenos_Aires";
+        json["options"][6] = "America/Chicago";
+        json["options"][7] = "America/Denver";
+        json["options"][8] = "America/Halifax";
+        json["options"][9] = "America/Los_Angeles";
+        json["options"][10] = "America/Manaus";
+        json["options"][11] = "America/Mexico_City";
+        json["options"][12] = "America/New_York";
+        json["options"][13] = "America/Phoenix";
+        json["options"][14] = "America/Regina";
+        json["options"][15] = "America/Santiago";
+        json["options"][16] = "America/Sao_Paulo";
+        json["options"][17] = "America/St_Johns";
+        json["options"][18] = "Asia/Bangkok";
+        json["options"][19] = "Asia/Dubai";
+        json["options"][20] = "Asia/Hong_Kong";
+        json["options"][21] = "Asia/Jerusalem";
+        json["options"][22] = "Asia/Karachi";
+        json["options"][23] = "Asia/Kathmandu";
+        json["options"][24] = "Asia/Kolkata";
+        json["options"][25] = "Asia/Riyadh";
+        json["options"][26] = "Asia/Seoul";
+        json["options"][27] = "Asia/Shanghai";
+        json["options"][28] = "Asia/Tehran";
+        json["options"][29] = "Asia/Tokyo";
+        json["options"][30] = "Asia/Yangon";
+        json["options"][31] = "Australia/Adelaide";
+        json["options"][32] = "Australia/Brisbane";
+        json["options"][33] = "Australia/Darwin";
+        json["options"][34] = "Australia/Hobart";
+        json["options"][35] = "Australia/Perth";
+        json["options"][36] = "Australia/Sydney";
+        json["options"][37] = "Europe/Berlin";
+        json["options"][38] = "Europe/Helsinki";
+        json["options"][39] = "Europe/Istanbul";
+        json["options"][40] = "Europe/London";
+        json["options"][41] = "Europe/Moscow";
+        json["options"][42] = "Pacific/Auckland";
+        json["options"][43] = "Pacific/Guam";
+        json["options"][44] = "Pacific/Honolulu";
+        json["options"][45] = "Pacific/Pago_Pago";
+        json["options"][46] = "None";
+
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "timezone", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "timezone", uidString);
+    }
+    
+    if((int)basicOpenerConfigAclPrefs[11] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_operating_mode", "Operating mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.operatingMode}}" }, { "en", "false" }, { "cmd_tpl", "{ \"operatingMode\": \"{{ value }}\" }" }});
+        json["options"][0] = "Generic door opener";
+        json["options"][1] = "Analogue intercom";
+        json["options"][2] = "Digital intercom";
+        json["options"][3] = "Siedle";
+        json["options"][4] = "TCS";
+        json["options"][5] = "Bticino";
+        json["options"][6] = "Siedle HTS";
+        json["options"][7] = "STR";
+        json["options"][8] = "Ritto";
+        json["options"][9] = "Fermax";
+        json["options"][10] = "Comelit";
+        json["options"][11] = "Urmet BiBus";
+        json["options"][12] = "Urmet 2Voice";
+        json["options"][13] = "Golmar";
+        json["options"][14] = "SKS";
+        json["options"][15] = "Spare";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "operating_mode", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "operating_mode", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[1] == 1)
+    {
+        // BUS mode switch analogue
+        publishHassTopic("switch",
+                         "bus_mode_switch",
+                         uidString,
+                         "_bus_mode_switch",
+                         "BUS mode switch analogue",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"busModeSwitch\": \"1\"}" },
+                           { "pl_off", "{ \"busModeSwitch\": \"0\"}" },
+                           { "val_tpl", "{{value_json.busModeSwitch}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "bus_mode_switch", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[2] == 1)
+    {
+        publishHassTopic("number",
+                         "short_circuit_duration",
+                         uidString,
+                         "_short_circuit_duration",
+                         "Short circuit duration",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"shortCircuitDuration\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.shortCircuitDuration}}" },
+                           { "min", "0" }});
+    }
+    else
+    {
+        removeHassTopic("number", "short_circuit_duration", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[3] == 1)
+    {
+        publishHassTopic("number",
+                         "electric_strike_delay",
+                         uidString,
+                         "_electric_strike_delay",
+                         "Electric strike delay",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"electricStrikeDelay\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.electricStrikeDelay}}" },
+                           { "min", "0" },
+                           { "min", "30000" },
+                           { "step", "3000" }});
+    }
+    else
+    {
+        removeHassTopic("number", "electric_strike_delay", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[4] == 1)
+    {
+        // Random Electric Strike Delay
+        publishHassTopic("switch",
+                         "random_electric_strike_delay",
+                         uidString,
+                         "_random_electric_strike_delay",
+                         "Random electric strike delay",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"randomElectricStrikeDelay\": \"1\"}" },
+                           { "pl_off", "{ \"randomElectricStrikeDelay\": \"0\"}" },
+                           { "val_tpl", "{{value_json.randomElectricStrikeDelay}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "random_electric_strike_delay", uidString);
+    }
+    
+    if((int)advancedOpenerConfigAclPrefs[5] == 1)
+    {
+        publishHassTopic("number",
+                         "electric_strike_duration",
+                         uidString,
+                         "_electric_strike_duration",
+                         "Electric strike duration",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"electricStrikeDuration\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.electricStrikeDuration}}" },
+                           { "min", "1000" },
+                           { "min", "30000" },
+                           { "step", "3000" }});
+    }
+    else
+    {
+        removeHassTopic("number", "electric_strike_duration", uidString);
+    }
+    
+    if((int)advancedOpenerConfigAclPrefs[6] == 1)
+    {
+        // Disable RTO after ring
+        publishHassTopic("switch",
+                         "disable_rto_after_ring",
+                         uidString,
+                         "_disable_rto_after_ring",
+                         "Disable RTO after ring",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"disableRtoAfterRing\": \"1\"}" },
+                           { "pl_off", "{ \"disableRtoAfterRing\": \"0\"}" },
+                           { "val_tpl", "{{value_json.disableRtoAfterRing}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "disable_rto_after_ring", uidString);
+    }
+    
+    if((int)advancedOpenerConfigAclPrefs[7] == 1)
+    {
+        publishHassTopic("number",
+                         "rto_timeout",
+                         uidString,
+                         "_rto_timeout",
+                         "RTO timeout",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"rtoTimeout\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.rtoTimeout}}" },
+                           { "min", "5" },
+                           { "min", "60" }});
+    }
+    else
+    {
+        removeHassTopic("number", "rto_timeout", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[8] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_doorbell_suppression", "Doorbell suppression", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doorbellSuppression}}" }, { "en", "false" }, { "cmd_tpl", "{ \"doorbellSuppression\": \"{{ value }}\" }" }});
+        json["options"][0] = "Off";
+        json["options"][1] = "CM";
+        json["options"][2] = "RTO";
+        json["options"][3] = "CM & RTO";
+        json["options"][4] = "Ring";
+        json["options"][5] = "CM & Ring";
+        json["options"][6] = "RTO & Ring";
+        json["options"][7] = "CM & RTO & Ring";        
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "doorbell_suppression", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "doorbell_suppression", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[9] == 1)
+    {
+        publishHassTopic("number",
+                         "doorbell_suppression_duration",
+                         uidString,
+                         "_doorbell_suppression_duration",
+                         "Doorbell suppression duration",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "cmd_tpl", "{ \"doorbellSuppressionDuration\": \"{{ value }}\" }" },
+                           { "val_tpl", "{{value_json.doorbellSuppressionDuration}}" },
+                           { "min", "500" },
+                           { "min", "10000" },
+                           { "step", "1000" }});
+    }
+    else
+    {
+        removeHassTopic("number", "doorbell_suppression_duration", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[10] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_sound_ring", "Sound ring", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundRing}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundRing\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Sound";
+        json["options"][1] = "Sound 1";
+        json["options"][2] = "Sound 2";
+        json["options"][3] = "Sound 3";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "sound_ring", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "sound_ring", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[11] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_sound_open", "Sound open", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundOpen}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundOpen\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Sound";
+        json["options"][1] = "Sound 1";
+        json["options"][2] = "Sound 2";
+        json["options"][3] = "Sound 3";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "sound_open", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "sound_open", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[12] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_sound_rto", "Sound RTO", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundRto}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundRto\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Sound";
+        json["options"][1] = "Sound 1";
+        json["options"][2] = "Sound 2";
+        json["options"][3] = "Sound 3";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "sound_rto", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "sound_rto", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[13] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_sound_cm", "Sound CM", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundCm}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundCm\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Sound";
+        json["options"][1] = "Sound 1";
+        json["options"][2] = "Sound 2";
+        json["options"][3] = "Sound 3";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "sound_cm", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "sound_cm", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[14] == 1)
+    {
+        // Sound confirmation
+        publishHassTopic("switch",
+                         "sound_confirmation",
+                         uidString,
+                         "_sound_confirmation",
+                         "Sound confirmation",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"soundConfirmation\": \"1\"}" },
+                           { "pl_off", "{ \"soundConfirmation\": \"0\"}" },
+                           { "val_tpl", "{{value_json.soundConfirmation}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "sound_confirmation", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[16] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_single_button_press_action", "Single button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.singleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"singleButtonPressAction\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Toggle RTO";
+        json["options"][2] = "Activate RTO";
+        json["options"][3] = "Deactivate RTO";
+        json["options"][4] = "Toggle CM";
+        json["options"][5] = "Activate CM";
+        json["options"][6] = "Deactivate CM";
+        json["options"][7] = "Open";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "single_button_press_action", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "single_button_press_action", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[17] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_double_button_press_action", "Double button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doubleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"doubleButtonPressAction\": \"{{ value }}\" }" }});
+        json["options"][0] = "No Action";
+        json["options"][1] = "Toggle RTO";
+        json["options"][2] = "Activate RTO";
+        json["options"][3] = "Deactivate RTO";
+        json["options"][4] = "Toggle CM";
+        json["options"][5] = "Activate CM";
+        json["options"][6] = "Deactivate CM";
+        json["options"][7] = "Open";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "double_button_press_action", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "double_button_press_action", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[18] == 1)
+    {
+        DynamicJsonDocument json(_bufferSize);
+        json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.batteryType}}" }, { "en", "false" }, { "cmd_tpl", "{ \"batteryType\": \"{{ value }}\" }" }});
+        json["options"][0] = "Alkali";
+        json["options"][1] = "Accumulators";
+        json["options"][2] = "Lithium";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "battery_type", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic("select", "battery_type", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[19] == 1)
+    {
+        // Automatic battery type detection
+        publishHassTopic("switch",
+                         "automatic_battery_type_detection",
+                         uidString,
+                         "_automatic_battery_type_detection",
+                         "Automatic battery type detection",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { "en", "false" },
+                           { "pl_on", "{ \"automaticBatteryTypeDetection\": \"1\"}" },
+                           { "pl_off", "{ \"automaticBatteryTypeDetection\": \"0\"}" },
+                           { "val_tpl", "{{value_json.automaticBatteryTypeDetection}}" },
+                           { "stat_on", "1" },
+                           { "stat_off", "0" }});
+    }
+    else
+    {
+        removeHassTopic("switch", "automatic_battery_type_detection", uidString);
+    }
+}
 
 void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
@@ -1461,8 +2989,42 @@ void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic
                                       { "val_tpl", "{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first|default).authorizationName|default }}" }});
 }
 
-void Network::publishHASSConfigKeypadAttemptInfo(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void Network::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
+    // Keypad battery critical
+        publishHassTopic("binary_sensor",
+                         "keypad_battery_low",
+                         uidString,
+                         "_keypad_battery_low",
+                         "Keypad battery low",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_battery_keypad_critical,
+                         deviceType,
+                         "battery",
+                         "",
+                         "diagnostic",
+                         "",
+                         {{"pl_on", "1"},
+                          {"pl_off", "0"}});
+
+    // Query Keypad
+    publishHassTopic("button",
+                     "query_keypad",
+                     uidString,
+                     "_query_keypad_button",
+                     "Query keypad",
+                     name,
+                     baseTopic,
+                     "",
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     String("~") + mqtt_topic_query_keypad,
+                     { { "en", "false" },
+                       { "pl_prs", "1" }});
+
     publishHassTopic("sensor",
                      "keypad_status",
                      uidString,
@@ -1477,7 +3039,7 @@ void Network::publishHASSConfigKeypadAttemptInfo(char *deviceType, const char *b
                      "diagnostic",
                      "",
                      { { "ic", "mdi:drag-vertical" },
-                                      { "val_tpl", "{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first|default).completionStatus|default }}" }});
+                       { "val_tpl", "{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first|default).completionStatus|default }}" }});
 }
 
 void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
@@ -1487,48 +3049,20 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
         return;
     }
 
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
-
-    if (discoveryTopic != "")
-    {
-        publishHassTopic("sensor",
-                         "wifi_signal_strength",
-                         uidString,
-                         "_wifi_signal_strength",
-                         "WIFI signal strength",
-                         name,
-                         baseTopic,
-                         _lockPath + mqtt_topic_wifi_rssi,
-                         deviceType,
-                         "signal_strength",
-                         "measurement",
-                         "diagnostic",
-                         "",
-                         { {"unit_of_meas", "dBm"} });
-    }
-}
-
-void Network::publishHASSBleRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
-
-    if (discoveryTopic != "")
-    {
-        publishHassTopic("sensor",
-                         "bluetooth_signal_strength",
-                         uidString,
-                         "_bluetooth_signal_strength",
-                         "Bluetooth signal strength",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_lock_rssi,
-                         deviceType,
-                         "signal_strength",
-                         "measurement",
-                         "diagnostic",
-                         "",
-                         { {"unit_of_meas", "dBm"} });
-    }
+    publishHassTopic("sensor",
+                     "wifi_signal_strength",
+                     uidString,
+                     "_wifi_signal_strength",
+                     "WIFI signal strength",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_wifi_rssi,
+                     deviceType,
+                     "signal_strength",
+                     "measurement",
+                     "diagnostic",
+                     "",
+                     { {"unit_of_meas", "dBm"} });
 }
 
 void Network::publishHassTopic(const String& mqttDeviceType,
@@ -1588,49 +3122,44 @@ void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDe
 
 void Network::removeHASSConfig(char* uidString)
 {
-    String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
-
-    if(discoveryTopic != "")
-    {
-        removeHassTopic("lock", "smartlock", uidString);
-        removeHassTopic("binary_sensor", "battery_low", uidString);
-        removeHassTopic("binary_sensor", "keypad_battery_low", uidString);
-        removeHassTopic("sensor", "battery_voltage", uidString);
-        removeHassTopic("sensor", "trigger", uidString);
-        removeHassTopic("binary_sensor", "mqtt_connected", uidString);
-        removeHassTopic("switch", "reset", uidString);
-        removeHassTopic("sensor", "firmware_version", uidString);
-        removeHassTopic("sensor", "hardware_version", uidString);
-        removeHassTopic("sensor", "nuki_hub_version", uidString);
-        removeHassTopic("sensor", "nuki_hub_latest", uidString);
-        removeHassTopic("update", "nuki_hub_update", uidString);
-        removeHassTopic("sensor", "nuki_hub_ip", uidString);
-        removeHassTopic("switch", "led_enabled", uidString);
-        removeHassTopic("switch", "button_enabled", uidString);
-        removeHassTopic("button", "unlatch", uidString);
-        removeHassTopic("button", "lockngo", uidString);
-        removeHassTopic("button", "lockngounlatch", uidString);
-        removeHassTopic("sensor", "battery_level", uidString);
-        removeHassTopic("binary_sensor", "door_sensor", uidString);
-        removeHassTopic("binary_sensor", "ring", uidString);
-        removeHassTopic("number", "led_brightness", uidString);
-        removeHassTopic("sensor", "sound_level", uidString);
-        removeHassTopic("number", "sound_level", uidString);
-        removeHassTopic("sensor", "last_action_authorization", uidString);
-        removeHassTopic("sensor", "keypad_status", uidString);
-        removeHassTopic("sensor", "wifi_signal_strength", uidString);
-        removeHassTopic("sensor", "bluetooth_signal_strength", uidString);
-        removeHassTopic("binary_sensor", "continuous_mode", uidString);
-        removeHassTopic("switch", "continuous_mode", uidString);
-        removeHassTopic("button", "query_lockstate", uidString);
-        removeHassTopic("button", "query_config", uidString);
-        removeHassTopic("button", "query_keypad", uidString);
-        removeHassTopic("button", "query_battery", uidString);
-        removeHassTopic("button", "query_commandresult", uidString);
-        removeHassTopic("switch", "auto_lock", uidString);
-        removeHassTopic("switch", "auto_unlock", uidString);
-        removeHassTopic("switch", "double_lock", uidString);
-    }
+    removeHassTopic("lock", "smartlock", uidString);
+    removeHassTopic("binary_sensor", "battery_low", uidString);
+    removeHassTopic("binary_sensor", "keypad_battery_low", uidString);
+    removeHassTopic("sensor", "battery_voltage", uidString);
+    removeHassTopic("sensor", "trigger", uidString);
+    removeHassTopic("binary_sensor", "mqtt_connected", uidString);
+    removeHassTopic("switch", "reset", uidString);
+    removeHassTopic("sensor", "firmware_version", uidString);
+    removeHassTopic("sensor", "hardware_version", uidString);
+    removeHassTopic("sensor", "nuki_hub_version", uidString);
+    removeHassTopic("sensor", "nuki_hub_latest", uidString);
+    removeHassTopic("update", "nuki_hub_update", uidString);
+    removeHassTopic("sensor", "nuki_hub_ip", uidString);
+    removeHassTopic("switch", "led_enabled", uidString);
+    removeHassTopic("switch", "button_enabled", uidString);
+    removeHassTopic("button", "unlatch", uidString);
+    removeHassTopic("button", "lockngo", uidString);
+    removeHassTopic("button", "lockngounlatch", uidString);
+    removeHassTopic("sensor", "battery_level", uidString);
+    removeHassTopic("binary_sensor", "door_sensor", uidString);
+    removeHassTopic("binary_sensor", "ring", uidString);
+    removeHassTopic("number", "led_brightness", uidString);
+    removeHassTopic("sensor", "sound_level", uidString);
+    removeHassTopic("number", "sound_level", uidString);
+    removeHassTopic("sensor", "last_action_authorization", uidString);
+    removeHassTopic("sensor", "keypad_status", uidString);
+    removeHassTopic("sensor", "wifi_signal_strength", uidString);
+    removeHassTopic("sensor", "bluetooth_signal_strength", uidString);
+    removeHassTopic("binary_sensor", "continuous_mode", uidString);
+    removeHassTopic("switch", "continuous_mode", uidString);
+    removeHassTopic("button", "query_lockstate", uidString);
+    removeHassTopic("button", "query_config", uidString);
+    removeHassTopic("button", "query_keypad", uidString);
+    removeHassTopic("button", "query_battery", uidString);
+    removeHassTopic("button", "query_commandresult", uidString);
+    removeHassTopic("switch", "auto_lock", uidString);
+    removeHassTopic("switch", "auto_unlock", uidString);
+    removeHassTopic("switch", "double_lock", uidString);
 }
 
 void Network::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)

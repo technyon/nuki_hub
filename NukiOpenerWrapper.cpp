@@ -554,10 +554,10 @@ void NukiOpenerWrapper::onConfigUpdateReceivedCallback(const char *value)
 
 Nuki::AdvertisingMode NukiOpenerWrapper::advertisingModeToEnum(const char *str)
 {
-    if(strcmp(str, "automatic") == 0) return Nuki::AdvertisingMode::Automatic;
-    else if(strcmp(str, "normal") == 0) return Nuki::AdvertisingMode::Normal;
-    else if(strcmp(str, "slow") == 0) return Nuki::AdvertisingMode::Slow;
-    else if(strcmp(str, "slowest") == 0) return Nuki::AdvertisingMode::Slowest;
+    if(strcmp(str, "Automatic") == 0) return Nuki::AdvertisingMode::Automatic;
+    else if(strcmp(str, "Normal") == 0) return Nuki::AdvertisingMode::Normal;
+    else if(strcmp(str, "Slow") == 0) return Nuki::AdvertisingMode::Slow;
+    else if(strcmp(str, "Slowest") == 0) return Nuki::AdvertisingMode::Slowest;
     return (Nuki::AdvertisingMode)0xff;
 }
 
@@ -609,60 +609,73 @@ Nuki::TimeZoneId NukiOpenerWrapper::timeZoneToEnum(const char *str)
     else if(strcmp(str, "Pacific/Guam") == 0) return Nuki::TimeZoneId::Pacific_Guam;
     else if(strcmp(str, "Pacific/Honolulu") == 0) return Nuki::TimeZoneId::Pacific_Honolulu;
     else if(strcmp(str, "Pacific/Pago_Pago") == 0) return Nuki::TimeZoneId::Pacific_Pago_Pago;
-    else if(strcmp(str, "none") == 0) return Nuki::TimeZoneId::None;
+    else if(strcmp(str, "None") == 0) return Nuki::TimeZoneId::None;
     return (Nuki::TimeZoneId)0xff;
 }
 
 uint8_t NukiOpenerWrapper::fobActionToInt(const char *str)
 {
-    if(strcmp(str, "noaction") == 0) return 0;
-    else if(strcmp(str, "togglerto") == 0) return 1;
-    else if(strcmp(str, "activaterto") == 0) return 2;
-    else if(strcmp(str, "deactivaterto") == 0) return 3;
-    else if(strcmp(str, "open") == 0) return 7;
-    else if(strcmp(str, "ring") == 0) return 8;
+    if(strcmp(str, "No Action") == 0) return 0;
+    else if(strcmp(str, "Toggle RTO") == 0) return 1;
+    else if(strcmp(str, "Activate RTO") == 0) return 2;
+    else if(strcmp(str, "Deactivate RTO") == 0) return 3;
+    else if(strcmp(str, "Open") == 0) return 7;
+    else if(strcmp(str, "Ring") == 0) return 8;
     return 99;
 }
 
 uint8_t NukiOpenerWrapper::operatingModeToInt(const char *str)
 {
-    if(strcmp(str, "genericdooropener") == 0) return 0;
-    else if(strcmp(str, "analogueintercom") == 0) return 1;
-    else if(strcmp(str, "digitalintercom") == 0) return 2;
-    else if(strcmp(str, "siedle") == 0) return 3;
-    else if(strcmp(str, "tcs") == 0) return 4;
-    else if(strcmp(str, "bticino") == 0) return 5;
-    else if(strcmp(str, "siedlehts") == 0) return 6;
-    else if(strcmp(str, "str") == 0) return 7;
-    else if(strcmp(str, "ritto") == 0) return 8;
-    else if(strcmp(str, "fermax") == 0) return 9;
-    else if(strcmp(str, "comelit") == 0) return 10;
-    else if(strcmp(str, "urmetbibus") == 0) return 11;
-    else if(strcmp(str, "urmet2voice") == 0) return 12;
-    else if(strcmp(str, "golmar") == 0) return 13;
-    else if(strcmp(str, "sks") == 0) return 14;
-    else if(strcmp(str, "spare") == 0) return 15;
+    if(strcmp(str, "Generic door opener") == 0) return 0;
+    else if(strcmp(str, "Analogue intercom") == 0) return 1;
+    else if(strcmp(str, "Digital intercom") == 0) return 2;
+    else if(strcmp(str, "Siedle") == 0) return 3;
+    else if(strcmp(str, "TCS") == 0) return 4;
+    else if(strcmp(str, "Bticino") == 0) return 5;
+    else if(strcmp(str, "Siedle HTS") == 0) return 6;
+    else if(strcmp(str, "STR") == 0) return 7;
+    else if(strcmp(str, "Ritto") == 0) return 8;
+    else if(strcmp(str, "Fermax") == 0) return 9;
+    else if(strcmp(str, "Comelit") == 0) return 10;
+    else if(strcmp(str, "Urmet BiBus") == 0) return 11;
+    else if(strcmp(str, "Urmet 2Voice") == 0) return 12;
+    else if(strcmp(str, "Golmar") == 0) return 13;
+    else if(strcmp(str, "SKS") == 0) return 14;
+    else if(strcmp(str, "Spare") == 0) return 15;
+    return 99;
+}
+
+uint8_t NukiOpenerWrapper::doorbellSuppressionToInt(const char *str)
+{
+    if(strcmp(str, "Off") == 0) return 0;
+    else if(strcmp(str, "CM") == 0) return 1;
+    else if(strcmp(str, "RTO") == 0) return 2;
+    else if(strcmp(str, "CM & RTO") == 0) return 3;
+    else if(strcmp(str, "Ring") == 0) return 4;
+    else if(strcmp(str, "CM & Ring") == 0) return 5;
+    else if(strcmp(str, "RTO & Ring") == 0) return 6;
+    else if(strcmp(str, "CM & RTO & Ring") == 0) return 7;
     return 99;
 }
 
 NukiOpener::ButtonPressAction NukiOpenerWrapper::buttonPressActionToEnum(const char* str)
 {
-    if(strcmp(str, "noaction") == 0) return NukiOpener::ButtonPressAction::NoAction;
-    else if(strcmp(str, "togglerto") == 0) return NukiOpener::ButtonPressAction::ToggleRTO;
-    else if(strcmp(str, "activaterto") == 0) return NukiOpener::ButtonPressAction::ActivateRTO;
-    else if(strcmp(str, "deactivaterto") == 0) return NukiOpener::ButtonPressAction::DeactivateRTO;
-    else if(strcmp(str, "togglecm") == 0) return NukiOpener::ButtonPressAction::ToggleCM;
-    else if(strcmp(str, "activatecm") == 0) return NukiOpener::ButtonPressAction::ActivateCM;
-    else if(strcmp(str, "deactivatecm") == 0) return NukiOpener::ButtonPressAction::DectivateCM;
-    else if(strcmp(str, "open") == 0) return NukiOpener::ButtonPressAction::Open;
+    if(strcmp(str, "No Action") == 0) return NukiOpener::ButtonPressAction::NoAction;
+    else if(strcmp(str, "Toggle RTO") == 0) return NukiOpener::ButtonPressAction::ToggleRTO;
+    else if(strcmp(str, "Activate RTO") == 0) return NukiOpener::ButtonPressAction::ActivateRTO;
+    else if(strcmp(str, "Deactivate RTO") == 0) return NukiOpener::ButtonPressAction::DeactivateRTO;
+    else if(strcmp(str, "Toggle CM") == 0) return NukiOpener::ButtonPressAction::ToggleCM;
+    else if(strcmp(str, "Activate CM") == 0) return NukiOpener::ButtonPressAction::ActivateCM;
+    else if(strcmp(str, "Deactivate CM") == 0) return NukiOpener::ButtonPressAction::DectivateCM;
+    else if(strcmp(str, "Open") == 0) return NukiOpener::ButtonPressAction::Open;
     return (NukiOpener::ButtonPressAction)0xff;
 }
 
 Nuki::BatteryType NukiOpenerWrapper::batteryTypeToEnum(const char* str)
 {
-    if(strcmp(str, "alkali") == 0) return Nuki::BatteryType::Alkali;
-    else if(strcmp(str, "accumulators") == 0) return Nuki::BatteryType::Accumulators;
-    else if(strcmp(str, "lithium") == 0) return Nuki::BatteryType::Lithium;
+    if(strcmp(str, "Alkali") == 0) return Nuki::BatteryType::Alkali;
+    else if(strcmp(str, "Accumulators") == 0) return Nuki::BatteryType::Accumulators;
+    else if(strcmp(str, "Lithium") == 0) return Nuki::BatteryType::Lithium;
     return (Nuki::BatteryType)0xff;
 }
 
@@ -978,14 +991,14 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                 }
                 else if(strcmp(advancedKeys[i], "doorbellSuppression") == 0)
                 {
-                    const uint8_t keyvalue = atoi(json[advancedKeys[i]]);
+                    const uint8_t dbsupr = nukiOpenerInst->doorbellSuppressionToInt(json[advancedKeys[i]]);
 
-                    if(keyvalue >= 0 && keyvalue <= 8)
+                    if(dbsupr != 99)
                     {
-                        if(_nukiAdvancedConfig.doorbellSuppression == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setDoorbellSuppression(keyvalue);
+                        if(_nukiAdvancedConfig.doorbellSuppression == dbsupr) jsonResult[advancedKeys[i]] = "unchanged";
+                        else cmdResult = _nukiOpener.setDoorbellSuppression(dbsupr);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidvalue";
+                    else jsonResult[basicKeys[i]] = "invalidvalue";
                 }
                 else if(strcmp(advancedKeys[i], "doorbellSuppressionDuration") == 0)
                 {

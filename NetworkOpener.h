@@ -67,6 +67,7 @@ private:
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
     void fobActionToString(const int fobact, char* str);
     void operatingModeToString(const int opmode, char* str);
+    void doorbellSuppressionToString(const int dbsupr, char* str);    
     void capabilitiesToString(const int capabilities, char* str);
 
     String concat(String a, String b);

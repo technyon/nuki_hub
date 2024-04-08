@@ -567,7 +567,9 @@ void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &conf
     json["electricStrikeDuration"] = config.electricStrikeDuration;
     json["disableRtoAfterRing"] = config.disableRtoAfterRing;
     json["rtoTimeout"] = config.rtoTimeout;
-    json["doorbellSuppression"] = config.doorbellSuppression;
+    memset(str, 0, sizeof(str));
+    doorbellSuppressionToString(config.doorbellSuppression, str);
+    json["doorbellSuppression"] = str;
     json["doorbellSuppressionDuration"] = config.doorbellSuppressionDuration;
     json["soundRing"] = config.soundRing;
     json["soundOpen"] = config.soundOpen;
@@ -613,10 +615,7 @@ void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, c
     availabilityTopic.concat("/maintenance/mqttConnectionState");
 
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), false, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigRingDetect(deviceType, baseTopic, name, uidString);
-    _network->publishHASSConfigContinuousMode(deviceType, baseTopic, name, uidString);
-    _network->publishHASSConfigSoundLevel(deviceType, baseTopic, name, uidString);
-    _network->publishHASSBleRssiConfig(deviceType, baseTopic, name, uidString);
+    _network->publishHASSConfigAdditionalOpenerEntities(deviceType, baseTopic, name, uidString);
 }
 
 void NetworkOpener::removeHASSConfig(char* uidString)
@@ -814,13 +813,13 @@ uint8_t NetworkOpener::queryCommands()
 void NetworkOpener::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
   switch (battype) {
     case Nuki::BatteryType::Alkali:
-      strcpy(str, "alkali");
+      strcpy(str, "Alkali");
       break;
     case Nuki::BatteryType::Accumulators:
-      strcpy(str, "accumulators");
+      strcpy(str, "Accumulators");
       break;
     case Nuki::BatteryType::Lithium:
-      strcpy(str, "lithium");
+      strcpy(str, "Lithium");
       break;
     default:
       strcpy(str, "undefined");
@@ -831,28 +830,28 @@ void NetworkOpener::batteryTypeToString(const Nuki::BatteryType battype, char* s
 void NetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str) {
   switch (btnPressAction) {
     case NukiOpener::ButtonPressAction::NoAction:
-      strcpy(str, "noaction");
+      strcpy(str, "No Action");
       break;
     case NukiOpener::ButtonPressAction::ToggleRTO:
-      strcpy(str, "togglerto");
+      strcpy(str, "Toggle RTO");
       break;
     case NukiOpener::ButtonPressAction::ActivateRTO:
-      strcpy(str, "activaterto");
+      strcpy(str, "Activate RTO");
       break;
     case NukiOpener::ButtonPressAction::DeactivateRTO:
-      strcpy(str, "deactivaterto");
+      strcpy(str, "Deactivate RTO");
       break;
     case NukiOpener::ButtonPressAction::ToggleCM:
-      strcpy(str, "togglecm");
+      strcpy(str, "Toggle CM");
       break;
     case NukiOpener::ButtonPressAction::ActivateCM:
-      strcpy(str, "activatecm");
+      strcpy(str, "Activate CM");
       break;
     case NukiOpener::ButtonPressAction::DectivateCM:
-      strcpy(str, "deactivatecm");
+      strcpy(str, "Deactivate CM");
       break;
     case NukiOpener::ButtonPressAction::Open:
-      strcpy(str, "open");
+      strcpy(str, "Open");
       break;
     default:
       strcpy(str, "undefined");
@@ -863,16 +862,16 @@ void NetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressActio
 void NetworkOpener::advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str) {
   switch (advmode) {
     case Nuki::AdvertisingMode::Automatic:
-      strcpy(str, "automatic");
+      strcpy(str, "Automatic");
       break;
     case Nuki::AdvertisingMode::Normal:
-      strcpy(str, "normal");
+      strcpy(str, "Normal");
       break;
     case Nuki::AdvertisingMode::Slow:
-      strcpy(str, "slow");
+      strcpy(str, "Slow");
       break;
     case Nuki::AdvertisingMode::Slowest:
-      strcpy(str, "slowest");
+      strcpy(str, "Slowest");
       break;
     default:
       strcpy(str, "undefined");
@@ -1021,7 +1020,7 @@ void NetworkOpener::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* 
       strcpy(str, "Pacific/Pago_Pago");
       break;
     case Nuki::TimeZoneId::None:
-      strcpy(str, "none");
+      strcpy(str, "None");
       break;
     default:
       strcpy(str, "undefined");
@@ -1032,22 +1031,22 @@ void NetworkOpener::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* 
 void NetworkOpener::fobActionToString(const int fobact, char* str) {
   switch (fobact) {
     case 0:
-      strcpy(str, "noaction");
+      strcpy(str, "No Action");
       break;
     case 1:
-      strcpy(str, "togglerto");
+      strcpy(str, "Toggle RTO");
       break;
     case 2:
-      strcpy(str, "activaterto");
+      strcpy(str, "Activate RTO");
       break;
     case 3:
-      strcpy(str, "deactivaterto");
+      strcpy(str, "Deactivate RTO");
       break;
     case 7:
-      strcpy(str, "open");
+      strcpy(str, "Open");
       break;
     case 8:
-      strcpy(str, "ring");
+      strcpy(str, "Ring");
       break;
     default:
       strcpy(str, "undefined");
@@ -1058,13 +1057,13 @@ void NetworkOpener::fobActionToString(const int fobact, char* str) {
 void NetworkOpener::capabilitiesToString(const int capabilities, char* str) {
   switch (capabilities) {
     case 0:
-      strcpy(str, "dooropener");
+      strcpy(str, "Door opener");
       break;
     case 1:
-      strcpy(str, "both");
+      strcpy(str, "Both");
       break;
     case 2:
-      strcpy(str, "rto");
+      strcpy(str, "RTO");
       break;
     default:
       strcpy(str, "undefined");
@@ -1075,52 +1074,84 @@ void NetworkOpener::capabilitiesToString(const int capabilities, char* str) {
 void NetworkOpener::operatingModeToString(const int opmode, char* str) {
   switch (opmode) {
     case 0:
-      strcpy(str, "genericdooropener");
+      strcpy(str, "Generic door opener");
       break;
     case 1:
-      strcpy(str, "analogueintercom");
+      strcpy(str, "Analogue intercom");
       break;
     case 2:
-      strcpy(str, "digitalintercom");
+      strcpy(str, "Digital intercom");
       break;
     case 3:
-      strcpy(str, "siedle");
+      strcpy(str, "Siedle");
       break;
     case 4:
-      strcpy(str, "tcs");
+      strcpy(str, "TCS");
       break;
     case 5:
-      strcpy(str, "bticino");
+      strcpy(str, "Bticino");
       break;
     case 6:
-      strcpy(str, "siedlehts");
+      strcpy(str, "Siedle HTS");
       break;
     case 7:
-      strcpy(str, "str");
+      strcpy(str, "STR");
       break;
     case 8:
-      strcpy(str, "ritto");
+      strcpy(str, "Ritto");
       break;
     case 9:
-      strcpy(str, "fermax");
+      strcpy(str, "Fermax");
       break;
     case 10:
-      strcpy(str, "comelit");
+      strcpy(str, "Comelit");
       break;
     case 11:
-      strcpy(str, "urmetbibus");
+      strcpy(str, "Urmet BiBus");
       break;
     case 12:
-      strcpy(str, "urmet2voice");
+      strcpy(str, "Urmet 2Voice");
       break;
     case 13:
-      strcpy(str, "golmar");
+      strcpy(str, "Golmar");
       break;
     case 14:
-      strcpy(str, "sks");
+      strcpy(str, "SKS");
       break;
     case 15:
-      strcpy(str, "spare");
+      strcpy(str, "Spare");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::doorbellSuppressionToString(const int dbsupr, char* str) {
+  switch (dbsupr) {
+    case 0:
+      strcpy(str, "Off");
+      break;
+    case 1:
+      strcpy(str, "CM");
+      break;
+    case 2:
+      strcpy(str, "RTO");
+      break;
+    case 3:
+      strcpy(str, "CM & RTO");
+      break;
+    case 4:
+      strcpy(str, "Ring");
+      break;
+    case 5:
+      strcpy(str, "CM & Ring");
+      break;
+    case 6:
+      strcpy(str, "RTO & Ring");
+      break;
+    case 7:
+      strcpy(str, "CM & RTO & Ring");
       break;
     default:
       strcpy(str, "undefined");

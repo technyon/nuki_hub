@@ -529,10 +529,10 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
 
 Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str)
 {
-    if(strcmp(str, "automatic") == 0) return Nuki::AdvertisingMode::Automatic;
-    else if(strcmp(str, "normal") == 0) return Nuki::AdvertisingMode::Normal;
-    else if(strcmp(str, "slow") == 0) return Nuki::AdvertisingMode::Slow;
-    else if(strcmp(str, "slowest") == 0) return Nuki::AdvertisingMode::Slowest;
+    if(strcmp(str, "Automatic") == 0) return Nuki::AdvertisingMode::Automatic;
+    else if(strcmp(str, "Normal") == 0) return Nuki::AdvertisingMode::Normal;
+    else if(strcmp(str, "Slow") == 0) return Nuki::AdvertisingMode::Slow;
+    else if(strcmp(str, "Slowest") == 0) return Nuki::AdvertisingMode::Slowest;
     return (Nuki::AdvertisingMode)0xff;
 }
 
@@ -584,37 +584,37 @@ Nuki::TimeZoneId NukiWrapper::timeZoneToEnum(const char *str)
     else if(strcmp(str, "Pacific/Guam") == 0) return Nuki::TimeZoneId::Pacific_Guam;
     else if(strcmp(str, "Pacific/Honolulu") == 0) return Nuki::TimeZoneId::Pacific_Honolulu;
     else if(strcmp(str, "Pacific/Pago_Pago") == 0) return Nuki::TimeZoneId::Pacific_Pago_Pago;
-    else if(strcmp(str, "none") == 0) return Nuki::TimeZoneId::None;
+    else if(strcmp(str, "None") == 0) return Nuki::TimeZoneId::None;
     return (Nuki::TimeZoneId)0xff;
 }
 
 uint8_t NukiWrapper::fobActionToInt(const char *str)
 {
-    if(strcmp(str, "noaction") == 0) return 0;
-    else if(strcmp(str, "unlock") == 0) return 1;
-    else if(strcmp(str, "lock") == 0) return 2;
-    else if(strcmp(str, "lockngo") == 0) return 3;
-    else if(strcmp(str, "intelligent") == 0) return 4;
+    if(strcmp(str, "No Action") == 0) return 0;
+    else if(strcmp(str, "Unlock") == 0) return 1;
+    else if(strcmp(str, "Lock") == 0) return 2;
+    else if(strcmp(str, "Lock n Go") == 0) return 3;
+    else if(strcmp(str, "Intelligent") == 0) return 4;
     return 99;
 }
 
 NukiLock::ButtonPressAction NukiWrapper::buttonPressActionToEnum(const char* str)
 {
-    if(strcmp(str, "noaction") == 0) return NukiLock::ButtonPressAction::NoAction;
-    else if(strcmp(str, "intelligent") == 0) return NukiLock::ButtonPressAction::Intelligent;
-    else if(strcmp(str, "unlock") == 0) return NukiLock::ButtonPressAction::Unlock;
-    else if(strcmp(str, "lock") == 0) return NukiLock::ButtonPressAction::Lock;
-    else if(strcmp(str, "unlatch") == 0) return NukiLock::ButtonPressAction::Unlatch;
-    else if(strcmp(str, "lockngo") == 0) return NukiLock::ButtonPressAction::LockNgo;
-    else if(strcmp(str, "showstatus") == 0) return NukiLock::ButtonPressAction::ShowStatus;
+    if(strcmp(str, "No Action") == 0) return NukiLock::ButtonPressAction::NoAction;
+    else if(strcmp(str, "Intelligent") == 0) return NukiLock::ButtonPressAction::Intelligent;
+    else if(strcmp(str, "Unlock") == 0) return NukiLock::ButtonPressAction::Unlock;
+    else if(strcmp(str, "Lock") == 0) return NukiLock::ButtonPressAction::Lock;
+    else if(strcmp(str, "Unlatch") == 0) return NukiLock::ButtonPressAction::Unlatch;
+    else if(strcmp(str, "Lock n Go") == 0) return NukiLock::ButtonPressAction::LockNgo;
+    else if(strcmp(str, "Show Status") == 0) return NukiLock::ButtonPressAction::ShowStatus;
     return (NukiLock::ButtonPressAction)0xff;
 }
 
 Nuki::BatteryType NukiWrapper::batteryTypeToEnum(const char* str)
 {
-    if(strcmp(str, "alkali") == 0) return Nuki::BatteryType::Alkali;
-    else if(strcmp(str, "accumulators") == 0) return Nuki::BatteryType::Accumulators;
-    else if(strcmp(str, "lithium") == 0) return Nuki::BatteryType::Lithium;
+    if(strcmp(str, "Alkali") == 0) return Nuki::BatteryType::Alkali;
+    else if(strcmp(str, "Accumulators") == 0) return Nuki::BatteryType::Accumulators;
+    else if(strcmp(str, "Lithium") == 0) return Nuki::BatteryType::Lithium;
     return (Nuki::BatteryType)0xff;
 }
 
@@ -823,7 +823,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 {
                     Nuki::AdvertisingMode advmode = nukiInst->advertisingModeToEnum(json[basicKeys[i]]);
 
-                    if(!(int)advmode == 0xff)
+                    if((int)advmode != 0xff)
                     {
                         if(_nukiConfig.advertisingMode == advmode) jsonResult[basicKeys[i]] = "unchanged";
                         else cmdResult = _nukiLock.setAdvertisingMode(advmode);
@@ -834,7 +834,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 {
                     Nuki::TimeZoneId tzid = nukiInst->timeZoneToEnum(json[basicKeys[i]]);
 
-                    if(!(int)tzid == 0xff)
+                    if((int)tzid != 0xff)
                     {
                         if(_nukiConfig.timeZoneId == tzid) jsonResult[basicKeys[i]] = "unchanged";
                         else cmdResult = _nukiLock.setTimeZoneId(tzid);
@@ -921,7 +921,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 {
                     NukiLock::ButtonPressAction sbpa = nukiInst->buttonPressActionToEnum(json[advancedKeys[i]]);
 
-                    if(!(int)sbpa == 0xff)
+                    if((int)sbpa != 0xff)
                     {
                         if(_nukiAdvancedConfig.singleButtonPressAction == sbpa) jsonResult[advancedKeys[i]] = "unchanged";
                         else cmdResult = _nukiLock.setSingleButtonPressAction(sbpa);
@@ -932,7 +932,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 {
                     NukiLock::ButtonPressAction dbpa = nukiInst->buttonPressActionToEnum(json[advancedKeys[i]]);
 
-                    if(!(int)dbpa == 0xff)
+                    if((int)dbpa != 0xff)
                     {
                         if(_nukiAdvancedConfig.doubleButtonPressAction == dbpa) jsonResult[advancedKeys[i]] = "unchanged";
                         else cmdResult = _nukiLock.setDoubleButtonPressAction(dbpa);
@@ -954,7 +954,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 {
                     Nuki::BatteryType battype = nukiInst->batteryTypeToEnum(json[advancedKeys[i]]);
 
-                    if(!(int)battype == 0xff)
+                    if((int)battype != 0xff)
                     {
                         if(_nukiAdvancedConfig.batteryType == battype) jsonResult[advancedKeys[i]] = "unchanged";
                         else cmdResult = _nukiLock.setBatteryType(battype);

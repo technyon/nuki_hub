@@ -1239,7 +1239,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
 
         response.concat("<h3>Nuki Lock Access Control</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
         response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
@@ -1257,7 +1257,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         response.concat("</table><br>");
 
         response.concat("<h3>Nuki Lock Config Control (Requires PIN to be set)</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
         response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
@@ -1312,7 +1312,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
         response.concat("<h3>Nuki Opener Access Control</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
         response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
@@ -1329,7 +1329,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         response.concat("</table><br>");
 
         response.concat("<h3>Nuki Opener Config Control (Requires PIN to be set)</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" onclick=\"");
+        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
         response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
         response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
@@ -1346,7 +1346,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         printCheckBox(response, "CONFOPNFOB1", "Fob Action 1", ((int)basicOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNFOB2", "Fob Action 2", ((int)basicOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNFOB3", "Fob Action 3", ((int)basicOpenerConfigAclPrefs[10] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNOPM", "Operation Mode", ((int)basicOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNOPM", "Operating Mode", ((int)basicOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNADVM", "Advertising Mode", ((int)basicOpenerConfigAclPrefs[12] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNTZID", "Timezone ID", ((int)basicOpenerConfigAclPrefs[13] == 1), "chk_config_opener");
 
@@ -1356,7 +1356,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         printCheckBox(response, "CONFOPNESD", "Eletric Strike Delay", ((int)advancedOpenerConfigAclPrefs[3] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNRESD", "Random Electric Strike Delay", ((int)advancedOpenerConfigAclPrefs[4] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNESDUR", "Electric Strike Duration", ((int)advancedOpenerConfigAclPrefs[5] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNDRTOAR", "disable RTO after ring", ((int)advancedOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
+        printCheckBox(response, "CONFOPNDRTOAR", "Disable RTO after ring", ((int)advancedOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNRTOT", "RTO timeout", ((int)advancedOpenerConfigAclPrefs[7] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNDRBSUP", "Doorbell suppression", ((int)advancedOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
         printCheckBox(response, "CONFOPNDRBSUPDUR", "Doorbell suppression duration", ((int)advancedOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
@@ -1656,7 +1656,7 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)basicOpenerConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
         response.concat("Opener config ACL (Fob Action 3): ");
         response.concat((int)basicOpenerConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Operation Mode): ");
+        response.concat("Opener config ACL (Operating Mode): ");
         response.concat((int)basicOpenerConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
         response.concat("Opener config ACL (Advertising Mode): ");
         response.concat((int)basicOpenerConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
@@ -1674,7 +1674,7 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)advancedOpenerConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
         response.concat("Opener config ACL (Electric Strike Duration): ");
         response.concat((int)advancedOpenerConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (disable RTO after ring): ");
+        response.concat("Opener config ACL (Disable RTO after ring): ");
         response.concat((int)advancedOpenerConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
         response.concat("Opener config ACL (RTO timeout): ");
         response.concat((int)advancedOpenerConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
