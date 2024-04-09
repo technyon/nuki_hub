@@ -6,7 +6,7 @@ The Nuki Hub software runs on a ESP32 module and acts as a bridge between Nuki d
 <br>
 It communicates with a Nuki Lock and/or Opener through Bluetooth (BLE) and uses MQTT to integrate with other systems.<br>
 <br>
-It exposes the lock state (and much more) through MQTT and allows executing commands like locking and unlocking through MQTT.<br>
+It exposes the lock state (and much more) through MQTT and allows executing commands like locking and unlocking as well as changing the Nuki Lock/Opener configuration through MQTT.<br>
 
 ***Nuki Hub does not integrate with the Nuki mobile app, it can't register itself as a bridge in the official Nuki mobile app.***
 
@@ -63,7 +63,7 @@ In a browser navigate to the IP address assigned to the ESP32 via DHCP (often fo
 Next click on "Edit" below "MQTT and Network Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required by your MQTT broker.<br>
 <br>
 The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this.<br>
-In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "MQTT Encryption" section of this README.
+In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
 
 ## Pairing with a Nuki Lock or Opener
 
@@ -104,11 +104,11 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 - Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
-- Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "Home Assistant Discovery" section of this README. 
-- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
-- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "MQTT Encryption" section of this README.
-- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "MQTT Encryption" section of this README.
-- Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "Connecting via Ethernet" section of this README.
+- Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "[Home Assistant Discovery](#home-assistant-discovery-optional)" section of this README. 
+- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
+- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
+- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
+- Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60. 
 - Network Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
@@ -141,20 +141,23 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Query interval keypad (Only available when a Keypad is detected): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current keypad state, default 1800.
 - Number of retries if command failed: Set to a positive integer to define the amount of times the Nuki Hub retries sending commands to the Nuki Lock or Opener when commands are not acknowledged by the device, default 3.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
-- Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "Pairing with a Nuki Lock or Opener" section of this README
+- Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
 - Presence detection timeout: Set to a positive integer to set the amount of seconds between updates to the presence/devices MQTT topic with the list of detected bluetooth devices, set to -1 to disable presence detection, default 60.
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 
 ### Access Level Configuration
 
 #### Nuki General Access Control
-- Change Lock/Opener configuration: Allows changing the Nuki Lock/Opener configuration through MQTT.
-- Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "Keypad control" section of this README
-- Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "Keypad control" section of this README
+- Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
+- Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Publish auth data: Enable to publish authorization data to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
 
 #### Nuki Lock/Opener Access Control
 - Enable or disable executing each available lock action for the Nuki Lock and Nuki Opener through MQTT. Note: GPIO control is not restricted through this setting.
+
+#### Nuki Lock/Opener Config Control
+- Enable or disable changing each available configuration setting for the Nuki Lock and Nuki Opener through MQTT.
+- NOTE: Changing configuration settings requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
 
 ### Credentials
 
@@ -219,14 +222,14 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
 
 ### Configuration
-- configuration/buttonEnabled: 1 if the Nuki Lock/opener button is enabled, otherwise 0.
-- configuration/ledEnabled: 1 if the Nuki Lock/opener LED is enabled, otherwise 0.
+- configuration/buttonEnabled: 1 if the Nuki Lock/Opener button is enabled, otherwise 0.
+- configuration/ledEnabled: 1 if the Nuki Lock/Opener LED is enabled, otherwise 0.
 - configuration/ledBrightness: Set to the brightness of the LED on the Nuki Lock (0=min; 5=max) (Lock only).
 - configuration/singleLock: 0 if the Nuki Lock is set to double-lock the door, otherwise 1 (= single-lock) (Lock only).
 - configuration/autoLock:  1 if the Nuki Lock is set to Auto Lock, otherwise 0 (Lock only).
 - configuration/autoUnlock: 1 if the Nuki Lock is set to Auto Unlock, otherwise 0 (Lock only).
-- configuration/soundLevel: Set to the volume of sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
-- configuration/action: Allows to change the configuration of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "Changing Nuki Lock/Opener Configuration" section of this readme for possible actions/values
+- configuration/soundLevel: Set to the volume for sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
+- configuration/action: Allows changing configuration settings of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "Changing Nuki Lock/Opener Configuration" section of this readme for possible actions/values
 - configuration/commandResult: Result of the last configuration change action as JSON data. See the "Changing Nuki Lock/Opener Configuration" section of this readme for possible values
 - configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings.
 - configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for available settings.
@@ -252,7 +255,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Keypad
 
-- See the "Keypad control" section of this README.
+- See the "[Keypad control](#keypad-control-optional)" section of this README.
 
 ### Info
 
@@ -277,6 +280,16 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Misc
 
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection.
+
+## Changing Nuki Lock/Opener Configuration
+
+To change Nuki Lock/Opener settings set configuration/action topic to a JSON formatted value with any of the following settings. Multiple settings can be changed at once.
+
+|Setting      | Possible values                                                   |
+|-------------|-------------------------------------------------------------------|
+| name        |    |
+| latitude    |    |
+| longitude   |    |
 
 ## Over-the-air Update (OTA)
 
