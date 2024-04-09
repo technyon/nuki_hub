@@ -195,13 +195,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - lock/address: The BLE address of the Nuki Lock.
 - lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
-<br><br>
-- configuration/autoLock: enable or disable autoLock (0 = disabled; 1 = enabled). Maps to "Auto lock enabled" in the bluetooth API.
-- configuration/autoUnlock: enable or disable autoLock in general (0 = disabled; 1 = enabled). Maps to "Auto unlock disabled" in the bluetooth API.
-- configuration/buttonEnabled: enable or disable the button on the lock (0 = disabled; 1 = enabled).
-- configuration/ledBrightness: Set the brightness of the LED on the lock (0=min; 5=max).
-- configuration/ledEnabled: enable or disable the LED on the lock (0 = disabled; 1 = enabled).
-- configuration/singleLock: configures wether to single- or double-lock the door (0 = double; 1 = single).
 
 ### Opener
 
@@ -224,10 +217,19 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/rssi: The bluetooth signal strength of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - lock/address: The BLE address of the Nuki Lock.
 - lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
-<br><br>
-- configuration/buttonEnabled: enable or disable the button on the opener (0 = disabled; 1 = enabled).
-- configuration/ledEnabled: enable or disable the LED on the opener (0 = disabled; 1 = enabled).
-- configuration/soundLevel: configures the volume of sounds the opener plays back (0 = min; 255 = max).
+
+### Configuration
+- configuration/buttonEnabled: 1 if the Nuki Lock/opener button is enabled, otherwise 0.
+- configuration/ledEnabled: 1 if the Nuki Lock/opener LED is enabled, otherwise 0.
+- configuration/ledBrightness: Set to the brightness of the LED on the Nuki Lock (0=min; 5=max) (Lock only).
+- configuration/singleLock: 0 if the Nuki Lock is set to double-lock the door, otherwise 1 (= single-lock) (Lock only).
+- configuration/autoLock:  1 if the Nuki Lock is set to Auto Lock, otherwise 0 (Lock only).
+- configuration/autoUnlock: 1 if the Nuki Lock is set to Auto Unlock, otherwise 0 (Lock only).
+- configuration/soundLevel: Set to the volume of sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
+- configuration/action: Allows to change the configuration of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "Changing Nuki Lock/Opener Configuration" section of this readme for possible actions/values
+- configuration/commandResult: Result of the last configuration change action as JSON data. See the "Changing Nuki Lock/Opener Configuration" section of this readme for possible values
+- configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings.
+- configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for available settings.
 
 ### Query
 
@@ -269,8 +271,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - maintenance/wifiRssi: The Wi-Fi signal strength of the Wi-Fi Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - maintenance/log: If "Enable MQTT logging" is enabled in the web interface, this topic will be filled with debug log information.
 - maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
-- maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See RestartReason.h for possible values
-- maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See RestartReason.h for possible values
+- maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/RestartReason.h) for possible values
+- maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See [RestartReason.h](/RestartReason.h) for possible values
  
 ### Misc
 
@@ -281,7 +283,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 After the initial installation of the Nuki Hub firmware via serial connection, further updates can be deployed via OTA update from a browser.<br>
 In the configuration portal, scroll down to "Firmware update" and click "Open".<br>
 Then Click "Browse" and select the new "nuki_hub.bin" file and select "Upload file".<br>
-After about a minute the new firmware should be installed.
+After about a minute the new firmware should be installed afterwhich the ESP will reboot automatically.
 
 ## MQTT Encryption (optional; Wi-Fi and LAN8720 only)
 
@@ -306,7 +308,7 @@ The following mapping between Home Assistant services and Nuki commands is setup
 | lock.unlock | Unlock    | Enable Ring To Open       | Enable Continuous Mode    |
 | lock.open   | Unlatch   | Electric Strike Actuation | Electric Strike Actuation |
 
-NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
+NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this software. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
 NOTE2: Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/), but this is not recommended
 
 ## Keypad control (optional)
@@ -314,7 +316,7 @@ NOTE2: Home Assistant can be setup manually using the [MQTT Lock integration](ht
 If a keypad is connected to the lock, keypad codes can be added, updated and removed.
 This has to enabled first in the configuration portal. Check "Enable keypad control via MQTT" and save the configuration.
 After enabling keypad control, information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes. 
-The same data is also published as JSON data to keypad/json.
+The same data is also published as JSON data to the "keypad/json" MQTT topic.
 <br>
 For security reasons, the code itself is not published. To modify keypad codes, a command
 structure is setup under keypad/command:
@@ -376,7 +378,7 @@ Note: The old setting "Enable control via GPIO" is removed. If you had enabled t
 
 If you prefer to connect to the MQTT Broker via Ethernet instead of Wi-Fi, you either use one of the supported ESP32 modules (see about section above),
 or wire a seperate Wiznet W5x00 Module (W5100, W5200, W5500 are supported). To use a supported module, flash the firmware, connect via Wi-Fi and
-select the correct network hardware in the MQTT and network settings section.
+select the correct network hardware in the "MQTT and Network Configuration" section.
 
 To wire an external W5x00 module to the ESP, use this wiring scheme:
 
@@ -415,7 +417,7 @@ To erase the flash, use the espressif download tool and click the "Erase" button
 Afterwards flash the firmware as described in the readme within the 7z file.<br>
 <br>
 
-Also, there are reports that ESP32 "DEVKIT1" module don't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.<br>
+Also, there are reports that the ESP32 "DEVKIT1" module doesn't work and pairing is not possible. The reason is unknown, but if you use such a module, try a different one.<br>
 <br>
 Reported as working are:
 - [M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)
@@ -454,7 +456,7 @@ See the previous point, this functionality needs the correct PIN to be configure
 
 ### Using Home Assistant, it's only possible to lock or unlock the door, but not to unlatch it
 
-Make sure "Access level" under "Advanced Nuki Configuration" is set to "Full".<br>
+Make sure the "Unlatch" option is checked under "Access Level Configuration".<br>
 <br>
 Unlatching can be triggered using the lock.open service.<br>
 <br>
