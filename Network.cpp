@@ -2520,7 +2520,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     {
         removeHassTopic("select", "timezone", uidString);
     }
-    
+
     if((int)basicOpenerConfigAclPrefs[11] == 1)
     {
         DynamicJsonDocument json(_bufferSize);
@@ -2657,7 +2657,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     {
         removeHassTopic("switch", "random_electric_strike_delay", uidString);
     }
-    
+
     if((int)advancedOpenerConfigAclPrefs[5] == 1)
     {
         publishHassTopic("number",
@@ -2684,7 +2684,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     {
         removeHassTopic("number", "electric_strike_duration", uidString);
     }
-    
+
     if((int)advancedOpenerConfigAclPrefs[6] == 1)
     {
         // Disable RTO after ring
@@ -2712,7 +2712,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     {
         removeHassTopic("switch", "disable_rto_after_ring", uidString);
     }
-    
+
     if((int)advancedOpenerConfigAclPrefs[7] == 1)
     {
         publishHassTopic("number",
@@ -2750,7 +2750,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
         json["options"][4] = "Ring";
         json["options"][5] = "CM & Ring";
         json["options"][6] = "RTO & Ring";
-        json["options"][7] = "CM & RTO & Ring";        
+        json["options"][7] = "CM & RTO & Ring";
         serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "doorbell_suppression", uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
@@ -3135,17 +3135,13 @@ void Network::removeHASSConfig(char* uidString)
     removeHassTopic("sensor", "nuki_hub_latest", uidString);
     removeHassTopic("update", "nuki_hub_update", uidString);
     removeHassTopic("sensor", "nuki_hub_ip", uidString);
-    removeHassTopic("switch", "led_enabled", uidString);
-    removeHassTopic("switch", "button_enabled", uidString);
     removeHassTopic("button", "unlatch", uidString);
     removeHassTopic("button", "lockngo", uidString);
     removeHassTopic("button", "lockngounlatch", uidString);
     removeHassTopic("sensor", "battery_level", uidString);
     removeHassTopic("binary_sensor", "door_sensor", uidString);
     removeHassTopic("binary_sensor", "ring", uidString);
-    removeHassTopic("number", "led_brightness", uidString);
     removeHassTopic("sensor", "sound_level", uidString);
-    removeHassTopic("number", "sound_level", uidString);
     removeHassTopic("sensor", "last_action_authorization", uidString);
     removeHassTopic("sensor", "keypad_status", uidString);
     removeHassTopic("sensor", "wifi_signal_strength", uidString);
@@ -3160,6 +3156,55 @@ void Network::removeHASSConfig(char* uidString)
     removeHassTopic("switch", "auto_lock", uidString);
     removeHassTopic("switch", "auto_unlock", uidString);
     removeHassTopic("switch", "double_lock", uidString);
+    removeHassTopic("switch", "automatic_battery_type_detection", uidString);
+    removeHassTopic("select", "battery_type", uidString);
+    removeHassTopic("select", "double_button_press_action", uidString);
+    removeHassTopic("select", "single_button_press_action", uidString);
+    removeHassTopic("switch", "sound_confirmation", uidString);
+    removeHassTopic("select", "sound_cm", uidString);
+    removeHassTopic("select", "sound_rto", uidString);
+    removeHassTopic("select", "sound_open", uidString);
+    removeHassTopic("select", "sound_ring", uidString);
+    removeHassTopic("number", "doorbell_suppression_duration", uidString);
+    removeHassTopic("select", "doorbell_suppression", uidString);
+    removeHassTopic("number", "rto_timeout", uidString);
+    removeHassTopic("switch", "disable_rto_after_ring", uidString);
+    removeHassTopic("number", "electric_strike_duration", uidString);
+    removeHassTopic("switch", "random_electric_strike_delay", uidString);
+    removeHassTopic("number", "electric_strike_delay", uidString);
+    removeHassTopic("number", "short_circuit_duration", uidString);
+    removeHassTopic("switch", "bus_mode_switch", uidString);
+    removeHassTopic("select", "operating_mode", uidString);
+    removeHassTopic("select", "timezone", uidString);
+    removeHassTopic("select", "advertising_mode", uidString);
+    removeHassTopic("select", "fob_action_3", uidString);
+    removeHassTopic("select", "fob_action_2", uidString);
+    removeHassTopic("select", "fob_action_1", uidString);
+    removeHassTopic("switch", "dst_mode", uidString);
+    removeHassTopic("number", "timezone_offset", uidString);
+    removeHassTopic("switch", "pairing_enabled", uidString);
+    removeHassTopic("number", "sound_level", uidString);
+    removeHassTopic("switch", "button_enabled", uidString);
+    removeHassTopic("switch", "led_enabled", uidString);
+    removeHassTopic("number", "led_brightness", uidString);
+    removeHassTopic("switch", "auto_update_enabled", uidString);
+    removeHassTopic("switch", "immediate_auto_lock_enabled", uidString);
+    removeHassTopic("switch", "nightmode_immediate_lock_start", uidString);
+    removeHassTopic("switch", "nightmode_auto_unlock", uidString);
+    removeHassTopic("switch", "nightmode_auto_lock", uidString);
+    removeHassTopic("text", "nightmode_end_time", uidString);
+    removeHassTopic("text", "nightmode_start_time", uidString);
+    removeHassTopic("switch", "nightmode_enabled", uidString);
+    removeHassTopic("number", "auto_lock_timeout", uidString);
+    removeHassTopic("number", "unlatch_duration", uidString);
+    removeHassTopic("switch", "detached_cylinder", uidString);
+    removeHassTopic("number", "lockngo_timeout", uidString);
+    removeHassTopic("number", "unlocked_locked_transition_offset_degrees", uidString);
+    removeHassTopic("number", "single_locked_position_offset_degrees", uidString);
+    removeHassTopic("number", "locked_position_offset_degrees", uidString);
+    removeHassTopic("number", "unlocked_position_offset_degrees", uidString);
+    removeHassTopic("switch", "pairing_enabled", uidString);
+    removeHassTopic("switch", "auto_unlatch", uidString);
 }
 
 void Network::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)
