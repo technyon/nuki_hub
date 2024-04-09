@@ -229,9 +229,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - configuration/autoLock:  1 if the Nuki Lock is set to Auto Lock, otherwise 0 (Lock only).
 - configuration/autoUnlock: 1 if the Nuki Lock is set to Auto Unlock, otherwise 0 (Lock only).
 - configuration/soundLevel: Set to the volume for sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
-- configuration/action: Allows changing configuration settings of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "Changing Nuki Lock/Opener Configuration" section of this readme for possible actions/values
-- configuration/commandResult: Result of the last configuration change action as JSON data. See the "Changing Nuki Lock/Opener Configuration" section of this readme for possible values
-- configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings.
+- configuration/action: Allows changing configuration settings of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible actions/values
+- configuration/commandResult: Result of the last configuration change action as JSON data. See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible values
+- configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings. Please note: Longitude and Latitude of the Lock/Opener are not published to MQTT by design. These values can still be changed though.
 - configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for available settings.
 
 ### Query
@@ -283,13 +283,108 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ## Changing Nuki Lock/Opener Configuration
 
-To change Nuki Lock/Opener settings set configuration/action topic to a JSON formatted value with any of the following settings. Multiple settings can be changed at once.
+To change Nuki Lock/Opener settings set the `configuration/action` topic to a JSON formatted value with any of the following settings. Multiple settings can be changed at once. See [Nuki Smart Lock API Basic Config](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config), [Nuki Smart Lock API Advanced Config](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config), [Nuki Opener API Basic Config](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) and [Nuki Opener API Advanced Config](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for more information on the available settings.<br>
 
-|Setting      | Possible values                                                   |
-|-------------|-------------------------------------------------------------------|
-| name        |    |
-| latitude    |    |
-| longitude   |    |
+### Nuki Lock Configuration
+
+| Setting                                 | Usage                                                                                            | Possible values                                                   | Example                            |
+|-----------------------------------------|--------------------------------------------------------------------------------------------------|-------------------------------------------------------------------|------------------------------------|
+| name                                    | The name of the Smart Lock.                                                                      | Alphanumeric string, max length 32 chars                          |`{ "name": "Frontdoor" }`           |
+| latitude                                | The latitude of the Smart Locks geoposition.                                                     | Float                                                             |`{ "latitude": "48.858093" }`       |
+| longitude                               | The longitude of the Smart Locks geoposition                                                     | Float                                                             |`{ "longitude": "2.294694" }`       |
+| autoUnlatch                             | Whether or not the door shall be unlatched by manually operating a door handle from the outside. | 1 = enabled, 0 = disabled                                         |`{ "autoUnlatch": "1" }`            |
+| pairingEnabled                          | Whether or not activating the pairing mode via button should be enabled.                         | 1 = enabled, 0 = disabled                                         |`{ "pairingEnabled": "0" }`         |
+| buttonEnabled                           | Whether or not the button should be enabled.                                                     | 1 = enabled, 0 = disabled                                         |`{ "buttonEnabled": "1" }`          |
+| ledEnabled                              | Whether or not the flashing LED should be enabled to signal an unlocked door.                    | 1 = enabled, 0 = disabled                                         |`{ "ledEnabled": "1" }`             |
+| ledBrightness                           | The LED brightness level                                                                         | 0 = off, …, 5 = max                                               |`{ "ledBrightness": "2" }`          |
+| timeZoneOffset                          | The timezone offset (UTC) in minutes                                                             | Integer between 0 and 60                                          |`{ "timeZoneOffset": "0" }`         |
+| dstMode                                 | The desired daylight saving time mode.                                                           | 0 = disabled, 1 = European                                        |`{ "dstMode": "0" }`                |
+| fobAction1                              | The desired action, if a Nuki Fob is pressed once.                                               | "No Action", "Unlock", "Lock", "Lock n Go", "Intelligent"         |`{ "fobAction1": "Lock n Go" }`     |
+| fobAction2                              | The desired action, if a Nuki Fob is pressed twice.                                              | "No Action", "Unlock", "Lock", "Lock n Go", "Intelligent"         |`{ "fobAction2": "Intelligent" }`   |
+| fobAction3                              | The desired action, if a Nuki Fob is pressed three times.                                        | "No Action", "Unlock", "Lock", "Lock n Go", "Intelligent"         |`{ "fobAction3": "Unlock" }`        |
+| singleLock                              | Whether only a single lock or double lock should be performed                                    | 0 = double lock, 1 = single lock                                  |`{ "singleLock": "0" }`             |
+| advertisingMode                         | The desired advertising mode.                                                                    | "Automatic", "Normal", "Slow", "Slowest"                          |`{ "advertisingMode": "Normal" }`   |
+| timeZone                                | The current timezone or "None" if timezones are not supported                                    | "None" or one of the timezones from [Nuki Timezones](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--list-of-timezone-ids)                                                                                                                                                                              |`{ "timeZone": "Europe/Berlin" }`   |
+| unlockedPositionOffsetDegrees           | Offset that alters the unlocked position in degrees.                                             | Integer between -90 and 180                              |`{ "unlockedPositionOffsetDegrees": "-90" }` |
+| lockedPositionOffsetDegrees             | Offset that alters the locked position in degrees.                                               | Integer between -180 and 90                                 |`{ "lockedPositionOffsetDegrees": "80" }` |
+| singleLockedPositionOffsetDegrees       | Offset that alters the single locked position in degrees.                                        | Integer between -180 and 180                         |`{ "singleLockedPositionOffsetDegrees": "120" }` |
+| unlockedToLockedTransitionOffsetDegrees | Offset that alters the position where transition from unlocked to locked happens in degrees.     | Integer between -180 and 180                   |`{ "unlockedToLockedTransitionOffsetDegrees": "180" }` |
+| lockNgoTimeout                          | Timeout for lock ‘n’ go in seconds                                                               | Integer between 5 and 60                                          |`{ "lockNgoTimeout": "60" }`        |
+| singleButtonPressAction                 | The desired action, if the button is pressed once.                  | "No Action", "Intelligent", "Unlock", "Lock", "Unlatch", "Lock n Go", "Show Status"   |`{ "singleButtonPressAction": "Lock n Go" }` |
+| doubleButtonPressAction                 | The desired action, if the button is pressed twice.                 | "No Action", "Intelligent", "Unlock", "Lock", "Unlatch", "Lock n Go", "Show Status" |`{ "doubleButtonPressAction": "Show Status" }` |
+| detachedCylinder                        | Wheter the inner side of the used cylinder is detached from the outer side.                      | 0 = not detached, 1 = detached                                    |`{ "detachedCylinder": "1" }`       |
+| batteryType                             | The type of the batteries present in the smart lock.                                             | "Alkali", "Accumulators", "Lithium"                               |`{ "batteryType": "Accumulators" }` |
+| automaticBatteryTypeDetection           | Whether the automatic detection of the battery type is enabled.                                  | 1 = enabled, 0 = disabled                          |`{ "automaticBatteryTypeDetection": "Lock n Go" }` |
+| unlatchDuration                         | Duration in seconds for holding the latch in unlatched position.                                 | Integer between 1 and 30                                          |`{ "unlatchDuration": "3" }`        |
+| autoLockTimeOut                         | Seconds until the smart lock relocks itself after it has been unlocked.                          | Integer between 30 and 180                                        |`{ "autoLockTimeOut": "60" }`       |
+| autoUnLockDisabled                      | Whether auto unlock should be disabled in general.                                               | 1 = auto unlock disabled, 0 = auto unlock enabled                 |`{ "autoUnLockDisabled": "1" }`     |
+| nightModeEnabled                        | Whether nightmode is enabled.                                                                    | 1 = enabled, 0 = disabled                                         |`{ "nightModeEnabled": "1" }`       |
+| nightModeStartTime                      | Start time for nightmode if enabled.                                                             | Time in "HH:MM" format                                            |`{ "nightModeStartTime": "22:00" }` |
+| nightModeEndTime                        | End time for nightmode if enabled.                                                               | Time in "HH:MM" format                                            |`{ "nightModeEndTime": "07:00" }`   |
+| nightModeAutoLockEnabled                | Whether auto lock should be enabled during nightmode.                                            | 1 = enabled, 0 = disabled                                        |`{ "nightModeAutoLockEnabled": "1" }`|
+| nightModeAutoUnlockDisabled             | Whether auto unlock should be disabled during nightmode.                                         | 1 = auto unlock disabled, 0 = auto unlock enabled             |`{ "nightModeAutoUnlockDisabled": "1" }`|
+| nightModeImmediateLockOnStart           | Whether the door should be immediately locked on nightmode start.                                | 1 = enabled, 0 = disabled                                   |`{ "nightModeImmediateLockOnStart": "1" }`|
+| autoLockEnabled                         | Whether auto lock is enabled.                                                                    | 1 = enabled, 0 = disabled                                         |`{ "autoLockEnabled": "1" }`        |
+| immediateAutoLockEnabled                | Whether auto lock should be performed immediately after the door has been closed.                | 1 = enabled, 0 = disabled                                        |`{ "immediateAutoLockEnabled": "1" }`|
+| autoUpdateEnabled                       | Whether automatic firmware updates should be enabled.                                            | 1 = enabled, 0 = disabled                                         |`{ "autoUpdateEnabled": "1" }`      |
+
+### Nuki Opener Configuration
+
+| Setting                                 | Usage                                                                                            | Possible values                                                   | Example                            |
+|-----------------------------------------|--------------------------------------------------------------------------------------------------|-------------------------------------------------------------------|------------------------------------|
+| name                                    | The name of the Opener.                                                                          | Alphanumeric string, max length 32 chars                          |`{ "name": "Frontdoor" }`           |
+| latitude                                | The latitude of the Openers geoposition.                                                         | Float                                                             |`{ "latitude": "48.858093" }`       |
+| longitude                               | The longitude of the Openers geoposition                                                         | Float                                                             |`{ "longitude": "2.294694" }`       |
+| pairingEnabled                          | Whether or not activating the pairing mode via button should be enabled.                         | 1 = enabled, 0 = disabled                                         |`{ "pairingEnabled": "0" }`         |
+| buttonEnabled                           | Whether or not the button should be enabled.                                                     | 1 = enabled, 0 = disabled                                         |`{ "buttonEnabled": "1" }`          |
+| ledFlashEnabled                         | Whether or not the flashing LED should be enabled to signal CM or RTO.                           | 1 = enabled, 0 = disabled                                         |`{ "ledFlashEnabled": "1" }`        |
+| timeZoneOffset                          | The timezone offset (UTC) in minutes                                                             | Integer between 0 and 60                                          |`{ "timeZoneOffset": "0" }`         |
+| dstMode                                 | The desired daylight saving time mode.                                                           | 0 = disabled, 1 = European                                        |`{ "dstMode": "0" }`                |
+| fobAction1                              | The desired action, if a Nuki Fob is pressed once.                                     | "No Action", "Toggle RTO", "Activate RTO", "Deactivate RTO", "Open", "Ring" |`{ "fobAction1": "Toggle RTO" }`    |
+| fobAction2                              | The desired action, if a Nuki Fob is pressed twice.                                    | "No Action", "Toggle RTO", "Activate RTO", "Deactivate RTO", "Open", "Ring" |`{ "fobAction2": "Open" }`          |
+| fobAction3                              | The desired action, if a Nuki Fob is pressed three times.                              | "No Action", "Toggle RTO", "Activate RTO", "Deactivate RTO", "Open", "Ring" |`{ "fobAction3": "Ring" }`          |
+| operatingMode                           | The desired operating mode                                                             | "Generic door opener", "Analogue intercom", "Digital intercom", "Siedle", "TCS", "Bticino", "Siedle HTS", "STR", "Ritto", "Fermax", "Comelit", "Urmet BiBus", "Urmet 2Voice", "Golmar", "SKS", "Spare"                                                                                                                            |`{ "operatingMode": "TCS" }`        |
+| advertisingMode                         | The desired advertising mode.                                                                    | "Automatic", "Normal", "Slow", "Slowest"                          |`{ "advertisingMode": "Normal" }`   |
+| timeZone                                | The current timezone or "None" if timezones are not supported                                    | "None" or one of the timezones from [Nuki Timezones](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--list-of-timezone-ids)                                                                                                                                                                              |`{ "timeZone": "Europe/Berlin" }`   |
+| intercomID                              | Database ID of the connected intercom.                                                           | Integer                                                           |`{ "intercomID": "1" }`             |
+| busModeSwitch                           | Method to switch between data and analogue mode                                                  | 0 = none, 1 =vshort circuit                                       |`{ "busModeSwitch": "0" }`          |
+| shortCircuitDuration                    | Duration of the short circuit for BUS mode switching in ms.                                      | Integer                                                           |`{ "shortCircuitDuration": "250" }` |
+| electricStrikeDelay                     | Delay in ms of electric strike activation in case of an electric strike actuation by RTO         | Integer between 0 and 30000                                       |`{ "electricStrikeDelay": "2080" }` |
+| randomElectricStrikeDelay               | Random delay (3-7s) in order to simulate a person inside actuating the electric strike.          | 1 = enabled, 0 = disabled                                       |`{ "randomElectricStrikeDelay": "1" }`|
+| electricStrikeDuration                  | Duration in ms of electric strike actuation.                                  .                  | Integer between 1000 and 30000                                 |`{ "electricStrikeDuration": "5000" }` |
+| disableRtoAfterRing                     | Whether to disable RTO after ring.                                                               | 1 = disable RTO after ring, 0 = Don't disable RTO after ring      |`{ "disableRtoAfterRing": "0" }`    |
+| rtoTimeout                              | After this period of time in minutes, RTO gets deactivated automatically                         | Integer between 5 and 60                                          |`{ "rtoTimeout": "60" }`            |
+| doorbellSuppression                     | Whether the doorbell is suppressed when Ring, CM and/or RTO are active     | "Off", "CM", "RTO", "CM & RTO", "Ring", "CM & Ring", "RTO & Ring", "CM & RTO & Ring"|`{ "doorbellSuppression": "CM & Ring" }`|
+| doorbellSuppressionDuration             | Duration in ms of doorbell suppression.                                                          | Integer between 500 and 10000                             |`{ "doorbellSuppressionDuration": "2000" }` |
+| soundRing                               | The Ring sound                                                                                   | "No Sound", "Sound 1", "Sound 2", "Sound 3"                       |`{ "soundRing": "No Sound" }`       |
+| soundOpen                               | The Open sound.                                                                                  | "No Sound", "Sound 1", "Sound 2", "Sound 3"                       |`{ "soundOpen": "Sound 1" }`        |
+| soundRto                                | The RTO sound.                                                                                   | "No Sound", "Sound 1", "Sound 2", "Sound 3"                       |`{ "soundRto": "Sound 2" }`         |
+| soundCm                                 | The CM sound.                                                                                    | "No Sound", "Sound 1", "Sound 2", "Sound 3"                       |`{ "soundCm": "Sound 3" }`          |
+| soundConfirmation                       | Sound confirmation                                                                               | 0 = no sound, 1 = sound                                           |`{ "soundConfirmation": "1" }`      |
+| soundLevel                              | The sound level for the opener                                                                   | Integer between 0 and 255                                         |`{ "soundLevel": "200" }`           |
+| singleButtonPressAction      | The desired action, if the button is pressed once.  | "No Action", "Toggle RTO", "Activate RTO", "Deactivate RTO", "Toggle CM", "Activate CM", "Deactivate CM", "Open"      |`{ "singleButtonPressAction": "Open" }` |
+| doubleButtonPressAction      | The desired action, if the button is pressed twice. | "No Action", "Toggle RTO", "Activate RTO", "Deactivate RTO", "Toggle CM", "Activate CM", "Deactivate CM", "Open" |`{ "doubleButtonPressAction": "No Action" }` |
+| batteryType                             | The type of the batteries present in the smart lock.                                             | "Alkali", "Accumulators", "Lithium"                               |`{ "batteryType": "Accumulators" }` |
+| automaticBatteryTypeDetection           | Whether the automatic detection of the battery type is enabled.                                  | 1 = enabled, 0 = disabled                                  |`{ "automaticBatteryTypeDetection": "1" }` |
+
+Example usage for changing multiple settings at once:<br>
+- `{ "buttonEnabled": "1", "lockngoTimeout": "60", "automaticBatteryTypeDetection": "1" }`
+- `{ "fobAction1": "Unlock", "fobAction2": "Intelligent", "nightModeImmediateLockOnStart": "1" }`
+
+### Result of attempted configuration changes
+
+The result of the last configuration change action will be published to the `configuration/commandResult` MQTT topic as JSON data.<br>
+<br>
+The JSON data will include a node called "general" and a node for every setting that Nuki Hub detected in the action.<br>
+Possible values for the "general" node are "noPinSet", "invalidJson", "invalidConfig", "success" and "noChange".<br>
+Possible values for the node per setting are "unchanged", "invalidValue", "valueTooLong", "accessDenied", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined"<br>
+<br>
+Example:
+- `{"advertisingMode":"success","general":"success"}`
+
+### Home Assistant discovery
+
+If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings. These entities will be disabled by default in Home Assistant, but can be found in the MQTT devices section of the Home Assistant UI under the "Configuration" section of the Nuki Lock/Opener and enabled there.
 
 ## Over-the-air Update (OTA)
 

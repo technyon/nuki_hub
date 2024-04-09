@@ -75,6 +75,7 @@ private:
     uint8_t fobActionToInt(const char *str);
     uint8_t operatingModeToInt(const char *str);
     uint8_t doorbellSuppressionToInt(const char *str);
+    uint8_t soundToInt(const char *str);
     NukiOpener::ButtonPressAction buttonPressActionToEnum(const char* str);
     Nuki::BatteryType batteryTypeToEnum(const char* str);
 

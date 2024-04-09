@@ -186,7 +186,7 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
         {
             _configUpdateReceivedCallback(value);
         }
-        
+
         publishString(mqtt_topic_config_action, "--");
     }
 }
@@ -509,8 +509,8 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 
     json["nukiID"] = uidString;
     json["name"] = config.name;
-    json["latitude"] = config.latitude;
-    json["longitude"] = config.longitude;
+    //json["latitude"] = config.latitude;
+    //json["longitude"] = config.longitude;
     memset(str, 0, sizeof(str));
     capabilitiesToString(config.capabilities, str);
     json["capabilities"] = str;
@@ -571,10 +571,18 @@ void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &conf
     doorbellSuppressionToString(config.doorbellSuppression, str);
     json["doorbellSuppression"] = str;
     json["doorbellSuppressionDuration"] = config.doorbellSuppressionDuration;
-    json["soundRing"] = config.soundRing;
-    json["soundOpen"] = config.soundOpen;
-    json["soundRto"] = config.soundRto;
-    json["soundCm"] = config.soundCm;
+    memset(str, 0, sizeof(str));
+    soundToString(config.soundRing, str);
+    json["soundRing"] = str;
+    memset(str, 0, sizeof(str));
+    soundToString(config.soundOpen, str);
+    json["soundOpen"] = str;
+    memset(str, 0, sizeof(str));
+    soundToString(config.soundRto, str);
+    json["soundRto"] = str;
+    memset(str, 0, sizeof(str));
+    soundToString(config.soundCm, str);
+    json["soundCm"] = str;
     json["soundConfirmation"] = config.soundConfirmation;
     json["soundLevel"] = config.soundLevel;
     memset(str, 0, sizeof(str));
@@ -1152,6 +1160,26 @@ void NetworkOpener::doorbellSuppressionToString(const int dbsupr, char* str) {
       break;
     case 7:
       strcpy(str, "CM & RTO & Ring");
+      break;
+    default:
+      strcpy(str, "undefined");
+      break;
+  }
+}
+
+void NetworkOpener::soundToString(const int sound, char* str) {
+  switch (sound) {
+    case 0:
+      strcpy(str, "No Sound");
+      break;
+    case 1:
+      strcpy(str, "Sound 1");
+      break;
+    case 2:
+      strcpy(str, "Sound 2");
+      break;
+    case 3:
+      strcpy(str, "Sound 3");
       break;
     default:
       strcpy(str, "undefined");

@@ -464,9 +464,9 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
 
     json["nukiID"] = uidString;
     json["name"] = config.name;
-    json["latitude"] = config.latitude;
-    json["autoUnlatch"] = config.autoUnlatch;
-    json["longitude"] = config.longitude;
+    //json["latitude"] = config.latitude;
+    //json["longitude"] = config.longitude;
+    json["autoUnlatch"] = config.autoUnlatch;    
     json["pairingEnabled"] = config.pairingEnabled;
     json["buttonEnabled"] = config.buttonEnabled;
     json["ledEnabled"] = config.ledEnabled;
