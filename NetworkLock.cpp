@@ -82,6 +82,12 @@ void NetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
     }
 
+    if(_preferences->getBool(preference_timecontrol_control_enabled))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_timecontrol_action);
+        _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
+    }
+
     _network->addReconnectedCallback([&]()
     {
         _reconnected = true;
@@ -203,6 +209,18 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
                 _configUpdateReceivedCallback(configTopic, value);
             }
         }
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_timecontrol_action))
+    {
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+
+        if(_timeControlCommandReceivedReceivedCallback != NULL)
+        {
+            _timeControlCommandReceivedReceivedCallback(value);
+        }
+
+        publishString(mqtt_topic_timecontrol_action, "--");
     }
 }
 
@@ -535,9 +553,86 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
     }
 }
 
+void NetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEntry>& entries)
+{
+    char str[50];
+    JsonDocument json;
+
+    for(const auto& entry : entries)
+    {
+        auto jsonEntry = json.add();
+
+        jsonEntry["entryId"] = entry.entryId;
+        jsonEntry["enabled"] = entry.enabled;
+        uint8_t weekdaysInt = entry.weekdays;
+        JsonArray weekdays = jsonEntry["weekdays"].to<JsonArray>();
+
+        while(weekdaysInt > 0) {
+            if(weekdaysInt >= 64)
+            {
+                weekdays.add("mon");
+                weekdaysInt -= 64;
+                continue;
+            }
+            if(weekdaysInt >= 32)
+            {
+                weekdays.add("tue");
+                weekdaysInt -= 32;
+                continue;
+            }
+            if(weekdaysInt >= 16)
+            {
+                weekdays.add("wed");
+                weekdaysInt -= 16;
+                continue;
+            }
+            if(weekdaysInt >= 8)
+            {
+                weekdays.add("thu");
+                weekdaysInt -= 8;
+                continue;
+            }
+            if(weekdaysInt >= 4)
+            {
+                weekdays.add("fri");
+                weekdaysInt -= 4;
+                continue;
+            }
+            if(weekdaysInt >= 2)
+            {
+                weekdays.add("sat");
+                weekdaysInt -= 2;
+                continue;
+            }
+            if(weekdaysInt >= 1)
+            {
+                weekdays.add("sun");
+                weekdaysInt -= 1;
+                continue;
+            }
+        }
+
+        char timeT[5];
+        sprintf(timeT, "%02d:%02d", entry.timeHour, entry.timeMin);
+        jsonEntry["time"] = timeT;
+
+        memset(str, 0, sizeof(str));
+        NukiLock::lockactionToString(entry.lockAction, str);
+        jsonEntry["lockAction"] = str;
+    }
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_timecontrol_json, _buffer);
+}
+
 void NetworkLock::publishKeypadCommandResult(const char* result)
 {
     publishString(mqtt_topic_keypad_command_result, result);
+}
+
+void NetworkLock::publishTimeControlCommandResult(const char* result)
+{
+    publishString(mqtt_topic_timecontrol_command_result, result);
 }
 
 void NetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
@@ -553,6 +648,11 @@ void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCal
 void NetworkLock::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled))
 {
     _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
+}
+
+void NetworkLock::setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char *))
+{
+    _timeControlCommandReceivedReceivedCallback = timeControlCommandReceivedReceivedCallback;
 }
 
 void NetworkLock::buildMqttPath(const char* path, char* outPath)
