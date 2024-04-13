@@ -329,10 +329,9 @@ To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to 
 
 Example usage:<br>
 Examples:
--Delete: `{ "action": "delete", "codeId": "1234" }`
--Add: `{ "action": "add", "code": "589472", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "wed", "thu", "fri" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
--Update: `{ "action": "update", "codeId": "1234", "code": "589472", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], 
- "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
+- Delete: `{ "action": "delete", "codeId": "1234" }`
+- Add: `{ "action": "add", "code": "589472", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "wed", "thu", "fri" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
+- Update: `{ "action": "update", "codeId": "1234", "code": "589472", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
 
 ### Result of attempted keypad code changes
 
