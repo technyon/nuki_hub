@@ -311,6 +311,12 @@ NOTE2: Home Assistant can be setup manually using the [MQTT Lock integration](ht
 
 ## Keypad control using JSON (optional)
 
+If a keypad is connected to the lock, keypad codes can be added, updated and removed. This has to enabled first in the configuration portal. Check "Add, modify and delete keypad codes" under "Access Level Configuration" and save the configuration.
+
+Information about current keypad codes is published as JSON data to the "keypad/json" MQTT topic.<br>
+This needs to be enabled separately by checking "Publish keypad codes information" under "Access Level Configuration" and saving the configuration.
+For security reasons, the code itself is not published.
+
 To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to a JSON formatted value containing the following nodes.
 
 | Node             | Delete   | Add      | Update   | Usage                                                                                    | Possible values                                                |
@@ -341,10 +347,9 @@ Possible values are "noPinSet", "keypadControlDisabled", "keypadNotAvailable", "
 ## Keypad control (alternative, optional)
 
 If a keypad is connected to the lock, keypad codes can be added, updated and removed.
-This has to enabled first in the configuration portal. Check "Enable keypad control via MQTT" and save the configuration.
-After enabling keypad control, information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes. 
-The same data is also published as JSON data to the "keypad/json" MQTT topic.
-<br>
+This has to enabled first in the configuration portal. Check "Add, modify and delete keypad codes" under "Access Level Configuration" and save the configuration.
+
+Information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes. This needs to be enabled separately by checking "Publish keypad codes information" under "Access Level Configuration" and saving the configuration.
 For security reasons, the code itself is not published. To modify keypad codes, a command
 structure is setup under keypad/command:
 
