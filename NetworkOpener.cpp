@@ -56,12 +56,14 @@ void NetworkOpener::initialize()
         _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
         _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
         _network->subscribe(_mqttPath, mqtt_topic_query_keypad);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_json_action);
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
         _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
+        _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
     }
 
     _network->addReconnectedCallback([&]()
@@ -188,6 +190,18 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
         }
 
         publishString(mqtt_topic_config_action, "--");
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_keypad_json_action))
+    {
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+
+        if(_keypadJsonCommandReceivedReceivedCallback != NULL)
+        {
+            _keypadJsonCommandReceivedReceivedCallback(value);
+        }
+
+        publishString(mqtt_topic_keypad_json_action, "--");
     }
 }
 
@@ -646,16 +660,78 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
 
         auto jsonEntry = json.add();
 
-        jsonEntry["id"] = entry.codeId;
+        jsonEntry["codeId"] = entry.codeId;
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
-        jsonEntry["createdYear"] = entry.dateCreatedYear;
-        jsonEntry["createdMonth"] = entry.dateCreatedMonth;
-        jsonEntry["createdDay"] = entry.dateCreatedDay;
-        jsonEntry["createdHour"] = entry.dateCreatedHour;
-        jsonEntry["createdMin"] = entry.dateCreatedMin;
-        jsonEntry["createdSec"] = entry.dateCreatedSec;
+        char createdDT[20];
+        sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateCreatedYear, entry.dateCreatedMonth, entry.dateCreatedDay, entry.dateCreatedHour, entry.dateCreatedMin, entry.dateCreatedSec);
+        jsonEntry["dateCreated"] = createdDT;
         jsonEntry["lockCount"] = entry.lockCount;
+        char lastActiveDT[20];
+        sprintf(lastActiveDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateLastActiveYear, entry.dateLastActiveMonth, entry.dateLastActiveDay, entry.dateLastActiveHour, entry.dateLastActiveMin, entry.dateLastActiveSec);
+        jsonEntry["dateLastActive"] = lastActiveDT;
+        jsonEntry["timeLimited"] = entry.timeLimited;
+        char allowedFromDT[20];
+        sprintf(allowedFromDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedFromYear, entry.allowedFromMonth, entry.allowedFromDay, entry.allowedFromHour, entry.allowedFromMin, entry.allowedFromSec);
+        jsonEntry["allowedFrom"] = allowedFromDT;
+        char allowedUntilDT[20];
+        sprintf(allowedUntilDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedUntilYear, entry.allowedUntilMonth, entry.allowedUntilDay, entry.allowedUntilHour, entry.allowedUntilMin, entry.allowedUntilSec);
+        jsonEntry["allowedUntil"] = allowedUntilDT;
+
+        uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
+        JsonArray weekdays = jsonEntry.createNestedArray("allowedWeekdays");
+
+        while(allowedWeekdaysInt > 0) {
+            if(allowedWeekdaysInt >= 64)
+            {
+                weekdays.add("mon");
+                allowedWeekdaysInt -= 64;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 32)
+            {
+                weekdays.add("tue");
+                allowedWeekdaysInt -= 32;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 16)
+            {
+                weekdays.add("wed");
+                allowedWeekdaysInt -= 16;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 8)
+            {
+                weekdays.add("thu");
+                allowedWeekdaysInt -= 8;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 4)
+            {
+                weekdays.add("fri");
+                allowedWeekdaysInt -= 4;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 2)
+            {
+                weekdays.add("sat");
+                allowedWeekdaysInt -= 2;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 1)
+            {
+                weekdays.add("sun");
+                allowedWeekdaysInt -= 1;
+                continue;
+            }
+        }
+
+        char allowedFromTimeT[5];
+        sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
+        jsonEntry["allowedFromTime"] = allowedFromTimeT;
+        char allowedUntilTimeT[5];
+        sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
+        jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
 
         ++index;
     }
@@ -686,6 +762,11 @@ void NetworkOpener::publishKeypadCommandResult(const char* result)
     publishString(mqtt_topic_keypad_command_result, result);
 }
 
+void NetworkOpener::publishKeypadJsonCommandResult(const char* result)
+{
+    publishString(mqtt_topic_keypad_json_command_result, result);
+}
+
 void NetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
@@ -699,6 +780,11 @@ void NetworkOpener::setConfigUpdateReceivedCallback(void (*configUpdateReceivedC
 void NetworkOpener::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled))
 {
     _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
+}
+
+void NetworkOpener::setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char *))
+{
+    _keypadJsonCommandReceivedReceivedCallback = keypadJsonCommandReceivedReceivedCallback;
 }
 
 void NetworkOpener::publishFloat(const char *topic, const float value, const uint8_t precision)

@@ -27,7 +27,7 @@ public:
     bool isPinSet();
     void setPin(const uint16_t pin);
     void unpair();
-    
+
     void disableHASS();
 
     void disableWatchdog();
@@ -47,10 +47,12 @@ private:
     static LockActionResult onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
+    static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* value);
-    
+    void onKeypadJsonCommandReceived(const char* value);
+
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
@@ -62,7 +64,7 @@ private:
 
     void readConfig();
     void readAdvancedConfig();
-    
+
     void setupHASS();
 
     void printCommandResult(Nuki::CmdResult result);

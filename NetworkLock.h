@@ -39,11 +39,13 @@ public:
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
+    void publishKeypadJsonCommandResult(const char* result);
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
-
+    void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
+    
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
     bool reconnected();
@@ -96,4 +98,5 @@ private:
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
+    void (*_keypadJsonCommandReceivedReceivedCallback)(const char* value) = nullptr;
 };
