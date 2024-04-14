@@ -182,8 +182,7 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
     if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
-        Log->print(F("Config action received: "));
-        Log->println(value);
+
         if(_configUpdateReceivedCallback != NULL)
         {
             _configUpdateReceivedCallback(value);

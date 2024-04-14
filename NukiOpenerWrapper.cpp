@@ -692,7 +692,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         jsonResult["general"] = "noPinSet";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
         _network->publishConfigCommandResult(_resbuf);
-        return; 
+        return;
     }
 
     DynamicJsonDocument json(2048);
@@ -701,21 +701,6 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     if(jsonError)
     {
         jsonResult["general"] = "invalidJson";
-        serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
-        _network->publishConfigCommandResult(_resbuf);
-        return;
-    }
-
-    updateConfig();
-
-    while ((!_nukiConfigValid || !_nukiAdvancedConfigValid) && _retryConfigCount < 11)
-    {
-        updateConfig();
-    }
-    
-    if(!_nukiConfigValid || !_nukiAdvancedConfigValid)
-    {
-        jsonResult["general"] = "invalidConfig";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
         _network->publishConfigCommandResult(_resbuf);
         return;
@@ -737,9 +722,9 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     for(int i=0; i < 16; i++)
     {
         if(json[basicKeys[i]])
-        { 
+        {
             const char *jsonchar = json[basicKeys[i]].as<const char*>();
-            
+
             if((int)basicOpenerConfigAclPrefs[i] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
@@ -914,7 +899,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         if(json[advancedKeys[i]])
         {
             const char *jsonchar = json[advancedKeys[i]].as<const char*>();
-            
+
             if((int)advancedOpenerConfigAclPrefs[i] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
@@ -1341,24 +1326,10 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             _network->publishKeypadJsonCommandResult("keypadNotAvailable");
             return;
         }
-
-        updateConfig();
-
-        while (!_nukiConfigValid && _retryConfigCount < 11)
-        {
-            updateConfig();
-        }
-
-        if(_configRead && _nukiConfigValid)
-        {
-            _network->publishKeypadJsonCommandResult("keypadNotAvailable");
-            return;
-        }
-
-        _network->publishKeypadJsonCommandResult("invalidConfig");
+        _network->publishKeypadJsonCommandResult("configNotReady");
         return;
     }
-
+    
     if(!_keypadEnabled)
     {
         _network->publishKeypadJsonCommandResult("keypadDisabled");
@@ -1534,7 +1505,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                         return;
                     }
                 }
-                
+
                 if(allowedWeekdays.indexOf("mon") >= 0) allowedWeekdaysInt += 64;
                 if(allowedWeekdays.indexOf("tue") >= 0) allowedWeekdaysInt += 32;
                 if(allowedWeekdays.indexOf("wed") >= 0) allowedWeekdaysInt += 16;
@@ -1543,7 +1514,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 if(allowedWeekdays.indexOf("sat") >= 0) allowedWeekdaysInt += 2;
                 if(allowedWeekdays.indexOf("sun") >= 0) allowedWeekdaysInt += 1;
             }
-            
+
             if(strcmp(action, "add") == 0)
             {
                 NukiOpener::NewKeypadEntry entry;

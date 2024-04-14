@@ -629,7 +629,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         jsonResult["general"] = "noPinSet";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
         _network->publishConfigCommandResult(_resbuf);
-        return; 
+        return;
     }
 
     DynamicJsonDocument json(2048);
@@ -638,21 +638,6 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
     if(jsonError)
     {
         jsonResult["general"] = "invalidJson";
-        serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
-        _network->publishConfigCommandResult(_resbuf);
-        return;
-    }
-
-    updateConfig();
-
-    while ((!_nukiConfigValid || !_nukiAdvancedConfigValid) && _retryConfigCount < 11)
-    {
-        updateConfig();
-    }
-    
-    if(!_nukiConfigValid || !_nukiAdvancedConfigValid)
-    {
-        jsonResult["general"] = "invalidConfig";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
         _network->publishConfigCommandResult(_resbuf);
         return;
@@ -676,7 +661,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[basicKeys[i]])
         {
             const char *jsonchar = json[basicKeys[i]].as<const char*>();
-            
+
             if((int)basicLockConfigAclPrefs[i] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
@@ -873,7 +858,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[advancedKeys[i]])
         {
             const char *jsonchar = json[advancedKeys[i]].as<const char*>();
-            
+
             if((int)advancedLockConfigAclPrefs[i] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
@@ -1056,7 +1041,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                         if(_nukiAdvancedConfig.nightModeEndTime == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
                         else cmdResult = _nukiLock.setNightModeEndTime(keyvalue);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";                
+                    else jsonResult[advancedKeys[i]] = "invalidValue";
                 }
                 else if(strcmp(advancedKeys[i], "nightModeAutoLockEnabled") == 0)
                 {
@@ -1140,7 +1125,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
     nukiLockPreferences->end();
 
     if(basicUpdated || advancedUpdated)
-    {        
+    {
         jsonResult["general"] = "success";
     }
     else jsonResult["general"] = "noChange";
@@ -1323,21 +1308,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             _network->publishKeypadJsonCommandResult("keypadNotAvailable");
             return;
         }
-
-        updateConfig();
-
-        while (!_nukiConfigValid && _retryConfigCount < 11)
-        {
-            updateConfig();
-        }
-
-        if(_configRead && _nukiConfigValid)
-        {
-            _network->publishKeypadJsonCommandResult("keypadNotAvailable");
-            return;
-        }
-
-        _network->publishKeypadJsonCommandResult("invalidConfig");
+        _network->publishKeypadJsonCommandResult("configNotReady");
         return;
     }
 

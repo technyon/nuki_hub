@@ -592,7 +592,7 @@ void Network::registerMqttReceiver(MqttReceiver* receiver)
 
 void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
-    uint8_t value[800] = {0};
+    uint8_t value[360] = {0};
     size_t l = min(len, sizeof(value)-1);
 
     for(int i=0; i<l; i++)
