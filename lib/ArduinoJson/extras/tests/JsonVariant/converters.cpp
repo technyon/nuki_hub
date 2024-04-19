@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -32,7 +32,7 @@ bool canConvertFromJson(JsonVariantConst src, const Date&) {
 }  // namespace
 
 TEST_CASE("Custom converter with overloading") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("convert JSON to Date") {
     doc["date"]["day"] = 2;
@@ -74,18 +74,18 @@ TEST_CASE("Custom converter with overloading") {
 
 class Complex {
  public:
-  explicit Complex(double r, double i) : _real(r), _imag(i) {}
+  explicit Complex(double r, double i) : real_(r), imag_(i) {}
 
   double real() const {
-    return _real;
+    return real_;
   }
 
   double imag() const {
-    return _imag;
+    return imag_;
   }
 
  private:
-  double _real, _imag;
+  double real_, imag_;
 };
 
 namespace ArduinoJson {
@@ -107,7 +107,7 @@ struct Converter<Complex> {
 }  // namespace ArduinoJson
 
 TEST_CASE("Custom converter with specialization") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("convert JSON to Complex") {
     doc["value"]["real"] = 2;

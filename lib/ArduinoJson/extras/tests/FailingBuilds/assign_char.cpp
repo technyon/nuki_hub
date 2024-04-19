@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,6 +7,6 @@
 // See issue #1498
 
 int main() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   doc["dummy"] = 'A';
 }

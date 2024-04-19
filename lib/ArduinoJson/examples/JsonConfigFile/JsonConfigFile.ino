@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 //
 // This example shows how to store your project configuration in a file.
@@ -17,35 +17,28 @@
 // * CLK  <-> pin 13
 // * CS   <-> pin 4
 //
-// https://arduinojson.org/v6/example/config/
+// https://arduinojson.org/v7/example/config/
 
 #include <ArduinoJson.h>
 #include <SD.h>
 #include <SPI.h>
 
 // Our configuration structure.
-//
-// Never use a JsonDocument to store the configuration!
-// A JsonDocument is *not* a permanent storage; it's only a temporary storage
-// used during the serialization phase. See:
-// https://arduinojson.org/v6/faq/why-must-i-create-a-separate-config-object/
 struct Config {
   char hostname[64];
   int port;
 };
 
-const char *filename = "/config.txt";  // <- SD library uses 8.3 filenames
+const char* filename = "/config.txt";  // <- SD library uses 8.3 filenames
 Config config;                         // <- global configuration object
 
 // Loads the configuration from a file
-void loadConfiguration(const char *filename, Config &config) {
+void loadConfiguration(const char* filename, Config& config) {
   // Open file for reading
   File file = SD.open(filename);
 
   // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<512> doc;
+  JsonDocument doc;
 
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
@@ -63,7 +56,7 @@ void loadConfiguration(const char *filename, Config &config) {
 }
 
 // Saves the configuration to a file
-void saveConfiguration(const char *filename, const Config &config) {
+void saveConfiguration(const char* filename, const Config& config) {
   // Delete existing file, otherwise the configuration is appended to the file
   SD.remove(filename);
 
@@ -75,9 +68,7 @@ void saveConfiguration(const char *filename, const Config &config) {
   }
 
   // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/assistant to compute the capacity.
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
 
   // Set the values in the document
   doc["hostname"] = config.hostname;
@@ -93,7 +84,7 @@ void saveConfiguration(const char *filename, const Config &config) {
 }
 
 // Prints the content of a file to the Serial
-void printFile(const char *filename) {
+void printFile(const char* filename) {
   // Open file for reading
   File file = SD.open(filename);
   if (!file) {
@@ -114,7 +105,8 @@ void printFile(const char *filename) {
 void setup() {
   // Initialize serial port
   Serial.begin(9600);
-  while (!Serial) continue;
+  while (!Serial)
+    continue;
 
   // Initialize SD library
   const int chipSelect = 4;
@@ -144,7 +136,7 @@ void loop() {
 // ------------------
 //
 // File is an unbuffered stream, which is not optimal for ArduinoJson.
-// See: https://arduinojson.org/v6/how-to/improve-speed/
+// See: https://arduinojson.org/v7/how-to/improve-speed/
 
 // See also
 // --------

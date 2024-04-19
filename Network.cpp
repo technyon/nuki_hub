@@ -371,7 +371,7 @@ bool Network::update()
 
             if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
             {
-                DynamicJsonDocument doc(6144);
+                JsonDocument doc;
                 DeserializationError jsonError = deserializeJson(doc, https.getStream());
 
                 if (!jsonError)
@@ -744,10 +744,10 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
 
     if (discoveryTopic != "")
     {
-        DynamicJsonDocument json(JSON_BUFFER_SIZE);
+        JsonDocument json;
 
-        auto dev = json.createNestedObject("dev");
-        auto ids = dev.createNestedArray("ids");
+        JsonObject dev = json["dev"].to<JsonObject>();
+        JsonArray ids = dev["ids"].to<JsonArray>();
         ids.add(String("nuki_") + uidString);
         json["dev"]["mf"] = "Nuki";
         json["dev"]["mdl"] = deviceType;
@@ -1380,7 +1380,7 @@ void Network::publishHASSConfigRingDetect(char *deviceType, const char *baseTopi
                          {{"pl_on", "ring"},
                           {"pl_off", "standby"}});
 
-        DynamicJsonDocument json(_bufferSize);
+        JsonDocument json;
         json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{"value_template", "{ \"event_type\": \"{{ value }}\" }"}});
         json["event_types"][0] = "ring";
         json["event_types"][1] = "ringlocked";
@@ -1542,7 +1542,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
 
     if (discoveryTopic != "")
     {
-        DynamicJsonDocument json(_bufferSize);
+        JsonDocument json;
         json = createHassJson(uidString, uidStringPostfix, displayName, name, baseTopic, stateTopic, deviceType, deviceClass, stateClass, entityCat, commandTopic, additionalEntries);
         serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
@@ -1629,7 +1629,7 @@ void Network::removeHASSConfigTopic(char *deviceType, char *name, char *uidStrin
     removeHassTopic(deviceType, name, uidString);
 }
 
-DynamicJsonDocument Network::createHassJson(const String& uidString,
+JsonDocument Network::createHassJson(const String& uidString,
                              const String& uidStringPostfix,
                              const String& displayName,
                              const String& name,
@@ -1643,7 +1643,7 @@ DynamicJsonDocument Network::createHassJson(const String& uidString,
                              std::vector<std::pair<char*, char*>> additionalEntries
 )
 {
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     json.clear();
     auto dev = json.createNestedObject("dev");

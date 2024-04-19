@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -8,8 +8,8 @@
 typedef ArduinoJson::detail::ElementProxy<JsonDocument&> ElementProxy;
 
 TEST_CASE("ElementProxy::add()") {
-  DynamicJsonDocument doc(4096);
-  doc.add();
+  JsonDocument doc;
+  doc.add<JsonVariant>();
   ElementProxy ep = doc[0];
 
   SECTION("add(int)") {
@@ -34,8 +34,8 @@ TEST_CASE("ElementProxy::add()") {
 }
 
 TEST_CASE("ElementProxy::clear()") {
-  DynamicJsonDocument doc(4096);
-  doc.add();
+  JsonDocument doc;
+  doc.add<JsonVariant>();
   ElementProxy ep = doc[0];
 
   SECTION("size goes back to zero") {
@@ -54,7 +54,7 @@ TEST_CASE("ElementProxy::clear()") {
 }
 
 TEST_CASE("ElementProxy::operator==()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("1 vs 1") {
     doc.add(1);
@@ -94,8 +94,8 @@ TEST_CASE("ElementProxy::operator==()") {
 }
 
 TEST_CASE("ElementProxy::remove()") {
-  DynamicJsonDocument doc(4096);
-  doc.add();
+  JsonDocument doc;
+  doc.add<JsonVariant>();
   ElementProxy ep = doc[0];
 
   SECTION("remove(int)") {
@@ -142,7 +142,7 @@ TEST_CASE("ElementProxy::remove()") {
 }
 
 TEST_CASE("ElementProxy::set()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   ElementProxy ep = doc[0];
 
   SECTION("set(int)") {
@@ -167,8 +167,8 @@ TEST_CASE("ElementProxy::set()") {
 }
 
 TEST_CASE("ElementProxy::size()") {
-  DynamicJsonDocument doc(4096);
-  doc.add();
+  JsonDocument doc;
+  doc.add<JsonVariant>();
   ElementProxy ep = doc[0];
 
   SECTION("returns 0") {
@@ -188,23 +188,8 @@ TEST_CASE("ElementProxy::size()") {
   }
 }
 
-TEST_CASE("ElementProxy::memoryUsage()") {
-  DynamicJsonDocument doc(4096);
-  doc.add();
-  ElementProxy ep = doc[0];
-
-  SECTION("returns 0 for null") {
-    REQUIRE(ep.memoryUsage() == 0);
-  }
-
-  SECTION("returns size for string") {
-    ep.set(std::string("hello"));
-    REQUIRE(ep.memoryUsage() == 6);
-  }
-}
-
 TEST_CASE("ElementProxy::operator[]") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   ElementProxy ep = doc[1];
 
   SECTION("set member") {
@@ -221,7 +206,7 @@ TEST_CASE("ElementProxy::operator[]") {
 }
 
 TEST_CASE("ElementProxy cast to JsonVariantConst") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   doc[0] = "world";
 
   const ElementProxy ep = doc[0];
@@ -232,7 +217,7 @@ TEST_CASE("ElementProxy cast to JsonVariantConst") {
 }
 
 TEST_CASE("ElementProxy cast to JsonVariant") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   doc[0] = "world";
 
   ElementProxy ep = doc[0];
@@ -244,12 +229,4 @@ TEST_CASE("ElementProxy cast to JsonVariant") {
   var.set("toto");
 
   CHECK(doc.as<std::string>() == "[\"toto\"]");
-}
-
-TEST_CASE("ElementProxy::shallowCopy()") {
-  StaticJsonDocument<1024> doc1, doc2;
-  doc2["hello"] = "world";
-  doc1[0].shallowCopy(doc2);
-
-  CHECK(doc1.as<std::string>() == "[{\"hello\":\"world\"}]");
 }

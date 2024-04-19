@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,25 +7,58 @@
 #include <catch.hpp>
 #include <sstream>
 
+#include "Allocators.hpp"
 #include "CustomReader.hpp"
 
+using ArduinoJson::detail::sizeofObject;
+
 TEST_CASE("deserializeJson(char*)") {
-  StaticJsonDocument<1024> doc;
+  SpyingAllocator spy;
+  JsonDocument doc(&spy);
 
-  SECTION("should not duplicate strings") {
-    char input[] = "{\"hello\":\"world\"}";
+  char input[] = "{\"hello\":\"world\"}";
 
-    DeserializationError err = deserializeJson(doc, input);
+  DeserializationError err = deserializeJson(doc, input);
 
-    REQUIRE(err == DeserializationError::Ok);
-    CHECK(doc.memoryUsage() == JSON_OBJECT_SIZE(1));
-    CHECK(doc.as<JsonVariant>().memoryUsage() ==
-          JSON_OBJECT_SIZE(1));  // issue #1318
-  }
+  REQUIRE(err == DeserializationError::Ok);
+
+  REQUIRE(spy.log() ==
+          AllocatorLog{
+              Allocate(sizeofStringBuffer()),
+              Reallocate(sizeofStringBuffer(), sizeofString("hello")),
+              Allocate(sizeofPool()),
+              Allocate(sizeofStringBuffer()),
+              Reallocate(sizeofStringBuffer(), sizeofString("world")),
+              Reallocate(sizeofPool(), sizeofObject(1)),
+          });
+}
+
+TEST_CASE("deserializeJson(unsigned char*, unsigned int)") {  // issue #1897
+  JsonDocument doc;
+
+  unsigned char input[] = "{\"hello\":\"world\"}";
+  unsigned char* input_ptr = input;
+  unsigned int size = sizeof(input);
+
+  DeserializationError err = deserializeJson(doc, input_ptr, size);
+
+  REQUIRE(err == DeserializationError::Ok);
+}
+
+TEST_CASE("deserializeJson(uint8_t*, size_t)") {  // issue #1898
+  JsonDocument doc;
+
+  uint8_t input[] = "{\"hello\":\"world\"}";
+  uint8_t* input_ptr = input;
+  size_t size = sizeof(input);
+
+  DeserializationError err = deserializeJson(doc, input_ptr, size);
+
+  REQUIRE(err == DeserializationError::Ok);
 }
 
 TEST_CASE("deserializeJson(const std::string&)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("should accept const string") {
     const std::string input("[42]");
@@ -54,7 +87,7 @@ TEST_CASE("deserializeJson(const std::string&)") {
 }
 
 TEST_CASE("deserializeJson(std::istream&)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("array") {
     std::istringstream json(" [ 42 ] ");
@@ -125,7 +158,7 @@ TEST_CASE("deserializeJson(VLA)") {
   char vla[i];
   strcpy(vla, "{\"a\":42}");
 
-  StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc;
+  JsonDocument doc;
   DeserializationError err = deserializeJson(doc, vla);
 
   REQUIRE(err == DeserializationError::Ok);
@@ -133,7 +166,7 @@ TEST_CASE("deserializeJson(VLA)") {
 #endif
 
 TEST_CASE("deserializeJson(CustomReader)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   CustomReader reader("[4,2]");
   DeserializationError err = deserializeJson(doc, reader);
 
@@ -144,10 +177,10 @@ TEST_CASE("deserializeJson(CustomReader)") {
 }
 
 TEST_CASE("deserializeJson(JsonDocument&, MemberProxy)") {
-  DynamicJsonDocument doc1(4096);
+  JsonDocument doc1;
   doc1["payload"] = "[4,2]";
 
-  DynamicJsonDocument doc2(4096);
+  JsonDocument doc2;
   DeserializationError err = deserializeJson(doc2, doc1["payload"]);
 
   REQUIRE(err == DeserializationError::Ok);
@@ -157,10 +190,10 @@ TEST_CASE("deserializeJson(JsonDocument&, MemberProxy)") {
 }
 
 TEST_CASE("deserializeJson(JsonDocument&, JsonVariant)") {
-  DynamicJsonDocument doc1(4096);
+  JsonDocument doc1;
   doc1["payload"] = "[4,2]";
 
-  DynamicJsonDocument doc2(4096);
+  JsonDocument doc2;
   DeserializationError err =
       deserializeJson(doc2, doc1["payload"].as<JsonVariant>());
 
@@ -171,10 +204,10 @@ TEST_CASE("deserializeJson(JsonDocument&, JsonVariant)") {
 }
 
 TEST_CASE("deserializeJson(JsonDocument&, JsonVariantConst)") {
-  DynamicJsonDocument doc1(4096);
+  JsonDocument doc1;
   doc1["payload"] = "[4,2]";
 
-  DynamicJsonDocument doc2(4096);
+  JsonDocument doc2;
   DeserializationError err =
       deserializeJson(doc2, doc1["payload"].as<JsonVariantConst>());
 
@@ -185,10 +218,10 @@ TEST_CASE("deserializeJson(JsonDocument&, JsonVariantConst)") {
 }
 
 TEST_CASE("deserializeJson(JsonDocument&, ElementProxy)") {
-  DynamicJsonDocument doc1(4096);
+  JsonDocument doc1;
   doc1[0] = "[4,2]";
 
-  DynamicJsonDocument doc2(4096);
+  JsonDocument doc2;
   DeserializationError err = deserializeJson(doc2, doc1[0]);
 
   REQUIRE(err == DeserializationError::Ok);

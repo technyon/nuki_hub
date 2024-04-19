@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,7 +9,7 @@
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 // A proxy class to get or set an element of an array.
-// https://arduinojson.org/v6/api/jsonarray/subscript/
+// https://arduinojson.org/v7/api/jsonarray/subscript/
 template <typename TUpstream>
 class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
                      public VariantOperators<ElementProxy<TUpstream>> {
@@ -17,44 +17,49 @@ class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
 
  public:
   ElementProxy(TUpstream upstream, size_t index)
-      : _upstream(upstream), _index(index) {}
+      : upstream_(upstream), index_(index) {}
 
   ElementProxy(const ElementProxy& src)
-      : _upstream(src._upstream), _index(src._index) {}
+      : upstream_(src.upstream_), index_(src.index_) {}
 
-  FORCE_INLINE ElementProxy& operator=(const ElementProxy& src) {
+  ElementProxy& operator=(const ElementProxy& src) {
     this->set(src);
     return *this;
   }
 
   template <typename T>
-  FORCE_INLINE ElementProxy& operator=(const T& src) {
+  ElementProxy& operator=(const T& src) {
     this->set(src);
     return *this;
   }
 
   template <typename T>
-  FORCE_INLINE ElementProxy& operator=(T* src) {
+  ElementProxy& operator=(T* src) {
     this->set(src);
     return *this;
   }
 
  private:
-  FORCE_INLINE MemoryPool* getPool() const {
-    return VariantAttorney::getPool(_upstream);
+  ResourceManager* getResourceManager() const {
+    return VariantAttorney::getResourceManager(upstream_);
   }
 
   FORCE_INLINE VariantData* getData() const {
-    return variantGetElement(VariantAttorney::getData(_upstream), _index);
+    return VariantData::getElement(
+        VariantAttorney::getData(upstream_), index_,
+        VariantAttorney::getResourceManager(upstream_));
   }
 
-  FORCE_INLINE VariantData* getOrCreateData() const {
-    return variantGetOrAddElement(VariantAttorney::getOrCreateData(_upstream),
-                                  _index, VariantAttorney::getPool(_upstream));
+  VariantData* getOrCreateData() const {
+    auto data = VariantAttorney::getOrCreateData(upstream_);
+    if (!data)
+      return nullptr;
+    return data->getOrAddElement(
+        index_, VariantAttorney::getResourceManager(upstream_));
   }
 
-  TUpstream _upstream;
-  size_t _index;
+  TUpstream upstream_;
+  size_t index_;
 };
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

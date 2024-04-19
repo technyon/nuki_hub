@@ -1,11 +1,14 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
-#define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
+#include <Arduino.h>
+
 #define ARDUINOJSON_STRING_BUFFER_SIZE 5
 #include <ArduinoJson.h>
+
 #include <catch.hpp>
+
 #include "custom_string.hpp"
 
 using namespace ArduinoJson::detail;
@@ -136,9 +139,9 @@ TEST_CASE("Writer<custom_string>") {
 }
 
 TEST_CASE("serializeJson(doc, String)") {
-  StaticJsonDocument<1024> doc;
+  JsonDocument doc;
   doc["hello"] = "world";
-  ::String output;
+  ::String output = "erase me";
 
   SECTION("sufficient capacity") {
     serializeJson(doc, output);

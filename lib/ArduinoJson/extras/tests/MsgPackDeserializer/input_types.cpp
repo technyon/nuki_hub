@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,8 +7,10 @@
 
 #include "CustomReader.hpp"
 
+using ArduinoJson::detail::sizeofObject;
+
 TEST_CASE("deserializeMsgPack(const std::string&)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("should accept const string") {
     const std::string input("\x92\x01\x02");
@@ -48,7 +50,7 @@ TEST_CASE("deserializeMsgPack(const std::string&)") {
 }
 
 TEST_CASE("deserializeMsgPack(std::istream&)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("should accept a zero in input") {
     std::istringstream input(std::string("\x92\x00\x02", 3));
@@ -76,7 +78,7 @@ TEST_CASE("deserializeMsgPack(VLA)") {
   char vla[i];
   memcpy(vla, "\xDE\x00\x01\xA5Hello\xA5world", 15);
 
-  StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc;
+  JsonDocument doc;
   DeserializationError err = deserializeMsgPack(doc, vla);
 
   REQUIRE(err == DeserializationError::Ok);
@@ -84,7 +86,7 @@ TEST_CASE("deserializeMsgPack(VLA)") {
 #endif
 
 TEST_CASE("deserializeMsgPack(CustomReader)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   CustomReader reader("\x92\xA5Hello\xA5world");
   DeserializationError err = deserializeMsgPack(doc, reader);
 

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -14,7 +14,7 @@ TEST_CASE("JsonObject::clear()") {
   }
 
   SECTION("Removes all elements") {
-    StaticJsonDocument<64> doc;
+    JsonDocument doc;
     JsonObject obj = doc.to<JsonObject>();
     obj["hello"] = 1;
     obj["world"] = 2;

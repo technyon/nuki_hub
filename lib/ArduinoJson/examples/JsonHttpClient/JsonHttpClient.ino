@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 //
 // This example shows how to parse a JSON document in an HTTP response.
@@ -16,7 +16,7 @@
 //   ]
 // }
 //
-// https://arduinojson.org/v6/example/http-client/
+// https://arduinojson.org/v7/example/http-client/
 
 #include <ArduinoJson.h>
 #include <Ethernet.h>
@@ -25,7 +25,8 @@
 void setup() {
   // Initialize Serial port
   Serial.begin(9600);
-  while (!Serial) continue;
+  while (!Serial)
+    continue;
 
   // Initialize Ethernet library
   byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
@@ -77,9 +78,7 @@ void setup() {
   }
 
   // Allocate the JSON document
-  // Use https://arduinojson.org/v6/assistant to compute the capacity.
-  const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
-  DynamicJsonDocument doc(capacity);
+  JsonDocument doc;
 
   // Parse JSON object
   DeserializationError error = deserializeJson(doc, client);
@@ -109,7 +108,7 @@ void loop() {
 // ------------------
 //
 // EthernetClient is an unbuffered stream, which is not optimal for ArduinoJson.
-// See: https://arduinojson.org/v6/how-to/improve-speed/
+// See: https://arduinojson.org/v7/how-to/improve-speed/
 
 // See also
 // --------
