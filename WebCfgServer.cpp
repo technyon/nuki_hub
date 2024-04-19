@@ -711,21 +711,23 @@ void WebCfgServer::buildHtml(String& response)
         printParameter(response, "Nuki Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No");
         printParameter(response, "Nuki Lock state", lockstateArr);
 
-        if(_nuki->isPaired()) {
+        if(_nuki->isPaired())
+        {
             switch(_preferences->getInt(preference_lock_pin_status, 4))
             {
                 case 0:
                     printParameter(response, "Nuki Lock PIN status", "PIN not set");
                     break;
                 case 1:
-                    printParameter(response, "Nuki Lock PIN status", "PIN set but invalid");
+                    printParameter(response, "Nuki Lock PIN status", "PIN valid");
                     break;
                 case 2:
-                    printParameter(response, "Nuki Lock PIN status", "PIN valid");
+                    printParameter(response, "Nuki Lock PIN status", "PIN set but invalid");
                     break;
                 default:
                     printParameter(response, "Nuki Lock PIN status", "Unknown");
                     break;
+            }
         }
     }
     if(_nukiOpener != nullptr)
@@ -742,24 +744,27 @@ void WebCfgServer::buildHtml(String& response)
         {
             printParameter(response, "Nuki Opener state", lockstateArr);
         }
-        
-        if(_nukiOpener->isPaired()) {
+
+        if(_nukiOpener->isPaired())
+        {
             switch(_preferences->getInt(preference_opener_pin_status, 4))
             {
                 case 0:
                     printParameter(response, "Nuki Opener PIN status", "PIN not set");
                     break;
                 case 1:
-                    printParameter(response, "Nuki Opener PIN status", "PIN set but invalid");
+                    printParameter(response, "Nuki Opener PIN status", "PIN valid");
                     break;
                 case 2:
-                    printParameter(response, "Nuki Opener PIN status", "PIN valid");
+                    printParameter(response, "Nuki Opener PIN status", "PIN set but invalid");
                     break;
                 default:
                     printParameter(response, "Nuki Opener PIN status", "Unknown");
                     break;
+            }
         }
     }
+
     printParameter(response, "Firmware", version.c_str(), "/info");
 
     if(_preferences->getBool(preference_check_updates))
