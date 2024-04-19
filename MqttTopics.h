@@ -51,6 +51,8 @@
 #define mqtt_topic_keypad_command_enabled "/keypad/command/enabled"
 #define mqtt_topic_keypad_command_result "/keypad/command/commandResult"
 #define mqtt_topic_keypad_json "/keypad/json"
+#define mqtt_topic_keypad_json_action "/keypad/actionJson"
+#define mqtt_topic_keypad_json_command_result "/keypad/commandResultJson"
 
 #define mqtt_topic_info_hardware_version "/info/hardwareVersion"
 #define mqtt_topic_info_firmware_version "/info/firmwareVersion"

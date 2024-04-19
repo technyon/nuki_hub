@@ -35,11 +35,13 @@ public:
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishKeypadCommandResult(const char* result);
+    void publishKeypadJsonCommandResult(const char* result);
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
-
+    void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
+    
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
     bool reconnected();
@@ -83,8 +85,8 @@ private:
     unsigned long _resetRingStateTs = 0;
     uint8_t _queryCommands = 0;
     uint32_t authId = 0;
-    char authName[33];    
-    
+    char authName[33];
+
     NukiOpener::LockState _currentLockState = NukiOpener::LockState::Undefined;
 
     char* _buffer;
@@ -93,4 +95,5 @@ private:
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
+    void (*_keypadJsonCommandReceivedReceivedCallback)(const char* value) = nullptr;
 };

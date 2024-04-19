@@ -309,13 +309,47 @@ The following mapping between Home Assistant services and Nuki commands is setup
 NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this SW. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
 NOTE2: Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/), but this is not recommended
 
-## Keypad control (optional)
+## Keypad control using JSON (optional)
+
+If a keypad is connected to the lock, keypad codes can be added, updated and removed. This has to enabled first in the configuration portal. Check "Add, modify and delete keypad codes" under "Access Level Configuration" and save the configuration.
+
+Information about current keypad codes is published as JSON data to the "keypad/json" MQTT topic.<br>
+This needs to be enabled separately by checking "Publish keypad codes information" under "Access Level Configuration" and saving the configuration.
+For security reasons, the code itself is not published.
+
+To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to a JSON formatted value containing the following nodes.
+
+| Node             | Delete   | Add      | Update   | Usage                                                                                    | Possible values                                                |
+|------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| action           | Required | Required | Required | The action to execute                                                                    | "delete", "add", "update"                                      |
+| codeId           | Required | Not used | Required | The code ID of the existing code to delete or update                                     | Integer                                                        |
+| code             | Not used | Required | Required | The code to create or update                                                             | 6-digit Integer without zero's                                 |
+| enabled          | Not used | Not used | Optional | Enable or disable the code, enabled if not set                                           | 1 = enabled, 0 = disabled                                      |
+| name             | Not used | Required | Required | The name of the code to create or update                                                 | String, max 20 chars                                           |
+| timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, disabled if not set | 1 = enabled, 0 = disabled                                      |
+| allowedFrom      | Not used | Optional | Optional | The start timestamp from which access should be allowed (requires timeLimited = 1)       | "YYYY-MM-DD HH:MM:SS"                                          |
+| allowedUntil     | Not used | Optional | Optional | The end timestamp until access should be allowed (requires timeLimited = 1)              | "YYYY-MM-DD HH:MM:SS"                                          |
+| allowedWeekdays  | Not used | Optional | Optional | Allowed weekdays on which access should be allowed (requires timeLimited = 1)            | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
+| allowedFromTime  | Not used | Optional | Optional | The start time per day from which access should be allowed (requires timeLimited = 1)    | "HH:MM"                                                        |
+| allowedUntilTime | Not used | Optional | Optional | The end time per day until access should be allowed (requires timeLimited = 1)           | "HH:MM"                                                        |
+
+Example usage:<br>
+Examples:
+- Delete: `{ "action": "delete", "codeId": "1234" }`
+- Add: `{ "action": "add", "code": "589472", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "wed", "thu", "fri" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
+- Update: `{ "action": "update", "codeId": "1234", "code": "589472", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
+
+### Result of attempted keypad code changes
+
+The result of the last configuration change action will be published to the `configuration/commandResultJson` MQTT topic.<br>
+Possible values are "noPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
+ 
+## Keypad control (alternative, optional)
 
 If a keypad is connected to the lock, keypad codes can be added, updated and removed.
-This has to enabled first in the configuration portal. Check "Enable keypad control via MQTT" and save the configuration.
-After enabling keypad control, information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes. 
-The same data is also published as JSON data to keypad/json.
-<br>
+This has to enabled first in the configuration portal. Check "Add, modify and delete keypad codes" under "Access Level Configuration" and save the configuration.
+
+Information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes. This needs to be enabled separately by checking "Publish keypad codes information" under "Access Level Configuration" and saving the configuration.
 For security reasons, the code itself is not published. To modify keypad codes, a command
 structure is setup under keypad/command:
 
