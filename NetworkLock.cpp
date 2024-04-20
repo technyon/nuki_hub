@@ -217,7 +217,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     char str[50];
     memset(&str, 0, sizeof(str));
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     lockstateToString(keyTurnerState.lockState, str);
 
@@ -347,7 +347,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     bool authFound = false;
     memset(authName, 0, sizeof(authName));
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     int i = 5;
     for(const auto& log : logEntries)
@@ -473,7 +473,7 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
     char uidString[20];
     itoa(config.nukiId, uidString, 16);
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     json["nukiID"] = uidString;
     json["name"] = config.name;
@@ -531,7 +531,7 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
     char nmet[6];
     sprintf(nmet, "%02d:%02d", config.nightModeEndTime[0], config.nightModeEndTime[1]);
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     json["totalDegrees"] = config.totalDegrees;
     json["unlockedPositionOffsetDegrees"] = config.unlockedPositionOffsetDegrees;
@@ -589,7 +589,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
 {
     uint index = 0;
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     for(const auto& entry : entries)
     {

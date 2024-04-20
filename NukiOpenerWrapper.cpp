@@ -684,7 +684,7 @@ Nuki::BatteryType NukiOpenerWrapper::batteryTypeToEnum(const char* str)
 
 void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
 {
-    DynamicJsonDocument jsonResult(2048);
+    JsonDocument jsonResult;
     char _resbuf[2048];
 
     if(_nukiOpener.getSecurityPincode() == 0)
@@ -695,7 +695,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         return;
     }
 
-    DynamicJsonDocument json(2048);
+    JsonDocument json;
     DeserializationError jsonError = deserializeJson(json, value);
 
     if(jsonError)
@@ -1336,7 +1336,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
         return;
     }
 
-    DynamicJsonDocument json(2048);
+    JsonDocument json;
     DeserializationError jsonError = deserializeJson(json, value);
 
     if(jsonError)

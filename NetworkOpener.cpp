@@ -211,7 +211,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     char str[50];
     memset(&str, 0, sizeof(str));
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     lockstateToString(keyTurnerState.lockState, str);
 
@@ -337,7 +337,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     bool authFound = false;
     memset(authName, 0, sizeof(authName));
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     int i = 5;
     for(const auto& log : logEntries)
@@ -518,7 +518,7 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
     char uidString[20];
     itoa(config.nukiId, uidString, 16);
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     json["nukiID"] = uidString;
     json["name"] = config.name;
@@ -570,7 +570,7 @@ void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &conf
 {
     char str[50];
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     json["intercomID"] = config.intercomID;
     json["busModeSwitch"] = config.busModeSwitch;
@@ -648,7 +648,7 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
 {
     uint index = 0;
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     for(const auto& entry : entries)
     {

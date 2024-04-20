@@ -98,7 +98,7 @@ private:
     
     String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
     void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
-    DynamicJsonDocument createHassJson(const String& uidString,
+    JsonDocument createHassJson(const String& uidString,
                         const String& uidStringPostfix,
                         const String& displayName,
                         const String& name,
