@@ -619,7 +619,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
         jsonEntry["allowedUntil"] = allowedUntilDT;
 
         uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
-        JsonArray weekdays = jsonEntry.createNestedArray("allowedWeekdays");
+        JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
 
         while(allowedWeekdaysInt > 0) {
             if(allowedWeekdaysInt >= 64)

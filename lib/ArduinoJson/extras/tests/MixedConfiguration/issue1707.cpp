@@ -1,18 +1,16 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #define ARDUINO
 #define memcpy_P(dest, src, n) memcpy((dest), (src), (n))
-
-#include "progmem_emulation.hpp"
 
 #include <ArduinoJson.h>
 
 #include <catch.hpp>
 
 TEST_CASE("Issue1707") {
-  StaticJsonDocument<128> doc;
+  JsonDocument doc;
 
   DeserializationError err = deserializeJson(doc, F("{\"hello\":12}"));
   REQUIRE(err == DeserializationError::Ok);

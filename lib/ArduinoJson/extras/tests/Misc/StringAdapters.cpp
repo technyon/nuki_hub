@@ -1,18 +1,16 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
-#define ARDUINOJSON_ENABLE_PROGMEM 1
-#define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
-
-#include "custom_string.hpp"
-#include "progmem_emulation.hpp"
-#include "weird_strcmp.hpp"
+#include <Arduino.h>
 
 #include <ArduinoJson/Strings/IsString.hpp>
 #include <ArduinoJson/Strings/StringAdapters.hpp>
 
 #include <catch.hpp>
+
+#include "custom_string.hpp"
+#include "weird_strcmp.hpp"
 
 using namespace ArduinoJson::detail;
 

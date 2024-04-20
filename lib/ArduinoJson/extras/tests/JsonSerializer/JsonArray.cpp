@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -15,7 +15,7 @@ static void check(JsonArray array, std::string expected) {
 }
 
 TEST_CASE("serializeJson(JsonArray)") {
-  StaticJsonDocument<JSON_ARRAY_SIZE(2)> doc;
+  JsonDocument doc;
   JsonArray array = doc.to<JsonArray>();
 
   SECTION("Empty") {
@@ -37,14 +37,6 @@ TEST_CASE("serializeJson(JsonArray)") {
   SECTION("TwoStrings") {
     array.add("hello");
     array.add("world");
-
-    check(array, "[\"hello\",\"world\"]");
-  }
-
-  SECTION("OneStringOverCapacity") {
-    array.add("hello");
-    array.add("world");
-    array.add("lost");
 
     check(array, "[\"hello\",\"world\"]");
   }
@@ -80,14 +72,6 @@ TEST_CASE("serializeJson(JsonArray)") {
     check(array, "[{\"key\":\"value\"}]");
   }
 
-  SECTION("OneIntegerOverCapacity") {
-    array.add(1);
-    array.add(2);
-    array.add(3);
-
-    check(array, "[1,2]");
-  }
-
   SECTION("OneTrue") {
     array.add(true);
 
@@ -107,22 +91,14 @@ TEST_CASE("serializeJson(JsonArray)") {
     check(array, "[false,true]");
   }
 
-  SECTION("OneBooleanOverCapacity") {
-    array.add(false);
-    array.add(true);
-    array.add(false);
-
-    check(array, "[false,true]");
-  }
-
   SECTION("OneEmptyNestedArray") {
-    array.createNestedArray();
+    array.add<JsonArray>();
 
     check(array, "[[]]");
   }
 
   SECTION("OneEmptyNestedHash") {
-    array.createNestedObject();
+    array.add<JsonObject>();
 
     check(array, "[{}]");
   }

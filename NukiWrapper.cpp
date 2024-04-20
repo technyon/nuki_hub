@@ -386,6 +386,31 @@ void NukiWrapper::updateConfig()
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
             _network->publishConfig(_nukiConfig);
             _retryConfigCount = 0;
+            
+            const int pinStatus = _preferences->getInt(preference_lock_pin_status, 4);
+
+            if(isPinSet()) {
+                Nuki::CmdResult result = _nukiLock.verifySecurityPin();
+
+                if(result != Nuki::CmdResult::Success)
+                {
+                    if(pinStatus != 2) {
+                        _preferences->putInt(preference_lock_pin_status, 2);
+                    }
+                }
+                else
+                {
+                    if(pinStatus != 1) {
+                        _preferences->putInt(preference_lock_pin_status, 1);
+                    }
+                }
+            }
+            else
+            {
+                if(pinStatus != 0) {
+                    _preferences->putInt(preference_lock_pin_status, 0);
+                }
+            }
         }
         else
         {

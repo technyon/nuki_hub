@@ -741,9 +741,9 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
 void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     JsonDocument json;
-
-    auto dev = json.createNestedObject("dev");
-    auto ids = dev.createNestedArray("ids");
+    json.clear();
+    JsonObject dev = json["dev"].to<JsonObject>();
+    JsonArray ids = dev["ids"].to<JsonArray>();
     ids.add(String("nuki_") + uidString);
     json["dev"]["mf"] = "Nuki";
     json["dev"]["mdl"] = deviceType;
@@ -2268,7 +2268,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                      "",
                      {{"pl_on", "ring"},
                       {"pl_off", "standby"}});
-
+  
     JsonDocument json;
     json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{"val_tpl", "{ \"event_type\": \"{{ value }}\" }"}});
     json["event_types"][0] = "ring";
@@ -3230,10 +3230,9 @@ JsonDocument Network::createHassJson(const String& uidString,
 )
 {
     JsonDocument json;
-
     json.clear();
-    auto dev = json.createNestedObject("dev");
-    auto ids = dev.createNestedArray("ids");
+    JsonObject dev = json["dev"].to<JsonObject>();
+    JsonArray ids = dev["ids"].to<JsonArray>();
     ids.add(String("nuki_") + uidString);
     json["dev"]["mf"] = "Nuki";
     json["dev"]["mdl"] = deviceType;

@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("JsonObject::nesting()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonObject obj = doc.to<JsonObject>();
 
   SECTION("return 0 if uninitialized") {
@@ -24,12 +24,12 @@ TEST_CASE("JsonObject::nesting()") {
   }
 
   SECTION("returns 2 with nested array") {
-    obj.createNestedArray("nested");
+    obj["nested"].to<JsonArray>();
     REQUIRE(obj.nesting() == 2);
   }
 
   SECTION("returns 2 with nested object") {
-    obj.createNestedObject("nested");
+    obj["nested"].to<JsonObject>();
     REQUIRE(obj.nesting() == 2);
   }
 }

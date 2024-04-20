@@ -1,8 +1,6 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
-
-#include "progmem_emulation.hpp"
 
 #define ARDUINOJSON_ENABLE_PROGMEM 1
 #include <ArduinoJson.h>
@@ -10,7 +8,7 @@
 #include <catch.hpp>
 
 TEST_CASE("Flash strings") {
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
 
   SECTION("deserializeJson()") {
     DeserializationError err = deserializeJson(doc, F("{'hello':'world'}"));

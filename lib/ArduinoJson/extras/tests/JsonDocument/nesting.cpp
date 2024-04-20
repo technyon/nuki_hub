@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("JsonDocument::nesting()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("return 0 if uninitialized") {
     REQUIRE(doc.nesting() == 0);

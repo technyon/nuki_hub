@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -8,7 +8,7 @@
 enum MYENUM2 { ONE = 1, TWO = 2 };
 
 TEST_CASE("JsonVariant::is<T>()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonVariant variant = doc.to<JsonVariant>();
 
   SECTION("unbound") {
@@ -160,160 +160,5 @@ TEST_CASE("JsonVariant::is<T>()") {
     CHECK(variant.is<MYENUM2>() == false);
     CHECK(variant.is<JsonVariant>() == true);
     CHECK(variant.is<JsonVariantConst>() == true);
-  }
-}
-
-TEST_CASE("JsonVariantConst::is<T>()") {
-  DynamicJsonDocument doc(4096);
-  JsonVariant variant = doc.to<JsonVariant>();
-  JsonVariantConst cvariant = variant;
-
-  SECTION("unbound") {
-    cvariant = JsonVariantConst();
-
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<JsonArrayConst>() == false);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonObjectConst>() == false);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<JsonVariantConst>() == false);
-    CHECK(cvariant.is<bool>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<std::string>() == false);
-    CHECK(cvariant.is<JsonString>() == false);
-    CHECK(cvariant.is<float>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
-  }
-
-  SECTION("null") {
-    CHECK(cvariant.is<JsonVariantConst>() == true);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<bool>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<std::string>() == false);
-    CHECK(cvariant.is<JsonString>() == false);
-    CHECK(cvariant.is<float>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
-  }
-
-  SECTION("true") {
-    variant.set(true);
-
-    CHECK(cvariant.is<bool>() == true);
-    CHECK(cvariant.is<JsonVariantConst>() == true);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<std::string>() == false);
-    CHECK(cvariant.is<JsonString>() == false);
-    CHECK(cvariant.is<float>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
-  }
-
-  SECTION("false") {
-    variant.set(false);
-
-    CHECK(cvariant.is<bool>() == true);
-    CHECK(cvariant.is<JsonVariantConst>() == true);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<std::string>() == false);
-    CHECK(cvariant.is<JsonString>() == false);
-    CHECK(cvariant.is<float>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
-  }
-
-  SECTION("int") {
-    variant.set(42);
-
-    CHECK(cvariant.is<int>() == true);
-    CHECK(cvariant.is<short>() == true);
-    CHECK(cvariant.is<long>() == true);
-    CHECK(cvariant.is<double>() == true);
-    CHECK(cvariant.is<float>() == true);
-    CHECK(cvariant.is<MYENUM2>() == true);
-    CHECK(cvariant.is<JsonVariantConst>() == true);
-    CHECK(cvariant.is<bool>() == false);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<std::string>() == false);
-    CHECK(cvariant.is<JsonString>() == false);
-  }
-
-  SECTION("double") {
-    variant.set(4.2);
-
-    CHECK(cvariant.is<double>() == true);
-    CHECK(cvariant.is<float>() == true);
-    CHECK(cvariant.is<JsonVariantConst>() == true);
-    CHECK(cvariant.is<bool>() == false);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<std::string>() == false);
-    CHECK(cvariant.is<JsonString>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
-  }
-
-  SECTION("const char*") {
-    variant.set("4.2");
-
-    CHECK(cvariant.is<const char*>() == true);
-    CHECK(cvariant.is<const char*>() == true);
-    CHECK(cvariant.is<std::string>() == true);
-    CHECK(cvariant.is<JsonString>() == true);
-    CHECK(cvariant.is<double>() == false);
-    CHECK(cvariant.is<float>() == false);
-    CHECK(cvariant.is<bool>() == false);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
-  }
-
-  SECTION("JsonArray") {
-    variant.to<JsonArray>();
-
-    CHECK(cvariant.is<JsonArrayConst>() == true);
-    CHECK(cvariant.is<JsonVariantConst>() == true);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonObjectConst>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<float>() == false);
-    CHECK(cvariant.is<bool>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
-  }
-
-  SECTION("JsonObject") {
-    variant.to<JsonObject>();
-
-    CHECK(cvariant.is<JsonObjectConst>() == true);
-    CHECK(cvariant.is<JsonVariantConst>() == true);
-    CHECK(cvariant.is<JsonObject>() == false);
-    CHECK(cvariant.is<JsonVariant>() == false);
-    CHECK(cvariant.is<JsonArray>() == false);
-    CHECK(cvariant.is<JsonArrayConst>() == false);
-    CHECK(cvariant.is<int>() == false);
-    CHECK(cvariant.is<float>() == false);
-    CHECK(cvariant.is<bool>() == false);
-    CHECK(cvariant.is<const char*>() == false);
-    CHECK(cvariant.is<MYENUM2>() == false);
   }
 }

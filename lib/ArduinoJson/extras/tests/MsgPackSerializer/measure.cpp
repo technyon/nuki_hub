@@ -1,12 +1,12 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("measureMsgPack()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonObject object = doc.to<JsonObject>();
   object["hello"] = "world";
 

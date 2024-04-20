@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_USE_LONG_LONG 0
@@ -16,7 +16,7 @@ using ArduinoJson::detail::isnan;
 }  // namespace my
 
 TEST_CASE("deserialize an integer") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
 
   SECTION("Integer") {
     SECTION("0") {

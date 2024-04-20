@@ -95,7 +95,7 @@ private:
                           const String& commandTopic = "",
                           std::vector<std::pair<char*, char*>> additionalEntries = {}
                           );
-    
+
     String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
     void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
     JsonDocument createHassJson(const String& uidString,
@@ -111,7 +111,7 @@ private:
                         const String& commandTopic = "",
                         std::vector<std::pair<char*, char*>> additionalEntries = {}
                         );
-                          
+
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
 

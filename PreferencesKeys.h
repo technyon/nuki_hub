@@ -14,8 +14,10 @@
 #define preference_mqtt_password "mqttpass"
 #define preference_mqtt_log_enabled "mqttlog"
 #define preference_lock_enabled "lockena"
+#define preference_lock_pin_status "lockpin"
 #define preference_mqtt_lock_path "mqttpath"
 #define preference_opener_enabled "openerena"
+#define preference_opener_pin_status "openerpin"
 #define preference_opener_continuous_mode "openercont"
 #define preference_mqtt_opener_path "mqttoppath"
 #define preference_check_updates "checkupdates"
@@ -74,8 +76,8 @@ private:
     std::vector<char*> _keys =
     {
             preference_started_before, preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_nuki_id_lock, preference_nuki_id_opener,  preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates,
-            preference_lock_enabled, preference_mqtt_lock_path, preference_opener_enabled, preference_opener_continuous_mode, preference_mqtt_opener_path,
-            preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
+            preference_lock_enabled, preference_lock_pin_status, preference_mqtt_lock_path, preference_opener_enabled, preference_opener_pin_status,
+            preference_opener_continuous_mode, preference_mqtt_opener_path, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
             preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url,
             preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
             preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval,

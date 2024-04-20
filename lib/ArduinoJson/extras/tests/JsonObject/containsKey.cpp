@@ -1,24 +1,18 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
 TEST_CASE("JsonObject::containsKey()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonObject obj = doc.to<JsonObject>();
   obj["hello"] = 42;
 
   SECTION("returns true only if key is present") {
     REQUIRE(false == obj.containsKey("world"));
     REQUIRE(true == obj.containsKey("hello"));
-  }
-
-  SECTION("works with JsonObjectConst") {
-    JsonObjectConst cobj = obj;
-    REQUIRE(false == cobj.containsKey("world"));
-    REQUIRE(true == cobj.containsKey("hello"));
   }
 
   SECTION("returns false after remove()") {
