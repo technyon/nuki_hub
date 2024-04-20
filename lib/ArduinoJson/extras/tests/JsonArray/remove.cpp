@@ -1,12 +1,14 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+#include "Allocators.hpp"
+
 TEST_CASE("JsonArray::remove()") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonArray array = doc.to<JsonArray>();
   array.add(1);
   array.add(2);
@@ -86,4 +88,24 @@ TEST_CASE("JsonArray::remove()") {
     JsonArray unboundArray;
     unboundArray.remove(unboundArray.begin());
   }
+}
+
+TEST_CASE("Removed elements are recycled") {
+  SpyingAllocator spy;
+  JsonDocument doc(&spy);
+  JsonArray array = doc.to<JsonArray>();
+
+  // fill the pool entirely
+  for (int i = 0; i < ARDUINOJSON_POOL_CAPACITY; i++)
+    array.add(i);
+
+  // free one slot in the pool
+  array.remove(0);
+
+  // add one element; it should use the free slot
+  array.add(42);
+
+  REQUIRE(spy.log() == AllocatorLog{
+                           Allocate(sizeofPool()),  // only one pool
+                       });
 }

@@ -795,7 +795,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
         return;
     }
 
-    DynamicJsonDocument json(2048);
+    JsonDocument json;
     DeserializationError jsonError = deserializeJson(json, value);
 
     if(jsonError)

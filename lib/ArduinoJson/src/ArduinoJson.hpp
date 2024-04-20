@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -13,7 +13,8 @@
 // Include Arduino.h before stdlib.h to avoid conflict with atexit()
 // https://github.com/bblanchon/ArduinoJson/pull/1693#issuecomment-1001060240
 #if ARDUINOJSON_ENABLE_ARDUINO_STRING || ARDUINOJSON_ENABLE_ARDUINO_STREAM || \
-    ARDUINOJSON_ENABLE_ARDUINO_PRINT || ARDUINOJSON_ENABLE_PROGMEM
+    ARDUINOJSON_ENABLE_ARDUINO_PRINT ||                                       \
+    (ARDUINOJSON_ENABLE_PROGMEM && defined(ARDUINO))
 #  include <Arduino.h>
 #endif
 
@@ -29,18 +30,19 @@
 #include "ArduinoJson/Object/JsonObject.hpp"
 #include "ArduinoJson/Variant/JsonVariantConst.hpp"
 
-#include "ArduinoJson/Document/DynamicJsonDocument.hpp"
-#include "ArduinoJson/Document/StaticJsonDocument.hpp"
+#include "ArduinoJson/Document/JsonDocument.hpp"
 
+#include "ArduinoJson/Array/ArrayImpl.hpp"
 #include "ArduinoJson/Array/ElementProxy.hpp"
-#include "ArduinoJson/Array/JsonArrayImpl.hpp"
 #include "ArduinoJson/Array/Utilities.hpp"
 #include "ArduinoJson/Collection/CollectionImpl.hpp"
-#include "ArduinoJson/Object/JsonObjectImpl.hpp"
+#include "ArduinoJson/Memory/VariantPoolImpl.hpp"
 #include "ArduinoJson/Object/MemberProxy.hpp"
+#include "ArduinoJson/Object/ObjectImpl.hpp"
 #include "ArduinoJson/Variant/ConverterImpl.hpp"
+#include "ArduinoJson/Variant/JsonVariantCopier.hpp"
 #include "ArduinoJson/Variant/VariantCompare.hpp"
-#include "ArduinoJson/Variant/VariantImpl.hpp"
+#include "ArduinoJson/Variant/VariantRefBaseImpl.hpp"
 
 #include "ArduinoJson/Json/JsonDeserializer.hpp"
 #include "ArduinoJson/Json/JsonSerializer.hpp"

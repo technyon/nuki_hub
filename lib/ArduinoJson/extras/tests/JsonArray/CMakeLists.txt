@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2023, Benoit BLANCHON
+# Copyright © 2014-2024, Benoit BLANCHON
 # MIT License
 
 add_executable(JsonArrayTests
@@ -7,11 +7,9 @@ add_executable(JsonArrayTests
 	clear.cpp
 	compare.cpp
 	copyArray.cpp
-	createNested.cpp
 	equals.cpp
 	isNull.cpp
 	iterator.cpp
-	memoryUsage.cpp
 	nesting.cpp
 	remove.cpp
 	size.cpp

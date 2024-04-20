@@ -225,7 +225,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     char str[50];
     memset(&str, 0, sizeof(str));
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     lockstateToString(keyTurnerState.lockState, str);
 
@@ -355,7 +355,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     bool authFound = false;
     memset(authName, 0, sizeof(authName));
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     int i = 5;
     for(const auto& log : logEntries)
@@ -508,7 +508,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
 {
     uint index = 0;
 
-    DynamicJsonDocument json(_bufferSize);
+    JsonDocument json;
 
     for(const auto& entry : entries)
     {
@@ -538,7 +538,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
         jsonEntry["allowedUntil"] = allowedUntilDT;
 
         uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
-        JsonArray weekdays = jsonEntry.createNestedArray("allowedWeekdays");
+        JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
 
         while(allowedWeekdaysInt > 0) {
             if(allowedWeekdaysInt >= 64)

@@ -1,6 +1,8 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
+
+#define ARDUINOJSON_SLOT_ID_SIZE 4  // required to reach 65536 elements
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
@@ -26,7 +28,7 @@ static void check(const JsonArray array, const std::string& expected) {
 }
 
 TEST_CASE("serialize MsgPack array") {
-  DynamicJsonDocument doc(JSON_ARRAY_SIZE(65536));
+  JsonDocument doc;
   JsonArray array = doc.to<JsonArray>();
 
   SECTION("empty") {
@@ -53,6 +55,7 @@ TEST_CASE("serialize MsgPack array") {
     const char* nil = 0;
     for (int i = 0; i < 65536; i++)
       array.add(nil);
+    REQUIRE(array.size() == 65536);
 
     check(array,
           std::string("\xDD\x00\x01\x00\x00", 5) + std::string(65536, '\xc0'));

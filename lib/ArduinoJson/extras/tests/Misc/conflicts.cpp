@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 // Include any header that might use the conflicting macros
@@ -51,6 +51,12 @@
 // issue #839
 #define BLOCKSIZE
 #define CAPACITY
+
+// issue #1905
+#define _current
+
+// issue #1914
+#define V7 7
 
 // catch.hpp mutes several warnings, this file also allows to detect them
 #include "ArduinoJson.h"

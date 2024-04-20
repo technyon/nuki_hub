@@ -1,65 +1,89 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+#include "Allocators.hpp"
+
 TEST_CASE("JsonObject::set()") {
-  DynamicJsonDocument doc1(4096);
-  DynamicJsonDocument doc2(4096);
+  SpyingAllocator spy;
+  JsonDocument doc1(&spy);
+  JsonDocument doc2(&spy);
 
   JsonObject obj1 = doc1.to<JsonObject>();
   JsonObject obj2 = doc2.to<JsonObject>();
 
   SECTION("doesn't copy static string in key or value") {
     obj1["hello"] = "world";
+    spy.clearLog();
 
     bool success = obj2.set(obj1);
 
     REQUIRE(success == true);
-    REQUIRE(doc1.memoryUsage() == doc2.memoryUsage());
     REQUIRE(obj2["hello"] == std::string("world"));
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                         });
   }
 
   SECTION("copy local string value") {
     obj1["hello"] = std::string("world");
+    spy.clearLog();
 
     bool success = obj2.set(obj1);
 
     REQUIRE(success == true);
-    REQUIRE(doc1.memoryUsage() == doc2.memoryUsage());
     REQUIRE(obj2["hello"] == std::string("world"));
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("world")),
+                         });
   }
 
   SECTION("copy local key") {
     obj1[std::string("hello")] = "world";
+    spy.clearLog();
 
     bool success = obj2.set(obj1);
 
     REQUIRE(success == true);
-    REQUIRE(doc1.memoryUsage() == doc2.memoryUsage());
     REQUIRE(obj2["hello"] == std::string("world"));
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofString("hello")),
+                             Allocate(sizeofPool()),
+                         });
   }
 
   SECTION("copy string from deserializeJson()") {
     deserializeJson(doc1, "{'hello':'world'}");
+    spy.clearLog();
 
     bool success = obj2.set(obj1);
 
     REQUIRE(success == true);
-    REQUIRE(doc1.memoryUsage() == doc2.memoryUsage());
     REQUIRE(obj2["hello"] == std::string("world"));
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofString("hello")),
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("world")),
+                         });
   }
 
   SECTION("copy string from deserializeMsgPack()") {
     deserializeMsgPack(doc1, "\x81\xA5hello\xA5world");
+    spy.clearLog();
 
     bool success = obj2.set(obj1);
 
     REQUIRE(success == true);
-    REQUIRE(doc1.memoryUsage() == doc2.memoryUsage());
     REQUIRE(obj2["hello"] == std::string("world"));
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofString("hello")),
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("world")),
+                         });
   }
 
   SECTION("should work with JsonObjectConst") {
@@ -67,32 +91,34 @@ TEST_CASE("JsonObject::set()") {
 
     obj2.set(static_cast<JsonObjectConst>(obj1));
 
-    REQUIRE(doc1.memoryUsage() == doc2.memoryUsage());
     REQUIRE(obj2["hello"] == std::string("world"));
   }
 
-  SECTION("destination too small to store the key") {
-    StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc3;
+  SECTION("copy fails in the middle of an object") {
+    TimebombAllocator timebomb(2);
+    JsonDocument doc3(&timebomb);
     JsonObject obj3 = doc3.to<JsonObject>();
 
-    obj1[std::string("hello")] = "world";
+    obj1[std::string("a")] = 1;
+    obj1[std::string("b")] = 2;
 
     bool success = obj3.set(obj1);
 
     REQUIRE(success == false);
-    REQUIRE(doc3.as<std::string>() == "{}");
+    REQUIRE(doc3.as<std::string>() == "{\"a\":1}");
   }
 
-  SECTION("destination too small to store the value") {
-    StaticJsonDocument<JSON_OBJECT_SIZE(1)> doc3;
+  SECTION("copy fails in the middle of an array") {
+    TimebombAllocator timebomb(1);
+    JsonDocument doc3(&timebomb);
     JsonObject obj3 = doc3.to<JsonObject>();
 
-    obj1["hello"] = std::string("world");
+    obj1["hello"][0] = std::string("world");
 
     bool success = obj3.set(obj1);
 
     REQUIRE(success == false);
-    REQUIRE(doc3.as<std::string>() == "{\"hello\":null}");
+    REQUIRE(doc3.as<std::string>() == "{\"hello\":[null]}");
   }
 
   SECTION("destination is null") {

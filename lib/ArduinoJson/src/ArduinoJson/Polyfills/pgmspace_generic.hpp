@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -54,14 +54,14 @@ inline T pgm_read(const T* p) {
 template <typename T>
 class pgm_ptr {
  public:
-  explicit pgm_ptr(const T* ptr) : _ptr(ptr) {}
+  explicit pgm_ptr(const T* ptr) : ptr_(ptr) {}
 
   T operator[](intptr_t index) const {
-    return pgm_read(_ptr + index);
+    return pgm_read(ptr_ + index);
   }
 
  private:
-  const T* _ptr;
+  const T* ptr_;
 };
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

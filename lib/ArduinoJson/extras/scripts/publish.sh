@@ -2,7 +2,7 @@
 
 set -eu
 
-which awk sed jq 7z curl perl >/dev/null
+which awk sed jq curl perl >/dev/null
 
 cd "$(dirname "$0")/../.."
 
@@ -15,6 +15,7 @@ VERSION="$1"
 DATE=$(date +%F)
 TAG="v$VERSION"
 VERSION_REGEX='[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9]+)?'
+STARS=$(curl -s https://api.github.com/repos/bblanchon/ArduinoJson | jq '.stargazers_count')
 
 update_version_in_source () {
 	IFS=".-" read MAJOR MINOR REVISION EXTRA < <(echo "$VERSION")
@@ -29,16 +30,25 @@ update_version_in_source () {
 	sed -i~ -bE "s/(project\\s*\\(ArduinoJson\\s+VERSION\\s+).*?\\)/\\1$MAJOR.$MINOR.$REVISION)/" CMakeLists.txt
 	rm CMakeLists.txt~
 
-	sed -i~ -bE "s/\"version\":.*$/\"version\": \"$VERSION\",/" library.json
+	sed -i~ -bE \
+		-e "s/\"version\":.*$/\"version\": \"$VERSION\",/" \
+		-e "s/[0-9]+ stars/$STARS stars/" \
+		library.json
 	rm library.json~
 
-	sed -i~ -bE "s/version=.*$/version=$VERSION/" library.properties
+	sed -i~ -bE \
+		-e "s/version=.*$/version=$VERSION/" \
+		-e "s/[0-9]+ stars/$STARS stars/" \
+		library.properties
 	rm library.properties~
 
 	sed -i~ -bE "s/version: .*$/version: $VERSION.{build}/" appveyor.yml
 	rm appveyor.yml~
 
-	sed -i~ -bE "s/^version: .*$/version: \"$VERSION\"/" idf_component.yml
+	sed -i~ -bE \
+		-e "s/^version: .*$/version: \"$VERSION\"/" \
+		-e "s/[0-9]+ stars/$STARS stars/" \
+		idf_component.yml
 	rm idf_component.yml~
 
 	sed -i~ -bE \
@@ -46,6 +56,7 @@ update_version_in_source () {
 		-e "s/ARDUINOJSON_VERSION_MAJOR .*$/ARDUINOJSON_VERSION_MAJOR $MAJOR/" \
 		-e "s/ARDUINOJSON_VERSION_MINOR .*$/ARDUINOJSON_VERSION_MINOR $MINOR/" \
 		-e "s/ARDUINOJSON_VERSION_REVISION .*$/ARDUINOJSON_VERSION_REVISION $REVISION/" \
+		-e "s/ARDUINOJSON_VERSION_MACRO .*$/ARDUINOJSON_VERSION_MACRO V$MAJOR$MINOR$REVISION/" \
 		src/ArduinoJson/version.hpp
 	rm src/ArduinoJson/version.hpp*~
 }
@@ -69,10 +80,8 @@ commit_new_version
 add_tag
 push
 
-extras/scripts/build-arduino-package.sh . "../ArduinoJson-$TAG.zip"
 extras/scripts/build-single-header.sh "src/ArduinoJson.h" "../ArduinoJson-$TAG.h"
 extras/scripts/build-single-header.sh "src/ArduinoJson.hpp" "../ArduinoJson-$TAG.hpp"
-extras/scripts/wandbox/publish.sh "../ArduinoJson-$TAG.h" > "../ArduinoJson-$TAG-wandbox.txt" || echo "Wandbox failed!"
-extras/scripts/get-release-page.sh "$VERSION" "CHANGELOG.md" "../ArduinoJson-$TAG-wandbox.txt" > "../ArduinoJson-$TAG.md"
+extras/scripts/get-release-page.sh "$VERSION" "CHANGELOG.md" "../ArduinoJson-$TAG.h" > "../ArduinoJson-$TAG.md"
 
 echo "You can now copy ../ArduinoJson-$TAG.md into arduinojson.org/collections/_versions/$VERSION.md"
