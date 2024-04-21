@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 //
 // This example shows the different ways you can use String with ArduinoJson.
@@ -8,12 +8,12 @@
 // JsonDocument. Prefer plain old char[], as they are more efficient in term of
 // code size, speed, and memory usage.
 //
-// https://arduinojson.org/v6/example/string/
+// https://arduinojson.org/v7/example/string/
 
 #include <ArduinoJson.h>
 
 void setup() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   // You can use a String as your JSON input.
   // WARNING: the string in the input  will be duplicated in the JsonDocument.
@@ -55,7 +55,6 @@ void setup() {
   }
 
   // Lastly, you can print the resulting JSON to a String
-  // WARNING: it doesn't replace the content but appends to it
   String output;
   serializeJson(doc, output);
 }

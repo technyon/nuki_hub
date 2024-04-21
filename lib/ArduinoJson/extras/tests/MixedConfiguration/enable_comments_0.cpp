@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_ENABLE_COMMENTS 0
@@ -8,7 +8,7 @@
 #include <catch.hpp>
 
 TEST_CASE("Comments should produce InvalidInput") {
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
 
   const char* testCases[] = {
       "/*COMMENT*/  [\"hello\"]",

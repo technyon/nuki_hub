@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -15,7 +15,7 @@ enum MY_ENUM { ONE = 1, TWO = 2 };
 TEST_CASE("JsonVariant::as()") {
   static const char* null = 0;
 
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonVariant variant = doc.to<JsonVariant>();
 
   SECTION("not set") {
@@ -250,17 +250,6 @@ TEST_CASE("JsonVariant::as()") {
     REQUIRE(variant.as<long long>() == 9223372036854775807);
   }
 #endif
-
-  SECTION("should work on JsonVariantConst") {
-    variant.set("hello");
-
-    JsonVariantConst cvar = variant;
-
-    REQUIRE(cvar.as<bool>() == true);
-    REQUIRE(cvar.as<long>() == 0L);
-    REQUIRE(cvar.as<const char*>() == std::string("hello"));
-    REQUIRE(cvar.as<std::string>() == std::string("hello"));
-  }
 
   SECTION("as<enum>()") {
     variant.set(1);

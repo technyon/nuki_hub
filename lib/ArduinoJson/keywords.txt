@@ -1,8 +1,3 @@
-# Macros
-JSON_ARRAY_SIZE	KEYWORD2
-JSON_OBJECT_SIZE	KEYWORD2
-JSON_STRING_SIZE	KEYWORD2
-
 # Free functions
 deserializeJson	KEYWORD2
 deserializeMsgPack	KEYWORD2
@@ -17,15 +12,13 @@ measureMsgPack	KEYWORD2
 # Methods
 add	KEYWORD2
 as	KEYWORD2
-createNestedArray	KEYWORD2
-createNestedObject	KEYWORD2
 get	KEYWORD2
 set	KEYWORD2
 to	KEYWORD2
 
 # Type names
 DeserializationError	KEYWORD1	DATA_TYPE
-DynamicJsonDocument	KEYWORD1	DATA_TYPE
+JsonDocument	KEYWORD1	DATA_TYPE
 JsonArray	KEYWORD1	DATA_TYPE
 JsonArrayConst	KEYWORD1	DATA_TYPE
 JsonDocument	KEYWORD1	DATA_TYPE
@@ -37,4 +30,3 @@ JsonString	KEYWORD1	DATA_TYPE
 JsonUInt	KEYWORD1	DATA_TYPE
 JsonVariant	KEYWORD1	DATA_TYPE
 JsonVariantConst	KEYWORD1	DATA_TYPE
-StaticJsonDocument	KEYWORD1	DATA_TYPE

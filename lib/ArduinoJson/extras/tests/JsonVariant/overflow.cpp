@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,7 +7,7 @@
 
 template <typename TOut, typename TIn>
 void shouldBeOk(TIn value) {
-  StaticJsonDocument<1> doc;
+  JsonDocument doc;
   JsonVariant var = doc.to<JsonVariant>();
   var.set(value);
   REQUIRE(var.as<TOut>() == TOut(value));
@@ -15,7 +15,7 @@ void shouldBeOk(TIn value) {
 
 template <typename TOut, typename TIn>
 void shouldOverflow(TIn value) {
-  StaticJsonDocument<1> doc;
+  JsonDocument doc;
   JsonVariant var = doc.to<JsonVariant>();
   var.set(value);
   REQUIRE(var.as<TOut>() == 0);

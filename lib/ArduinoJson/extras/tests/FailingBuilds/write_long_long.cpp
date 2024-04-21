@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_USE_LONG_LONG 0
@@ -10,6 +10,6 @@
 #endif
 
 int main() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   doc["dummy"] = static_cast<long long>(42);
 }

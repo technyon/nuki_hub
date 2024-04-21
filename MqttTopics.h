@@ -51,6 +51,8 @@
 #define mqtt_topic_keypad_command_enabled "/keypad/command/enabled"
 #define mqtt_topic_keypad_command_result "/keypad/command/commandResult"
 #define mqtt_topic_keypad_json "/keypad/json"
+#define mqtt_topic_keypad_json_action "/keypad/actionJson"
+#define mqtt_topic_keypad_json_command_result "/keypad/commandResultJson"
 
 #define mqtt_topic_timecontrol_json "/timecontrol/json"
 #define mqtt_topic_timecontrol_action "/timecontrol/action"

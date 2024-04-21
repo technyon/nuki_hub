@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2023, Benoit BLANCHON
+# Copyright © 2014-2024, Benoit BLANCHON
 # MIT License
 
 macro(build_should_fail target)
@@ -23,17 +23,11 @@ endmacro()
 add_executable(Issue978 Issue978.cpp)
 build_should_fail(Issue978)
 
-add_executable(Issue1189 Issue1189.cpp)
-build_should_fail(Issue1189)
-
 add_executable(read_long_long read_long_long.cpp)
 build_should_fail(read_long_long)
 
 add_executable(write_long_long write_long_long.cpp)
 build_should_fail(write_long_long)
-
-add_executable(delete_jsondocument delete_jsondocument.cpp)
-build_should_fail(delete_jsondocument)
 
 add_executable(variant_as_char variant_as_char.cpp)
 build_should_fail(variant_as_char)

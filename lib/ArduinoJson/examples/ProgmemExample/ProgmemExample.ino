@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 //
 // This example shows the different ways you can use Flash strings with
@@ -9,12 +9,12 @@
 // JsonDocument. Prefer plain old char*, as they are more efficient in term of
 // code size, speed, and memory usage.
 //
-// https://arduinojson.org/v6/example/progmem/
+// https://arduinojson.org/v7/example/progmem/
 
 #include <ArduinoJson.h>
 
 void setup() {
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   // You can use a Flash String as your JSON input.
   // WARNING: the strings in the input will be duplicated in the JsonDocument.

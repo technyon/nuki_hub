@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2023, Benoit BLANCHON
+// Copyright © 2014-2024, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -19,7 +19,7 @@ static void checkObjectPretty(const JsonObject obj,
 }
 
 TEST_CASE("serializeJsonPretty(JsonObject)") {
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonObject obj = doc.to<JsonObject>();
 
   SECTION("EmptyObject") {
@@ -47,8 +47,8 @@ TEST_CASE("serializeJsonPretty(JsonObject)") {
   }
 
   SECTION("EmptyNestedContainers") {
-    obj.createNestedObject("key1");
-    obj.createNestedArray("key2");
+    obj["key1"].to<JsonObject>();
+    obj["key2"].to<JsonArray>();
 
     checkObjectPretty(obj,
                       "{\r\n"
@@ -58,10 +58,10 @@ TEST_CASE("serializeJsonPretty(JsonObject)") {
   }
 
   SECTION("NestedContainers") {
-    JsonObject nested1 = obj.createNestedObject("key1");
+    JsonObject nested1 = obj["key1"].to<JsonObject>();
     nested1["a"] = 1;
 
-    JsonArray nested2 = obj.createNestedArray("key2");
+    JsonArray nested2 = obj["key2"].to<JsonArray>();
     nested2.add(2);
 
     checkObjectPretty(obj,
