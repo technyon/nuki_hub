@@ -37,7 +37,7 @@ public:
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char* lockAction, char* unlockAction, char* openAction);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
-    void publishTimeControl(const std::list<NukiLock::TimeControlEntry>& entries);
+    void publishTimeControl(const std::list<NukiLock::TimeControlEntry>& timeControlEntries);
     void publishKeypadCommandResult(const char* result);
     void publishKeypadJsonCommandResult(const char* result);
     void publishTimeControlCommandResult(const char* result);

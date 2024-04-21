@@ -184,6 +184,11 @@ void NukiWrapper::update()
             setupHASS();
         }
     }
+    if(_nextTimeControlUpdateTs != 0 && ts > _nextTimeControlUpdateTs)
+    {
+        _nextTimeControlUpdateTs = 0;
+        updateTimeControl(true);
+    }
     if(_hassEnabled && _configRead && _network->reconnected())
     {
         setupHASS();
@@ -381,8 +386,8 @@ void NukiWrapper::updateConfig()
             _network->publishConfig(_nukiConfig);
             _retryConfigCount = 0;
 
-            if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl();
-            
+            if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl(false);
+
             const int pinStatus = _preferences->getInt(preference_lock_pin_status, 4);
 
             if(isPinSet()) {
@@ -477,6 +482,9 @@ void NukiWrapper::updateKeypad()
     {
         std::list<NukiLock::KeypadEntry> entries;
         _nukiLock.getKeypadEntries(&entries);
+        
+        Log->print(F("Lock keypad codes: "));
+        Log->println(entries.size());
 
         entries.sort([](const NukiLock::KeypadEntry& a, const NukiLock::KeypadEntry& b) { return a.codeId < b.codeId; });
 
@@ -500,28 +508,40 @@ void NukiWrapper::updateKeypad()
     postponeBleWatchdog();
 }
 
-void NukiWrapper::updateTimeControl()
+void NukiWrapper::updateTimeControl(bool retrieved)
 {
     if(!_preferences->getBool(preference_timecontrol_info_enabled)) return;
 
-    Log->print(F("Querying lock time control: "));
-    Nuki::CmdResult result = _nukiLock.retrieveTimeControlEntries();
-    printCommandResult(result);
-    if(result == Nuki::CmdResult::Success)
+    if(!retrieved)
     {
-        std::list<NukiLock::TimeControlEntry> entries;
-        _nukiLock.getTimeControlEntries(&entries);
+        Log->print(F("Querying lock time control: "));
+        Nuki::CmdResult result = _nukiLock.retrieveTimeControlEntries();
+        printCommandResult(result);
+        if(result == Nuki::CmdResult::Success)
+        {
+            _nextTimeControlUpdateTs = millis() + 5000;
+        }
+    }
+    else
+    {
+        std::list<NukiLock::TimeControlEntry> timeControlEntries;
+        _nukiLock.getTimeControlEntries(&timeControlEntries);
+        
+        Log->print(F("Lock time control entries: "));
+        Log->println(timeControlEntries.size());
 
-        entries.sort([](const NukiLock::TimeControlEntry& a, const NukiLock::TimeControlEntry& b) { return a.entryId < b.entryId; });
+        timeControlEntries.sort([](const NukiLock::TimeControlEntry& a, const NukiLock::TimeControlEntry& b) { return a.entryId < b.entryId; });
+
+        _network->publishTimeControl(timeControlEntries);
 
         _timeControlIds.clear();
-        _timeControlIds.reserve(entries.size());
-        for(const auto& entry : entries)
+        _timeControlIds.reserve(timeControlEntries.size());
+        for(const auto& entry : timeControlEntries)
         {
             _timeControlIds.push_back(entry.entryId);
         }
     }
-
+    
     postponeBleWatchdog();
 }
 
@@ -532,26 +552,32 @@ void NukiWrapper::postponeBleWatchdog()
 
 NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 {
-    if(strcmp(str, "unlock") == 0) return NukiLock::LockAction::Unlock;
-    else if(strcmp(str, "lock") == 0) return NukiLock::LockAction::Lock;
-    else if(strcmp(str, "unlatch") == 0) return NukiLock::LockAction::Unlatch;
-    else if(strcmp(str, "lockNgo") == 0) return NukiLock::LockAction::LockNgo;
-    else if(strcmp(str, "lockNgoUnlatch") == 0) return NukiLock::LockAction::LockNgoUnlatch;
-    else if(strcmp(str, "fullLock") == 0) return NukiLock::LockAction::FullLock;
-    else if(strcmp(str, "fobAction2") == 0) return NukiLock::LockAction::FobAction2;
-    else if(strcmp(str, "fobAction1") == 0) return NukiLock::LockAction::FobAction1;
-    else if(strcmp(str, "fobAction3") == 0) return NukiLock::LockAction::FobAction3;
+    if(strcmp(str, "unlock") == 0 || strcmp(str, "Unlock") == 0) return NukiLock::LockAction::Unlock;
+    else if(strcmp(str, "lock") == 0 || strcmp(str, "Lock") == 0) return NukiLock::LockAction::Lock;
+    else if(strcmp(str, "unlatch") == 0 || strcmp(str, "Unlatch") == 0) return NukiLock::LockAction::Unlatch;
+    else if(strcmp(str, "lockNgo") == 0 || strcmp(str, "LockNgo") == 0) return NukiLock::LockAction::LockNgo;
+    else if(strcmp(str, "lockNgoUnlatch") == 0 || strcmp(str, "LockNgoUnlatch") == 0) return NukiLock::LockAction::LockNgoUnlatch;
+    else if(strcmp(str, "fullLock") == 0 || strcmp(str, "FullLock") == 0) return NukiLock::LockAction::FullLock;
+    else if(strcmp(str, "fobAction2") == 0 || strcmp(str, "FobAction2") == 0) return NukiLock::LockAction::FobAction2;
+    else if(strcmp(str, "fobAction1") == 0 || strcmp(str, "FobAction1") == 0) return NukiLock::LockAction::FobAction1;
+    else if(strcmp(str, "fobAction3") == 0 || strcmp(str, "FobAction3") == 0) return NukiLock::LockAction::FobAction3;
     return (NukiLock::LockAction)0xff;
 }
 
 LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
-    NukiLock::LockAction action = nukiInst->lockActionToEnum(value);
-
-    if((int)action == 0xff)
+    NukiLock::LockAction action;
+    
+    if(strlen(value) > 0)
     {
-        return LockActionResult::UnknownAction;
+        action = nukiInst->lockActionToEnum(value);
+        
+        if((int)action == 0xff)
+        {
+            return LockActionResult::UnknownAction;
+        }
     }
+    else return LockActionResult::UnknownAction;
 
     nukiLockPreferences = new Preferences();
     nukiLockPreferences->begin("nukihub", true);
@@ -821,7 +847,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         return;
     }
 
-    DynamicJsonDocument json(2048);
+    JsonDocument json;
     DeserializationError jsonError = deserializeJson(json, value);
 
     if(jsonError)
@@ -1150,9 +1176,21 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
     uint8_t enabled = json["enabled"].as<unsigned int>();
     String weekdays = json["weekdays"].as<String>();
     const char *time = json["time"].as<const char*>();
-    NukiLock::LockAction timeControlLockAction = nukiInst->lockActionToEnum(json["lockAction"].as<const char*>());
+    const char *lockAct = json["lockAction"].as<const char*>();
+    NukiLock::LockAction timeControlLockAction;
 
-    if((int)timeControlLockAction == 0xff)
+    if(strlen(lockAct) > 0)
+    {
+
+        timeControlLockAction = nukiInst->lockActionToEnum(lockAct);
+
+        if((int)timeControlLockAction == 0xff)
+        {
+            _network->publishTimeControlCommandResult("invalidLockAction");
+            return;
+        }
+    }
+    else
     {
         _network->publishTimeControlCommandResult("invalidLockAction");
         return;
@@ -1197,19 +1235,19 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(timeAr[0] < 0 || timeAr[0] > 23 || timeAr[1] < 0 || timeAr[1] > 59)
                     {
-                        _network->publishKeypadJsonCommandResult("invalidTime");
+                        _network->publishTimeControlCommandResult("invalidTime");
                         return;
                     }
                 }
                 else
                 {
-                    _network->publishKeypadJsonCommandResult("invalidTime");
+                    _network->publishTimeControlCommandResult("invalidTime");
                     return;
                 }
             }
             else
             {
-                _network->publishKeypadJsonCommandResult("invalidTime");
+                _network->publishTimeControlCommandResult("invalidTime");
                 return;
             }
 
@@ -1235,7 +1273,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                 entry.lockAction = timeControlLockAction;
 
-                result = _nukiLock.addKeypadEntry(entry);
+                result = _nukiLock.addTimeControlEntry(entry);
                 Log->print("Add time control: ");
                 Log->println((int)result);
             }
@@ -1273,7 +1311,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
             NukiLock::cmdResultToString(result, resultStr);
             _network->publishTimeControlCommandResult(resultStr);
         }
-        
+
         _nextConfigUpdateTs = millis() + 300;
     }
     else

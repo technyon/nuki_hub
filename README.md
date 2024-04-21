@@ -399,13 +399,13 @@ To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson
 | enabled          | Not used | Not used | Optional | Enable or disable the entry, enabled if not set                                          | 1 = enabled, 0 = disabled                                      |
 | weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued                              | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
 | time             | Not used | Required | Required | The time on which the chosen lock action should be executed                              | "HH:MM"                                                        |
-| lockaction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time        | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock", "FobAction1", "FobAction2", "FobAction3. For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM", "FobAction1", "FobAction2", "FobAction3"                                             |
+| lockAction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time        | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM"                                                                      |
 
 Example usage:<br>
 Examples:
 - Delete: `{ "action": "delete", "entryId": "1234" }`
-- Add: `{ "action": "add", "weekdays": [ "wed", "thu", "fri" ], "time": "08:00", "lockaction": "unlock" }`
-- Update: `{ "action": "update", "entryId": "1234", "enabled": "1", "weekdays": [ "mon", "tue", "sat", "sun" ], "time": "08:00", "lockaction": "lock" }`
+- Add: `{ "action": "add", "weekdays": [ "wed", "thu", "fri" ], "time": "08:00", "lockAction": "Unlock" }`
+- Update: `{ "action": "update", "entryId": "1234", "enabled": "1", "weekdays": [ "mon", "tue", "sat", "sun" ], "time": "08:00", "lockAction": "Lock" }`
 
 ## GPIO lock control (optional)
 

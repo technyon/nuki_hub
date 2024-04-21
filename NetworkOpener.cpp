@@ -398,24 +398,24 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         {
             case NukiOpener::LoggingType::LockAction:
                 memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
-                NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
+                NukiOpener::triggerToString((NukiOpener::Trigger)log.data[1], str);
                 entry["trigger"] = str;
 
                 memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[3], str);
                 entry["completionStatus"] = str;
                 break;
             case NukiOpener::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
                 entry["completionStatus"] = str;
                 break;
             case NukiOpener::LoggingType::DoorbellRecognition:
@@ -685,12 +685,12 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
     }
 }
 
-void NetworkOpener::publishTimeControl(const std::list<NukiLock::TimeControlEntry>& entries)
+void NetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries)
 {
     char str[50];
     JsonDocument json;
 
-    for(const auto& entry : entries)
+    for(const auto& entry : timeControlEntries)
     {
         auto jsonEntry = json.add();
 
@@ -749,7 +749,7 @@ void NetworkOpener::publishTimeControl(const std::list<NukiLock::TimeControlEntr
         jsonEntry["time"] = timeT;
 
         memset(str, 0, sizeof(str));
-        NetworkOpener::lockactionToString(entry.lockAction, str);
+        NukiOpener::lockactionToString(entry.lockAction, str);
         jsonEntry["lockAction"] = str;
     }
 

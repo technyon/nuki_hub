@@ -629,12 +629,12 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
     }
 }
 
-void NetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEntry>& entries)
+void NetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEntry>& timeControlEntries)
 {
     char str[50];
     JsonDocument json;
 
-    for(const auto& entry : entries)
+    for(const auto& entry : timeControlEntries)
     {
         auto jsonEntry = json.add();
 
