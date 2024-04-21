@@ -749,6 +749,12 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         if(json[basicKeys[i]])
         {
             const char *jsonchar = json[basicKeys[i]].as<const char*>();
+            
+            if(strlen(jsonchar) == 0)
+            {
+                jsonResult[basicKeys[i]] = "noValueSet";
+                continue;
+            }
 
             if((int)basicOpenerConfigAclPrefs[i] == 1)
             {
@@ -924,6 +930,12 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         if(json[advancedKeys[i]])
         {
             const char *jsonchar = json[advancedKeys[i]].as<const char*>();
+            
+            if(strlen(jsonchar) == 0)
+            {
+                jsonResult[advancedKeys[i]] = "noValueSet";
+                continue;
+            }
 
             if((int)advancedOpenerConfigAclPrefs[i] == 1)
             {

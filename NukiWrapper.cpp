@@ -686,6 +686,12 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[basicKeys[i]])
         {
             const char *jsonchar = json[basicKeys[i]].as<const char*>();
+            
+            if(strlen(jsonchar) == 0)
+            {
+                jsonResult[basicKeys[i]] = "noValueSet";
+                continue;
+            }
 
             if((int)basicLockConfigAclPrefs[i] == 1)
             {
@@ -883,6 +889,12 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[advancedKeys[i]])
         {
             const char *jsonchar = json[advancedKeys[i]].as<const char*>();
+            
+            if(strlen(jsonchar) == 0)
+            {
+                jsonResult[advancedKeys[i]] = "noValueSet";
+                continue;
+            }
 
             if((int)advancedLockConfigAclPrefs[i] == 1)
             {

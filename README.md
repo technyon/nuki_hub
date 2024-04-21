@@ -378,7 +378,7 @@ The result of the last configuration change action will be published to the `con
 <br>
 The JSON data will include a node called "general" and a node for every setting that Nuki Hub detected in the action.<br>
 Possible values for the "general" node are "noPinSet", "invalidJson", "invalidConfig", "success" and "noChange".<br>
-Possible values for the node per setting are "unchanged", "invalidValue", "valueTooLong", "accessDenied", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined"<br>
+Possible values for the node per setting are "unchanged", "noValueSet", "invalidValue", "valueTooLong", "accessDenied", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined"<br>
 <br>
 Example:
 - `{"advertisingMode":"success","general":"success"}`
