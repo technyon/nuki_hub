@@ -131,56 +131,56 @@ private:
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getChar(key)) : String(preferences->getChar(key)));
+        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getChar(key)) : String(preferences->getChar(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt8(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getUChar(key)) : String(preferences->getUChar(key)));
+        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUChar(key)) : String(preferences->getUChar(key)));
         s.concat("\n");
     }
     const void appendPreferenceInt16(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getShort(key)) : String(preferences->getShort(key)));
+        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getShort(key)) : String(preferences->getShort(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt16(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getUShort(key)) : String(preferences->getUShort(key)));
+        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUShort(key)) : String(preferences->getUShort(key)));
         s.concat("\n");
     }
     const void appendPreferenceInt32(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getInt(key)) : String(preferences->getInt(key)));
+        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getInt(key)) : String(preferences->getInt(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt32(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getUInt(key)) : String(preferences->getUInt(key)));
+        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUInt(key)) : String(preferences->getUInt(key)));
         s.concat("\n");
     }
     const void appendPreferenceInt64(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getLong64(key)) : String(preferences->getLong64(key)));
+        s.concat(isRedacted(key) ? redact((const int64_t)preferences->getLong64(key)) : String(preferences->getLong64(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt64(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getULong64(key)) : String(preferences->getULong64(key)));
+        s.concat(isRedacted(key) ? redact((const uint64_t)preferences->getULong64(key)) : String(preferences->getULong64(key)));
         s.concat("\n");
     }
     const void appendPreferenceBool(Preferences *preferences, String& s, const char* description, const char* key)
@@ -194,7 +194,7 @@ private:
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getString(key)) : preferences->getString(key));
+        s.concat(isRedacted(key) ? redact((const String)preferences->getString(key)) : preferences->getString(key));
         s.concat("\n");
     }
 
