@@ -10,6 +10,18 @@
         { "path": "nuki_hub.bin", "offset": 65536 },
         { "path": "nuki_hub.partitions.bin", "offset": 32768 }
       ]
+    },
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "nuki_hub_esp32s3.bin", "offset": 0 },
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "nuki_hub_esp32c3.bin", "offset": 0 },
+      ]
     }
   ]
 }

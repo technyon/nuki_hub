@@ -32,6 +32,7 @@ void DhcpClass::reset_DHCP_lease()
     memset(_dhcpDhcpServerIp, 0, sizeof(_dhcpDhcpServerIp));
     memset(_dhcpDnsServerIp, 0, sizeof(_dhcpDnsServerIp));
 }
+
 	//return:0 on error, 1 if request is sent and response is received
 int DhcpClass::request_DHCP_lease()
 {

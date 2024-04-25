@@ -15,7 +15,8 @@ Feel free to join us on Discord: https://discord.gg/feB9FnMY
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- All dual-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 should work, but builds are currently only provided for the ESP32 and not for the ESP32-S3 or ESP32-C3.
+- All dual-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 should work. Tested builds are provided for the ESP32 and ESP32-S3.
+- Single-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 might work. Untested builds are provided for the ESP32-C3 and ESP32-Solo1.
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
 - The ESP32-C6 and ESP32-H2 are not supported by Arduino Core 2.0.15 as such can't run Nuki Hub (at this time).
 
@@ -46,8 +47,9 @@ Please go to "MQTT and Network Configuration" and select "Wi-Fi only" as the net
 
 Flash the firmware to an ESP32. The easiest way to install is to use the web installer using a compatible browser like Chrome/Opera/Edge:<br>
 https://technyon.github.io/nuki_hub/<br>
+NOTE: Webflash is not available for the ESP32-Solo1<br>
 <br>
-Alternatively download the latest release from https://github.com/technyon/nuki_hub/releases<br>
+Alternatively download the latest release for your ESP32 model from https://github.com/technyon/nuki_hub/releases<br>
 Unpack the 7z archive and read the included readme.txt for installation instructions for either "Espressif Flash Download Tools" or "esptool".
 
 ## Initial setup (Network and MQTT)
@@ -455,6 +457,7 @@ Reported as working are:
 - [M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)
 - ESP32-WROOM-32D (DEVKIT V4)
 - ESP32-WROOM-32E
+- ESP32-S3-WROOM-1
 
 For more information check the related issue: https://github.com/technyon/nuki_hub/issues/39
 
