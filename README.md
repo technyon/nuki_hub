@@ -153,6 +153,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Change Lock/Opener configuration: Allows changing the Nuki Lock/Opener configuration through MQTT.
 - Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "Keypad control" section of this README
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "Keypad control" section of this README
+- Publish time control information: Enable to publish information about time control entries through MQTT, see the "Time control" section of this README
+- Add, modify and delete time control entries: Enable to allow configuration of time control entries through MQTT, see the "Time control" section of this README
 - Publish auth data: Enable to publish authorization data to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
 
 #### Nuki Lock/Opener Access Control
@@ -253,6 +255,10 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Keypad
 
 - See the "Keypad control" section of this README.
+
+### Time Control
+
+- See the "Time control" section of this README.
 
 ### Info
 
@@ -378,6 +384,30 @@ For example, to add a code:
 - write 111222 to code
 - write 1 to enabled
 - write "add" to action
+
+## Time control using JSON (optional)
+
+Time control entries can be added, updated and removed. This has to enabled first in the configuration portal. Check "Add, modify and delete time control entries" under "Access Level Configuration" and save the configuration.
+
+Information about current time control entries is published as JSON data to the "timecontrol/json" MQTT topic.<br>
+This needs to be enabled separately by checking "Publish time control entries information" under "Access Level Configuration" and saving the configuration.
+
+To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson` topic to a JSON formatted value containing the following nodes.
+
+| Node             | Delete   | Add      | Update   | Usage                                                                                    | Possible values                                                |
+|------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| action           | Required | Required | Required | The action to execute                                                                    | "delete", "add", "update"                                      |
+| entryId          | Required | Not used | Required | The entry ID of the existing entry to delete or update                                   | Integer                                                        |
+| enabled          | Not used | Not used | Optional | Enable or disable the entry, enabled if not set                                          | 1 = enabled, 0 = disabled                                      |
+| weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued                              | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
+| time             | Not used | Required | Required | The time on which the chosen lock action should be executed                              | "HH:MM"                                                        |
+| lockAction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time        | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM"                                                                      |
+
+Example usage:<br>
+Examples:
+- Delete: `{ "action": "delete", "entryId": "1234" }`
+- Add: `{ "action": "add", "weekdays": [ "wed", "thu", "fri" ], "time": "08:00", "lockAction": "Unlock" }`
+- Update: `{ "action": "update", "entryId": "1234", "enabled": "1", "weekdays": [ "mon", "tue", "sat", "sun" ], "time": "08:00", "lockAction": "Lock" }`
 
 ## GPIO lock control (optional)
 

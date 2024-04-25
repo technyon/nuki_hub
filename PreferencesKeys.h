@@ -50,6 +50,8 @@
 #define preference_admin_enabled "aclConfig"
 #define preference_keypad_info_enabled "kpInfoEnabled"
 #define preference_keypad_control_enabled "kpCntrlEnabled"
+#define preference_timecontrol_control_enabled "tcCntrlEnabled"
+#define preference_timecontrol_info_enabled "tcInfoEnabled"
 #define preference_publish_authdata "pubAuth"
 #define preference_acl "aclLckOpn"
 #define preference_register_as_app "regAsApp" // true = register as hub; false = register as app
@@ -79,9 +81,10 @@ private:
             preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
             preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval,
             preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
-            preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
+            preference_restart_ble_beacon_lost, preference_query_interval_lockstate, 
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
             preference_keypad_control_enabled, preference_admin_enabled, preference_keypad_info_enabled, preference_acl,
+            preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
             preference_access_level, preference_register_as_app, preference_command_nr_of_retries,
             preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
             preference_publish_debug_info, preference_presence_detection_timeout,
@@ -98,7 +101,7 @@ private:
     {
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_admin_enabled, preference_keypad_info_enabled,
-            preference_register_as_app, preference_ip_dhcp_enabled,
+            preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled
     };
 

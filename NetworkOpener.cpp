@@ -72,6 +72,12 @@ void NetworkOpener::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
     }
 
+    if(_preferences->getBool(preference_timecontrol_control_enabled))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_timecontrol_action);
+        _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
+    }
+
     _network->addReconnectedCallback([&]()
      {
          _reconnected = true;
@@ -206,6 +212,18 @@ void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const u
         }
 
         publishString(mqtt_topic_keypad_json_action, "--");
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_timecontrol_action))
+    {
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+
+        if(_timeControlCommandReceivedReceivedCallback != NULL)
+        {
+            _timeControlCommandReceivedReceivedCallback(value);
+        }
+
+        publishString(mqtt_topic_timecontrol_action, "--");
     }
 }
 
@@ -380,24 +398,24 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         {
             case NukiOpener::LoggingType::LockAction:
                 memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
-                NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
+                NukiOpener::triggerToString((NukiOpener::Trigger)log.data[1], str);
                 entry["trigger"] = str;
 
                 memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[3], str);
                 entry["completionStatus"] = str;
                 break;
             case NukiOpener::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 entry["action"] = str;
 
                 memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
                 entry["completionStatus"] = str;
                 break;
             case NukiOpener::LoggingType::DoorbellRecognition:
@@ -667,6 +685,78 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
     }
 }
 
+void NetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries)
+{
+    char str[50];
+    JsonDocument json;
+
+    for(const auto& entry : timeControlEntries)
+    {
+        auto jsonEntry = json.add();
+
+        jsonEntry["entryId"] = entry.entryId;
+        jsonEntry["enabled"] = entry.enabled;
+        uint8_t weekdaysInt = entry.weekdays;
+        JsonArray weekdays = jsonEntry["weekdays"].to<JsonArray>();
+
+        while(weekdaysInt > 0) {
+            if(weekdaysInt >= 64)
+            {
+                weekdays.add("mon");
+                weekdaysInt -= 64;
+                continue;
+            }
+            if(weekdaysInt >= 32)
+            {
+                weekdays.add("tue");
+                weekdaysInt -= 32;
+                continue;
+            }
+            if(weekdaysInt >= 16)
+            {
+                weekdays.add("wed");
+                weekdaysInt -= 16;
+                continue;
+            }
+            if(weekdaysInt >= 8)
+            {
+                weekdays.add("thu");
+                weekdaysInt -= 8;
+                continue;
+            }
+            if(weekdaysInt >= 4)
+            {
+                weekdays.add("fri");
+                weekdaysInt -= 4;
+                continue;
+            }
+            if(weekdaysInt >= 2)
+            {
+                weekdays.add("sat");
+                weekdaysInt -= 2;
+                continue;
+            }
+            if(weekdaysInt >= 1)
+            {
+                weekdays.add("sun");
+                weekdaysInt -= 1;
+                continue;
+            }
+        }
+
+        char timeT[5];
+        sprintf(timeT, "%02d:%02d", entry.timeHour, entry.timeMin);
+        jsonEntry["time"] = timeT;
+
+        memset(str, 0, sizeof(str));
+        NukiOpener::lockactionToString(entry.lockAction, str);
+        jsonEntry["lockAction"] = str;
+    }
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_timecontrol_json, _buffer);
+}
+
 void NetworkOpener::publishKeypadCommandResult(const char* result)
 {
     publishString(mqtt_topic_keypad_command_result, result);
@@ -677,6 +767,11 @@ void NetworkOpener::publishKeypadJsonCommandResult(const char* result)
     publishString(mqtt_topic_keypad_json_command_result, result);
 }
 
+void NetworkOpener::publishTimeControlCommandResult(const char* result)
+{
+    publishString(mqtt_topic_timecontrol_command_result, result);
+}
+  
 void NetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
@@ -695,6 +790,11 @@ void NetworkOpener::setKeypadCommandReceivedCallback(void (*keypadCommandReceive
 void NetworkOpener::setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char *))
 {
     _keypadJsonCommandReceivedReceivedCallback = keypadJsonCommandReceivedReceivedCallback;
+}
+
+void NetworkOpener::setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char *))
+{
+    _timeControlCommandReceivedReceivedCallback = timeControlCommandReceivedReceivedCallback;
 }
 
 void NetworkOpener::publishFloat(const char *topic, const float value, const uint8_t precision)
