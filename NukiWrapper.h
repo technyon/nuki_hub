@@ -48,16 +48,19 @@ private:
     static void onConfigUpdateReceivedCallback(const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void onKeypadJsonCommandReceivedCallback(const char* value);
+    static void onTimeControlCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
+    void onTimeControlCommandReceived(const char* value);
 
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
     void updateAuthData();
     void updateKeypad();
+    void updateTimeControl(bool retrieved);
     void postponeBleWatchdog();
 
     void updateGpioOutputs();
@@ -91,6 +94,7 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
     std::vector<uint16_t> _keypadCodeIds;
+    std::vector<uint8_t> _timeControlIds;
 
     NukiLock::KeyTurnerState _lastKeyTurnerState;
     NukiLock::KeyTurnerState _keyTurnerState;
@@ -121,6 +125,7 @@ private:
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
+    unsigned long _nextTimeControlUpdateTs = 0;
     unsigned long _nextKeypadUpdateTs = 0;
     unsigned long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;

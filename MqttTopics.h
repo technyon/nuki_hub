@@ -58,6 +58,10 @@
 #define mqtt_topic_keypad_json_action "/keypad/actionJson"
 #define mqtt_topic_keypad_json_command_result "/keypad/commandResultJson"
 
+#define mqtt_topic_timecontrol_json "/timecontrol/json"
+#define mqtt_topic_timecontrol_action "/timecontrol/action"
+#define mqtt_topic_timecontrol_command_result "/timecontrol/commandResult"
+
 #define mqtt_topic_info_hardware_version "/info/hardwareVersion"
 #define mqtt_topic_info_firmware_version "/info/firmwareVersion"
 #define mqtt_topic_info_nuki_hub_version "/info/nukiHubVersion"

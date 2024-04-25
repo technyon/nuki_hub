@@ -15,7 +15,8 @@ Feel free to join us on Discord: https://discord.gg/feB9FnMY
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- All dual-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 should work, but builds are currently only provided for the ESP32 and not for the ESP32-S3 or ESP32-C3.
+- All dual-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 should work. Tested builds are provided for the ESP32 and ESP32-S3.
+- Single-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 might work. Untested builds are provided for the ESP32-C3 and ESP32-Solo1.
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
 - The ESP32-C6 and ESP32-H2 are not supported by Arduino Core 2.0.15 as such can't run Nuki Hub (at this time).
 
@@ -46,8 +47,9 @@ Please go to "MQTT and Network Configuration" and select "Wi-Fi only" as the net
 
 Flash the firmware to an ESP32. The easiest way to install is to use the web installer using a compatible browser like Chrome/Opera/Edge:<br>
 https://technyon.github.io/nuki_hub/<br>
+NOTE: Webflash is not available for the ESP32-Solo1<br>
 <br>
-Alternatively download the latest release from https://github.com/technyon/nuki_hub/releases<br>
+Alternatively download the latest release for your ESP32 model from https://github.com/technyon/nuki_hub/releases<br>
 Unpack the 7z archive and read the included readme.txt for installation instructions for either "Espressif Flash Download Tools" or "esptool".
 
 ## Initial setup (Network and MQTT)
@@ -150,6 +152,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 #### Nuki General Access Control
 - Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
+- Publish time control information: Enable to publish information about time control entries through MQTT, see the "Time control" section of this README
+- Add, modify and delete time control entries: Enable to allow configuration of time control entries through MQTT, see the "Time control" section of this README
 - Publish auth data: Enable to publish authorization data to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
 
 #### Nuki Lock/Opener Access Control
@@ -256,6 +260,10 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Keypad
 
 - See the "[Keypad control](#keypad-control-optional)" section of this README.
+
+### Time Control
+
+- See the "Time control" section of this README.
 
 ### Info
 
@@ -489,6 +497,30 @@ For example, to add a code:
 - write 1 to enabled
 - write "add" to action
 
+## Time control using JSON (optional)
+
+Time control entries can be added, updated and removed. This has to enabled first in the configuration portal. Check "Add, modify and delete time control entries" under "Access Level Configuration" and save the configuration.
+
+Information about current time control entries is published as JSON data to the "timecontrol/json" MQTT topic.<br>
+This needs to be enabled separately by checking "Publish time control entries information" under "Access Level Configuration" and saving the configuration.
+
+To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson` topic to a JSON formatted value containing the following nodes.
+
+| Node             | Delete   | Add      | Update   | Usage                                                                                    | Possible values                                                |
+|------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| action           | Required | Required | Required | The action to execute                                                                    | "delete", "add", "update"                                      |
+| entryId          | Required | Not used | Required | The entry ID of the existing entry to delete or update                                   | Integer                                                        |
+| enabled          | Not used | Not used | Optional | Enable or disable the entry, enabled if not set                                          | 1 = enabled, 0 = disabled                                      |
+| weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued                              | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
+| time             | Not used | Required | Required | The time on which the chosen lock action should be executed                              | "HH:MM"                                                        |
+| lockAction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time        | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM"                                                                      |
+
+Example usage:<br>
+Examples:
+- Delete: `{ "action": "delete", "entryId": "1234" }`
+- Add: `{ "action": "add", "weekdays": [ "wed", "thu", "fri" ], "time": "08:00", "lockAction": "Unlock" }`
+- Update: `{ "action": "update", "entryId": "1234", "enabled": "1", "weekdays": [ "mon", "tue", "sat", "sun" ], "time": "08:00", "lockAction": "Lock" }`
+
 ## GPIO lock control (optional)
 
 The lock can be controlled via GPIO.<br>
@@ -567,6 +599,7 @@ Reported as working are:
 - [M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)
 - ESP32-WROOM-32D (DEVKIT V4)
 - ESP32-WROOM-32E
+- ESP32-S3-WROOM-1
 
 For more information check the related issue: https://github.com/technyon/nuki_hub/issues/39
 

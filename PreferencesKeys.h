@@ -49,6 +49,8 @@
 #define preference_access_level "accLvl"
 #define preference_keypad_info_enabled "kpInfoEnabled"
 #define preference_keypad_control_enabled "kpCntrlEnabled"
+#define preference_timecontrol_control_enabled "tcCntrlEnabled"
+#define preference_timecontrol_info_enabled "tcInfoEnabled"
 #define preference_publish_authdata "pubAuth"
 #define preference_acl "aclLckOpn"
 #define preference_conf_lock_basic_acl "confLckBasAcl"
@@ -82,9 +84,10 @@ private:
             preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
             preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval,
             preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
-            preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
+            preference_restart_ble_beacon_lost, preference_query_interval_lockstate, 
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
             preference_keypad_control_enabled, preference_keypad_info_enabled, preference_acl,
+            preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
             preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl, preference_conf_opener_advanced_acl,
             preference_access_level, preference_register_as_app, preference_command_nr_of_retries,
             preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
@@ -102,7 +105,7 @@ private:
     {
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled,
-            preference_register_as_app, preference_ip_dhcp_enabled,
+            preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled
     };
 
@@ -135,56 +138,56 @@ private:
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getChar(key)) : String(preferences->getChar(key)));
+        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getChar(key)) : String(preferences->getChar(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt8(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getUChar(key)) : String(preferences->getUChar(key)));
+        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUChar(key)) : String(preferences->getUChar(key)));
         s.concat("\n");
     }
     const void appendPreferenceInt16(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getShort(key)) : String(preferences->getShort(key)));
+        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getShort(key)) : String(preferences->getShort(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt16(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getUShort(key)) : String(preferences->getUShort(key)));
+        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUShort(key)) : String(preferences->getUShort(key)));
         s.concat("\n");
     }
     const void appendPreferenceInt32(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getInt(key)) : String(preferences->getInt(key)));
+        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getInt(key)) : String(preferences->getInt(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt32(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getUInt(key)) : String(preferences->getUInt(key)));
+        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUInt(key)) : String(preferences->getUInt(key)));
         s.concat("\n");
     }
     const void appendPreferenceInt64(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getLong64(key)) : String(preferences->getLong64(key)));
+        s.concat(isRedacted(key) ? redact((const int64_t)preferences->getLong64(key)) : String(preferences->getLong64(key)));
         s.concat("\n");
     }
     const void appendPreferenceUInt64(Preferences *preferences, String& s, const char* description, const char* key)
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getULong64(key)) : String(preferences->getULong64(key)));
+        s.concat(isRedacted(key) ? redact((const uint64_t)preferences->getULong64(key)) : String(preferences->getULong64(key)));
         s.concat("\n");
     }
     const void appendPreferenceBool(Preferences *preferences, String& s, const char* description, const char* key)
@@ -198,7 +201,7 @@ private:
     {
         s.concat(description);
         s.concat(": ");
-        s.concat(isRedacted(key) ? redact(preferences->getString(key)) : preferences->getString(key));
+        s.concat(isRedacted(key) ? redact((const String)preferences->getString(key)) : preferences->getString(key));
         s.concat("\n");
     }
 
