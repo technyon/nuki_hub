@@ -508,7 +508,7 @@ void NukiOpenerWrapper::updateKeypad()
     {
         std::list<NukiLock::KeypadEntry> entries;
         _nukiOpener.getKeypadEntries(&entries);
-        
+
         Log->print(F("Opener keypad codes: "));
         Log->println(entries.size());
 
@@ -552,7 +552,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
     {
         std::list<NukiOpener::TimeControlEntry> timeControlEntries;
         _nukiOpener.getTimeControlEntries(&timeControlEntries);
-        
+
         Log->print(F("Opener time control entries: "));
         Log->println(timeControlEntries.size());
 
@@ -593,14 +593,18 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
 {
     NukiOpener::LockAction action;
 
-    if(strlen(value) > 0)
+    if(value)
     {
-        action = nukiOpenerInst->lockActionToEnum(value);
-
-        if((int)action == 0xff)
+        if(strlen(value) > 0)
         {
-            return LockActionResult::UnknownAction;
+            action = nukiOpenerInst->lockActionToEnum(value);
+
+            if((int)action == 0xff)
+            {
+                return LockActionResult::UnknownAction;
+            }
         }
+        else return LockActionResult::UnknownAction;
     }
     else return LockActionResult::UnknownAction;
 
@@ -803,7 +807,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         if(json[basicKeys[i]])
         {
             const char *jsonchar = json[basicKeys[i]].as<const char*>();
-            
+
             if(strlen(jsonchar) == 0)
             {
                 jsonResult[basicKeys[i]] = "noValueSet";
@@ -984,7 +988,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         if(json[advancedKeys[i]])
         {
             const char *jsonchar = json[advancedKeys[i]].as<const char*>();
-            
+
             if(strlen(jsonchar) == 0)
             {
                 jsonResult[advancedKeys[i]] = "noValueSet";
@@ -1420,7 +1424,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
         _network->publishKeypadJsonCommandResult("configNotReady");
         return;
     }
-    
+
     if(!_keypadEnabled)
     {
         _network->publishKeypadJsonCommandResult("keypadDisabled");
@@ -1503,7 +1507,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             unsigned int allowedUntilTimeAr[2];
             uint8_t allowedWeekdaysInt = 0;
 
-            if(timeLimited == 1 && enabled != 0)
+            if(timeLimited == 1)
             {
                 if(allowedFrom)
                 {
@@ -1655,6 +1659,18 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             }
             else if (strcmp(action, "update") == 0)
             {
+                if(!codeId)
+                {
+                    _network->publishKeypadJsonCommandResult("noCodeIdSet");
+                    return;
+                }
+
+                if(!idExists)
+                {
+                    _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                    return;
+                }
+
                 NukiOpener::UpdatedKeypadEntry entry;
                 memset(&entry, 0, sizeof(entry));
                 entry.codeId = codeId;
@@ -1759,9 +1775,8 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
     const char *lockAct = json["lockAction"].as<const char*>();
     NukiOpener::LockAction timeControlLockAction;
 
-    if(strlen(lockAct) > 0)
+    if(lockAct)
     {
-
         timeControlLockAction = nukiOpenerInst->lockActionToEnum(lockAct);
 
         if((int)timeControlLockAction == 0xff)
@@ -1769,11 +1784,6 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
             _network->publishTimeControlCommandResult("invalidLockAction");
             return;
         }
-    }
-    else
-    {
-        _network->publishTimeControlCommandResult("invalidLockAction");
-        return;
     }
 
     if(action)
@@ -1859,6 +1869,12 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
             }
             else if (strcmp(action, "update") == 0)
             {
+                if(!idExists)
+                {
+                    _network->publishTimeControlCommandResult("noExistingEntryIdSet");
+                    return;
+                }
+
                 NukiOpener::TimeControlEntry entry;
                 memset(&entry, 0, sizeof(entry));
                 entry.entryId = entryId;

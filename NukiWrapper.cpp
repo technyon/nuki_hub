@@ -575,17 +575,21 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
     NukiLock::LockAction action;
     
-    if(strlen(value) > 0)
+    if(value)
     {
-        action = nukiInst->lockActionToEnum(value);
-        
-        if((int)action == 0xff)
+        if(strlen(value) > 0)
         {
-            return LockActionResult::UnknownAction;
+            action = nukiInst->lockActionToEnum(value);
+            
+            if((int)action == 0xff)
+            {
+                return LockActionResult::UnknownAction;
+            }
         }
+        else return LockActionResult::UnknownAction;
     }
     else return LockActionResult::UnknownAction;
-
+        
     nukiLockPreferences = new Preferences();
     nukiLockPreferences->begin("nukihub", true);
     uint32_t aclPrefs[17];
@@ -1490,7 +1494,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             unsigned int allowedUntilTimeAr[2];
             uint8_t allowedWeekdaysInt = 0;
 
-            if(timeLimited == 1 && enabled != 0)
+            if(timeLimited == 1)
             {
                 if(allowedFrom)
                 {
@@ -1642,6 +1646,18 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             }
             else if (strcmp(action, "update") == 0)
             {
+                if(!codeId)
+                {
+                    _network->publishKeypadJsonCommandResult("noCodeIdSet");
+                    return;
+                }
+                
+                if(!idExists)
+                {
+                    _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                    return;
+                }
+                
                 NukiLock::UpdatedKeypadEntry entry;
                 memset(&entry, 0, sizeof(entry));
                 entry.codeId = codeId;
@@ -1746,9 +1762,8 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
     const char *lockAct = json["lockAction"].as<const char*>();
     NukiLock::LockAction timeControlLockAction;
 
-    if(strlen(lockAct) > 0)
+    if(lockAct)
     {
-
         timeControlLockAction = nukiInst->lockActionToEnum(lockAct);
 
         if((int)timeControlLockAction == 0xff)
@@ -1757,12 +1772,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
             return;
         }
     }
-    else
-    {
-        _network->publishTimeControlCommandResult("invalidLockAction");
-        return;
-    }
-
+    
     if(action)
     {
         bool idExists = false;
@@ -1846,6 +1856,12 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
             }
             else if (strcmp(action, "update") == 0)
             {
+                if(!idExists)
+                {
+                    _network->publishTimeControlCommandResult("noExistingEntryIdSet");
+                    return;
+                }
+                
                 NukiLock::TimeControlEntry entry;
                 memset(&entry, 0, sizeof(entry));
                 entry.entryId = entryId;

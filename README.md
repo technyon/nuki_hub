@@ -15,10 +15,12 @@ Feel free to join us on Discord: https://discord.gg/feB9FnMY
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- All dual-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 should work. Tested builds are provided for the ESP32 and ESP32-S3.
-- Single-core ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 might work. Untested builds are provided for the ESP32-C3 and ESP32-Solo1.
+- All ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 should work. Tested builds are provided for the ESP32, ESP32-S3 and ESP32-C3.
+- Untested builds are provided for the ESP32-Solo1.
+
+<b>Not supported ESP32 devices:</b>
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
-- The ESP32-C6 and ESP32-H2 are not supported by Arduino Core 2.0.15 as such can't run Nuki Hub (at this time).
+- The ESP32-C6 and ESP32-H2 are not supported by Arduino Core 2.0.15 and as such Nuki Hub is not compiled against these targets (at this time).
 
 <b>Supported Nuki devices:</b>
 - Nuki Smart Lock 1.0
@@ -438,21 +440,20 @@ For security reasons, the code itself is not published.
 
 To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to a JSON formatted value containing the following nodes.
 
-| Node             | Delete   | Add      | Update   | Usage                                                                                    | Possible values                                                |
-|------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| action           | Required | Required | Required | The action to execute                                                                    | "delete", "add", "update"                                      |
-| codeId           | Required | Not used | Required | The code ID of the existing code to delete or update                                     | Integer                                                        |
-| code             | Not used | Required | Required | The code to create or update                                                             | 6-digit Integer without zero's                                 |
-| enabled          | Not used | Not used | Optional | Enable or disable the code, enabled if not set                                           | 1 = enabled, 0 = disabled                                      |
-| name             | Not used | Required | Required | The name of the code to create or update                                                 | String, max 20 chars                                           |
-| timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, disabled if not set | 1 = enabled, 0 = disabled                                      |
-| allowedFrom      | Not used | Optional | Optional | The start timestamp from which access should be allowed (requires timeLimited = 1)       | "YYYY-MM-DD HH:MM:SS"                                          |
-| allowedUntil     | Not used | Optional | Optional | The end timestamp until access should be allowed (requires timeLimited = 1)              | "YYYY-MM-DD HH:MM:SS"                                          |
-| allowedWeekdays  | Not used | Optional | Optional | Allowed weekdays on which access should be allowed (requires timeLimited = 1)            | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
-| allowedFromTime  | Not used | Optional | Optional | The start time per day from which access should be allowed (requires timeLimited = 1)    | "HH:MM"                                                        |
-| allowedUntilTime | Not used | Optional | Optional | The end time per day until access should be allowed (requires timeLimited = 1)           | "HH:MM"                                                        |
+| Node             | Delete   | Add      | Update   | Usage                                                                                                            | Possible values                        |
+|------------------|----------|----------|----------|------------------------------------------------------------------------------------------------------------------|----------------------------------------|
+| action           | Required | Required | Required | The action to execute                                                                                            | "delete", "add", "update"              |
+| codeId           | Required | Not used | Required | The code ID of the existing code to delete or update                                                             | Integer                                |
+| code             | Not used | Required | Required | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
+| enabled          | Not used | Not used | Optional | Enable or disable the code, always enabled on add, disabled if not set on update                                 | 1 = enabled, 0 = disabled              |
+| name             | Not used | Required | Required | The name of the code to create or update                                                                         | String, max 20 chars                   |
+| timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, disabled if not set (requires enabled = 1)  | 1 = enabled, 0 = disabled              |
+| allowedFrom      | Not used | Optional | Optional | The start timestamp from which access should be allowed (requires enabled = 1 and timeLimited = 1)               | "YYYY-MM-DD HH:MM:SS"                  |
+| allowedUntil     | Not used | Optional | Optional | The end timestamp until access should be allowed (requires enabled = 1 and timeLimited = 1)                      | "YYYY-MM-DD HH:MM:SS"                  |
+| allowedWeekdays  | Not used | Optional | Optional | Weekdays on which access should be allowed (requires enabled = 1 and timeLimited = 1)     | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun"|
+| allowedFromTime  | Not used | Optional | Optional | The start time per day from which access should be allowed (requires enabled = 1 and timeLimited = 1)            | "HH:MM"                                |
+| allowedUntilTime | Not used | Optional | Optional | The end time per day until access should be allowed (requires enabled = 1 and timeLimited = 1)                   | "HH:MM"                                |
 
-Example usage:<br>
 Examples:
 - Delete: `{ "action": "delete", "codeId": "1234" }`
 - Add: `{ "action": "add", "code": "589472", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "wed", "thu", "fri" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
@@ -510,12 +511,11 @@ To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson
 |------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | action           | Required | Required | Required | The action to execute                                                                    | "delete", "add", "update"                                      |
 | entryId          | Required | Not used | Required | The entry ID of the existing entry to delete or update                                   | Integer                                                        |
-| enabled          | Not used | Not used | Optional | Enable or disable the entry, enabled if not set                                          | 1 = enabled, 0 = disabled                                      |
-| weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued                              | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
-| time             | Not used | Required | Required | The time on which the chosen lock action should be executed                              | "HH:MM"                                                        |
-| lockAction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time        | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM"                                                                      |
+| enabled          | Not used | Not used | Optional | Enable or disable the entry, always enabled on add, disabled if not set on update        | 1 = enabled, 0 = disabled                                      |
+| weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued (requires enabled = 1)       | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
+| time             | Not used | Required | Required | The time on which the chosen lock action should be executed (requires enabled = 1)       | "HH:MM"                                                        |
+| lockAction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time (requires enabled = 1) | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM                                                            |
 
-Example usage:<br>
 Examples:
 - Delete: `{ "action": "delete", "entryId": "1234" }`
 - Add: `{ "action": "add", "weekdays": [ "wed", "thu", "fri" ], "time": "08:00", "lockAction": "Unlock" }`
