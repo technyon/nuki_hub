@@ -14,14 +14,10 @@ RUN cd ~/arduino* && \
 
 RUN git clone --recurse-submodules https://github.com/technyon/Arduino-CMake-Toolchain.git ~/Arduino-CMake-Toolchain
 
-COPY icon /usr/src/nuki_hub/icon
-COPY include /usr/src/nuki_hub/include
+COPY src /usr/src/nuki_hub/src
 COPY lib /usr/src/nuki_hub/lib
-COPY networkDevices /usr/src/nuki_hub/networkDevices
+COPY include /usr/src/nuki_hub/include
 COPY CMakeLists.txt /usr/src/nuki_hub
-COPY index.html /usr/src/nuki_hub
-COPY *.h /usr/src/nuki_hub/
-COPY *.cpp /usr/src/nuki_hub/
 
 RUN mkdir -p /usr/src/nuki_hub/build
 
