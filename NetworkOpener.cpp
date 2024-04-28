@@ -17,8 +17,6 @@ NetworkOpener::NetworkOpener(Network* network, Preferences* preferences, char* b
     _configTopics.push_back(mqtt_topic_config_led_enabled);
     _configTopics.push_back(mqtt_topic_config_sound_level);
 
-    memset(authName, 0, sizeof(authName));
-
     _network->registerMqttReceiver(this);
 }
 
@@ -297,8 +295,8 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
         publishBool(mqtt_topic_battery_critical, critical);
     }
 
-    json["auth_id"] = authId;
-    json["auth_name"] = authName;
+    json["auth_id"] = _authId;
+    json["auth_name"] = _authName;
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
@@ -359,8 +357,9 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 {
     char str[50];
 
-    bool authFound = false;
-    memset(authName, 0, sizeof(authName));
+    _authId = 0;
+    _authName = "";
+    _authFound = false;
 
     JsonDocument json;
 
@@ -373,11 +372,11 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         }
         --i;
 
-        if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction) && ! authFound)
+        if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction) && ! _authFound)
         {
-            authFound = true;
-            authId = log.authId;
-            memcpy(authName, log.name, sizeof(log.name));
+            _authFound = true;
+            _authId = log.authId;
+            _authName = (char*)log.name;
         }
 
         auto entry = json.add();
@@ -475,10 +474,10 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_log, _buffer);
 
-    if(authFound)
+    if(_authFound)
     {
-        publishUInt(mqtt_topic_lock_auth_id, authId);
-        publishString(mqtt_topic_lock_auth_name, authName);
+        publishUInt(mqtt_topic_lock_auth_id, _authId);
+        publishString(mqtt_topic_lock_auth_name, _authName);
     }
 }
 
