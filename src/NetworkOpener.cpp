@@ -17,6 +17,8 @@ NetworkOpener::NetworkOpener(Network* network, Preferences* preferences, char* b
     _configTopics.push_back(mqtt_topic_config_led_enabled);
     _configTopics.push_back(mqtt_topic_config_sound_level);
 
+    memset(authName, 0, sizeof(authName));
+
     _network->registerMqttReceiver(this);
 }
 
