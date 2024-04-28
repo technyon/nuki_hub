@@ -21,6 +21,8 @@ NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffe
     _configTopics.push_back(mqtt_topic_config_auto_lock);
     _configTopics.push_back(mqtt_topic_config_single_lock);
 
+    memset(authName, 0, sizeof(authName));
+
     _network->registerMqttReceiver(this);
 }
 
