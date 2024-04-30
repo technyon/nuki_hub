@@ -1170,7 +1170,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:led-variant-on" },
                            { "pl_on", "{ \"ledEnabled\": \"1\"}" },
                            { "pl_off", "{ \"ledEnabled\": \"0\"}" },
@@ -1199,7 +1199,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:radiobox-marked" },
                            { "pl_on", "{ \"buttonEnabled\": \"1\"}" },
                            { "pl_off", "{ \"buttonEnabled\": \"0\"}" },
@@ -1228,7 +1228,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"autoLockEnabled\": \"1\"}" },
                            { "pl_off", "{ \"autoLockEnabled\": \"0\"}" },
                            { "val_tpl", "{{value_json.autoLockEnabled}}" },
@@ -1256,7 +1256,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"autoUnLockDisabled\": \"0\"}" },
                            { "pl_off", "{ \"autoUnLockDisabled\": \"1\"}" },
                            { "val_tpl", "{{value_json.autoUnLockDisabled}}" },
@@ -1284,7 +1284,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"singleLock\": \"0\"}" },
                            { "pl_off", "{ \"singleLock\": \"1\"}" },
                            { "val_tpl", "{{value_json.singleLock}}" },
@@ -1326,7 +1326,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:brightness-6" },
                            { "cmd_tpl", "{ \"ledBrightness\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.ledBrightness}}" },
@@ -1354,7 +1354,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"autoUnlatch\": \"1\"}" },
                            { "pl_off", "{ \"autoUnlatch\": \"0\"}" },
                            { "val_tpl", "{{value_json.autoUnlatch}}" },
@@ -1382,7 +1382,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"pairingEnabled\": \"1\"}" },
                            { "pl_off", "{ \"pairingEnabled\": \"0\"}" },
                            { "val_tpl", "{{value_json.pairingEnabled}}" },
@@ -1409,7 +1409,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:timer-cog-outline" },
                            { "cmd_tpl", "{ \"timeZoneOffset\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.timeZoneOffset}}" },
@@ -1437,7 +1437,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"dstMode\": \"1\"}" },
                            { "pl_off", "{ \"dstMode\": \"0\"}" },
                            { "val_tpl", "{{value_json.dstMode}}" },
@@ -1452,7 +1452,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)basicLockConfigAclPrefs[10] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_fob_action_1", "Fob action 1", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction1}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction1\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_fob_action_1", "Fob action 1", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction1}}" }, { "en", "true" }, { "cmd_tpl", "{ \"fobAction1\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Unlock";
         json["options"][2] = "Lock";
@@ -1470,7 +1470,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)basicLockConfigAclPrefs[11] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_fob_action_2", "Fob action 2", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction2}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction2\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_fob_action_2", "Fob action 2", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction2}}" }, { "en", "true" }, { "cmd_tpl", "{ \"fobAction2\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Unlock";
         json["options"][2] = "Lock";
@@ -1488,7 +1488,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)basicLockConfigAclPrefs[12] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_fob_action_3", "Fob action 3", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction3}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction3\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_fob_action_3", "Fob action 3", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction3}}" }, { "en", "true" }, { "cmd_tpl", "{ \"fobAction3\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Unlock";
         json["options"][2] = "Lock";
@@ -1506,7 +1506,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)basicLockConfigAclPrefs[14] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_advertising_mode", "Advertising mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.advertisingMode}}" }, { "en", "false" }, { "cmd_tpl", "{ \"advertisingMode\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_advertising_mode", "Advertising mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.advertisingMode}}" }, { "en", "true" }, { "cmd_tpl", "{ \"advertisingMode\": \"{{ value }}\" }" }});
         json["options"][0] = "Automatic";
         json["options"][1] = "Normal";
         json["options"][2] = "Slow";
@@ -1523,7 +1523,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)basicLockConfigAclPrefs[15] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_timezone", "Timezone", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.timeZone}}" }, { "en", "false" }, { "cmd_tpl", "{ \"timeZone\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_timezone", "Timezone", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.timeZone}}" }, { "en", "true" }, { "cmd_tpl", "{ \"timeZone\": \"{{ value }}\" }" }});
         json["options"][0] = "Africa/Cairo";
         json["options"][1] = "Africa/Lagos";
         json["options"][2] = "Africa/Maputo";
@@ -1596,7 +1596,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"unlockedPositionOffsetDegrees\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.unlockedPositionOffsetDegrees}}" },
                            { "min", "-90" },
@@ -1622,7 +1622,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"lockedPositionOffsetDegrees\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.lockedPositionOffsetDegrees}}" },
                            { "min", "-180" },
@@ -1648,7 +1648,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"singleLockedPositionOffsetDegrees\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.singleLockedPositionOffsetDegrees}}" },
                            { "min", "-180" },
@@ -1674,7 +1674,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"unlockedToLockedTransitionOffsetDegrees\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.unlockedToLockedTransitionOffsetDegrees}}" },
                            { "min", "-180" },
@@ -1700,7 +1700,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"lockNgoTimeout\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.lockNgoTimeout}}" },
                            { "min", "5" },
@@ -1714,7 +1714,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)advancedLockConfigAclPrefs[5] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_single_button_press_action", "Single button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.singleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"singleButtonPressAction\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_single_button_press_action", "Single button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.singleButtonPressAction}}" }, { "en", "true" }, { "cmd_tpl", "{ \"singleButtonPressAction\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Intelligent";
         json["options"][2] = "Unlock";
@@ -1734,7 +1734,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)advancedLockConfigAclPrefs[6] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_double_button_press_action", "Double button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doubleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"doubleButtonPressAction\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_double_button_press_action", "Double button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doubleButtonPressAction}}" }, { "en", "true" }, { "cmd_tpl", "{ \"doubleButtonPressAction\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Intelligent";
         json["options"][2] = "Unlock";
@@ -1767,7 +1767,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"detachedCylinder\": \"1\"}" },
                            { "pl_off", "{ \"detachedCylinder\": \"0\"}" },
                            { "val_tpl", "{{value_json.detachedCylinder}}" },
@@ -1782,7 +1782,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     if((int)advancedLockConfigAclPrefs[8] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.batteryType}}" }, { "en", "false" }, { "cmd_tpl", "{ \"batteryType\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.batteryType}}" }, { "en", "true" }, { "cmd_tpl", "{ \"batteryType\": \"{{ value }}\" }" }});
         json["options"][0] = "Alkali";
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
@@ -1811,7 +1811,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"automaticBatteryTypeDetection\": \"1\"}" },
                            { "pl_off", "{ \"automaticBatteryTypeDetection\": \"0\"}" },
                            { "val_tpl", "{{value_json.automaticBatteryTypeDetection}}" },
@@ -1838,7 +1838,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"unlatchDuration\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.unlatchDuration}}" },
                            { "min", "1" },
@@ -1864,7 +1864,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"autoLockTimeOut\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.autoLockTimeOut}}" },
                            { "min", "30" },
@@ -1891,7 +1891,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"nightModeEnabled\": \"1\"}" },
                            { "pl_off", "{ \"nightModeEnabled\": \"0\"}" },
                            { "val_tpl", "{{value_json.nightModeEnabled}}" },
@@ -1919,7 +1919,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pattern", "([0-1][0-9]|2[0-3]):[0-5][0-9]" },
                            { "cmd_tpl", "{ \"nightModeStartTime\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.nightModeStartTime}}" },
@@ -1947,7 +1947,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pattern", "([0-1][0-9]|2[0-3]):[0-5][0-9]" },
                            { "cmd_tpl", "{ \"nightModeEndTime\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.nightModeEndTime}}" },
@@ -1975,7 +1975,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"nightModeAutoLockEnabled\": \"1\"}" },
                            { "pl_off", "{ \"nightModeAutoLockEnabled\": \"0\"}" },
                            { "val_tpl", "{{value_json.nightModeAutoLockEnabled}}" },
@@ -2003,7 +2003,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"nightModeAutoUnlockDisabled\": \"0\"}" },
                            { "pl_off", "{ \"nightModeAutoUnlockDisabled\": \"1\"}" },
                            { "val_tpl", "{{value_json.nightModeAutoUnlockDisabled}}" },
@@ -2031,7 +2031,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"nightModeImmediateLockOnStart\": \"1\"}" },
                            { "pl_off", "{ \"nightModeImmediateLockOnStart\": \"0\"}" },
                            { "val_tpl", "{{value_json.nightModeImmediateLockOnStart}}" },
@@ -2059,7 +2059,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"immediateAutoLockEnabled\": \"1\"}" },
                            { "pl_off", "{ \"immediateAutoLockEnabled\": \"0\"}" },
                            { "val_tpl", "{{value_json.immediateAutoLockEnabled}}" },
@@ -2087,7 +2087,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"autoUpdateEnabled\": \"1\"}" },
                            { "pl_off", "{ \"autoUpdateEnabled\": \"0\"}" },
                            { "val_tpl", "{{value_json.autoUpdateEnabled}}" },
@@ -2169,7 +2169,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:led-variant-on" },
                            { "pl_on", "{ \"ledEnabled\": \"1\"}" },
                            { "pl_off", "{ \"ledEnabled\": \"0\"}" },
@@ -2198,7 +2198,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:radiobox-marked" },
                            { "pl_on", "{ \"buttonEnabled\": \"1\"}" },
                            { "pl_off", "{ \"buttonEnabled\": \"0\"}" },
@@ -2242,7 +2242,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "",
                          String("~") + mqtt_topic_lock_action,
-                         {{ "en", "false" },
+                         {{ "en", "true" },
                           {"stat_on", "on"},
                           {"stat_off", "off"},
                           {"pl_on", "activateCM"},
@@ -2292,7 +2292,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:volume-source" },
                            { "cmd_tpl", "{ \"soundLevel\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.soundLevel}}" },
@@ -2322,7 +2322,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"pairingEnabled\": \"1\"}" },
                            { "pl_off", "{ \"pairingEnabled\": \"0\"}" },
                            { "val_tpl", "{{value_json.pairingEnabled}}" },
@@ -2349,7 +2349,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "ic", "mdi:timer-cog-outline" },
                            { "cmd_tpl", "{ \"timeZoneOffset\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.timeZoneOffset}}" },
@@ -2377,7 +2377,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"dstMode\": \"1\"}" },
                            { "pl_off", "{ \"dstMode\": \"0\"}" },
                            { "val_tpl", "{{value_json.dstMode}}" },
@@ -2392,7 +2392,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)basicOpenerConfigAclPrefs[8] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_fob_action_1", "Fob action 1", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction1}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction1\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_fob_action_1", "Fob action 1", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction1}}" }, { "en", "true" }, { "cmd_tpl", "{ \"fobAction1\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Toggle RTO";
         json["options"][2] = "Activate RTO";
@@ -2411,7 +2411,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)basicOpenerConfigAclPrefs[9] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_fob_action_2", "Fob action 2", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction2}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction2\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_fob_action_2", "Fob action 2", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction2}}" }, { "en", "true" }, { "cmd_tpl", "{ \"fobAction2\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Toggle RTO";
         json["options"][2] = "Activate RTO";
@@ -2430,7 +2430,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)basicOpenerConfigAclPrefs[10] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_fob_action_3", "Fob action 3", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction3}}" }, { "en", "false" }, { "cmd_tpl", "{ \"fobAction3\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_fob_action_3", "Fob action 3", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.fobAction3}}" }, { "en", "true" }, { "cmd_tpl", "{ \"fobAction3\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Toggle RTO";
         json["options"][2] = "Activate RTO";
@@ -2449,7 +2449,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)basicOpenerConfigAclPrefs[12] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_advertising_mode", "Advertising mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.advertisingMode}}" }, { "en", "false" }, { "cmd_tpl", "{ \"advertisingMode\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_advertising_mode", "Advertising mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.advertisingMode}}" }, { "en", "true" }, { "cmd_tpl", "{ \"advertisingMode\": \"{{ value }}\" }" }});
         json["options"][0] = "Automatic";
         json["options"][1] = "Normal";
         json["options"][2] = "Slow";
@@ -2466,7 +2466,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)basicOpenerConfigAclPrefs[13] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_timezone", "Timezone", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.timeZone}}" }, { "en", "false" }, { "cmd_tpl", "{ \"timeZone\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_timezone", "Timezone", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.timeZone}}" }, { "en", "true" }, { "cmd_tpl", "{ \"timeZone\": \"{{ value }}\" }" }});
         json["options"][0] = "Africa/Cairo";
         json["options"][1] = "Africa/Lagos";
         json["options"][2] = "Africa/Maputo";
@@ -2527,7 +2527,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)basicOpenerConfigAclPrefs[11] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_operating_mode", "Operating mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.operatingMode}}" }, { "en", "false" }, { "cmd_tpl", "{ \"operatingMode\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_operating_mode", "Operating mode", name, baseTopic, String("~") + mqtt_topic_config_basic_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.operatingMode}}" }, { "en", "true" }, { "cmd_tpl", "{ \"operatingMode\": \"{{ value }}\" }" }});
         json["options"][0] = "Generic door opener";
         json["options"][1] = "Analogue intercom";
         json["options"][2] = "Digital intercom";
@@ -2569,7 +2569,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"busModeSwitch\": \"1\"}" },
                            { "pl_off", "{ \"busModeSwitch\": \"0\"}" },
                            { "val_tpl", "{{value_json.busModeSwitch}}" },
@@ -2596,7 +2596,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"shortCircuitDuration\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.shortCircuitDuration}}" },
                            { "min", "0" }});
@@ -2621,7 +2621,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"electricStrikeDelay\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.electricStrikeDelay}}" },
                            { "min", "0" },
@@ -2649,7 +2649,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"randomElectricStrikeDelay\": \"1\"}" },
                            { "pl_off", "{ \"randomElectricStrikeDelay\": \"0\"}" },
                            { "val_tpl", "{{value_json.randomElectricStrikeDelay}}" },
@@ -2676,7 +2676,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"electricStrikeDuration\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.electricStrikeDuration}}" },
                            { "min", "1000" },
@@ -2704,7 +2704,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"disableRtoAfterRing\": \"1\"}" },
                            { "pl_off", "{ \"disableRtoAfterRing\": \"0\"}" },
                            { "val_tpl", "{{value_json.disableRtoAfterRing}}" },
@@ -2731,7 +2731,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"rtoTimeout\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.rtoTimeout}}" },
                            { "min", "5" },
@@ -2745,7 +2745,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[8] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_doorbell_suppression", "Doorbell suppression", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doorbellSuppression}}" }, { "en", "false" }, { "cmd_tpl", "{ \"doorbellSuppression\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_doorbell_suppression", "Doorbell suppression", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doorbellSuppression}}" }, { "en", "true" }, { "cmd_tpl", "{ \"doorbellSuppression\": \"{{ value }}\" }" }});
         json["options"][0] = "Off";
         json["options"][1] = "CM";
         json["options"][2] = "RTO";
@@ -2778,7 +2778,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "cmd_tpl", "{ \"doorbellSuppressionDuration\": \"{{ value }}\" }" },
                            { "val_tpl", "{{value_json.doorbellSuppressionDuration}}" },
                            { "min", "500" },
@@ -2793,7 +2793,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[10] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_sound_ring", "Sound ring", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundRing}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundRing\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_sound_ring", "Sound ring", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundRing}}" }, { "en", "true" }, { "cmd_tpl", "{ \"soundRing\": \"{{ value }}\" }" }});
         json["options"][0] = "No Sound";
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
@@ -2810,7 +2810,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[11] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_sound_open", "Sound open", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundOpen}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundOpen\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_sound_open", "Sound open", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundOpen}}" }, { "en", "true" }, { "cmd_tpl", "{ \"soundOpen\": \"{{ value }}\" }" }});
         json["options"][0] = "No Sound";
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
@@ -2827,7 +2827,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[12] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_sound_rto", "Sound RTO", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundRto}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundRto\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_sound_rto", "Sound RTO", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundRto}}" }, { "en", "true" }, { "cmd_tpl", "{ \"soundRto\": \"{{ value }}\" }" }});
         json["options"][0] = "No Sound";
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
@@ -2844,7 +2844,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[13] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_sound_cm", "Sound CM", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundCm}}" }, { "en", "false" }, { "cmd_tpl", "{ \"soundCm\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_sound_cm", "Sound CM", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.soundCm}}" }, { "en", "true" }, { "cmd_tpl", "{ \"soundCm\": \"{{ value }}\" }" }});
         json["options"][0] = "No Sound";
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
@@ -2874,7 +2874,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"soundConfirmation\": \"1\"}" },
                            { "pl_off", "{ \"soundConfirmation\": \"0\"}" },
                            { "val_tpl", "{{value_json.soundConfirmation}}" },
@@ -2889,7 +2889,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[16] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_single_button_press_action", "Single button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.singleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"singleButtonPressAction\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_single_button_press_action", "Single button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.singleButtonPressAction}}" }, { "en", "true" }, { "cmd_tpl", "{ \"singleButtonPressAction\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Toggle RTO";
         json["options"][2] = "Activate RTO";
@@ -2910,7 +2910,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[17] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_double_button_press_action", "Double button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doubleButtonPressAction}}" }, { "en", "false" }, { "cmd_tpl", "{ \"doubleButtonPressAction\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_double_button_press_action", "Double button press action", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.doubleButtonPressAction}}" }, { "en", "true" }, { "cmd_tpl", "{ \"doubleButtonPressAction\": \"{{ value }}\" }" }});
         json["options"][0] = "No Action";
         json["options"][1] = "Toggle RTO";
         json["options"][2] = "Activate RTO";
@@ -2931,7 +2931,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     if((int)advancedOpenerConfigAclPrefs[18] == 1)
     {
         JsonDocument json;
-        json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.batteryType}}" }, { "en", "false" }, { "cmd_tpl", "{ \"batteryType\": \"{{ value }}\" }" }});
+        json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ "val_tpl", "{{value_json.batteryType}}" }, { "en", "true" }, { "cmd_tpl", "{ \"batteryType\": \"{{ value }}\" }" }});
         json["options"][0] = "Alkali";
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
@@ -2960,7 +2960,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                          "",
                          "config",
                          String("~") + mqtt_topic_config_action,
-                         { { "en", "false" },
+                         { { "en", "true" },
                            { "pl_on", "{ \"automaticBatteryTypeDetection\": \"1\"}" },
                            { "pl_off", "{ \"automaticBatteryTypeDetection\": \"0\"}" },
                            { "val_tpl", "{{value_json.automaticBatteryTypeDetection}}" },
