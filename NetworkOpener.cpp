@@ -12,6 +12,8 @@ NetworkOpener::NetworkOpener(Network* network, Preferences* preferences, char* b
           _buffer(buffer),
           _bufferSize(bufferSize)
 {
+
+    memset(authName, 0, sizeof(authName));
     _network->registerMqttReceiver(this);
 }
 

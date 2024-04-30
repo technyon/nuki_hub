@@ -13,6 +13,8 @@ NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffe
   _buffer(buffer),
   _bufferSize(bufferSize)
 {
+
+    memset(authName, 0, sizeof(authName));
     _network->registerMqttReceiver(this);
 }
 
