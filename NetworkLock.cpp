@@ -389,7 +389,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
         {
             authFound = true;
             authId = log.authId;
-            memcpy(authName, log.name, sizeof(log.name));
+            strncpy(authName, (char*)log.name, sizeof(log.name));
         }
 
         auto entry = json.add();

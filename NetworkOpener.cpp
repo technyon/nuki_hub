@@ -377,7 +377,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         {
             authFound = true;
             authId = log.authId;
-            memcpy(authName, log.name, sizeof(log.name));
+            strncpy(authName, (char*)log.name, sizeof(log.name));
         }
 
         auto entry = json.add();
