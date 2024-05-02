@@ -4,6 +4,7 @@
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../MqttTopics.h"
+#include "sdkconfig.h"
 
 W5500Device::W5500Device(const String &hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, int variant)
 : NetworkDevice(hostname, ipConfiguration),
@@ -48,7 +49,11 @@ void W5500Device::initialize()
     {
         case W5500Variant::M5StackAtomPoe:
             _resetPin = -1;
+            #if defined(CONFIG_IDF_TARGET_ESP32S3)
+            Ethernet.init(6, 5, 7, 8);
+            #else
             Ethernet.init(19, 22, 23, 33);
+            #endif
             break;
         default:
             _resetPin = -1;
