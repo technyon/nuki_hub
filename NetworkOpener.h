@@ -87,7 +87,7 @@ private:
     unsigned long _resetRingStateTs = 0;
     uint8_t _queryCommands = 0;
     uint32_t _authId = 0;
-    String _authName = "";
+    char _authName[33];
     bool _authFound = false;
 
     NukiOpener::LockState _currentLockState = NukiOpener::LockState::Undefined;

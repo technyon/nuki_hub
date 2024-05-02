@@ -20,6 +20,9 @@ NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffe
     _configTopics.push_back(mqtt_topic_config_auto_unlock);
     _configTopics.push_back(mqtt_topic_config_auto_lock);
     _configTopics.push_back(mqtt_topic_config_single_lock);
+    
+    memset(_authName, 0, sizeof(_authName));
+    _authName[0] = '\0';
 
     _network->registerMqttReceiver(this);
 }
@@ -224,7 +227,7 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
 
         publishString(mqtt_topic_keypad_json_action, "--");
     }
-  
+
     if(comparePrefixedPath(topic, mqtt_topic_timecontrol_action))
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
@@ -325,7 +328,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     json["auth_id"] = _authId;
     json["auth_name"] = _authName;
-    
+
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
 
@@ -371,7 +374,8 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     char str[50];
 
     _authId = 0;
-    _authName = "";
+    memset(_authName, 0, sizeof(_authName));
+    _authName[0] = '\0';
     _authFound = false;
 
     JsonDocument json;
@@ -388,14 +392,16 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
         {
             _authFound = true;
             _authId = log.authId;
-            _authName = (char*)log.name;
+            int sizeName = sizeof(log.name);
+            memcpy(_authName, log.name, sizeName);
+            if(_authName[sizeName - 1] != '\0') _authName[sizeName] = '\0';
         }
 
         auto entry = json.add();
 
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
-        entry["authorizationName"] = log.name;
+        entry["authorizationName"] = _authName;
         entry["timeYear"] = log.timeStampYear;
         entry["timeMonth"] = log.timeStampMonth;
         entry["timeDay"] = log.timeStampDay;

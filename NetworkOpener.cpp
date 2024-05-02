@@ -16,6 +16,9 @@ NetworkOpener::NetworkOpener(Network* network, Preferences* preferences, char* b
     _configTopics.push_back(mqtt_topic_config_button_enabled);
     _configTopics.push_back(mqtt_topic_config_led_enabled);
     _configTopics.push_back(mqtt_topic_config_sound_level);
+    
+    memset(_authName, 0, sizeof(_authName));
+    _authName[0] = '\0';
 
     _network->registerMqttReceiver(this);
 }
@@ -358,7 +361,8 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     char str[50];
 
     _authId = 0;
-    _authName = "";
+    memset(_authName, 0, sizeof(_authName));
+    _authName[0] = '\0';
     _authFound = false;
 
     JsonDocument json;
@@ -376,14 +380,16 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         {
             _authFound = true;
             _authId = log.authId;
-            _authName = (char*)log.name;
+            int sizeName = sizeof(log.name);
+            memcpy(_authName, log.name, sizeName);
+            if(_authName[sizeName - 1] != '\0') _authName[sizeName] = '\0';
         }
 
         auto entry = json.add();
 
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
-        entry["authorizationName"] = log.name;
+        entry["authorizationName"] = _authName;
         entry["timeYear"] = log.timeStampYear;
         entry["timeMonth"] = log.timeStampMonth;
         entry["timeDay"] = log.timeStampDay;
