@@ -248,6 +248,7 @@ class WiFiManager
 {
   public:
     WiFiManager(Print& consolePort);
+    WiFiManager(const char* user, const char* password);
     WiFiManager();
     ~WiFiManager();
     void WiFiManagerInit();
@@ -411,6 +412,9 @@ class WiFiManager
 
     // if true (default) then stop the config portal from autoConnect when wifi is saved
     void          setDisableConfigPortal(boolean enable);
+    
+    // if true then find the AP with the best RSSI for the given SSID
+    void          setFindBestRSSI(boolean enabled);
 
     // set a custom hostname, sets sta and ap dhcp client id for esp32, and sta for esp8266
     bool          setHostname(const char * hostname);
@@ -593,6 +597,7 @@ class WiFiManager
     boolean       _showBack               = false; // show back button
     boolean       _enableConfigPortal     = true;  // FOR autoconnect - start config portal if autoconnect failed
     boolean       _disableConfigPortal    = true;  // FOR autoconnect - stop config portal if cp wifi save
+    boolean       _findBestRSSI           = false; // find best rssi ap in wifiscan
     String        _hostname               = "";    // hostname for esp8266 for dhcp, and or MDNS
 
     const char*   _customHeadElement      = ""; // store custom head element html from user isnide <head>
@@ -836,6 +841,10 @@ protected:
     std::function<void()> _resetcallback;
     std::function<void()> _preotaupdatecallback;
     std::function<void()> _configportaltimeoutcallback;
+    
+    bool _hasCredentials = false;
+    char _credUser[31] = {0};
+    char _credPassword[31] = {0};
 
     template <class T>
     auto optionalIPFromString(T *obj, const char *s) -> decltype(  obj->fromString(s)  ) {

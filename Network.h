@@ -67,6 +67,7 @@ public:
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
     bool encryptionSupported();
     const String networkDeviceName() const;
+    const String networkBSSID() const;
 
     const NetworkDeviceType networkDeviceType();
 

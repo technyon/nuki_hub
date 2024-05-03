@@ -35,6 +35,7 @@ public:
     int8_t signalStrength() override;
     
     String localIP() override;
+    String BSSIDstr() override;
 
 private:
     void onDisconnected();

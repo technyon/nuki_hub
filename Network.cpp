@@ -686,6 +686,11 @@ const String Network::networkDeviceName() const
     return _device->deviceName();
 }
 
+const String Network::networkBSSID() const
+{
+    return _device->BSSIDstr();
+}
+
 void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision)
 {
     char str[30];

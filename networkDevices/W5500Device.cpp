@@ -225,3 +225,8 @@ String W5500Device::localIP()
 {
     return Ethernet.localIP().toString();
 }
+
+String W5500Device::BSSIDstr()
+{
+    return "";
+}

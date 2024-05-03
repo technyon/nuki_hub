@@ -371,6 +371,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putString(preference_mqtt_hass_cu_url, value);
             configChanged = true;
         }
+        else if(key == "BESTRSSI")
+        {
+            _preferences->putBool(preference_find_best_rssi, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "HOSTNAME")
         {
             _preferences->putString(preference_hostname, value);
@@ -955,6 +960,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
     printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled));
+    printCheckBox(response, "BESTRSSI", "Connect to AP with the best signal in an environment with multiple APs with the same SSID", _preferences->getBool(preference_find_best_rssi));
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect));
@@ -1210,6 +1216,13 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat("Network device: ");
     response.concat(_network->networkDeviceName());
     response.concat("\n");
+    
+    if(_network->networkDeviceName() == "Built-in Wi-Fi")
+    {
+        response.concat("BSSID of AP: ");
+        response.concat(_network->networkBSSID());
+        response.concat("\n");
+    }
 
     response.concat("Uptime: ");
     response.concat(millis() / 1000 / 60);
