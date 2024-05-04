@@ -13,8 +13,9 @@ NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffe
   _buffer(buffer),
   _bufferSize(bufferSize)
 {
+    memset(_authName, 0, sizeof(_authName));
+    _authName[0] = '\0';
 
-    memset(authName, 0, sizeof(authName));
     _network->registerMqttReceiver(this);
 }
 
@@ -218,7 +219,7 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
 
         publishString(mqtt_topic_keypad_json_action, "--");
     }
-  
+
     if(comparePrefixedPath(topic, mqtt_topic_timecontrol_action))
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
@@ -317,8 +318,8 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
         }
     }
 
-    json["auth_id"] = authId;
-    json["auth_name"] = authName;
+    json["auth_id"] = _authId;
+    json["auth_name"] = _authName;
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
@@ -364,8 +365,10 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
 {
     char str[50];
 
-    bool authFound = false;
-    memset(authName, 0, sizeof(authName));
+    _authId = 0;
+    memset(_authName, 0, sizeof(_authName));
+    _authName[0] = '\0';
+    _authFound = false;
 
     JsonDocument json;
 
@@ -377,18 +380,20 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
             break;
         }
         --i;
-        if((log.loggingType == NukiLock::LoggingType::LockAction || log.loggingType == NukiLock::LoggingType::KeypadAction) && ! authFound)
+        if((log.loggingType == NukiLock::LoggingType::LockAction || log.loggingType == NukiLock::LoggingType::KeypadAction) && ! _authFound)
         {
-            authFound = true;
-            authId = log.authId;
-            memcpy(authName, log.name, sizeof(log.name));
+            _authFound = true;
+            _authId = log.authId;
+            int sizeName = sizeof(log.name);
+            memcpy(_authName, log.name, sizeName);
+            if(_authName[sizeName - 1] != '\0') _authName[sizeName] = '\0';
         }
 
         auto entry = json.add();
 
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
-        entry["authorizationName"] = log.name;
+        entry["authorizationName"] = _authName;
         entry["timeYear"] = log.timeStampYear;
         entry["timeMonth"] = log.timeStampMonth;
         entry["timeDay"] = log.timeStampDay;
@@ -454,10 +459,10 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_log, _buffer);
 
-    if(authFound)
+    if(_authFound)
     {
-        publishUInt(mqtt_topic_lock_auth_id, authId);
-        publishString(mqtt_topic_lock_auth_name, authName);
+        publishUInt(mqtt_topic_lock_auth_id, _authId);
+        publishString(mqtt_topic_lock_auth_name, _authName);
     }
 }
 
