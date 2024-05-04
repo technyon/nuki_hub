@@ -43,7 +43,7 @@ public:
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
     void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
-    void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));    
+    void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
     bool reconnected();
@@ -86,8 +86,9 @@ private:
     int _keypadCommandEnabled = 1;
     unsigned long _resetRingStateTs = 0;
     uint8_t _queryCommands = 0;
-    uint32_t authId = 0;
-    char authName[33];
+    uint32_t _authId = 0;
+    char _authName[33];
+    bool _authFound = false;
 
     NukiOpener::LockState _currentLockState = NukiOpener::LockState::Undefined;
 

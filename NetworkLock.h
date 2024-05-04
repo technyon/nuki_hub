@@ -84,9 +84,10 @@ private:
     String _keypadCommandCode = "";
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
-    uint8_t _queryCommands = 0;    
-    uint32_t authId = 0;
-    char authName[33];
+    uint8_t _queryCommands = 0;
+    uint32_t _authId = 0;
+    char _authName[33];
+    bool _authFound = false;
 
     char* _buffer;
     size_t _bufferSize;
