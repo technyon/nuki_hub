@@ -524,7 +524,7 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
     json["fobAction3"] = str;
     json["singleLock"] = config.singleLock;
     memset(str, 0, sizeof(str));
-    advertisingModeToString(config.advertisingMode, str);
+    _network->advertisingModeToString(config.advertisingMode, str);
     json["advertisingMode"] = str;
     json["hasKeypad"] = config.hasKeypad;
     json["hasKeypadV2"] = config.hasKeypadV2;
@@ -534,7 +534,7 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
     homeKitStatusToString(config.homeKitStatus, str);
     json["homeKitStatus"] = str;
     memset(str, 0, sizeof(str));
-    timeZoneIdToString(config.timeZoneId, str);
+    _network->timeZoneIdToString(config.timeZoneId, str);
     json["timeZone"] = str;
 
     serializeJson(json, _buffer, _bufferSize);
@@ -572,7 +572,7 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
     json["doubleButtonPressAction"] = str;
     json["detachedCylinder"] = config.detachedCylinder;
     memset(str, 0, sizeof(str));
-    batteryTypeToString(config.batteryType, str);
+    _network->batteryTypeToString(config.batteryType, str);
     json["batteryType"] = str;
     json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
     json["unlatchDuration"] = config.unlatchDuration;
@@ -988,23 +988,6 @@ uint8_t NetworkLock::queryCommands()
     return qc;
 }
 
-void NetworkLock::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
-  switch (battype) {
-    case Nuki::BatteryType::Alkali:
-      strcpy(str, "Alkali");
-      break;
-    case Nuki::BatteryType::Accumulators:
-      strcpy(str, "Accumulators");
-      break;
-    case Nuki::BatteryType::Lithium:
-      strcpy(str, "Lithium");
-      break;
-    default:
-      strcpy(str, "undefined");
-      break;
-  }
-}
-
 void NetworkLock::buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str) {
   switch (btnPressAction) {
     case NukiLock::ButtonPressAction::NoAction:
@@ -1027,175 +1010,6 @@ void NetworkLock::buttonPressActionToString(const NukiLock::ButtonPressAction bt
       break;
     case NukiLock::ButtonPressAction::ShowStatus:
       strcpy(str, "Show Status");
-      break;
-    default:
-      strcpy(str, "undefined");
-      break;
-  }
-}
-
-void NetworkLock::advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str) {
-  switch (advmode) {
-    case Nuki::AdvertisingMode::Automatic:
-      strcpy(str, "Automatic");
-      break;
-    case Nuki::AdvertisingMode::Normal:
-      strcpy(str, "Normal");
-      break;
-    case Nuki::AdvertisingMode::Slow:
-      strcpy(str, "Slow");
-      break;
-    case Nuki::AdvertisingMode::Slowest:
-      strcpy(str, "Slowest");
-      break;
-    default:
-      strcpy(str, "undefined");
-      break;
-  }
-}
-
-void NetworkLock::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str) {
-  switch (timeZoneId) {
-    case Nuki::TimeZoneId::Africa_Cairo:
-      strcpy(str, "Africa/Cairo");
-      break;
-    case Nuki::TimeZoneId::Africa_Lagos:
-      strcpy(str, "Africa/Lagos");
-      break;
-    case Nuki::TimeZoneId::Africa_Maputo:
-      strcpy(str, "Africa/Maputo");
-      break;
-    case Nuki::TimeZoneId::Africa_Nairobi:
-      strcpy(str, "Africa/Nairobi");
-      break;
-    case Nuki::TimeZoneId::America_Anchorage:
-      strcpy(str, "America/Anchorage");
-      break;
-    case Nuki::TimeZoneId::America_Argentina_Buenos_Aires:
-      strcpy(str, "America/Argentina/Buenos_Aires");
-      break;
-    case Nuki::TimeZoneId::America_Chicago:
-      strcpy(str, "America/Chicago");
-      break;
-    case Nuki::TimeZoneId::America_Denver:
-      strcpy(str, "America/Denver");
-      break;
-    case Nuki::TimeZoneId::America_Halifax:
-      strcpy(str, "America/Halifax");
-      break;
-    case Nuki::TimeZoneId::America_Los_Angeles:
-      strcpy(str, "America/Los_Angeles");
-      break;
-    case Nuki::TimeZoneId::America_Manaus:
-      strcpy(str, "America/Manaus");
-      break;
-    case Nuki::TimeZoneId::America_Mexico_City:
-      strcpy(str, "America/Mexico_City");
-      break;
-    case Nuki::TimeZoneId::America_New_York:
-      strcpy(str, "America/New_York");
-      break;
-    case Nuki::TimeZoneId::America_Phoenix:
-      strcpy(str, "America/Phoenix");
-      break;
-    case Nuki::TimeZoneId::America_Regina:
-      strcpy(str, "America/Regina");
-      break;
-    case Nuki::TimeZoneId::America_Santiago:
-      strcpy(str, "America/Santiago");
-      break;
-    case Nuki::TimeZoneId::America_Sao_Paulo:
-      strcpy(str, "America/Sao_Paulo");
-      break;
-    case Nuki::TimeZoneId::America_St_Johns:
-      strcpy(str, "America/St_Johns");
-      break;
-    case Nuki::TimeZoneId::Asia_Bangkok:
-      strcpy(str, "Asia/Bangkok");
-      break;
-    case Nuki::TimeZoneId::Asia_Dubai:
-      strcpy(str, "Asia/Dubai");
-      break;
-    case Nuki::TimeZoneId::Asia_Hong_Kong:
-      strcpy(str, "Asia/Hong_Kong");
-      break;
-    case Nuki::TimeZoneId::Asia_Jerusalem:
-      strcpy(str, "Asia/Jerusalem");
-      break;
-    case Nuki::TimeZoneId::Asia_Karachi:
-      strcpy(str, "Asia/Karachi");
-      break;
-    case Nuki::TimeZoneId::Asia_Kathmandu:
-      strcpy(str, "Asia/Kathmandu");
-      break;
-    case Nuki::TimeZoneId::Asia_Kolkata:
-      strcpy(str, "Asia/Kolkata");
-      break;
-    case Nuki::TimeZoneId::Asia_Riyadh:
-      strcpy(str, "Asia/Riyadh");
-      break;
-    case Nuki::TimeZoneId::Asia_Seoul:
-      strcpy(str, "Asia/Seoul");
-      break;
-    case Nuki::TimeZoneId::Asia_Shanghai:
-      strcpy(str, "Asia/Shanghai");
-      break;
-    case Nuki::TimeZoneId::Asia_Tehran:
-      strcpy(str, "Asia/Tehran");
-      break;
-    case Nuki::TimeZoneId::Asia_Tokyo:
-      strcpy(str, "Asia/Tokyo");
-      break;
-    case Nuki::TimeZoneId::Asia_Yangon:
-      strcpy(str, "Asia/Yangon");
-      break;
-    case Nuki::TimeZoneId::Australia_Adelaide:
-      strcpy(str, "Australia/Adelaide");
-      break;
-    case Nuki::TimeZoneId::Australia_Brisbane:
-      strcpy(str, "Australia/Brisbane");
-      break;
-    case Nuki::TimeZoneId::Australia_Darwin:
-      strcpy(str, "Australia/Darwin");
-      break;
-    case Nuki::TimeZoneId::Australia_Hobart:
-      strcpy(str, "Australia/Hobart");
-      break;
-    case Nuki::TimeZoneId::Australia_Perth:
-      strcpy(str, "Australia/Perth");
-      break;
-    case Nuki::TimeZoneId::Australia_Sydney:
-      strcpy(str, "Australia/Sydney");
-      break;
-    case Nuki::TimeZoneId::Europe_Berlin:
-      strcpy(str, "Europe/Berlin");
-      break;
-    case Nuki::TimeZoneId::Europe_Helsinki:
-      strcpy(str, "Europe/Helsinki");
-      break;
-    case Nuki::TimeZoneId::Europe_Istanbul:
-      strcpy(str, "Europe/Istanbul");
-      break;
-    case Nuki::TimeZoneId::Europe_London:
-      strcpy(str, "Europe/London");
-      break;
-    case Nuki::TimeZoneId::Europe_Moscow:
-      strcpy(str, "Europe/Moscow");
-      break;
-    case Nuki::TimeZoneId::Pacific_Auckland:
-      strcpy(str, "Pacific/Auckland");
-      break;
-    case Nuki::TimeZoneId::Pacific_Guam:
-      strcpy(str, "Pacific/Guam");
-      break;
-    case Nuki::TimeZoneId::Pacific_Honolulu:
-      strcpy(str, "Pacific/Honolulu");
-      break;
-    case Nuki::TimeZoneId::Pacific_Pago_Pago:
-      strcpy(str, "Pacific/Pago_Pago");
-      break;
-    case Nuki::TimeZoneId::None:
-      strcpy(str, "None");
       break;
     default:
       strcpy(str, "undefined");

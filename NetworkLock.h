@@ -65,10 +65,7 @@ private:
     bool publishString(const char* topic, const std::string& value);
     bool publishString(const char* topic, const char* value);
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
-    void batteryTypeToString(const Nuki::BatteryType battype, char* str);
     void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
-    void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);
-    void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
     void homeKitStatusToString(const int hkstatus, char* str);
     void fobActionToString(const int fobact, char* str);
 

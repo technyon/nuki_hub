@@ -65,10 +65,7 @@ private:
     void buildMqttPath(const char* path, char* outPath);
     void subscribe(const char* path);
     void logactionCompletionStatusToString(uint8_t value, char* out);
-    void batteryTypeToString(const Nuki::BatteryType battype, char* str);
     void buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str);
-    void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);
-    void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
     void fobActionToString(const int fobact, char* str);
     void operatingModeToString(const int opmode, char* str);
     void doorbellSuppressionToString(const int dbsupr, char* str);
