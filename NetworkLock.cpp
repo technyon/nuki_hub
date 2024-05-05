@@ -389,7 +389,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
             if(_authName[sizeName - 1] != '\0') _authName[sizeName] = '\0';
         }
 
-        auto entry = json.add();
+        auto entry = json.add<JsonVariant>();
 
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
@@ -623,7 +623,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
         basePath.concat(std::to_string(index).c_str());
         publishKeypadEntry(basePath, entry);
 
-        auto jsonEntry = json.add();
+        auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["codeId"] = entry.codeId;
         jsonEntry["enabled"] = entry.enabled;
@@ -724,7 +724,7 @@ void NetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEntry>
 
     for(const auto& entry : timeControlEntries)
     {
-        auto jsonEntry = json.add();
+        auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["entryId"] = entry.entryId;
         jsonEntry["enabled"] = entry.enabled;
@@ -874,7 +874,7 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
     }
     else
     {
-        _network->removeHASSConfigTopic("binary_sensor", "door_sensor", uidString);
+        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
     }
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
 
@@ -884,7 +884,7 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
     }
     else
     {
-        _network->removeHASSConfigTopic("sensor", "last_action_authorization", uidString);
+        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
     }
 
     if(hasKeypad)
@@ -893,8 +893,8 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
     }
     else
     {
-        _network->removeHASSConfigTopic("sensor", "keypad_status", uidString);
-        _network->removeHASSConfigTopic("binary_sensor", "keypad_battery_low", uidString);
+        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
+        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
     }
 }
 

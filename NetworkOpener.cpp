@@ -380,7 +380,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
             if(_authName[sizeName - 1] != '\0') _authName[sizeName] = '\0';
         }
 
-        auto entry = json.add();
+        auto entry = json.add<JsonVariant>();
 
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
@@ -682,7 +682,7 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
         basePath.concat(std::to_string(index).c_str());
         publishKeypadEntry(basePath, entry);
 
-        auto jsonEntry = json.add();
+        auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["codeId"] = entry.codeId;
         jsonEntry["enabled"] = entry.enabled;
@@ -783,7 +783,7 @@ void NetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeControlEn
 
     for(const auto& entry : timeControlEntries)
     {
-        auto jsonEntry = json.add();
+        auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["entryId"] = entry.entryId;
         jsonEntry["enabled"] = entry.enabled;
