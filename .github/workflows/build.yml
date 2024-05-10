@@ -21,46 +21,45 @@ jobs:
         run: pip install --upgrade platformio
       - name: Install ESPTool
         run: pip install --upgrade esptool
-      - name: Build PlatformIO Project esp32dev
+      - name: Build PlatformIO Project esp32
         run: | 
           pio run --environment esp32dev
           mkdir -p release/esp32dev
-          cp .pio/build/esp32dev/firmware.bin release/esp32dev/nuki_hub.bin
+          cp .pio/build/esp32dev/firmware.bin release/esp32dev/nuki_hub_esp32.bin
           cp .pio/build/esp32dev/partitions.bin release/esp32dev/nuki_hub.partitions.bin
           cp .pio/build/esp32dev/bootloader.bin release/esp32dev/bootloader.bin
-          esptool.py --chip esp32 merge_bin -o release/esp32dev/nuki_hub_esp32.bin --flash_mode dio --flash_freq keep --flash_size keep 0x1000 release/esp32dev/bootloader.bin 0x10000 release/esp32dev/nuki_hub.bin 0x8000 release/esp32dev/nuki_hub.partitions.bin
-          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x1000 bootloader.bin 0x10000 nuki_hub.bin 0x8000 nuki_hub.partitions.bin" > release/esp32dev/flash.sh
+          esptool.py --chip esp32 merge_bin -o release/esp32dev/webflash_nuki_hub_esp32.bin --flash_mode dio --flash_freq keep --flash_size keep 0x1000 release/esp32dev/bootloader.bin 0x10000 release/esp32dev/nuki_hub_esp32.bin 0x8000 release/esp32dev/nuki_hub.partitions.bin
+          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x1000 bootloader.bin 0x10000 nuki_hub_esp32.bin 0x8000 nuki_hub.partitions.bin" > release/esp32dev/flash.sh
       - name: Build PlatformIO Project esp32-s3
         run: |
           pio run --environment esp32-s3
           mkdir -p release/esp32-s3
-          cp .pio/build/esp32-s3/firmware.bin release/esp32-s3/nuki_hub.bin
+          cp .pio/build/esp32-s3/firmware.bin release/esp32-s3/nuki_hub_esp32s3.bin
           cp .pio/build/esp32-s3/partitions.bin release/esp32-s3/nuki_hub.partitions.bin
           cp .pio/build/esp32-s3/bootloader.bin release/esp32-s3/bootloader.bin
-          esptool.py --chip esp32s3 merge_bin -o release/esp32-s3/nuki_hub_esp32s3.bin --flash_mode dio --flash_freq keep --flash_size keep 0x0 release/esp32-s3/bootloader.bin 0x10000 release/esp32-s3/nuki_hub.bin 0x8000 release/esp32-s3/nuki_hub.partitions.bin
-          echo "esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x0 bootloader.bin 0x10000 nuki_hub.bin 0x8000 nuki_hub.partitions.bin" > release/esp32-s3/flash.sh
+          esptool.py --chip esp32s3 merge_bin -o release/esp32-s3/webflash_nuki_hub_esp32s3.bin --flash_mode dio --flash_freq keep --flash_size keep 0x0 release/esp32-s3/bootloader.bin 0x10000 release/esp32-s3/nuki_hub_esp32s3.bin 0x8000 release/esp32-s3/nuki_hub.partitions.bin
+          echo "esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x0 bootloader.bin 0x10000 nuki_hub_esp32s3.bin 0x8000 nuki_hub.partitions.bin" > release/esp32-s3/flash.sh
       - name: Build PlatformIO Project esp32-c3
         run: |
           pio run --environment esp32-c3
           mkdir -p release/esp32-c3
-          cp .pio/build/esp32-c3/firmware.bin release/esp32-c3/nuki_hub.bin
+          cp .pio/build/esp32-c3/firmware.bin release/esp32-c3/nuki_hub_esp32c3.bin
           cp .pio/build/esp32-c3/partitions.bin release/esp32-c3/nuki_hub.partitions.bin
           cp .pio/build/esp32-c3/bootloader.bin release/esp32-c3/bootloader.bin
-          esptool.py --chip esp32c3 merge_bin -o release/esp32-c3/nuki_hub_esp32c3.bin --flash_mode dio --flash_freq keep --flash_size keep 0x0 release/esp32-c3/bootloader.bin 0x10000 release/esp32-c3/nuki_hub.bin 0x8000 release/esp32-c3/nuki_hub.partitions.bin
-          echo "esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x0 bootloader.bin 0x10000 nuki_hub.bin 0x8000 nuki_hub.partitions.bin" > release/esp32-c3/flash.sh
+          esptool.py --chip esp32c3 merge_bin -o release/esp32-c3/webflash_nuki_hub_esp32c3.bin --flash_mode dio --flash_freq keep --flash_size keep 0x0 release/esp32-c3/bootloader.bin 0x10000 release/esp32-c3/nuki_hub_esp32c3.bin 0x8000 release/esp32-c3/nuki_hub.partitions.bin
+          echo "esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x0 bootloader.bin 0x10000 nuki_hub_esp32c3.bin 0x8000 nuki_hub.partitions.bin" > release/esp32-c3/flash.sh
       - name: Build PlatformIO Project esp32solo1
         run: |
           pio run --environment esp32solo1
           mkdir -p release/esp32solo1
-          cp .pio/build/esp32solo1/firmware.bin release/esp32solo1/nuki_hub.bin
+          cp .pio/build/esp32solo1/firmware.bin release/esp32solo1/nuki_hub_esp32solo1.bin
           cp .pio/build/esp32solo1/partitions.bin release/esp32solo1/nuki_hub.partitions.bin
           cp .pio/build/esp32solo1/bootloader.bin release/esp32solo1/bootloader.bin
-          esptool.py --chip esp32 merge_bin -o release/esp32solo1/nuki_hub_esp32solo1.bin --flash_mode dio --flash_freq keep --flash_size keep 0x1000 release/esp32solo1/bootloader.bin 0x10000 release/esp32solo1/nuki_hub.bin 0x8000 release/esp32solo1/nuki_hub.partitions.bin
-          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x1000 bootloader.bin 0x10000 nuki_hub.bin 0x8000 nuki_hub.partitions.bin" > release/esp32solo1/flash.sh
-      - name: Upload Artifact esp32dev
+          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0x1000 bootloader.bin 0x10000 nuki_hub_esp32solo1.bin 0x8000 nuki_hub.partitions.bin" > release/esp32solo1/flash.sh
+      - name: Upload Artifact esp32
         uses: actions/upload-artifact@v4
         with:
-          name: esp32dev-assets
+          name: esp32-assets
           path: release/esp32dev
       - name: Upload Artifact esp32-s3
         uses: actions/upload-artifact@v4

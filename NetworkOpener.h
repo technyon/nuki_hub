@@ -35,12 +35,13 @@ public:
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries);
+    void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
     void publishKeypadJsonCommandResult(const char* result);
     void publishTimeControlCommandResult(const char* result);
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
-    void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
+    void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
     void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
@@ -64,6 +65,12 @@ private:
     void buildMqttPath(const char* path, char* outPath);
     void subscribe(const char* path);
     void logactionCompletionStatusToString(uint8_t value, char* out);
+    void buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str);
+    void fobActionToString(const int fobact, char* str);
+    void operatingModeToString(const int opmode, char* str);
+    void doorbellSuppressionToString(const int dbsupr, char* str);
+    void soundToString(const int sound, char* str);
+    void capabilitiesToString(const int capabilities, char* str);
 
     String concat(String a, String b);
 
@@ -73,8 +80,6 @@ private:
 
     char _mqttPath[181] = {0};
     bool _isConnected = false;
-
-    std::vector<char*> _configTopics;
 
     bool _firstTunerStatePublish = true;
     bool _haEnabled= false;
@@ -96,7 +101,7 @@ private:
     const size_t _bufferSize;
 
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
-    void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+    void (*_configUpdateReceivedCallback)(const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
     void (*_keypadJsonCommandReceivedReceivedCallback)(const char* value) = nullptr;
     void (*_timeControlCommandReceivedReceivedCallback)(const char* value) = nullptr;

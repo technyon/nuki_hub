@@ -14,13 +14,13 @@
     {
       "chipFamily": "ESP32-S3",
       "parts": [
-        { "path": "nuki_hub_esp32s3.bin", "offset": 0 }
+        { "path": "webflash_nuki_hub_esp32s3.bin", "offset": 0 }
       ]
     },
     {
       "chipFamily": "ESP32-C3",
       "parts": [
-        { "path": "nuki_hub_esp32c3.bin", "offset": 0 }
+        { "path": "webflash_nuki_hub_esp32c3.bin", "offset": 0 }
       ]
     }
   ]
