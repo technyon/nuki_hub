@@ -10,6 +10,7 @@
 #include "Gpio.h"
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
+#include "NukiConstants.h"
 
 enum class NetworkDeviceType
 {
@@ -46,19 +47,17 @@ public:
     bool publishString(const char* prefix, const char* topic, const char* value);
 
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
-    void publishHASSConfigAdditionalButtons(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigBatLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigAdditionalLockEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigRingDetect(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigContinuousMode(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigLedBrightness(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigSoundLevel(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigAdditionalOpenerEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigKeypadAttemptInfo(char* deviceType, const char* baseTopic, char* name, char* uidString);
+    void publishHASSConfigKeypad(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSBleRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
     void removeHASSConfigTopic(char* deviceType, char* name, char* uidString);
+    void batteryTypeToString(const Nuki::BatteryType battype, char* str);
+    void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);
+    void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
 
     void clearWifiFallback();
 
