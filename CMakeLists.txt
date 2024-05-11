@@ -42,34 +42,34 @@ include_directories(${PROJECT_NAME}
 )
 
 set(SRCFILES
-        Config.h
-        NukiDeviceId.cpp
-        CharBuffer.cpp
-        Network.cpp
-        MqttReceiver.h
-        NetworkLock.cpp
-        NetworkOpener.cpp
-        networkDevices/NetworkDevice.h
-        networkDevices/NetworkDevice.cpp
-        networkDevices/WifiDevice.cpp
-        networkDevices/W5500Device.cpp
-        networkDevices/EthLan8720Device.cpp
-        networkDevices/ClientSyncW5500.cpp
-        networkDevices/espMqttClientW5500.cpp
-        networkDevices/IPConfiguration.cpp
-        LockActionResult.h
-        QueryCommand.h
-        NukiWrapper.cpp
-        NukiOpenerWrapper.cpp
-        MqttTopics.h
-        Ota.cpp
-        WebCfgServerConstants.h
-        WebCfgServer.cpp
-        PresenceDetection.cpp
-        PreferencesKeys.h
-        Gpio.cpp
-        Logger.cpp
-        RestartReason.h
+        src/Config.h
+        src/NukiDeviceId.cpp
+        src/CharBuffer.cpp
+        src/Network.cpp
+        src/MqttReceiver.h
+        src/NetworkLock.cpp
+        src/NetworkOpener.cpp
+        src/networkDevices/NetworkDevice.h
+        src/networkDevices/NetworkDevice.cpp
+        src/networkDevices/WifiDevice.cpp
+        src/networkDevices/W5500Device.cpp
+        src/networkDevices/EthLan8720Device.cpp
+        src/networkDevices/ClientSyncW5500.cpp
+        src/networkDevices/espMqttClientW5500.cpp
+        src/networkDevices/IPConfiguration.cpp
+        src/LockActionResult.h
+        src/QueryCommand.h
+        src/NukiWrapper.cpp
+        src/NukiOpenerWrapper.cpp
+        src/MqttTopics.h
+        src/Ota.cpp
+        src/WebCfgServerConstants.h
+        src/WebCfgServer.cpp
+        src/PresenceDetection.cpp
+        src/PreferencesKeys.h
+        src/Gpio.cpp
+        src/Logger.cpp
+        src/RestartReason.h
 #        include/RTOS.h
         lib/WiFiManager/WiFiManager.cpp
         lib/WiFiManager/wm_consts_en.h
@@ -114,7 +114,7 @@ file(GLOB_RECURSE SRCFILESREC
 )
 
 add_executable(${PROJECT_NAME}
-        main.cpp
+        src/main.cpp
         ${SRCFILES}
         ${SRCFILESREC}
         )

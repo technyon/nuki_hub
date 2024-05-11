@@ -20,6 +20,10 @@
 #define mqtt_topic_lock_address "/lock/address"
 #define mqtt_topic_lock_retry "/lock/retry"
 
+#define mqtt_topic_config_action "/configuration/action"
+#define mqtt_topic_config_action_command_result "/configuration/commandResult"
+#define mqtt_topic_config_basic_json "/configuration/basicJson"
+#define mqtt_topic_config_advanced_json "/configuration/advancedJson"
 #define mqtt_topic_config_button_enabled "/configuration/buttonEnabled"
 #define mqtt_topic_config_led_enabled "/configuration/ledEnabled"
 #define mqtt_topic_config_led_brightness "/configuration/ledBrightness"

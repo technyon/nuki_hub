@@ -38,12 +38,13 @@ public:
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishTimeControl(const std::list<NukiLock::TimeControlEntry>& timeControlEntries);
+    void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
     void publishKeypadJsonCommandResult(const char* result);
     void publishTimeControlCommandResult(const char* result);
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
-    void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* path, const char* value));
+    void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* value));
     void setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled));
     void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
@@ -64,6 +65,9 @@ private:
     bool publishString(const char* topic, const std::string& value);
     bool publishString(const char* topic, const char* value);
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
+    void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
+    void homeKitStatusToString(const int hkstatus, char* str);
+    void fobActionToString(const int fobact, char* str);
 
     String concat(String a, String b);
 
@@ -72,7 +76,6 @@ private:
     Network* _network;
     Preferences* _preferences;
 
-    std::vector<char*> _configTopics;
     char _mqttPath[181] = {0};
 
     bool _firstTunerStatePublish = true;
@@ -93,7 +96,7 @@ private:
     size_t _bufferSize;
 
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
-    void (*_configUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+    void (*_configUpdateReceivedCallback)(const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
     void (*_keypadJsonCommandReceivedReceivedCallback)(const char* value) = nullptr;
     void (*_timeControlCommandReceivedReceivedCallback)(const char* value) = nullptr;
