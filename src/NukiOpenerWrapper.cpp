@@ -767,8 +767,17 @@ Nuki::BatteryType NukiOpenerWrapper::batteryTypeToEnum(const char* str)
 
 void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
 {
+
     JsonDocument jsonResult;
     char _resbuf[2048];
+
+    if(!_configRead || !_nukiConfigValid)
+    {
+        jsonResult["general"] = "configNotReady";
+        serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
+        _network->publishConfigCommandResult(_resbuf);
+        return;
+    }
 
     if(_nukiOpener.getSecurityPincode() == 0)
     {
@@ -1744,6 +1753,12 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
 void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 {
+    if(!_configRead || !_nukiConfigValid)
+    {
+        _network->publishTimeControlCommandResult("configNotReady");
+        return;
+    }
+
     if(_nukiOpener.getSecurityPincode() == 0)
     {
         _network->publishTimeControlCommandResult("noPinSet");
