@@ -84,7 +84,7 @@ Enable "Register as app" before pairing to allow this. Otherwise the Bridge will
 ## Support
 
 If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
-REFNW2959GXR7<br>
+REFXH49NT9NGP<br>
 This will also give you a 10% discount on your order.<br>
 <br>
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:<br>
