@@ -1,5 +1,5 @@
+#include <stdexcept>
 #include "Gpio2Go.h"
-
 
 void Gpio2Go::configurePin(int pin, PinMode pin_Mode, InterruptMode interrupt_Mode, uint16_t timeoutAfterTriggerMS)
 {

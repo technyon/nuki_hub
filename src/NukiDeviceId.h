@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <Preferences.h>
 
 class NukiDeviceId

@@ -29,6 +29,7 @@ add_compile_definitions(ARDUINO_ARCH_ESP32)
 include_directories(${PROJECT_NAME}
         PRIVATE
         lib/Crc16
+        lib/sodium
         lib/NimBLE-Arduino/src
         lib/BleScanner/src
         lib/nuki_ble/src
@@ -75,6 +76,7 @@ set(SRCFILES
         lib/WiFiManager/wm_consts_en.h
         lib/WiFiManager/wm_strings_en.h
         lib/Crc16/Crc16.h
+        lib/sodium/sodium.h
         lib/nuki_ble/src/NukiBle.cpp
         lib/nuki_ble/src/NukiBle.hpp
         lib/nuki_ble/src/NukiLock.cpp
