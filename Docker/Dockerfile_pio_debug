@@ -1,0 +1,49 @@
+FROM eclipse-temurin:11-jdk-jammy AS builder
+
+RUN set -ex &&         \
+    apt-get update &&  \
+    apt-get install -y git python3 pip && \
+    pip install --upgrade platformio && \
+    pip install --upgrade esptool
+
+COPY icon /usr/src/nuki_hub/icon
+COPY include /usr/src/nuki_hub/include
+COPY lib /usr/src/nuki_hub/lib
+COPY networkDevices /usr/src/nuki_hub/networkDevices
+COPY partitions.csv /usr/src/nuki_hub
+COPY platformio.ini /usr/src/nuki_hub
+COPY index.html /usr/src/nuki_hub
+COPY *.h /usr/src/nuki_hub/
+COPY *.cpp /usr/src/nuki_hub/
+
+RUN set -ex && \
+    cd /usr/src/nuki_hub && \
+    mkdir -p debug/esp32 && \
+    mkdir -p debug/esp32s3 && \
+    mkdir -p debug/esp32c3 && \
+    mkdir -p debug/esp32solo1 && \
+    pio run --environment esp32dev_dbg && \
+    esptool.py --chip esp32 merge_bin -o debug/webflash_nuki_hub_esp32.bin --flash_mode dio --flash_freq keep --flash_size keep 0x1000 .pio/build/esp32dev_dbg/bootloader.bin 0x10000 .pio/build/esp32dev_dbg/firmware.bin 0x8000 .pio/build/esp32dev_dbg/partitions.bin && \
+    cp .pio/build/esp32dev_dbg/bootloader.bin debug/esp32/bootloader.bin && \
+    cp .pio/build/esp32dev_dbg/firmware.bin debug/esp32/nuki_hub_esp32.bin && \
+    cp .pio/build/esp32dev_dbg/partitions.bin debug/esp32/nuki_hub.partitions.bin && \
+    cp .pio/build/esp32dev_dbg/firmware.elf debug/esp32/nuki_hub_esp32.elf && \
+    pio run --environment esp32-s3_dbg && \
+    esptool.py --chip esp32s3 merge_bin -o debug/webflash_nuki_hub_esp32s3.bin --flash_mode dio --flash_freq keep --flash_size keep 0x0 .pio/build/esp32-s3_dbg/bootloader.bin 0x10000 .pio/build/esp32-s3_dbg/firmware.bin 0x8000 .pio/build/esp32-s3_dbg/partitions.bin && \
+    cp .pio/build/esp32-s3_dbg/bootloader.bin debug/esp32s3/bootloader.bin && \
+    cp .pio/build/esp32-s3_dbg/firmware.bin debug/esp32s3/nuki_hub_esp32s3.bin && \
+    cp .pio/build/esp32-s3_dbg/partitions.bin debug/esp32s3/nuki_hub.partitions.bin && \
+    cp .pio/build/esp32-s3_dbg/firmware.elf debug/esp32s3/nuki_hub_esp32s3.elf && \
+    pio run --environment esp32-c3_dbg && \
+    esptool.py --chip esp32c3 merge_bin -o debug/webflash_nuki_hub_esp32c3.bin --flash_mode dio --flash_freq keep --flash_size keep 0x0 .pio/build/esp32-c3_dbg/bootloader.bin 0x10000 .pio/build/esp32-c3_dbg/firmware.bin 0x8000 .pio/build/esp32-c3_dbg/partitions.bin && \
+    cp .pio/build/esp32-c3_dbg/bootloader.bin debug/esp32c3/bootloader.bin && \
+    cp .pio/build/esp32-c3_dbg/firmware.bin debug/esp32c3/nuki_hub_esp32c3.bin && \
+    cp .pio/build/esp32-c3_dbg/partitions.bin debug/esp32c3/nuki_hub.partitions.bin && \
+    cp .pio/build/esp32-c3_dbg/firmware.elf debug/esp32c3/nuki_hub_esp32c3.elf && \
+    pio run --environment esp32solo1_dbg && \    
+    cp .pio/build/esp32solo1_dbg/bootloader.bin debug/esp32solo1/bootloader.bin && \
+    cp .pio/build/esp32solo1_dbg/firmware.bin debug/esp32solo1/nuki_hub_esp32solo1.bin && \
+    cp .pio/build/esp32solo1_dbg/partitions.bin debug/esp32solo1/nuki_hub.partitions.bin && \
+    cp .pio/build/esp32solo1_dbg/firmware.elf debug/esp32solo1/nuki_hub_esp32solo1.elf
+
+CMD ["/bin/bash"]
