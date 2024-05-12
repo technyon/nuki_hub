@@ -1,7 +1,7 @@
 #pragma once
 
 #include "NukiOpener.h"
-#include "NetworkOpener.h"
+#include "NukiNetworkOpener.h"
 #include "NukiOpenerConstants.h"
 #include "NukiDataTypes.h"
 #include "BleScanner.h"
@@ -11,7 +11,7 @@
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
-    NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences);
+    NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkOpener* network, Gpio* gpio, Preferences* preferences);
     virtual ~NukiOpenerWrapper();
 
     void initialize();
@@ -88,7 +88,7 @@ private:
     NukiDeviceId* _deviceId = nullptr;
     NukiOpener::NukiOpener _nukiOpener;
     BleScanner::Scanner* _bleScanner = nullptr;
-    NetworkOpener* _network = nullptr;
+    NukiNetworkOpener* _network = nullptr;
     Gpio* _gpio = nullptr;
     Preferences* _preferences = nullptr;
     int _intervalLockstate = 0; // seconds

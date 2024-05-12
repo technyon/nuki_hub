@@ -9,7 +9,7 @@
 NukiOpenerWrapper* nukiOpenerInst;
 Preferences* nukiOpenerPreferences = nullptr;
 
-NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkOpener* network, Gpio* gpio, Preferences* preferences)
+NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkOpener* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
   _deviceId(deviceId),
   _nukiOpener(deviceName, _deviceId->get()),

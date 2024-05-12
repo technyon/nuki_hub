@@ -7,7 +7,7 @@
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
   _nuki(nuki),
   _nukiOpener(nukiOpener),

@@ -7,7 +7,7 @@
 #include "NimBLEBeacon.h"
 #include "NukiUtils.h"
 
-PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, Network* network, char* buffer, size_t bufferSize)
+PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, NukiNetwork* network, char* buffer, size_t bufferSize)
 : _preferences(preferences),
   _bleScanner(bleScanner),
   _network(network),

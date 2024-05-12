@@ -1,6 +1,6 @@
 #include "Arduino.h"
 #include "NukiWrapper.h"
-#include "NetworkLock.h"
+#include "NukiNetworkLock.h"
 #include "WebCfgServer.h"
 #include <RTOS.h>
 #include "PreferencesKeys.h"
@@ -15,9 +15,9 @@
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 
-Network* network = nullptr;
-NetworkLock* networkLock = nullptr;
-NetworkOpener* networkOpener = nullptr;
+NukiNetwork* network = nullptr;
+NukiNetworkLock* networkLock = nullptr;
+NukiNetworkOpener* networkOpener = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
 NukiWrapper* nuki = nullptr;
@@ -284,15 +284,15 @@ void setup()
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(preferences, gpio, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
+    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
     network->initialize();
 
-    networkLock = new NetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
+    networkLock = new NukiNetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
     networkLock->initialize();
 
     if(openerEnabled)
     {
-        networkOpener = new NetworkOpener(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
+        networkOpener = new NukiNetworkOpener(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
         networkOpener->initialize();
     }
 

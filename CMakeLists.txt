@@ -45,10 +45,10 @@ set(SRCFILES
         src/Config.h
         src/NukiDeviceId.cpp
         src/CharBuffer.cpp
-        src/Network.cpp
+        src/NukiNetwork.cpp
         src/MqttReceiver.h
-        src/NetworkLock.cpp
-        src/NetworkOpener.cpp
+        src/NukiNetworkLock.cpp
+        src/NukiNetworkOpener.cpp
         src/networkDevices/NetworkDevice.h
         src/networkDevices/NetworkDevice.cpp
         src/networkDevices/WifiDevice.cpp

@@ -24,10 +24,10 @@ enum class NetworkDeviceType
 
 #define JSON_BUFFER_SIZE 1024
 
-class Network
+class NukiNetwork
 {
 public:
-    explicit Network(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+    explicit NukiNetwork(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void initialize();
     bool update();
@@ -121,7 +121,7 @@ private:
 
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
 
-    static Network* _inst;
+    static NukiNetwork* _inst;
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};

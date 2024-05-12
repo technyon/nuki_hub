@@ -7,13 +7,13 @@
 #include <vector>
 #include "NukiConstants.h"
 #include "NukiOpenerConstants.h"
-#include "NetworkLock.h"
+#include "NukiNetworkLock.h"
 
-class NetworkOpener : public MqttReceiver
+class NukiNetworkOpener : public MqttReceiver
 {
 public:
-    explicit NetworkOpener(Network* network, Preferences* preferences, char* buffer, size_t bufferSize);
-    virtual ~NetworkOpener() = default;
+    explicit NukiNetworkOpener(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize);
+    virtual ~NukiNetworkOpener() = default;
 
     void initialize();
     void update();
@@ -76,7 +76,7 @@ private:
 
     Preferences* _preferences;
 
-    Network* _network = nullptr;
+    NukiNetwork* _network = nullptr;
 
     char _mqttPath[181] = {0};
     bool _isConnected = false;

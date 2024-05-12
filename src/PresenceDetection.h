@@ -2,7 +2,7 @@
 
 #include "BleScanner.h"
 #include "BleInterfaces.h"
-#include "Network.h"
+#include "NukiNetwork.h"
 
 struct PdDevice
 {
@@ -16,7 +16,7 @@ struct PdDevice
 class PresenceDetection : public BleScanner::Subscriber
 {
 public:
-    PresenceDetection(Preferences* preferences, BleScanner::Scanner* bleScanner, Network* network, char* buffer, size_t bufferSize);
+    PresenceDetection(Preferences* preferences, BleScanner::Scanner* bleScanner, NukiNetwork* network, char* buffer, size_t bufferSize);
     virtual ~PresenceDetection();
 
     void initialize();
@@ -29,7 +29,7 @@ private:
 
     Preferences* _preferences;
     BleScanner::Scanner* _bleScanner;
-    Network* _network;
+    NukiNetwork* _network;
     char* _csv = {0};
     size_t _bufferSize = 0;
     std::map<long long, PdDevice> _devices;
