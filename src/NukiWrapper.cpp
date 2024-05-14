@@ -450,7 +450,7 @@ void NukiWrapper::updateConfig()
 
 void NukiWrapper::updateAuthData()
 {
-    if(_nukiLock.getSecurityPincode() == 0) return;
+    if(!isPinSet()) return;
 
     Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
@@ -715,7 +715,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         return;
     }
 
-    if(_nukiLock.getSecurityPincode() == 0)
+    if(!isPinSet())
     {
         jsonResult["general"] = "noPinSet";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
@@ -1397,7 +1397,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
 
 void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 {
-    if(_nukiLock.getSecurityPincode() == 0)
+    if(!isPinSet())
     {
         _network->publishKeypadJsonCommandResult("noPinSet");
         return;
@@ -1745,7 +1745,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
         return;
     }
 
-    if(_nukiLock.getSecurityPincode() == 0)
+    if(!isPinSet())
     {
         _network->publishTimeControlCommandResult("noPinSet");
         return;
