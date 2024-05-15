@@ -469,7 +469,7 @@ void NukiOpenerWrapper::updateConfig()
 
 void NukiOpenerWrapper::updateAuthData()
 {
-    if(_nukiOpener.getSecurityPincode() == 0) return;
+    if(!isPinSet()) return;
 
     Nuki::CmdResult result = _nukiOpener.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
@@ -767,10 +767,19 @@ Nuki::BatteryType NukiOpenerWrapper::batteryTypeToEnum(const char* str)
 
 void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
 {
+
     JsonDocument jsonResult;
     char _resbuf[2048];
 
-    if(_nukiOpener.getSecurityPincode() == 0)
+    if(!_configRead || !_nukiConfigValid)
+    {
+        jsonResult["general"] = "configNotReady";
+        serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
+        _network->publishConfigCommandResult(_resbuf);
+        return;
+    }
+
+    if(!isPinSet())
     {
         jsonResult["general"] = "noPinSet";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
@@ -1402,7 +1411,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
 
 void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 {
-    if(_nukiOpener.getSecurityPincode() == 0)
+    if(!isPinSet())
     {
         _network->publishKeypadJsonCommandResult("noPinSet");
         return;
@@ -1744,7 +1753,13 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
 void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 {
-    if(_nukiOpener.getSecurityPincode() == 0)
+    if(!_configRead || !_nukiConfigValid)
+    {
+        _network->publishTimeControlCommandResult("configNotReady");
+        return;
+    }
+
+    if(!isPinSet())
     {
         _network->publishTimeControlCommandResult("noPinSet");
         return;
