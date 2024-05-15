@@ -112,9 +112,9 @@ void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
-    xTaskCreatePinnedToCore(networkTask, "ntw", 10240, NULL, 3, &networkTaskHandle, 1);
-    xTaskCreatePinnedToCore(nukiTask, "nuki", 5120, NULL, 2, &nukiTaskHandle, 1);
-    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 896, NULL, 5, &presenceDetectionTaskHandle, 1);
+    xTaskCreatePinnedToCore(networkTask, "ntw", 12288, NULL, 3, &networkTaskHandle, 1);
+    xTaskCreatePinnedToCore(nukiTask, "nuki", 8192, NULL, 2, &nukiTaskHandle, 1);
+    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 1024, NULL, 5, &presenceDetectionTaskHandle, 1);
 }
 
 void initEthServer(const NetworkDeviceType device)
