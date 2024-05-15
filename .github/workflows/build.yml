@@ -1,5 +1,17 @@
-name: Build using Github Actions
-on: [push, pull_request]
+name: NukiHub
+on:
+  push:
+    branches: ["*"]
+    tags: ["*"]
+  pull_request:
+    branches: ["*"]
+    tags: ["*"]
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Checkout source code and build
@@ -140,3 +152,32 @@ jobs:
         with:
           name: esp32solo1-debug-assets
           path: debug/esp32solo1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - name: Download esp32dev-debug
+        uses: actions/download-artifact@v3
+        with:
+          name: esp32-debug-assets
+          path: debug/esp32dev
+
+      - name: Get the version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+
+      - name: Build the zip archive from the documentation
+        run: |
+          cd debug/esp32dev
+          zip -9r ../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-DEBUG.zip *
+
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          prerelease: false
+          draft: true
+          artifacts: "NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-DEBUG.zip"
+          artifactContentType: application/zip
