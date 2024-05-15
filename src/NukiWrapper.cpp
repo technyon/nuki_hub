@@ -451,7 +451,7 @@ void NukiWrapper::updateConfig()
 
 void NukiWrapper::updateAuthData()
 {
-    if(_nukiLock.getSecurityPincode() == 0) return;
+    if(!isPinSet()) return;
 
     Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, 0, 0, true);
     if(result != Nuki::CmdResult::Success)
@@ -490,7 +490,7 @@ void NukiWrapper::updateKeypad()
     {
         std::list<NukiLock::KeypadEntry> entries;
         _nukiLock.getKeypadEntries(&entries);
-        
+
         Log->print(F("Lock keypad codes: "));
         Log->println(entries.size());
 
@@ -534,7 +534,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
     {
         std::list<NukiLock::TimeControlEntry> timeControlEntries;
         _nukiLock.getTimeControlEntries(&timeControlEntries);
-        
+
         Log->print(F("Lock time control entries: "));
         Log->println(timeControlEntries.size());
 
@@ -549,7 +549,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
             _timeControlIds.push_back(entry.entryId);
         }
     }
-    
+
     postponeBleWatchdog();
 }
 
@@ -575,13 +575,13 @@ NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
     NukiLock::LockAction action;
-    
+
     if(value)
     {
         if(strlen(value) > 0)
         {
             action = nukiInst->lockActionToEnum(value);
-            
+
             if((int)action == 0xff)
             {
                 return LockActionResult::UnknownAction;
@@ -708,7 +708,15 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
     JsonDocument jsonResult;
     char _resbuf[2048];
 
-    if(_nukiLock.getSecurityPincode() == 0)
+    if(!_configRead || !_nukiConfigValid)
+    {
+        jsonResult["general"] = "configNotReady";
+        serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
+        _network->publishConfigCommandResult(_resbuf);
+        return;
+    }
+
+    if(!isPinSet())
     {
         jsonResult["general"] = "noPinSet";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
@@ -745,7 +753,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[basicKeys[i]])
         {
             const char *jsonchar = json[basicKeys[i]].as<const char*>();
-            
+
             if(strlen(jsonchar) == 0)
             {
                 jsonResult[basicKeys[i]] = "noValueSet";
@@ -948,7 +956,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[advancedKeys[i]])
         {
             const char *jsonchar = json[advancedKeys[i]].as<const char*>();
-            
+
             if(strlen(jsonchar) == 0)
             {
                 jsonResult[advancedKeys[i]] = "noValueSet";
@@ -1390,7 +1398,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
 
 void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 {
-    if(_nukiLock.getSecurityPincode() == 0)
+    if(!isPinSet())
     {
         _network->publishKeypadJsonCommandResult("noPinSet");
         return;
@@ -1653,7 +1661,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                     _network->publishKeypadJsonCommandResult("noCodeIdSet");
                     return;
                 }
-                
+
                 if(!idExists)
                 {
                     _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
@@ -1733,7 +1741,13 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
 void NukiWrapper::onTimeControlCommandReceived(const char *value)
 {
-    if(_nukiLock.getSecurityPincode() == 0)
+    if(!_configRead || !_nukiConfigValid)
+    {
+        _network->publishTimeControlCommandResult("configNotReady");
+        return;
+    }
+
+    if(!isPinSet())
     {
         _network->publishTimeControlCommandResult("noPinSet");
         return;
