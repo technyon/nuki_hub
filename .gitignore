@@ -1,8 +1,13 @@
 .idea
 build
+debug
+release
 cmake-build-debug
 cmake-build-release
 cmake-build-release-s3
+bin/*
+ota/*
+webflash/*.bin
 .pio
 .vscode
 .project

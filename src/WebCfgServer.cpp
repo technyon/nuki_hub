@@ -1178,18 +1178,12 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
 
     response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
-
-    if(_preferences->getBool(preference_check_updates))
-    {
-        response.concat("<div id=\"gitdiv\"><button title=\"Open latest release on GitHub\" onclick=\" window.open('");
-        response.concat(GITHUB_LATEST_RELEASE_URL);
-        response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
-
-        response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
-        response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
-        response.concat("'); return false;\">Download latest binary from GitHub</button></div>");
-    }
-
+    response.concat("<div id=\"gitdiv\"><button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+    response.concat(GITHUB_LATEST_RELEASE_URL);
+    response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
+    response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
+    response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
+    response.concat("'); return false;\">Download latest binary from GitHub</button></div>");
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");
