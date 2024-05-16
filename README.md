@@ -45,14 +45,16 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 <b>Note for users upgrading from Nuki Hub 8.21 or lower:</b><br>
 Please go to "MQTT and Network Configuration" and select "Wi-Fi only" as the network device (unless you use other network hardware).
 
-## Installation
+## First time installation
 
 Flash the firmware to an ESP32. The easiest way to install is to use the web installer using a compatible browser like Chrome/Opera/Edge:<br>
 https://technyon.github.io/nuki_hub/<br>
 NOTE: Webflash is not available for the ESP32-Solo1<br>
 <br>
 Alternatively download the latest release for your ESP32 model from https://github.com/technyon/nuki_hub/releases<br>
-Unpack the 7z archive and read the included readme.txt for installation instructions for either "Espressif Flash Download Tools" or "esptool".
+Unpack the zip archive and read the included how-to-flash.txt for installation instructions for either "Espressif Flash Download Tools" or "esptool".<br>
+<br>
+Updates can be installed using the Nuki Hub web configurator
 
 ## Initial setup (Network and MQTT)
 
