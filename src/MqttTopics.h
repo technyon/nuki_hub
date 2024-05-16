@@ -1,6 +1,7 @@
 #pragma once
 
 #define mqtt_topic_lock_action "/lock/action"
+#define mqtt_topic_lock_status_updated "/lock/statusUpdated"
 #define mqtt_topic_lock_state "/lock/state"
 #define mqtt_topic_lock_ha_state "/lock/hastate"
 #define mqtt_topic_lock_json "/lock/json"

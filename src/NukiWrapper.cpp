@@ -176,6 +176,7 @@ void NukiWrapper::update()
         _statusUpdated = false;
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
+        _network->publishStatusUpdated(_statusUpdated);
     }
     if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
     {
@@ -1938,6 +1939,7 @@ void NukiWrapper::notify(Nuki::EventType eventType)
     if(eventType == Nuki::EventType::KeyTurnerStatusUpdated)
     {
         _statusUpdated = true;
+        _network->publishStatusUpdated(_statusUpdated);
     }
 }
 
