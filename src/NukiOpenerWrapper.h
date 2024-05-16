@@ -105,6 +105,7 @@ private:
     int _retryLockstateCount = 0;
     unsigned long _nextRetryTs = 0;
     std::vector<uint16_t> _keypadCodeIds;
+    std::vector<uint32_t> _keypadCodes;
     std::vector<uint8_t> _timeControlIds;
 
     NukiOpener::OpenerState _lastKeyTurnerState;
