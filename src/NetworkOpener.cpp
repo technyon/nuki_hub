@@ -266,6 +266,25 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     }
 
     json["trigger"] = str;
+    
+    json["ringToOpenTimer"] = keyTurnerState.ringToOpenTimer;
+    char curTime[20];
+    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
+    json["currentTime"] = curTime;
+    json["timeZoneOffset"] = keyTurnerState.timeZoneOffset;
+
+    lockactionToString(keyTurnerState.lastLockAction, str);
+
+    if(_firstTunerStatePublish || keyTurnerState.lastLockAction != lastKeyTurnerState.lastLockAction)
+    {
+        publishString(mqtt_topic_lock_last_lock_action, str);
+    }
+
+    json["last_lock_action"] = str;
+
+    memset(&str, 0, sizeof(str));
+    triggerToString(keyTurnerState.lastLockActionTrigger, str);
+    json["last_lock_action_trigger"] = str;
 
     memset(&str, 0, sizeof(str));
     completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
@@ -866,6 +885,11 @@ void NetworkOpener::publishKeypadJsonCommandResult(const char* result)
 void NetworkOpener::publishTimeControlCommandResult(const char* result)
 {
     publishString(mqtt_topic_timecontrol_command_result, result);
+}
+
+void NetworkOpener::publishStatusUpdated(const bool statusUpdated)
+{
+    publishBool(mqtt_topic_lock_status_updated, statusUpdated);
 }
   
 void NetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))

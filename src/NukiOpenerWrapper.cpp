@@ -154,9 +154,10 @@ void NukiOpenerWrapper::update()
 
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
+        _statusUpdated = false;
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
-        _statusUpdated = false;
+        _network->publishStatusUpdated(_statusUpdated);
     }
     if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
     {
@@ -1962,6 +1963,7 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
     if(eventType == Nuki::EventType::KeyTurnerStatusUpdated)
     {
         _statusUpdated = true;
+        _network->publishStatusUpdated(_statusUpdated);
     }
 }
 
