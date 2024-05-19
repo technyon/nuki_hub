@@ -191,9 +191,10 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Lock
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3.
+- lock/statusUpdated: 1 when the Nuki Lock/Opener signals the KeyTurner state has been updated, resets to 0 when Nuki Hub has queried the updated state. 
 - lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked.
 - lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed.
-- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
+- lock/json: Reports the lock state, lockngo_state, trigger, current time, time zone offset, night mode state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
 - lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked.
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system.
 - lock/lastLockAction: Reports the last lock action as a string. Possible values are: Unlock, Lock, Unlatch, LockNgo, LockNgoUnlatch, FullLock, FobAction1, FobAction2, FobAction3, Unknown.
@@ -205,14 +206,14 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating.
 - lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - lock/address: The BLE address of the Nuki Lock.
-- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
+- lock/retry: Reports the current number of retries for the current command. 0 when command is successful, "failed" if the number of retries is greater than the maximum configured number of retries.
 
 ### Opener
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: activateRTO, deactivateRTO, electricStrikeActuation, activateCM, deactivateCM, fobAction1, fobAction2, fobAction3.
 - lock/state: Reports the current lock state as a string. Possible values are: locked, RTOactive, open, opening, uncalibrated.
 - lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed.
-- lock/json: Reports the lock state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
+- lock/json: Reports the lock state, trigger, ring to open timer, current time, time zone offset, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
 - lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked.
 - lock/continuousMode: Enable or disable continuous mode on the opener (0 = disabled; 1 = enabled).
 - lock/ring: The string "ring" is published to this topic when a doorbell ring is detected while RTO or continuous mode is active or "ringlocked" when both are inactive.
@@ -227,7 +228,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating.
 - lock/rssi: The bluetooth signal strength of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - lock/address: The BLE address of the Nuki Lock.
-- lock/retry: Reports the current number of retries for the current command. 0 when command is succesfull, "failed" if the number of retries is greater than the maximum configured number of retries.
+- lock/retry: Reports the current number of retries for the current command. 0 when command is successful, "failed" if the number of retries is greater than the maximum configured number of retries.
 
 ### Configuration
 - configuration/buttonEnabled: 1 if the Nuki Lock/Opener button is enabled, otherwise 0.
