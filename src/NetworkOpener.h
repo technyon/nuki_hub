@@ -35,6 +35,7 @@ public:
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries);
+    void publishStatusUpdated(const bool statusUpdated);
     void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
     void publishKeypadJsonCommandResult(const char* result);

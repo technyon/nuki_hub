@@ -241,7 +241,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     lockstateToString(keyTurnerState.lockState, str);
 
-    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState) && keyTurnerState.lockState != NukiLock::LockState::Undefined)
+    if(keyTurnerState.lockState != NukiLock::LockState::Undefined)
     {
 
         publishString(mqtt_topic_lock_state, str);
@@ -253,6 +253,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     }
 
     json["lock_state"] = str;
+    json["lockngo_state"] = (keyTurnerState.lockNgoTimer == 0 ? 0 : 1);
 
     memset(&str, 0, sizeof(str));
     triggerToString(keyTurnerState.trigger, str);
@@ -263,6 +264,12 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     }
 
     json["trigger"] = str;
+    
+    char curTime[20];
+    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
+    json["currentTime"] = curTime;
+    json["timeZoneOffset"] = keyTurnerState.timeZoneOffset;
+    json["nightModeActive"] = keyTurnerState.nightModeActive;
 
     memset(&str, 0, sizeof(str));
     lockactionToString(keyTurnerState.lastLockAction, str);
@@ -273,6 +280,10 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     }
 
     json["last_lock_action"] = str;
+
+    memset(&str, 0, sizeof(str));
+    triggerToString(keyTurnerState.lastLockActionTrigger, str);
+    json["last_lock_action_trigger"] = str;
 
     memset(&str, 0, sizeof(str));
     NukiLock::completionStatusToString(keyTurnerState.lastLockActionCompletionStatus, str);
@@ -804,6 +815,11 @@ void NetworkLock::publishKeypadJsonCommandResult(const char* result)
 void NetworkLock::publishTimeControlCommandResult(const char* result)
 {
     publishString(mqtt_topic_timecontrol_command_result, result);
+}
+
+void NetworkLock::publishStatusUpdated(const bool statusUpdated)
+{
+    publishBool(mqtt_topic_lock_status_updated, statusUpdated);
 }
 
 void NetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
