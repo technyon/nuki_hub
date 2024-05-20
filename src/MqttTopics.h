@@ -70,6 +70,8 @@
 #define mqtt_topic_info_nuki_hub_ip "/info/nukiHubIp"
 
 #define mqtt_topic_reset "/maintenance/reset"
+#define mqtt_topic_webserver_state "/maintenance/webserver/state"
+#define mqtt_topic_webserver_action "/maintenance/webserver/enable"
 #define mqtt_topic_uptime "/maintenance/uptime"
 #define mqtt_topic_wifi_rssi "/maintenance/wifiRssi"
 #define mqtt_topic_log "/maintenance/log"

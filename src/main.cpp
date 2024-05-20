@@ -114,7 +114,11 @@ void setupTasks()
 
     xTaskCreatePinnedToCore(networkTask, "ntw", 12288, NULL, 3, &networkTaskHandle, 1);
     xTaskCreatePinnedToCore(nukiTask, "nuki", 8192, NULL, 2, &nukiTaskHandle, 1);
-    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 1024, NULL, 5, &presenceDetectionTaskHandle, 1);
+    
+    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
+    {
+        xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 1024, NULL, 5, &presenceDetectionTaskHandle, 1);
+    }
 }
 
 void initEthServer(const NetworkDeviceType device)
@@ -316,16 +320,22 @@ void setup()
         nukiOpener->initialize();
     }
 
-    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
-    webCfgServer->initialize();
-
-    presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
-    presenceDetection->initialize();
-
+    if(preferences->getBool(preference_webserver_enabled, true))
+    {
+        webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
+        webCfgServer->initialize();
+    }
+    
+    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
+    {
+        presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
+        presenceDetection->initialize();
+    }
+    
     setupTasks();
 }
 
 void loop()
 {
-    delay(60000);
+    vTaskDelete(NULL);
 }

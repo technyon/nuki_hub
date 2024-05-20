@@ -53,6 +53,10 @@ void NetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
 
+    _network->subscribe(_mqttPath, mqtt_topic_webserver_action);
+    _network->initTopic(_mqttPath, mqtt_topic_webserver_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_webserver_state, _preferences->getBool(preference_webserver_enabled, true) ? 1 : 0);
+
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
@@ -97,6 +101,32 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
     {
         Log->println(F("Restart requested via MQTT."));
+        _network->clearWifiFallback();
+        delay(200);
+        restartEsp(RestartReason::RequestedViaMqtt);
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
+    {
+        if(strcmp(value, "") == 0 ||
+           strcmp(value, "--") == 0) return;
+
+        publishString(mqtt_topic_webserver_action, "--");
+
+        if(strcmp(value, "1") == 0)
+        {
+            if(_preferences->getBool(preference_webserver_enabled)) return;
+            Log->println(F("Webserver enabled, restarting."));
+            _preferences->putBool(preference_webserver_enabled, true);
+
+        }
+        else if (strcmp(value, "0") == 0)
+        {
+            if(!_preferences->getBool(preference_webserver_enabled)) return;
+            Log->println(F("Webserver disabled, restarting."));
+            _preferences->putBool(preference_webserver_enabled, false);
+        }
+
         _network->clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
@@ -199,7 +229,7 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
         if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
-        
+
         if(_configUpdateReceivedCallback != NULL)
         {
             _configUpdateReceivedCallback(value);
@@ -265,7 +295,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     }
 
     json["trigger"] = str;
-    
+
     char curTime[20];
     sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
     json["currentTime"] = curTime;

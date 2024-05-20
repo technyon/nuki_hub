@@ -1765,8 +1765,12 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.concat(", nuki: ");
     response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
-    response.concat(", pd: ");
-    response.concat(uxTaskGetStackHighWaterMark(presenceDetectionTaskHandle));
+    
+    if(_preferences->getInt(preference_presence_detection_timeout) >= 0)
+    {
+        response.concat(", pd: ");
+        response.concat(uxTaskGetStackHighWaterMark(presenceDetectionTaskHandle));
+    }
     response.concat("\n");
 
     _gpio->getConfigurationText(response, _gpio->pinConfiguration());
