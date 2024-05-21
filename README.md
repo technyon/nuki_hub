@@ -390,7 +390,7 @@ Example usage for changing multiple settings at once:<br>
 The result of the last configuration change action will be published to the `configuration/commandResult` MQTT topic as JSON data.<br>
 <br>
 The JSON data will include a node called "general" and a node for every setting that Nuki Hub detected in the action.<br>
-Possible values for the "general" node are "noPinSet", "invalidJson", "invalidConfig", "success" and "noChange".<br>
+Possible values for the "general" node are "noValidPinSet", "invalidJson", "invalidConfig", "success" and "noChange".<br>
 Possible values for the node per setting are "unchanged", "noValueSet", "invalidValue", "valueTooLong", "accessDenied", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined"<br>
 <br>
 Example:
@@ -482,7 +482,7 @@ Examples:
 ### Result of attempted keypad code changes
 
 The result of the last configuration change action will be published to the `configuration/commandResultJson` MQTT topic.<br>
-Possible values are "noPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
+Possible values are "noValidPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
  
 ## Keypad control (alternative, optional)
 

@@ -25,6 +25,7 @@ public:
     void lockngounlatch();
 
     bool isPinSet();
+    bool isPinValid();
     void setPin(const uint16_t pin);
     void unpair();
 
