@@ -306,6 +306,11 @@ bool NukiOpenerWrapper::isPinSet()
     return _nukiOpener.getSecurityPincode() != 0;
 }
 
+bool NukiOpenerWrapper::isPinValid()
+{
+    return _preferences->getInt(preference_opener_pin_status, 4) == 1;
+}
+
 void NukiOpenerWrapper::setPin(const uint16_t pin)
 {
     _nukiOpener.saveSecurityPincode(pin);
@@ -374,15 +379,18 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 
     if(_publishAuthData)
     {
+        Log->println(F("Publishing auth data"));
         updateAuthData();
+        Log->println(F("Done publishing auth data"));
     }
 
     postponeBleWatchdog();
+    Log->println(F("Done querying lock state"));
 }
 
 void NukiOpenerWrapper::updateBatteryState()
 {
-    Log->print("Querying opener battery state: ");
+    Log->print(F("Querying opener battery state: "));
     Nuki::CmdResult result = _nukiOpener.requestBatteryReport(&_batteryReport);
     printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
@@ -390,6 +398,7 @@ void NukiOpenerWrapper::updateBatteryState()
         _network->publishBatteryReport(_batteryReport);
     }
     postponeBleWatchdog();
+    Log->println(F("Done querying lock battery state"));
 }
 
 void NukiOpenerWrapper::updateConfig()
@@ -471,26 +480,27 @@ void NukiOpenerWrapper::updateConfig()
 
 void NukiOpenerWrapper::updateAuthData()
 {
-    if(!isPinSet()) return;
+    if(!isPinValid())
+    {
+        Log->println(F("No valid PIN set"));
+        return;
+    }
 
-    Nuki::CmdResult result = _nukiOpener.retrieveLogEntries(0, 0, 0, true);
+    Nuki::CmdResult result = _nukiOpener.retrieveLogEntries(0, 5, 1, false);
+    Log->print(F("Retrieve log entries: "));
+    Log->println(result);
     if(result != Nuki::CmdResult::Success)
     {
         return;
     }
+
     delay(100);
-
-    uint16_t count = _nukiOpener.getLogEntryCount();
-
-    result = _nukiOpener.retrieveLogEntries(0, count < 5 ? count : 5, 1, false);
-    if(result != Nuki::CmdResult::Success)
-    {
-        return;
-    }
-    delay(1000);
 
     std::list<NukiOpener::LogEntry> log;
     _nukiOpener.getLogEntries(&log);
+
+    Log->print(F("Log size: "));
+    Log->println(log.size());
 
     if(log.size() > 0)
     {
@@ -527,9 +537,12 @@ void NukiOpenerWrapper::updateKeypad()
 
         _keypadCodeIds.clear();
         _keypadCodeIds.reserve(entries.size());
+        _keypadCodes.clear();
+        _keypadCodes.reserve(entries.size());
         for(const auto& entry : entries)
         {
             _keypadCodeIds.push_back(entry.codeId);
+            _keypadCodes.push_back(entry.code);
         }
     }
 
@@ -781,9 +794,9 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         return;
     }
 
-    if(!isPinSet())
+    if(!isPinValid())
     {
-        jsonResult["general"] = "noPinSet";
+        jsonResult["general"] = "noValidPinSet";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
         _network->publishConfigCommandResult(_resbuf);
         return;
@@ -1413,9 +1426,9 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
 
 void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 {
-    if(!isPinSet())
+    if(!isPinValid())
     {
-        _network->publishKeypadJsonCommandResult("noPinSet");
+        _network->publishKeypadJsonCommandResult("noValidPinSet");
         return;
     }
 
@@ -1480,7 +1493,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             if(idExists)
             {
                 result = _nukiOpener.deleteKeypadEntry(codeId);
-                Log->print("Delete keypad code: ");
+                Log->print(F("Delete keypad code: "));
                 Log->println((int)result);
             }
             else
@@ -1507,7 +1520,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     return;
                 }
             }
-            else
+            else if (strcmp(action, "update") != 0)
             {
                 _network->publishKeypadJsonCommandResult("noCodeSet");
                 return;
@@ -1666,7 +1679,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 }
 
                 result = _nukiOpener.addKeypadEntry(entry);
-                Log->print("Add keypad code: ");
+                Log->print(F("Add keypad code: "));
                 Log->println((int)result);
             }
             else if (strcmp(action, "update") == 0)
@@ -1688,7 +1701,14 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 entry.codeId = codeId;
                 size_t nameLen = strlen(name);
                 memcpy(&entry.name, name, nameLen > 20 ? 20 : nameLen);
-                entry.code = code;
+
+                if(code) entry.code = code;
+                else
+                {
+                    auto it = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId);
+                    entry.code = _keypadCodes[(it - _keypadCodeIds.begin())];
+                }
+                
                 entry.enabled = enabled == 0 ? 0 : 1;
                 entry.timeLimited = timeLimited == 1 ? 1 : 0;
 
@@ -1727,7 +1747,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 }
 
                 result = _nukiOpener.updateKeypadEntry(entry);
-                Log->print("Update keypad code: ");
+                Log->print(F("Update keypad code: "));
                 Log->println((int)result);
             }
         }
@@ -1762,9 +1782,9 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
         return;
     }
 
-    if(!isPinSet())
+    if(!isPinValid())
     {
-        _network->publishTimeControlCommandResult("noPinSet");
+        _network->publishTimeControlCommandResult("noValidPinSet");
         return;
     }
 
@@ -1817,7 +1837,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
             if(idExists)
             {
                 result = _nukiOpener.removeTimeControlEntry(entryId);
-                Log->print("Delete time control ");
+                Log->print(F("Delete time control "));
                 Log->println((int)result);
             }
             else
@@ -1882,7 +1902,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                 entry.lockAction = timeControlLockAction;
 
                 result = _nukiOpener.addTimeControlEntry(entry);
-                Log->print("Add time control: ");
+                Log->print(F("Add time control: "));
                 Log->println((int)result);
             }
             else if (strcmp(action, "update") == 0)
@@ -1908,7 +1928,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                 entry.lockAction = timeControlLockAction;
 
                 result = _nukiOpener.updateTimeControlEntry(entry);
-                Log->print("Update time control: ");
+                Log->print(F("Update time control: "));
                 Log->println((int)result);
             }
         }
