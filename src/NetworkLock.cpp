@@ -405,11 +405,8 @@ void NetworkLock::publishState(NukiLock::LockState lockState)
 void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries)
 {
     char str[50];
-
-    _authId = 0;
-    memset(_authName, 0, sizeof(_authName));
-    _authName[0] = '\0';
-    _authFound = false;
+    char authName[33];
+    bool authFound = false;
 
     JsonDocument json;
 
@@ -421,20 +418,31 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
             break;
         }
         --i;
-        if((log.loggingType == NukiLock::LoggingType::LockAction || log.loggingType == NukiLock::LoggingType::KeypadAction) && ! _authFound)
+
+        memset(authName, 0, sizeof(authName));
+        authName[0] = '\0';
+
+        if((log.loggingType == NukiLock::LoggingType::LockAction || log.loggingType == NukiLock::LoggingType::KeypadAction))
         {
-            _authFound = true;
-            _authId = log.authId;
             int sizeName = sizeof(log.name);
-            memcpy(_authName, log.name, sizeName);
-            if(_authName[sizeName - 1] != '\0') _authName[sizeName] = '\0';
+            memcpy(authName, log.name, sizeName);
+            if(authName[sizeName - 1] != '\0') authName[sizeName] = '\0';
+
+            if(!authFound)
+            {
+                authFound = true;
+                _authFound = true;
+                _authId = log.authId;
+                memset(_authName, 0, sizeof(_authName));
+                memcpy(_authName, authName, sizeof(authName));
+            }
         }
 
         auto entry = json.add<JsonVariant>();
 
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
-        entry["authorizationName"] = _authName;
+        entry["authorizationName"] = authName;
         entry["timeYear"] = log.timeStampYear;
         entry["timeMonth"] = log.timeStampMonth;
         entry["timeDay"] = log.timeStampDay;
@@ -500,7 +508,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_log, _buffer);
 
-    if(_authFound)
+    if(authFound)
     {
         publishUInt(mqtt_topic_lock_auth_id, _authId);
         publishString(mqtt_topic_lock_auth_name, _authName);

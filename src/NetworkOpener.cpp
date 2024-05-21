@@ -266,7 +266,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     }
 
     json["trigger"] = str;
-    
+
     json["ringToOpenTimer"] = keyTurnerState.ringToOpenTimer;
     char curTime[20];
     sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
@@ -373,11 +373,8 @@ void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
 void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries)
 {
     char str[50];
-
-    _authId = 0;
-    memset(_authName, 0, sizeof(_authName));
-    _authName[0] = '\0';
-    _authFound = false;
+    char authName[33];
+    bool authFound = false;
 
     JsonDocument json;
 
@@ -390,13 +387,23 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
         }
         --i;
 
-        if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction) && ! _authFound)
+        memset(authName, 0, sizeof(authName));
+        authName[0] = '\0';
+
+        if((log.loggingType == NukiOpener::LoggingType::LockAction || log.loggingType == NukiOpener::LoggingType::KeypadAction))
         {
-            _authFound = true;
-            _authId = log.authId;
             int sizeName = sizeof(log.name);
-            memcpy(_authName, log.name, sizeName);
-            if(_authName[sizeName - 1] != '\0') _authName[sizeName] = '\0';
+            memcpy(authName, log.name, sizeName);
+            if(authName[sizeName - 1] != '\0') authName[sizeName] = '\0';
+
+            if(!authFound)
+            {
+                authFound = true;
+                _authFound = true;
+                _authId = log.authId;
+                memset(_authName, 0, sizeof(_authName));
+                memcpy(_authName, authName, sizeof(authName));
+            }
         }
 
         auto entry = json.add<JsonVariant>();
@@ -494,7 +501,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_log, _buffer);
 
-    if(_authFound)
+    if(authFound)
     {
         publishUInt(mqtt_topic_lock_auth_id, _authId);
         publishString(mqtt_topic_lock_auth_name, _authName);
@@ -891,7 +898,7 @@ void NetworkOpener::publishStatusUpdated(const bool statusUpdated)
 {
     publishBool(mqtt_topic_lock_status_updated, statusUpdated);
 }
-  
+
 void NetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;

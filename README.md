@@ -10,7 +10,7 @@ It exposes the lock state (and much more) through MQTT and allows executing comm
 
 ***Nuki Hub does not integrate with the Nuki mobile app, it can't register itself as a bridge in the official Nuki mobile app.***
 
-Feel free to join us on Discord: https://discord.gg/feB9FnMY
+Feel free to join us on Discord: https://discord.gg/24HxpGBJ
 
 ## Supported devices
 
@@ -156,16 +156,16 @@ In a browser navigate to the IP address assigned to the ESP32.
 #### Nuki General Access Control
 - Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
-- Publish time control information: Enable to publish information about time control entries through MQTT, see the "Time control" section of this README
-- Add, modify and delete time control entries: Enable to allow configuration of time control entries through MQTT, see the "Time control" section of this README
-- Publish auth data: Enable to publish authorization data to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
+- Publish time control information: Enable to publish information about time control entries through MQTT, see the "[Time Control](#time-control)" section of this README
+- Add, modify and delete time control entries: Enable to allow configuration of time control entries through MQTT, see the "[Time Control](#time-control)" section of this README
+- Publish auth data: Enable to publish authorization data to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "[Nuki Lock PIN / Nuki Opener PIN](#nuki-lock-pin--nuki-opener-pin)" below.
 
 #### Nuki Lock/Opener Access Control
 - Enable or disable executing each available lock action for the Nuki Lock and Nuki Opener through MQTT. Note: GPIO control is not restricted through this setting.
 
 #### Nuki Lock/Opener Config Control
 - Enable or disable changing each available configuration setting for the Nuki Lock and Nuki Opener through MQTT.
-- NOTE: Changing configuration settings requires the Nuki security code / PIN to be set, see "Nuki Lock PIN / Nuki Opener PIN" below.
+- NOTE: Changing configuration settings requires the Nuki security code / PIN to be set, see "[Nuki Lock PIN / Nuki Opener PIN](#nuki-lock-pin--nuki-opener-pin)" below.
 
 ### Credentials
 
@@ -184,7 +184,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### GPIO Configuration
 
-- Gpio [2-33]: See the "GPIO lock control" section of this README.
+- Gpio [2-33]: See the "[GPIO lock control](#gpio-lock-control-optional)" section of this README.
 
 ## Exposed MQTT Topics
 
@@ -268,7 +268,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Time Control
 
-- See the "Time control" section of this README.
+- See the "[Time Control](#time-control)" section of this README.
 
 ### Info
 
@@ -390,7 +390,7 @@ Example usage for changing multiple settings at once:<br>
 The result of the last configuration change action will be published to the `configuration/commandResult` MQTT topic as JSON data.<br>
 <br>
 The JSON data will include a node called "general" and a node for every setting that Nuki Hub detected in the action.<br>
-Possible values for the "general" node are "noPinSet", "invalidJson", "invalidConfig", "success" and "noChange".<br>
+Possible values for the "general" node are "noValidPinSet", "invalidJson", "invalidConfig", "success" and "noChange".<br>
 Possible values for the node per setting are "unchanged", "noValueSet", "invalidValue", "valueTooLong", "accessDenied", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined"<br>
 <br>
 Example:
@@ -415,8 +415,25 @@ To enable SSL encryption, supply the necessary information in the MQTT Configura
 The following configurations are supported:<br>
 CA, CERT and KEY are empty -> No encryption<br>
 CA is filled but CERT and KEY are empty -> Encrypted MQTT<br>
-CA, CERT and KEY are filled -> Encrypted MQTT with client vaildation
+CA, CERT and KEY are filled -> Encrypted MQTT with client vaildation<br>
+<br>
+Example certificate creation for your MQTT server:
+```console
+# make a ca key
+openssl genpkey -algorithm RSA -out ca.key
 
+# make a CA cert
+openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj "/C=US/ST=YourState/L=YourCity/O=YourOrganization/OU=YourUnit/CN=YourCAName"
+
+# make a server key
+openssl genpkey -algorithm RSA -out server.key
+
+# Make a sign request, MAKE SURE THE CN MATCHES YOUR MQTT SERVERNAME
+openssl req -new -key server.key -out server.csr -subj "/C=US/ST=YourState/L=YourCity/O=YourOrganization/OU=YourUnit/CN=homeserver.local"
+
+# sign it
+ openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 3650
+```
 ## Home Assistant Discovery (optional)
 
 This software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/) for integrating Nuki Hub with Home Assistant.<br>
@@ -447,7 +464,7 @@ To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to 
 |------------------|----------|----------|----------|------------------------------------------------------------------------------------------------------------------|----------------------------------------|
 | action           | Required | Required | Required | The action to execute                                                                                            | "delete", "add", "update"              |
 | codeId           | Required | Not used | Required | The code ID of the existing code to delete or update                                                             | Integer                                |
-| code             | Not used | Required | Required | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
+| code             | Not used | Required | Optional | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
 | enabled          | Not used | Not used | Optional | Enable or disable the code, always enabled on add, disabled if not set on update                                 | 1 = enabled, 0 = disabled              |
 | name             | Not used | Required | Required | The name of the code to create or update                                                                         | String, max 20 chars                   |
 | timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, disabled if not set (requires enabled = 1)  | 1 = enabled, 0 = disabled              |
@@ -460,12 +477,12 @@ To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to 
 Examples:
 - Delete: `{ "action": "delete", "codeId": "1234" }`
 - Add: `{ "action": "add", "code": "589472", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "wed", "thu", "fri" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
-- Update: `{ "action": "update", "codeId": "1234", "code": "589472", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
+- Update: `{ "action": "update", "codeId": "1234", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
 
 ### Result of attempted keypad code changes
 
 The result of the last configuration change action will be published to the `configuration/commandResultJson` MQTT topic.<br>
-Possible values are "noPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
+Possible values are "noValidPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
  
 ## Keypad control (alternative, optional)
 
