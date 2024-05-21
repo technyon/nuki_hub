@@ -94,6 +94,7 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
     std::vector<uint16_t> _keypadCodeIds;
+    std::vector<uint32_t> _keypadCodes;
     std::vector<uint8_t> _timeControlIds;
 
     NukiLock::KeyTurnerState _lastKeyTurnerState;

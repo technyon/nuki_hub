@@ -507,9 +507,12 @@ void NukiWrapper::updateKeypad()
 
         _keypadCodeIds.clear();
         _keypadCodeIds.reserve(entries.size());
+        _keypadCodes.clear();
+        _keypadCodes.reserve(entries.size());
         for(const auto& entry : entries)
         {
             _keypadCodeIds.push_back(entry.codeId);
+            _keypadCodes.push_back(entry.code);
         }
     }
 
@@ -1491,7 +1494,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                     return;
                 }
             }
-            else
+            else if (strcmp(action, "update") != 0)
             {
                 _network->publishKeypadJsonCommandResult("noCodeSet");
                 return;
@@ -1672,7 +1675,14 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                 entry.codeId = codeId;
                 size_t nameLen = strlen(name);
                 memcpy(&entry.name, name, nameLen > 20 ? 20 : nameLen);
-                entry.code = code;
+                
+                if(code) entry.code = code;
+                else
+                {
+                    auto it = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId);
+                    entry.code = _keypadCodes[(it - _keypadCodeIds.begin())];
+                }
+
                 entry.enabled = enabled == 0 ? 0 : 1;
                 entry.timeLimited = timeLimited == 1 ? 1 : 0;
 

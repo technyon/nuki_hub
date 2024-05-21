@@ -447,7 +447,7 @@ To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to 
 |------------------|----------|----------|----------|------------------------------------------------------------------------------------------------------------------|----------------------------------------|
 | action           | Required | Required | Required | The action to execute                                                                                            | "delete", "add", "update"              |
 | codeId           | Required | Not used | Required | The code ID of the existing code to delete or update                                                             | Integer                                |
-| code             | Not used | Required | Required | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
+| code             | Not used | Required | Optional | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
 | enabled          | Not used | Not used | Optional | Enable or disable the code, always enabled on add, disabled if not set on update                                 | 1 = enabled, 0 = disabled              |
 | name             | Not used | Required | Required | The name of the code to create or update                                                                         | String, max 20 chars                   |
 | timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, disabled if not set (requires enabled = 1)  | 1 = enabled, 0 = disabled              |
@@ -460,7 +460,7 @@ To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to 
 Examples:
 - Delete: `{ "action": "delete", "codeId": "1234" }`
 - Add: `{ "action": "add", "code": "589472", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "wed", "thu", "fri" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
-- Update: `{ "action": "update", "codeId": "1234", "code": "589472", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
+- Update: `{ "action": "update", "codeId": "1234", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
 
 ### Result of attempted keypad code changes
 
