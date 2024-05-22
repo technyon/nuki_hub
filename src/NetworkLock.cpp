@@ -46,7 +46,6 @@ void NetworkLock::initialize()
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
-
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_config_action);
 
@@ -558,7 +557,6 @@ void NetworkLock::publishConfig(const NukiLock::Config &config)
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_basic_json, _buffer);
-
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledEnabled == 1);
     publishInt(mqtt_topic_config_led_brightness, config.ledBrightness);
@@ -609,7 +607,6 @@ void NetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &config)
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_advanced_json, _buffer);
-
     publishBool(mqtt_topic_config_auto_unlock, config.autoUnLockDisabled == 0);
     publishBool(mqtt_topic_config_auto_lock, config.autoLockEnabled == 1);
 }
@@ -892,6 +889,7 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
 {
     _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction);
     _network->publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
+
     if(hasDoorSensor)
     {
         _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);

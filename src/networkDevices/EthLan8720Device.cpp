@@ -143,3 +143,8 @@ String EthLan8720Device::localIP()
 {
     return ETH.localIP().toString();
 }
+
+String EthLan8720Device::BSSIDstr()
+{
+    return "";
+}

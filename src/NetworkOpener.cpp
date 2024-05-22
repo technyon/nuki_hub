@@ -39,7 +39,6 @@ void NetworkOpener::initialize()
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
-
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_config_action);
 
@@ -610,7 +609,6 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_basic_json, _buffer);
-
     publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);
     publishBool(mqtt_topic_config_led_enabled, config.ledFlashEnabled == 1);
     publishString(mqtt_topic_info_firmware_version, std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]));
@@ -662,7 +660,6 @@ void NetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &conf
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_advanced_json, _buffer);
-
     publishUInt(mqtt_topic_config_sound_level, config.soundLevel);
 }
 
@@ -707,7 +704,7 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
         basePath.concat("/code_");
         basePath.concat(std::to_string(index).c_str());
         publishKeypadEntry(basePath, entry);
-
+      
         auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["codeId"] = entry.codeId;

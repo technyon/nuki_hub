@@ -33,6 +33,7 @@ public:
     virtual int8_t signalStrength() = 0;
     
     virtual String localIP() = 0;
+    virtual String BSSIDstr() = 0;
 
     virtual void mqttSetClientId(const char* clientId);
     virtual void mqttSetCleanSession(bool cleanSession);

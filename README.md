@@ -116,6 +116,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
+- Connect to AP with the best signal in an environment with multiple APs with the same SSID: Enable to perform a scan for the Access Point with the best signal strenght for the specified SSID in a multi AP/Mesh environment.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60. 
 - Network Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
 - Restart on disconnect: Enable to restart the Nuki Hub after 60 seconds without a connection to a network.
