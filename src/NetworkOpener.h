@@ -65,7 +65,6 @@ private:
 
     void buildMqttPath(const char* path, char* outPath);
     void subscribe(const char* path);
-    void logactionCompletionStatusToString(uint8_t value, char* out);
     void buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str);
     void fobActionToString(const int fobact, char* str);
     void operatingModeToString(const int opmode, char* str);

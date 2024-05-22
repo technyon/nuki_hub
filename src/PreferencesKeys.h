@@ -72,6 +72,12 @@
 #define preference_has_mac_byte_1 (char*)"macb1"
 #define preference_has_mac_byte_2 (char*)"macb2"
 #define preference_latest_version (char*)"latest"
+#define preference_task_size_network (char*)"tsksznetw"
+#define preference_task_size_nuki (char*)"tsksznuki"
+#define preference_task_size_pd (char*)"tskszpd"
+#define preference_authlog_max_entries (char*)"authmaxentry"
+#define preference_keypad_max_entries (char*)"kpmaxentry"
+#define preference_timecontrol_max_entries (char*)"tcmaxentry"
 
 class DebugPreferences
 {
@@ -83,17 +89,15 @@ private:
             preference_opener_continuous_mode, preference_mqtt_opener_path, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
             preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url,
             preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
-            preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval,
-            preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
-            preference_restart_ble_beacon_lost, preference_query_interval_lockstate, 
-            preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad,
-            preference_keypad_control_enabled, preference_keypad_info_enabled, preference_acl,
-            preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
+            preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval, preference_hostname,
+            preference_network_timeout, preference_restart_on_disconnect, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
+            preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
+            preference_keypad_info_enabled, preference_acl, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
             preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl, preference_conf_opener_advanced_acl,
-            preference_access_level, preference_register_as_app, preference_command_nr_of_retries,
-            preference_command_retry_delay, preference_cred_user, preference_cred_password, preference_publish_authdata,
-            preference_publish_debug_info, preference_presence_detection_timeout,
+            preference_access_level, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
+            preference_cred_password, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout,
             preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version,
+            preference_task_size_network, preference_task_size_nuki, preference_task_size_pd, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries
     };
     std::vector<char*> _redact =
     {

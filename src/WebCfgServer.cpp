@@ -78,6 +78,14 @@ void WebCfgServer::initialize()
         buildAccLvlHtml(response);
         _server.send(200, "text/html", response);
     });
+    _server.on("/advanced", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildAdvancedConfigHtml(response);
+        _server.send(200, "text/html", response);
+    });
     _server.on("/cred", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -465,6 +473,36 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
             configChanged = true;
         }
+        else if(key == "TSKNTWK")
+        {
+            _preferences->putInt(preference_task_size_network, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "TSKNUKI")
+        {
+            _preferences->putInt(preference_task_size_nuki, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "TSKPD")
+        {
+            _preferences->putInt(preference_task_size_pd, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "ALMAX")
+        {
+            _preferences->putInt(preference_authlog_max_entries, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "KPMAX")
+        {
+            _preferences->putInt(preference_keypad_max_entries, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "TCMAX")
+        {
+            _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
+            configChanged = true;
+        }
         else if(key == "ACLLVLCHANGED")
         {
             aclLvlChanged = true;
@@ -488,7 +526,7 @@ bool WebCfgServer::processArgs(String& message)
         {
             _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
             configChanged = true;
-        }        
+        }
         else if(key == "PUBAUTH")
         {
             _preferences->putBool(preference_publish_authdata, (value == "1"));
@@ -1071,23 +1109,25 @@ void WebCfgServer::buildHtml(String& response)
     if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota");
 
     response.concat("</table><br><table id=\"tblnav\"><tbody>");
-    response.concat("<tr><td><h3>MQTT and Network Configuration</h3></td><td class=\"tdbtn\">");
+    response.concat("<tr><td><h5>MQTT and Network Configuration</h5></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
-    response.concat("</td></tr><tr><td><h3>Nuki Configuration</h3></td><td class=\"tdbtn\">");
+    response.concat("</td></tr><tr><td><h5>Nuki Configuration</h5></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/nukicfg");
-    response.concat("</td></tr><tr><td><h3>Access Level Configuration</h3></td><td class=\"tdbtn\">");
+    response.concat("</td></tr><tr><td><h5>Access Level Configuration</h5></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/acclvl");
-    response.concat("</td></tr><tr><td><h3>Credentials</h3></td><td class=\"tdbtn\">");
+    response.concat("</td></tr><tr><td><h5>Credentials</h5></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");
-    response.concat("</td></tr><tr><td><h3>GPIO Configuration</h3></td><td class=\"tdbtn\">");
+    response.concat("</td></tr><tr><td><h5>GPIO Configuration</h5></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Edit", "/gpiocfg");
-    response.concat("</td></tr><tr><td><h3>Firmware update</h3></td><td class=\"tdbtn\">");
+    response.concat("</td></tr><tr><td><h5>Firmware update</h5></td><td class=\"tdbtn\">");
     buildNavigationButton(response, "Open", "/ota");
+    response.concat("</td></tr><tr><td><h5>Advanced Configuration</h5></td><td class=\"tdbtn\">");
+    buildNavigationButton(response, "Edit", "/advanced");
     response.concat("</td></tr>");
 
     if(_allowRestartToPortal)
     {
-        response.concat("<tr><td><h3>Wi-Fi</h3></td><td class=\"tdbtn\">");
+        response.concat("<tr><td><h5>Wi-Fi</h5></td><td class=\"tdbtn\">");
         buildNavigationButton(response, "Restart and configure Wi-Fi", "/wifi");
         response.concat("</td></tr>");
     }
@@ -1250,6 +1290,26 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15);
     printInputField(response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15);
     printInputField(response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15);
+    response.concat("</table>");
+
+    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.concat("</form>");
+    response.concat("</body></html>");
+}
+
+void WebCfgServer::buildAdvancedConfigHtml(String &response)
+{
+    buildHtmlHeader(response);
+    response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<h3>Advanced Configuration</h3>");
+    response.concat("<h4 style=\"color: #ff0000\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash nukihub using USB/serial</h4>");
+    response.concat("<table>");
+    printInputField(response, "TSKNTWK", "Task size Network", _preferences->getInt(preference_task_size_network, 12288), 6);
+    printInputField(response, "TSKNUKI", "Task size Nuki", _preferences->getInt(preference_task_size_nuki, 8192), 6);
+    printInputField(response, "TSKPD", "Task size Presence Detection", _preferences->getInt(preference_task_size_pd, 1024), 6);
+    printInputField(response, "ALMAX", "Max auth log entries", _preferences->getInt(preference_authlog_max_entries, 5), 3);
+    printInputField(response, "KPMAX", "Max keypad entries", _preferences->getInt(preference_keypad_max_entries, 10), 3);
+    printInputField(response, "TCMAX", "Max timecontrol entries", _preferences->getInt(preference_timecontrol_max_entries, 10), 3);
     response.concat("</table>");
 
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -1765,7 +1825,7 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.concat(", nuki: ");
     response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
-    
+
     if(_preferences->getInt(preference_presence_detection_timeout) >= 0)
     {
         response.concat(", pd: ");

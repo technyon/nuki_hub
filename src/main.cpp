@@ -52,7 +52,11 @@ void networkTask(void *pvParameters)
         {
             networkOpener->update();
         }
-        webCfgServer->update();
+
+        if(preferences->getBool(preference_webserver_enabled, true))
+        {
+            webCfgServer->update();
+        }
 
         // millis() is about to overflow. Restart device to prevent problems with overflow
         if(millis() > restartTs)
@@ -112,12 +116,12 @@ void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
-    xTaskCreatePinnedToCore(networkTask, "ntw", 12288, NULL, 3, &networkTaskHandle, 1);
-    xTaskCreatePinnedToCore(nukiTask, "nuki", 8192, NULL, 2, &nukiTaskHandle, 1);
-    
+    xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, 12288), NULL, 3, &networkTaskHandle, 1);
+    xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, 8192), NULL, 2, &nukiTaskHandle, 1);
+
     if(preferences->getInt(preference_presence_detection_timeout) >= 0)
     {
-        xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 1024, NULL, 5, &presenceDetectionTaskHandle, 1);
+        xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", preferences->getInt(preference_task_size_pd, 1024), NULL, 5, &presenceDetectionTaskHandle, 1);
     }
 }
 
@@ -325,13 +329,13 @@ void setup()
         webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
         webCfgServer->initialize();
     }
-    
+
     if(preferences->getInt(preference_presence_detection_timeout) >= 0)
     {
         presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
         presenceDetection->initialize();
     }
-    
+
     setupTasks();
 }
 
