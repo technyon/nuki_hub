@@ -71,7 +71,12 @@ file(GLOB_RECURSE SRCFILESREC
         lib/espMqttClient/src/Packets/*.cpp
         lib/espMqttClient/src/Packets/*.h
         lib/espMqttClient/src/Transport/*.cpp
-        lib/espMqttClient/src/Transport/*.h        
+        lib/espMqttClient/src/Transport/*.h
+        lib/Arduino-TOTP-RFC6238-generator/src/*.hpp
+        lib/Arduino-Base32-Decode/src/*.cpp
+        lib/Arduino-Base32-Decode/src/*.h
+        lib/DuoAuthLibrary/src/*.cpp
+        lib/DuoAuthLibrary/src/*.h
 )
 
 include_directories(
@@ -81,6 +86,9 @@ include_directories(
         ../lib/MqttLogger/src
         ../lib/nuki_ble/src
         ../lib/PsychicHttp/src
+        ../lib/Arduino-TOTP-RFC6238-generator/src
+        ../lib/Arduino-Base32-Decode/src
+        ../lib/DuoAuthLibrary/src
         ../src
 )
 

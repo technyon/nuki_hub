@@ -87,12 +87,15 @@
 #define preference_cred_session_lifetime_remember (char*)"credLfRmbr"
 #define preference_cred_session_lifetime_duo (char*)"credLfDuo"
 #define preference_cred_session_lifetime_duo_remember (char*)"credLfDuoRmbr"
+#define preference_cred_session_lifetime_totp (char*)"credLfTotp"
+#define preference_cred_session_lifetime_totp_remember (char*)"credLfTotpRmbr"
 #define preference_cred_duo_approval (char*)"duoApprove"
 #define preference_cred_bypass_boot_btn_enabled (char*)"bypassBtBtn"
 #define preference_cred_bypass_gpio_high (char*)"bypassHigh"
 #define preference_cred_bypass_gpio_low (char*)"bypassLow"
 #define preference_publish_config (char*)"nhPubConfig"
 #define preference_config_from_mqtt (char*)"nhCntrlEnabled"
+#define preference_totp_secret (char*)"totpsecret"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
@@ -268,6 +271,8 @@ inline void initPreferences(Preferences* preferences)
         preferences->putInt(preference_cred_session_lifetime_remember, 720);
         preferences->putInt(preference_cred_session_lifetime_duo, 3600);
         preferences->putInt(preference_cred_session_lifetime_duo_remember, 720);
+        preferences->putInt(preference_cred_session_lifetime_totp, 3600);
+        preferences->putInt(preference_cred_session_lifetime_totp_remember, 720);
         preferences->putInt(preference_cred_bypass_gpio_high, -1);
         preferences->putInt(preference_cred_bypass_gpio_low, -1); 
 
@@ -530,7 +535,7 @@ private:
         preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_cred_duo_enabled, preference_https_fqdn, preference_bypass_proxy,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_publish_config,
-        preference_config_from_mqtt
+        preference_config_from_mqtt, preference_totp_secret, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember
     };
     std::vector<char*> _redact =
     {
@@ -569,7 +574,7 @@ private:
         preference_network_custom_irq, preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso,
         preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio, preference_http_auth_type,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
-        preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low
+        preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember
     };
     std::vector<char*> _uintPrefs =
     {

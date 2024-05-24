@@ -27,10 +27,10 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Smart Lock 1.0
 - Nuki Smart Lock 2.0
 - Nuki Smart Lock 3.0
-- Nuki Smart Lock 3.0 Pro (read FAQ below)
-- Nuki Smart Lock 4.0 (read FAQ below)
-- Nuki Smart Lock 4.0 Pro (read FAQ below)
-- Nuki Smart Lock Ultra (read FAQ below)
+- Nuki Smart Lock 3.0 Pro
+- Nuki Smart Lock 4.0
+- Nuki Smart Lock 4.0 Pro
+- Nuki Smart Lock Ultra
 - Nuki Opener
 - Nuki Keypad 1.0
 - Nuki Keypad 2.0
@@ -147,7 +147,7 @@ To configure the connection to the MQTT broker, first connect your client device
 In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router) or static IP.<br><br>
 Next click on "MQTT Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and password if required by your MQTT broker.<br>
 <br>
-The firmware supports SSL encryption for MQTT, however most people don't use this.<br>
+The firmware supports SSL encryption for MQTT.<br>
 See the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 
 ## Pairing with a Nuki Lock (1.0-4.0) or Opener
@@ -324,18 +324,21 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 - HTTP Authentication type: Select from Basic, Digest or Form based authentication. Digest authentication is more secure than Basic or Form based authentication, especially over unencrypted (HTTP) connections. Form based authentication works best with password managers. Note: Firefox seems to have issues with basic authentication.
 - Bypass authentication for reverse proxy with IP: IP for which authentication is bypassed. Use in conjunction with a reverse proxy server with separate authentication.
 - Duo Push authentication enabled: Enable to use Duo Push Multi Factor Authentication (MFA). See [Duo Push authentication](/DUOAUTH.md) for instructions on how to setup Duo Push authentication.
-- Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings): Enable to require Duo Push approval on all sensitive operations.
-- Bypass Duo Push authentication by pressing the BOOT button during login: Enable to allow bypassing Duo Push authentication by pressing the BOOT button on the ESP during login. Note that this does not work on all ESP's (nor do all ESP's have a boot button to begin with). Test before relying on this function.
-- Bypass Duo Push authentication by pulling GPIO High: Set to a GPIO pin to allow bypassing Duo Push authentication by pulling the GPIO high during login.
-- Bypass Duo Push authentication by pulling GPIO Low: Set to a GPIO pin to allow bypassing Duo Push authentication by pulling the GPIO low during login.
+- Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings): Enable to require MFA approval on all sensitive operations.
+- Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button during login: Enable to allow bypassing MFA authentication by pressing the BOOT button on the ESP during login. Note that this does not work on all ESP's (nor do all ESP's have a boot button to begin with). Test before relying on this function.
+- Bypass MFA (Duo/TOTP) authentication by pulling GPIO High: Set to a GPIO pin to allow bypassing MFA authentication by pulling the GPIO high during login.
+- Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low: Set to a GPIO pin to allow bypassing MFA authentication by pulling the GPIO low during login.
 - Duo API hostname: Set to the Duo API hostname
 - Duo integration key: Set to the Duo integration key
 - Duo secret key: Set to the Duo secret key
 - Duo user: Set to the Duo user that you want to receive the push notification
+- TOTP Secret Key: Set a TOTP secret key to enable TOTP MFA. Enter the TOTP secret key in an authenticator application (Password manager, Microsoft/Google Authenticator etc.) to generate TOTP codes.
 - Session validity (in seconds): Session validity to use with form authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
 - Session validity remember (in hours): Session validity to use with form authentication when the "Remember me" checkbox is enabled, default 720 hours.
 - Duo Session validity (in seconds): Session validity to use with Duo authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
 - Duo Session validity remember (in hours): Session validity to use with Duo authentication when the "Remember me" checkbox is enabled, default 720 hours.
+- TOTP Session validity (in seconds): Session validity to use with TOTP authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
+- TOTP Session validity remember (in hours): Session validity to use with TOTP authentication when the "Remember me" checkbox is enabled, default 720 hours.
 
 #### Nuki Lock PIN / Nuki Opener PIN
 
@@ -463,8 +466,8 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - [opener/]configuration/soundLevel: Set to the volume for sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
 - [lock/opener/]configuration/action: Allows changing configuration settings of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible actions/values
 - [lock/opener/]configuration/commandResult: Result of the last configuration change action as JSON data. See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible values
-- [lock/opener/]configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings. Please note: Longitude and Latitude of the Lock/Opener are not published to MQTT by design. These values can still be changed though.
-- [lock/opener/]configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for available settings.
+- [lock/opener/]configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Bluetooth API](https://developer.nuki.io/t/bluetooth-api/27) for available settings. Please note: Longitude and Latitude of the Lock/Opener are not published to MQTT by design. These values can still be changed though.
+- [lock/opener/]configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Bluetooth API](https://developer.nuki.io/t/bluetooth-api/27) for available settings.
 - configuration/action: Allows importing and exporting configuration settings of Nuki Hub using a JSON formatted value. After receiving the action, the value is set to "--", see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
 - configuration/commandResult: Result of the last Nuki Hub configuration import action as JSON data, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
 - configuration/json: Topic where you can export Nuki Hub configuration as JSON data to, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
@@ -520,7 +523,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - maintenance/restartReasonNukiHub: Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/src/RestartReason.h) for possible values
 - maintenance/restartReasonNukiEsp: Set to the last reason the ESP was restarted. See [RestartReason.h](/src/RestartReason.h) for possible values
 
-## Import and Export Nuki Hub settings over MQTT
+## Import and Export Nuki Hub settings over MQTT (BETA)
 
 Consider this when deciding if you want to enable the following functionality:
 
@@ -546,7 +549,7 @@ A general explanation of the exported values can be found in the [PreferencesKey
 
 If you set the value of `exportNH`/`exportMQTTS`/`exportHTTPS` to an integer value > 0 the `nukihub/configuration/json` will be cleared after the given amount of seconds (e.g. `{"exportMQTTS": 30}` will clear the JSON topic after 30 seconds)
 
-If you have enabled `Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will first need to approve the Duo Push before the settings will be exported.
+If you have enabled `Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will need to either provide a currently valid TOTP code as part of the sent JSON in the `totp` node or approve the Duo Push before the settings will be exported.
 
 ### Import/Change Nuki Hub settings over MQTT
 
@@ -557,7 +560,7 @@ The expected values and format is the same as the JSON files/values that can be 
 The result of the import will be available in the `nukihub/configuration/commandResult` topic in JSON format.
 After the import is complete the ESP32 will reboot.
 
-If you have enabled `Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will first need to approve the Duo Push before the settings will be changed/imported.
+If you have enabled `Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will need to either provide a currently valid TOTP code as part of the sent JSON in the `totp` node or approve the Duo Push before the settings will be changed/imported.
 
 Note: When importing settings using MQTT there are less/no checks on the values entered. These checks are only available when changing settings through the WebConfigurator. 
 Consider testing your configuration values by changing them in the Web Configurator before trying to use MQTT to change configuration.
@@ -565,7 +568,7 @@ A general explanation of the values that can be imported can be found in the [Pr
 
 ## Changing Nuki Lock/Opener Configuration
 
-To change Nuki Lock/Opener settings set the `configuration/action` topic to a JSON formatted value with any of the following settings. Multiple settings can be changed at once. See [Nuki Smart Lock API Basic Config](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config), [Nuki Smart Lock API Advanced Config](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config), [Nuki Opener API Basic Config](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) and [Nuki Opener API Advanced Config](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for more information on the available settings.<br>
+To change Nuki Lock/Opener settings set the `configuration/action` topic to a JSON formatted value with any of the following settings. Multiple settings can be changed at once. See [Nuki Bluetooh API](https://developer.nuki.io/t/bluetooth-api/27) for more information on the available settings.<br>
 Changing settings has to enabled first in the configuration portal. Check the settings you want to be able to change under "Nuki Lock/Opener Config Control" in "Access Level Configuration" and save the configuration.
 
 ### Nuki Lock Configuration
@@ -587,7 +590,7 @@ Changing settings has to enabled first in the configuration portal. Check the se
 | fobAction3                              | The desired action, if a Nuki Fob is pressed three times.                                        | "No Action", "Unlock", "Lock", "Lock n Go", "Intelligent"         |`{ "fobAction3": "Unlock" }`        |
 | singleLock                              | Whether only a single lock or double lock should be performed                                    | 0 = double lock, 1 = single lock                                  |`{ "singleLock": "0" }`             |
 | advertisingMode                         | The desired advertising mode.                                                                    | "Automatic", "Normal", "Slow", "Slowest"                          |`{ "advertisingMode": "Normal" }`   |
-| timeZone                                | The current timezone or "None" if timezones are not supported                                    | "None" or one of the timezones from [Nuki Timezones](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--list-of-timezone-ids)                                                                                                                                                                              |`{ "timeZone": "Europe/Berlin" }`   |
+| timeZone                                | The current timezone or "None" if timezones are not supported                                    | "None" or one of the timezones from [Nuki Bluetooh API](https://developer.nuki.io/t/bluetooth-api/27)                                                                                                                                                                              |`{ "timeZone": "Europe/Berlin" }`   |
 | unlockedPositionOffsetDegrees           | Offset that alters the unlocked position in degrees.                                             | Integer between -90 and 180                              |`{ "unlockedPositionOffsetDegrees": "-90" }` |
 | lockedPositionOffsetDegrees             | Offset that alters the locked position in degrees.                                               | Integer between -180 and 90                                 |`{ "lockedPositionOffsetDegrees": "80" }` |
 | singleLockedPositionOffsetDegrees       | Offset that alters the single locked position in degrees.                                        | Integer between -180 and 180                         |`{ "singleLockedPositionOffsetDegrees": "120" }` |
@@ -631,7 +634,7 @@ Changing settings has to enabled first in the configuration portal. Check the se
 | fobAction3                              | The desired action, if a Nuki Fob is pressed three times.                              | "No Action", "Toggle RTO", "Activate RTO", "Deactivate RTO", "Open", "Ring" |`{ "fobAction3": "Ring" }`          |
 | operatingMode                           | The desired operating mode                                                             | "Generic door opener", "Analogue intercom", "Digital intercom", "Siedle", "TCS", "Bticino", "Siedle HTS", "STR", "Ritto", "Fermax", "Comelit", "Urmet BiBus", "Urmet 2Voice", "Golmar", "SKS", "Spare"                                                                                                                            |`{ "operatingMode": "TCS" }`        |
 | advertisingMode                         | The desired advertising mode.                                                                    | "Automatic", "Normal", "Slow", "Slowest"                          |`{ "advertisingMode": "Normal" }`   |
-| timeZone                                | The current timezone or "None" if timezones are not supported                                    | "None" or one of the timezones from [Nuki Timezones](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--list-of-timezone-ids)                                                                                                                                                                              |`{ "timeZone": "Europe/Berlin" }`   |
+| timeZone                                | The current timezone or "None" if timezones are not supported                                    | "None" or one of the timezones from [Nuki Bluetooh API](https://developer.nuki.io/t/bluetooth-api/27)                                                                                                                                                                              |`{ "timeZone": "Europe/Berlin" }`   |
 | intercomID                              | Database ID of the connected intercom.                                                           | Integer                                                           |`{ "intercomID": "1" }`             |
 | busModeSwitch                           | Method to switch between data and analogue mode                                                  | 0 = none, 1 =vshort circuit                                       |`{ "busModeSwitch": "0" }`          |
 | shortCircuitDuration                    | Duration of the short circuit for BUS mode switching in ms.                                      | Integer                                                           |`{ "shortCircuitDuration": "250" }` |
@@ -961,7 +964,7 @@ This unfortunately means that older versions of Home Assistant are not supported
 
 ### Nuki Hub in bridge mode doesn't work when Thread or Wi-Fi on a Nuki Smartlock (3.0 Pro / 4.0 / 4.0 Pro) is turned on.
 
-According to Nuki this is by design and part of the specification of the Pro lock.<br>
+According to Nuki this is by design and part of the specification of Wi-Fi/Thread enabled locks.<br>
 You can use either the built-in Wi-Fi/Thread or a Bridge (which Nuki Hub registers as), using both at the same time is not supported.<br>
 Or you can use Nuki Hub in Hybrid mode using Wi-Fi or Thread, see [hybrid mode](/HYBRID.md)<br>
 

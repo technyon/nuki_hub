@@ -75,7 +75,12 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
 
         if (_duoEnabled)
         {
-            loadSessions(true);
+            loadSessions(1);
+        }
+
+        if (_importExport->getTOTPEnabled())
+        {
+            loadSessions(2);
         }
     }
     _confirmCode = generateConfirmCode();
@@ -85,26 +90,30 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
 #endif
 }
 
-bool WebCfgServer::isAuthenticated(PsychicRequest *request, bool duo)
+bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
 {
     String cookieKey = "sessionId";
 
-    if (duo)
+    if (type == 1)
     {
         cookieKey = "duoId";
+    }
+    else if (type == 2)
+    {
+        cookieKey = "totpId";
     }
 
     if (request->hasCookie(cookieKey.c_str()))
     {
         String cookie = request->getCookie(cookieKey.c_str());
 
-        if ((!duo && _httpSessions[cookie].is<JsonVariant>()) || (duo && _importExport->_duoSessions[cookie].is<JsonVariant>()))
+        if ((type == 0 && _httpSessions[cookie].is<JsonVariant>()) || (type == 1 && _importExport->_duoSessions[cookie].is<JsonVariant>()) || (type == 2 && _importExport->_totpSessions[cookie].is<JsonVariant>()))
         {
             struct timeval time;
             gettimeofday(&time, NULL);
             int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
 
-            if ((!duo && _httpSessions[cookie].as<signed long long>() > time_us) || (duo && _importExport->_duoSessions[cookie].as<signed long long>() > time_us))
+            if ((type == 0 && _httpSessions[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us))
             {
                 return true;
             }
@@ -114,7 +123,6 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request, bool duo)
             }
         }
     }
-    Log->println("Authentication Failed");
     return false;
 }
 
@@ -156,18 +164,40 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         if (request->hasCookie("duoId")) {
             String cookie2 = request->getCookie("duoId");
             _importExport->_duoSessions.remove(cookie2);
-            saveSessions(true);
+            saveSessions(1);
         }
         else
         {
-            Log->print("No session cookie found");
+            Log->print("No duo session cookie found");
+        }
+    }
+
+    if (_importExport->getTOTPEnabled())
+    {
+        if (!_isSSL)
+        {
+            resp->setCookie("totpId", "", 0, "HttpOnly");
+        }
+        else
+        {
+            resp->setCookie("totpId", "", 0, "Secure; HttpOnly");
+        }
+
+        if (request->hasCookie("totpId")) {
+            String cookie2 = request->getCookie("totpId");
+            _importExport->_totpSessions.remove(cookie2);
+            saveSessions(2);
+        }
+        else
+        {
+            Log->print("No totp session cookie found");
         }
     }
 
     return buildConfirmHtml(request, resp, "Logging out", 3, true);
 }
 
-void WebCfgServer::saveSessions(bool duo)
+void WebCfgServer::saveSessions(int type)
 {
     if(_preferences->getBool(preference_update_time, false))
     {
@@ -179,22 +209,27 @@ void WebCfgServer::saveSessions(bool duo)
         {
             File file;
 
-            if (!duo)
+            if (type == 0)
             {
                 file = SPIFFS.open("/sessions.json", "w");
                 serializeJson(_httpSessions, file);
             }
-            else
+            else if (type == 1)
             {
                 file = SPIFFS.open("/duosessions.json", "w");
                 serializeJson(_importExport->_duoSessions, file);
+            }
+            else if (type == 2)
+            {
+                file = SPIFFS.open("/totpsessions.json", "w");
+                serializeJson(_importExport->_totpSessions, file);
             }
             file.close();
         }
     }
 }
 
-void WebCfgServer::loadSessions(bool duo)
+void WebCfgServer::loadSessions(int type)
 {
     if(_preferences->getBool(preference_update_time, false))
     {
@@ -206,7 +241,7 @@ void WebCfgServer::loadSessions(bool duo)
         {
             File file;
 
-            if (!duo)
+            if (type == 0)
             {
                 file = SPIFFS.open("/sessions.json", "r");
 
@@ -218,7 +253,7 @@ void WebCfgServer::loadSessions(bool duo)
                     deserializeJson(_httpSessions, file);
                 }
             }
-            else
+            else if (type == 1)
             {
                 file = SPIFFS.open("/duosessions.json", "r");
 
@@ -228,6 +263,18 @@ void WebCfgServer::loadSessions(bool duo)
                 else
                 {
                     deserializeJson(_importExport->_duoSessions, file);
+                }
+            }
+            else if (type == 2)
+            {
+                file = SPIFFS.open("/totpsessions.json", "r");
+
+                if (!file || file.isDirectory()) {
+                    Log->println("totpsessions.json not found");
+                }
+                else
+                {
+                    deserializeJson(_importExport->_totpSessions, file);
                 }
             }
             file.close();
@@ -245,12 +292,16 @@ void WebCfgServer::clearSessions()
     {
         _httpSessions.clear();
         _importExport->_duoSessions.clear();
+        _importExport->_totpSessions.clear();
         File file;
         file = SPIFFS.open("/sessions.json", "w");
         serializeJson(_httpSessions, file);
         file.close();
         file = SPIFFS.open("/duosessions.json", "w");
         serializeJson(_importExport->_duoSessions, file);
+        file.close();
+        file = SPIFFS.open("/totpsessions.json", "w");
+        serializeJson(_importExport->_totpSessions, file);
         file.close();
     }
 }
@@ -268,71 +319,65 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
         {
             if (!isAuthenticated(request))
             {
+                Log->println("Authentication Failed");
                 return savedAuthType;
-            }
-            else if (_duoEnabled && !isAuthenticated(request, true))
-            {
-                if (_bypassGPIO)
-                {
-                    if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
-                    {
-                        Log->print("Duo bypassed because boot button pressed");
-                        return 4;
-                    }
-                }
-                if (_bypassGPIOHigh > -1)
-                {
-                    if (digitalRead(_bypassGPIOHigh) == HIGH)
-                    {
-                        Log->print("Duo bypassed because bypass GPIO pin pulled high");
-                        return 4;
-                    }
-                }
-                if (_bypassGPIOLow > -1)
-                {
-                    if (digitalRead(_bypassGPIOLow) == LOW)
-                    {
-                        Log->print("Duo bypassed because bypass GPIO pin pulled low");
-                        return 4;
-                    }
-                }
-                return 3;
             }
         }
         else
         {
             if (!request->authenticate(_credUser, _credPassword))
             {
+                Log->println("Authentication Failed");
                 return savedAuthType;
             }
-            else if (_duoEnabled && !isAuthenticated(request, true))
+        }
+
+        if (_duoEnabled || _importExport->getTOTPEnabled())
+        {
+            if (_bypassGPIO)
             {
-                if (_bypassGPIO)
+                if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
                 {
-                    if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
-                    {
-                        Log->print("Duo bypassed because boot button pressed");
-                        return 4;
-                    }
+                    Log->print("Duo bypassed because boot button pressed");
+                    return 4;
                 }
-                if (_bypassGPIOHigh > -1)
-                {
-                    if (digitalRead(_bypassGPIOHigh) == HIGH)
-                    {
-                        Log->print("Duo bypassed because bypass GPIO pin pulled high");
-                        return 4;
-                    }
-                }
-                if (_bypassGPIOLow > -1)
-                {
-                    if (digitalRead(_bypassGPIOLow) == LOW)
-                    {
-                        Log->print("Duo bypassed because bypass GPIO pin pulled low");
-                        return 4;
-                    }
-                }
-                return 3;
             }
+            if (_bypassGPIOHigh > -1)
+            {
+                if (digitalRead(_bypassGPIOHigh) == HIGH)
+                {
+                    Log->print("Duo bypassed because bypass GPIO pin pulled high");
+                    return 4;
+                }
+            }
+            if (_bypassGPIOLow > -1)
+            {
+                if (digitalRead(_bypassGPIOLow) == LOW)
+                {
+                    Log->print("Duo bypassed because bypass GPIO pin pulled low");
+                    return 4;
+                }
+            }
+
+            if(_duoEnabled && isAuthenticated(request, 1))
+            {
+                _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = false;
+                return 4;
+            }
+            else if(_importExport->getTOTPEnabled() && isAuthenticated(request, 2))
+            {
+                _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
+                return 4;
+            }
+
+            Log->println("Authentication Failed");
+
+            if(_importExport->getTOTPEnabled() && _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"])
+            {
+                return 5;
+            }
+
+            return 3;
         }
     }
 
@@ -378,6 +423,7 @@ void WebCfgServer::initialize()
                     return resp->redirect("/get?page=login");
                     break;
                 case 3:
+                case 5:
                 case 4:
                 default:
                     break;
@@ -413,6 +459,7 @@ void WebCfgServer::initialize()
                     return resp->redirect("/get?page=login");
                     break;
                 case 3:
+                case 5:
                 case 4:
                 default:
                     break;
@@ -483,6 +530,14 @@ void WebCfgServer::initialize()
                             return resp->redirect("/get?page=duoauth");
                         }
                         break;
+                    case 5:
+                        if (value != "totp")
+                        {
+                            resp->setCode(302);
+                            resp->addHeader("Cache-Control", "no-cache");
+                            return resp->redirect("/get?page=totp");
+                        }
+                        break;
                     case 4:
                     default:
                         break;
@@ -500,13 +555,17 @@ void WebCfgServer::initialize()
             {
                 return buildLoginHtml(request, resp);
             }
+            else if (value == "totp")
+            {
+                return buildTOTPHtml(request, resp, 0);
+            }
             else if (value == "logout")
             {
                 return logoutSession(request, resp);
             }
             else if (value == "duoauth")
             {
-                return buildDuoHtml(request, resp);
+                return buildDuoHtml(request, resp, 0);
             }
             else if (value == "duocheck")
             {
@@ -518,13 +577,13 @@ void WebCfgServer::initialize()
             }
             else if (value == "reboot")
             {
-                String value = "";
+                String value2 = "";
                 if(request->hasParam("CONFIRMTOKEN"))
                 {
                     const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
                     if(p->value() != "")
                     {
-                        value = p->value();
+                        value2 = p->value();
                     }
                 }
                 else
@@ -532,7 +591,7 @@ void WebCfgServer::initialize()
                     return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
                 }
 
-                if(value != _confirmCode)
+                if(value2 != _confirmCode)
                 {
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
@@ -560,31 +619,38 @@ void WebCfgServer::initialize()
             }
             else if (value == "export")
             {
-                if(_preferences->getBool(preference_cred_duo_approval, false))
+                if(!_preferences->getBool(preference_cred_duo_approval, false) || (!_importExport->getTOTPEnabled() && !_duoEnabled))
                 {
-                    if (!timeSynced)
-                    {
-                        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
-                    }
-                    else if (_importExport->startDuoAuth((char*)"Approve Nuki Hub export"))
-                    {
-                        int duoResult = 2;
+                    return sendSettings(request, resp);
+                }
 
-                        while (duoResult == 2)
+                if(_importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"])
+                {
+                    _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
+                    return sendSettings(request, resp);
+                }
+                else if(request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+                {
+                    const PsychicWebParameter* pass = request->getParam("totpkey");
+                    if(pass->value() != "")
+                    {
+                        String totpkey = pass->value();
+                        if (_importExport->checkTOTP(&totpkey))
                         {
-                            duoResult = _importExport->checkDuoApprove();
-                            delay(2000);
-                            esp_task_wdt_reset();
-                        }
-
-                        if (duoResult != 1)
-                        {
-                            return buildConfirmHtml(request, resp, "Duo approval failed, redirecting to main menu", 3, true);
+                            _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
+                            return sendSettings(request, resp);
                         }
                     }
                 }
 
-                return sendSettings(request, resp);
+                if(_importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] && _importExport->getTOTPEnabled())
+                {
+                    return buildTOTPHtml(request, resp, 1);
+                }
+                else
+                {
+                    return buildDuoHtml(request, resp, 1);
+                }
             }
             else if (value == "impexpcfg")
             {
@@ -653,20 +719,20 @@ void WebCfgServer::initialize()
             }
             else if (value == "wifimanager")
             {
-                String value = "";
+                String value2 = "";
                 if(request->hasParam("CONFIRMTOKEN"))
                 {
                     const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
                     if(p->value() != "")
                     {
-                        value = p->value();
+                        value2 = p->value();
                     }
                 }
                 else
                 {
                     return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
                 }
-                if(value != _confirmCode)
+                if(value2 != _confirmCode)
                 {
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
@@ -694,13 +760,13 @@ void WebCfgServer::initialize()
             }
             else if (value == "reboottoota")
             {
-                String value = "";
+                String value2 = "";
                 if(request->hasParam("CONFIRMTOKEN"))
                 {
                     const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
                     if(p->value() != "")
                     {
-                        value = p->value();
+                        value2 = p->value();
                     }
                 }
                 else
@@ -708,7 +774,7 @@ void WebCfgServer::initialize()
                     return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
                 }
 
-                if(value != _confirmCode)
+                if(value2 != _confirmCode)
                 {
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
@@ -750,7 +816,7 @@ void WebCfgServer::initialize()
                 }
             }
 
-            if (value != "login")
+            if (value != "login" && value != "totp")
             {
                 int authReq = doAuthentication(request);
 
@@ -772,32 +838,58 @@ void WebCfgServer::initialize()
                         resp->addHeader("Cache-Control", "no-cache");
                         return resp->redirect("/get?page=duoauth");
                         break;
+                    case 5:
+                        resp->setCode(302);
+                        resp->addHeader("Cache-Control", "no-cache");
+                        return resp->redirect("/get?page=totp");
+                        break;
                     case 4:
                     default:
                         break;
                 }
 
-                if(_preferences->getBool(preference_cred_duo_approval, false))
+                if(_preferences->getBool(preference_cred_duo_approval, false) && (_importExport->getTOTPEnabled() && _duoEnabled))
                 {
-                    if (!timeSynced)
+                    if(!_importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"])
                     {
-                        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+                        bool approved = false;
+                        if(request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+                        {
+                            const PsychicWebParameter* pass = request->getParam("totpkey");
+                            if(pass->value() != "")
+                            {
+                                String totpkey = pass->value();
+                                if (_importExport->checkTOTP(&totpkey))
+                                {
+                                    _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
+                                    approved = true;
+                                }
+                            }
+                        }
+
+                        if (!approved)
+                        {
+                            int posttype = 3;
+
+                            if (value == "import")
+                            {
+                                posttype = 2;
+                            }
+
+                            if(_importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] && _importExport->getTOTPEnabled())
+                            {
+
+                                return buildTOTPHtml(request, resp, posttype);
+                            }
+                            else
+                            {
+                                return buildDuoHtml(request, resp, posttype);
+                            }
+                        }
                     }
-                    else if (_importExport->startDuoAuth((char*)"Approve Nuki Hub setting change"))
+                    else
                     {
-                        int duoResult = 2;
-
-                        while (duoResult == 2)
-                        {
-                            duoResult = _importExport->checkDuoApprove();
-                            delay(2000);
-                            esp_task_wdt_reset();
-                        }
-
-                        if (duoResult != 1)
-                        {
-                            return buildConfirmHtml(request, resp, "Duo approval failed, redirecting to main menu", 3, true);
-                        }
+                        _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
                     }
                 }
             }
@@ -816,6 +908,22 @@ void WebCfgServer::initialize()
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/get?page=login");
+                }
+            }
+            else if (value == "totp")
+            {
+                bool loggedIn = processTOTP(request, resp);
+                if (loggedIn)
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/");
+                }
+                else
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=totp");
                 }
             }
             #ifndef NUKI_HUB_UPDATER
@@ -902,6 +1010,8 @@ void WebCfgServer::initialize()
                     return ESP_FAIL;
                 case 3:
                     return ESP_FAIL;
+                case 5:
+                    return ESP_FAIL;
                 case 4:
                 default:
                     break;
@@ -930,6 +1040,11 @@ void WebCfgServer::initialize()
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/get?page=duoauth");
+                    break;
+                case 5:
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=totp");
                     break;
                 case 4:
                 default:
@@ -988,6 +1103,11 @@ void WebCfgServer::initialize()
                 resp->setCode(302);
                 resp->addHeader("Cache-Control", "no-cache");
                 return resp->redirect("/get?page=duoauth");
+                break;
+            case 5:
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/get?page=totp");
                 break;
             case 4:
             default:
@@ -1741,7 +1861,88 @@ esp_err_t WebCfgServer::buildLoginHtml(PsychicRequest *request, PsychicResponse*
     response.print("</head><body><center><h2>Nuki Hub login</h2><form action=\"/post?page=login\" method=\"post\">");
     response.print("<div class=\"container\"><label for=\"username\"><b>Username</b></label><input type=\"text\" placeholder=\"Enter Username\" name=\"username\" required>");
     response.print("<label for=\"password\"><b>Password</b></label><input type=\"password\" placeholder=\"Enter Password\" name=\"password\" required>");
-    response.print("<button type=\"submit\">Login</button><label><input type=\"checkbox\" name=\"remember\"> Remember me</label></div>");
+    if (_importExport->getTOTPEnabled() || _duoEnabled)
+    {
+        if (_importExport->getTOTPEnabled()) {
+            response.print("<button name=\"totp\" type=\"submit\" formaction=\"/post?page=login&totp=1\">Login with TOTP</button>");
+        }
+        if (_duoEnabled) {
+            response.print("<button name=\"duo\" type=\"submit\">Login with Duo</button>");
+        }
+    }
+    else {
+        response.print("<button type=\"submit\">Login</button>");
+    }
+    response.print("<label><input type=\"checkbox\" name=\"remember\"> Remember me</label></div>");
+    response.print("</form></center></body></html>");
+    return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* resp, int type)
+{
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
+    /*
+    if (!timeSynced)
+    {
+        char millis[20];
+        itoa(espMillis(), millis, 10);
+        response.print((String)"<script>window.onload = function() { var startTime = Date.now(); var interval = setInterval(function() { var elapsedTime = Date.now() - startTime; document.getElementById(\"timestamp\").innerHTML = (elapsedTime / 1000).toFixed(3) + " + millis + ";}, 100);  }</script>");
+    }
+    */
+    response.print("</head><body><center><h2>Nuki Hub TOTP</h2>");
+
+    String typeText = "Login";
+
+    if(type == 0)
+    {
+        response.print("<form action=\"/post?page=totp\" method=\"post\">");
+    }
+    else
+    {
+        if(type == 1)
+        {
+            typeText = "Export";
+            response.print((String)"<form action=\"" + request->uri() + "\" method=\"get\" target=\"_blank\">");
+        }
+        else if(type == 2)
+        {
+            typeText = "Import";
+            response.print((String)"<form action=\"" + request->uri() + "\" method=\"post\">");
+        }
+        else
+        {
+            typeText = "Save";
+            response.print((String)"<form action=\"" + request->uri() + "\" method=\"post\">");
+        }
+        int params = request->params();
+
+        for(int index = 0; index < params; index++)
+        {
+            const PsychicWebParameter* p = request->getParam(index);
+            if (p->name() != "totpkey")
+            {
+                response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
+            }
+        }
+    }
+
+    response.print("<div class=\"container\">");
+    response.print("<label for=\"totpkey\"><b>TOTP</b></label><input type=\"text\" placeholder=\"Enter TOTP code\" name=\"totpkey\">");
+    /*
+    if (!timeSynced)
+    {
+        response.print("<label for=\"timestamp\"><b>Timestamp</b></label><span type=\"text\" id=\"timestamp\"></span>");
+    }
+    */
+    response.print("<button type=\"submit\" ");
+    if(type == 1)
+    {
+        response.print("onclick=\"setTimeout(function() { window.location.href = '/' }, 1000);\"");
+    }
+    response.print((String)">" + typeText + "</button></div>");
     response.print("</form></center></body></html>");
     return response.endSend();
 }
@@ -1785,14 +1986,33 @@ esp_err_t WebCfgServer::buildCoredumpHtml(PsychicRequest *request, PsychicRespon
     return resp->redirect("/");
 }
 
-esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* resp)
+esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* resp, int type)
 {
     if (!timeSynced)
     {
         return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
     }
 
-    bool duo = _importExport->startDuoAuth((char*)"Approve Nuki Hub login");
+    String duoText;
+
+    if (type == 0)
+    {
+        duoText = "login";
+    }
+    else if (type == 1)
+    {
+        duoText = "export";
+    }
+    else if (type == 2)
+    {
+        duoText = "import";
+    }
+    else if (type == 3)
+    {
+        duoText = "save";
+    }
+
+    bool duo = _importExport->startDuoAuth((char*)((String("Approve Nuki Hub ") + duoText).c_str()));
 
     if (!duo)
     {
@@ -1807,20 +2027,23 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
             sprintf(buffer + (i * 8), "%08lx", (unsigned long int)esp_random());
         }
 
-        int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720);
+        if(type == 0)
+        {
+            int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720);
 
-        if (!_importExport->_sessionsOpts[request->client()->localIP().toString()])
-        {
-            durationLength = _preferences->getInt(preference_cred_session_lifetime_duo, 3600);
-        }
+            if (!_importExport->_sessionsOpts[request->client()->localIP().toString()])
+            {
+                durationLength = _preferences->getInt(preference_cred_session_lifetime_duo, 3600);
+            }
 
-        if (!_isSSL)
-        {
-            response.setCookie("duoId", buffer, durationLength, "HttpOnly");
-        }
-        else
-        {
-            response.setCookie("duoId", buffer, durationLength, "Secure; HttpOnly");
+            if (!_isSSL)
+            {
+                response.setCookie("duoId", buffer, durationLength, "HttpOnly");
+            }
+            else
+            {
+                response.setCookie("duoId", buffer, durationLength, "Secure; HttpOnly");
+            }
         }
 
         _importExport->setDuoCheckIP(request->client()->localIP().toString());
@@ -1829,11 +2052,36 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
         response.beginSend();
         response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         response.print("<style>.container{border:3px solid #f1f1f1; max-width: 400px; padding:16px}</style>");
-        response.print((String)"<script>let intervalId; let stop = 0; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + String(buffer) + "', true); request.onload = () => { const obj = request.responseText; if ((obj == \"1\" || obj == \"0\") && stop == 0) { stop = 1; clearInterval(intervalId); if (obj == \"1\") { document.getElementById('duoresult').innerHTML = 'Login approved<br>Redirecting...'; setTimeout(function() { window.location.href = \"/\"; }, 2000); } else { document.getElementById('duoresult').innerHTML = 'Login failed<br>Refresh to retry'; } } }; request.send(); }</script>");
-        response.print("</head><body><center><h2>Nuki Hub login</h2>");
+        response.print((String)"<script>let intervalId; let stop = 0; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + String(buffer) + "&type=" + type + "', true); request.onload = () => { const obj = request.responseText; if ((obj == \"1\" || obj == \"0\") && stop == 0) { stop = 1; clearInterval(intervalId); if (obj == \"1\") { document.getElementById('duoresult').innerHTML = '" + duoText + " approved<br>Redirecting...'; ");
+        if(type == 0)
+        {
+            response.print("setTimeout(function() { window.location.href = \"/\"");
+        }
+        else if (type == 1)
+        {
+            response.print((String)"window.open('" + request->uri() + "'); setTimeout(function() { window.location.href = \"/\"");
+        }
+        else
+        {
+            response.print("setTimeout(function() { document.getElementById('frmrepost').submit()");
+        }
+        response.print("; }, 2000); } else { document.getElementById('duoresult').innerHTML = '" + duoText + " failed<br>Refresh to retry'; } } }; request.send(); }</script>");
+        response.print("</head><body><center><h2>Nuki Hub " + duoText + "</h2>");
         response.print("<div class=\"container\">Duo Push sent<br><br>");
-        response.print("Please confirm login in the Duo app<br><br><div id=\"duoresult\"></div></div>");
+        response.print("Please confirm " + duoText + " in the Duo app<br><br><div id=\"duoresult\"></div></div>");
         response.print("</div>");
+        if (type > 1)
+        {
+            response.print((String)"<form id=\"frmrepost\" action=\"" + request->uri() + "\" method=\"post\">");
+            int params = request->params();
+
+            for(int index = 0; index < params; index++)
+            {
+                const PsychicWebParameter* p = request->getParam(index);
+                response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
+            }
+            response.print("</form>");
+        }
         response.print("</center></body></html>");
 
         return response.endSend();
@@ -1876,6 +2124,52 @@ bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
                 int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
                 _httpSessions[buffer] = time_us + (durationLength*1000000L);
                 saveSessions();
+
+                _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = request->hasParam("totp");
+
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
+{
+    if(request->hasParam("totpkey"))
+    {
+        const PsychicWebParameter* pass = request->getParam("totpkey");
+        if(pass->value() != "")
+        {
+            String totpkey = pass->value();
+            if (_importExport->checkTOTP(&totpkey))
+            {
+                char buffer[33];
+                int i;
+                int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_totp_remember, 720);
+                for (i = 0; i < 4; i++) {
+                    sprintf(buffer + (i * 8), "%08lx", (unsigned long int)esp_random());
+                }
+
+                if (!_importExport->_sessionsOpts[request->client()->localIP().toString()])
+                {
+                    durationLength = _preferences->getInt(preference_cred_session_lifetime_totp, 3600);
+                }
+
+                if (!_isSSL)
+                {
+                    resp->setCookie("totpId", buffer, durationLength, "HttpOnly");
+                }
+                else
+                {
+                    resp->setCookie("totpId", buffer, durationLength, "Secure; HttpOnly");
+                }
+
+                struct timeval time;
+                gettimeofday(&time, NULL);
+                int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+                _importExport->_totpSessions[buffer] = time_us + (durationLength*1000000L);
+                saveSessions(2);
                 return true;
             }
         }
@@ -2572,6 +2866,28 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             if(_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720) != value.toInt())
             {
                 _preferences->putInt(preference_cred_session_lifetime_duo_remember, value.toInt());
+                Log->print("Setting changed: ");
+                Log->println(key);
+                configChanged = true;
+                clearSession = true;
+            }
+        }
+        else if(key == "CREDTOTPLFTM")
+        {
+            if(_preferences->getInt(preference_cred_session_lifetime_totp, 3600) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_session_lifetime_totp, value.toInt());
+                Log->print("Setting changed: ");
+                Log->println(key);
+                configChanged = true;
+                clearSession = true;
+            }
+        }
+        else if(key == "CREDTOTPLFTMRMBR")
+        {
+            if(_preferences->getInt(preference_cred_session_lifetime_totp_remember, 720) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_session_lifetime_totp_remember, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
                 configChanged = true;
@@ -3824,6 +4140,21 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         {
             pass2 = value;
         }
+        else if(key == "CREDTOTP")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_totp_secret, "") != value)
+                {
+                    _preferences->putString(preference_totp_secret, value);
+                    Log->print("Setting changed: ");
+                    Log->println(key);
+                    configChanged = true;
+                    clearSession = true;
+                    newMFA = true;
+                }
+            }
+        }
         else if(key == "NUKIPIN" && _nuki != nullptr)
         {
             if(value == "#")
@@ -4374,6 +4705,14 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
 
 esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* resp)
 {
+    char randomstr[17];
+    randomSeed(analogRead(0));
+    char chars[] = {'2', '3','4', '5', '6','7', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+    for(int i = 0;i < 16; i++){
+        randomstr[i] = chars[random(32)];
+    }
+    randomstr[16] = '\0';
+
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
@@ -4391,18 +4730,24 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printDropDown(&response, "CREDDIGEST", "HTTP Authentication type", String(_preferences->getInt(preference_http_auth_type, 0)), httpAuthOptions, "");
     printInputField(&response, "CREDTRUSTPROXY", "Bypass authentication for reverse proxy with IP", _preferences->getString(preference_bypass_proxy, "").c_str(), 255, "");
     printCheckBox(&response, "DUOENA", "Duo Push authentication enabled", _preferences->getBool(preference_cred_duo_enabled, false), "");
-    printCheckBox(&response, "DUOAPPROVAL", "Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings)", _preferences->getBool(preference_cred_duo_approval, false), "");
-    printCheckBox(&response, "DUOBYPASS", "Bypass Duo Push authentication by pressing the BOOT button while logging in", _preferences->getBool(preference_cred_bypass_boot_btn_enabled, false), "");
-    printInputField(&response, "DUOBYPASSHIGH", "Bypass Duo Push authentication by pulling GPIO High", _preferences->getInt(preference_cred_bypass_gpio_high, -1), 2, "");
-    printInputField(&response, "DUOBYPASSLOW", "Bypass Duo Push authentication by pulling GPIO Low", _preferences->getInt(preference_cred_bypass_gpio_low, -1), 2, "");
+    printCheckBox(&response, "DUOAPPROVAL", "Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)", _preferences->getBool(preference_cred_duo_approval, false), "");
+    printCheckBox(&response, "DUOBYPASS", "Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button while logging in", _preferences->getBool(preference_cred_bypass_boot_btn_enabled, false), "");
+    printInputField(&response, "DUOBYPASSHIGH", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO High", _preferences->getInt(preference_cred_bypass_gpio_high, -1), 2, "");
+    printInputField(&response, "DUOBYPASSLOW", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low", _preferences->getInt(preference_cred_bypass_gpio_low, -1), 2, "");
     printInputField(&response, "DUOHOST", "Duo API hostname", "*", 255, "", true, false);
     printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
     printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
     printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
+    printInputField(&response, "CREDTOTP", "TOTP Secret Key (requires Form authentication)", "*", 16, "", true, false);
+    response.print("<tr id=\"totpgentr\" ><td><input type=\"button\" id=\"totpgen\" onclick=\"document.getElementsByName('CREDTOTP')[0].type='text'; document.getElementsByName('CREDTOTP')[0].value='");
+    response.print(randomstr);
+    response.print("'; document.getElementById('totpgentr').style.display='none';\" value=\"Generate new TOTP key\"></td></tr>");
     printInputField(&response, "CREDLFTM", "Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime, 3600), 12, "");
     printInputField(&response, "CREDLFTMRMBR", "Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_remember, 720), 12, "");
     printInputField(&response, "CREDDUOLFTM", "Duo Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_duo, 3600), 12, "");
     printInputField(&response, "CREDDUOLFTMRMBR", "Duo Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_duo_remember, 720), 12, "");
+    printInputField(&response, "CREDTOTPLFTM", "TOTP Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_totp, 3600), 12, "");
+    printInputField(&response, "CREDTOTPLFTMRMBR", "TOTP Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_totp_remember, 720), 12, "");
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var input_pass2 = document.getElementById(\"inputpass2\").value; var pattern = /^[ -~]*$/; if(input_user == '#' || input_user == '') { return true; } if (input_pass != input_pass2) { alert('Passwords do not match'); return false;} if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
@@ -5374,6 +5719,17 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print(_preferences->getInt(preference_cred_session_lifetime_duo, 3600));
         response.print("\nDuo Session validity remember (in hours): ");
         response.print(_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720));
+    }
+
+    response.print("\nTOTP MFA enabled: ");
+    response.print(_importExport->getTOTPEnabled() ? "Yes" : "No");
+
+    if (_importExport->getTOTPEnabled())
+    {
+        response.print("\nTOTP Session validity (in seconds): ");
+        response.print(_preferences->getInt(preference_cred_session_lifetime_totp, 3600));
+        response.print("\nTOTP Session validity remember (in hours): ");
+        response.print(_preferences->getInt(preference_cred_session_lifetime_totp_remember, 720));
     }
 
     response.print("\nWeb configurator enabled: ");

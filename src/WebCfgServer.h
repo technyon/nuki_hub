@@ -104,16 +104,18 @@ private:
     String generateConfirmCode();
     String _confirmCode = "----";
 
-    void saveSessions(bool duo = false);
-    void loadSessions(bool duo = false);
+    void saveSessions(int type = 0);
+    void loadSessions(int type = 0);
     void clearSessions();
     esp_err_t logoutSession(PsychicRequest *request, PsychicResponse* resp);
-    bool isAuthenticated(PsychicRequest *request, bool duo = false);
+    bool isAuthenticated(PsychicRequest *request, int type = 0);
     bool processLogin(PsychicRequest *request, PsychicResponse* resp);
+    bool processTOTP(PsychicRequest *request, PsychicResponse* resp);
     int doAuthentication(PsychicRequest *request);
     esp_err_t buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);
-    esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildTOTPHtml(PsychicRequest *request, PsychicResponse* resp, int type);
+    esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp, int type);
     esp_err_t buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");

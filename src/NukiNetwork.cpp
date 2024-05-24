@@ -1091,9 +1091,19 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             }
             else
             {
-                if(_preferences->getBool(preference_cred_duo_approval, false))
+                if(_preferences->getBool(preference_cred_duo_approval, false) && (_importExport->getTOTPEnabled() || _importExport->getDuoEnabled()))
                 {
-                    if (!timeSynced)
+                    if(_importExport->getTOTPEnabled() && !doc["totp"].isNull())
+                    {
+                        String jsonTotp = doc["totp"];
+                        
+                        if (!_importExport->checkTOTP(&jsonTotp)) {
+                            publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action_command_result, "{\"error\": \"totpIncorrect\"}", false);
+                            publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);
+                            return;
+                        }
+                    }
+                    else if (!timeSynced)
                     {
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action_command_result, "{\"error\": \"duoTimeNotSynced\"}", false);
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);

@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include <DuoAuthLib.h>
+#include <TOTP-RC6236-generator.hpp>
 
 ImportExport::ImportExport(Preferences *preferences)
  : _preferences(preferences)
@@ -34,11 +35,19 @@ void ImportExport::readSettings()
             _bypassGPIOLow = _preferences->getInt(preference_cred_bypass_gpio_low, -1);
         }
     }
+
+    _totpKey = _preferences->getString(preference_totp_secret, "");
+    _totpEnabled = _totpKey.length() > 0;
 }
 
 bool ImportExport::getDuoEnabled()
 {
     return _duoEnabled;
+}
+
+bool ImportExport::getTOTPEnabled()
+{
+    return _totpEnabled;
 }
 
 bool ImportExport::getBypassGPIOEnabled()
@@ -90,7 +99,7 @@ bool ImportExport::startDuoAuth(char* pushType)
 
 void ImportExport::setDuoCheckIP(String duoCheckIP)
 {
-    _duoCheckIP = duoCheckIP;    
+    _duoCheckIP = duoCheckIP;
 }
 
 void ImportExport::setDuoCheckId(String duoCheckId)
@@ -122,12 +131,22 @@ int ImportExport::checkDuoAuth(PsychicRequest *request)
     const char* duo_ikey = _duoIkey.c_str();
     const char* duo_skey = _duoSkey.c_str();
     const char* duo_user = _duoUser.c_str();
+    
+    int type = 0;
+    if(request->hasParam("type"))
+    {
+        const PsychicWebParameter* p = request->getParam("type");
+        if(p->value() != "")
+        {
+            type = p->value().toInt();
+        }
+    }
 
     if (request->hasParam("id")) {
         const PsychicWebParameter* p = request->getParam("id");
-        String cookie2 = p->value();
+        String id = p->value();
         DuoAuthLib duoAuth;
-        if(_duoActiveRequest && _duoCheckIP == request->client()->localIP().toString() && cookie2 == _duoCheckId)
+        if(_duoActiveRequest && _duoCheckIP == request->client()->localIP().toString() && id == _duoCheckId)
         {
             duoAuth.begin(duo_host, duo_ikey, duo_skey, &timeinfo);
 
@@ -148,20 +167,28 @@ int ImportExport::checkDuoAuth(PsychicRequest *request)
                     _duoTransactionId = "";
                     _duoCheckIP = "";
                     _duoCheckId = "";
-                    int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720);
+                    
+                    if(type==0)
+                    {
+                        int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720);
 
-                    if (!_sessionsOpts[request->client()->localIP().toString()])
-                    {
-                        durationLength = _preferences->getInt(preference_cred_session_lifetime_duo, 3600);
+                        if (!_sessionsOpts[request->client()->localIP().toString()])
+                        {
+                            durationLength = _preferences->getInt(preference_cred_session_lifetime_duo, 3600);
+                        }
+                        struct timeval time;
+                        gettimeofday(&time, NULL);
+                        int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+                        _duoSessions[id] = time_us + (durationLength*1000000L);
+                        saveSessions();
+                        if (_preferences->getBool(preference_mfa_reconfigure, false))
+                        {
+                            _preferences->putBool(preference_mfa_reconfigure, false);
+                        }
                     }
-                    struct timeval time;
-                    gettimeofday(&time, NULL);
-                    int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
-                    _duoSessions[cookie2] = time_us + (durationLength*1000000L);
-                    saveSessions();
-                    if (_preferences->getBool(preference_mfa_reconfigure, false))
+                    else
                     {
-                        _preferences->putBool(preference_mfa_reconfigure, false);
+                        _sessionsOpts[request->client()->localIP().toString() + "approve"] = true;
                     }
                     return 1;
                 }
@@ -172,11 +199,19 @@ int ImportExport::checkDuoAuth(PsychicRequest *request)
                     _duoTransactionId = "";
                     _duoCheckIP = "";
                     _duoCheckId = "";
-                    if (_preferences->getBool(preference_mfa_reconfigure, false))
+                    
+                    if(type==0)
                     {
-                        _preferences->putBool(preference_cred_duo_enabled, false);
-                        _duoEnabled = false;
-                        _preferences->putBool(preference_mfa_reconfigure, false);
+                        if (_preferences->getBool(preference_mfa_reconfigure, false))
+                        {
+                            _preferences->putBool(preference_cred_duo_enabled, false);
+                            _duoEnabled = false;
+                            _preferences->putBool(preference_mfa_reconfigure, false);
+                        }
+                    }
+                    else
+                    {
+                        _sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
                     }
                     return 0;
                 }
@@ -229,6 +264,32 @@ int ImportExport::checkDuoApprove()
         }
     }
     return 0;
+}
+
+bool ImportExport::checkTOTP(String* totpKey)
+{
+    String key(totpKey->c_str());
+    
+    if(_totpEnabled)
+    {
+        time_t now;
+        time(&now);
+        int totpTime = -60;
+
+        while (totpTime <= 60)
+        {
+            String key2(TOTP::currentOTP(now, _totpKey, 30, 6, totpTime)->c_str());
+            
+            if(key.toInt() == key2.toInt())
+            {
+                Log->println("Successful TOTP MFA Auth");
+                return true;
+            }
+            totpTime += 30;
+        }
+        Log->println("Failed TOTP MFA Auth");
+    }
+    return false;
 }
 
 void ImportExport::exportHttpsJson(JsonDocument &json)
@@ -1000,6 +1061,6 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             }
         }
     }
-    
+
     return json;
 }

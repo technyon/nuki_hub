@@ -15,6 +15,8 @@ public:
     int checkDuoAuth(PsychicRequest *request);
     int checkDuoApprove();
     bool startDuoAuth(char* pushType = (char*)"");
+    bool getTOTPEnabled();
+    bool checkTOTP(String* totpKey);
     bool getDuoEnabled();
     bool getBypassGPIOEnabled();
     int getBypassGPIOHigh();
@@ -23,11 +25,13 @@ public:
     void setDuoCheckIP(String duoCheckIP);
     void setDuoCheckId(String duoCheckId);
     JsonDocument _duoSessions;
+    JsonDocument _totpSessions;
     JsonDocument _sessionsOpts;
 private:
     void saveSessions();
     Preferences* _preferences;
     struct tm timeinfo;
+    bool _totpEnabled = false;
     bool _duoActiveRequest;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
@@ -41,5 +45,6 @@ private:
     String _duoUser;
     String _duoCheckId;
     String _duoCheckIP;
+    String _totpKey;    
 };
 
