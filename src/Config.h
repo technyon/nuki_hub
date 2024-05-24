@@ -23,3 +23,5 @@
 #define MQTT_CLEAN_SESSIONS false
 
 #define GPIO_DEBOUNCE_TIME 200
+
+#define NUKI_HUB_BUILD "unknownbuildnr"

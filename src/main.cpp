@@ -252,6 +252,8 @@ void setup()
     Log = &Serial;
 
     Log->print(F("Nuki Hub version ")); Log->println(NUKI_HUB_VERSION);
+    
+    Log->print(F("Nuki Hub build ")); Log->println(NUKI_HUB_BUILD);
 
     bool firstStart = initPreferences();
 
