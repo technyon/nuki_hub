@@ -1003,9 +1003,6 @@ void WebCfgServer::buildHtml(String& response)
     buildHtmlHeader(response);
 
     response.concat("<br><h3>Info</h3>\n");
-
-    String version = NUKI_HUB_VERSION;
-
     response.concat("<table>");
 
     printParameter(response, "Hostname", _hostname.c_str());
@@ -1071,7 +1068,7 @@ void WebCfgServer::buildHtml(String& response)
         }
     }
 
-    printParameter(response, "Firmware", version.c_str(), "/info");
+    printParameter(response, "Firmware", NUKI_HUB_VERSION, "/info");
 
     if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota");
 
@@ -1532,6 +1529,9 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     response.concat("Nuki Hub version: ");
     response.concat(NUKI_HUB_VERSION);
+    response.concat("\n");
+    response.concat("Nuki Hub build: ");
+    response.concat(NUKI_HUB_BUILD);
     response.concat("\n");
 
     response.concat(debugPreferences.preferencesToString(_preferences));
