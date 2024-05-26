@@ -228,6 +228,7 @@ void NukiOpenerWrapper::update()
             _retryCount = 0;
             _nextLockAction = (NukiOpener::LockAction) 0xff;
             _network->publishRetry("--");
+
             if(_intervalLockstate > 10)
             {
                 _nextLockStateUpdateTs = ts + 10 * 1000;
@@ -1483,6 +1484,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             _network->publishKeypadJsonCommandResult("keypadNotAvailable");
             return;
         }
+
         _network->publishKeypadJsonCommandResult("configNotReady");
         return;
     }
@@ -1732,7 +1734,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
                     return;
                 }
-
+              
                 NukiOpener::UpdatedKeypadEntry entry;
                 memset(&entry, 0, sizeof(entry));
                 entry.codeId = codeId;
@@ -2078,6 +2080,7 @@ void NukiOpenerWrapper::disableHASS()
         Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
         _nukiConfigValid = result == Nuki::CmdResult::Success;
     }
+
     if(_nukiConfigValid)
     {
         char uidString[20];

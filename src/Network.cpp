@@ -359,6 +359,7 @@ bool Network::update()
         }
         if (!_versionPublished) {
             publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_version, NUKI_HUB_VERSION);
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_build, NUKI_HUB_BUILD);
             _versionPublished = true;
         }
         _lastMaintenanceTs = ts;
@@ -598,7 +599,8 @@ void Network::registerMqttReceiver(MqttReceiver* receiver)
 
 void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
-    uint8_t value[360] = {0};
+    uint8_t value[800] = {0};
+
     size_t l = min(len, sizeof(value)-1);
 
     for(int i=0; i<l; i++)
@@ -690,6 +692,11 @@ bool Network::encryptionSupported()
 const String Network::networkDeviceName() const
 {
     return _device->deviceName();
+}
+
+const String Network::networkBSSID() const
+{
+    return _device->BSSIDstr();
 }
 
 void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision)
@@ -921,6 +928,23 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                      name,
                      baseTopic,
                      _lockPath + mqtt_topic_info_nuki_hub_version,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { (char*)"en", (char*)"true" },
+                       {(char*)"ic", (char*)"mdi:counter"}});
+                       
+    // Nuki Hub build
+    publishHassTopic("sensor",
+                     "nuki_hub_build",
+                     uidString,
+                     "_nuki_hub_build",
+                     "Nuki Hub build",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_info_nuki_hub_build,
                      deviceType,
                      "",
                      "",
@@ -3141,6 +3165,7 @@ void Network::removeHASSConfig(char* uidString)
     removeHassTopic((char*)"sensor", (char*)"firmware_version", uidString);
     removeHassTopic((char*)"sensor", (char*)"hardware_version", uidString);
     removeHassTopic((char*)"sensor", (char*)"nuki_hub_version", uidString);
+    removeHassTopic((char*)"sensor", (char*)"nuki_hub_build", uidString);
     removeHassTopic((char*)"sensor", (char*)"nuki_hub_latest", uidString);
     removeHassTopic((char*)"update", (char*)"nuki_hub_update", uidString);
     removeHassTopic((char*)"sensor", (char*)"nuki_hub_ip", uidString);

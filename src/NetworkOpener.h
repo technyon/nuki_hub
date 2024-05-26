@@ -71,7 +71,7 @@ private:
     void doorbellSuppressionToString(const int dbsupr, char* str);
     void soundToString(const int sound, char* str);
     void capabilitiesToString(const int capabilities, char* str);
-
+    
     String concat(String a, String b);
 
     Preferences* _preferences;
@@ -80,7 +80,6 @@ private:
 
     char _mqttPath[181] = {0};
     bool _isConnected = false;
-
     bool _firstTunerStatePublish = true;
     bool _haEnabled= false;
     bool _reconnected = false;

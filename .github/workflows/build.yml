@@ -33,6 +33,11 @@ jobs:
         run: pip install --upgrade platformio
       - name: Install ESPTool
         run: pip install --upgrade esptool
+      - name: Add version info
+        env:
+          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+        run: |
+          sed -i "s/unknownbuildnr/$Version (release)/g" src/Config.h
       - name: Build PlatformIO Project esp32dev
         run: |
           pio run --environment esp32dev
@@ -96,6 +101,11 @@ jobs:
         with:
           name: esp32solo1-assets
           path: release/esp32solo1
+      - name: Add version info
+        env:
+          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+        run: |
+          sed -i "s/$Version (release)/$Version (debug)/g" src/Config.h
       - name: Build PlatformIO Project esp32dev_dbg
         run: |
           pio run --environment esp32dev_dbg

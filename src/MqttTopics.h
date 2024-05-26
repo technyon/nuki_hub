@@ -66,6 +66,7 @@
 #define mqtt_topic_info_hardware_version "/info/hardwareVersion"
 #define mqtt_topic_info_firmware_version "/info/firmwareVersion"
 #define mqtt_topic_info_nuki_hub_version "/info/nukiHubVersion"
+#define mqtt_topic_info_nuki_hub_build "/info/nukiHubBuild"
 #define mqtt_topic_info_nuki_hub_latest "/info/nukiHubLatest"
 #define mqtt_topic_info_nuki_hub_ip "/info/nukiHubIp"
 

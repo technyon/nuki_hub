@@ -247,6 +247,7 @@ void NukiWrapper::update()
             _retryCount = 0;
             _nextLockAction = (NukiLock::LockAction) 0xff;
             _network->publishRetry("--");
+
             if(_intervalLockstate > 10)
             {
                 _nextLockStateUpdateTs = ts + 10 * 1000;
@@ -1477,6 +1478,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             _network->publishKeypadJsonCommandResult("keypadNotAvailable");
             return;
         }
+
         _network->publishKeypadJsonCommandResult("configNotReady");
         return;
     }
@@ -1843,7 +1845,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
     const char *time = json["time"].as<const char*>();
     const char *lockAct = json["lockAction"].as<const char*>();
     NukiLock::LockAction timeControlLockAction;
-
+  
     if(lockAct)
     {
         timeControlLockAction = nukiInst->lockActionToEnum(lockAct);
@@ -2059,6 +2061,7 @@ void NukiWrapper::disableHASS()
         Nuki::CmdResult result = _nukiLock.requestConfig(&_nukiConfig);
         _nukiConfigValid = result == Nuki::CmdResult::Success;
     }
+
     if(_nukiConfigValid)
     {
         char uidString[20];

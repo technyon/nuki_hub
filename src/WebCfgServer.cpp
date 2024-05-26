@@ -383,6 +383,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putString(preference_mqtt_hass_cu_url, value);
             configChanged = true;
         }
+        else if(key == "BESTRSSI")
+        {
+            _preferences->putBool(preference_find_best_rssi, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "HOSTNAME")
         {
             _preferences->putString(preference_hostname, value);
@@ -1067,9 +1072,6 @@ void WebCfgServer::buildHtml(String& response)
     buildHtmlHeader(response);
 
     response.concat("<br><h3>Info</h3>\n");
-
-    String version = NUKI_HUB_VERSION;
-
     response.concat("<table>");
 
     printParameter(response, "Hostname", _hostname.c_str());
@@ -1135,7 +1137,7 @@ void WebCfgServer::buildHtml(String& response)
         }
     }
 
-    printParameter(response, "Firmware", version.c_str(), "/info");
+    printParameter(response, "Firmware", NUKI_HUB_VERSION, "/info");
 
     if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota");
 
@@ -1311,6 +1313,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
     printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled), "");
+    printCheckBox(response, "BESTRSSI", "Connect to AP with the best signal in an environment with multiple APs with the same SSID", _preferences->getBool(preference_find_best_rssi), "");
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
     printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
@@ -1368,6 +1371,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<input type=\"hidden\" name=\"ACLLVLCHANGED\" value=\"1\">");
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
+
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled), "");
@@ -1531,11 +1535,14 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     response.concat("<h3>Basic Nuki Configuration</h3>");
     response.concat("<table>");
     printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled), "");
+
     if(_preferences->getBool(preference_lock_enabled))
     {
         printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
     }
+
     printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
+
     if(_preferences->getBool(preference_opener_enabled))
     {
         printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
@@ -1623,6 +1630,9 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     response.concat("Nuki Hub version: ");
     response.concat(NUKI_HUB_VERSION);
+    response.concat("\n");
+    response.concat("Nuki Hub build: ");
+    response.concat(NUKI_HUB_BUILD);
     response.concat("\n");
 
     response.concat(debugPreferences.preferencesToString(_preferences));
@@ -1754,7 +1764,6 @@ void WebCfgServer::buildInfoHtml(String &response)
         _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
         uint32_t advancedOpenerConfigAclPrefs[22];
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
-
         response.concat("Opener firmware version: ");
         response.concat(_nukiOpener->firmwareVersion().c_str());
         response.concat("\nOpener hardware version: ");
@@ -1853,6 +1862,13 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat("Network device: ");
     response.concat(_network->networkDeviceName());
     response.concat("\n");
+    
+    if(_network->networkDeviceName() == "Built-in Wi-Fi")
+    {
+        response.concat("BSSID of AP: ");
+        response.concat(_network->networkBSSID());
+        response.concat("\n");
+    }
 
     response.concat("Uptime: ");
     response.concat(millis() / 1000 / 60);
@@ -1997,8 +2013,10 @@ void WebCfgServer::printCheckBox(String &response, const char *token, const char
 
     response.concat("<input type=checkbox name=\"");
     response.concat(token);
+
     response.concat("\" class=\"");
     response.concat(htmlClass);
+
     response.concat("\" value=\"1\"");
     response.concat(value ? " checked=\"checked\"" : "");
     response.concat("/></td></tr>");
