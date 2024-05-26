@@ -480,22 +480,28 @@ void NukiWrapper::updateAuthData(bool retrieved)
 
     if(!retrieved)
     {
-        Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, 3, 1, false);
+        delay(250);
+        Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
         Log->print(F("Retrieve log entries: "));
         Log->println(result);
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            Nuki::CmdResult result = _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
-            if(result == Nuki::CmdResult::Success)
-            {
-                _waitAuthLogUpdateTs = millis() + 5000;
-            }
-            delay(150);
+            _waitAuthLogUpdateTs = millis() + 5000;
+            delay(100);
 
             std::list<NukiLock::LogEntry> log;
             _nukiLock.getLogEntries(&log);
-            _network->publishAuthorizationInfo(log, true);
+            
+            if(log.size() > _preferences->getInt(preference_authlog_max_entries, 3))
+            {
+                log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
+            }
+            
+            if(log.size() > 0)
+            {
+                 _network->publishAuthorizationInfo(log, true);
+            }
         }
     }
     else
