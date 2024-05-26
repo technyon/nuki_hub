@@ -1,11 +1,9 @@
 #pragma once
 
-#define CHAR_BUFFER_SIZE 4096
-
 class CharBuffer
 {
 public:
-    static void initialize();
+    static void initialize(char16_t buffer_size);
     static char* get();
 
 private:

@@ -370,7 +370,7 @@ void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
     }
 }
 
-void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries)
+void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries, bool latest)
 {
     char str[50];
     char authName[33];
@@ -399,101 +399,107 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
             }
         }
 
-        auto entry = json.add<JsonVariant>();
-
-        entry["index"] = log.index;
-        entry["authorizationId"] = log.authId;
-        entry["authorizationName"] = _authName;
-        entry["timeYear"] = log.timeStampYear;
-        entry["timeMonth"] = log.timeStampMonth;
-        entry["timeDay"] = log.timeStampDay;
-        entry["timeHour"] = log.timeStampHour;
-        entry["timeMinute"] = log.timeStampMinute;
-        entry["timeSecond"] = log.timeStampSecond;
-
-        memset(str, 0, sizeof(str));
-        loggingTypeToString(log.loggingType, str);
-        entry["type"] = str;
-
-        switch(log.loggingType)
+        if(!latest)
         {
-            case NukiOpener::LoggingType::LockAction:
-                memset(str, 0, sizeof(str));
-                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
-                entry["action"] = str;
+            auto entry = json.add<JsonVariant>();
 
-                memset(str, 0, sizeof(str));
-                NukiOpener::triggerToString((NukiOpener::Trigger)log.data[1], str);
-                entry["trigger"] = str;
+            entry["index"] = log.index;
+            entry["authorizationId"] = log.authId;
+            entry["authorizationName"] = _authName;
+            entry["timeYear"] = log.timeStampYear;
+            entry["timeMonth"] = log.timeStampMonth;
+            entry["timeDay"] = log.timeStampDay;
+            entry["timeHour"] = log.timeStampHour;
+            entry["timeMinute"] = log.timeStampMinute;
+            entry["timeSecond"] = log.timeStampSecond;
 
-                memset(str, 0, sizeof(str));
-                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[3], str);
-                entry["completionStatus"] = str;
-                break;
-            case NukiOpener::LoggingType::KeypadAction:
-                memset(str, 0, sizeof(str));
-                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
-                entry["action"] = str;
+            memset(str, 0, sizeof(str));
+            loggingTypeToString(log.loggingType, str);
+            entry["type"] = str;
 
-                memset(str, 0, sizeof(str));
-                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
-                entry["completionStatus"] = str;
-                break;
-            case NukiOpener::LoggingType::DoorbellRecognition:
-                switch(log.data[0] & 3)
-                {
-                    case 0:
-                        entry["mode"] = "None";
-                        break;
-                    case 1:
-                        entry["mode"] = "RTO";
-                        break;
-                    case 2:
-                        entry["mode"] = "CM";
-                        break;
-                    default:
-                        entry["mode"] = "Unknown";
-                        break;
-                }
+            switch(log.loggingType)
+            {
+                case NukiOpener::LoggingType::LockAction:
+                    memset(str, 0, sizeof(str));
+                    NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
+                    entry["action"] = str;
 
-                switch(log.data[1])
-                {
-                    case 0:
-                        entry["source"] = "Doorbell";
-                        break;
-                    case 1:
-                        entry["source"] = "Timecontrol";
-                        break;
-                    case 2:
-                        entry["source"] = "App";
-                        break;
-                    case 3:
-                        entry["source"] = "Button";
-                        break;
-                    case 4:
-                        entry["source"] = "Fob";
-                        break;
-                    case 5:
-                        entry["source"] = "Bridge";
-                        break;
-                    case 6:
-                        entry["source"] = "Keypad";
-                        break;
-                    default:
-                        entry["source"] = "Unknown";
-                        break;                }
+                    memset(str, 0, sizeof(str));
+                    NukiOpener::triggerToString((NukiOpener::Trigger)log.data[1], str);
+                    entry["trigger"] = str;
 
-                entry["geofence"] = log.data[2] == 1 ? "active" : "inactive";
-                entry["doorbellSuppression"] = log.data[3] == 1 ? "active" : "inactive";
-                entry["completionStatus"] = str;
+                    memset(str, 0, sizeof(str));
+                    NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[3], str);
+                    entry["completionStatus"] = str;
+                    break;
+                case NukiOpener::LoggingType::KeypadAction:
+                    memset(str, 0, sizeof(str));
+                    NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
+                    entry["action"] = str;
 
-                break;
+                    memset(str, 0, sizeof(str));
+                    NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
+                    entry["completionStatus"] = str;
+                    break;
+                case NukiOpener::LoggingType::DoorbellRecognition:
+                    switch(log.data[0] & 3)
+                    {
+                        case 0:
+                            entry["mode"] = "None";
+                            break;
+                        case 1:
+                            entry["mode"] = "RTO";
+                            break;
+                        case 2:
+                            entry["mode"] = "CM";
+                            break;
+                        default:
+                            entry["mode"] = "Unknown";
+                            break;
+                    }
+
+                    switch(log.data[1])
+                    {
+                        case 0:
+                            entry["source"] = "Doorbell";
+                            break;
+                        case 1:
+                            entry["source"] = "Timecontrol";
+                            break;
+                        case 2:
+                            entry["source"] = "App";
+                            break;
+                        case 3:
+                            entry["source"] = "Button";
+                            break;
+                        case 4:
+                            entry["source"] = "Fob";
+                            break;
+                        case 5:
+                            entry["source"] = "Bridge";
+                            break;
+                        case 6:
+                            entry["source"] = "Keypad";
+                            break;
+                        default:
+                            entry["source"] = "Unknown";
+                            break;                }
+
+                    entry["geofence"] = log.data[2] == 1 ? "active" : "inactive";
+                    entry["doorbellSuppression"] = log.data[3] == 1 ? "active" : "inactive";
+                    entry["completionStatus"] = str;
+
+                    break;
+            }
         }
     }
 
-    serializeJson(json, _buffer, _bufferSize);
-    publishString(mqtt_topic_lock_log, _buffer);
-
+    if(!latest)
+    {
+        serializeJson(json, _buffer, _bufferSize);
+        publishString(mqtt_topic_lock_log, _buffer);
+    }
+    
     if(authFound)
     {
         publishUInt(mqtt_topic_lock_auth_id, _authId);

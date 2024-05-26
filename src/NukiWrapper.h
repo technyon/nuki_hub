@@ -59,8 +59,8 @@ private:
     void updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
-    void updateAuthData();
-    void updateKeypad();
+    void updateAuthData(bool retrieved);
+    void updateKeypad(bool retrieved);
     void updateTimeControl(bool retrieved);
     void postponeBleWatchdog();
 
@@ -127,7 +127,9 @@ private:
     unsigned long _nextLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
-    unsigned long _nextTimeControlUpdateTs = 0;
+    unsigned long _waitAuthLogUpdateTs = 0;
+    unsigned long _waitKeypadUpdateTs = 0;    
+    unsigned long _waitTimeControlUpdateTs = 0;
     unsigned long _nextKeypadUpdateTs = 0;
     unsigned long _nextRssiTs = 0;
     unsigned long _lastRssi = 0;

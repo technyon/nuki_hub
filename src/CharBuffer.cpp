@@ -1,8 +1,8 @@
 #include "CharBuffer.h"
 
-void CharBuffer::initialize()
+void CharBuffer::initialize(char16_t buffer_size)
 {
-    _buffer = new char[CHAR_BUFFER_SIZE];
+    _buffer = new char[buffer_size];
 }
 
 char *CharBuffer::get()

@@ -401,7 +401,7 @@ void NetworkLock::publishState(NukiLock::LockState lockState)
     }
 }
 
-void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries)
+void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries, bool latest)
 {
     char str[50];
     char authName[33];
@@ -430,77 +430,83 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
             }
         }
 
-        auto entry = json.add<JsonVariant>();
-
-        entry["index"] = log.index;
-        entry["authorizationId"] = log.authId;
-        entry["authorizationName"] = authName;
-        entry["timeYear"] = log.timeStampYear;
-        entry["timeMonth"] = log.timeStampMonth;
-        entry["timeDay"] = log.timeStampDay;
-        entry["timeHour"] = log.timeStampHour;
-        entry["timeMinute"] = log.timeStampMinute;
-        entry["timeSecond"] = log.timeStampSecond;
-
-        memset(str, 0, sizeof(str));
-        loggingTypeToString(log.loggingType, str);
-        entry["type"] = str;
-
-        switch(log.loggingType)
+        if(!latest)
         {
-            case NukiLock::LoggingType::LockAction:
-                memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
-                entry["action"] = str;
+            auto entry = json.add<JsonVariant>();
 
-                memset(str, 0, sizeof(str));
-                NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
-                entry["trigger"] = str;
+            entry["index"] = log.index;
+            entry["authorizationId"] = log.authId;
+            entry["authorizationName"] = authName;
+            entry["timeYear"] = log.timeStampYear;
+            entry["timeMonth"] = log.timeStampMonth;
+            entry["timeDay"] = log.timeStampDay;
+            entry["timeHour"] = log.timeStampHour;
+            entry["timeMinute"] = log.timeStampMinute;
+            entry["timeSecond"] = log.timeStampSecond;
 
-                memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
-                entry["completionStatus"] = str;
-                entry["completionStatusVal"] = log.data[3];                
-                break;
-            case NukiLock::LoggingType::KeypadAction:
-                memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
-                entry["action"] = str;
+            memset(str, 0, sizeof(str));
+            loggingTypeToString(log.loggingType, str);
+            entry["type"] = str;
 
-                memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
-                entry["completionStatus"] = str;
-                entry["completionStatusVal"] = log.data[2];                
-                break;
-            case NukiLock::LoggingType::DoorSensor:
-                memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+            switch(log.loggingType)
+            {
+                case NukiLock::LoggingType::LockAction:
+                    memset(str, 0, sizeof(str));
+                    NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                    entry["action"] = str;
 
-                switch(log.data[0])
-                {
-                    case 0:
-                        entry["action"] = "DoorOpened";
-                        break;
-                    case 1:
-                        entry["action"] = "DoorClosed";
-                        break;
-                    case 2:
-                        entry["action"] = "SensorJammed";
-                        break;
-                    default:
-                        entry["action"] = "Unknown";
-                        break;
-                }
+                    memset(str, 0, sizeof(str));
+                    NukiLock::triggerToString((NukiLock::Trigger)log.data[1], str);
+                    entry["trigger"] = str;
 
-                memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
-                entry["completionStatus"] = str;
-                break;
+                    memset(str, 0, sizeof(str));
+                    NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+                    entry["completionStatus"] = str;
+                    entry["completionStatusVal"] = log.data[3];                
+                    break;
+                case NukiLock::LoggingType::KeypadAction:
+                    memset(str, 0, sizeof(str));
+                    NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+                    entry["action"] = str;
+
+                    memset(str, 0, sizeof(str));
+                    NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                    entry["completionStatus"] = str;
+                    entry["completionStatusVal"] = log.data[2];                
+                    break;
+                case NukiLock::LoggingType::DoorSensor:
+                    memset(str, 0, sizeof(str));
+                    NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
+
+                    switch(log.data[0])
+                    {
+                        case 0:
+                            entry["action"] = "DoorOpened";
+                            break;
+                        case 1:
+                            entry["action"] = "DoorClosed";
+                            break;
+                        case 2:
+                            entry["action"] = "SensorJammed";
+                            break;
+                        default:
+                            entry["action"] = "Unknown";
+                            break;
+                    }
+
+                    memset(str, 0, sizeof(str));
+                    NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                    entry["completionStatus"] = str;
+                    break;
+            }
         }
     }
 
-    serializeJson(json, _buffer, _bufferSize);
-    publishString(mqtt_topic_lock_log, _buffer);
+    if(!latest)
+    {
+        serializeJson(json, _buffer, _bufferSize);
+        publishString(mqtt_topic_lock_log, _buffer);
+    }
 
     if(authFound)
     {
