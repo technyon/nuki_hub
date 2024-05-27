@@ -42,6 +42,7 @@ private:
     void buildOtaHtml(String& response, bool errored);
     void buildOtaCompletedHtml(String& response);
     void buildMqttConfigHtml(String& response);
+    void buildAdvancedConfigHtml(String& response);
     void buildNukiConfigHtml(String& response);
     void buildGpioConfigHtml(String& response);
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);

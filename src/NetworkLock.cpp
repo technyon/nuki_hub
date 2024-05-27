@@ -52,6 +52,10 @@ void NetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
 
+    _network->subscribe(_mqttPath, mqtt_topic_webserver_action);
+    _network->initTopic(_mqttPath, mqtt_topic_webserver_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_webserver_state, (_preferences->getBool(preference_webserver_enabled, true) ? "1" : "0"));
+
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
@@ -96,6 +100,31 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
     {
         Log->println(F("Restart requested via MQTT."));
+        _network->clearWifiFallback();
+        delay(200);
+        restartEsp(RestartReason::RequestedViaMqtt);
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
+    {
+        if(strcmp(value, "") == 0 ||
+           strcmp(value, "--") == 0) return;
+
+        if(strcmp(value, "1") == 0)
+        {
+            if(_preferences->getBool(preference_webserver_enabled, true)) return;
+            Log->println(F("Webserver enabled, restarting."));
+            _preferences->putBool(preference_webserver_enabled, true);
+
+        }
+        else if (strcmp(value, "0") == 0)
+        {
+            if(!_preferences->getBool(preference_webserver_enabled, true)) return;
+            Log->println(F("Webserver disabled, restarting."));
+            _preferences->putBool(preference_webserver_enabled, false);
+        }
+
+        publishString(mqtt_topic_webserver_action, "--");
         _network->clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
@@ -371,7 +400,7 @@ void NetworkLock::publishState(NukiLock::LockState lockState)
     }
 }
 
-void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries)
+void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries, bool latest)
 {
     char str[50];
     char authName[33];
@@ -379,15 +408,8 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
 
     JsonDocument json;
 
-    int i = 5;
     for(const auto& log : logEntries)
     {
-        if(i <= 0)
-        {
-            break;
-        }
-        --i;
-
         memset(authName, 0, sizeof(authName));
         authName[0] = '\0';
 
@@ -437,6 +459,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
                 memset(str, 0, sizeof(str));
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
                 entry["completionStatus"] = str;
+                entry["completionStatusVal"] = log.data[3];
                 break;
             case NukiLock::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
@@ -446,6 +469,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
                 memset(str, 0, sizeof(str));
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
                 entry["completionStatus"] = str;
+                entry["completionStatusVal"] = log.data[2];
                 break;
             case NukiLock::LoggingType::DoorSensor:
                 memset(str, 0, sizeof(str));
@@ -475,7 +499,9 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     }
 
     serializeJson(json, _buffer, _bufferSize);
-    publishString(mqtt_topic_lock_log, _buffer);
+
+    if(latest) publishString(mqtt_topic_lock_log_latest, _buffer);
+    else publishString(mqtt_topic_lock_log, _buffer);
 
     if(authFound)
     {

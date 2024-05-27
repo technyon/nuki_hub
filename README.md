@@ -200,6 +200,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system.
 - lock/lastLockAction: Reports the last lock action as a string. Possible values are: Unlock, Lock, Unlatch, LockNgo, LockNgoUnlatch, FullLock, FobAction1, FobAction2, FobAction3, Unknown.
 - lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data.
+- lock/shortLog: If "Publish auth data" is enabled in the web interface, this topic will be filled with the 3 most recent entries in the log of authorization data, updates faster than lock/log.
 - lock/completionStatus: Status of the last action as reported by Nuki Lock: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown.
 - lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action.
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action.

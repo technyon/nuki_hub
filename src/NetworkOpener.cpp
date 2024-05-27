@@ -369,7 +369,7 @@ void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
     }
 }
 
-void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries)
+void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries, bool latest)
 {
     char str[50];
     char authName[33];
@@ -377,15 +377,8 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 
     JsonDocument json;
 
-    int i = 5;
     for(const auto& log : logEntries)
     {
-        if(i <= 0)
-        {
-            break;
-        }
-        --i;
-
         memset(authName, 0, sizeof(authName));
         authName[0] = '\0';
 
@@ -498,43 +491,14 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     }
 
     serializeJson(json, _buffer, _bufferSize);
-    publishString(mqtt_topic_lock_log, _buffer);
 
+    if(latest) publishString(mqtt_topic_lock_log_latest, _buffer);
+    else publishString(mqtt_topic_lock_log, _buffer);
+    
     if(authFound)
     {
         publishUInt(mqtt_topic_lock_auth_id, _authId);
         publishString(mqtt_topic_lock_auth_name, _authName);
-    }
-}
-
-void NetworkOpener::logactionCompletionStatusToString(uint8_t value, char* out)
-{
-    switch (value)
-    {
-        case 0x00:
-            strcpy(out, "success");
-            break;
-        case 0x02:
-            strcpy(out, "cancelled");
-            break;
-        case 0x03:
-            strcpy(out, "tooRecent");
-            break;
-        case 0x04:
-            strcpy(out, "busy");
-            break;
-        case 0x08:
-            strcpy(out, "incomplete");
-            break;
-        case 0xfe:
-            strcpy(out, "otherError");
-            break;
-        case 0xff:
-            strcpy(out, "unknown");
-            break;
-        default:
-            strcpy(out, "undefined");
-            break;
     }
 }
 

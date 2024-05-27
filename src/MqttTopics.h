@@ -12,6 +12,7 @@
 #define mqtt_topic_lock_trigger "/lock/trigger"
 #define mqtt_topic_lock_last_lock_action "/lock/lastLockAction"
 #define mqtt_topic_lock_log "/lock/log"
+#define mqtt_topic_lock_log_latest "/lock/shortLog"
 #define mqtt_topic_lock_auth_id "/lock/authorizationId"
 #define mqtt_topic_lock_auth_name "/lock/authorizationName"
 #define mqtt_topic_lock_completionStatus "/lock/completionStatus"
@@ -71,6 +72,8 @@
 #define mqtt_topic_info_nuki_hub_ip "/info/nukiHubIp"
 
 #define mqtt_topic_reset "/maintenance/reset"
+#define mqtt_topic_webserver_state "/maintenance/webserver/state"
+#define mqtt_topic_webserver_action "/maintenance/webserver/enable"
 #define mqtt_topic_uptime "/maintenance/uptime"
 #define mqtt_topic_wifi_rssi "/maintenance/wifiRssi"
 #define mqtt_topic_log "/maintenance/log"

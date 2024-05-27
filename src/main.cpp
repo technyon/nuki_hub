@@ -52,7 +52,11 @@ void networkTask(void *pvParameters)
         {
             networkOpener->update();
         }
-        webCfgServer->update();
+
+        if(preferences->getBool(preference_webserver_enabled, true))
+        {
+            webCfgServer->update();
+        }
 
         // millis() is about to overflow. Restart device to prevent problems with overflow
         if(millis() > restartTs)
@@ -112,9 +116,13 @@ void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
-    xTaskCreatePinnedToCore(networkTask, "ntw", 12288, NULL, 3, &networkTaskHandle, 1);
-    xTaskCreatePinnedToCore(nukiTask, "nuki", 8192, NULL, 2, &nukiTaskHandle, 1);
-    xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", 1024, NULL, 5, &presenceDetectionTaskHandle, 1);
+    xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
+    xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
+
+    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
+    {
+        xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", preferences->getInt(preference_task_size_pd, PD_TASK_SIZE), NULL, 5, &presenceDetectionTaskHandle, 1);
+    }
 }
 
 void initEthServer(const NetworkDeviceType device)
@@ -259,6 +267,27 @@ void setup()
 
     initializeRestartReason();
 
+    if(preferences->getBool(preference_enable_bootloop_reset, false) &&
+    (esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
+    esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
+    esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
+    esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT))
+    {
+        preferences->putInt(preference_bootloop_counter, preferences->getInt(preference_bootloop_counter, 0) + 1);
+        Log->println(F("Bootloop counter incremented"));
+        
+        if(preferences->getInt(preference_bootloop_counter) == 10)
+        {
+            preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
+            preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
+            preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
+            preferences->putInt(preference_task_size_pd, PD_TASK_SIZE);
+            preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
+            preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
+            preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
+            preferences->putInt(preference_bootloop_counter, 0);
+        }
+    }
 
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
 
@@ -269,8 +298,10 @@ void setup()
     {
         deviceIdOpener->assignId(deviceIdLock->get());
     }
+    
+    char16_t buffer_size = preferences->getInt(preference_buffer_size, 4096);
 
-    CharBuffer::initialize();
+    CharBuffer::initialize(buffer_size);
 
     if(preferences->getInt(preference_restart_timer) != 0)
     {
@@ -286,15 +317,15 @@ void setup()
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(preferences, gpio, mqttLockPath, CharBuffer::get(), CHAR_BUFFER_SIZE);
+    network = new Network(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
     network->initialize();
 
-    networkLock = new NetworkLock(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
+    networkLock = new NetworkLock(network, preferences, CharBuffer::get(), buffer_size);
     networkLock->initialize();
 
     if(openerEnabled)
     {
-        networkOpener = new NetworkOpener(network, preferences, CharBuffer::get(), CHAR_BUFFER_SIZE);
+        networkOpener = new NetworkOpener(network, preferences, CharBuffer::get(), buffer_size);
         networkOpener->initialize();
     }
 
@@ -318,16 +349,22 @@ void setup()
         nukiOpener->initialize();
     }
 
-    webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
-    webCfgServer->initialize();
+    if(preferences->getBool(preference_webserver_enabled, true))
+    {
+        webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
+        webCfgServer->initialize();
+    }
 
-    presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
-    presenceDetection->initialize();
+    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
+    {
+        presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
+        presenceDetection->initialize();
+    }
 
     setupTasks();
 }
 
 void loop()
 {
-    delay(60000);
+    vTaskDelete(NULL);
 }

@@ -3,6 +3,7 @@
 #include "sdkconfig.h"
 
 #define NUKI_HUB_VERSION "8.34"
+#define NUKI_HUB_BUILD "unknownbuildnr"
 
 #define GITHUB_LATEST_RELEASE_URL "https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_LATEST_RELEASE_API_URL "https://api.github.com/repos/technyon/nuki_hub/releases/latest"
@@ -24,4 +25,10 @@
 
 #define GPIO_DEBOUNCE_TIME 200
 
-#define NUKI_HUB_BUILD "unknownbuildnr"
+#define CHAR_BUFFER_SIZE 4096
+#define NETWORK_TASK_SIZE 12288
+#define NUKI_TASK_SIZE 8192
+#define PD_TASK_SIZE 1024
+#define MAX_AUTHLOG 5
+#define MAX_KEYPAD 10
+#define MAX_TIMECONTROL 10
