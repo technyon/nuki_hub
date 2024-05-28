@@ -82,6 +82,7 @@
 #define preference_bootloop_counter (char*)"btlpcounter"
 #define preference_enable_bootloop_reset (char*)"enabtlprst"
 #define preference_buffer_size (char*)"buffsize"
+#define preference_disable_non_json (char*)"disnonjson"
 
 class DebugPreferences
 {
@@ -99,7 +100,7 @@ private:
             preference_keypad_info_enabled, preference_acl, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
             preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl, preference_conf_opener_advanced_acl,
             preference_access_level, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
-            preference_cred_password, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout,
+            preference_cred_password, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout, preference_disable_non_json,
             preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version,
             preference_task_size_network, preference_task_size_nuki, preference_task_size_pd, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries
     };
@@ -115,7 +116,7 @@ private:
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
             preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi, preference_restart_on_disconnect, preference_keypad_control_enabled,
             preference_keypad_info_enabled, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
-            preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled
+            preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_disable_non_json
     };
 
     const bool isRedacted(const char* key) const

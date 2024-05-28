@@ -264,13 +264,13 @@ void Network::initialize()
 bool Network::update()
 {
     unsigned long ts = millis();
-    
+
     if(ts > 120000 && ts < 125000 && _preferences->getInt(preference_bootloop_counter, 0) > 0)
     {
         _preferences->putInt(preference_bootloop_counter, 0);
         Log->println(F("Bootloop counter reset"));
     }
-    
+
     _device->update();
 
     if(!_mqttEnabled)
@@ -935,7 +935,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                      "",
                      { { (char*)"en", (char*)"true" },
                        {(char*)"ic", (char*)"mdi:counter"}});
-                       
+
     // Nuki Hub build
     publishHassTopic("sensor",
                      "nuki_hub_build",
@@ -2298,7 +2298,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                      "",
                      {{(char*)"pl_on", (char*)"ring"},
                       {(char*)"pl_off", (char*)"standby"}});
-  
+
     JsonDocument json;
     json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{(char*)"val_tpl", (char*)"{ \"event_type\": \"{{ value }}\" }"}});
     json["event_types"][0] = "ring";
@@ -3150,6 +3150,18 @@ void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDe
         String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
     }
+}
+
+void Network::removeTopic(const String& mqttPath, const String& mqttTopic)
+{
+    String path = mqttPath;
+    path.concat(mqttTopic);
+   _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+
+    #ifdef DEBUG_NUKIHUB
+    Log->print(F("Removing MQTT topic: "));
+    Log->println(path.c_str());
+    #endif
 }
 
 

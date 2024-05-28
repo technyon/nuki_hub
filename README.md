@@ -122,6 +122,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Restart on disconnect: Enable to restart the Nuki Hub after 60 seconds without a connection to a network.
 - Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
+- Disable some extraneous non-JSON topics: Enable to not publish non-JSON keypad and config MQTT topics.
 
 #### IP Address assignment
 
