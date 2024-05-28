@@ -51,6 +51,7 @@ private:
     void sendCss();
     void sendFavicon();
     void processUnpair(bool opener);
+    void processFactoryReset();
 
     void buildHtmlHeader(String& response);
     void printInputField(String& response, const char* token, const char* description, const char* value, const size_t& maxLength, const bool& isPassword = false, const bool& showLengthRestriction = false);
