@@ -333,7 +333,7 @@ void NukiOpenerWrapper::unpair()
     Preferences nukiBlePref;
     nukiBlePref.begin("NukiHubopener", false);
     nukiBlePref.clear();
-    nukiBlePref.end();        
+    nukiBlePref.end();
     _deviceId->assignNewId();
     _preferences->remove(preference_nuki_id_opener);
     _paired = false;
@@ -520,7 +520,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
             {
                 log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
             }
-            
+
             if(log.size() > 0)
             {
                 _network->publishAuthorizationInfo(log, true);
@@ -863,8 +863,8 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     }
 
     Nuki::CmdResult cmdResult;
-    const char *basicKeys[] = {"name", "latitude", "longitude", "pairingEnabled", "buttonEnabled", "ledFlashEnabled", "timeZoneOffset", "dstMode", "fobAction1",  "fobAction2", "fobAction3", "operatingMode", "advertisingMode", "timeZone"};
-    const char *advancedKeys[] = {"intercomID", "busModeSwitch", "shortCircuitDuration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection"};
+    const char *basicKeys[14] = {"name", "latitude", "longitude", "pairingEnabled", "buttonEnabled", "ledFlashEnabled", "timeZoneOffset", "dstMode", "fobAction1",  "fobAction2", "fobAction3", "operatingMode", "advertisingMode", "timeZone"};
+    const char *advancedKeys[20] = {"intercomID", "busModeSwitch", "shortCircuitDuration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection"};
     bool basicUpdated = false;
     bool advancedUpdated = false;
     uint32_t basicOpenerConfigAclPrefs[16];
@@ -875,7 +875,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     nukiOpenerPreferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
     nukiOpenerPreferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
-    for(int i=0; i < 16; i++)
+    for(int i=0; i < 14; i++)
     {
         if(json[basicKeys[i]])
         {
@@ -1056,261 +1056,258 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         }
     }
 
-    for(int i=0; i < 20; i++)
+    for(int j=0; j < 20; j++)
     {
-        if(json[advancedKeys[i]])
+        if(json[advancedKeys[j]])
         {
-            const char *jsonchar = json[advancedKeys[i]].as<const char*>();
+            const char *jsonchar = json[advancedKeys[j]].as<const char*>();
 
             if(strlen(jsonchar) == 0)
             {
-                jsonResult[advancedKeys[i]] = "noValueSet";
+                jsonResult[advancedKeys[j]] = "noValueSet";
                 continue;
             }
 
-            if((int)advancedOpenerConfigAclPrefs[i] == 1)
+            if((int)advancedOpenerConfigAclPrefs[j] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
 
-                if(strcmp(advancedKeys[i], "intercomID") == 0)
+                if(strcmp(advancedKeys[j], "intercomID") == 0)
                 {
                     const uint16_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue >= 0)
                     {
-                        if(_nukiAdvancedConfig.intercomID == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.intercomID == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setIntercomID(keyvalue);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "busModeSwitch") == 0)
+                else if(strcmp(advancedKeys[j], "busModeSwitch") == 0)
                 {
                     const uint8_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue == 0 || keyvalue == 1)
                     {
-                        if(_nukiAdvancedConfig.busModeSwitch == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.busModeSwitch == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setBusModeSwitch((keyvalue > 0));
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "shortCircuitDuration") == 0)
+                else if(strcmp(advancedKeys[j], "shortCircuitDuration") == 0)
                 {
                     const uint16_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue >= 0)
                     {
-                        if(_nukiAdvancedConfig.shortCircuitDuration == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.shortCircuitDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setShortCircuitDuration(keyvalue);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "electricStrikeDelay") == 0)
+                else if(strcmp(advancedKeys[j], "electricStrikeDelay") == 0)
                 {
                     const uint16_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue >= 0 && keyvalue <= 30000)
                     {
-                        if(_nukiAdvancedConfig.electricStrikeDelay == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.electricStrikeDelay == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setElectricStrikeDelay(keyvalue);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "randomElectricStrikeDelay") == 0)
+                else if(strcmp(advancedKeys[j], "randomElectricStrikeDelay") == 0)
                 {
                     const uint8_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue == 0 || keyvalue == 1)
                     {
-                        if(_nukiAdvancedConfig.randomElectricStrikeDelay == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.randomElectricStrikeDelay == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.enableRandomElectricStrikeDelay((keyvalue > 0));
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "electricStrikeDuration") == 0)
+                else if(strcmp(advancedKeys[j], "electricStrikeDuration") == 0)
                 {
                     const uint16_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue >= 1000 && keyvalue <= 30000)
                     {
-                        if(_nukiAdvancedConfig.electricStrikeDuration == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.electricStrikeDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setElectricStrikeDuration(keyvalue);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "disableRtoAfterRing") == 0)
+                else if(strcmp(advancedKeys[j], "disableRtoAfterRing") == 0)
                 {
                     const uint8_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue == 0 || keyvalue == 1)
                     {
-                        if(_nukiAdvancedConfig.disableRtoAfterRing == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.disableRtoAfterRing == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.disableRtoAfterRing((keyvalue > 0));
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "rtoTimeout") == 0)
+                else if(strcmp(advancedKeys[j], "rtoTimeout") == 0)
                 {
                     const uint8_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue >= 5 && keyvalue <= 60)
                     {
-                        if(_nukiAdvancedConfig.rtoTimeout == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.rtoTimeout == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setRtoTimeout(keyvalue);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "doorbellSuppression") == 0)
+                else if(strcmp(advancedKeys[j], "doorbellSuppression") == 0)
                 {
                     const uint8_t dbsupr = nukiOpenerInst->doorbellSuppressionToInt(jsonchar);
 
                     if(dbsupr != 99)
                     {
-                        if(_nukiAdvancedConfig.doorbellSuppression == dbsupr) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.doorbellSuppression == dbsupr) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setDoorbellSuppression(dbsupr);
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "doorbellSuppressionDuration") == 0)
+                else if(strcmp(advancedKeys[j], "doorbellSuppressionDuration") == 0)
                 {
                     const uint16_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue >= 500 && keyvalue <= 10000)
                     {
-                        if(_nukiAdvancedConfig.doorbellSuppressionDuration == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.doorbellSuppressionDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setDoorbellSuppressionDuration(keyvalue);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "soundRing") == 0)
+                else if(strcmp(advancedKeys[j], "soundRing") == 0)
                 {
                     const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
                     if(sound != 99)
                     {
-                        if(_nukiAdvancedConfig.soundRing == sound) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.soundRing == sound) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setSoundRing(sound);
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "soundOpen") == 0)
+                else if(strcmp(advancedKeys[j], "soundOpen") == 0)
                 {
                     const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
                     if(sound != 99)
                     {
-                        if(_nukiAdvancedConfig.soundOpen == sound) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.soundOpen == sound) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setSoundOpen(sound);
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "soundRto") == 0)
+                else if(strcmp(advancedKeys[j], "soundRto") == 0)
                 {
                     const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
                     if(sound != 99)
                     {
-                        if(_nukiAdvancedConfig.soundRto == sound) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.soundRto == sound) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setSoundRto(sound);
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "soundCm") == 0)
+                else if(strcmp(advancedKeys[j], "soundCm") == 0)
                 {
                     const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
                     if(sound != 99)
                     {
-                        if(_nukiAdvancedConfig.soundCm == sound) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.soundCm == sound) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setSoundCm(sound);
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "soundConfirmation") == 0)
+                else if(strcmp(advancedKeys[j], "soundConfirmation") == 0)
                 {
                     const uint8_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue == 0 || keyvalue == 1)
                     {
-                        if(_nukiAdvancedConfig.soundConfirmation == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.soundConfirmation == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.enableSoundConfirmation((keyvalue > 0));
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "soundLevel") == 0)
+                else if(strcmp(advancedKeys[j], "soundLevel") == 0)
                 {
                     const uint8_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue >= 0 && keyvalue <= 255)
                     {
-                        if(_nukiAdvancedConfig.soundLevel == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.soundLevel == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setSoundLevel(keyvalue);
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "singleButtonPressAction") == 0)
+                else if(strcmp(advancedKeys[j], "singleButtonPressAction") == 0)
                 {
                     NukiOpener::ButtonPressAction sbpa = nukiOpenerInst->buttonPressActionToEnum(jsonchar);
 
                     if(!(int)sbpa == 0xff)
                     {
-                        if(_nukiAdvancedConfig.singleButtonPressAction == sbpa) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.singleButtonPressAction == sbpa) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setSingleButtonPressAction(sbpa);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "doubleButtonPressAction") == 0)
+                else if(strcmp(advancedKeys[j], "doubleButtonPressAction") == 0)
                 {
                     NukiOpener::ButtonPressAction dbpa = nukiOpenerInst->buttonPressActionToEnum(jsonchar);
 
                     if(!(int)dbpa == 0xff)
                     {
-                        if(_nukiAdvancedConfig.doubleButtonPressAction == dbpa) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.doubleButtonPressAction == dbpa) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setDoubleButtonPressAction(dbpa);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "batteryType") == 0)
+                else if(strcmp(advancedKeys[j], "batteryType") == 0)
                 {
                     Nuki::BatteryType battype = nukiOpenerInst->batteryTypeToEnum(jsonchar);
 
                     if(!(int)battype == 0xff)
                     {
-                        if(_nukiAdvancedConfig.batteryType == battype) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.batteryType == battype) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.setBatteryType(battype);
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
-                else if(strcmp(advancedKeys[i], "automaticBatteryTypeDetection") == 0)
+                else if(strcmp(advancedKeys[j], "automaticBatteryTypeDetection") == 0)
                 {
                     const uint8_t keyvalue = atoi(jsonchar);
 
                     if(keyvalue == 0 || keyvalue == 1)
                     {
-                        if(_nukiAdvancedConfig.automaticBatteryTypeDetection == keyvalue) jsonResult[advancedKeys[i]] = "unchanged";
+                        if(_nukiAdvancedConfig.automaticBatteryTypeDetection == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                         else cmdResult = _nukiOpener.enableAutoBatteryTypeDetection((keyvalue > 0));
                     }
-                    else jsonResult[advancedKeys[i]] = "invalidValue";
+                    else jsonResult[advancedKeys[j]] = "invalidValue";
                 }
 
                 if(cmdResult == Nuki::CmdResult::Success) advancedUpdated = true;
 
-                if(!jsonResult[advancedKeys[i]]) {
+                if(!jsonResult[advancedKeys[j]]) {
                     char resultStr[15] = {0};
                     NukiOpener::cmdResultToString(cmdResult, resultStr);
-                    jsonResult[advancedKeys[i]] = resultStr;
+                    jsonResult[advancedKeys[j]] = resultStr;
                 }
             }
-            else jsonResult[advancedKeys[i]] = "accessDenied";
+            else jsonResult[advancedKeys[j]] = "accessDenied";
         }
     }
 
     nukiOpenerPreferences->end();
 
-    if(basicUpdated || advancedUpdated)
-    {
-        jsonResult["general"] = "success";
-    }
+    if(basicUpdated || advancedUpdated) jsonResult["general"] = "success";
     else jsonResult["general"] = "noChange";
 
     _nextConfigUpdateTs = millis() + 300;
