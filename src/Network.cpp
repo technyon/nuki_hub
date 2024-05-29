@@ -327,11 +327,14 @@ bool Network::update()
 
     if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
     {
-        bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, _presenceCsv);
-        if(!success)
+        if(_preferences->getBool(preference_publish_presence))
         {
-            Log->println(F("Failed to publish presence CSV data."));
-            Log->println(_presenceCsv);
+            bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, _presenceCsv);
+            if(!success)
+            {
+                Log->println(F("Failed to publish presence CSV data."));
+                Log->println(_presenceCsv);
+            }
         }
         _presenceCsv = nullptr;
     }
