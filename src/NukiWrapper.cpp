@@ -334,6 +334,10 @@ void NukiWrapper::setPin(const uint16_t pin)
 void NukiWrapper::unpair()
 {
     _nukiLock.unPairNuki();
+    Preferences nukiBlePref;
+    nukiBlePref.begin("NukiHub", false);
+    nukiBlePref.clear();
+    nukiBlePref.end();
     _deviceId->assignNewId();
     _preferences->remove(preference_nuki_id_lock);
     _paired = false;
