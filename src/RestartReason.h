@@ -20,6 +20,7 @@ enum class RestartReason
     OTAAborted,
     OTAUnknownState,
     DeviceUnpaired,
+    NukiHubReset,
     NotApplicable
 };
 
@@ -100,6 +101,8 @@ inline static String getRestartReason()
             return "OTAUnknownState";
         case RestartReason::DeviceUnpaired:
             return "DeviceUnpaired";
+        case RestartReason::NukiHubReset:
+            return "NukiHubFactoryReset";
         case RestartReason::NotApplicable:
             return "NotApplicable";
         default:

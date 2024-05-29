@@ -183,6 +183,10 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 - Type [4 DIGIT CODE] to confirm unpair: Set to the shown randomly generated code to unpair the Nuki Lock or Opener from the Nuki Hub.
 
+#### Factory reset Nuki Hub
+
+- Type [4 DIGIT CODE] to confirm factory reset: Set to the shown randomly generated code to reset all Nuki Hub settings to default and unpair Nuki Lock and/or Opener. Optionally also reset WiFi settings to default by enabling the checkbox.
+
 ### GPIO Configuration
 
 - Gpio [2-33]: See the "[GPIO lock control](#gpio-lock-control-optional)" section of this README.

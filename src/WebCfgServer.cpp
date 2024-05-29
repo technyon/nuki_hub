@@ -6,6 +6,7 @@
 #include "Config.h"
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
+#include <esp_wifi.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
@@ -139,6 +140,13 @@ void WebCfgServer::initialize()
         }
 
         processUnpair(true);
+    });
+    _server.on("/factoryreset", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
+        processFactoryReset();
     });
     _server.on("/wifimanager", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -489,7 +497,7 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "TSKNUKI")
         {
             if(value.toInt() > 8191 && value.toInt() < 32769)
-            {            
+            {
                 _preferences->putInt(preference_task_size_nuki, value.toInt());
                 configChanged = true;
             }
@@ -505,7 +513,7 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "ALMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 51)
-            {            
+            {
                 _preferences->putInt(preference_authlog_max_entries, value.toInt());
                 configChanged = true;
             }
@@ -513,7 +521,7 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "KPMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 101)
-            {            
+            {
                 _preferences->putInt(preference_keypad_max_entries, value.toInt());
                 configChanged = true;
             }
@@ -521,7 +529,7 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "TCMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 51)
-            {            
+            {
                 _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
                 configChanged = true;
             }
@@ -529,11 +537,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "BUFFSIZE")
         {
             if(value.toInt() > 4095 && value.toInt() < 32769)
-            {            
+            {
                 _preferences->putInt(preference_buffer_size, value.toInt());
                 configChanged = true;
             }
-        }        
+        }
         else if(key == "BTLPRST")
         {
             _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
@@ -1236,6 +1244,18 @@ void WebCfgServer::buildCredHtml(String &response)
         response.concat("</table>");
         response.concat("<br><button type=\"submit\">OK</button></form>");
     }
+
+    response.concat("<br><br><h3>Factory reset Nuki Hub</h3>");
+    response.concat("<h4 style=\"color: #ff0000\">This will reset all settings to default and unpair Nuki Lock and/or Opener. Optionally will also reset WiFi settings and reopen WiFi manager portal.</h4>");
+    response.concat("<form method=\"post\" action=\"/factoryreset\">");
+    response.concat("<table>");
+    String message = "Type ";
+    message.concat(_confirmCode);
+    message.concat(" to confirm factory reset");
+    printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
+    printCheckBox(response, "WIFI", "Also reset WiFi settings", false, "");
+    response.concat("</table>");
+    response.concat("<br><button type=\"submit\">OK</button></form>");
     response.concat("</body></html>");
 }
 
@@ -1862,7 +1882,7 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat("Network device: ");
     response.concat(_network->networkDeviceName());
     response.concat("\n");
-    
+
     if(_network->networkDeviceName() == "Built-in Wi-Fi")
     {
         response.concat("BSSID of AP: ");
@@ -1939,6 +1959,69 @@ void WebCfgServer::processUnpair(bool opener)
     }
     waitAndProcess(false, 1000);
     restartEsp(RestartReason::DeviceUnpaired);
+}
+
+void WebCfgServer::processFactoryReset()
+{
+    bool resetWifi = false;
+    String response = "";
+    if(_server.args() == 0)
+    {
+        buildConfirmHtml(response, "Confirm code is invalid.", 3);
+        _server.send(200, "text/html", response);
+        return;
+    }
+    else
+    {
+        String key = _server.argName(0);
+        String value = _server.arg(0);
+
+        if(key != "CONFIRMTOKEN" || value != _confirmCode)
+        {
+            buildConfirmHtml(response, "Confirm code is invalid.", 3);
+            _server.send(200, "text/html", response);
+            return;
+        }
+
+        String key2 = _server.argName(2);
+        String value2 = _server.arg(2);
+
+        if(key2 == "WIFI" && value2 == "1")
+        {
+            resetWifi = true;
+            buildConfirmHtml(response, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener and resetting WiFi.", 3);
+        }
+        else buildConfirmHtml(response, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener.", 3);
+    }
+
+    _server.send(200, "text/html", response);
+    waitAndProcess(false, 2000);
+
+    if(_nuki != nullptr)
+    {
+        _nuki->disableHASS();
+        _nuki->unpair();
+    }
+    if(_nukiOpener != nullptr)
+    {
+        _nukiOpener->disableHASS();
+        _nukiOpener->unpair();
+    }
+
+    _preferences->clear();
+
+    if(resetWifi)
+    {
+        wifi_config_t current_conf;
+        esp_wifi_get_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
+        memset(current_conf.sta.ssid, 0, sizeof(current_conf.sta.ssid));
+        memset(current_conf.sta.password, 0, sizeof(current_conf.sta.password));
+        esp_wifi_set_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
+        _network->reconfigureDevice();
+    }
+
+    waitAndProcess(false, 3000);
+    restartEsp(RestartReason::NukiHubReset);
 }
 
 void WebCfgServer::buildHtmlHeader(String &response)
