@@ -122,6 +122,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Restart on disconnect: Enable to restart the Nuki Hub after 60 seconds without a connection to a network.
 - Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
+- Enable hybrid official MQTT and Nuki Hub setup: Enable to combine the official MQTT over Thread/WiFi with BLE. Improves speed of state changes. Needs the official MQTT to be setup first. Also requires Nuki Hub to be paired as app and unregistered as a bridge using the Nuki app. If enabled while paired as a bridge will automatically enable pairing as an app and unpair as a bridge.
+- Enable sending actions through official MQTT: Enable to sent lock actions through the official MQTT topics (e.g. over Thread/WiFi) instead of using BLE. Needs "Enable hybrid official MQTT and Nuki Hub setup" to be enabled.
 
 #### IP Address assignment
 
@@ -155,6 +157,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Access Level Configuration
 
 #### Nuki General Access Control
+- Publish Nuki configuration information: Enable to publish information about the configuration of the connected Nuki device(s) through MQTT.
 - Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Publish time control information: Enable to publish information about time control entries through MQTT, see the "[Time Control](#time-control)" section of this README
@@ -267,6 +270,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
 - battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
 - battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0.
+- battery/doorSensorCritical (only available in hybdrid mode): 1 if the battery level of a connected doorsensor is critical, otherwise 0.
 
 ### Keypad
 

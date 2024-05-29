@@ -46,12 +46,14 @@ public:
 
 private:
     static LockActionResult onLockActionReceivedCallback(const char* value);
+    static void onOfficialUpdateReceivedCallback(const char* topic, const char* value);
     static void onConfigUpdateReceivedCallback(const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
+    void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);

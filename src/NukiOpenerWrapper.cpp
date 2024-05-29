@@ -333,7 +333,7 @@ void NukiOpenerWrapper::unpair()
     Preferences nukiBlePref;
     nukiBlePref.begin("NukiHubopener", false);
     nukiBlePref.clear();
-    nukiBlePref.end();        
+    nukiBlePref.end();
     _deviceId->assignNewId();
     _preferences->remove(preference_nuki_id_opener);
     _paired = false;
@@ -435,7 +435,7 @@ void NukiOpenerWrapper::updateConfig()
             _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2 > 0;
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
-            _network->publishConfig(_nukiConfig);
+            if(_preferences->getBool(preference_conf_info_enabled, false)) _network->publishConfig(_nukiConfig);
             _retryConfigCount = 0;
 
             if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl(false);
@@ -478,7 +478,7 @@ void NukiOpenerWrapper::updateConfig()
     }
     if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_opener, 0) == _nukiConfig.nukiId)
     {
-        _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        if(_preferences->getBool(preference_conf_info_enabled, false)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
         _retryConfigCount = 0;
     }
     else
@@ -520,7 +520,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
             {
                 log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
             }
-            
+
             if(log.size() > 0)
             {
                 _network->publishAuthorizationInfo(log, true);

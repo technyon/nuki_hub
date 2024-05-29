@@ -31,6 +31,7 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, 
     _keyTurnerState.lockState = NukiLock::LockState::Undefined;
 
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
+    network->setOfficialUpdateReceivedCallback(nukiInst->onOfficialUpdateReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
     network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
     network->setKeypadJsonCommandReceivedCallback(nukiInst->onKeypadJsonCommandReceivedCallback);
@@ -202,7 +203,7 @@ void NukiWrapper::update()
     {
         _waitKeypadUpdateTs = 0;
         updateKeypad(true);
-    }    
+    }
     if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
     {
         _waitTimeControlUpdateTs = 0;
@@ -416,7 +417,7 @@ void NukiWrapper::updateConfig()
             _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2 > 0;
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
-            _network->publishConfig(_nukiConfig);
+            if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishConfig(_nukiConfig);            
             _retryConfigCount = 0;
 
             if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl(false);
@@ -459,7 +460,7 @@ void NukiWrapper::updateConfig()
     }
     if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_lock, 0) == _nukiConfig.nukiId)
     {
-        _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
         _retryConfigCount = 0;
     }
     else
@@ -496,12 +497,12 @@ void NukiWrapper::updateAuthData(bool retrieved)
 
             std::list<NukiLock::LogEntry> log;
             _nukiLock.getLogEntries(&log);
-            
+
             if(log.size() > _preferences->getInt(preference_authlog_max_entries, 3))
             {
                 log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
             }
-            
+
             if(log.size() > 0)
             {
                  _network->publishAuthorizationInfo(log, true);
@@ -512,7 +513,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
     {
         std::list<NukiLock::LogEntry> log;
         _nukiLock.getLogEntries(&log);
-        
+
         if(log.size() > _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG))
         {
             log.resize(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG));
@@ -526,14 +527,14 @@ void NukiWrapper::updateAuthData(bool retrieved)
              _network->publishAuthorizationInfo(log, false);
         }
     }
-    
+
     postponeBleWatchdog();
 }
 
 void NukiWrapper::updateKeypad(bool retrieved)
 {
     if(!_preferences->getBool(preference_keypad_info_enabled)) return;
-    
+
     if(!retrieved)
     {
         Log->print(F("Querying lock keypad: "));
@@ -553,7 +554,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
         Log->println(entries.size());
 
         entries.sort([](const NukiLock::KeypadEntry& a, const NukiLock::KeypadEntry& b) { return a.codeId < b.codeId; });
-        
+
         if(entries.size() > _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD))
         {
             entries.resize(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
@@ -605,12 +606,12 @@ void NukiWrapper::updateTimeControl(bool retrieved)
         Log->println(timeControlEntries.size());
 
         timeControlEntries.sort([](const NukiLock::TimeControlEntry& a, const NukiLock::TimeControlEntry& b) { return a.entryId < b.entryId; });
-        
+
         if(timeControlEntries.size() > _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL))
         {
             timeControlEntries.resize(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL));
         }
-        
+
         _network->publishTimeControl(timeControlEntries);
 
         _timeControlIds.clear();
@@ -676,6 +677,11 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 
     nukiLockPreferences->end();
     return LockActionResult::AccessDenied;
+}
+
+void NukiWrapper::onOfficialUpdateReceivedCallback(const char *topic, const char *value)
+{
+    nukiInst->onOfficialUpdateReceived(topic, value);
 }
 
 void NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
@@ -772,6 +778,101 @@ Nuki::BatteryType NukiWrapper::batteryTypeToEnum(const char* str)
     else if(strcmp(str, "Accumulators") == 0) return Nuki::BatteryType::Accumulators;
     else if(strcmp(str, "Lithium") == 0) return Nuki::BatteryType::Lithium;
     return (Nuki::BatteryType)0xff;
+}
+
+void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
+{
+    char str[50];
+    memset(&str, 0, sizeof(str));
+
+    if(strcmp(topic, mqtt_topic_official_connected) == 0)
+    {
+        _network->_offConnected = (value == "true" ? 1 : 0);
+    }
+    else if(strcmp(topic, mqtt_topic_official_state) == 0)
+    {
+        _network->_offState = atoi(value);
+        _statusUpdated = true;
+        _network->publishStatusUpdated(_statusUpdated);
+        NukiLock::lockstateToString((NukiLock::LockState)_network->_offState, str);
+        _network->publishString(mqtt_topic_lock_state, str);
+
+        if(_preferences->getString(preference_mqtt_hass_discovery) != "")
+        {
+            _network->publishState((NukiLock::LockState)_network->_offState);
+        }
+    }
+    else if(strcmp(topic, mqtt_topic_official_doorsensorState) == 0)
+    {
+        _network->_offDoorsensorState = atoi(value);
+        _statusUpdated = true;
+        _network->publishStatusUpdated(_statusUpdated);
+        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_network->_offDoorsensorState, str);
+        _network->publishString(mqtt_topic_lock_door_sensor_state, str);
+    }
+    else if(strcmp(topic, mqtt_topic_official_batteryCritical) == 0)
+    {
+        _network->_offCritical = (value == "true" ? 1 : 0);
+        _network->publishBool(mqtt_topic_battery_critical, _network->_offCritical);
+    }
+    else if(strcmp(topic, mqtt_topic_official_batteryCharging) == 0)
+    {
+        _network->_offCharging = (value == "true" ? 1 : 0);
+        _network->publishBool(mqtt_topic_battery_charging, _network->_offCharging);
+    }
+    else if(strcmp(topic, mqtt_topic_official_batteryChargeState) == 0)
+    {
+        _network->_offChargeState = atoi(value);
+        _network->publishInt(mqtt_topic_battery_level, _network->_offChargeState);
+    }
+    else if(strcmp(topic, mqtt_topic_official_keypadBatteryCritical) == 0)
+    {
+        _network->_offKeypadCritical = (value == "true" ? 1 : 0);
+        _network->publishBool(mqtt_topic_battery_keypad_critical, _network->_offKeypadCritical);
+    }
+    else if(strcmp(topic, mqtt_topic_official_doorsensorBatteryCritical) == 0)
+    {
+        _network->_offDoorsensorCritical = (value == "true" ? 1 : 0);
+        _network->publishBool(mqtt_topic_battery_doorsensor_critical, _network->_offDoorsensorCritical);
+    }
+    else if(strcmp(topic, mqtt_topic_official_commandResponse) == 0)
+    {
+        _network->_offCommandResponse = atoi(value);
+        char resultStr[15] = {0};
+        NukiLock::cmdResultToString((Nuki::CmdResult)_network->_offCommandResponse, resultStr);
+        _network->publishCommandResult(resultStr);
+    }
+    else if(strcmp(topic, mqtt_topic_official_lockActionEvent) == 0)
+    {
+        _network->_offLockActionEvent = (char*)value;
+        char *i;
+        _network->_offLockAction = atoi(strtok_r(_network->_offLockActionEvent, ";", &i));
+        _network->_offTrigger = atoi(strtok_r(NULL, ";", &i));
+        _network->_offAuthId = atoi(strtok_r(NULL, ";", &i));
+        _network->_offCodeId = atoi(strtok_r(NULL, ";", &i));
+        _network->_offContext = atoi(strtok_r(NULL, ";", &i));
+
+        memset(&str, 0, sizeof(str));
+        lockactionToString((NukiLock::LockAction)_network->_offLockAction, str);
+        _network->publishString(mqtt_topic_lock_last_lock_action, str);
+
+        memset(&str, 0, sizeof(str));
+        triggerToString((NukiLock::Trigger)_network->_offTrigger, str);
+        _network->publishString(mqtt_topic_lock_trigger, str);
+
+        if(_network->_offAuthId > 0 || _network->_offCodeId > 0)
+        {
+            _network->_authFound = true;
+
+            if(_network->_offCodeId > 0) _network->_authId = _network->_offCodeId;
+            else _network->_authId = _network->_offAuthId;
+
+            /*
+            _network->_authName = RETRIEVE FROM ARRAY FROM SOMEWHERE;
+            _network->_offContext = BASE ON CONTEXT OF TRIGGER AND PUBLISH SOMEWHERE;
+            */
+        }
+    }
 }
 
 void NukiWrapper::onConfigUpdateReceived(const char *value)
@@ -1744,7 +1845,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                 entry.codeId = codeId;
                 size_t nameLen = strlen(name);
                 memcpy(&entry.name, name, nameLen > 20 ? 20 : nameLen);
-                
+
                 if(code) entry.code = code;
                 else
                 {
@@ -1855,7 +1956,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
     const char *time = json["time"].as<const char*>();
     const char *lockAct = json["lockAction"].as<const char*>();
     NukiLock::LockAction timeControlLockAction;
-  
+
     if(lockAct)
     {
         timeControlLockAction = nukiInst->lockActionToEnum(lockAct);

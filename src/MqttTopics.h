@@ -22,6 +22,19 @@
 #define mqtt_topic_lock_address "/lock/address"
 #define mqtt_topic_lock_retry "/lock/retry"
 
+#define mqtt_topic_official_lock_action "/lockAction"
+//#define mqtt_topic_official_mode "/mode"
+#define mqtt_topic_official_state "/state"
+#define mqtt_topic_official_batteryCritical "/batteryCritical"
+#define mqtt_topic_official_batteryChargeState "/batteryChargeState"
+#define mqtt_topic_official_batteryCharging "/batteryCharging"
+#define mqtt_topic_official_keypadBatteryCritical "/keypadBatteryCritical"
+#define mqtt_topic_official_doorsensorState "/doorsensorState"
+#define mqtt_topic_official_doorsensorBatteryCritical "/doorsensorBatteryCritical"
+#define mqtt_topic_official_connected "/connected"
+#define mqtt_topic_official_commandResponse "/commandResponse"
+#define mqtt_topic_official_lockActionEvent "/lockActionEvent"
+
 #define mqtt_topic_config_action "/configuration/action"
 #define mqtt_topic_config_action_command_result "/configuration/commandResult"
 #define mqtt_topic_config_basic_json "/configuration/basicJson"
@@ -48,6 +61,7 @@
 #define mqtt_topic_battery_max_turn_current "/battery/maxTurnCurrent"
 #define mqtt_topic_battery_lock_distance "/battery/lockDistance"
 #define mqtt_topic_battery_keypad_critical "/battery/keypadCritical"
+#define mqtt_topic_battery_doorsensor_critical "/battery/doorSensorCritical"
 
 #define mqtt_topic_keypad "/keypad"
 #define mqtt_topic_keypad_command_action "/keypad/command/action"

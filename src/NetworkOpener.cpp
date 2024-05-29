@@ -433,10 +433,34 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
                 memset(str, 0, sizeof(str));
                 NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 entry["action"] = str;
+                
+                switch(log.data[1])
+                {
+                    case 0:
+                        entry["trigger"] = "arrowkey";
+                        break;
+                    case 1:
+                        entry["trigger"] = "code";
+                        break;
+                    case 2:
+                        entry["trigger"] = "fingerprint";
+                        break;
+                    default:
+                        entry["trigger"] = "Unknown";
+                        break;
+                }
 
                 memset(str, 0, sizeof(str));
-                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
-                entry["completionStatus"] = str;
+
+                if(log.data[2] == 9) entry["completionStatus"] = "notAuthorized";
+                else if (log.data[2] == 224) entry["completionStatus"] = "invalidCode";
+                else
+                {
+                    NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
+                    entry["completionStatus"] = str;
+                }
+                
+                entry["codeId"] = 256U*log.data[4]+log.data[3];
                 break;
             case NukiOpener::LoggingType::DoorbellRecognition:
                 switch(log.data[0] & 3)
@@ -484,8 +508,11 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 
                 entry["geofence"] = log.data[2] == 1 ? "active" : "inactive";
                 entry["doorbellSuppression"] = log.data[3] == 1 ? "active" : "inactive";
+                entry["soundId"] = log.data[4];
+                memset(str, 0, sizeof(str));
+                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[5], str);
                 entry["completionStatus"] = str;
-
+                entry["codeId"] = 256U*log.data[7]+log.data[6];
                 break;
         }
     }

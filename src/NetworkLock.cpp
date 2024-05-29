@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include "RestartReason.h"
 #include <ArduinoJson.h>
+#include <ctype.h>
 
 NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffer, size_t bufferSize)
 : _network(network),
@@ -15,6 +16,19 @@ NetworkLock::NetworkLock(Network* network, Preferences* preferences, char* buffe
 {
     memset(_authName, 0, sizeof(_authName));
     _authName[0] = '\0';
+
+    _offTopics.reserve(10);
+    //_offTopics.push_back(mqtt_topic_official_mode);
+    _offTopics.push_back((char*)mqtt_topic_official_state);
+    _offTopics.push_back((char*)mqtt_topic_official_batteryCritical);
+    _offTopics.push_back((char*)mqtt_topic_official_batteryChargeState);
+    _offTopics.push_back((char*)mqtt_topic_official_batteryCharging);
+    _offTopics.push_back((char*)mqtt_topic_official_keypadBatteryCritical);
+    _offTopics.push_back((char*)mqtt_topic_official_doorsensorState);
+    _offTopics.push_back((char*)mqtt_topic_official_doorsensorBatteryCritical);
+    _offTopics.push_back((char*)mqtt_topic_official_connected);
+    _offTopics.push_back((char*)mqtt_topic_official_commandResponse);
+    _offTopics.push_back((char*)mqtt_topic_official_lockActionEvent);
 
     _network->registerMqttReceiver(this);
 }
@@ -87,6 +101,20 @@ void NetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     }
 
+    if(_preferences->getBool(preference_official_hybrid, false))
+    {
+        char uidString[20];
+        itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
+        for(char* c=uidString; *c=toupper(*c); ++c);
+        strcpy(_offMqttPath, "nuki/");
+        strcat(_offMqttPath,uidString);
+
+        for(const auto& offTopic : _offTopics)
+        {
+            _network->subscribe(_offMqttPath, offTopic);
+        }
+    }
+
     _network->addReconnectedCallback([&]()
     {
         _reconnected = true;
@@ -128,6 +156,20 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
         _network->clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
+    }
+
+    if(_preferences->getBool(preference_official_hybrid, false))
+    {
+        for(auto offTopic : _offTopics)
+        {
+            if(comparePrefixedPath(topic, offTopic))
+            {
+                if(_officialUpdateReceivedCallback != nullptr)
+                {
+                    _officialUpdateReceivedCallback(offTopic, value);
+                }
+            }
+        }
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
@@ -268,31 +310,49 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     JsonDocument json;
 
-    lockstateToString(keyTurnerState.lockState, str);
-
-    if(keyTurnerState.lockState != NukiLock::LockState::Undefined)
+    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
     {
+        lockstateToString(keyTurnerState.lockState, str);
 
-        publishString(mqtt_topic_lock_state, str);
-
-        if(_haEnabled)
+        if(keyTurnerState.lockState != NukiLock::LockState::Undefined)
         {
-            publishState(keyTurnerState.lockState);
+
+            publishString(mqtt_topic_lock_state, str);
+
+            if(_haEnabled)
+            {
+                publishState(keyTurnerState.lockState);
+            }
         }
+
+        json["lock_state"] = str;
+    }
+    else
+    {
+        lockstateToString((NukiLock::LockState)_offState, str);
+        json["lock_state"] = str;
     }
 
-    json["lock_state"] = str;
     json["lockngo_state"] = (keyTurnerState.lockNgoTimer == 0 ? 0 : 1);
 
     memset(&str, 0, sizeof(str));
-    triggerToString(keyTurnerState.trigger, str);
 
-    if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
+    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
     {
-        publishString(mqtt_topic_lock_trigger, str);
-    }
+        triggerToString(keyTurnerState.trigger, str);
 
-    json["trigger"] = str;
+        if(_firstTunerStatePublish || keyTurnerState.trigger != lastKeyTurnerState.trigger)
+        {
+            publishString(mqtt_topic_lock_trigger, str);
+        }
+
+        json["trigger"] = str;
+    }
+    else
+    {
+        triggerToString((NukiLock::Trigger)_offTrigger, str);
+        json["trigger"] = str;
+    }
 
     char curTime[20];
     sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
@@ -301,14 +361,23 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     json["nightModeActive"] = keyTurnerState.nightModeActive;
 
     memset(&str, 0, sizeof(str));
-    lockactionToString(keyTurnerState.lastLockAction, str);
 
-    if(_firstTunerStatePublish || keyTurnerState.lastLockAction != lastKeyTurnerState.lastLockAction)
+    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
     {
-        publishString(mqtt_topic_lock_last_lock_action, str);
-    }
+        lockactionToString(keyTurnerState.lastLockAction, str);
 
-    json["last_lock_action"] = str;
+        if(_firstTunerStatePublish || keyTurnerState.lastLockAction != lastKeyTurnerState.lastLockAction)
+        {
+            publishString(mqtt_topic_lock_last_lock_action, str);
+        }
+
+        json["last_lock_action"] = str;
+    }
+    else
+    {
+        lockactionToString((NukiLock::LockAction)_offLockAction, str);
+        json["last_lock_action"] = str;
+    }
 
     memset(&str, 0, sizeof(str));
     triggerToString(keyTurnerState.lastLockActionTrigger, str);
@@ -323,38 +392,47 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     }
 
     json["lock_completion_status"] = str;
-
     memset(&str, 0, sizeof(str));
-    NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
 
-    if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
+    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
     {
-        publishString(mqtt_topic_lock_door_sensor_state, str);
-    }
+        NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
 
-    json["door_sensor_state"] = str;
-
-    if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
-    {
-        bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
-        publishBool(mqtt_topic_battery_critical, critical);
-
-        bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
-        publishBool(mqtt_topic_battery_charging, charging);
-
-        uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
-        publishInt(mqtt_topic_battery_level, level);
-    }
-
-    if(_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState)
-    {
-        if((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
-            publishBool(mqtt_topic_battery_keypad_critical, (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
-        }
-        else
+        if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
         {
-            publishBool(mqtt_topic_battery_keypad_critical, false);
+            publishString(mqtt_topic_lock_door_sensor_state, str);
         }
+
+        json["door_sensor_state"] = str;
+
+
+        if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
+        {
+            bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
+            publishBool(mqtt_topic_battery_critical, critical);
+
+            bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
+            publishBool(mqtt_topic_battery_charging, charging);
+
+            uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
+            publishInt(mqtt_topic_battery_level, level);
+        }
+
+        if(_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState)
+        {
+            if((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
+                publishBool(mqtt_topic_battery_keypad_critical, (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
+            }
+            else
+            {
+                publishBool(mqtt_topic_battery_keypad_critical, false);
+            }
+        }
+    }
+    else
+    {
+        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_offDoorsensorState, str);
+        json["door_sensor_state"] = str;
     }
 
     json["auth_id"] = _authId;
@@ -459,22 +537,41 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
                 memset(str, 0, sizeof(str));
                 NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
                 entry["completionStatus"] = str;
-                entry["completionStatusVal"] = log.data[3];
                 break;
             case NukiLock::LoggingType::KeypadAction:
                 memset(str, 0, sizeof(str));
                 NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
                 entry["action"] = str;
+                
+                switch(log.data[1])
+                {
+                    case 0:
+                        entry["trigger"] = "arrowkey";
+                        break;
+                    case 1:
+                        entry["trigger"] = "code";
+                        break;
+                    case 2:
+                        entry["trigger"] = "fingerprint";
+                        break;
+                    default:
+                        entry["trigger"] = "Unknown";
+                        break;
+                }
 
                 memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
-                entry["completionStatus"] = str;
-                entry["completionStatusVal"] = log.data[2];
+
+                if(log.data[2] == 9) entry["completionStatus"] = "notAuthorized";
+                else if (log.data[2] == 224) entry["completionStatus"] = "invalidCode";
+                else
+                {
+                    NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
+                    entry["completionStatus"] = str;
+                }
+                
+                entry["codeId"] = 256U*log.data[4]+log.data[3];
                 break;
             case NukiLock::LoggingType::DoorSensor:
-                memset(str, 0, sizeof(str));
-                NukiLock::lockactionToString((NukiLock::LockAction)log.data[0], str);
-
                 switch(log.data[0])
                 {
                     case 0:
@@ -490,10 +587,6 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
                         entry["action"] = "Unknown";
                         break;
                 }
-
-                memset(str, 0, sizeof(str));
-                NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[2], str);
-                entry["completionStatus"] = str;
                 break;
         }
     }
@@ -859,6 +952,11 @@ void NetworkLock::publishStatusUpdated(const bool statusUpdated)
 void NetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
+}
+
+void NetworkLock::setOfficialUpdateReceivedCallback(void (*officialUpdateReceivedCallback)(const char *, const char *))
+{
+    _officialUpdateReceivedCallback = officialUpdateReceivedCallback;
 }
 
 void NetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *))

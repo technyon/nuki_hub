@@ -421,6 +421,16 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_check_updates, (value == "1"));
             configChanged = true;
         }
+        else if(key == "OFFHYBRID")
+        {
+            _preferences->putBool(preference_official_hybrid, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "HYBRIDACT")
+        {
+            _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "DHCPENA")
         {
             _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
@@ -550,6 +560,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "ACLLVLCHANGED")
         {
             aclLvlChanged = true;
+        }
+        else if(key == "CONFPUB")
+        {
+            _preferences->putBool(preference_conf_info_enabled, (value == "1"));
+            configChanged = true;
         }
         else if(key == "KPPUB")
         {
@@ -1339,6 +1354,8 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
+    printCheckBox(response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
+    printCheckBox(response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
 
@@ -1391,7 +1408,8 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<input type=\"hidden\" name=\"ACLLVLCHANGED\" value=\"1\">");
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
-
+    printCheckBox(response, "CONFPUB", "Publish Nuki configuration information", _preferences->getBool(preference_conf_info_enabled, true), "");
+    
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled), "");
@@ -1476,9 +1494,9 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     }
     if(_nukiOpener != nullptr)
     {
-        uint32_t basicOpenerConfigAclPrefs[16];
+        uint32_t basicOpenerConfigAclPrefs[14];
         _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
-        uint32_t advancedOpenerConfigAclPrefs[22];
+        uint32_t advancedOpenerConfigAclPrefs[20];
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
         response.concat("<h3>Nuki Opener Access Control</h3>");
@@ -1780,9 +1798,9 @@ void WebCfgServer::buildInfoHtml(String &response)
 
     if(_nukiOpener != nullptr)
     {
-        uint32_t basicOpenerConfigAclPrefs[16];
+        uint32_t basicOpenerConfigAclPrefs[14];
         _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
-        uint32_t advancedOpenerConfigAclPrefs[22];
+        uint32_t advancedOpenerConfigAclPrefs[20];
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
         response.concat("Opener firmware version: ");
         response.concat(_nukiOpener->firmwareVersion().c_str());
