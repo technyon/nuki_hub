@@ -1077,7 +1077,8 @@ void WebCfgServer::update()
 
 void WebCfgServer::buildHtml(String& response)
 {
-    buildHtmlHeader(response);
+    String header = "<meta http-equiv='refresh' content='15'>"; // auto refresh page
+    buildHtmlHeader(response, header);
 
     response.concat("<br><h3>Info</h3>\n");
     response.concat("<table>");
@@ -2024,10 +2025,12 @@ void WebCfgServer::processFactoryReset()
     restartEsp(RestartReason::NukiHubReset);
 }
 
-void WebCfgServer::buildHtmlHeader(String &response)
+void WebCfgServer::buildHtmlHeader(String &response, String additionalHeader)
 {
     response.concat("<html><head>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
+    if(strcmp(additionalHeader.c_str(), "") != 0)
+        response.concat(additionalHeader);
 //    response.concat("<style>");
 //    response.concat(stylecss);
 //    response.concat("</style>");

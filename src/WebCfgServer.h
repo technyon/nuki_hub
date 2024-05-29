@@ -53,7 +53,7 @@ private:
     void processUnpair(bool opener);
     void processFactoryReset();
 
-    void buildHtmlHeader(String& response);
+    void buildHtmlHeader(String& response, String additionalHeader = "");
     void printInputField(String& response, const char* token, const char* description, const char* value, const size_t& maxLength, const bool& isPassword = false, const bool& showLengthRestriction = false);
     void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
     void printCheckBox(String& response, const char* token, const char* description, const bool value, const char* htmlClass);
