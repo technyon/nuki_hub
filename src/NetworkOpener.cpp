@@ -61,6 +61,11 @@ void NetworkOpener::initialize()
         _network->removeTopic(_mqttPath, mqtt_topic_config_led_enabled);
         _network->removeTopic(_mqttPath, mqtt_topic_config_sound_level);
         _network->removeTopic(_mqttPath, mqtt_topic_keypad_command_result);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_level);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_critical);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_charging);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_voltage);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_keypad_critical);
         //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
 
@@ -254,6 +259,7 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
     memset(&str, 0, sizeof(str));
 
     JsonDocument json;
+    JsonDocument jsonBattery;
 
     lockstateToString(keyTurnerState.lockState, str);
 
@@ -327,9 +333,11 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 
     json["door_sensor_state"] = str;
 
-    if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
+    bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
+    jsonBattery["critical"] = critical ? "1" : "0";
+
+    if((_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState) && !_preferences->getBool(preference_disable_non_json, false))
     {
-        bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
         publishBool(mqtt_topic_battery_critical, critical);
     }
 
@@ -338,6 +346,9 @@ void NetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& keyTurn
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
+
+    serializeJson(jsonBattery, _buffer, _bufferSize);
+    publishString(mqtt_topic_battery_basic_json, _buffer);
 
     _firstTunerStatePublish = false;
 }
@@ -543,7 +554,25 @@ void NetworkOpener::publishLockstateCommandResult(const char *resultStr)
 
 void NetworkOpener::publishBatteryReport(const NukiOpener::BatteryReport& batteryReport)
 {
-    publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
+    if(!_preferences->getBool(preference_disable_non_json, false))
+    {
+        publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
+    }
+
+    char str[50];
+    memset(&str, 0, sizeof(str));
+
+    JsonDocument json;
+
+    json["batteryVoltage"] = (float)batteryReport.batteryVoltage / 1000.0;
+    json["critical"] = batteryReport.criticalBatteryState;
+    lockactionToString(batteryReport.lockAction, str);
+    json["lockAction"] = str;
+    json["startVoltage"] = (float)batteryReport.startVoltage / 1000.0;
+    json["lowestVoltage"] = (float)batteryReport.lowestVoltage / 1000.0;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_battery_advanced_json, _buffer);
 }
 
 void NetworkOpener::publishConfig(const NukiOpener::Config &config)
@@ -595,7 +624,7 @@ void NetworkOpener::publishConfig(const NukiOpener::Config &config)
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_basic_json, _buffer);
-    
+
     if(!_preferences->getBool(preference_disable_non_json, false))
     {
         publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1);

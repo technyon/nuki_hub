@@ -264,6 +264,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
 - battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
 - battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0.
+- battery/basicJson: The current battery state (critical, charging, level and keypad critical) of the Nuki Lock/Opener as JSON data.
+- battery/advancedJson: : The current battery state (critical, batteryDrain, batteryVoltage, lockAction, startVoltage, lowestVoltage, lockDistance, startTemperature, maxTurnCurrent and batteryResistance) of the Nuki Lock/Opener as JSON data.
 
 ### Keypad
 

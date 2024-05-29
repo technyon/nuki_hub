@@ -77,6 +77,14 @@ void NetworkLock::initialize()
         _network->removeTopic(_mqttPath, mqtt_topic_config_auto_unlock);
         _network->removeTopic(_mqttPath, mqtt_topic_config_auto_lock);
         _network->removeTopic(_mqttPath, mqtt_topic_config_single_lock);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_level);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_critical);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_charging);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_voltage);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_drain);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_max_turn_current);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_lock_distance);
+        _network->removeTopic(_mqttPath, mqtt_topic_battery_keypad_critical);
         //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
 
@@ -291,6 +299,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     memset(&str, 0, sizeof(str));
 
     JsonDocument json;
+    JsonDocument jsonBattery;
 
     lockstateToString(keyTurnerState.lockState, str);
 
@@ -358,27 +367,26 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     json["door_sensor_state"] = str;
 
-    if(_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState)
+    bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
+    bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
+    uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
+    bool keypadCritical = (keyTurnerState.accessoryBatteryState & (1 << 7)) != 0 ? (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0 : false;
+
+    jsonBattery["critical"] = critical ? "1" : "0";
+    jsonBattery["charging"] = charging ? "1" : "0";
+    jsonBattery["level"] = level;
+    jsonBattery["keypadCritical"] = keypadCritical ? "1" : "0";
+
+    if((_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState) && !_preferences->getBool(preference_disable_non_json, false))
     {
-        bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
         publishBool(mqtt_topic_battery_critical, critical);
-
-        bool charging = (keyTurnerState.criticalBatteryState & 0b00000010) > 0;
         publishBool(mqtt_topic_battery_charging, charging);
-
-        uint8_t level = (keyTurnerState.criticalBatteryState & 0b11111100) >> 1;
         publishInt(mqtt_topic_battery_level, level);
     }
 
-    if(_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState)
+    if((_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState) && !_preferences->getBool(preference_disable_non_json, false))
     {
-        if((keyTurnerState.accessoryBatteryState & (1 << 7)) != 0) {
-            publishBool(mqtt_topic_battery_keypad_critical, (keyTurnerState.accessoryBatteryState & (1 << 6)) != 0);
-        }
-        else
-        {
-            publishBool(mqtt_topic_battery_keypad_critical, false);
-        }
+        publishBool(mqtt_topic_battery_keypad_critical, keypadCritical);
     }
 
     json["auth_id"] = _authId;
@@ -386,6 +394,9 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
+    
+    serializeJson(jsonBattery, _buffer, _bufferSize);
+    publishString(mqtt_topic_battery_basic_json, _buffer);
 
     _firstTunerStatePublish = false;
 }
@@ -552,10 +563,33 @@ void NetworkLock::publishLockstateCommandResult(const char *resultStr)
 
 void NetworkLock::publishBatteryReport(const NukiLock::BatteryReport& batteryReport)
 {
-    publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
-    publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
-    publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
-    publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
+    if(!_preferences->getBool(preference_disable_non_json, false))
+    {
+        publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0);
+        publishInt(mqtt_topic_battery_drain, batteryReport.batteryDrain); // milliwatt seconds
+        publishFloat(mqtt_topic_battery_max_turn_current, (float)batteryReport.maxTurnCurrent / 1000.0);
+        publishInt(mqtt_topic_battery_lock_distance, batteryReport.lockDistance); // degrees
+    }
+
+    char str[50];
+    memset(&str, 0, sizeof(str));
+
+    JsonDocument json;
+
+    json["batteryDrain"] = batteryReport.batteryDrain;
+    json["batteryVoltage"] = (float)batteryReport.batteryVoltage / 1000.0;
+    json["critical"] = batteryReport.criticalBatteryState;
+    lockactionToString(batteryReport.lockAction, str);
+    json["lockAction"] = str;
+    json["startVoltage"] = (float)batteryReport.startVoltage / 1000.0;
+    json["lowestVoltage"] = (float)batteryReport.lowestVoltage / 1000.0;
+    json["lockDistance"] = (float)batteryReport.lockDistance / 1000.0;
+    json["startTemperature"] = batteryReport.startTemperature;
+    json["maxTurnCurrent"] = (float)batteryReport.maxTurnCurrent / 1000.0;
+    json["batteryResistance"] = (float)batteryReport.batteryResistance / 1000.0;
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_battery_advanced_json, _buffer);
 }
 
 void NetworkLock::publishConfig(const NukiLock::Config &config)
