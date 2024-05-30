@@ -32,7 +32,7 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId
 
     network->setLockActionReceivedCallback(nukiOpenerInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiOpenerInst->onConfigUpdateReceivedCallback);
-    network->setKeypadCommandReceivedCallback(nukiOpenerInst->onKeypadCommandReceivedCallback);
+    if(_preferences->getBool(preference_disable_non_json, false)) network->setKeypadCommandReceivedCallback(nukiOpenerInst->onKeypadCommandReceivedCallback);
     network->setKeypadJsonCommandReceivedCallback(nukiOpenerInst->onKeypadJsonCommandReceivedCallback);
 
     _gpio->addCallback(NukiOpenerWrapper::gpioActionCallback);
@@ -520,7 +520,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
             {
                 log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
             }
-            
+
             if(log.size() > 0)
             {
                 _network->publishAuthorizationInfo(log, true);
@@ -571,7 +571,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         }
 
         uint keypadCount = entries.size();
-        if(keypadCount > _maxKeypadCodeCount)
+        if(keypadCount > _maxKeypadCodeCount && !_preferences->getBool(preference_disable_non_json, false))
         {
             _maxKeypadCodeCount = keypadCount;
             _preferences->putUInt(preference_lock_max_keypad_code_count, _maxKeypadCodeCount);
@@ -1358,6 +1358,8 @@ void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action, const int& 
 
 void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
+    if(_preferences->getBool(preference_disable_non_json, false)) return;
+    
     if(!_preferences->getBool(preference_keypad_control_enabled))
     {
         _network->publishKeypadCommandResult("KeypadControlDisabled");
