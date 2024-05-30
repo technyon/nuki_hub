@@ -154,6 +154,7 @@ bool initPreferences()
     {
         preferences->putBool(preference_started_before, true);
         preferences->putBool(preference_lock_enabled, true);
+        preferences->putBool(preference_publish_presence, true);
         uint32_t aclPrefs[17] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
         preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
         uint32_t basicLockConfigAclPrefs[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
@@ -171,6 +172,10 @@ bool initPreferences()
 
         if(configVer < (atof(NUKI_HUB_VERSION) * 100))
         {
+            if (configVer < 835){
+                preferences->putBool(preference_publish_presence, true);
+            }
+
             if (configVer < 834)
             {
                 if(preferences->getInt(preference_keypad_control_enabled))
