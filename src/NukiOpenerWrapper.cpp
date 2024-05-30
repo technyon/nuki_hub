@@ -333,7 +333,7 @@ void NukiOpenerWrapper::unpair()
     Preferences nukiBlePref;
     nukiBlePref.begin("NukiHubopener", false);
     nukiBlePref.clear();
-    nukiBlePref.end();        
+    nukiBlePref.end();
     _deviceId->assignNewId();
     _preferences->remove(preference_nuki_id_opener);
     _paired = false;
@@ -521,6 +521,8 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
                 log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
             }
 
+            log.sort([](const NukiOpener::LogEntry& a, const NukiOpener::LogEntry& b) { return a.index < b.index; });
+
             if(log.size() > 0)
             {
                 _network->publishAuthorizationInfo(log, true);
@@ -536,6 +538,8 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         {
             log.resize(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG));
         }
+
+        log.sort([](const NukiOpener::LogEntry& a, const NukiOpener::LogEntry& b) { return a.index < b.index; });
 
         Log->print(F("Log size: "));
         Log->println(log.size());
@@ -1359,7 +1363,7 @@ void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action, const int& 
 void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
     if(_preferences->getBool(preference_disable_non_json, false)) return;
-    
+
     if(!_preferences->getBool(preference_keypad_control_enabled))
     {
         _network->publishKeypadCommandResult("KeypadControlDisabled");
@@ -2073,11 +2077,11 @@ void NukiOpenerWrapper::setupHASS()
 
     if(_preferences->getBool(preference_opener_continuous_mode))
     {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
+        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _publishAuthData, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
     }
     else
     {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
+        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _publishAuthData, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
     }
 
     _hassSetupCompleted = true;

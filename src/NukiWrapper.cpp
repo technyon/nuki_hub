@@ -496,11 +496,13 @@ void NukiWrapper::updateAuthData(bool retrieved)
 
             std::list<NukiLock::LogEntry> log;
             _nukiLock.getLogEntries(&log);
-
+            
             if(log.size() > _preferences->getInt(preference_authlog_max_entries, 3))
             {
                 log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
             }
+
+            log.sort([](const NukiLock::LogEntry& a, const NukiLock::LogEntry& b) { return a.index < b.index; });
 
             if(log.size() > 0)
             {
@@ -517,6 +519,8 @@ void NukiWrapper::updateAuthData(bool retrieved)
         {
             log.resize(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG));
         }
+        
+        log.sort([](const NukiLock::LogEntry& a, const NukiLock::LogEntry& b) { return a.index < b.index; });
 
         Log->print(F("Log size: "));
         Log->println(log.size());

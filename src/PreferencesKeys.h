@@ -51,6 +51,7 @@
 #define preference_access_level (char*)"accLvl"
 #define preference_keypad_info_enabled (char*)"kpInfoEnabled"
 #define preference_keypad_control_enabled (char*)"kpCntrlEnabled"
+#define preference_keypad_publish_code (char*)"kpPubCode"
 #define preference_timecontrol_control_enabled (char*)"tcCntrlEnabled"
 #define preference_timecontrol_info_enabled (char*)"tcInfoEnabled"
 #define preference_publish_authdata (char*)"pubAuth"
@@ -97,7 +98,7 @@ private:
             preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval, preference_hostname, preference_find_best_rssi, 
             preference_network_timeout, preference_restart_on_disconnect, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
-            preference_keypad_info_enabled, preference_acl, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
+            preference_keypad_info_enabled, preference_keypad_publish_code, preference_acl, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
             preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl, preference_conf_opener_advanced_acl,
             preference_access_level, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
             preference_cred_password, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout, preference_disable_non_json,
@@ -115,8 +116,8 @@ private:
     {
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
             preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi, preference_restart_on_disconnect, preference_keypad_control_enabled,
-            preference_keypad_info_enabled, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_ip_dhcp_enabled,
-            preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_disable_non_json
+            preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app,
+            preference_ip_dhcp_enabled, preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_disable_non_json
     };
 
     const bool isRedacted(const char* key) const
