@@ -429,6 +429,10 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "HYBRIDACT")
         {
             _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
+        }
+        else if(key == "DISNONJSON")
+        {
+            _preferences->putBool(preference_disable_non_json, (value == "1"));
             configChanged = true;
         }
         else if(key == "DHCPENA")
@@ -1354,6 +1358,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
+    printCheckBox(response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
     printCheckBox(response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
     printCheckBox(response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
     response.concat("</table>");
@@ -2046,9 +2051,6 @@ void WebCfgServer::buildHtmlHeader(String &response)
 {
     response.concat("<html><head>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-//    response.concat("<style>");
-//    response.concat(stylecss);
-//    response.concat("</style>");
     response.concat("<link rel='stylesheet' href='/style.css'>");
     response.concat("<title>Nuki Hub</title></head><body>");
 
@@ -2317,11 +2319,13 @@ void WebCfgServer::handleOtaUpload()
 void WebCfgServer::sendCss()
 {
     // escaped by https://www.cescaper.com/
+    _server.sendHeader("Cache-Control", "public, max-age=3600");
     _server.send(200, "text/css", stylecss, sizeof(stylecss));
 }
 
 void WebCfgServer::sendFavicon()
 {
+    _server.sendHeader("Cache-Control", "public, max-age=604800");
     _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
 }
 
