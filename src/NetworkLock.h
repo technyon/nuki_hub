@@ -43,6 +43,7 @@ public:
     void publishKeypadCommandResult(const char* result);
     void publishKeypadJsonCommandResult(const char* result);
     void publishTimeControlCommandResult(const char* result);
+    void publishOffAction(const int value);
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
     void setOfficialUpdateReceivedCallback(void (*officialUpdateReceivedCallback)(const char* path, const char* value));
@@ -84,7 +85,7 @@ public:
     bool _authFound = false;
 
 private:
-    bool comparePrefixedPath(const char* fullPath, const char* subPath);
+    bool comparePrefixedPath(const char* fullPath, const char* subPath, bool offPath = false);
 
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
@@ -93,7 +94,7 @@ private:
 
     String concat(String a, String b);
 
-    void buildMqttPath(const char* path, char* outPath);
+    void buildMqttPath(const char* path, char* outPath, bool offPath = false);
 
     Network* _network;
     Preferences* _preferences;

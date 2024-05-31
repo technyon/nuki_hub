@@ -101,6 +101,18 @@ void NetworkLock::initialize()
         _network->removeTopic(_mqttPath, mqtt_topic_battery_keypad_critical);
         //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
+    
+    if(!_preferences->getBool(preference_conf_info_enabled, false))
+    {
+        _network->removeTopic(_mqttPath, mqtt_topic_config_basic_json);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_advanced_json);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_button_enabled);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_led_enabled);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_led_brightness);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_auto_unlock);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_auto_lock);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_single_lock);
+    }
 
     if(_preferences->getBool(preference_keypad_control_enabled))
     {
@@ -190,7 +202,14 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
     {
         for(auto offTopic : _offTopics)
         {
-            if(comparePrefixedPath(topic, offTopic))
+            Log->print(F("Compare topic: "));
+            Log->println(topic);
+            Log->print(F("to topic: "));
+            Log->println(offTopic);
+            Log->print(F("Result: "));
+            Log->println(comparePrefixedPath(topic, offTopic, true));
+            
+            if(comparePrefixedPath(topic, offTopic, true))
             {
                 if(_officialUpdateReceivedCallback != nullptr)
                 {
@@ -343,7 +362,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     JsonDocument json;
     JsonDocument jsonBattery;
 
-    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
+    if(!_offConnected)
     {
         lockstateToString(keyTurnerState.lockState, str);
 
@@ -370,7 +389,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     memset(&str, 0, sizeof(str));
 
-    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
+    if(!_offConnected)
     {
         triggerToString(keyTurnerState.trigger, str);
 
@@ -395,7 +414,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     memset(&str, 0, sizeof(str));
 
-    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
+    if(!_offConnected)
     {
         lockactionToString(keyTurnerState.lastLockAction, str);
 
@@ -427,7 +446,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
     json["lock_completion_status"] = str;
     memset(&str, 0, sizeof(str));
 
-    if(!_preferences->getBool(preference_official_hybrid, false) || !_offConnected)
+    if(!_offConnected)
     {
         NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
 
@@ -459,6 +478,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
         {
             publishBool(mqtt_topic_battery_keypad_critical, keypadCritical);
         }
+    }
     else
     {
         NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_offDoorsensorState, str);
@@ -1072,10 +1092,15 @@ void NetworkLock::setTimeControlCommandReceivedCallback(void (*timeControlComman
     _timeControlCommandReceivedReceivedCallback = timeControlCommandReceivedReceivedCallback;
 }
 
-void NetworkLock::buildMqttPath(const char* path, char* outPath)
+void NetworkLock::buildMqttPath(const char* path, char* outPath, bool offPath)
 {
     int offset = 0;
-    for(const char& c : _mqttPath)
+    char inPath[181] = {0};
+        
+    if(offPath) memcpy(inPath, _offMqttPath, sizeof(_offMqttPath));
+    else memcpy(inPath, _mqttPath, sizeof(_mqttPath));
+    
+    for(const char& c : inPath)
     {
         if(c == 0x00)
         {
@@ -1094,10 +1119,10 @@ void NetworkLock::buildMqttPath(const char* path, char* outPath)
     outPath[i+1] = 0x00;
 }
 
-bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
+bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath, bool offPath)
 {
     char prefixedPath[500];
-    buildMqttPath(subPath, prefixedPath);
+    buildMqttPath(subPath, prefixedPath, offPath);
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
@@ -1140,6 +1165,11 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
 void NetworkLock::removeHASSConfig(char *uidString)
 {
     _network->removeHASSConfig(uidString);
+}
+
+void NetworkLock::publishOffAction(const int value)
+{
+    _network->publishInt(_offMqttPath, mqtt_topic_official_lock_action, value);
 }
 
 void NetworkLock::publishFloat(const char *topic, const float value, const uint8_t precision)

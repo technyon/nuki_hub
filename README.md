@@ -79,7 +79,7 @@ Pairing should be automatic.<br>
 When pairing is successful, the web interface should show "Paired: Yes" (it might be necessary to reload the page in your browser).<br>
 MQTT nodes like lock state and battery level should now reflect the reported values from the lock.<br>
 <br>
-<b>Note: It is possible to run Nuki Hub alongside a Nuki Bridge. 
+<b>Note: It is possible to run Nuki Hub alongside a Nuki Bridge.
 This is not recommended and will lead to excessive battery drain and can lead to either device missing updates.
 Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
 
@@ -96,7 +96,7 @@ This project is free to use for everyone. However if you feel like donating, you
 
 In a browser navigate to the IP address assigned to the ESP32.
 
-### MQTT and Network Configuration 
+### MQTT and Network Configuration
 
 #### Basic MQTT and Network Configuration
 
@@ -110,20 +110,20 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 - Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
-- Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "[Home Assistant Discovery](#home-assistant-discovery-optional)" section of this README. 
+- Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "[Home Assistant Discovery](#home-assistant-discovery-optional)" section of this README.
 - MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
 - Connect to AP with the best signal in an environment with multiple APs with the same SSID: Enable to perform a scan for the Access Point with the best signal strenght for the specified SSID in a multi AP/Mesh environment.
-- RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60. 
+- RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
 - Network Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
 - Restart on disconnect: Enable to restart the Nuki Hub after 60 seconds without a connection to a network.
 - Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 - Disable some extraneous non-JSON topics: Enable to not publish non-JSON keypad and config MQTT topics.
-- Enable hybrid official MQTT and Nuki Hub setup: Enable to combine the official MQTT over Thread/WiFi with BLE. Improves speed of state changes. Needs the official MQTT to be setup first. Also requires Nuki Hub to be paired as app and unregistered as a bridge using the Nuki app. If enabled while paired as a bridge will automatically enable pairing as an app and unpair as a bridge.
+- Enable hybrid official MQTT and Nuki Hub setup: Enable to combine the official MQTT over Thread/WiFi with BLE. Improves speed of state changes. Needs the official MQTT to be setup first. Also requires Nuki Hub to be paired as app and unregistered as a bridge using the Nuki app.
 - Enable sending actions through official MQTT: Enable to sent lock actions through the official MQTT topics (e.g. over Thread/WiFi) instead of using BLE. Needs "Enable hybrid official MQTT and Nuki Hub setup" to be enabled.
 
 #### IP Address assignment
@@ -176,7 +176,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Credentials
 
-- User: Pick a username to enable HTTP Basic authentication for the Web Configuration, Set to "#" to disable authentication. 
+- User: Pick a username to enable HTTP Basic authentication for the Web Configuration, Set to "#" to disable authentication.
 - Password/Retype password: Pick a password to enable HTTP Basic authentication for the Web Configuration.
 
 #### Nuki Lock PIN / Nuki Opener PIN
@@ -200,7 +200,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Lock
 
 - lock/action: Allows to execute lock actions. After receiving the action, the value is set to "ack". Possible actions: unlock, lock, unlatch, lockNgo, lockNgoUnlatch, fullLock, fobAction1, fobAction2, fobAction3.
-- lock/statusUpdated: 1 when the Nuki Lock/Opener signals the KeyTurner state has been updated, resets to 0 when Nuki Hub has queried the updated state. 
+- lock/statusUpdated: 1 when the Nuki Lock/Opener signals the KeyTurner state has been updated, resets to 0 when Nuki Hub has queried the updated state.
 - lock/state: Reports the current lock state as a string. Possible values are: uncalibrated, locked, unlocked, unlatched, unlockedLnga, unlatching, bootRun, motorBlocked.
 - lock/hastate: Reports the current lock state as a string, specifically for use by Home Assistant. Possible values are: locking, locked, unlocking, unlocked, jammed.
 - lock/json: Reports the lock state, lockngo_state, trigger, current time, time zone offset, night mode state, last action trigger, last lock action, lock completion status, door sensor state, auth ID and auth name as JSON data.
@@ -302,7 +302,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
 - maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/RestartReason.h) for possible values
 - maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See [RestartReason.h](/RestartReason.h) for possible values
- 
+
 ### Misc
 
 - presence/devices: List of detected bluetooth devices as CSV. Can be used for presence detection.
@@ -496,7 +496,7 @@ Examples:
 
 The result of the last configuration change action will be published to the `configuration/commandResultJson` MQTT topic.<br>
 Possible values are "noValidPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
- 
+
 ## Keypad control (alternative, optional)
 
 If a keypad is connected to the lock, keypad codes can be added, updated and removed.

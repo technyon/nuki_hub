@@ -68,6 +68,18 @@ void NetworkOpener::initialize()
         _network->removeTopic(_mqttPath, mqtt_topic_battery_keypad_critical);
         //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
+    
+    if(!_preferences->getBool(preference_conf_info_enabled, false))
+    {
+        _network->removeTopic(_mqttPath, mqtt_topic_config_basic_json);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_advanced_json);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_button_enabled);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_led_enabled);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_led_brightness);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_auto_unlock);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_auto_lock);
+        _network->removeTopic(_mqttPath, mqtt_topic_config_single_lock);
+    }
 
     if(_preferences->getBool(preference_keypad_control_enabled))
     {

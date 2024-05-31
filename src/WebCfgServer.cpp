@@ -424,11 +424,14 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "OFFHYBRID")
         {
             _preferences->putBool(preference_official_hybrid, (value == "1"));
+            if((value == "1")) _preferences->putBool(preference_register_as_app, true);
             configChanged = true;
         }
         else if(key == "HYBRIDACT")
         {
             _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
+            if(value == "1") _preferences->putBool(preference_register_as_app, true);
+            configChanged = true;
         }
         else if(key == "DISNONJSON")
         {
@@ -1414,7 +1417,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     response.concat("<h3>Nuki General Access Control</h3>");
     response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
     printCheckBox(response, "CONFPUB", "Publish Nuki configuration information", _preferences->getBool(preference_conf_info_enabled, true), "");
-    
+
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled), "");
