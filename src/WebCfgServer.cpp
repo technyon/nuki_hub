@@ -7,6 +7,7 @@
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
 #include <esp_wifi.h>
+#include <ArduinoJson.h>
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
 : _server(ethServer),
@@ -64,6 +65,14 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
         sendCss();
+    });
+    _server.on("/status", HTTP_GET, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildStatusHtml(response);
+        _server.send(200, "text/html", response);
     });
     _server.on("/favicon.ico", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -1077,78 +1086,46 @@ void WebCfgServer::update()
 
 void WebCfgServer::buildHtml(String& response)
 {
-    String header = "<meta http-equiv='refresh' content='15'>"; // auto refresh page
+    String header = "<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
     buildHtmlHeader(response, header);
 
     response.concat("<br><h3>Info</h3>\n");
     response.concat("<table>");
 
-    printParameter(response, "Hostname", _hostname.c_str());
-    printParameter(response, "MQTT Connected", _network->mqttConnectionState() > 0 ? "Yes" : "No");
+    printParameter(response, "Hostname", _hostname.c_str(), "", "hostname");
+    printParameter(response, "MQTT Connected", _network->mqttConnectionState() > 0 ? "Yes" : "No", "", "mqttState");
     if(_nuki != nullptr)
     {
-        char lockstateArr[20];
-        NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockstateArr);
-        printParameter(response, "Nuki Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No");
-        printParameter(response, "Nuki Lock state", lockstateArr);
+        char lockStateArr[20];
+        NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockStateArr);
+        printParameter(response, "Nuki Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No", "", "lockPaired");
+        printParameter(response, "Nuki Lock state", lockStateArr, "", "lockState");
 
         if(_nuki->isPaired())
         {
-            switch(_preferences->getInt(preference_lock_pin_status, 4))
-            {
-                case 0:
-                    printParameter(response, "Nuki Lock PIN status", "PIN not set");
-                    break;
-                case 1:
-                    printParameter(response, "Nuki Lock PIN status", "PIN valid");
-                    break;
-                case 2:
-                    printParameter(response, "Nuki Lock PIN status", "PIN set but invalid");
-                    break;
-                default:
-                    printParameter(response, "Nuki Lock PIN status", "Unknown");
-                    break;
-            }
+            String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
+            printParameter(response, "Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
         }
     }
     if(_nukiOpener != nullptr)
     {
-        char lockstateArr[20];
-        NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, lockstateArr);
-        printParameter(response, "Nuki Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
+        char openerStateArr[20];
+        NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, openerStateArr);
+        printParameter(response, "Nuki Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No", "", "openerPaired");
 
-        if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode)
-        {
-            printParameter(response, "Nuki Opener state", "Open (Continuous Mode)");
-        }
-        else
-        {
-            printParameter(response, "Nuki Opener state", lockstateArr);
-        }
+        if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode) printParameter(response, "Nuki Opener state", "Open (Continuous Mode)", "", "openerState");
+        else printParameter(response, "Nuki Opener state", openerStateArr, "", "openerState");
 
         if(_nukiOpener->isPaired())
         {
-            switch(_preferences->getInt(preference_opener_pin_status, 4))
-            {
-                case 0:
-                    printParameter(response, "Nuki Opener PIN status", "PIN not set");
-                    break;
-                case 1:
-                    printParameter(response, "Nuki Opener PIN status", "PIN valid");
-                    break;
-                case 2:
-                    printParameter(response, "Nuki Opener PIN status", "PIN set but invalid");
-                    break;
-                default:
-                    printParameter(response, "Nuki Opener PIN status", "Unknown");
-                    break;
-            }
+            String openerState = pinStateToString(_preferences->getInt(preference_opener_pin_status, 4));
+            printParameter(response, "Nuki Opener PIN status", openerState.c_str(), "", "openerPin");
         }
     }
 
-    printParameter(response, "Firmware", NUKI_HUB_VERSION, "/info");
+    printParameter(response, "Firmware", NUKI_HUB_VERSION, "/info", "firmware");
 
-    if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota");
+    if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
 
     response.concat("</table><br><table id=\"tblnav\"><tbody>");
     response.concat("<tr><td><h5>MQTT and Network Configuration</h5></td><td class=\"tdbtn\">");
@@ -1380,6 +1357,88 @@ void WebCfgServer::buildAdvancedConfigHtml(String &response)
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
     response.concat("</body></html>");
+}
+
+void WebCfgServer::buildStatusHtml(String &response)
+{
+    JsonDocument json;
+    char _resbuf[2048];
+    bool mqttDone = false;
+    bool lockDone = false;
+    bool openerDone = false;
+    bool latestDone = false;
+
+    json["stop"] = 0;
+
+    if(_network->mqttConnectionState() > 0)
+    {
+        json["mqttState"] = "Yes";
+        mqttDone = true;
+    }
+    else json["mqttState"] = "No";
+
+    if(_nuki != nullptr)
+    {
+        char lockStateArr[20];
+        NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockStateArr);
+        String lockState = lockStateArr;
+        String LockPaired = (_nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No");
+        json["lockPaired"] = LockPaired;
+        json["lockState"] = lockState;
+
+        if(_nuki->isPaired())
+        {
+            json["lockPin"] = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
+            lockDone = true;
+        }
+        else json["lockPin"] = "Not Paired";
+    }
+    else lockDone = true;
+    if(_nukiOpener != nullptr)
+    {
+        char openerStateArr[20];
+        NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, openerStateArr);
+        String openerState = openerStateArr;
+        String openerPaired = (_nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No");
+        json["openerPaired"] = openerPaired;
+
+        if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode) json["openerState"] = "Open (Continuous Mode)";
+        else json["openerState"] = openerState;
+
+        if(_nukiOpener->isPaired())
+        {
+            json["openerPin"] = pinStateToString(_preferences->getInt(preference_opener_pin_status, 4));
+            openerDone = true;
+        }
+        else json["openerPin"] = "Not Paired";
+    }
+    else openerDone = true;
+
+    if(_preferences->getBool(preference_check_updates))
+    {
+        json["latestFirmware"] = _preferences->getString(preference_latest_version);
+        latestDone = true;
+    }
+    else latestDone = true;
+
+    if(mqttDone && lockDone && openerDone && latestDone) json["stop"] = 1;
+
+    serializeJson(json, _resbuf, sizeof(_resbuf));
+    response = _resbuf;
+}
+
+String WebCfgServer::pinStateToString(uint8_t value) {
+    switch(value)
+    {
+        case 0:
+            return (String)"PIN not set";
+        case 1:
+            return (String)"PIN valid";
+        case 2:
+            return (String)"PIN set but invalid";;
+        default:
+            return (String)"Unknown";
+    }
 }
 
 void WebCfgServer::buildAccLvlHtml(String &response)
@@ -2186,17 +2245,20 @@ void WebCfgServer::buildNavigationButton(String &response, const char *caption, 
     response.concat("</form>");
 }
 
-void WebCfgServer::printParameter(String& response, const char *description, const char *value, const char *link)
+void WebCfgServer::printParameter(String& response, const char *description, const char *value, const char *link, const char *id)
 {
     response.concat("<tr>");
     response.concat("<td>");
     response.concat(description);
     response.concat("</td>");
-    response.concat("<td>");
-    if(strcmp(link, "") == 0)
+    if(strcmp(id, "") == 0) response.concat("<td>");
+    else
     {
-        response.concat(value);
+        response.concat("<td id=\"");
+        response.concat(id);
+        response.concat("\">");
     }
+    if(strcmp(link, "") == 0) response.concat(value);
     else
     {
         response.concat("<a href=\"");

@@ -42,6 +42,7 @@ private:
     void buildOtaHtml(String& response, bool errored);
     void buildOtaCompletedHtml(String& response);
     void buildMqttConfigHtml(String& response);
+    void buildStatusHtml(String& response);
     void buildAdvancedConfigHtml(String& response);
     void buildNukiConfigHtml(String& response);
     void buildGpioConfigHtml(String& response);
@@ -64,8 +65,9 @@ private:
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
     String getPreselectionForGpio(const uint8_t& pin);
+    String pinStateToString(uint8_t value);
 
-    void printParameter(String& response, const char* description, const char* value, const char *link = "");
+    void printParameter(String& response, const char* description, const char* value, const char *link = "", const char *id = "");
 
     String generateConfirmCode();
     void waitAndProcess(const bool blocking, const uint32_t duration);
