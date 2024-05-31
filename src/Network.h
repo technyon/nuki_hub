@@ -55,6 +55,7 @@ public:
     void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void removeHASSConfig(char* uidString);
     void removeHASSConfigTopic(char* deviceType, char* name, char* uidString);
+    void removeTopic(const String& mqttPath, const String& mqttTopic);
     void batteryTypeToString(const Nuki::BatteryType battype, char* str);
     void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);

@@ -48,6 +48,8 @@
 #define mqtt_topic_battery_max_turn_current "/battery/maxTurnCurrent"
 #define mqtt_topic_battery_lock_distance "/battery/lockDistance"
 #define mqtt_topic_battery_keypad_critical "/battery/keypadCritical"
+#define mqtt_topic_battery_basic_json "/battery/basicJson"
+#define mqtt_topic_battery_advanced_json "/battery/advancedJson"
 
 #define mqtt_topic_keypad "/keypad"
 #define mqtt_topic_keypad_command_action "/keypad/command/action"

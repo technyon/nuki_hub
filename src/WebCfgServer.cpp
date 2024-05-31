@@ -430,6 +430,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_check_updates, (value == "1"));
             configChanged = true;
         }
+        else if(key == "DISNONJSON")
+        {
+            _preferences->putBool(preference_disable_non_json, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "DHCPENA")
         {
             _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
@@ -1317,6 +1322,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
+    printCheckBox(response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
 
@@ -2088,11 +2094,7 @@ void WebCfgServer::buildHtmlHeader(String &response, String additionalHeader)
 {
     response.concat("<html><head>");
     response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    if(strcmp(additionalHeader.c_str(), "") != 0)
-        response.concat(additionalHeader);
-//    response.concat("<style>");
-//    response.concat(stylecss);
-//    response.concat("</style>");
+    if(strcmp(additionalHeader.c_str(), "") != 0) response.concat(additionalHeader);
     response.concat("<link rel='stylesheet' href='/style.css'>");
     response.concat("<title>Nuki Hub</title></head><body>");
 
@@ -2364,11 +2366,13 @@ void WebCfgServer::handleOtaUpload()
 void WebCfgServer::sendCss()
 {
     // escaped by https://www.cescaper.com/
+    _server.sendHeader("Cache-Control", "public, max-age=3600");
     _server.send(200, "text/css", stylecss, sizeof(stylecss));
 }
 
 void WebCfgServer::sendFavicon()
 {
+    _server.sendHeader("Cache-Control", "public, max-age=604800");
     _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
 }
 

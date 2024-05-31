@@ -264,13 +264,13 @@ void Network::initialize()
 bool Network::update()
 {
     unsigned long ts = millis();
-    
+
     if(ts > 120000 && ts < 125000 && _preferences->getInt(preference_bootloop_counter, 0) > 0)
     {
         _preferences->putInt(preference_bootloop_counter, 0);
         Log->println(F("Bootloop counter reset"));
     }
-    
+
     _device->update();
 
     if(!_mqttEnabled)
@@ -806,14 +806,15 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                      "Battery low",
                      name,
                      baseTopic,
-                     String("~") + mqtt_topic_battery_critical,
+                     String("~") + mqtt_topic_battery_basic_json,
                      deviceType,
                      "battery",
                      "",
                      "diagnostic",
                      "",
                      {{(char*)"pl_on", (char*)"1"},
-                      {(char*)"pl_off", (char*)"0"}});
+                      {(char*)"pl_off", (char*)"0"},
+                      {(char*)"val_tpl", (char*)"{{value_json.critical}}" }});
 
     // Battery voltage
     publishHassTopic("sensor",
@@ -823,13 +824,14 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                      "Battery voltage",
                      name,
                      baseTopic,
-                     String("~") + mqtt_topic_battery_voltage,
+                     String("~") + mqtt_topic_battery_advanced_json,
                      deviceType,
                      "voltage",
                      "measurement",
                      "diagnostic",
                      "",
-                     { {(char*)"unit_of_meas", (char*)"V"} });
+                     { {(char*)"unit_of_meas", (char*)"V"},
+                       {(char*)"val_tpl", (char*)"{{value_json.level}}" }});
 
     // Trigger
     publishHassTopic("sensor",
@@ -935,7 +937,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                      "",
                      { { (char*)"en", (char*)"true" },
                        {(char*)"ic", (char*)"mdi:counter"}});
-                       
+
     // Nuki Hub build
     publishHassTopic("sensor",
                      "nuki_hub_build",
@@ -1333,13 +1335,14 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
                      "Battery level",
                      name,
                      baseTopic,
-                     String("~") + mqtt_topic_battery_level,
+                     String("~") + mqtt_topic_battery_basic_json,
                      deviceType,
                      "battery",
                      "measurement",
                      "diagnostic",
                      "",
-                     { {(char*)"unit_of_meas", (char*)"%"} });
+                     { {(char*)"unit_of_meas", (char*)"%"},
+                       {(char*)"val_tpl", (char*)"{{value_json.level}}" }});
 
     if((int)basicLockConfigAclPrefs[7] == 1)
     {
@@ -2298,7 +2301,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
                      "",
                      {{(char*)"pl_on", (char*)"ring"},
                       {(char*)"pl_off", (char*)"standby"}});
-  
+
     JsonDocument json;
     json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{(char*)"val_tpl", (char*)"{ \"event_type\": \"{{ value }}\" }"}});
     json["event_types"][0] = "ring";
@@ -3032,14 +3035,15 @@ void Network::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, c
                          "Keypad battery low",
                          name,
                          baseTopic,
-                         String("~") + mqtt_topic_battery_keypad_critical,
+                         String("~") + mqtt_topic_battery_basic_json,
                          deviceType,
                          "battery",
                          "",
                          "diagnostic",
                          "",
                          {{(char*)"pl_on", (char*)"1"},
-                          {(char*)"pl_off", (char*)"0"}});
+                          {(char*)"pl_off", (char*)"0"},
+                          {(char*)"val_tpl", (char*)"{{value_json.keypadCritical}}" }});
 
     // Query Keypad
     publishHassTopic("button",
@@ -3150,6 +3154,18 @@ void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDe
         String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
     }
+}
+
+void Network::removeTopic(const String& mqttPath, const String& mqttTopic)
+{
+    String path = mqttPath;
+    path.concat(mqttTopic);
+   _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+
+    #ifdef DEBUG_NUKIHUB
+    Log->print(F("Removing MQTT topic: "));
+    Log->println(path.c_str());
+    #endif
 }
 
 

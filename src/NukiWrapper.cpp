@@ -32,7 +32,7 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, 
 
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
-    network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
+    if(_preferences->getBool(preference_disable_non_json, false)) network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
     network->setKeypadJsonCommandReceivedCallback(nukiInst->onKeypadJsonCommandReceivedCallback);
     network->setTimeControlCommandReceivedCallback(nukiInst->onTimeControlCommandReceivedCallback);
 
@@ -202,7 +202,7 @@ void NukiWrapper::update()
     {
         _waitKeypadUpdateTs = 0;
         updateKeypad(true);
-    }    
+    }
     if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
     {
         _waitTimeControlUpdateTs = 0;
@@ -496,12 +496,12 @@ void NukiWrapper::updateAuthData(bool retrieved)
 
             std::list<NukiLock::LogEntry> log;
             _nukiLock.getLogEntries(&log);
-            
+
             if(log.size() > _preferences->getInt(preference_authlog_max_entries, 3))
             {
                 log.resize(_preferences->getInt(preference_authlog_max_entries, 3));
             }
-            
+
             if(log.size() > 0)
             {
                  _network->publishAuthorizationInfo(log, true);
@@ -512,7 +512,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
     {
         std::list<NukiLock::LogEntry> log;
         _nukiLock.getLogEntries(&log);
-        
+
         if(log.size() > _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG))
         {
             log.resize(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG));
@@ -526,14 +526,14 @@ void NukiWrapper::updateAuthData(bool retrieved)
              _network->publishAuthorizationInfo(log, false);
         }
     }
-    
+
     postponeBleWatchdog();
 }
 
 void NukiWrapper::updateKeypad(bool retrieved)
 {
     if(!_preferences->getBool(preference_keypad_info_enabled)) return;
-    
+
     if(!retrieved)
     {
         Log->print(F("Querying lock keypad: "));
@@ -553,14 +553,14 @@ void NukiWrapper::updateKeypad(bool retrieved)
         Log->println(entries.size());
 
         entries.sort([](const NukiLock::KeypadEntry& a, const NukiLock::KeypadEntry& b) { return a.codeId < b.codeId; });
-        
+
         if(entries.size() > _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD))
         {
             entries.resize(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
         }
 
         uint keypadCount = entries.size();
-        if(keypadCount > _maxKeypadCodeCount)
+        if(keypadCount > _maxKeypadCodeCount && !_preferences->getBool(preference_disable_non_json, false))
         {
             _maxKeypadCodeCount = keypadCount;
             _preferences->putUInt(preference_lock_max_keypad_code_count, _maxKeypadCodeCount);
@@ -605,12 +605,12 @@ void NukiWrapper::updateTimeControl(bool retrieved)
         Log->println(timeControlEntries.size());
 
         timeControlEntries.sort([](const NukiLock::TimeControlEntry& a, const NukiLock::TimeControlEntry& b) { return a.entryId < b.entryId; });
-        
+
         if(timeControlEntries.size() > _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL))
         {
             timeControlEntries.resize(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL));
         }
-        
+
         _network->publishTimeControl(timeControlEntries);
 
         _timeControlIds.clear();
@@ -1352,6 +1352,8 @@ void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
 
 void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
+    if(_preferences->getBool(preference_disable_non_json, false)) return;
+
     if(!_preferences->getBool(preference_keypad_control_enabled))
     {
         _network->publishKeypadCommandResult("KeypadControlDisabled");
@@ -1744,7 +1746,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                 entry.codeId = codeId;
                 size_t nameLen = strlen(name);
                 memcpy(&entry.name, name, nameLen > 20 ? 20 : nameLen);
-                
+
                 if(code) entry.code = code;
                 else
                 {
@@ -1855,7 +1857,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
     const char *time = json["time"].as<const char*>();
     const char *lockAct = json["lockAction"].as<const char*>();
     NukiLock::LockAction timeControlLockAction;
-  
+
     if(lockAct)
     {
         timeControlLockAction = nukiInst->lockActionToEnum(lockAct);
