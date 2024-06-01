@@ -738,7 +738,7 @@ void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, c
     {
         _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
         _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
-    
+    }
     if(hasKeypad)
     {
         _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
