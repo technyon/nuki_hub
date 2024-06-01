@@ -409,7 +409,7 @@ Example:
 
 ### Home Assistant discovery
 
-If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings. These entities will be disabled by default in Home Assistant, but can be found in the MQTT devices section of the Home Assistant UI under the "Configuration" section of the Nuki Lock/Opener and enabled there.
+If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings.
 
 ## Over-the-air Update (OTA)
 

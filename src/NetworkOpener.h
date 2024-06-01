@@ -31,7 +31,7 @@ public:
     void publishRssi(const int& rssi);
     void publishRetry(const std::string& message);
     void publishBleAddress(const std::string& address);
-    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& publishAuthData, char* lockAction, char* unlockAction, char* openAction);
+    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& publishAuthData, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries);
