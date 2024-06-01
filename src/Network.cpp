@@ -3023,6 +3023,27 @@ void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic
                      "",
                      { { (char*)"ic", (char*)"mdi:format-list-bulleted" },
                        { (char*)"val_tpl", (char*)"{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first|default).authorizationName|default }}" }});
+
+    String rollingSate = "~";
+    rollingSate.concat(mqtt_topic_lock_log_rolling);
+    const char *rollingStateChr = rollingSate.c_str();
+
+    publishHassTopic("sensor",
+                     "rolling_log",
+                     uidString,
+                     "_rolling_log",
+                     "Rolling authorization log",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_lock_log_rolling,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { (char*)"ic", (char*)"mdi:format-list-bulleted" },
+                       { (char*)"json_attr_t", (char*)rollingStateChr },
+                       { (char*)"val_tpl", (char*)"{{value_json.authorizationId}}" }});
 }
 
 void Network::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, char *name, char *uidString)
@@ -3194,6 +3215,7 @@ void Network::removeHASSConfig(char* uidString)
     removeHassTopic((char*)"sensor", (char*)"sound_level", uidString);
     removeHassTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
     removeHassTopic((char*)"sensor", (char*)"keypad_status", uidString);
+    removeHassTopic((char*)"sensor", (char*)"rolling_log", uidString);
     removeHassTopic((char*)"sensor", (char*)"wifi_signal_strength", uidString);
     removeHassTopic((char*)"sensor", (char*)"bluetooth_signal_strength", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"continuous_mode", uidString);

@@ -16,12 +16,21 @@
 #include <NimBLEDevice.h>
 #include "BleInterfaces.h"
 
+// Access to a globally available instance of BleScanner, created when first used
+// Note that BLESCANNER.initialize() has to be called somewhere
+#define BLESCANNER BleScanner::Scanner::instance()
+
 namespace BleScanner {
 
 class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
   public:
     Scanner(int reservedSubscribers = 10);
     ~Scanner() = default;
+
+    static Scanner& instance() {
+      static Scanner* scanner = new Scanner(); // only initialized once on first call
+      return *scanner;
+    }
 
     /**
      * @brief Initializes the BLE scanner
@@ -77,7 +86,7 @@ class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) override;
 
   private:
-    uint32_t scanDuration = 3;
+    uint32_t scanDuration = 0; //default indefinite scanning time
     BLEScan* bleScan = nullptr;
     std::vector<Subscriber*> subscribers;
     uint16_t scanErrors = 0;

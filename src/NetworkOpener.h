@@ -31,7 +31,7 @@ public:
     void publishRssi(const int& rssi);
     void publishRetry(const std::string& message);
     void publishBleAddress(const std::string& address);
-    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
+    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& publishAuthData, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries);
@@ -71,7 +71,7 @@ private:
     void doorbellSuppressionToString(const int dbsupr, char* str);
     void soundToString(const int sound, char* str);
     void capabilitiesToString(const int capabilities, char* str);
-    
+
     String concat(String a, String b);
 
     Preferences* _preferences;
@@ -93,6 +93,7 @@ private:
     uint32_t _authId = 0;
     char _authName[33];
     bool _authFound = false;
+    uint32_t _lastRollingLog = 0;
 
     NukiOpener::LockState _currentLockState = NukiOpener::LockState::Undefined;
 

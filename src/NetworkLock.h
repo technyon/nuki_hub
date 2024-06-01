@@ -92,6 +92,7 @@ private:
     uint32_t _authId = 0;
     char _authName[33];
     bool _authFound = false;
+    uint32_t _lastRollingLog = 0;
 
     char* _buffer;
     size_t _bufferSize;
