@@ -155,6 +155,11 @@ void NetworkLock::initialize()
             _network->subscribe(_offMqttPath, offTopic);
         }
     }
+  
+    if(_preferences->getBool(preference_publish_authdata, false))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
+    }
 
     _network->addReconnectedCallback([&]()
     {
@@ -196,6 +201,13 @@ void NetworkLock::onMqttDataReceived(const char* topic, byte* payload, const uns
         _network->clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
+    {
+        if(strcmp(value, "") == 0 ||
+           strcmp(value, "--") == 0) return;
+
+        if(atoi(value) > 0 && atoi(value) > _lastRollingLog) _lastRollingLog = atoi(value);
     }
 
     if(_preferences->getBool(preference_official_hybrid, false))
@@ -490,7 +502,7 @@ void NetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurne
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer);
-    
+
     serializeJson(jsonBattery, _buffer, _bufferSize);
     publishString(mqtt_topic_battery_basic_json, _buffer);
 
@@ -535,7 +547,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
 {
     char str[50];
     char authName[33];
-    bool authFound = false;
+    uint32_t authIndex = 0;
 
     JsonDocument json;
 
@@ -550,9 +562,9 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
             memcpy(authName, log.name, sizeName);
             if(authName[sizeName - 1] != '\0') authName[sizeName] = '\0';
 
-            if(!authFound)
+            if(log.index > authIndex)
             {
-                authFound = true;
+                authIndex = log.index;
                 _authFound = true;
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
@@ -642,6 +654,14 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
                 }
                 break;
         }
+
+        if(log.index > _lastRollingLog)
+        {
+            _lastRollingLog = log.index;
+            serializeJson(entry, _buffer, _bufferSize);
+            publishString(mqtt_topic_lock_log_rolling, _buffer);
+            publishInt(mqtt_topic_lock_log_rolling_last, log.index);
+        }
     }
 
     serializeJson(json, _buffer, _bufferSize);
@@ -649,7 +669,7 @@ void NetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& 
     if(latest) publishString(mqtt_topic_lock_log_latest, _buffer);
     else publishString(mqtt_topic_lock_log, _buffer);
 
-    if(authFound)
+    if(authIndex > 0)
     {
         publishUInt(mqtt_topic_lock_auth_id, _authId);
         publishString(mqtt_topic_lock_auth_name, _authName);
@@ -846,6 +866,12 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
         auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["codeId"] = entry.codeId;
+
+        if(_preferences->getBool(preference_keypad_publish_code, false))
+        {
+            jsonEntry["code"] = entry.code;
+        }
+
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
         char createdDT[20];
@@ -937,6 +963,19 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
 
             ++index;
         }
+
+        if(!_preferences->getBool(preference_keypad_publish_code, false))
+        {
+            for(int i=0; i<maxKeypadCodeCount; i++)
+            {
+                String codeTopic = _mqttPath;
+                codeTopic.concat(mqtt_topic_keypad);
+                codeTopic.concat("/code_");
+                codeTopic.concat(std::to_string(i).c_str());
+                codeTopic.concat("/");
+                _network->removeTopic(codeTopic, "code");
+            }
+        }
     }
     else if (maxKeypadCodeCount > 0)
     {
@@ -949,6 +988,7 @@ void NetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries,
             codeTopic.concat("/");
             _network->removeTopic(codeTopic, "id");
             _network->removeTopic(codeTopic, "enabled");
+            _network->removeTopic(codeTopic, "code");
             _network->removeTopic(codeTopic, "name");
             _network->removeTopic(codeTopic, "createdYear");
             _network->removeTopic(codeTopic, "createdMonth");
@@ -1149,6 +1189,7 @@ void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, cha
     else
     {
         _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
+        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
     }
 
     if(hasKeypad)
@@ -1224,6 +1265,12 @@ void NetworkLock::publishKeypadEntry(const String topic, NukiLock::KeypadEntry e
     publishInt(concat(topic, "/id").c_str(), entry.codeId);
     publishBool(concat(topic, "/enabled").c_str(), entry.enabled);
     publishString(concat(topic, "/name").c_str(), codeName);
+
+    if(_preferences->getBool(preference_keypad_publish_code, false))
+    {
+        publishInt(concat(topic, "/code").c_str(), entry.code);
+    }
+
     publishInt(concat(topic, "/createdYear").c_str(), entry.dateCreatedYear);
     publishInt(concat(topic, "/createdMonth").c_str(), entry.dateCreatedMonth);
     publishInt(concat(topic, "/createdDay").c_str(), entry.dateCreatedDay);

@@ -109,6 +109,11 @@ void NetworkOpener::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     }
 
+    if(_preferences->getBool(preference_publish_authdata, false))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
+    }
+
     _network->addReconnectedCallback([&]()
      {
          _reconnected = true;
@@ -127,6 +132,14 @@ void NetworkOpener::update()
 void NetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* value = (char*)payload;
+
+    if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
+    {
+        if(strcmp(value, "") == 0 ||
+           strcmp(value, "--") == 0) return;
+
+        if(atoi(value) > 0 && atoi(value) > _lastRollingLog) _lastRollingLog = atoi(value);
+    }
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
@@ -418,7 +431,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
 {
     char str[50];
     char authName[33];
-    bool authFound = false;
+    uint32_t authIndex = 0;
 
     JsonDocument json;
 
@@ -433,9 +446,9 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
             memcpy(authName, log.name, sizeName);
             if(authName[sizeName - 1] != '\0') authName[sizeName] = '\0';
 
-            if(!authFound)
+            if(log.index > authIndex)
             {
-                authFound = true;
+                authIndex = log.index;
                 _authFound = true;
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
@@ -560,6 +573,14 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
                 entry["codeId"] = 256U*log.data[7]+log.data[6];
                 break;
         }
+        
+        if(log.index > _lastRollingLog)
+        {
+            _lastRollingLog = log.index;
+            serializeJson(entry, _buffer, _bufferSize);
+            publishString(mqtt_topic_lock_log_rolling, _buffer);
+            publishInt(mqtt_topic_lock_log_rolling_last, log.index);
+        }
     }
 
     serializeJson(json, _buffer, _bufferSize);
@@ -567,7 +588,7 @@ void NetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntr
     if(latest) publishString(mqtt_topic_lock_log_latest, _buffer);
     else publishString(mqtt_topic_lock_log, _buffer);
 
-    if(authFound)
+    if(authIndex > 0)
     {
         publishUInt(mqtt_topic_lock_auth_id, _authId);
         publishString(mqtt_topic_lock_auth_name, _authName);
@@ -741,13 +762,31 @@ void NetworkOpener::publishBleAddress(const std::string &address)
     publishString(mqtt_topic_lock_address, address);
 }
 
-void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction)
+void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& publishAuthData, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     String availabilityTopic = _preferences->getString("mqttpath");
     availabilityTopic.concat("/maintenance/mqttConnectionState");
 
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), false, lockAction, unlockAction, openAction);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
     _network->publishHASSConfigAdditionalOpenerEntities(deviceType, baseTopic, name, uidString);
+    if(publishAuthData)
+    {
+        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
+        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
+    }
+    if(hasKeypad)
+    {
+        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
+        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
+    }
 }
 
 void NetworkOpener::removeHASSConfig(char* uidString)
@@ -773,6 +812,12 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
         jsonEntry["codeId"] = entry.codeId;
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
+
+        if(_preferences->getBool(preference_keypad_publish_code, false))
+        {
+            jsonEntry["code"] = entry.code;
+        }
+
         char createdDT[20];
         sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateCreatedYear, entry.dateCreatedMonth, entry.dateCreatedDay, entry.dateCreatedHour, entry.dateCreatedMin, entry.dateCreatedSec);
         jsonEntry["dateCreated"] = createdDT;
@@ -862,6 +907,19 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
 
             ++index;
         }
+        
+        if(!_preferences->getBool(preference_keypad_publish_code, false))
+        {
+            for(int i=0; i<maxKeypadCodeCount; i++)
+            {
+                String codeTopic = _mqttPath;
+                codeTopic.concat(mqtt_topic_keypad);
+                codeTopic.concat("/code_");
+                codeTopic.concat(std::to_string(i).c_str());
+                codeTopic.concat("/");
+                _network->removeTopic(codeTopic, "code");
+            }
+        }
     }
     else if (maxKeypadCodeCount > 0)
     {
@@ -874,6 +932,7 @@ void NetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entrie
             codeTopic.concat("/");
             _network->removeTopic(codeTopic, "id");
             _network->removeTopic(codeTopic, "enabled");
+            _network->removeTopic(codeTopic, "code");
             _network->removeTopic(codeTopic, "name");
             _network->removeTopic(codeTopic, "createdYear");
             _network->removeTopic(codeTopic, "createdMonth");
@@ -1064,6 +1123,12 @@ void NetworkOpener::publishKeypadEntry(const String topic, NukiLock::KeypadEntry
     publishInt(concat(topic, "/id").c_str(), entry.codeId);
     publishBool(concat(topic, "/enabled").c_str(), entry.enabled);
     publishString(concat(topic, "/name").c_str(), codeName);
+
+    if(_preferences->getBool(preference_keypad_publish_code, false))
+    {
+        publishInt(concat(topic, "/code").c_str(), entry.code);
+    }
+
     publishInt(concat(topic, "/createdYear").c_str(), entry.dateCreatedYear);
     publishInt(concat(topic, "/createdMonth").c_str(), entry.dateCreatedMonth);
     publishInt(concat(topic, "/createdDay").c_str(), entry.dateCreatedDay);

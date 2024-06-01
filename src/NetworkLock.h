@@ -113,6 +113,7 @@ private:
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
     uint8_t _queryCommands = 0;
+    uint32_t _lastRollingLog = 0;
 
     char* _buffer;
     size_t _bufferSize;

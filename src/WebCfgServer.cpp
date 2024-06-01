@@ -578,6 +578,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "KPCODE")
+        {
+            _preferences->putBool(preference_keypad_publish_code, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "KPENA")
         {
             _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
@@ -1420,12 +1425,13 @@ void WebCfgServer::buildAccLvlHtml(String &response)
 
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
-        printCheckBox(response, "KPPUB", "Publish keypad codes information", _preferences->getBool(preference_keypad_info_enabled), "");
+        printCheckBox(response, "KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
+        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span style=\"color: #ff0000\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), ""); 
         printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
     printCheckBox(response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
     printCheckBox(response, "TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
-    printCheckBox(response, "PUBAUTH", "Publish authorisation log (may reduce battery life)", _preferences->getBool(preference_publish_authdata), "");
+    printCheckBox(response, "PUBAUTH", "Publish authorization log (may reduce battery life)", _preferences->getBool(preference_publish_authdata), "");
     response.concat("</table><br>");
     if(_nuki != nullptr)
     {

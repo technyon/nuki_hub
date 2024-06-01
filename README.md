@@ -159,7 +159,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Nuki General Access Control
 - Publish Nuki configuration information: Enable to publish information about the configuration of the connected Nuki device(s) through MQTT.
-- Publish keypad codes information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
+- Publish keypad entries information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
+- Also publish keypad codes (Only available when a Keypad is detected): Enable to publish the actual keypad codes through MQTT, note that is could be considered a security risk
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Publish time control information: Enable to publish information about time control entries through MQTT, see the "[Time Control](#time-control)" section of this README
 - Add, modify and delete time control entries: Enable to allow configuration of time control entries through MQTT, see the "[Time Control](#time-control)" section of this README
@@ -207,8 +208,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - lock/binaryState: Reports the current lock state as a string, mostly for use by Home Assistant. Possible values are: locked, unlocked.
 - lock/trigger: The trigger of the last action: autoLock, automatic, button, manual, system.
 - lock/lastLockAction: Reports the last lock action as a string. Possible values are: Unlock, Lock, Unlatch, LockNgo, LockNgoUnlatch, FullLock, FobAction1, FobAction2, FobAction3, Unknown.
-- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data.
+- lock/log: If "Publish auth data" is enabled in the web interface, this topic will be filled with the log of authorization data. By default a maximum of 5 logs are published at a time.
 - lock/shortLog: If "Publish auth data" is enabled in the web interface, this topic will be filled with the 3 most recent entries in the log of authorization data, updates faster than lock/log.
+- lock/rollingLog: If "Publish auth data" is enabled in the web interface, this topic will be filled with the last log entry from the authorization data. Logs are published in order.
 - lock/completionStatus: Status of the last action as reported by Nuki Lock: success, motorBlocked, canceled, tooRecent, busy, lowMotorVoltage, clutchFailure, motorPowerFailure, incompleteFailure, invalidCode, otherError, unknown.
 - lock/authorizationId: If enabled in the web interface, this node returns the authorization id of the last lock action.
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action.
@@ -411,7 +413,7 @@ Example:
 
 ### Home Assistant discovery
 
-If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings. These entities will be disabled by default in Home Assistant, but can be found in the MQTT devices section of the Home Assistant UI under the "Configuration" section of the Nuki Lock/Opener and enabled there.
+If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings.
 
 ## Over-the-air Update (OTA)
 
@@ -469,7 +471,8 @@ If a keypad is connected to the lock, keypad codes can be added, updated and rem
 
 Information about current keypad codes is published as JSON data to the "keypad/json" MQTT topic.<br>
 This needs to be enabled separately by checking "Publish keypad codes information" under "Access Level Configuration" and saving the configuration.
-For security reasons, the code itself is not published.
+For security reasons, the code itself is not published, unless this is explicitly enabled in the Nuki Hub settings.
+By default a maximum of 10 entries are published.
 
 To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to a JSON formatted value containing the following nodes.
 
@@ -503,8 +506,9 @@ If a keypad is connected to the lock, keypad codes can be added, updated and rem
 This has to enabled first in the configuration portal. Check "Add, modify and delete keypad codes" under "Access Level Configuration" and save the configuration.
 
 Information about codes is published under "keypad/code_x", x starting from 0 up the number of configured codes. This needs to be enabled separately by checking "Publish keypad codes information" under "Access Level Configuration" and saving the configuration.
+By default a maximum of 10 entries are published.
 
-For security reasons, the code itself is not published. To modify keypad codes, a command
+For security reasons, the code itself is not published, unless this is explicitly enabled in the Nuki Hub settings. To modify keypad codes, a command
 structure is setup under keypad/command:
 
 - keypad/command/id: The id of an existing code, found under keypad_code_x
@@ -537,6 +541,7 @@ Time control entries can be added, updated and removed. This has to enabled firs
 
 Information about current time control entries is published as JSON data to the "timecontrol/json" MQTT topic.<br>
 This needs to be enabled separately by checking "Publish time control entries information" under "Access Level Configuration" and saving the configuration.
+By default a maximum of 10 entries are published.
 
 To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson` topic to a JSON formatted value containing the following nodes.
 
