@@ -702,13 +702,23 @@ void NetworkOpener::publishBleAddress(const std::string &address)
     publishString(mqtt_topic_lock_address, address);
 }
 
-void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, char* lockAction, char* unlockAction, char* openAction)
+void NetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     String availabilityTopic = _preferences->getString("mqttpath");
     availabilityTopic.concat("/maintenance/mqttConnectionState");
 
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), false, lockAction, unlockAction, openAction);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
     _network->publishHASSConfigAdditionalOpenerEntities(deviceType, baseTopic, name, uidString);
+    
+    if(hasKeypad)
+    {
+        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
+        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
+    }
 }
 
 void NetworkOpener::removeHASSConfig(char* uidString)
