@@ -72,7 +72,7 @@ void WebCfgServer::initialize()
         }
         String response = "";
         buildStatusHtml(response);
-        _server.send(200, "text/html", response);
+        _server.send(200, "application/json", response);
     });
     _server.on("/favicon.ico", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
