@@ -68,6 +68,7 @@
 #define mqtt_topic_battery_advanced_json "/battery/advancedJson"
 
 #define mqtt_topic_keypad "/keypad"
+#define mqtt_topic_keypad_codes "/keypad/codes"
 #define mqtt_topic_keypad_command_action "/keypad/command/action"
 #define mqtt_topic_keypad_command_id "/keypad/command/id"
 #define mqtt_topic_keypad_command_name "/keypad/command/name"
@@ -78,6 +79,8 @@
 #define mqtt_topic_keypad_json_action "/keypad/actionJson"
 #define mqtt_topic_keypad_json_command_result "/keypad/commandResultJson"
 
+#define mqtt_topic_timecontrol "/timecontrol"
+#define mqtt_topic_timecontrol_entries "/timecontrol/entries"
 #define mqtt_topic_timecontrol_json "/timecontrol/json"
 #define mqtt_topic_timecontrol_action "/timecontrol/action"
 #define mqtt_topic_timecontrol_command_result "/timecontrol/commandResult"

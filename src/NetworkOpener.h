@@ -34,7 +34,7 @@ public:
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& publishAuthData, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
-    void publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries);
+    void publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries, uint maxTimeControlEntryCount);
     void publishStatusUpdated(const bool statusUpdated);
     void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
@@ -50,17 +50,18 @@ public:
 
     bool reconnected();
     uint8_t queryCommands();
+    char _nukiName[33];
 
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
-    void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
-    void publishInt(const char* topic, const int value);
-    void publishUInt(const char* topic, const unsigned int value);
-    void publishBool(const char* topic, const bool value);
-    void publishString(const char* topic, const String& value);
-    void publishString(const char* topic, const std::string& value);
-    void publishString(const char* topic, const char* value);
+    void publishFloat(const char* topic, const float value, const uint8_t precision = 2, bool retain = false);
+    void publishInt(const char* topic, const int value, bool retain = false);
+    void publishUInt(const char* topic, const unsigned int value, bool retain = false);
+    void publishBool(const char* topic, const bool value, bool retain = false);
+    void publishString(const char* topic, const String& value, bool retain = false);
+    void publishString(const char* topic, const std::string& value, bool retain = false);
+    void publishString(const char* topic, const char* value, bool retain = false);
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
 
     void buildMqttPath(const char* path, char* outPath);

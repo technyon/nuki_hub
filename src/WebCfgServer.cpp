@@ -593,6 +593,16 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "KPPER")
+        {
+            _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "TCPER")
+        {
+            _preferences->putBool(preference_timecontrol_topic_per_entry, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "TCENA")
         {
             _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
@@ -1216,9 +1226,9 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
-    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, false, true);
-    printInputField(response, "CREDPASS", "Password", "*", 30, true, true);
-    printInputField(response, "CREDPASSRE", "Retype password", "*", 30, true);
+    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "", false, true);
+    printInputField(response, "CREDPASS", "Password", "*", 30, "", true, true);
+    printInputField(response, "CREDPASSRE", "Retype password", "*", 30, "", true);
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
@@ -1228,7 +1238,7 @@ void WebCfgServer::buildCredHtml(String &response)
         response.concat("<br><br><form method=\"post\" action=\"savecfg\">");
         response.concat("<h3>Nuki Lock PIN</h3>");
         response.concat("<table>");
-        printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, true);
+        printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, "", true);
         response.concat("</table>");
         response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
         response.concat("</form>");
@@ -1239,7 +1249,7 @@ void WebCfgServer::buildCredHtml(String &response)
         response.concat("<br><br><form method=\"post\" action=\"savecfg\">");
         response.concat("<h3>Nuki Opener PIN</h3>");
         response.concat("<table>");
-        printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, true);
+        printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, "", true);
         response.concat("</table>");
         response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
         response.concat("</form>");
@@ -1254,7 +1264,7 @@ void WebCfgServer::buildCredHtml(String &response)
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
-        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
+        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
         response.concat("</table>");
         response.concat("<br><button type=\"submit\">OK</button></form>");
     }
@@ -1267,7 +1277,7 @@ void WebCfgServer::buildCredHtml(String &response)
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
-        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
+        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
         response.concat("</table>");
         response.concat("<br><button type=\"submit\">OK</button></form>");
     }
@@ -1279,7 +1289,7 @@ void WebCfgServer::buildCredHtml(String &response)
     String message = "Type ";
     message.concat(_confirmCode);
     message.concat(" to confirm factory reset");
-    printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10);
+    printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
     printCheckBox(response, "WIFI", "Also reset WiFi settings", false, "");
     response.concat("</table>");
     response.concat("<br><button type=\"submit\">OK</button></form>");
@@ -1343,17 +1353,17 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("<form method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Basic MQTT and Network Configuration</h3>");
     response.concat("<table>");
-    printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100);
-    printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100);
-    printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5);
-    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, false, true);
-    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, true, true);
+    printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100, "");
+    printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100, "");
+    printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
+    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
+    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
     response.concat("</table><br>");
 
     response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
     response.concat("<table>");
-    printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30);
-    printInputField(response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261);
+    printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
+    printInputField(response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
     if(_nukiOpener != nullptr) printCheckBox(response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
@@ -1361,8 +1371,8 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
     printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled), "");
     printCheckBox(response, "BESTRSSI", "Connect to AP with the best signal in an environment with multiple APs with the same SSID", _preferences->getBool(preference_find_best_rssi), "");
-    printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6);
-    printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5);
+    printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6, "");
+    printInputField(response, "NETTIMEOUT", "Network Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
@@ -1375,10 +1385,10 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     response.concat("<h3>IP Address assignment</h3>");
     response.concat("<table>");
     printCheckBox(response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
-    printInputField(response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15);
-    printInputField(response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15);
-    printInputField(response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15);
-    printInputField(response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15);
+    printInputField(response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15, "");
+    printInputField(response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15, "");
+    printInputField(response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
+    printInputField(response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
     response.concat("</table>");
 
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -1397,18 +1407,20 @@ void WebCfgServer::buildAdvancedConfigHtml(String &response)
     response.concat(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.concat("</td></tr>");
     printCheckBox(response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
-    printInputField(response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6);
-    printInputField(response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6);
-    printInputField(response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6);
-    printInputField(response, "TSKPD", "Task size Presence Detection (min 1024, max 4048)", _preferences->getInt(preference_task_size_pd, PD_TASK_SIZE), 6);
-    printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3);
-    printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3);
-    printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3);
+    printInputField(response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
+    printInputField(response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
+    printInputField(response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
+    printInputField(response, "TSKPD", "Task size Presence Detection (min 1024, max 4048)", _preferences->getInt(preference_task_size_pd, PD_TASK_SIZE), 6, "");
+    printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "inputmaxauthlog");
+    printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
+    printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");
+    response.concat("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
+    response.concat("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
     response.concat("</table>");
 
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
-    response.concat("</body></html>");
+    response.concat("</body><script>window.onload=function(){ document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var charbuf = 0; var networktask = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>32768) { charbuf = 32768; } if(networktask<12288) { networktask = 12288; } else if (networktask>32768) { networktask = 32768; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
 }
 
 void WebCfgServer::buildAccLvlHtml(String &response)
@@ -1426,10 +1438,12 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
         printCheckBox(response, "KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
-        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span style=\"color: #ff0000\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), ""); 
+        printCheckBox(response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
+        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span style=\"color: #ff0000\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
         printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
     printCheckBox(response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
+    printCheckBox(response, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
     printCheckBox(response, "TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
     printCheckBox(response, "PUBAUTH", "Publish authorization log (may reduce battery life)", _preferences->getBool(preference_publish_authdata), "");
     response.concat("</table><br>");
@@ -1590,32 +1604,32 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 
     if(_preferences->getBool(preference_lock_enabled))
     {
-        printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180);
+        printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
     }
 
     printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
 
     if(_preferences->getBool(preference_opener_enabled))
     {
-        printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180);
+        printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180, "");
     }
     response.concat("</table><br>");
 
     response.concat("<h3>Advanced Nuki Configuration</h3>");
     response.concat("<table>");
 
-    printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10);
-    printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10);
-    printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10);
+    printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10, "");
+    printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10, "");
+    printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10, "");
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
-        printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10);
+        printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10, "");
     }
-    printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10);
-    printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10);
+    printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10, "");
+    printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
     printCheckBox(response, "REGAPP", "Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
-    printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10);
-    printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10);
+    printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10, "");
+    printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
@@ -2071,6 +2085,7 @@ void WebCfgServer::printInputField(String& response,
                                    const char *description,
                                    const char *value,
                                    const size_t& maxLength,
+                                   const char *id,
                                    const bool& isPassword,
                                    const bool& showLengthRestriction)
 {
@@ -2090,7 +2105,13 @@ void WebCfgServer::printInputField(String& response,
 
     response.concat("</td><td>");
     response.concat("<input type=");
-    response.concat(isPassword ? "password" : "text");
+    response.concat(isPassword ? "\"password\"" : "\"text\"");
+    if(id)
+    {
+        response.concat(" id=\"");
+        response.concat(id);
+        response.concat("\"");
+    }
     response.concat(" value=\"");
     response.concat(value);
     response.concat("\" name=\"");
@@ -2105,11 +2126,12 @@ void WebCfgServer::printInputField(String& response,
                                    const char *token,
                                    const char *description,
                                    const int value,
-                                   size_t maxLength)
+                                   size_t maxLength,
+                                   const char *id)
 {
     char valueStr[20];
     itoa(value, valueStr, 10);
-    printInputField(response, token, description, valueStr, maxLength);
+    printInputField(response, token, description, valueStr, maxLength, id);
 }
 
 void WebCfgServer::printCheckBox(String &response, const char *token, const char *description, const bool value, const char *htmlClass)

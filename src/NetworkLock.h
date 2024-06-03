@@ -37,7 +37,7 @@ public:
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char* lockAction, char* unlockAction, char* openAction);
     void removeHASSConfig(char* uidString);
     void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
-    void publishTimeControl(const std::list<NukiLock::TimeControlEntry>& timeControlEntries);
+    void publishTimeControl(const std::list<NukiLock::TimeControlEntry>& timeControlEntries, uint maxTimeControlEntryCount);
     void publishStatusUpdated(const bool statusUpdated);
     void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
@@ -53,14 +53,14 @@ public:
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
-    void publishFloat(const char* topic, const float value, const uint8_t precision = 2);
-    void publishInt(const char* topic, const int value);
-    void publishUInt(const char* topic, const unsigned int value);
-    void publishULong(const char* topic, const unsigned long value);
-    void publishBool(const char* topic, const bool value);
-    bool publishString(const char* topic, const String& value);
-    bool publishString(const char* topic, const std::string& value);
-    bool publishString(const char* topic, const char* value);
+    void publishFloat(const char* topic, const float value, const uint8_t precision = 2, bool retain = false);
+    void publishInt(const char* topic, const int value, bool retain = false);
+    void publishUInt(const char* topic, const unsigned int value, bool retain = false);
+    void publishULong(const char* topic, const unsigned long value, bool retain = false);
+    void publishBool(const char* topic, const bool value, bool retain = false);
+    bool publishString(const char* topic, const String& value, bool retain = false);
+    bool publishString(const char* topic, const std::string& value, bool retain = false);
+    bool publishString(const char* topic, const char* value, bool retain = false);
 
     bool reconnected();
     uint8_t queryCommands();
@@ -81,6 +81,7 @@ public:
     uint32_t _offCodeId = 0;
     uint8_t _offContext = 0;
     uint32_t _authId = 0;
+    char _nukiName[33];
     char _authName[33];
     bool _authFound = false;
 

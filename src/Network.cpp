@@ -153,7 +153,7 @@ void Network::setupDevice()
 
 void Network::initialize()
 {
-    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
     _hostname = _preferences->getString(preference_hostname);
@@ -518,8 +518,6 @@ bool Network::reconnect()
             for(const String& topic : _subscribedTopics)
             {
                 _device->mqttSubscribe(topic.c_str(), MQTT_QOS_LEVEL);
-                Log->print(F("Subscribed to: "));
-                Log->println(topic);
             }
             if(_firstConnect)
             {
@@ -701,56 +699,56 @@ const String Network::networkBSSID() const
     return _device->BSSIDstr();
 }
 
-void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision)
+void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision, bool retain)
 {
     char str[30];
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishInt(const char* prefix, const char *topic, const int value)
+void Network::publishInt(const char* prefix, const char *topic, const int value, bool retain)
 {
     char str[30];
     itoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishUInt(const char* prefix, const char *topic, const unsigned int value)
+void Network::publishUInt(const char* prefix, const char *topic, const unsigned int value, bool retain)
 {
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishULong(const char* prefix, const char *topic, const unsigned long value)
+void Network::publishULong(const char* prefix, const char *topic, const unsigned long value, bool retain)
 {
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishBool(const char* prefix, const char *topic, const bool value)
+void Network::publishBool(const char* prefix, const char *topic, const bool value, bool retain)
 {
     char str[2] = {0};
     str[0] = value ? '1' : '0';
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-bool Network::publishString(const char* prefix, const char *topic, const char *value)
+bool Network::publishString(const char* prefix, const char *topic, const char *value, bool retain)
 {
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
+    return _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value) > 0;
 }
 
 void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)

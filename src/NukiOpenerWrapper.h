@@ -128,6 +128,7 @@ private:
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
     uint _maxKeypadCodeCount = 0;
+    uint _maxTimeControlEntryCount = 0;
     bool _configRead = false;
     long _rssiPublishInterval = 0;
     unsigned long _nextLockStateUpdateTs = 0;

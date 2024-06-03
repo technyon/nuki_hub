@@ -96,6 +96,7 @@ private:
     int _restartBeaconTimeout = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
+    bool _taskRunning = false;
     std::vector<uint16_t> _keypadCodeIds;
     std::vector<uint32_t> _keypadCodes;
     std::vector<uint8_t> _timeControlIds;
@@ -118,6 +119,7 @@ private:
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
     uint _maxKeypadCodeCount = 0;
+    uint _maxTimeControlEntryCount = 0;
     bool _configRead = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;

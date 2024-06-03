@@ -57,11 +57,18 @@ void NukiOpenerWrapper::initialize()
     _keypadEnabled = _preferences->getBool(preference_keypad_info_enabled);
     _publishAuthData = _preferences->getBool(preference_publish_authdata);
     _maxKeypadCodeCount = _preferences->getUInt(preference_opener_max_keypad_code_count);
+    _maxTimeControlEntryCount = _preferences->getUInt(preference_opener_max_timecontrol_entry_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
+    
+    if(!_nrOfRetries > -1)
+    {
+        _nrOfRetries = 3;
+        _preferences->putInt(preference_command_nr_of_retries, _nrOfRetries);
+    }
 
     if(_retryDelay <= 100)
     {
@@ -575,10 +582,10 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         }
 
         uint keypadCount = entries.size();
-        if(keypadCount > _maxKeypadCodeCount && !_preferences->getBool(preference_disable_non_json, false))
+        if(keypadCount > _maxKeypadCodeCount)
         {
             _maxKeypadCodeCount = keypadCount;
-            _preferences->putUInt(preference_lock_max_keypad_code_count, _maxKeypadCodeCount);
+            _preferences->putUInt(preference_opener_max_keypad_code_count, _maxKeypadCodeCount);
         }
 
         _network->publishKeypad(entries, _maxKeypadCodeCount);
@@ -625,8 +632,15 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         {
             timeControlEntries.resize(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL));
         }
+        
+        uint timeControlCount = timeControlEntries.size();
+        if(timeControlCount > _maxTimeControlEntryCount)
+        {
+            _maxTimeControlEntryCount = timeControlCount;
+            _preferences->putUInt(preference_opener_max_timecontrol_entry_count, _maxTimeControlEntryCount);
+        }
 
-        _network->publishTimeControl(timeControlEntries);
+        _network->publishTimeControl(timeControlEntries, _maxTimeControlEntryCount);
 
         _timeControlIds.clear();
         _timeControlIds.reserve(timeControlEntries.size());

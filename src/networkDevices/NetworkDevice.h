@@ -31,7 +31,7 @@ public:
 
     virtual bool isConnected() = 0;
     virtual int8_t signalStrength() = 0;
-    
+
     virtual String localIP() = 0;
     virtual String BSSIDstr() = 0;
 
