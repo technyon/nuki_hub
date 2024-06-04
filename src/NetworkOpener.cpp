@@ -409,12 +409,15 @@ void NetworkOpener::publishState(NukiOpener::OpenerState lockState)
                 publishString(mqtt_topic_lock_binary_state, "locked");
                 break;
             case NukiOpener::LockState::RTOactive:
-            case NukiOpener::LockState::Open:
                 publishString(mqtt_topic_lock_ha_state, "unlocked");
                 publishString(mqtt_topic_lock_binary_state, "unlocked");
                 break;
+            case NukiOpener::LockState::Open:
+                publishString(mqtt_topic_lock_ha_state, "open");
+                publishString(mqtt_topic_lock_binary_state, "unlocked");
+                break;
             case NukiOpener::LockState::Opening:
-                publishString(mqtt_topic_lock_ha_state, "unlocking");
+                publishString(mqtt_topic_lock_ha_state, "opening");
                 publishString(mqtt_topic_lock_binary_state, "unlocked");
                 break;
             case NukiOpener::LockState::Undefined:

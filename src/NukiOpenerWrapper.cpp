@@ -63,7 +63,7 @@ void NukiOpenerWrapper::initialize()
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
-    
+
     if(!_nrOfRetries > -1)
     {
         _nrOfRetries = 3;
@@ -124,7 +124,7 @@ void NukiOpenerWrapper::update()
         Log->println(F("Nuki opener start pairing"));
         _network->publishBleAddress("");
 
-        Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
+        Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_opener_as_app) ?
                                            Nuki::AuthorizationIdType::App :
                                            Nuki::AuthorizationIdType::Bridge;
 
@@ -220,7 +220,17 @@ void NukiOpenerWrapper::update()
 
     if(_nextLockAction != (NukiOpener::LockAction)0xff && ts > _nextRetryTs)
     {
+        int loop = 0;
+        while(_taskRunning && loop < 600)
+        {
+            Log->println("Waiting to run Nuki BLE command");
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+            ++loop;
+        }
+
+        _taskRunning = true;
         Nuki::CmdResult cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
+        _taskRunning = false;
 
         char resultStr[15] = {0};
         NukiOpener::cmdResultToString(cmdResult, resultStr);
@@ -297,16 +307,8 @@ void NukiOpenerWrapper::activateCM()
 
 void NukiOpenerWrapper::deactivateRtoCm()
 {
-    if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
-    {
-        _nextLockAction = NukiOpener::LockAction::DeactivateCM;
-        return;
-    }
-
-    if(_keyTurnerState.lockState == NukiOpener::LockState::RTOactive)
-    {
-        _nextLockAction = NukiOpener::LockAction::DeactivateRTO;
-    }
+    if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode) _nextLockAction = NukiOpener::LockAction::DeactivateCM;
+    else if(_keyTurnerState.lockState == NukiOpener::LockState::RTOactive) _nextLockAction = NukiOpener::LockAction::DeactivateRTO;
 }
 
 void NukiOpenerWrapper::deactivateRTO()
@@ -348,8 +350,29 @@ void NukiOpenerWrapper::unpair()
 
 void NukiOpenerWrapper::updateKeyTurnerState()
 {
-    Log->print(F("Querying opener state: "));
-    Nuki::CmdResult result =_nukiOpener.requestOpenerState(&_keyTurnerState);
+    Nuki::CmdResult result;
+    _retryCount = 0;
+
+    while(_retryCount < _nrOfRetries)
+    {
+        int loop = 0;
+        while(_taskRunning && loop < 600)
+        {
+            Log->println("Waiting to run Nuki BLE command");
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+            ++loop;
+        }
+        _taskRunning = true;
+        Log->print(F("Querying opener state: "));
+        result =_nukiOpener.requestOpenerState(&_keyTurnerState);
+        _taskRunning = false;
+        if(!_nukiConfigValid) {
+            ++_retryCount;
+        }
+        else break;
+
+        vTaskDelay( 1000 / portTICK_PERIOD_MS);
+    }
 
     char resultStr[15];
     memset(&resultStr, 0, sizeof(resultStr));
@@ -407,20 +430,42 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     }
 
     postponeBleWatchdog();
-    Log->println(F("Done querying lock state"));
+    Log->println(F("Done querying opener state"));
 }
 
 void NukiOpenerWrapper::updateBatteryState()
 {
-    Log->print(F("Querying opener battery state: "));
-    Nuki::CmdResult result = _nukiOpener.requestBatteryReport(&_batteryReport);
+    Nuki::CmdResult result;
+    _retryCount = 0;
+
+    while(_retryCount < _nrOfRetries)
+    {
+        int loop = 0;
+        while(_taskRunning && loop < 600)
+        {
+            Log->println("Waiting to run Nuki BLE command");
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+            ++loop;
+        }
+        _taskRunning = true;
+        Log->print(F("Querying opener battery state: "));
+        result = _nukiOpener.requestBatteryReport(&_batteryReport);
+        _taskRunning = false;
+        if(!result == Nuki::CmdResult::Success) {
+            ++_retryCount;
+        }
+        else break;
+
+        vTaskDelay( 1000 / portTICK_PERIOD_MS);
+    }
+
     printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
     }
     postponeBleWatchdog();
-    Log->println(F("Done querying lock battery state"));
+    Log->println(F("Done querying opener battery state"));
 }
 
 void NukiOpenerWrapper::updateConfig()
@@ -450,7 +495,28 @@ void NukiOpenerWrapper::updateConfig()
             const int pinStatus = _preferences->getInt(preference_opener_pin_status, 4);
 
             if(isPinSet()) {
-                Nuki::CmdResult result = _nukiOpener.verifySecurityPin();
+                Nuki::CmdResult result;
+                _retryCount = 0;
+
+                while(_retryCount < _nrOfRetries)
+                {
+                    int loop = 0;
+                    while(_taskRunning && loop < 600)
+                    {
+                        Log->println("Waiting to run Nuki BLE command");
+                        vTaskDelay( 50 / portTICK_PERIOD_MS);
+                        ++loop;
+                    }
+                    _taskRunning = true;
+                    result = _nukiOpener.verifySecurityPin();
+                    _taskRunning = false;
+                    if(!result == Nuki::CmdResult::Success) {
+                        ++_retryCount;
+                    }
+                    else break;
+
+                    vTaskDelay( 1000 / portTICK_PERIOD_MS);
+                }
 
                 if(result != Nuki::CmdResult::Success)
                 {
@@ -511,8 +577,30 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
     if(!retrieved)
     {
         delay(250);
-        Nuki::CmdResult result = _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
-        Log->print(F("Retrieve log entries: "));
+        Nuki::CmdResult result;
+        _retryCount = 0;
+
+        while(_retryCount < _nrOfRetries)
+        {
+            int loop = 0;
+            while(_taskRunning && loop < 600)
+            {
+                Log->println("Waiting to run Nuki BLE command");
+                vTaskDelay( 50 / portTICK_PERIOD_MS);
+                ++loop;
+            }
+            _taskRunning = true;
+            Log->print(F("Retrieve log entries: "));
+            result = _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
+            _taskRunning = false;
+            if(!result == Nuki::CmdResult::Success) {
+                ++_retryCount;
+            }
+            else break;
+
+            vTaskDelay( 1000 / portTICK_PERIOD_MS);
+        }
+
         Log->println(result);
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
@@ -532,7 +620,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
 
             if(log.size() > 0)
             {
-                _network->publishAuthorizationInfo(log, true);
+                 _network->publishAuthorizationInfo(log, true);
             }
         }
     }
@@ -553,9 +641,10 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
 
         if(log.size() > 0)
         {
-            _network->publishAuthorizationInfo(log, false);
+             _network->publishAuthorizationInfo(log, false);
         }
     }
+
     postponeBleWatchdog();
 }
 
@@ -563,18 +652,47 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
 {
     if(!_preferences->getBool(preference_keypad_info_enabled)) return;
 
-    Log->print(F("Querying opener keypad: "));
-    Nuki::CmdResult result = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-    printCommandResult(result);
-    if(result == Nuki::CmdResult::Success)
+    if(!retrieved)
     {
-        std::list<NukiLock::KeypadEntry> entries;
+        Nuki::CmdResult result;
+        _retryCount = 0;
+
+        while(_retryCount < _nrOfRetries)
+        {
+            int loop = 0;
+            while(_taskRunning && loop < 600)
+            {
+                Log->println("Waiting to run Nuki BLE command");
+                vTaskDelay( 50 / portTICK_PERIOD_MS);
+                ++loop;
+            }
+            _taskRunning = true;
+            Log->print(F("Querying opener keypad: "));
+            result = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+            _taskRunning = false;
+            if(!result == Nuki::CmdResult::Success) {
+                ++_retryCount;
+            }
+            else break;
+
+            vTaskDelay( 1000 / portTICK_PERIOD_MS);
+        }
+
+        printCommandResult(result);
+        if(result == Nuki::CmdResult::Success)
+        {
+            _waitKeypadUpdateTs = millis() + 5000;
+        }
+    }
+    else
+    {
+        std::list<NukiOpener::KeypadEntry> entries;
         _nukiOpener.getKeypadEntries(&entries);
 
-        Log->print(F("Opener keypad codes: "));
+        Log->print(F("Lock keypad codes: "));
         Log->println(entries.size());
 
-        entries.sort([](const NukiLock::KeypadEntry& a, const NukiLock::KeypadEntry& b) { return a.codeId < b.codeId; });
+        entries.sort([](const NukiOpener::KeypadEntry& a, const NukiOpener::KeypadEntry& b) { return a.codeId < b.codeId; });
 
         if(entries.size() > _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD))
         {
@@ -592,12 +710,9 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
 
         _keypadCodeIds.clear();
         _keypadCodeIds.reserve(entries.size());
-        _keypadCodes.clear();
-        _keypadCodes.reserve(entries.size());
         for(const auto& entry : entries)
         {
             _keypadCodeIds.push_back(entry.codeId);
-            _keypadCodes.push_back(entry.code);
         }
     }
 
@@ -610,8 +725,30 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
 
     if(!retrieved)
     {
-        Log->print(F("Querying opener time control: "));
-        Nuki::CmdResult result = _nukiOpener.retrieveTimeControlEntries();
+        Nuki::CmdResult result;
+        _retryCount = 0;
+
+        while(_retryCount < _nrOfRetries)
+        {
+            int loop = 0;
+            while(_taskRunning && loop < 600)
+            {
+                Log->println("Waiting to run Nuki BLE command");
+                vTaskDelay( 50 / portTICK_PERIOD_MS);
+                ++loop;
+            }
+            _taskRunning = true;
+            Log->print(F("Querying opener time control: "));
+            result = _nukiOpener.retrieveTimeControlEntries();
+            _taskRunning = false;
+            if(!result == Nuki::CmdResult::Success) {
+                ++_retryCount;
+            }
+            else break;
+
+            vTaskDelay( 1000 / portTICK_PERIOD_MS);
+        }
+
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
@@ -632,7 +769,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         {
             timeControlEntries.resize(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL));
         }
-        
+
         uint timeControlCount = timeControlEntries.size();
         if(timeControlCount > _maxTimeControlEntryCount)
         {
@@ -680,11 +817,7 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
         if(strlen(value) > 0)
         {
             action = nukiOpenerInst->lockActionToEnum(value);
-
-            if((int)action == 0xff)
-            {
-                return LockActionResult::UnknownAction;
-            }
+            if((int)action == 0xff) return LockActionResult::UnknownAction;
         }
         else return LockActionResult::UnknownAction;
     }
@@ -908,158 +1041,177 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
             if((int)basicOpenerConfigAclPrefs[i] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
+                _retryCount = 0;
 
-                if(strcmp(basicKeys[i], "name") == 0)
+                while(_retryCount < _nrOfRetries)
                 {
-                    if(strlen(jsonchar) <= 32)
+                    int loop = 0;
+                    while(_taskRunning && loop < 600)
                     {
-                        if(strcmp((const char*)_nukiConfig.name, jsonchar) == 0) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setName(std::string(jsonchar));
+                        Log->println("Waiting to run Nuki BLE command");
+                        vTaskDelay( 50 / portTICK_PERIOD_MS);
+                        ++loop;
                     }
-                    else jsonResult[basicKeys[i]] = "valueTooLong";
-                }
-                else if(strcmp(basicKeys[i], "latitude") == 0)
-                {
-                    const float keyvalue = atof(jsonchar);
 
-                    if(keyvalue > 0)
+                    if(strcmp(basicKeys[i], "name") == 0)
                     {
-                        if(_nukiConfig.latitude == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setLatitude(keyvalue);
+                        if(strlen(jsonchar) <= 32)
+                        {
+                            if(strcmp((const char*)_nukiConfig.name, jsonchar) == 0) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setName(std::string(jsonchar));
+                        }
+                        else jsonResult[basicKeys[i]] = "valueTooLong";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "longitude") == 0)
-                {
-                    const float keyvalue = atof(jsonchar);
+                    else if(strcmp(basicKeys[i], "latitude") == 0)
+                    {
+                        const float keyvalue = atof(jsonchar);
 
-                    if(keyvalue > 0)
-                    {
-                        if(_nukiConfig.longitude == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setLongitude(keyvalue);
+                        if(keyvalue > 0)
+                        {
+                            if(_nukiConfig.latitude == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setLatitude(keyvalue);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "pairingEnabled") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(basicKeys[i], "longitude") == 0)
+                    {
+                        const float keyvalue = atof(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiConfig.pairingEnabled == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.enablePairing((keyvalue > 0));
+                        if(keyvalue > 0)
+                        {
+                            if(_nukiConfig.longitude == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setLongitude(keyvalue);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "buttonEnabled") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(basicKeys[i], "pairingEnabled") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiConfig.buttonEnabled == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.enableButton((keyvalue > 0));
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiConfig.pairingEnabled == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.enablePairing((keyvalue > 0));
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "ledFlashEnabled") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(basicKeys[i], "buttonEnabled") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiConfig.ledFlashEnabled == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.enableLedFlash((keyvalue > 0));
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiConfig.buttonEnabled == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.enableButton((keyvalue > 0));
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "timeZoneOffset") == 0)
-                {
-                    const int16_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(basicKeys[i], "ledFlashEnabled") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue >= 0 && keyvalue <= 60)
-                    {
-                        if(_nukiConfig.timeZoneOffset == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setTimeZoneOffset(keyvalue);
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiConfig.ledFlashEnabled == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.enableLedFlash((keyvalue > 0));
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "dstMode") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(basicKeys[i], "timeZoneOffset") == 0)
+                    {
+                        const int16_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiConfig.dstMode == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.enableDst((keyvalue > 0));
+                        if(keyvalue >= 0 && keyvalue <= 60)
+                        {
+                            if(_nukiConfig.timeZoneOffset == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setTimeZoneOffset(keyvalue);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "fobAction1") == 0)
-                {
-                    const uint8_t fobAct1 = nukiOpenerInst->fobActionToInt(jsonchar);
+                    else if(strcmp(basicKeys[i], "dstMode") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(fobAct1 != 99)
-                    {
-                        if(_nukiConfig.fobAction1 == fobAct1) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setFobAction(1, fobAct1);
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiConfig.dstMode == keyvalue) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.enableDst((keyvalue > 0));
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "fobAction2") == 0)
-                {
-                    const uint8_t fobAct2 = nukiOpenerInst->fobActionToInt(jsonchar);
+                    else if(strcmp(basicKeys[i], "fobAction1") == 0)
+                    {
+                        const uint8_t fobAct1 = nukiOpenerInst->fobActionToInt(jsonchar);
 
-                    if(fobAct2 != 99)
-                    {
-                        if(_nukiConfig.fobAction2 == fobAct2) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setFobAction(2, fobAct2);
+                        if(fobAct1 != 99)
+                        {
+                            if(_nukiConfig.fobAction1 == fobAct1) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setFobAction(1, fobAct1);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "fobAction3") == 0)
-                {
-                    const uint8_t fobAct3 = nukiOpenerInst->fobActionToInt(jsonchar);
+                    else if(strcmp(basicKeys[i], "fobAction2") == 0)
+                    {
+                        const uint8_t fobAct2 = nukiOpenerInst->fobActionToInt(jsonchar);
 
-                    if(fobAct3 != 99)
-                    {
-                        if(_nukiConfig.fobAction3 == fobAct3) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setFobAction(3, fobAct3);
+                        if(fobAct2 != 99)
+                        {
+                            if(_nukiConfig.fobAction2 == fobAct2) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setFobAction(2, fobAct2);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "operatingMode") == 0)
-                {
-                    const uint8_t opmode = nukiOpenerInst->operatingModeToInt(jsonchar);
+                    else if(strcmp(basicKeys[i], "fobAction3") == 0)
+                    {
+                        const uint8_t fobAct3 = nukiOpenerInst->fobActionToInt(jsonchar);
 
-                    if(opmode != 99)
-                    {
-                        if(_nukiConfig.operatingMode == opmode) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setOperatingMode(opmode);
+                        if(fobAct3 != 99)
+                        {
+                            if(_nukiConfig.fobAction3 == fobAct3) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setFobAction(3, fobAct3);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "advertisingMode") == 0)
-                {
-                    Nuki::AdvertisingMode advmode = nukiOpenerInst->advertisingModeToEnum(jsonchar);
+                    else if(strcmp(basicKeys[i], "operatingMode") == 0)
+                    {
+                        const uint8_t opmode = nukiOpenerInst->operatingModeToInt(jsonchar);
 
-                    if(!(int)advmode == 0xff)
-                    {
-                        if(_nukiConfig.advertisingMode == advmode) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setAdvertisingMode(advmode);
+                        if(opmode != 99)
+                        {
+                            if(_nukiConfig.operatingMode == opmode) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setOperatingMode(opmode);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
-                }
-                else if(strcmp(basicKeys[i], "timeZone") == 0)
-                {
-                    Nuki::TimeZoneId tzid = nukiOpenerInst->timeZoneToEnum(jsonchar);
+                    else if(strcmp(basicKeys[i], "advertisingMode") == 0)
+                    {
+                        Nuki::AdvertisingMode advmode = nukiOpenerInst->advertisingModeToEnum(jsonchar);
 
-                    if(!(int)tzid == 0xff)
-                    {
-                        if(_nukiConfig.timeZoneId == tzid) jsonResult[basicKeys[i]] = "unchanged";
-                        else cmdResult = _nukiOpener.setTimeZoneId(tzid);
+                        if(!(int)advmode == 0xff)
+                        {
+                            if(_nukiConfig.advertisingMode == advmode) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setAdvertisingMode(advmode);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
                     }
-                    else jsonResult[basicKeys[i]] = "invalidValue";
+                    else if(strcmp(basicKeys[i], "timeZone") == 0)
+                    {
+                        Nuki::TimeZoneId tzid = nukiOpenerInst->timeZoneToEnum(jsonchar);
+
+                        if(!(int)tzid == 0xff)
+                        {
+                            if(_nukiConfig.timeZoneId == tzid) jsonResult[basicKeys[i]] = "unchanged";
+                            else cmdResult = _nukiOpener.setTimeZoneId(tzid);
+                        }
+                        else jsonResult[basicKeys[i]] = "invalidValue";
+                    }
+
+                    if(!cmdResult == Nuki::CmdResult::Success) {
+                        ++_retryCount;
+                    }
+                    else break;
+
+                    vTaskDelay( 1000 / portTICK_PERIOD_MS);
                 }
 
                 if(cmdResult == Nuki::CmdResult::Success) basicUpdated = true;
@@ -1089,226 +1241,245 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
             if((int)advancedOpenerConfigAclPrefs[j] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
+                _retryCount = 0;
 
-                if(strcmp(advancedKeys[j], "intercomID") == 0)
+                while(_retryCount < _nrOfRetries)
                 {
-                    const uint16_t keyvalue = atoi(jsonchar);
-
-                    if(keyvalue >= 0)
+                    int loop = 0;
+                    while(_taskRunning && loop < 600)
                     {
-                        if(_nukiAdvancedConfig.intercomID == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setIntercomID(keyvalue);
+                        Log->println("Waiting to run Nuki BLE command");
+                        vTaskDelay( 50 / portTICK_PERIOD_MS);
+                        ++loop;
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "busModeSwitch") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
+                    if(strcmp(advancedKeys[j], "intercomID") == 0)
                     {
-                        if(_nukiAdvancedConfig.busModeSwitch == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setBusModeSwitch((keyvalue > 0));
-                    }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "shortCircuitDuration") == 0)
-                {
-                    const uint16_t keyvalue = atoi(jsonchar);
+                        const uint16_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue >= 0)
-                    {
-                        if(_nukiAdvancedConfig.shortCircuitDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setShortCircuitDuration(keyvalue);
+                        if(keyvalue >= 0)
+                        {
+                            if(_nukiAdvancedConfig.intercomID == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setIntercomID(keyvalue);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "electricStrikeDelay") == 0)
-                {
-                    const uint16_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "busModeSwitch") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue >= 0 && keyvalue <= 30000)
-                    {
-                        if(_nukiAdvancedConfig.electricStrikeDelay == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setElectricStrikeDelay(keyvalue);
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiAdvancedConfig.busModeSwitch == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setBusModeSwitch((keyvalue > 0));
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "randomElectricStrikeDelay") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "shortCircuitDuration") == 0)
+                    {
+                        const uint16_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiAdvancedConfig.randomElectricStrikeDelay == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.enableRandomElectricStrikeDelay((keyvalue > 0));
+                        if(keyvalue >= 0)
+                        {
+                            if(_nukiAdvancedConfig.shortCircuitDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setShortCircuitDuration(keyvalue);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "electricStrikeDuration") == 0)
-                {
-                    const uint16_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "electricStrikeDelay") == 0)
+                    {
+                        const uint16_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue >= 1000 && keyvalue <= 30000)
-                    {
-                        if(_nukiAdvancedConfig.electricStrikeDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setElectricStrikeDuration(keyvalue);
+                        if(keyvalue >= 0 && keyvalue <= 30000)
+                        {
+                            if(_nukiAdvancedConfig.electricStrikeDelay == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setElectricStrikeDelay(keyvalue);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "disableRtoAfterRing") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "randomElectricStrikeDelay") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiAdvancedConfig.disableRtoAfterRing == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.disableRtoAfterRing((keyvalue > 0));
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiAdvancedConfig.randomElectricStrikeDelay == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.enableRandomElectricStrikeDelay((keyvalue > 0));
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "rtoTimeout") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "electricStrikeDuration") == 0)
+                    {
+                        const uint16_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue >= 5 && keyvalue <= 60)
-                    {
-                        if(_nukiAdvancedConfig.rtoTimeout == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setRtoTimeout(keyvalue);
+                        if(keyvalue >= 1000 && keyvalue <= 30000)
+                        {
+                            if(_nukiAdvancedConfig.electricStrikeDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setElectricStrikeDuration(keyvalue);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "doorbellSuppression") == 0)
-                {
-                    const uint8_t dbsupr = nukiOpenerInst->doorbellSuppressionToInt(jsonchar);
+                    else if(strcmp(advancedKeys[j], "disableRtoAfterRing") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(dbsupr != 99)
-                    {
-                        if(_nukiAdvancedConfig.doorbellSuppression == dbsupr) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setDoorbellSuppression(dbsupr);
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiAdvancedConfig.disableRtoAfterRing == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.disableRtoAfterRing((keyvalue > 0));
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "doorbellSuppressionDuration") == 0)
-                {
-                    const uint16_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "rtoTimeout") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(keyvalue >= 500 && keyvalue <= 10000)
-                    {
-                        if(_nukiAdvancedConfig.doorbellSuppressionDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setDoorbellSuppressionDuration(keyvalue);
+                        if(keyvalue >= 5 && keyvalue <= 60)
+                        {
+                            if(_nukiAdvancedConfig.rtoTimeout == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setRtoTimeout(keyvalue);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "soundRing") == 0)
-                {
-                    const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
+                    else if(strcmp(advancedKeys[j], "doorbellSuppression") == 0)
+                    {
+                        const uint8_t dbsupr = nukiOpenerInst->doorbellSuppressionToInt(jsonchar);
 
-                    if(sound != 99)
-                    {
-                        if(_nukiAdvancedConfig.soundRing == sound) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setSoundRing(sound);
+                        if(dbsupr != 99)
+                        {
+                            if(_nukiAdvancedConfig.doorbellSuppression == dbsupr) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setDoorbellSuppression(dbsupr);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "soundOpen") == 0)
-                {
-                    const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
+                    else if(strcmp(advancedKeys[j], "doorbellSuppressionDuration") == 0)
+                    {
+                        const uint16_t keyvalue = atoi(jsonchar);
 
-                    if(sound != 99)
-                    {
-                        if(_nukiAdvancedConfig.soundOpen == sound) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setSoundOpen(sound);
+                        if(keyvalue >= 500 && keyvalue <= 10000)
+                        {
+                            if(_nukiAdvancedConfig.doorbellSuppressionDuration == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setDoorbellSuppressionDuration(keyvalue);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "soundRto") == 0)
-                {
-                    const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
+                    else if(strcmp(advancedKeys[j], "soundRing") == 0)
+                    {
+                        const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
-                    if(sound != 99)
-                    {
-                        if(_nukiAdvancedConfig.soundRto == sound) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setSoundRto(sound);
+                        if(sound != 99)
+                        {
+                            if(_nukiAdvancedConfig.soundRing == sound) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setSoundRing(sound);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "soundCm") == 0)
-                {
-                    const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
+                    else if(strcmp(advancedKeys[j], "soundOpen") == 0)
+                    {
+                        const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
-                    if(sound != 99)
-                    {
-                        if(_nukiAdvancedConfig.soundCm == sound) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setSoundCm(sound);
+                        if(sound != 99)
+                        {
+                            if(_nukiAdvancedConfig.soundOpen == sound) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setSoundOpen(sound);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "soundConfirmation") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "soundRto") == 0)
+                    {
+                        const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiAdvancedConfig.soundConfirmation == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.enableSoundConfirmation((keyvalue > 0));
+                        if(sound != 99)
+                        {
+                            if(_nukiAdvancedConfig.soundRto == sound) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setSoundRto(sound);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "soundLevel") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "soundCm") == 0)
+                    {
+                        const uint8_t sound = nukiOpenerInst->soundToInt(jsonchar);
 
-                    if(keyvalue >= 0 && keyvalue <= 255)
-                    {
-                        if(_nukiAdvancedConfig.soundLevel == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setSoundLevel(keyvalue);
+                        if(sound != 99)
+                        {
+                            if(_nukiAdvancedConfig.soundCm == sound) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setSoundCm(sound);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "singleButtonPressAction") == 0)
-                {
-                    NukiOpener::ButtonPressAction sbpa = nukiOpenerInst->buttonPressActionToEnum(jsonchar);
+                    else if(strcmp(advancedKeys[j], "soundConfirmation") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(!(int)sbpa == 0xff)
-                    {
-                        if(_nukiAdvancedConfig.singleButtonPressAction == sbpa) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setSingleButtonPressAction(sbpa);
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiAdvancedConfig.soundConfirmation == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.enableSoundConfirmation((keyvalue > 0));
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "doubleButtonPressAction") == 0)
-                {
-                    NukiOpener::ButtonPressAction dbpa = nukiOpenerInst->buttonPressActionToEnum(jsonchar);
+                    else if(strcmp(advancedKeys[j], "soundLevel") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
 
-                    if(!(int)dbpa == 0xff)
-                    {
-                        if(_nukiAdvancedConfig.doubleButtonPressAction == dbpa) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setDoubleButtonPressAction(dbpa);
+                        if(keyvalue >= 0 && keyvalue <= 255)
+                        {
+                            if(_nukiAdvancedConfig.soundLevel == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setSoundLevel(keyvalue);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "batteryType") == 0)
-                {
-                    Nuki::BatteryType battype = nukiOpenerInst->batteryTypeToEnum(jsonchar);
+                    else if(strcmp(advancedKeys[j], "singleButtonPressAction") == 0)
+                    {
+                        NukiOpener::ButtonPressAction sbpa = nukiOpenerInst->buttonPressActionToEnum(jsonchar);
 
-                    if(!(int)battype == 0xff)
-                    {
-                        if(_nukiAdvancedConfig.batteryType == battype) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.setBatteryType(battype);
+                        if(!(int)sbpa == 0xff)
+                        {
+                            if(_nukiAdvancedConfig.singleButtonPressAction == sbpa) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setSingleButtonPressAction(sbpa);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
-                }
-                else if(strcmp(advancedKeys[j], "automaticBatteryTypeDetection") == 0)
-                {
-                    const uint8_t keyvalue = atoi(jsonchar);
+                    else if(strcmp(advancedKeys[j], "doubleButtonPressAction") == 0)
+                    {
+                        NukiOpener::ButtonPressAction dbpa = nukiOpenerInst->buttonPressActionToEnum(jsonchar);
 
-                    if(keyvalue == 0 || keyvalue == 1)
-                    {
-                        if(_nukiAdvancedConfig.automaticBatteryTypeDetection == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
-                        else cmdResult = _nukiOpener.enableAutoBatteryTypeDetection((keyvalue > 0));
+                        if(!(int)dbpa == 0xff)
+                        {
+                            if(_nukiAdvancedConfig.doubleButtonPressAction == dbpa) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setDoubleButtonPressAction(dbpa);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
-                    else jsonResult[advancedKeys[j]] = "invalidValue";
+                    else if(strcmp(advancedKeys[j], "batteryType") == 0)
+                    {
+                        Nuki::BatteryType battype = nukiOpenerInst->batteryTypeToEnum(jsonchar);
+
+                        if(!(int)battype == 0xff)
+                        {
+                            if(_nukiAdvancedConfig.batteryType == battype) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.setBatteryType(battype);
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
+                    }
+                    else if(strcmp(advancedKeys[j], "automaticBatteryTypeDetection") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
+
+                        if(keyvalue == 0 || keyvalue == 1)
+                        {
+                            if(_nukiAdvancedConfig.automaticBatteryTypeDetection == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
+                            else cmdResult = _nukiOpener.enableAutoBatteryTypeDetection((keyvalue > 0));
+                        }
+                        else jsonResult[advancedKeys[j]] = "invalidValue";
+                    }
+
+                    if(!cmdResult == Nuki::CmdResult::Success) {
+                        ++_retryCount;
+                    }
+                    else break;
+
+                    vTaskDelay( 1000 / portTICK_PERIOD_MS);
                 }
 
                 if(cmdResult == Nuki::CmdResult::Success) advancedUpdated = true;
@@ -1397,88 +1568,114 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
     bool idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), id) != _keypadCodeIds.end();
     int codeInt = code.toInt();
     bool codeValid = codeInt > 100000 && codeInt < 1000000 && (code.indexOf('0') == -1);
-    NukiLock::CmdResult result = (NukiLock::CmdResult)-1;
+    Nuki::CmdResult result = (Nuki::CmdResult)-1;
+    _retryCount = 0;
 
-    if(strcmp(command, "add") == 0)
+    while(_retryCount < _nrOfRetries)
     {
-        if(name == "" || name == "--")
+        int loop = 0;
+        while(_taskRunning && loop < 600)
         {
-            _network->publishKeypadCommandResult("MissingParameterName");
-            return;
-        }
-        if(codeInt == 0)
-        {
-            _network->publishKeypadCommandResult("MissingParameterCode");
-            return;
-        }
-        if(!codeValid)
-        {
-            _network->publishKeypadCommandResult("CodeInvalid");
-            return;
+            Log->println("Waiting to run Nuki BLE command");
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+            ++loop;
         }
 
-        NukiLock::NewKeypadEntry entry;
-        memset(&entry, 0, sizeof(entry));
-        size_t nameLen = name.length();
-        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
-        entry.code = codeInt;
-        result = _nukiOpener.addKeypadEntry(entry);
-        Log->print("Add keypad code: "); Log->println((int)result);
-        updateKeypad(false);
-    }
-    else if(strcmp(command, "delete") == 0)
-    {
-        if(!idExists)
+        if(strcmp(command, "add") == 0)
         {
-            _network->publishKeypadCommandResult("UnknownId");
+            if(name == "" || name == "--")
+            {
+                _network->publishKeypadCommandResult("MissingParameterName");
+                return;
+            }
+            if(codeInt == 0)
+            {
+                _network->publishKeypadCommandResult("MissingParameterCode");
+                return;
+            }
+            if(!codeValid)
+            {
+                _network->publishKeypadCommandResult("CodeInvalid");
+                return;
+            }
+
+            NukiOpener::NewKeypadEntry entry;
+            memset(&entry, 0, sizeof(entry));
+            size_t nameLen = name.length();
+            memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+            entry.code = codeInt;
+            _taskRunning = true;
+            result = _nukiOpener.addKeypadEntry(entry);
+            _taskRunning = false;
+            Log->print("Add keypad code: "); Log->println((int)result);
+            updateKeypad(false);
+        }
+        else if(strcmp(command, "delete") == 0)
+        {
+            if(!idExists)
+            {
+                _network->publishKeypadCommandResult("UnknownId");
+                return;
+            }
+
+            _taskRunning = true;
+            result = _nukiOpener.deleteKeypadEntry(id);
+            _taskRunning = false;
+            Log->print("Delete keypad code: "); Log->println((int)result);
+            updateKeypad(false);
+        }
+        else if(strcmp(command, "update") == 0)
+        {
+            if(name == "" || name == "--")
+            {
+                _network->publishKeypadCommandResult("MissingParameterName");
+                return;
+            }
+            if(codeInt == 0)
+            {
+                _network->publishKeypadCommandResult("MissingParameterCode");
+                return;
+            }
+            if(!codeValid)
+            {
+                _network->publishKeypadCommandResult("CodeInvalid");
+                return;
+            }
+            if(!idExists)
+            {
+                _network->publishKeypadCommandResult("UnknownId");
+                return;
+            }
+
+            NukiOpener::UpdatedKeypadEntry entry;
+            memset(&entry, 0, sizeof(entry));
+            entry.codeId = id;
+            size_t nameLen = name.length();
+            memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+            entry.code = codeInt;
+            entry.enabled = enabled == 0 ? 0 : 1;
+            _taskRunning = true;
+            result = _nukiOpener.updateKeypadEntry(entry);
+            _taskRunning = false;
+            Log->print("Update keypad code: "); Log->println((int)result);
+            updateKeypad(false);
+        }
+        else if(command == "--")
+        {
             return;
         }
-        result = _nukiOpener.deleteKeypadEntry(id);
-        Log->print("Delete keypad code: "); Log->println((int)result);
-        updateKeypad(false);
-    }
-    else if(strcmp(command, "update") == 0)
-    {
-        if(name == "" || name == "--")
+        else
         {
-            _network->publishKeypadCommandResult("MissingParameterName");
-            return;
-        }
-        if(codeInt == 0)
-        {
-            _network->publishKeypadCommandResult("MissingParameterCode");
-            return;
-        }
-        if(!codeValid)
-        {
-            _network->publishKeypadCommandResult("CodeInvalid");
-            return;
-        }
-        if(!idExists)
-        {
-            _network->publishKeypadCommandResult("UnknownId");
+            _network->publishKeypadCommandResult("UnknownCommand");
             return;
         }
 
-        NukiLock::UpdatedKeypadEntry entry;
-        memset(&entry, 0, sizeof(entry));
-        entry.codeId = id;
-        size_t nameLen = name.length();
-        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
-        entry.code = codeInt;
-        entry.enabled = enabled == 0 ? 0 : 1;
-        result = _nukiOpener.updateKeypadEntry(entry);
-        Log->print("Update keypad code: "); Log->println((int)result);
-        updateKeypad(false);
-    }
-    else if(command == "--")
-    {
-        return;
-    }
-    else
-    {
-        _network->publishKeypadCommandResult("UnknownCommand");
-        return;
+        if(!result == Nuki::CmdResult::Success) {
+            ++_retryCount;
+        }
+        else break;
+
+        vTaskDelay( 1000 / portTICK_PERIOD_MS);
     }
 
     if((int)result != -1)
@@ -1531,20 +1728,34 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
         return;
     }
 
-    Nuki::CmdResult result = (Nuki::CmdResult)-1;
-
+    char oldName[21];
     const char *action = json["action"].as<const char*>();
     uint16_t codeId = json["codeId"].as<unsigned int>();
-    uint32_t code = json["code"].as<unsigned int>();
-    String codeStr = json["code"].as<String>();
-    const char *name = json["name"].as<const char*>();
-    uint8_t enabled = json["enabled"].as<unsigned int>();
-    uint8_t timeLimited = json["timeLimited"].as<unsigned int>();
-    const char *allowedFrom = json["allowedFrom"].as<const char*>();
-    const char *allowedUntil = json["allowedUntil"].as<const char*>();
-    String allowedWeekdays = json["allowedWeekdays"].as<String>();
-    const char *allowedFromTime = json["allowedFromTime"].as<const char*>();
-    const char *allowedUntilTime = json["allowedUntilTime"].as<const char*>();
+    uint32_t code;
+    uint8_t enabled;
+    uint8_t timeLimited;
+    String name;
+    String allowedFrom;
+    String allowedUntil;
+    String allowedWeekdays;
+    String allowedFromTime;
+    String allowedUntilTime;
+
+    if(json.containsKey("code")) code = json["code"].as<unsigned int>();
+    else code = 12;
+
+    if(json.containsKey("enabled")) enabled = json["enabled"].as<unsigned int>();
+    else enabled = 2;
+
+    if(json.containsKey("timeLimited")) timeLimited = json["timeLimited"].as<unsigned int>();
+    else timeLimited = 2;
+
+    if(json.containsKey("name")) name = json["name"].as<String>();
+    if(json.containsKey("allowedFrom")) allowedFrom = json["allowedFrom"].as<String>();
+    if(json.containsKey("allowedUntil")) allowedUntil = json["allowedUntil"].as<String>();
+    if(json.containsKey("allowedWeekdays")) allowedWeekdays = json["allowedWeekdays"].as<String>();
+    if(json.containsKey("allowedFromTime")) allowedFromTime = json["allowedFromTime"].as<String>();
+    if(json.containsKey("allowedUntilTime")) allowedUntilTime = json["allowedUntilTime"].as<String>();
 
     if(action)
     {
@@ -1555,272 +1766,387 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId) != _keypadCodeIds.end();
         }
 
-        if(strcmp(action, "delete") == 0) {
-            if(idExists)
-            {
-                result = _nukiOpener.deleteKeypadEntry(codeId);
-                Log->print(F("Delete keypad code: "));
-                Log->println((int)result);
-            }
-            else
-            {
-                _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
-                return;
-            }
-        }
-        else if(strcmp(action, "add") == 0 || strcmp(action, "update") == 0)
+        Nuki::CmdResult result = (Nuki::CmdResult)-1;
+        _retryCount = 0;
+
+        while(_retryCount < _nrOfRetries)
         {
-            if(!name)
+            int loop = 0;
+            while(_taskRunning && loop < 600)
             {
-                _network->publishKeypadJsonCommandResult("noNameSet");
-                return;
+                Log->println("Waiting to run Nuki BLE command");
+                vTaskDelay( 50 / portTICK_PERIOD_MS);
+                ++loop;
             }
 
-            if(code)
-            {
-                bool codeValid = code > 100000 && code < 1000000 && (codeStr.indexOf('0') == -1);
-
-                if (!codeValid)
+            if(strcmp(action, "delete") == 0) {
+                if(idExists)
                 {
-                    _network->publishKeypadJsonCommandResult("noValidCodeSet");
+                    _taskRunning = true;
+                    result = _nukiOpener.deleteKeypadEntry(codeId);
+                    _taskRunning = false;
+                    Log->print(F("Delete keypad code: "));
+                    Log->println((int)result);
+                }
+                else
+                {
+                    _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
                     return;
                 }
             }
-            else if (strcmp(action, "update") != 0)
+            else if(strcmp(action, "add") == 0 || strcmp(action, "update") == 0)
             {
-                _network->publishKeypadJsonCommandResult("noCodeSet");
-                return;
-            }
-
-            unsigned int allowedFromAr[6];
-            unsigned int allowedUntilAr[6];
-            unsigned int allowedFromTimeAr[2];
-            unsigned int allowedUntilTimeAr[2];
-            uint8_t allowedWeekdaysInt = 0;
-
-            if(timeLimited == 1)
-            {
-                if(allowedFrom)
+                if(!name.length() > 0)
                 {
-                    if(strlen(allowedFrom) == 19)
+                    if (strcmp(action, "update") != 0)
                     {
-                        String allowedFromStr = allowedFrom;
-                        allowedFromAr[0] = (uint16_t)allowedFromStr.substring(0, 4).toInt();
-                        allowedFromAr[1] = (uint8_t)allowedFromStr.substring(5, 7).toInt();
-                        allowedFromAr[2] = (uint8_t)allowedFromStr.substring(8, 10).toInt();
-                        allowedFromAr[3] = (uint8_t)allowedFromStr.substring(11, 13).toInt();
-                        allowedFromAr[4] = (uint8_t)allowedFromStr.substring(14, 16).toInt();
-                        allowedFromAr[5] = (uint8_t)allowedFromStr.substring(17, 19).toInt();
+                        _network->publishKeypadJsonCommandResult("noNameSet");
+                        return;
+                    }
+                }
 
-                        if(allowedFromAr[0] < 2000 || allowedFromAr[0] > 3000 || allowedFromAr[1] < 1 || allowedFromAr[1] > 12 || allowedFromAr[2] < 1 || allowedFromAr[2] > 31 || allowedFromAr[3] < 0 || allowedFromAr[3] > 23 || allowedFromAr[4] < 0 || allowedFromAr[4] > 59 || allowedFromAr[5] < 0 || allowedFromAr[5] > 59)
+                if(!code == 12)
+                {
+                    String codeStr = json["code"].as<String>();
+                    bool codeValid = code > 100000 && code < 1000000 && (codeStr.indexOf('0') == -1);
+
+                    if (!codeValid)
+                    {
+                        _network->publishKeypadJsonCommandResult("noValidCodeSet");
+                        return;
+                    }
+                }
+                else if (strcmp(action, "update") != 0)
+                {
+                    _network->publishKeypadJsonCommandResult("noCodeSet");
+                    return;
+                }
+
+                unsigned int allowedFromAr[6];
+                unsigned int allowedUntilAr[6];
+                unsigned int allowedFromTimeAr[2];
+                unsigned int allowedUntilTimeAr[2];
+                uint8_t allowedWeekdaysInt = 0;
+
+                if(timeLimited == 1)
+                {
+                    if(allowedFrom.length() > 0)
+                    {
+                        if(allowedFrom.length() == 19)
+                        {
+                            allowedFromAr[0] = (uint16_t)allowedFrom.substring(0, 4).toInt();
+                            allowedFromAr[1] = (uint8_t)allowedFrom.substring(5, 7).toInt();
+                            allowedFromAr[2] = (uint8_t)allowedFrom.substring(8, 10).toInt();
+                            allowedFromAr[3] = (uint8_t)allowedFrom.substring(11, 13).toInt();
+                            allowedFromAr[4] = (uint8_t)allowedFrom.substring(14, 16).toInt();
+                            allowedFromAr[5] = (uint8_t)allowedFrom.substring(17, 19).toInt();
+
+                            if(allowedFromAr[0] < 2000 || allowedFromAr[0] > 3000 || allowedFromAr[1] < 1 || allowedFromAr[1] > 12 || allowedFromAr[2] < 1 || allowedFromAr[2] > 31 || allowedFromAr[3] < 0 || allowedFromAr[3] > 23 || allowedFromAr[4] < 0 || allowedFromAr[4] > 59 || allowedFromAr[5] < 0 || allowedFromAr[5] > 59)
+                            {
+                                _network->publishKeypadJsonCommandResult("invalidAllowedFrom");
+                                return;
+                            }
+                        }
+                        else
                         {
                             _network->publishKeypadJsonCommandResult("invalidAllowedFrom");
                             return;
                         }
                     }
-                    else
-                    {
-                        _network->publishKeypadJsonCommandResult("invalidAllowedFrom");
-                        return;
-                    }
-                }
 
-                if(allowedUntil)
-                {
-                    if(strlen(allowedUntil) == 19)
+                    if(allowedUntil.length() > 0)
                     {
-                        String allowedUntilStr = allowedUntil;
-                        allowedUntilAr[0] = (uint16_t)allowedUntilStr.substring(0, 4).toInt();
-                        allowedUntilAr[1] = (uint8_t)allowedUntilStr.substring(5, 7).toInt();
-                        allowedUntilAr[2] = (uint8_t)allowedUntilStr.substring(8, 10).toInt();
-                        allowedUntilAr[3] = (uint8_t)allowedUntilStr.substring(11, 13).toInt();
-                        allowedUntilAr[4] = (uint8_t)allowedUntilStr.substring(14, 16).toInt();
-                        allowedUntilAr[5] = (uint8_t)allowedUntilStr.substring(17, 19).toInt();
+                        if(allowedUntil.length() > 0 == 19)
+                        {
+                            allowedUntilAr[0] = (uint16_t)allowedUntil.substring(0, 4).toInt();
+                            allowedUntilAr[1] = (uint8_t)allowedUntil.substring(5, 7).toInt();
+                            allowedUntilAr[2] = (uint8_t)allowedUntil.substring(8, 10).toInt();
+                            allowedUntilAr[3] = (uint8_t)allowedUntil.substring(11, 13).toInt();
+                            allowedUntilAr[4] = (uint8_t)allowedUntil.substring(14, 16).toInt();
+                            allowedUntilAr[5] = (uint8_t)allowedUntil.substring(17, 19).toInt();
 
-                        if(allowedUntilAr[0] < 2000 || allowedUntilAr[0] > 3000 || allowedUntilAr[1] < 1 || allowedUntilAr[1] > 12 || allowedUntilAr[2] < 1 || allowedUntilAr[2] > 31 || allowedUntilAr[3] < 0 || allowedUntilAr[3] > 23 || allowedUntilAr[4] < 0 || allowedUntilAr[4] > 59 || allowedUntilAr[5] < 0 || allowedUntilAr[5] > 59)
+                            if(allowedUntilAr[0] < 2000 || allowedUntilAr[0] > 3000 || allowedUntilAr[1] < 1 || allowedUntilAr[1] > 12 || allowedUntilAr[2] < 1 || allowedUntilAr[2] > 31 || allowedUntilAr[3] < 0 || allowedUntilAr[3] > 23 || allowedUntilAr[4] < 0 || allowedUntilAr[4] > 59 || allowedUntilAr[5] < 0 || allowedUntilAr[5] > 59)
+                            {
+                                _network->publishKeypadJsonCommandResult("invalidAllowedUntil");
+                                return;
+                            }
+                        }
+                        else
                         {
                             _network->publishKeypadJsonCommandResult("invalidAllowedUntil");
                             return;
                         }
                     }
-                    else
-                    {
-                        _network->publishKeypadJsonCommandResult("invalidAllowedUntil");
-                        return;
-                    }
-                }
 
-                if(allowedFromTime)
-                {
-                    if(strlen(allowedFromTime) == 5)
+                    if(allowedFromTime.length() > 0)
                     {
-                        String allowedFromTimeStr = allowedFromTime;
-                        allowedFromTimeAr[0] = (uint8_t)allowedFromTimeStr.substring(0, 2).toInt();
-                        allowedFromTimeAr[1] = (uint8_t)allowedFromTimeStr.substring(3, 5).toInt();
+                        if(allowedFromTime.length() == 5)
+                        {
+                            allowedFromTimeAr[0] = (uint8_t)allowedFromTime.substring(0, 2).toInt();
+                            allowedFromTimeAr[1] = (uint8_t)allowedFromTime.substring(3, 5).toInt();
 
-                        if(allowedFromTimeAr[0] < 0 || allowedFromTimeAr[0] > 23 || allowedFromTimeAr[1] < 0 || allowedFromTimeAr[1] > 59)
+                            if(allowedFromTimeAr[0] < 0 || allowedFromTimeAr[0] > 23 || allowedFromTimeAr[1] < 0 || allowedFromTimeAr[1] > 59)
+                            {
+                                _network->publishKeypadJsonCommandResult("invalidAllowedFromTime");
+                                return;
+                            }
+                        }
+                        else
                         {
                             _network->publishKeypadJsonCommandResult("invalidAllowedFromTime");
                             return;
                         }
                     }
-                    else
-                    {
-                        _network->publishKeypadJsonCommandResult("invalidAllowedFromTime");
-                        return;
-                    }
-                }
 
-                if(allowedUntilTime)
-                {
-                    if(strlen(allowedUntilTime) == 5)
+                    if(allowedUntilTime.length() > 0)
                     {
-                        String allowedUntilTimeStr = allowedUntilTime;
-                        allowedUntilTimeAr[0] = (uint8_t)allowedUntilTimeStr.substring(0, 2).toInt();
-                        allowedUntilTimeAr[1] = (uint8_t)allowedUntilTimeStr.substring(3, 5).toInt();
+                        if(allowedUntilTime.length() == 5)
+                        {
+                            allowedUntilTimeAr[0] = (uint8_t)allowedUntilTime.substring(0, 2).toInt();
+                            allowedUntilTimeAr[1] = (uint8_t)allowedUntilTime.substring(3, 5).toInt();
 
-                        if(allowedUntilTimeAr[0] < 0 || allowedUntilTimeAr[0] > 23 || allowedUntilTimeAr[1] < 0 || allowedUntilTimeAr[1] > 59)
+                            if(allowedUntilTimeAr[0] < 0 || allowedUntilTimeAr[0] > 23 || allowedUntilTimeAr[1] < 0 || allowedUntilTimeAr[1] > 59)
+                            {
+                                _network->publishKeypadJsonCommandResult("invalidAllowedUntilTime");
+                                return;
+                            }
+                        }
+                        else
                         {
                             _network->publishKeypadJsonCommandResult("invalidAllowedUntilTime");
                             return;
                         }
                     }
-                    else
+
+                    if(allowedWeekdays.indexOf("mon") >= 0) allowedWeekdaysInt += 64;
+                    if(allowedWeekdays.indexOf("tue") >= 0) allowedWeekdaysInt += 32;
+                    if(allowedWeekdays.indexOf("wed") >= 0) allowedWeekdaysInt += 16;
+                    if(allowedWeekdays.indexOf("thu") >= 0) allowedWeekdaysInt += 8;
+                    if(allowedWeekdays.indexOf("fri") >= 0) allowedWeekdaysInt += 4;
+                    if(allowedWeekdays.indexOf("sat") >= 0) allowedWeekdaysInt += 2;
+                    if(allowedWeekdays.indexOf("sun") >= 0) allowedWeekdaysInt += 1;
+                }
+
+                if(strcmp(action, "add") == 0)
+                {
+                    NukiOpener::NewKeypadEntry entry;
+                    memset(&entry, 0, sizeof(entry));
+                    size_t nameLen = name.length();
+                    memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+                    entry.code = code;
+                    entry.timeLimited = timeLimited == 1 ? 1 : 0;
+
+                    if(allowedFrom.length() > 0)
                     {
-                        _network->publishKeypadJsonCommandResult("invalidAllowedUntilTime");
+                        entry.allowedFromYear = allowedFromAr[0];
+                        entry.allowedFromMonth = allowedFromAr[1];
+                        entry.allowedFromDay = allowedFromAr[2];
+                        entry.allowedFromHour = allowedFromAr[3];
+                        entry.allowedFromMin = allowedFromAr[4];
+                        entry.allowedFromSec = allowedFromAr[5];
+                    }
+
+                    if(allowedUntil.length() > 0)
+                    {
+                        entry.allowedUntilYear = allowedUntilAr[0];
+                        entry.allowedUntilMonth = allowedUntilAr[1];
+                        entry.allowedUntilDay = allowedUntilAr[2];
+                        entry.allowedUntilHour = allowedUntilAr[3];
+                        entry.allowedUntilMin = allowedUntilAr[4];
+                        entry.allowedUntilSec = allowedUntilAr[5];
+                    }
+
+                    entry.allowedWeekdays = allowedWeekdaysInt;
+
+                    if(allowedFromTime.length() > 0)
+                    {
+                        entry.allowedFromTimeHour = allowedFromTimeAr[0];
+                        entry.allowedFromTimeMin = allowedFromTimeAr[1];
+                    }
+
+                    if(allowedUntilTime.length() > 0)
+                    {
+                        entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
+                        entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
+                    }
+
+                    _taskRunning = true;
+                    result = _nukiOpener.addKeypadEntry(entry);
+                    _taskRunning = false;
+                    Log->print(F("Add keypad code: "));
+                    Log->println((int)result);
+                }
+                else if (strcmp(action, "update") == 0)
+                {
+                    if(!codeId)
+                    {
+                        _network->publishKeypadJsonCommandResult("noCodeIdSet");
                         return;
                     }
+
+                    if(!idExists)
+                    {
+                        _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                        return;
+                    }
+
+                    int loop = 0;
+                    while(_taskRunning && loop < 600)
+                    {
+                        Log->println("Waiting to run Nuki BLE command");
+                        vTaskDelay( 50 / portTICK_PERIOD_MS);
+                        ++loop;
+                    }
+
+                    _taskRunning = true;
+                    Nuki::CmdResult resultKp = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+                    _taskRunning = false;
+                    bool foundExisting = false;
+
+                    if(resultKp == Nuki::CmdResult::Success)
+                    {
+                        std::list<NukiOpener::KeypadEntry> entries;
+                        _nukiOpener.getKeypadEntries(&entries);
+
+                        for(const auto& entry : entries)
+                        {
+                            if (codeId != entry.codeId) continue;
+                            else foundExisting = true;
+
+                            if(!name.length() > 0)
+                            {
+                                memset(oldName, 0, sizeof(oldName));
+                                memcpy(oldName, entry.name, sizeof(entry.name));
+                            }
+                            if(code == 12) code = entry.code;
+                            if(enabled == 2) enabled = entry.enabled;
+                            if(timeLimited == 2) timeLimited = entry.timeLimited;
+                            if(!allowedFrom.length() > 0)
+                            {
+                                allowedFrom = "old";
+                                allowedFromAr[0] = entry.allowedFromYear;
+                                allowedFromAr[1] = entry.allowedFromMonth;
+                                allowedFromAr[2] = entry.allowedFromDay;
+                                allowedFromAr[3] = entry.allowedFromHour;
+                                allowedFromAr[4] = entry.allowedFromMin;
+                                allowedFromAr[5] = entry.allowedFromSec;
+                            }
+                            if(!allowedUntil.length() > 0)
+                            {
+                                allowedUntil = "old";
+                                allowedUntilAr[0] = entry.allowedUntilYear;
+                                allowedUntilAr[1] = entry.allowedUntilMonth;
+                                allowedUntilAr[2] = entry.allowedUntilDay;
+                                allowedUntilAr[3] = entry.allowedUntilHour;
+                                allowedUntilAr[4] = entry.allowedUntilMin;
+                                allowedUntilAr[5] = entry.allowedUntilSec;
+                            }
+                            if(!allowedWeekdays.length() > 0) allowedWeekdaysInt = entry.allowedWeekdays;
+                            if(!allowedFromTime.length() > 0)
+                            {
+                                allowedFromTime = "old";
+                                allowedFromTimeAr[0] = entry.allowedFromTimeHour;
+                                allowedFromTimeAr[1] = entry.allowedFromTimeMin;
+                            }
+
+                            if(!allowedUntilTime.length() > 0)
+                            {
+                                allowedUntilTime = "old";
+                                allowedUntilTimeAr[0] = entry.allowedUntilTimeHour;
+                                allowedUntilTimeAr[1] = entry.allowedUntilTimeMin;
+                            }
+                        }
+
+                        if(!foundExisting)
+                        {
+                            _network->publishKeypadJsonCommandResult("failedToRetrieveExistingKeypadEntry");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        _network->publishKeypadJsonCommandResult("failedToRetrieveExistingKeypadEntry");
+                        return;
+                    }
+
+                    NukiOpener::UpdatedKeypadEntry entry;
+
+                    memset(&entry, 0, sizeof(entry));
+                    entry.codeId = codeId;
+                    entry.code = code;
+
+                    if(!name.length() > 0)
+                    {
+                        size_t nameLen = strlen(oldName);
+                        memcpy(&entry.name, oldName, nameLen > 20 ? 20 : nameLen);
+                    }
+                    else
+                    {
+                        size_t nameLen = name.length();
+                        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+                    }
+                    entry.enabled = enabled;
+                    entry.timeLimited = timeLimited;
+
+                    if(enabled == 1)
+                    {
+                        if(timeLimited == 1)
+                        {
+                            if(allowedFrom.length() > 0)
+                            {
+                                entry.allowedFromYear = allowedFromAr[0];
+                                entry.allowedFromMonth = allowedFromAr[1];
+                                entry.allowedFromDay = allowedFromAr[2];
+                                entry.allowedFromHour = allowedFromAr[3];
+                                entry.allowedFromMin = allowedFromAr[4];
+                                entry.allowedFromSec = allowedFromAr[5];
+                            }
+
+                            if(allowedUntil.length() > 0)
+                            {
+                                entry.allowedUntilYear = allowedUntilAr[0];
+                                entry.allowedUntilMonth = allowedUntilAr[1];
+                                entry.allowedUntilDay = allowedUntilAr[2];
+                                entry.allowedUntilHour = allowedUntilAr[3];
+                                entry.allowedUntilMin = allowedUntilAr[4];
+                                entry.allowedUntilSec = allowedUntilAr[5];
+                            }
+
+                            entry.allowedWeekdays = allowedWeekdaysInt;
+
+                            if(allowedFromTime.length() > 0)
+                            {
+                                entry.allowedFromTimeHour = allowedFromTimeAr[0];
+                                entry.allowedFromTimeMin = allowedFromTimeAr[1];
+                            }
+
+                            if(allowedUntilTime.length() > 0)
+                            {
+                                entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
+                                entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
+                            }
+                        }
+                    }
+
+                    _taskRunning = true;
+                    result = _nukiOpener.updateKeypadEntry(entry);
+                    _taskRunning = false;
+                    Log->print(F("Update keypad code: "));
+                    Log->println((int)result);
                 }
-
-                if(allowedWeekdays.indexOf("mon") >= 0) allowedWeekdaysInt += 64;
-                if(allowedWeekdays.indexOf("tue") >= 0) allowedWeekdaysInt += 32;
-                if(allowedWeekdays.indexOf("wed") >= 0) allowedWeekdaysInt += 16;
-                if(allowedWeekdays.indexOf("thu") >= 0) allowedWeekdaysInt += 8;
-                if(allowedWeekdays.indexOf("fri") >= 0) allowedWeekdaysInt += 4;
-                if(allowedWeekdays.indexOf("sat") >= 0) allowedWeekdaysInt += 2;
-                if(allowedWeekdays.indexOf("sun") >= 0) allowedWeekdaysInt += 1;
             }
-
-            if(strcmp(action, "add") == 0)
+            else
             {
-                NukiOpener::NewKeypadEntry entry;
-                memset(&entry, 0, sizeof(entry));
-                size_t nameLen = strlen(name);
-                memcpy(&entry.name, name, nameLen > 20 ? 20 : nameLen);
-                entry.code = code;
-                entry.timeLimited = timeLimited == 1 ? 1 : 0;
-
-                if(allowedFrom)
-                {
-                    entry.allowedFromYear = allowedFromAr[0];
-                    entry.allowedFromMonth = allowedFromAr[1];
-                    entry.allowedFromDay = allowedFromAr[2];
-                    entry.allowedFromHour = allowedFromAr[3];
-                    entry.allowedFromMin = allowedFromAr[4];
-                    entry.allowedFromSec = allowedFromAr[5];
-                }
-
-                if(allowedUntil)
-                {
-                    entry.allowedUntilYear = allowedUntilAr[0];
-                    entry.allowedUntilMonth = allowedUntilAr[1];
-                    entry.allowedUntilDay = allowedUntilAr[2];
-                    entry.allowedUntilHour = allowedUntilAr[3];
-                    entry.allowedUntilMin = allowedUntilAr[4];
-                    entry.allowedUntilSec = allowedUntilAr[5];
-                }
-
-                entry.allowedWeekdays = allowedWeekdaysInt;
-
-                if(allowedFromTime)
-                {
-                    entry.allowedFromTimeHour = allowedFromTimeAr[0];
-                    entry.allowedFromTimeMin = allowedFromTimeAr[1];
-                }
-
-                if(allowedUntilTime)
-                {
-                    entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
-                    entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
-                }
-
-                result = _nukiOpener.addKeypadEntry(entry);
-                Log->print(F("Add keypad code: "));
-                Log->println((int)result);
+                _network->publishKeypadJsonCommandResult("invalidAction");
+                return;
             }
-            else if (strcmp(action, "update") == 0)
-            {
-                if(!codeId)
-                {
-                    _network->publishKeypadJsonCommandResult("noCodeIdSet");
-                    return;
-                }
 
-                if(!idExists)
-                {
-                    _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
-                    return;
-                }
-
-                NukiOpener::UpdatedKeypadEntry entry;
-                memset(&entry, 0, sizeof(entry));
-                entry.codeId = codeId;
-                size_t nameLen = strlen(name);
-                memcpy(&entry.name, name, nameLen > 20 ? 20 : nameLen);
-
-                if(code) entry.code = code;
-                else
-                {
-                    auto it = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId);
-                    entry.code = _keypadCodes[(it - _keypadCodeIds.begin())];
-                }
-
-                entry.enabled = enabled == 0 ? 0 : 1;
-                entry.timeLimited = timeLimited == 1 ? 1 : 0;
-
-                if(allowedFrom)
-                {
-                    entry.allowedFromYear = allowedFromAr[0];
-                    entry.allowedFromMonth = allowedFromAr[1];
-                    entry.allowedFromDay = allowedFromAr[2];
-                    entry.allowedFromHour = allowedFromAr[3];
-                    entry.allowedFromMin = allowedFromAr[4];
-                    entry.allowedFromSec = allowedFromAr[5];
-                }
-
-                if(allowedUntil)
-                {
-                    entry.allowedUntilYear = allowedUntilAr[0];
-                    entry.allowedUntilMonth = allowedUntilAr[1];
-                    entry.allowedUntilDay = allowedUntilAr[2];
-                    entry.allowedUntilHour = allowedUntilAr[3];
-                    entry.allowedUntilMin = allowedUntilAr[4];
-                    entry.allowedUntilSec = allowedUntilAr[5];
-                }
-
-                entry.allowedWeekdays = allowedWeekdaysInt;
-
-                if(allowedFromTime)
-                {
-                    entry.allowedFromTimeHour = allowedFromTimeAr[0];
-                    entry.allowedFromTimeMin = allowedFromTimeAr[1];
-                }
-
-                if(allowedUntilTime)
-                {
-                    entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
-                    entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
-                }
-
-                result = _nukiOpener.updateKeypadEntry(entry);
-                Log->print(F("Update keypad code: "));
-                Log->println((int)result);
+            if(!result == Nuki::CmdResult::Success) {
+                ++_retryCount;
             }
-        }
-        else
-        {
-            _network->publishKeypadJsonCommandResult("invalidAction");
-            return;
+            else break;
+
+            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
 
         updateKeypad(false);
@@ -1869,19 +2195,24 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
         return;
     }
 
-    Nuki::CmdResult result = (Nuki::CmdResult)-1;
-
     const char *action = json["action"].as<const char*>();
     uint8_t entryId = json["entryId"].as<unsigned int>();
-    uint8_t enabled = json["enabled"].as<unsigned int>();
-    String weekdays = json["weekdays"].as<String>();
-    const char *time = json["time"].as<const char*>();
-    const char *lockAct = json["lockAction"].as<const char*>();
+    uint8_t enabled;
+    String weekdays;
+    String time;
+    String lockAction;
     NukiOpener::LockAction timeControlLockAction;
 
-    if(lockAct)
+    if(json.containsKey("enabled")) enabled = json["enabled"].as<unsigned int>();
+    else enabled = 2;
+
+    if(json.containsKey("weekdays")) weekdays = json["weekdays"].as<String>();
+    if(json.containsKey("time")) time = json["time"].as<String>();
+    if(json.containsKey("lockAction")) lockAction = json["lockAction"].as<String>();
+
+    if(lockAction.length() > 0)
     {
-        timeControlLockAction = nukiOpenerInst->lockActionToEnum(lockAct);
+        timeControlLockAction = nukiOpenerInst->lockActionToEnum(lockAction.c_str());
 
         if((int)timeControlLockAction == 0xff)
         {
@@ -1899,109 +2230,176 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
             idExists = std::find(_timeControlIds.begin(), _timeControlIds.end(), entryId) != _timeControlIds.end();
         }
 
-        if(strcmp(action, "delete") == 0) {
-            if(idExists)
-            {
-                result = _nukiOpener.removeTimeControlEntry(entryId);
-                Log->print(F("Delete time control "));
-                Log->println((int)result);
-            }
-            else
-            {
-                _network->publishTimeControlCommandResult("noExistingEntryIdSet");
-                return;
-            }
-        }
-        else if(strcmp(action, "add") == 0 || strcmp(action, "update") == 0)
+        Nuki::CmdResult result = (Nuki::CmdResult)-1;
+        _retryCount = 0;
+
+        while(_retryCount < _nrOfRetries)
         {
-            uint8_t timeHour;
-            uint8_t timeMin;
-            uint8_t weekdaysInt = 0;
-            unsigned int timeAr[2];
-
-            if(time)
+            int loop = 0;
+            while(_taskRunning && loop < 600)
             {
-                if(strlen(time) == 5)
-                {
-                    String timeStr = time;
-                    timeAr[0] = (uint8_t)timeStr.substring(0, 2).toInt();
-                    timeAr[1] = (uint8_t)timeStr.substring(3, 5).toInt();
+                Log->println("Waiting to run Nuki BLE command");
+                vTaskDelay( 50 / portTICK_PERIOD_MS);
+                ++loop;
+            }
 
-                    if(timeAr[0] < 0 || timeAr[0] > 23 || timeAr[1] < 0 || timeAr[1] > 59)
+            if(strcmp(action, "delete") == 0) {
+                if(idExists)
+                {
+                    _taskRunning = true;
+                    result = _nukiOpener.removeTimeControlEntry(entryId);
+                    _taskRunning = false;
+                    Log->print(F("Delete time control: "));
+                    Log->println((int)result);
+                }
+                else
+                {
+                    _network->publishTimeControlCommandResult("noExistingEntryIdSet");
+                    return;
+                }
+            }
+            else if(strcmp(action, "add") == 0 || strcmp(action, "update") == 0)
+            {
+                uint8_t timeHour;
+                uint8_t timeMin;
+                uint8_t weekdaysInt = 0;
+                unsigned int timeAr[2];
+
+                if(time.length() > 0)
+                {
+                    if(time.length() == 5)
+                    {
+                        timeAr[0] = (uint8_t)time.substring(0, 2).toInt();
+                        timeAr[1] = (uint8_t)time.substring(3, 5).toInt();
+
+                        if(timeAr[0] < 0 || timeAr[0] > 23 || timeAr[1] < 0 || timeAr[1] > 59)
+                        {
+                            _network->publishTimeControlCommandResult("invalidTime");
+                            return;
+                        }
+                    }
+                    else
                     {
                         _network->publishTimeControlCommandResult("invalidTime");
                         return;
                     }
                 }
-                else
+
+                if(weekdays.indexOf("mon") >= 0) weekdaysInt += 64;
+                if(weekdays.indexOf("tue") >= 0) weekdaysInt += 32;
+                if(weekdays.indexOf("wed") >= 0) weekdaysInt += 16;
+                if(weekdays.indexOf("thu") >= 0) weekdaysInt += 8;
+                if(weekdays.indexOf("fri") >= 0) weekdaysInt += 4;
+                if(weekdays.indexOf("sat") >= 0) weekdaysInt += 2;
+                if(weekdays.indexOf("sun") >= 0) weekdaysInt += 1;
+
+                if(strcmp(action, "add") == 0)
                 {
-                    _network->publishTimeControlCommandResult("invalidTime");
-                    return;
+                    NukiOpener::NewTimeControlEntry entry;
+                    memset(&entry, 0, sizeof(entry));
+                    entry.weekdays = weekdaysInt;
+
+                    if(time.length() > 0)
+                    {
+                        entry.timeHour = timeAr[0];
+                        entry.timeMin = timeAr[1];
+                    }
+
+                    entry.lockAction = timeControlLockAction;
+
+                    _taskRunning = true;
+                    result = _nukiOpener.addTimeControlEntry(entry);
+                    _taskRunning = false;
+                    Log->print(F("Add time control: "));
+                    Log->println((int)result);
+                }
+                else if (strcmp(action, "update") == 0)
+                {
+                    if(!idExists)
+                    {
+                        _network->publishTimeControlCommandResult("noExistingEntryIdSet");
+                        return;
+                    }
+
+                    int loop = 0;
+                    while(_taskRunning && loop < 600)
+                    {
+                        Log->println("Waiting to run Nuki BLE command");
+                        vTaskDelay( 50 / portTICK_PERIOD_MS);
+                        ++loop;
+                    }
+
+                    _taskRunning = true;
+                    Nuki::CmdResult resultTc = _nukiOpener.retrieveTimeControlEntries();
+                    _taskRunning = false;
+                    bool foundExisting = false;
+
+                    if(resultTc == Nuki::CmdResult::Success)
+                    {
+                        std::list<NukiOpener::TimeControlEntry> timeControlEntries;
+                        _nukiOpener.getTimeControlEntries(&timeControlEntries);
+
+                        for(const auto& entry : timeControlEntries)
+                        {
+                            if (entryId != entry.entryId) continue;
+                            else foundExisting = true;
+
+                            if(enabled == 2) enabled = entry.enabled;
+                            if(!weekdays.length() > 0) weekdaysInt = entry.weekdays;
+                            if(!time.length() > 0)
+                            {
+                                time = "old";
+                                timeAr[0] = entry.timeHour;
+                                timeAr[1] = entry.timeMin;
+                            }
+                            if(!lockAction.length() > 0) timeControlLockAction = entry.lockAction;
+                        }
+
+                        if(!foundExisting)
+                        {
+                            _network->publishTimeControlCommandResult("failedToRetrieveExistingKeypadEntry");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        _network->publishTimeControlCommandResult("failedToRetrieveExistingKeypadEntry");
+                        return;
+                    }
+
+                    NukiOpener::TimeControlEntry entry;
+                    memset(&entry, 0, sizeof(entry));
+                    entry.entryId = entryId;
+                    entry.enabled = enabled;
+                    entry.weekdays = weekdaysInt;
+
+                    if(time.length() > 0)
+                    {
+                        entry.timeHour = timeAr[0];
+                        entry.timeMin = timeAr[1];
+                    }
+
+                    entry.lockAction = timeControlLockAction;
+
+                    _taskRunning = true;
+                    result = _nukiOpener.updateTimeControlEntry(entry);
+                    _taskRunning = false;
+                    Log->print(F("Update time control: "));
+                    Log->println((int)result);
                 }
             }
             else
             {
-                _network->publishTimeControlCommandResult("invalidTime");
+                _network->publishTimeControlCommandResult("invalidAction");
                 return;
             }
 
-            if(weekdays.indexOf("mon") >= 0) weekdaysInt += 64;
-            if(weekdays.indexOf("tue") >= 0) weekdaysInt += 32;
-            if(weekdays.indexOf("wed") >= 0) weekdaysInt += 16;
-            if(weekdays.indexOf("thu") >= 0) weekdaysInt += 8;
-            if(weekdays.indexOf("fri") >= 0) weekdaysInt += 4;
-            if(weekdays.indexOf("sat") >= 0) weekdaysInt += 2;
-            if(weekdays.indexOf("sun") >= 0) weekdaysInt += 1;
-
-            if(strcmp(action, "add") == 0)
-            {
-                NukiOpener::NewTimeControlEntry entry;
-                memset(&entry, 0, sizeof(entry));
-                entry.weekdays = weekdaysInt;
-
-                if(time)
-                {
-                    entry.timeHour = timeAr[0];
-                    entry.timeMin = timeAr[1];
-                }
-
-                entry.lockAction = timeControlLockAction;
-
-                result = _nukiOpener.addTimeControlEntry(entry);
-                Log->print(F("Add time control: "));
-                Log->println((int)result);
+            if(!result == Nuki::CmdResult::Success) {
+                ++_retryCount;
             }
-            else if (strcmp(action, "update") == 0)
-            {
-                if(!idExists)
-                {
-                    _network->publishTimeControlCommandResult("noExistingEntryIdSet");
-                    return;
-                }
+            else break;
 
-                NukiOpener::TimeControlEntry entry;
-                memset(&entry, 0, sizeof(entry));
-                entry.entryId = entryId;
-                entry.enabled = enabled == 0 ? 0 : 1;
-                entry.weekdays = weekdaysInt;
-
-                if(time)
-                {
-                    entry.timeHour = timeAr[0];
-                    entry.timeMin = timeAr[1];
-                }
-
-                entry.lockAction = timeControlLockAction;
-
-                result = _nukiOpener.updateTimeControlEntry(entry);
-                Log->print(F("Update time control: "));
-                Log->println((int)result);
-            }
-        }
-        else
-        {
-            _network->publishTimeControlCommandResult("invalidAction");
-            return;
+            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
 
         if((int)result != -1)
@@ -2057,9 +2455,32 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
 
 void NukiOpenerWrapper::readConfig()
 {
-    Log->print(F("Reading opener config. Result: "));
-    Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
-    _nukiConfigValid = result == Nuki::CmdResult::Success;
+    Nuki::CmdResult result;
+    _retryCount = 0;
+
+    while(_retryCount < _nrOfRetries)
+    {
+        int loop = 0;
+        while(_taskRunning && loop < 600)
+        {
+            Log->println("Waiting to run Nuki BLE command");
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+            ++loop;
+        }
+        _taskRunning = true;
+        Log->print(F("Reading opener config. Result: "));
+        Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
+        _taskRunning = false;
+        _nukiConfigValid = result == Nuki::CmdResult::Success;
+
+        if(!_nukiConfigValid) {
+            ++_retryCount;
+        }
+        else break;
+
+        vTaskDelay( 1000 / portTICK_PERIOD_MS);
+    }
+
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->println(resultStr);
@@ -2068,9 +2489,31 @@ void NukiOpenerWrapper::readConfig()
 
 void NukiOpenerWrapper::readAdvancedConfig()
 {
-    Log->print(F("Reading opener advanced config. Result: "));
-    Nuki::CmdResult result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
-    _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
+    Nuki::CmdResult result;
+    _retryCount = 0;
+
+    while(_retryCount < _nrOfRetries)
+    {
+        int loop = 0;
+        while(_taskRunning && loop < 600)
+        {
+            Log->println("Waiting to run Nuki BLE command");
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+            ++loop;
+        }
+        _taskRunning = true;
+         result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
+        _taskRunning = false;
+        _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
+
+        if(!_nukiAdvancedConfigValid) {
+            ++_retryCount;
+        }
+        else break;
+
+        vTaskDelay( 1000 / portTICK_PERIOD_MS);
+    }
+
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->println(resultStr);
@@ -2086,14 +2529,8 @@ void NukiOpenerWrapper::setupHASS()
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
 
-    if(_preferences->getBool(preference_opener_continuous_mode))
-    {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _publishAuthData, _hasKeypad, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
-    }
-    else
-    {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _publishAuthData, _hasKeypad, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
-    }
+    if(_preferences->getBool(preference_opener_continuous_mode)) _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _publishAuthData, _hasKeypad, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
+    else _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _publishAuthData, _hasKeypad, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
 
     _hassSetupCompleted = true;
 
@@ -2104,8 +2541,30 @@ void NukiOpenerWrapper::disableHASS()
 {
     if(!_nukiConfigValid) // only ask for config once to save battery life
     {
-        Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
-        _nukiConfigValid = result == Nuki::CmdResult::Success;
+        Nuki::CmdResult result;
+        _retryCount = 0;
+
+        while(_retryCount < _nrOfRetries)
+        {
+            int loop = 0;
+            while(_taskRunning && loop < 600)
+            {
+                Log->println("Waiting to run Nuki BLE command");
+                vTaskDelay( 50 / portTICK_PERIOD_MS);
+                ++loop;
+            }
+            _taskRunning = true;
+            result = _nukiOpener.requestConfig(&_nukiConfig);
+            _taskRunning = false;
+            _nukiConfigValid = result == Nuki::CmdResult::Success;
+
+            if(!_nukiConfigValid) {
+                ++_retryCount;
+            }
+            else break;
+
+            vTaskDelay( 1000 / portTICK_PERIOD_MS);
+        }
     }
 
     if(_nukiConfigValid)
@@ -2114,10 +2573,7 @@ void NukiOpenerWrapper::disableHASS()
         itoa(_nukiConfig.nukiId, uidString, 16);
         _network->removeHASSConfig(uidString);
     }
-    else
-    {
-        Log->println(F("Unable to disable HASS. Invalid config received."));
-    }
+    else Log->println(F("Unable to disable HASS. Invalid config received."));
 }
 
 void NukiOpenerWrapper::printCommandResult(Nuki::CmdResult result)

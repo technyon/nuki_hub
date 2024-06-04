@@ -100,6 +100,7 @@ private:
     int _restartBeaconTimeout = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
+    bool _taskRunning = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryCount = 0;
@@ -107,7 +108,6 @@ private:
     int _retryLockstateCount = 0;
     unsigned long _nextRetryTs = 0;
     std::vector<uint16_t> _keypadCodeIds;
-    std::vector<uint32_t> _keypadCodes;
     std::vector<uint8_t> _timeControlIds;
 
     NukiOpener::OpenerState _lastKeyTurnerState;

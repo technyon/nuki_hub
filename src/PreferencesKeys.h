@@ -66,6 +66,7 @@
 #define preference_conf_opener_basic_acl (char*)"confOpnBasAcl"
 #define preference_conf_opener_advanced_acl (char*)"confOpnAdvAcl"
 #define preference_register_as_app (char*)"regAsApp" // true = register as hub; false = register as app
+#define preference_register_opener_as_app (char*)"regOpnAsApp"
 #define preference_command_nr_of_retries (char*)"nrRetry"
 #define preference_command_retry_delay (char*)"rtryDelay"
 #define preference_cred_user (char*)"crdusr"
@@ -91,6 +92,8 @@
 #define preference_disable_non_json (char*)"disnonjson"
 #define preference_official_hybrid (char*)"offHybrid"
 #define preference_official_hybrid_actions (char*)"hybridAct"
+#define preference_official_hybrid_retry (char*)"hybridRtry"
+#define preference_query_interval_hybrid_lockstate (char*)"hybridTimer"
 
 class DebugPreferences
 {
@@ -106,10 +109,11 @@ private:
             preference_network_timeout, preference_restart_on_disconnect, preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry,
             preference_keypad_topic_per_entry, preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
             preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
-            preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password,
-            preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout, preference_official_hybrid,
-            preference_official_hybrid_actions, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version,
-            preference_task_size_network, preference_task_size_nuki, preference_task_size_pd, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries
+            preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password,
+            preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout, preference_official_hybrid, preference_query_interval_hybrid_lockstate,
+            preference_official_hybrid_actions, preference_official_hybrid_retry, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, 
+            preference_latest_version, preference_task_size_network, preference_task_size_nuki, preference_task_size_pd, preference_authlog_max_entries, preference_keypad_max_entries,
+            preference_timecontrol_max_entries
     };
     std::vector<char*> _redact =
     {
@@ -123,8 +127,8 @@ private:
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
             preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi, preference_restart_on_disconnect,
             preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
-            preference_register_as_app, preference_ip_dhcp_enabled, preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled,
-            preference_official_hybrid, preference_official_hybrid_actions, preference_conf_info_enabled, preference_disable_non_json
+            preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled, preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info,
+            preference_network_wifi_fallback_disabled, preference_official_hybrid, preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json
     };
 
     const bool isRedacted(const char* key) const

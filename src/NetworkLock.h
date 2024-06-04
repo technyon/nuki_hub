@@ -81,6 +81,8 @@ public:
     uint32_t _offCodeId = 0;
     uint8_t _offContext = 0;
     uint32_t _authId = 0;
+    unsigned long _offCommandExecutedTs = 0;
+    NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
     char _nukiName[33];
     char _authName[33];
     bool _authFound = false;

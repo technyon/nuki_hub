@@ -519,10 +519,16 @@ void NetworkLock::publishState(NukiLock::LockState lockState)
             publishString(mqtt_topic_lock_binary_state, "unlocked");
             break;
         case NukiLock::LockState::Unlocked:
-        case NukiLock::LockState::Unlatched:
-        case NukiLock::LockState::Unlatching:
         case NukiLock::LockState::UnlockedLnga:
             publishString(mqtt_topic_lock_ha_state, "unlocked");
+            publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
+        case NukiLock::LockState::Unlatched:
+            publishString(mqtt_topic_lock_ha_state, "open");
+            publishString(mqtt_topic_lock_binary_state, "unlocked");
+            break;
+        case NukiLock::LockState::Unlatching:
+            publishString(mqtt_topic_lock_ha_state, "opening");
             publishString(mqtt_topic_lock_binary_state, "unlocked");
             break;
         case NukiLock::LockState::Uncalibrated:

@@ -442,6 +442,16 @@ bool WebCfgServer::processArgs(String& message)
             if(value == "1") _preferences->putBool(preference_register_as_app, true);
             configChanged = true;
         }
+        else if(key == "HYBRIDTIMER")
+        {
+            _preferences->putInt(preference_query_interval_hybrid_lockstate, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "HYBRIDRETRY")
+        {
+            _preferences->putBool(preference_official_hybrid_retry, (value == "1"));
+            configChanged = true;
+        }        
         else if(key == "DISNONJSON")
         {
             _preferences->putBool(preference_disable_non_json, (value == "1"));
@@ -983,6 +993,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_register_as_app, (value == "1"));
             configChanged = true;
         }
+        else if(key == "REGAPPOPN")
+        {
+            _preferences->putBool(preference_register_opener_as_app, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "LOCKENA")
         {
             _preferences->putBool(preference_lock_enabled, (value == "1"));
@@ -1357,6 +1372,8 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
     printCheckBox(response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
     printCheckBox(response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
+    printInputField(response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
+    printCheckBox(response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");    
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
 
@@ -1687,7 +1704,8 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     }
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10, "");
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
-    printCheckBox(response, "REGAPP", "Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
+    if(_nuki != nullptr) printCheckBox(response, "REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
+    if(_nukiOpener != nullptr) printCheckBox(response, "REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10, "");
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     response.concat("</table>");

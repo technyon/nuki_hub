@@ -90,6 +90,7 @@ private:
     Gpio* _gpio = nullptr;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
+    int _intervalHybridLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
     int _intervalKeypad = 0; // seconds
@@ -98,7 +99,6 @@ private:
     bool _clearAuthData = false;
     bool _taskRunning = false;
     std::vector<uint16_t> _keypadCodeIds;
-    std::vector<uint32_t> _keypadCodes;
     std::vector<uint8_t> _timeControlIds;
 
     NukiLock::KeyTurnerState _lastKeyTurnerState;
@@ -127,8 +127,9 @@ private:
     int _retryConfigCount = 0;
     int _retryLockstateCount = 0;
     long _rssiPublishInterval = 0;
-    unsigned long _nextRetryTs = 0;
+    unsigned long _nextRetryTs = 0;    
     unsigned long _nextLockStateUpdateTs = 0;
+    unsigned long _nextHybridLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _waitAuthLogUpdateTs = 0;

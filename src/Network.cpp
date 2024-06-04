@@ -358,6 +358,8 @@ bool Network::update()
     if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
     {
         publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60);
+        publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
+        
         if(_publishDebugInfo)
         {
             publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
@@ -794,6 +796,8 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
     json["stat_locking"] = "locking";
     json["stat_unlocked"] = "unlocked";
     json["stat_unlocking"] = "unlocking";
+    json["stat_open"] = "open";
+    json["stat_opening"] = "opening";
     json["opt"] = "false";
 
     serializeJson(json, _buffer, _bufferSize);
