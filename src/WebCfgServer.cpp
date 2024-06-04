@@ -1431,7 +1431,7 @@ void WebCfgServer::buildStatusHtml(String &response)
         if(_nuki->isPaired())
         {
             json["lockPin"] = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
-            lockDone = true;
+            if(strcmp(lockStateArr, "undefined") != 0) lockDone = true;
         }
         else json["lockPin"] = "Not Paired";
     }
@@ -1450,7 +1450,7 @@ void WebCfgServer::buildStatusHtml(String &response)
         if(_nukiOpener->isPaired())
         {
             json["openerPin"] = pinStateToString(_preferences->getInt(preference_opener_pin_status, 4));
-            openerDone = true;
+            if(strcmp(openerStateArr, "undefined") != 0) openerDone = true;
         }
         else json["openerPin"] = "Not Paired";
     }
