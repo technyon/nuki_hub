@@ -198,3 +198,20 @@ td>select {
     text-align: center;
     vertical-align: middle;
 }
+
+.warning {
+    color: #f00;
+}
+
+@media only screen and (max-width: 600px) {
+    .adapt td { display: block; }
+
+    .adapt input[type=text],
+    .adapt input[type=password],
+    .adapt input[type=submit],
+    .adapt textarea,
+    .adapt select { width: 100%; }
+
+    .adapt table td:first-child { border-top: 0; }
+    .adapt table td:last-child { border-bottom: 0; }
+}
