@@ -1348,7 +1348,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
 void WebCfgServer::buildAdvancedConfigHtml(String &response)
 {
     buildHtmlHeader(response);
-    response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Advanced Configuration</h3>");
     response.concat("<h4 class=\"warning\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash nukihub using USB/serial</h4>");
     response.concat("<table>");
