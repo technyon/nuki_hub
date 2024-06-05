@@ -136,55 +136,30 @@ jobs:
     name: Release new version
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags')
+    #if: startsWith(github.ref, 'refs/tags')
     steps:
+      - name: Get the version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
       - name: Git Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}    
-      - name: Download esp32dev
+      - name: Download release assets
         uses: actions/download-artifact@v4
         with:
-          name: esp32-assets
-          path: release/esp32dev
-      - name: Download esp32-s3
+          path: release
+          pattern: *-release-assets
+      - name: Download debug assets
         uses: actions/download-artifact@v4
         with:
-          name: esp32-s3-assets
-          path: release/esp32s3
-      - name: Download esp32-c3
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-c3-assets
-          path: release/esp32c3
-      - name: Download esp32solo1
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32solo1-assets
-          path: release/esp32solo1
-      - name: Download esp32dev-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-debug-assets
-          path: debug/esp32dev
-      - name: Download esp32-s3-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-s3-debug-assets
-          path: debug/esp32s3
-      - name: Download esp32-c3-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-c3-debug-assets
-          path: debug/esp32c3
-      - name: Download esp32solo1-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32solo1-debug-assets
-          path: debug/esp32solo1
-      - name: Get the version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+          path: debug
+          pattern: *-debug-assets
+      - name: List files
+        run: |
+          find release/
+          find debug/
+          exit 1
       - name: Build the zip archive for ESP32
         run: |
           cd release/esp32dev
