@@ -212,6 +212,6 @@ td>select {
     .adapt textarea,
     .adapt select { width: 100%; }
 
-    .adapt table td:first-child { border-top: 0; }
-    .adapt table td:last-child { border-bottom: 0; }
+    .adapt table td:first-child { border-bottom: 0; }
+    .adapt table td:last-child { border-top: 0; }
 }
