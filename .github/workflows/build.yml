@@ -24,6 +24,7 @@ jobs:
         include:
         - board: esp32dev
           name: esp32
+          build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}
       VARIANT: ${{ matrix.name || matrix.board }}
