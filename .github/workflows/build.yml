@@ -155,43 +155,44 @@ jobs:
         with:
           path: debug
           pattern: '*-debug-assets'
+      - name: Build zip archives
+        id: zip
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+        run: |
+          NUKI="NukiHub-${VERSION}"
+          ARTIFACTS=""
+
+          for FOLDER in release/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            echo "${FOLDER} --"
+            cd $FOLDER
+
+            ZIPFILE="${NUKI}-${MODEL}.zip"
+            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
+
+            zip -9r ../../${ZIPFILE} * -x "webflash_nuki_hub_*.bin"
+            cd ../..
+          done
+
+          for FOLDER in debug/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            echo "${FOLDER} --"
+            cd $FOLDER
+
+            ZIPFILE="${NUKI}-${MODEL}-DEBUG.zip"
+
+            zip -9r ../../${ZIPFILE} *
+            cd ../..
+          done
+
+          # remove last character
+          ARTIFACTS="${ARTIFACTS%?}"
+          echo "artifacts=${ARTIFACTS}" | tee -a ${GITHUB_OUTPUT}
       - name: List files
         run: |
-          find release/
-          find debug/
+          find . -name '*.zip'
           exit 1
-      - name: Build the zip archive for ESP32
-        run: |
-          cd release/esp32dev
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32.zip * -x "webflash_nuki_hub_esp32.bin"
-      - name: Build the zip archive for ESP32-S3
-        run: |
-          cd release/esp32s3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3.zip * -x "webflash_nuki_hub_esp32s3.bin"
-      - name: Build the zip archive for ESP32-C3
-        run: |
-          cd release/esp32c3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3.zip * -x "webflash_nuki_hub_esp32c3.bin"
-      - name: Build the zip archive for ESP32-SOLO1
-        run: |
-          cd release/esp32solo1
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1.zip * 
-      - name: Build the zip archive for ESP32 Debug
-        run: |
-          cd debug/esp32dev
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-DEBUG.zip *
-      - name: Build the zip archive for ESP32-S3 Debug
-        run: |
-          cd debug/esp32s3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3-DEBUG.zip *
-      - name: Build the zip archive for ESP32-C3 Debug
-        run: |
-          cd debug/esp32c3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3-DEBUG.zip *
-      - name: Build the zip archive for ESP32-SOLO1 Debug
-        run: |
-          cd debug/esp32solo1
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1-DEBUG.zip *          
       - name: Create Release
         id: create_release
         uses: ncipollo/release-action@v1
@@ -201,17 +202,12 @@ jobs:
           updateOnlyUnreleased: true
           draft: true
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
-          artifacts: "NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-DEBUG.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3-DEBUG.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3-DEBUG.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1-DEBUG.zip"
+          artifacts: ${{ steps.zip.outputs.artifacts }}
           artifactContentType: application/zip
       - name: Copy binaries to ota and webflash
         run: |
-          cp release/esp32dev/nuki_hub_esp32.bin ota/nuki_hub_esp32.bin
-          cp release/esp32s3/nuki_hub_esp32s3.bin ota/nuki_hub_esp32s3.bin
-          cp release/esp32c3/nuki_hub_esp32c3.bin ota/nuki_hub_esp32c3.bin
-          cp release/esp32solo1/nuki_hub_esp32solo1.bin ota/nuki_hub_esp32solo1.bin
-          cp release/esp32dev/webflash_nuki_hub_esp32.bin webflash/webflash_nuki_hub_esp32.bin
-          cp release/esp32s3/webflash_nuki_hub_esp32s3.bin webflash/webflash_nuki_hub_esp32s3.bin
-          cp release/esp32c3/webflash_nuki_hub_esp32c3.bin webflash/webflash_nuki_hub_esp32c3.bin
+          cp -vf release/*/nuki_hub_*.bin ota/
+          cp -vf release/*/webflash_nuki_hub_*.bin webflash/
           rm -rf release
           rm -rf debug
           rm -rf NukiHub-*.zip
