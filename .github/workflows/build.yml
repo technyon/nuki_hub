@@ -149,12 +149,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: release
-          pattern: *-release-assets
+          pattern: '*-release-assets'
       - name: Download debug assets
         uses: actions/download-artifact@v4
         with:
           path: debug
-          pattern: *-debug-assets
+          pattern: '*-debug-assets'
       - name: List files
         run: |
           find release/
