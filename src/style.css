@@ -212,6 +212,12 @@ td>select {
     .adapt textarea,
     .adapt select { width: 100%; }
 
+    .adapt input[type=checkbox] {
+        width: 1.5em;
+        height: 1.5em;
+        text-align: center;
+    }
+
     .adapt table td:first-child { border-bottom: 0; }
     .adapt table td:last-child { border-top: 0; }
 }
