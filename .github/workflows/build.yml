@@ -83,8 +83,8 @@ jobs:
       - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ format('{0}-{1}-assets', matrix.name, matrix.build) }}
-          path: ${{ matrix.build }}/${{ matrix.name }}
+          name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
+          path: ${{ matrix.build }}/${{ env.VARIANT }}
 
       # ----
 
