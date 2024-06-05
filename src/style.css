@@ -38,35 +38,13 @@ source: https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css
 	padding: 0
 }
 
-address,
-area,
-article,
-aside,
-audio,
-blockquote,
-datalist,
-details,
-dl,
-fieldset,
-figure,
-iframe,
 img,
 input,
-meter,
-nav,
-ol,
-optgroup,
 option,
-output,
 p,
-pre,
-progress,
-ruby,
-section,
 table,
 textarea,
-ul,
-video {
+ul {
 	margin-bottom: 1rem
 }
 
@@ -124,40 +102,6 @@ a:hover { color: var(--nc-lk-2) }
 abbr { cursor: help }
 abbr:hover { cursor: help }
 
-blockquote {
-	padding: 1.5rem;
-	background: var(--nc-bg-2);
-	border-left: 5px solid var(--nc-bg-3)
-}
-
-blockquote :last-child {
-	padding-bottom: 0;
-	margin-bottom: 0
-}
-
-header {
-	background: var(--nc-bg-2);
-	border-bottom: 1px solid var(--nc-bg-3);
-	padding: 2rem 1.5rem;
-	margin: -2rem calc(0px - (50vw - 50%)) 2rem;
-	padding-left: calc(50vw - 50%);
-	padding-right: calc(50vw - 50%)
-}
-
-header h1,
-header h2,
-header h3 {
-	padding-bottom: 0;
-	border-bottom: 0
-}
-
-header>:first-child {
-	margin-top: 0;
-	padding-top: 0
-}
-
-header>:last-child { margin-bottom: 0 }
-
 a button,
 button,
 input[type=button],
@@ -201,75 +145,6 @@ input[type=submit]:hover {
 	background: var(--nc-lk-2)
 }
 
-code, kbd, pre, samp {
-	font-family: var(--nc-font-mono);
-	background: var(--nc-bg-2);
-	border: 1px solid var(--nc-bg-3);
-	border-radius: 4px;
-	padding: 3px 6px;
-	font-size: .9rem
-}
-
-kbd { border-bottom: 3px solid var(--nc-bg-3) }
-
-pre {
-	padding: 1rem 1.4rem;
-	max-width: 100%;
-	overflow: auto
-}
-
-pre code {
-	background: inherit;
-	font-size: inherit;
-	color: inherit;
-	border: 0;
-	padding: 0;
-	margin: 0
-}
-
-code pre {
-	display: inline;
-	background: inherit;
-	font-size: inherit;
-	color: inherit;
-	border: 0;
-	padding: 0;
-	margin: 0
-}
-
-details {
-	padding: .6rem 1rem;
-	background: var(--nc-bg-2);
-	border: 1px solid var(--nc-bg-3);
-	border-radius: 4px
-}
-
-summary {
-	cursor: pointer;
-	font-weight: 700
-}
-
-details[open] { padding-bottom: .75rem }
-details[open] summary { margin-bottom: 6px }
-details[open]>:last-child { margin-bottom: 0 }
-dt { font-weight: 700 }
-dd::before { content: '→ ' }
-
-hr {
-	border: 0;
-	border-bottom: 1px solid var(--nc-bg-3);
-	margin: 1rem auto
-}
-
-fieldset {
-	margin-top: 1rem;
-	padding: 2rem;
-	border: 1px solid var(--nc-bg-3);
-	border-radius: 4px
-}
-
-legend { padding: 0.5rem }
-
 table {
 	border-collapse: collapse;
 	width: 100%
@@ -284,31 +159,9 @@ td, th {
 th { background: var(--nc-bg-2) }
 tr:nth-child(even) { background: var(--nc-bg-2) }
 
-table caption {
-	font-weight: 700;
-	margin-bottom: .5rem
-}
-
 textarea { max-width: 100% }
-ol, ul { padding-left: 2rem }
-li { margin-top: .4rem }
 
-ol ol,
-ol ul,
-ul ol,
-ul ul {
-	margin-bottom: 0
-}
-
-mark {
-	padding: 3px 6px;
-	background: var(--nc-ac-1);
-	color: var(--nc-ac-tx)
-}
-
-input,
-select,
-textarea {
+input, select, textarea {
 	padding: 6px 12px;
 	margin-bottom: .5rem;
 	background: var(--nc-bg-2);
