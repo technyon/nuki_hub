@@ -110,6 +110,8 @@ jobs:
           # fix for docs
           if [ "$BOARD" = "ESP32SOLO1" ]; then
             BOARD="ESP32Solo1"
+          elif [ "$BOARD" = "ESP32DEV" ]; then
+            BOARD="ESP32"
           fi
 
           # look for documentation on flash and copy the command
