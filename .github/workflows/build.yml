@@ -75,10 +75,30 @@ jobs:
           cp -v bin/boot_app0.bin ${BUILD}/${VARIANT}/boot_app0.bin
           cp -v how-to-flash.txt ${BUILD}/${VARIANT}/how-to-flash.txt
 
-          cat << EOF | tee ${BUILD}/${VARIANT}/flash.sh
-          esptool.py --chip esp32 merge_bin -o ${BUILD}/${VARIANT}/webflash_nuki_hub_${VARIANT}.bin --flash_mode dio --flash_freq keep --flash_size keep 0xe000 bin/boot_app0.bin 0x1000 ${BUILD}/${VARIANT}/bootloader.bin 0x10000 ${BUILD}/${VARIANT}/nuki_hub_${VARIANT}.bin 0x8000 ${BUILD}/${VARIANT}/nuki_hub.partitions.bin
-          EOF
-          chmod a+x ${BUILD}/${VARIANT}/flash.sh
+      - name: Pack webflash image
+        if: ${{ matrix.build == 'release' && matrix.board != 'esp32solo1' }}
+        env:
+          POSITION_BOOTLOADER: "0x0"
+          POSITION_PARTITIONS: "0x8000"
+          POSITION_BOOT_APP: "0xe000"
+          POSITION_APP: "0x10000"
+          CHIP: ${{ env.VARIANT }}
+          FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
+        run: |
+          if [ "$BOARD" = "esp32dev" ]; then
+            POSITION_BOOTLOADER="0x1000"
+          fi
+
+          esptool.py \
+            --chip ${CHIP} \
+            merge_bin -o ${FILES}/webflash_nuki_hub_${VARIANT}.bin \
+            --flash_mode dio \
+            --flash_freq keep \
+            --flash_size keep \
+            ${POSITION_BOOT_APP} bin/boot_app0.bin \
+            ${POSITION_BOOTLOADER} ${FILES}/bootloader.bin \
+            ${POSITION_APP} ${FILES}/nuki_hub_${VARIANT}.bin \
+            ${POSITION_PARTITIONS} ${FILES}/nuki_hub.partitions.bin
 
       - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
         uses: actions/upload-artifact@v4
