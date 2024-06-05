@@ -113,7 +113,7 @@ jobs:
           fi
 
           # look for documentation on flash and copy the command
-          command=`sed -n '/^Howto flash (esptool)$/,$p' ${DOC} | sed -n "/^## ${BOARD}$/,\${ n; n; p; }" | head -n1`
+          command=`sed -n '/^Howto flash (esptool)$/,$p' ${DOC} | sed -n '/^## '"${BOARD}"'$/,\${ n; n; p; }' | head -n1`
 
           if [ -z "$command" ]; then
             echo "::error::Command not found in document ${DOC} for board ${BOARD}"
