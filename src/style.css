@@ -4,38 +4,38 @@ source: https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css
 */
 
 :root {
-	--nc-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-	--nc-font-mono: Consolas, monaco, 'Ubuntu Mono', 'Liberation Mono', 'Courier New', Courier, monospace;
-	--nc-tx-1: #000000;
-	--nc-tx-2: #1A1A1A;
-	--nc-bg-1: #FFFFFF;
-	--nc-bg-2: #F6F8FA;
-	--nc-bg-3: #E5E7EB;
-	--nc-lk-1: #0070F3;
-	--nc-lk-2: #0366D6;
-	--nc-lk-tx: #FFFFFF;
-	--nc-ac-1: #79FFE1;
-	--nc-ac-tx: #0C4047
+    --nc-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    --nc-font-mono: Consolas, monaco, 'Ubuntu Mono', 'Liberation Mono', 'Courier New', Courier, monospace;
+    --nc-tx-1: #000000;
+    --nc-tx-2: #1A1A1A;
+    --nc-bg-1: #FFFFFF;
+    --nc-bg-2: #F6F8FA;
+    --nc-bg-3: #E5E7EB;
+    --nc-lk-1: #0070F3;
+    --nc-lk-2: #0366D6;
+    --nc-lk-tx: #FFFFFF;
+    --nc-ac-1: #79FFE1;
+    --nc-ac-tx: #0C4047
 }
 
 @media (prefers-color-scheme:dark) {
-	:root {
-		--nc-tx-1: #ffffff;
-		--nc-tx-2: #eeeeee;
-		--nc-bg-1: #000000;
-		--nc-bg-2: #111111;
-		--nc-bg-3: #222222;
-		--nc-lk-1: #3291FF;
-		--nc-lk-2: #0070F3;
-		--nc-lk-tx: #FFFFFF;
-		--nc-ac-1: #7928CA;
-		--nc-ac-tx: #FFFFFF
-	}
+    :root {
+        --nc-tx-1: #ffffff;
+        --nc-tx-2: #eeeeee;
+        --nc-bg-1: #000000;
+        --nc-bg-2: #111111;
+        --nc-bg-3: #222222;
+        --nc-lk-1: #3291FF;
+        --nc-lk-2: #0070F3;
+        --nc-lk-tx: #FFFFFF;
+        --nc-ac-1: #7928CA;
+        --nc-ac-tx: #FFFFFF
+    }
 }
 
 * {
-	margin: 0;
-	padding: 0
+    margin: 0;
+    padding: 0
 }
 
 img,
@@ -45,50 +45,50 @@ p,
 table,
 textarea,
 ul {
-	margin-bottom: 1rem
+    margin-bottom: 1rem
 }
 
 button,
 html,
 input,
 select {
-	font-family: var(--nc-font-sans)
+    font-family: var(--nc-font-sans)
 }
 
 body {
-	margin: 0 auto;
-	max-width: 750px;
-	padding: 2rem;
-	border-radius: 6px;
-	overflow-x: hidden;
-	word-break: normal;
-	overflow-wrap: anywhere;
-	background: var(--nc-bg-1);
-	color: var(--nc-tx-2);
-	font-size: 1.03rem;
-	line-height: 1.5
+    margin: 0 auto;
+    max-width: 750px;
+    padding: 2rem;
+    border-radius: 6px;
+    overflow-x: hidden;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    background: var(--nc-bg-1);
+    color: var(--nc-tx-2);
+    font-size: 1.03rem;
+    line-height: 1.5
 }
 
 ::selection {
-	background: var(--nc-ac-1);
-	color: var(--nc-ac-tx)
+    background: var(--nc-ac-1);
+    color: var(--nc-ac-tx)
 }
 
 h1, h2, h3, h4, h5, h6 {
-	line-height: 1;
-	color: var(--nc-tx-1);
-	padding-top: .875rem
+    line-height: 1;
+    color: var(--nc-tx-1);
+    padding-top: .875rem
 }
 
 h1, h2, h3 {
-	color: var(--nc-tx-1);
-	padding-bottom: 2px;
-	margin-bottom: 8px;
-	border-bottom: 1px solid var(--nc-bg-2)
+    color: var(--nc-tx-1);
+    padding-bottom: 2px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--nc-bg-2)
 }
 
 h4, h5, h6 {
-	margin-bottom: .3rem
+    margin-bottom: .3rem
 }
 
 h1 { font-size: 2.25rem }
@@ -107,19 +107,19 @@ button,
 input[type=button],
 input[type=reset],
 input[type=submit] {
-	font-size: 1rem;
-	display: inline-block;
-	padding: 6px 12px;
-	text-align: center;
-	text-decoration: none;
-	white-space: nowrap;
-	background: var(--nc-lk-1);
-	color: var(--nc-lk-tx);
-	border: 0;
-	border-radius: 4px;
-	box-sizing: border-box;
-	cursor: pointer;
-	color: var(--nc-lk-tx)
+    font-size: 1rem;
+    display: inline-block;
+    padding: 6px 12px;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    background: var(--nc-lk-1);
+    color: var(--nc-lk-tx);
+    border: 0;
+    border-radius: 4px;
+    box-sizing: border-box;
+    cursor: pointer;
+    color: var(--nc-lk-tx)
 }
 
 a button[disabled],
@@ -127,9 +127,9 @@ button[disabled],
 input[type=button][disabled],
 input[type=reset][disabled],
 input[type=submit][disabled] {
-	cursor: default;
-	opacity: .5;
-	cursor: not-allowed
+    cursor: default;
+    opacity: .5;
+    cursor: not-allowed
 }
 
 .button:focus,
@@ -142,18 +142,18 @@ input[type=reset]:focus,
 input[type=reset]:hover,
 input[type=submit]:focus,
 input[type=submit]:hover {
-	background: var(--nc-lk-2)
+    background: var(--nc-lk-2)
 }
 
 table {
-	border-collapse: collapse;
-	width: 100%
+    border-collapse: collapse;
+    width: 100%
 }
 
 td, th {
-	border: 1px solid var(--nc-bg-3);
-	text-align: left;
-	padding: .5rem
+    border: 1px solid var(--nc-bg-3);
+    text-align: left;
+    padding: .5rem
 }
 
 th { background: var(--nc-bg-2) }
@@ -162,39 +162,39 @@ tr:nth-child(even) { background: var(--nc-bg-2) }
 textarea { max-width: 100% }
 
 input, select, textarea {
-	padding: 6px 12px;
-	margin-bottom: .5rem;
-	background: var(--nc-bg-2);
-	color: var(--nc-tx-2);
-	border: 1px solid var(--nc-bg-3);
-	border-radius: 4px;
-	box-shadow: none;
-	box-sizing: border-box
+    padding: 6px 12px;
+    margin-bottom: .5rem;
+    background: var(--nc-bg-2);
+    color: var(--nc-tx-2);
+    border: 1px solid var(--nc-bg-3);
+    border-radius: 4px;
+    box-shadow: none;
+    box-sizing: border-box
 }
 
 img { max-width: 100% }
 
 td>input {
-	margin-top: 0px;
-	margin-bottom: 0px
+    margin-top: 0px;
+    margin-bottom: 0px
 }
 
 td>textarea {
-	margin-top: 0px;
-	margin-bottom: 0px
+    margin-top: 0px;
+    margin-bottom: 0px
 }
 
 td>select {
-	margin-top: 0px;
-	margin-bottom: 0px
+    margin-top: 0px;
+    margin-bottom: 0px
 }
 
 #tblnav td, th {
-	border: 0;
-	border-bottom: 1px solid;
+    border: 0;
+    border-bottom: 1px solid;
 }
 
 .tdbtn {
-	text-align: center;
-	vertical-align: middle;
+    text-align: center;
+    vertical-align: middle;
 }
