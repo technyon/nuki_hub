@@ -17,7 +17,7 @@ jobs:
     name: Build ${{ matrix.board }} (${{ matrix.build }})
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         board: [esp32dev, esp32-s3, esp32-c3, esp32solo1]
         build: [release, debug]
