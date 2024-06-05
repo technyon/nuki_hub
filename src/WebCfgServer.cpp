@@ -1688,17 +1688,10 @@ void WebCfgServer::buildGpioConfigHtml(String &response)
 void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
 {
     String delay(redirectDelay);
+    String header = "<meta http-equiv=\"Refresh\" content=\"" + delay + "; url=/\" />";
 
-    response.concat("<html>\n");
-    response.concat("<head>\n");
-    response.concat("<title>Nuki Hub</title>\n");
-    response.concat("<meta http-equiv=\"Refresh\" content=\"");
-    response.concat(redirectDelay);
-    response.concat("; url=/\" />");
-    response.concat("\n</head>\n");
-    response.concat("<body>\n");
+    buildHtmlHeader(response, header);
     response.concat(message);
-
     response.concat("</body></html>");
 }
 
