@@ -19,21 +19,20 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
+        board: [esp32-s3, esp32-c3, esp32solo1]
         build: [release, debug]
         include:
         - board: esp32dev
           name: esp32
-        - board: esp32-s3
-          name: esp32s3
-        - board: esp32-c3
-          name: esp32c3
-        - board: esp32solo1
-          name: esp32solo1
     env:
       BOARD: ${{ matrix.board }}
-      VARIANT: ${{ matrix.name }}
+      VARIANT: ${{ matrix.name || matrix.board }}
       BUILD: ${{ matrix.build }}
     steps:
+      - name: Fix variant name
+        run: |
+          # remove dash character
+          echo "VARIANT=${VARIANT//-/}" | tee -a ${GITHUB_ENV}
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -60,7 +59,9 @@ jobs:
           if [ "$BUILD" = "debug" ]; then
             BOARD="${BOARD}_dbg"
           fi
-          pio run --environment ${BOARD}
+          echo "::group::Building with PlatformIO"
+            pio run --environment ${BOARD}
+          echo "::endgroup::"
           mkdir -p ${BUILD}/${VARIANT}
           cp -v .pio/build/${BOARD}/firmware.bin ${BUILD}/${VARIANT}/nuki_hub_${VARIANT}.bin
           cp -v .pio/build/${BOARD}/partitions.bin ${BUILD}/${VARIANT}/nuki_hub.partitions.bin
