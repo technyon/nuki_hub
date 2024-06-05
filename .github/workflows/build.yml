@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: Build ${{ matrix.board }}
+    name: Build ${{ matrix.board }} (${{ matrix.build }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -71,10 +71,10 @@ jobs:
           cp -v bin/boot_app0.bin ${BUILD}/${VARIANT}/boot_app0.bin
           cp -v how-to-flash.txt ${BUILD}/${VARIANT}/how-to-flash.txt
 
-          cat << EOF | tee release/${VARIANT}/flash.sh
-          esptool.py --chip esp32 merge_bin -o release/${VARIANT}/webflash_nuki_hub_${VARIANT}.bin --flash_mode dio --flash_freq keep --flash_size keep 0xe000 bin/boot_app0.bin 0x1000 release/${VARIANT}/bootloader.bin 0x10000 release/${VARIANT}/nuki_hub_${VARIANT}.bin 0x8000 release/${VARIANT}/nuki_hub.partitions.bin
+          cat << EOF | tee ${BUILD}/${VARIANT}/flash.sh
+          esptool.py --chip esp32 merge_bin -o ${BUILD}/${VARIANT}/webflash_nuki_hub_${VARIANT}.bin --flash_mode dio --flash_freq keep --flash_size keep 0xe000 bin/boot_app0.bin 0x1000 ${BUILD}/${VARIANT}/bootloader.bin 0x10000 ${BUILD}/${VARIANT}/nuki_hub_${VARIANT}.bin 0x8000 ${BUILD}/${VARIANT}/nuki_hub.partitions.bin
           EOF
-          chmod a+x release/${VARIANT}/flash.sh
+          chmod a+x ${BUILD}/${VARIANT}/flash.sh
 
       - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
         uses: actions/upload-artifact@v4
