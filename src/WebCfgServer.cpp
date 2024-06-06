@@ -1137,36 +1137,29 @@ void WebCfgServer::buildHtml(String& response)
 
     if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
 
-    response.concat("</table><br><table id=\"tblnav\"><tbody>");
-    response.concat("<tr><td><h5>MQTT and Network Configuration</h5></td><td class=\"tdbtn\">");
-    buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
-    response.concat("</td></tr><tr><td><h5>Nuki Configuration</h5></td><td class=\"tdbtn\">");
-    buildNavigationButton(response, "Edit", "/nukicfg");
-    response.concat("</td></tr><tr><td><h5>Access Level Configuration</h5></td><td class=\"tdbtn\">");
-    buildNavigationButton(response, "Edit", "/acclvl");
-    response.concat("</td></tr><tr><td><h5>Credentials</h5></td><td class=\"tdbtn\">");
-    buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");
-    response.concat("</td></tr><tr><td><h5>GPIO Configuration</h5></td><td class=\"tdbtn\">");
-    buildNavigationButton(response, "Edit", "/gpiocfg");
-    response.concat("</td></tr><tr><td><h5>Firmware update</h5></td><td class=\"tdbtn\">");
-    buildNavigationButton(response, "Open", "/ota");
+    response.concat("</table><br>");
+    response.concat("<ul id=\"tblnav\">");
+    buildNavigationMenuEntry(response, "MQTT and Network Configuration", "/mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
+    buildNavigationMenuEntry(response, "Nuki Configuration", "/nukicfg");
+    buildNavigationMenuEntry(response, "Access Level Configuration", "/acclvl");
+    buildNavigationMenuEntry(response, "Credentials", "/cred", _pinsConfigured ? "" : "Please configure PIN");
+    buildNavigationMenuEntry(response, "GPIO Configuration", "/gpiocfg");
+    buildNavigationMenuEntry(response, "Firmware update", "/ota");
+
+    // buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
+    // buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");
 
     if(_preferences->getBool(preference_publish_debug_info, false))
     {
-        response.concat("</td></tr><tr><td><h5>Advanced Configuration</h5></td><td class=\"tdbtn\">");
-        buildNavigationButton(response, "Edit", "/advanced");
+        buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
     }
-
-    response.concat("</td></tr>");
 
     if(_allowRestartToPortal)
     {
-        response.concat("<tr><td><h5>Wi-Fi</h5></td><td class=\"tdbtn\">");
-        buildNavigationButton(response, "Restart and configure Wi-Fi", "/wifi");
-        response.concat("</td></tr>");
+        buildNavigationMenuEntry(response, "Configure Wi-Fi", "/wifi");
     }
 
-    response.concat("</tbody></table></body></html>");
+    response.concat("</ul></body></html>");
 }
 
 
@@ -2244,6 +2237,21 @@ void WebCfgServer::buildNavigationButton(String &response, const char *caption, 
     response.concat("</button> ");
     response.concat(labelText);
     response.concat("</form>");
+}
+
+void WebCfgServer::buildNavigationMenuEntry(String &response, const char *title, const char *targetPath, const char* warningMessage)
+{
+    response.concat("<a href=\"");
+    response.concat(targetPath);
+    response.concat("\">");
+    response.concat("<li>");
+    response.concat(title);
+    if(strcmp(warningMessage, "") == 0){
+        response.concat("<span>");
+        response.concat(warningMessage);
+        response.concat("</span>");
+    }
+    response.concat("</li></a>");
 }
 
 void WebCfgServer::printParameter(String& response, const char *description, const char *value, const char *link, const char *id)

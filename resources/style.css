@@ -196,16 +196,6 @@ td>select {
     margin-bottom: 0px
 }
 
-#tblnav td, th {
-    border: 0;
-    border-bottom: 1px solid;
-}
-
-.tdbtn {
-    text-align: center;
-    vertical-align: middle;
-}
-
 .warning {
     color: #f00;
 }
@@ -230,4 +220,53 @@ td>select {
 
     .adapt table td:first-child { border-bottom: 0; }
     .adapt table td:last-child { border-top: 0; }
+}
+
+#tblnav a {
+    border: 0;
+    border-bottom: 1px solid;
+    display: block;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: .6rem 0;
+    line-height: 1;
+    color: var(--nc-tx-1);
+    text-decoration: none;
+
+    background: linear-gradient(to left, transparent 50%, rgba(255,255,255,0.4) 50%) right;
+    background-size: 200% 100%;
+    transition:all .2s ease;
+}
+
+#tblnav a:hover {
+    background-position: left;
+    transition:all .45s ease;
+}
+
+#tblnav a:active {
+    background: var(--nc-lk-1);
+    transition:all .15s ease;
+}
+
+#tblnav a li {
+    list-style: none;
+    padding: .5rem;
+    display: inline-block;
+    width: 100%;
+}
+
+#tblnav a li>span {
+    float: right;
+    text-align: right;
+    margin-right: 10px;
+    max-width: 140px;
+    color: #f70;
+    font-weight: 100;
+    font-style: italic;
+    display: block;
+}
+
+.tdbtn {
+    text-align: center;
+    vertical-align: middle;
 }
