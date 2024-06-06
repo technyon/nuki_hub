@@ -238,6 +238,11 @@ td>select {
     transition:all .2s ease;
 }
 
+#tblnav a:nth-child(even) {
+    background: linear-gradient(to left, var(--nc-bg-2) 50%, rgba(255,255,255,0.4) 50%) right;
+    background-size: 200% 100%;
+}
+
 #tblnav a:hover {
     background-position: left;
     transition:all .45s ease;
