@@ -61,6 +61,7 @@ private:
     void printTextarea(String& response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(String &response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options);
     void buildNavigationButton(String& response, const char* caption, const char* targetPath, const char* labelText = "");
+    void buildNavigationMenuEntry(String &response, const char *title, const char *targetPath, const char* warningMessage = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
