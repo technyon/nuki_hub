@@ -2246,7 +2246,7 @@ void WebCfgServer::buildNavigationMenuEntry(String &response, const char *title,
     response.concat("\">");
     response.concat("<li>");
     response.concat(title);
-    if(strcmp(warningMessage, "") == 0){
+    if(strcmp(warningMessage, "") != 0){
         response.concat("<span>");
         response.concat(warningMessage);
         response.concat("</span>");
