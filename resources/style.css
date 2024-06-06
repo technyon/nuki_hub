@@ -220,6 +220,10 @@ td>select {
 
     .adapt table td:first-child { border-bottom: 0; }
     .adapt table td:last-child { border-top: 0; }
+
+    #tblnav a li>span {
+        max-width: 140px;
+    }
 }
 
 #tblnav a {
@@ -264,7 +268,6 @@ td>select {
     float: right;
     text-align: right;
     margin-right: 10px;
-    max-width: 140px;
     color: #f70;
     font-weight: 100;
     font-style: italic;
