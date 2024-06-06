@@ -2054,7 +2054,7 @@ void NukiWrapper::setupHASS()
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
 
-    _network->publishHASSConfig((char*)"SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, hasDoorSensor(), _hasKeypad, _publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
+    _network->publishHASSConfig((char*)"SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), _hasKeypad, _publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
     _hassSetupCompleted = true;
 
     Log->println("HASS setup for lock completed.");
