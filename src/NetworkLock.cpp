@@ -1045,10 +1045,10 @@ bool NetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
-void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
+void NetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name,  char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
                                char *unlockAction, char *openAction)
 {
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction);
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction);
     _network->publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
 
     if(hasDoorSensor)
