@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Nuki Hub Readme
+    url: https://github.com/technyon/nuki_hub
+    about: All the information related to Nuki Hub.
+  - name: Nuki Hub Discussions and Support
+    url: https://github.com/technyon/nuki_hub/discussions
+    about: Nuki Hub usage Questions, Feature Requests and Projects.
+  - name: Nuki Hub Users Chat
+    url: https://discord.gg/9nPq85bP4p
+    about: Chat for feedback, questions and troubleshooting.
