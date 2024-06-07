@@ -14,9 +14,28 @@ permissions:
 
 jobs:
   build:
-    name: Checkout source code and build
+    name: Build ${{ matrix.board }} (${{ matrix.build }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [esp32dev, esp32-s3, esp32-c3, esp32solo1]
+        build: [release, debug]
+    env:
+      BOARD: ${{ matrix.board }}
+      VARIANT: ${{ matrix.name || matrix.board }}
+      BUILD: ${{ matrix.build }}
     steps:
+      - name: Fix variant name
+        run: |
+          # remove dash character
+          export VARIANT=${VARIANT//-/}
+
+          if [ "$VARIANT" = "esp32dev" ]; then
+            VARIANT="esp32"
+          fi
+
+          echo "VARIANT=${VARIANT}" | tee -a ${GITHUB_ENV}
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -37,224 +56,142 @@ jobs:
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
-          sed -i "s/unknownbuildnr/$Version (release)/g" src/Config.h
-      - name: Build PlatformIO Project esp32dev
+          sed -i "s/unknownbuildnr/$Version (${BUILD})/g" src/Config.h
+      - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
-          pio run --environment esp32dev
-          mkdir -p release/esp32dev
-          cp .pio/build/esp32dev/firmware.bin release/esp32dev/nuki_hub_esp32.bin
-          cp .pio/build/esp32dev/partitions.bin release/esp32dev/nuki_hub.partitions.bin
-          cp .pio/build/esp32dev/bootloader.bin release/esp32dev/bootloader.bin
-          cp bin/boot_app0.bin release/esp32dev/boot_app0.bin
-          cp how-to-flash.txt release/esp32dev/how-to-flash.txt
-          esptool.py --chip esp32 merge_bin -o release/esp32dev/webflash_nuki_hub_esp32.bin --flash_mode dio --flash_freq keep --flash_size keep 0xe000 bin/boot_app0.bin 0x1000 release/esp32dev/bootloader.bin 0x10000 release/esp32dev/nuki_hub_esp32.bin 0x8000 release/esp32dev/nuki_hub.partitions.bin
-          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32.bin 0x8000 nuki_hub.partitions.bin" > release/esp32dev/flash.sh
-      - name: Build PlatformIO Project esp32-s3
-        run: |
-          pio run --environment esp32-s3
-          mkdir -p release/esp32s3
-          cp .pio/build/esp32-s3/firmware.bin release/esp32s3/nuki_hub_esp32s3.bin
-          cp .pio/build/esp32-s3/partitions.bin release/esp32s3/nuki_hub.partitions.bin
-          cp .pio/build/esp32-s3/bootloader.bin release/esp32s3/bootloader.bin
-          cp bin/boot_app0.bin release/esp32s3/boot_app0.bin
-          cp how-to-flash.txt release/esp32s3/how-to-flash.txt
-          esptool.py --chip esp32s3 merge_bin -o release/esp32s3/webflash_nuki_hub_esp32s3.bin --flash_mode dio --flash_freq keep --flash_size keep 0xe000 bin/boot_app0.bin 0x0 release/esp32s3/bootloader.bin 0x10000 release/esp32s3/nuki_hub_esp32s3.bin 0x8000 release/esp32s3/nuki_hub.partitions.bin
-          echo "esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32s3.bin 0x8000 nuki_hub.partitions.bin" > release/esp32s3/flash.sh
-      - name: Build PlatformIO Project esp32-c3
-        run: |
-          pio run --environment esp32-c3
-          mkdir -p release/esp32c3
-          cp .pio/build/esp32-c3/firmware.bin release/esp32c3/nuki_hub_esp32c3.bin
-          cp .pio/build/esp32-c3/partitions.bin release/esp32c3/nuki_hub.partitions.bin
-          cp .pio/build/esp32-c3/bootloader.bin release/esp32c3/bootloader.bin
-          cp bin/boot_app0.bin release/esp32c3/boot_app0.bin
-          cp how-to-flash.txt release/esp32c3/how-to-flash.txt
-          esptool.py --chip esp32c3 merge_bin -o release/esp32c3/webflash_nuki_hub_esp32c3.bin --flash_mode dio --flash_freq keep --flash_size keep 0xe000 bin/boot_app0.bin 0x0 release/esp32c3/bootloader.bin 0x10000 release/esp32c3/nuki_hub_esp32c3.bin 0x8000 release/esp32c3/nuki_hub.partitions.bin
-          echo "esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32c3.bin 0x8000 nuki_hub.partitions.bin" > release/esp32c3/flash.sh
-      - name: Build PlatformIO Project esp32solo1
-        run: |
-          pio run --environment esp32solo1
-          mkdir -p release/esp32solo1
-          cp .pio/build/esp32solo1/firmware.bin release/esp32solo1/nuki_hub_esp32solo1.bin
-          cp .pio/build/esp32solo1/partitions.bin release/esp32solo1/nuki_hub.partitions.bin
-          cp .pio/build/esp32solo1/bootloader.bin release/esp32solo1/bootloader.bin
-          cp bin/boot_app0.bin release/esp32solo1/boot_app0.bin
-          cp how-to-flash.txt release/esp32solo1/how-to-flash.txt
-          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32solo1.bin 0x8000 nuki_hub.partitions.bin" > release/esp32solo1/flash.sh
-      - name: Upload Artifact esp32dev
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32-assets
-          path: release/esp32dev
-      - name: Upload Artifact esp32-s3
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32-s3-assets
-          path: release/esp32s3
-      - name: Upload Artifact esp32-c3
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32-c3-assets
-          path: release/esp32c3
-      - name: Upload Artifact esp32solo1
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32solo1-assets
-          path: release/esp32solo1
-      - name: Add version info
+          if [ "$BUILD" = "debug" ]; then
+            BOARD="${BOARD}_dbg"
+          fi
+          echo "::group::Building with PlatformIO"
+            pio run --environment ${BOARD}
+          echo "::endgroup::"
+          mkdir -p ${BUILD}/${VARIANT}
+          cp -v .pio/build/${BOARD}/firmware.bin ${BUILD}/${VARIANT}/nuki_hub_${VARIANT}.bin
+          cp -v .pio/build/${BOARD}/partitions.bin ${BUILD}/${VARIANT}/nuki_hub.partitions.bin
+          cp -v .pio/build/${BOARD}/bootloader.bin ${BUILD}/${VARIANT}/bootloader.bin
+          if [ "$BUILD" = "debug" ]; then
+            cp -v .pio/build/${BOARD}/firmware.elf ${BUILD}/${VARIANT}/nuki_hub_${VARIANT}.elf
+          fi
+          cp -v bin/boot_app0.bin ${BUILD}/${VARIANT}/boot_app0.bin
+          cp -v how-to-flash.txt ${BUILD}/${VARIANT}/how-to-flash.txt
+
+      - name: Pack webflash image
+        if: ${{ matrix.build == 'release' && matrix.board != 'esp32solo1' }}
         env:
-          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+          POSITION_BOOTLOADER: "0x0"
+          POSITION_PARTITIONS: "0x8000"
+          POSITION_BOOT_APP: "0xe000"
+          POSITION_APP: "0x10000"
+          CHIP: ${{ env.VARIANT }}
+          FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
         run: |
-          sed -i "s/$Version (release)/$Version (debug)/g" src/Config.h
-      - name: Build PlatformIO Project esp32dev_dbg
+          if [ "$BOARD" = "esp32dev" ]; then
+            POSITION_BOOTLOADER="0x1000"
+          fi
+
+          esptool.py \
+            --chip ${CHIP} \
+            merge_bin -o ${FILES}/webflash_nuki_hub_${VARIANT}.bin \
+            --flash_mode dio \
+            --flash_freq keep \
+            --flash_size keep \
+            ${POSITION_BOOT_APP} bin/boot_app0.bin \
+            ${POSITION_BOOTLOADER} ${FILES}/bootloader.bin \
+            ${POSITION_APP} ${FILES}/nuki_hub_${VARIANT}.bin \
+            ${POSITION_PARTITIONS} ${FILES}/nuki_hub.partitions.bin
+
+      - name: Add flash script
+        env:
+          DOC: how-to-flash.txt
+          FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
         run: |
-          pio run --environment esp32dev_dbg
-          mkdir -p debug/esp32dev
-          cp .pio/build/esp32dev_dbg/bootloader.bin debug/esp32dev/bootloader.bin
-          cp .pio/build/esp32dev_dbg/firmware.bin debug/esp32dev/nuki_hub_esp32.bin
-          cp .pio/build/esp32dev_dbg/partitions.bin debug/esp32dev/nuki_hub.partitions.bin
-          cp .pio/build/esp32dev_dbg/firmware.elf debug/esp32dev/nuki_hub_esp32.elf
-          cp bin/boot_app0.bin debug/esp32dev/boot_app0.bin
-          cp how-to-flash.txt debug/esp32dev/how-to-flash.txt
-          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32.bin 0x8000 nuki_hub.partitions.bin" > debug/esp32dev/flash.sh
-      - name: Build PlatformIO Project esp32-s3_dbg
-        run: |
-          pio run --environment esp32-s3_dbg
-          mkdir -p debug/esp32s3
-          cp .pio/build/esp32-s3_dbg/bootloader.bin debug/esp32s3/bootloader.bin
-          cp .pio/build/esp32-s3_dbg/firmware.bin debug/esp32s3/nuki_hub_esp32s3.bin
-          cp .pio/build/esp32-s3_dbg/partitions.bin debug/esp32s3/nuki_hub.partitions.bin
-          cp .pio/build/esp32-s3_dbg/firmware.elf debug/esp32s3/nuki_hub_esp32s3.elf
-          cp bin/boot_app0.bin debug/esp32s3/boot_app0.bin
-          cp how-to-flash.txt debug/esp32s3/how-to-flash.txt
-          echo "esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32s3.bin 0x8000 nuki_hub.partitions.bin" > debug/esp32s3/flash.sh
-      - name: Build PlatformIO Project esp32-c3_dbg
-        run: |
-          pio run --environment esp32-c3_dbg
-          mkdir -p debug/esp32c3
-          cp .pio/build/esp32-c3_dbg/bootloader.bin debug/esp32c3/bootloader.bin
-          cp .pio/build/esp32-c3_dbg/firmware.bin debug/esp32c3/nuki_hub_esp32c3.bin
-          cp .pio/build/esp32-c3_dbg/partitions.bin debug/esp32c3/nuki_hub.partitions.bin
-          cp .pio/build/esp32-c3_dbg/firmware.elf debug/esp32c3/nuki_hub_esp32c3.elf
-          cp bin/boot_app0.bin debug/esp32c3/boot_app0.bin
-          cp how-to-flash.txt debug/esp32c3/how-to-flash.txt
-          echo "esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32c3.bin 0x8000 nuki_hub.partitions.bin" > debug/esp32c3/flash.sh
-      - name: Build PlatformIO Project esp32solo1_dbg
-        run: |
-          pio run --environment esp32solo1_dbg
-          mkdir -p debug/esp32solo1
-          cp .pio/build/esp32solo1_dbg/bootloader.bin debug/esp32solo1/bootloader.bin
-          cp .pio/build/esp32solo1_dbg/firmware.bin debug/esp32solo1/nuki_hub_esp32solo1.bin
-          cp .pio/build/esp32solo1_dbg/partitions.bin debug/esp32solo1/nuki_hub.partitions.bin
-          cp .pio/build/esp32solo1_dbg/firmware.elf debug/esp32solo1/nuki_hub_esp32solo1.elf
-          cp bin/boot_app0.bin debug/esp32solo1/boot_app0.bin
-          cp how-to-flash.txt debug/esp32solo1/how-to-flash.txt
-          echo "esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32solo1.bin 0x8000 nuki_hub.partitions.bin" > debug/esp32solo1/flash.sh
-      - name: Upload Artifact esp32dev-debug
+          BOARD=`echo $BOARD | tr '[:lower:]' '[:upper:]'`
+
+          # fix for docs
+          if [ "$BOARD" = "ESP32SOLO1" ]; then
+            BOARD="ESP32Solo1"
+          elif [ "$BOARD" = "ESP32DEV" ]; then
+            BOARD="ESP32"
+          fi
+
+          # look for documentation on flash and copy the command
+          command=`sed -n '/^Howto flash (esptool)$/,$p' ${DOC} | sed -n '/^## '"${BOARD}"'$/,\${ n; n; p; }' | head -n1`
+
+          if [ -z "$command" ]; then
+            echo "::error::Command not found in document ${DOC} for board ${BOARD}"
+            exit 1
+          fi
+
+          echo -n "Command: "
+          echo "$command" | tee ${FILES}/flash.sh
+          chmod a+x ${FILES}/flash.sh
+
+      - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
         uses: actions/upload-artifact@v4
         with:
-          name: esp32-debug-assets
-          path: debug/esp32dev
-      - name: Upload Artifact esp32-s3-debug
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32-s3-debug-assets
-          path: debug/esp32s3
-      - name: Upload Artifact esp32-c3-debug
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32-c3-debug-assets
-          path: debug/esp32c3
-      - name: Upload Artifact esp32solo1-debug
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32solo1-debug-assets
-          path: debug/esp32solo1
+          name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
+          path: ${{ matrix.build }}/${{ env.VARIANT }}
+
   release:
     name: Release new version
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
     steps:
+      - name: Get the version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
       - name: Git Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}    
-      - name: Download esp32dev
+      - name: Download release assets
         uses: actions/download-artifact@v4
         with:
-          name: esp32-assets
-          path: release/esp32dev
-      - name: Download esp32-s3
+          path: release
+          pattern: '*-release-assets'
+      - name: Download debug assets
         uses: actions/download-artifact@v4
         with:
-          name: esp32-s3-assets
-          path: release/esp32s3
-      - name: Download esp32-c3
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-c3-assets
-          path: release/esp32c3
-      - name: Download esp32solo1
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32solo1-assets
-          path: release/esp32solo1
-      - name: Download esp32dev-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-debug-assets
-          path: debug/esp32dev
-      - name: Download esp32-s3-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-s3-debug-assets
-          path: debug/esp32s3
-      - name: Download esp32-c3-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32-c3-debug-assets
-          path: debug/esp32c3
-      - name: Download esp32solo1-debug
-        uses: actions/download-artifact@v4
-        with:
-          name: esp32solo1-debug-assets
-          path: debug/esp32solo1
-      - name: Get the version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
-      - name: Build the zip archive for ESP32
+          path: debug
+          pattern: '*-debug-assets'
+      - name: Build zip archives
+        id: zip
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: |
-          cd release/esp32dev
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32.zip * -x "webflash_nuki_hub_esp32.bin"
-      - name: Build the zip archive for ESP32-S3
-        run: |
-          cd release/esp32s3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3.zip * -x "webflash_nuki_hub_esp32s3.bin"
-      - name: Build the zip archive for ESP32-C3
-        run: |
-          cd release/esp32c3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3.zip * -x "webflash_nuki_hub_esp32c3.bin"
-      - name: Build the zip archive for ESP32-SOLO1
-        run: |
-          cd release/esp32solo1
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1.zip * 
-      - name: Build the zip archive for ESP32 Debug
-        run: |
-          cd debug/esp32dev
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-DEBUG.zip *
-      - name: Build the zip archive for ESP32-S3 Debug
-        run: |
-          cd debug/esp32s3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3-DEBUG.zip *
-      - name: Build the zip archive for ESP32-C3 Debug
-        run: |
-          cd debug/esp32c3
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3-DEBUG.zip *
-      - name: Build the zip archive for ESP32-SOLO1 Debug
-        run: |
-          cd debug/esp32solo1
-          zip -9r ../../NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1-DEBUG.zip *          
+          NUKI="NukiHub-${VERSION}"
+          ARTIFACTS=""
+
+          for FOLDER in release/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            ZIPFILE="${NUKI}-${MODEL}.zip"
+
+            echo "${FOLDER} -- ${ZIPFILE}"
+            cd $FOLDER
+
+            zip -9r ../../${ZIPFILE} * -x "webflash_nuki_hub_*.bin"
+            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
+
+            cd ../..
+          done
+
+          for FOLDER in debug/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            ZIPFILE="${NUKI}-${MODEL}-DEBUG.zip"
+
+            echo "${FOLDER} -- ${ZIPFILE}"
+            cd $FOLDER
+
+            zip -9r ../../${ZIPFILE} *
+            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
+
+            cd ../..
+          done
+
+          # remove last character
+          ARTIFACTS="${ARTIFACTS%?}"
+          echo "artifacts=${ARTIFACTS}" | tee -a ${GITHUB_OUTPUT}
       - name: Create Release
         id: create_release
         uses: ncipollo/release-action@v1
@@ -264,17 +201,12 @@ jobs:
           updateOnlyUnreleased: true
           draft: true
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
-          artifacts: "NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-DEBUG.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-S3-DEBUG.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-C3-DEBUG.zip,NukiHub-${{ steps.get_version.outputs.VERSION }}-ESP32-SOLO1-DEBUG.zip"
+          artifacts: ${{ steps.zip.outputs.artifacts }}
           artifactContentType: application/zip
       - name: Copy binaries to ota and webflash
         run: |
-          cp release/esp32dev/nuki_hub_esp32.bin ota/nuki_hub_esp32.bin
-          cp release/esp32s3/nuki_hub_esp32s3.bin ota/nuki_hub_esp32s3.bin
-          cp release/esp32c3/nuki_hub_esp32c3.bin ota/nuki_hub_esp32c3.bin
-          cp release/esp32solo1/nuki_hub_esp32solo1.bin ota/nuki_hub_esp32solo1.bin
-          cp release/esp32dev/webflash_nuki_hub_esp32.bin webflash/webflash_nuki_hub_esp32.bin
-          cp release/esp32s3/webflash_nuki_hub_esp32s3.bin webflash/webflash_nuki_hub_esp32s3.bin
-          cp release/esp32c3/webflash_nuki_hub_esp32c3.bin webflash/webflash_nuki_hub_esp32c3.bin
+          cp -vf release/*/nuki_hub_*.bin ota/
+          cp -vf release/*/webflash_nuki_hub_*.bin webflash/
           rm -rf release
           rm -rf debug
           rm -rf NukiHub-*.zip

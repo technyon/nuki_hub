@@ -760,7 +760,7 @@ bool Network::publishString(const char* prefix, const char *topic, const char *v
     return _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value) > 0;
 }
 
-void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
+void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     JsonDocument json;
     json.clear();
@@ -770,6 +770,8 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
     json["dev"]["mf"] = "Nuki";
     json["dev"]["mdl"] = deviceType;
     json["dev"]["name"] = name;
+    json["dev"]["sw"] = softwareVersion;
+    json["dev"]["hw"] = hardwareVersion;
 
     String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url);
 

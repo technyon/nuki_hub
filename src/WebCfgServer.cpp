@@ -1216,7 +1216,7 @@ void WebCfgServer::buildCredHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Credentials</h3>");
     response.concat("<table>");
     printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "", false, true);
@@ -1228,7 +1228,7 @@ void WebCfgServer::buildCredHtml(String &response)
 
     if(_nuki != nullptr)
     {
-        response.concat("<br><br><form method=\"post\" action=\"savecfg\">");
+        response.concat("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
         response.concat("<h3>Nuki Lock PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, "", true);
@@ -1239,7 +1239,7 @@ void WebCfgServer::buildCredHtml(String &response)
 
     if(_nukiOpener != nullptr)
     {
-        response.concat("<br><br><form method=\"post\" action=\"savecfg\">");
+        response.concat("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
         response.concat("<h3>Nuki Opener PIN</h3>");
         response.concat("<table>");
         printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, "", true);
@@ -1252,7 +1252,7 @@ void WebCfgServer::buildCredHtml(String &response)
     if(_nuki != nullptr)
     {
         response.concat("<br><br><h3>Unpair Nuki Lock</h3>");
-        response.concat("<form method=\"post\" action=\"/unpairlock\">");
+        response.concat("<form class=\"adapt\" method=\"post\" action=\"/unpairlock\">");
         response.concat("<table>");
         String message = "Type ";
         message.concat(_confirmCode);
@@ -1265,7 +1265,7 @@ void WebCfgServer::buildCredHtml(String &response)
     if(_nukiOpener != nullptr)
     {
         response.concat("<br><br><h3>Unpair Nuki Opener</h3>");
-        response.concat("<form method=\"post\" action=\"/unpairopener\">");
+        response.concat("<form class=\"adapt\" method=\"post\" action=\"/unpairopener\">");
         response.concat("<table>");
         String message = "Type ";
         message.concat(_confirmCode);
@@ -1276,8 +1276,8 @@ void WebCfgServer::buildCredHtml(String &response)
     }
 
     response.concat("<br><br><h3>Factory reset Nuki Hub</h3>");
-    response.concat("<h4 style=\"color: #ff0000\">This will reset all settings to default and unpair Nuki Lock and/or Opener. Optionally will also reset WiFi settings and reopen WiFi manager portal.</h4>");
-    response.concat("<form method=\"post\" action=\"/factoryreset\">");
+    response.concat("<h4 class=\"warning\">This will reset all settings to default and unpair Nuki Lock and/or Opener. Optionally will also reset WiFi settings and reopen WiFi manager portal.</h4>");
+    response.concat("<form class=\"adapt\" method=\"post\" action=\"/factoryreset\">");
     response.concat("<table>");
     String message = "Type ";
     message.concat(_confirmCode);
@@ -1343,7 +1343,7 @@ void WebCfgServer::buildOtaCompletedHtml(String &response)
 void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     buildHtmlHeader(response);
-    response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Basic MQTT and Network Configuration</h3>");
     response.concat("<table>");
     printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100, "");
@@ -1394,9 +1394,9 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
 void WebCfgServer::buildAdvancedConfigHtml(String &response)
 {
     buildHtmlHeader(response);
-    response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Advanced Configuration</h3>");
-    response.concat("<h4 style=\"color: #ff0000\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash nukihub using USB/serial</h4>");
+    response.concat("<h4 class=\"warning\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash nukihub using USB/serial</h4>");
     response.concat("<table>");
     response.concat("<tr><td>Current bootloop prevention state</td><td>");
     response.concat(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
@@ -1516,7 +1516,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     {
         printCheckBox(response, "KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
         printCheckBox(response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
-        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span style=\"color: #ff0000\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
+        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), ""); 
         printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
     printCheckBox(response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
@@ -1674,7 +1674,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 {
     buildHtmlHeader(response);
 
-    response.concat("<form method=\"post\" action=\"savecfg\">");
+    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
     response.concat("<h3>Basic Nuki Configuration</h3>");
     response.concat("<table>");
     printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled), "");
@@ -1740,17 +1740,10 @@ void WebCfgServer::buildGpioConfigHtml(String &response)
 void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
 {
     String delay(redirectDelay);
+    String header = "<meta http-equiv=\"Refresh\" content=\"" + delay + "; url=/\" />";
 
-    response.concat("<html>\n");
-    response.concat("<head>\n");
-    response.concat("<title>Nuki Hub</title>\n");
-    response.concat("<meta http-equiv=\"Refresh\" content=\"");
-    response.concat(redirectDelay);
-    response.concat("; url=/\" />");
-    response.concat("\n</head>\n");
-    response.concat("<body>\n");
+    buildHtmlHeader(response, header);
     response.concat(message);
-
     response.concat("</body></html>");
 }
 

@@ -47,7 +47,7 @@ public:
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain = false);
     bool publishString(const char* prefix, const char* topic, const char* value, bool retain = false);
 
-    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
+    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
     void publishHASSConfigAdditionalLockEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAdditionalOpenerEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
