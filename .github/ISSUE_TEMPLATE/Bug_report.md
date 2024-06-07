@@ -35,6 +35,8 @@ _Make sure your have performed every step and checked the applicable boxes befor
 - [ ] Provide the output of http://nukihubIP/info:
 ```
 
+```
+
 ### TO REPRODUCE
 _Steps to reproduce the behavior:_
 
