@@ -60,19 +60,19 @@ Howto flash (esptool)
 
 As an alternative to the Download Tools, you can also use the esptool from the Espressif SDK. The command line to flash looks like this:
 
-ESP32
+## ESP32
 
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32.bin 0x8000 nuki_hub.partitions.bin
 
-ESP-S3
+## ESP32-S3
 
 esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32s3.bin 0x8000 nuki_hub.partitions.bin
 
-ESP-C3
+## ESP32-C3
 
 esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32c3.bin 0x8000 nuki_hub.partitions.bin
 
-ESP32-Solo1
+## ESP32Solo1
 
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32solo1.bin 0x8000 nuki_hub.partitions.bin
 
