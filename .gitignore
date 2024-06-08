@@ -11,3 +11,8 @@ webflash/*.bin
 .pio
 .vscode
 .project
+
+# Python venv
+/pyvenv.cfg
+/lib64
+/lib/python3*
