@@ -7,9 +7,15 @@ DEBUG_BOARDS := $(shell grep -oP '(?<=\[env:)[^\]]+' $(PLATFORMIO_INI) | grep '_
 .PHONY: default
 default: esp32
 
+.PHONY: release
+release: $(BOARDS)
+
+.PHONY: debug
+debug: $(DEBUG_BOARDS)
+
 # Target to build all boards in both release and debug modes
 .PHONY: all
-all: $(BOARDS) $(DEBUG_BOARDS)
+all: release debug
 
 # Alias
 .PHONY: esp32
