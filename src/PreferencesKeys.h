@@ -24,6 +24,8 @@
 #define preference_check_updates (char*)"checkupdates"
 #define preference_lock_max_keypad_code_count (char*)"maxkpad"
 #define preference_opener_max_keypad_code_count (char*)"opmaxkpad"
+#define preference_lock_max_timecontrol_entry_count (char*)"maxtc"
+#define preference_opener_max_timecontrol_entry_count (char*)"opmaxtc"
 #define preference_mqtt_ca (char*)"mqttca"
 #define preference_mqtt_crt (char*)"mqttcrt"
 #define preference_mqtt_key (char*)"mqttkey"
@@ -50,17 +52,21 @@
 #define preference_query_interval_keypad (char*)"kpInterval"
 #define preference_access_level (char*)"accLvl"
 #define preference_keypad_info_enabled (char*)"kpInfoEnabled"
+#define preference_keypad_topic_per_entry (char*)"kpPerEntry"
 #define preference_keypad_control_enabled (char*)"kpCntrlEnabled"
 #define preference_keypad_publish_code (char*)"kpPubCode"
 #define preference_timecontrol_control_enabled (char*)"tcCntrlEnabled"
+#define preference_timecontrol_topic_per_entry (char*)"tcPerEntry"
 #define preference_timecontrol_info_enabled (char*)"tcInfoEnabled"
 #define preference_publish_authdata (char*)"pubAuth"
 #define preference_acl (char*)"aclLckOpn"
+#define preference_conf_info_enabled (char*)"cnfInfoEnabled"
 #define preference_conf_lock_basic_acl (char*)"confLckBasAcl"
 #define preference_conf_lock_advanced_acl (char*)"confLckAdvAcl"
 #define preference_conf_opener_basic_acl (char*)"confOpnBasAcl"
 #define preference_conf_opener_advanced_acl (char*)"confOpnAdvAcl"
 #define preference_register_as_app (char*)"regAsApp" // true = register as hub; false = register as app
+#define preference_register_opener_as_app (char*)"regOpnAsApp"
 #define preference_command_nr_of_retries (char*)"nrRetry"
 #define preference_command_retry_delay (char*)"rtryDelay"
 #define preference_cred_user (char*)"crdusr"
@@ -84,6 +90,10 @@
 #define preference_enable_bootloop_reset (char*)"enabtlprst"
 #define preference_buffer_size (char*)"buffsize"
 #define preference_disable_non_json (char*)"disnonjson"
+#define preference_official_hybrid (char*)"offHybrid"
+#define preference_official_hybrid_actions (char*)"hybridAct"
+#define preference_official_hybrid_retry (char*)"hybridRtry"
+#define preference_query_interval_hybrid_lockstate (char*)"hybridTimer"
 
 class DebugPreferences
 {
@@ -92,18 +102,18 @@ private:
     {
             preference_started_before, preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_nuki_id_lock, preference_nuki_id_opener,  preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates, preference_webserver_enabled,
             preference_lock_enabled, preference_lock_pin_status, preference_mqtt_lock_path, preference_opener_enabled, preference_opener_pin_status,
-            preference_opener_continuous_mode, preference_mqtt_opener_path, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
-            preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url,
-            preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
-            preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval, preference_hostname, preference_find_best_rssi, 
-            preference_network_timeout, preference_restart_on_disconnect, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
-            preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
-            preference_keypad_info_enabled, preference_keypad_publish_code, preference_acl, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
-            preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl, preference_conf_opener_advanced_acl,
-            preference_access_level, preference_register_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
-            preference_cred_password, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout, preference_disable_non_json,
-            preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version,
-            preference_task_size_network, preference_task_size_nuki, preference_task_size_pd, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries
+            preference_opener_continuous_mode, preference_mqtt_opener_path, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_lock_max_timecontrol_entry_count,
+            preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_mqtt_hass_discovery,
+            preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address, preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server,
+            preference_network_hardware, preference_network_wifi_fallback_disabled, preference_rssi_publish_interval, preference_hostname, preference_find_best_rssi,
+            preference_network_timeout, preference_restart_on_disconnect, preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry,
+            preference_keypad_topic_per_entry, preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
+            preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
+            preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password,
+            preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout, preference_official_hybrid, preference_query_interval_hybrid_lockstate,
+            preference_official_hybrid_actions, preference_official_hybrid_retry, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, 
+            preference_latest_version, preference_task_size_network, preference_task_size_nuki, preference_task_size_pd, preference_authlog_max_entries, preference_keypad_max_entries,
+            preference_timecontrol_max_entries
     };
     std::vector<char*> _redact =
     {
@@ -115,9 +125,10 @@ private:
     std::vector<char*> _boolPrefs =
     {
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
-            preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi, preference_restart_on_disconnect, preference_keypad_control_enabled,
-            preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app,
-            preference_ip_dhcp_enabled, preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_disable_non_json
+            preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi, preference_restart_on_disconnect,
+            preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled,
+            preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled, preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info,
+            preference_network_wifi_fallback_disabled, preference_official_hybrid, preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json
     };
 
     const bool isRedacted(const char* key) const

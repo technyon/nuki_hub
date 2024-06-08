@@ -160,7 +160,7 @@ void Network::setupDevice()
 
 void Network::initialize()
 {
-    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
+    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
     _hostname = _preferences->getString(preference_hostname);
@@ -358,6 +358,8 @@ bool Network::update()
     if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
     {
         publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60);
+        publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
+        
         if(_publishDebugInfo)
         {
             publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
@@ -706,56 +708,56 @@ const String Network::networkBSSID() const
     return _device->BSSIDstr();
 }
 
-void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision)
+void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision, bool retain)
 {
     char str[30];
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishInt(const char* prefix, const char *topic, const int value)
+void Network::publishInt(const char* prefix, const char *topic, const int value, bool retain)
 {
     char str[30];
     itoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishUInt(const char* prefix, const char *topic, const unsigned int value)
+void Network::publishUInt(const char* prefix, const char *topic, const unsigned int value, bool retain)
 {
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishULong(const char* prefix, const char *topic, const unsigned long value)
+void Network::publishULong(const char* prefix, const char *topic, const unsigned long value, bool retain)
 {
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishBool(const char* prefix, const char *topic, const bool value)
+void Network::publishBool(const char* prefix, const char *topic, const bool value, bool retain)
 {
     char str[2] = {0};
     str[0] = value ? '1' : '0';
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    _device->mqttPublish(path, MQTT_QOS_LEVEL, true, str);
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-bool Network::publishString(const char* prefix, const char *topic, const char *value)
+bool Network::publishString(const char* prefix, const char *topic, const char *value, bool retain)
 {
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    return _device->mqttPublish(path, MQTT_QOS_LEVEL, true, value) > 0;
+    return _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value) > 0;
 }
 
 void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
@@ -796,6 +798,8 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
     json["stat_locking"] = "locking";
     json["stat_unlocked"] = "unlocked";
     json["stat_unlocking"] = "unlocking";
+    json["stat_open"] = "open";
+    json["stat_opening"] = "opening";
     json["opt"] = "false";
 
     serializeJson(json, _buffer, _bufferSize);
@@ -1101,10 +1105,15 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
-    uint32_t basicLockConfigAclPrefs[16];
-    _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
-    uint32_t advancedLockConfigAclPrefs[22];
-    _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
+
+    uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedLockConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    if(_preferences->getBool(preference_conf_info_enabled, true))
+    {
+        _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
+        _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
+    }
 
     if((int)aclPrefs[2])
     {
@@ -2166,10 +2175,14 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
-    uint32_t basicOpenerConfigAclPrefs[16];
-    _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
-    uint32_t advancedOpenerConfigAclPrefs[22];
-    _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
+    uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedOpenerConfigAclPrefs[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    if(_preferences->getBool(preference_conf_info_enabled, true))
+    {
+        _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
+        _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
+    }
 
     if((int)aclPrefs[11])
     {
@@ -2193,64 +2206,6 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     else
     {
         removeHassTopic((char*)"button", (char*)"unlatch", uidString);
-    }
-
-    if((int)basicOpenerConfigAclPrefs[5] == 1)
-    {
-        // LED enabled
-        publishHassTopic("switch",
-                         "led_enabled",
-                         uidString,
-                         "_led_enabled",
-                         "LED enabled",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_config_basic_json,
-                         deviceType,
-                         "",
-                         "",
-                         "config",
-                         String("~") + mqtt_topic_config_action,
-                         { { (char*)"en", (char*)"true" },
-                           { (char*)"ic", (char*)"mdi:led-variant-on" },
-                           { (char*)"pl_on", (char*)"{ \"ledEnabled\": \"1\"}" },
-                           { (char*)"pl_off", (char*)"{ \"ledEnabled\": \"0\"}" },
-                           { (char*)"val_tpl", (char*)"{{value_json.ledEnabled}}" },
-                           { (char*)"stat_on", (char*)"1" },
-                           { (char*)"stat_off", (char*)"0" }});
-    }
-    else
-    {
-        removeHassTopic((char*)"switch", (char*)"led_enabled", uidString);
-    }
-
-    if((int)basicOpenerConfigAclPrefs[4] == 1)
-    {
-        // Button enabled
-        publishHassTopic("switch",
-                         "button_enabled",
-                         uidString,
-                         "_button_enabled",
-                         "Button enabled",
-                         name,
-                         baseTopic,
-                         String("~") + mqtt_topic_config_basic_json,
-                         deviceType,
-                         "",
-                         "",
-                         "config",
-                         String("~") + mqtt_topic_config_action,
-                         { { (char*)"en", (char*)"true" },
-                           { (char*)"ic", (char*)"mdi:radiobox-marked" },
-                           { (char*)"pl_on", (char*)"{ \"buttonEnabled\": \"1\"}" },
-                           { (char*)"pl_off", (char*)"{ \"buttonEnabled\": \"0\"}" },
-                           { (char*)"val_tpl", (char*)"{{value_json.buttonEnabled}}" },
-                           { (char*)"stat_on", (char*)"1" },
-                           { (char*)"stat_off", (char*)"0" }});
-    }
-    else
-    {
-        removeHassTopic((char*)"switch", (char*)"button_enabled", uidString);
     }
 
     publishHassTopic("binary_sensor",
@@ -2318,6 +2273,64 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     serializeJson(json, _buffer, _bufferSize);
     String path = createHassTopicPath("event", "ring", uidString);
     _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+
+    if((int)basicOpenerConfigAclPrefs[5] == 1)
+    {
+        // LED enabled
+        publishHassTopic("switch",
+                         "led_enabled",
+                         uidString,
+                         "_led_enabled",
+                         "LED enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { (char*)"en", (char*)"true" },
+                           { (char*)"ic", (char*)"mdi:led-variant-on" },
+                           { (char*)"pl_on", (char*)"{ \"ledEnabled\": \"1\"}" },
+                           { (char*)"pl_off", (char*)"{ \"ledEnabled\": \"0\"}" },
+                           { (char*)"val_tpl", (char*)"{{value_json.ledEnabled}}" },
+                           { (char*)"stat_on", (char*)"1" },
+                           { (char*)"stat_off", (char*)"0" }});
+    }
+    else
+    {
+        removeHassTopic((char*)"switch", (char*)"led_enabled", uidString);
+    }
+
+    if((int)basicOpenerConfigAclPrefs[4] == 1)
+    {
+        // Button enabled
+        publishHassTopic("switch",
+                         "button_enabled",
+                         uidString,
+                         "_button_enabled",
+                         "Button enabled",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_basic_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+                         { { (char*)"en", (char*)"true" },
+                           { (char*)"ic", (char*)"mdi:radiobox-marked" },
+                           { (char*)"pl_on", (char*)"{ \"buttonEnabled\": \"1\"}" },
+                           { (char*)"pl_off", (char*)"{ \"buttonEnabled\": \"0\"}" },
+                           { (char*)"val_tpl", (char*)"{{value_json.buttonEnabled}}" },
+                           { (char*)"stat_on", (char*)"1" },
+                           { (char*)"stat_off", (char*)"0" }});
+    }
+    else
+    {
+        removeHassTopic((char*)"switch", (char*)"button_enabled", uidString);
+    }
 
     if((int)advancedOpenerConfigAclPrefs[15] == 1)
     {

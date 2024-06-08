@@ -53,10 +53,9 @@ private:
     void sendFavicon();
     void processUnpair(bool opener);
     void processFactoryReset();
-
     void buildHtmlHeader(String& response, String additionalHeader = "");
-    void printInputField(String& response, const char* token, const char* description, const char* value, const size_t& maxLength, const bool& isPassword = false, const bool& showLengthRestriction = false);
-    void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength);
+    void printInputField(String& response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* id, const bool& isPassword = false, const bool& showLengthRestriction = false);
+    void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength, const char* id);
     void printCheckBox(String& response, const char* token, const char* description, const bool value, const char* htmlClass);
     void printTextarea(String& response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(String &response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options);

@@ -46,12 +46,14 @@ public:
 
 private:
     static LockActionResult onLockActionReceivedCallback(const char* value);
+    static void onOfficialUpdateReceivedCallback(const char* topic, const char* value);
     static void onConfigUpdateReceivedCallback(const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
+    void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
@@ -88,14 +90,15 @@ private:
     Gpio* _gpio = nullptr;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
+    int _intervalHybridLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
     int _intervalKeypad = 0; // seconds
     int _restartBeaconTimeout = 0; // seconds
     bool _publishAuthData = false;
     bool _clearAuthData = false;
+    bool _taskRunning = false;
     std::vector<uint16_t> _keypadCodeIds;
-    std::vector<uint32_t> _keypadCodes;
     std::vector<uint8_t> _timeControlIds;
 
     NukiLock::KeyTurnerState _lastKeyTurnerState;
@@ -116,6 +119,7 @@ private:
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
     uint _maxKeypadCodeCount = 0;
+    uint _maxTimeControlEntryCount = 0;
     bool _configRead = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
@@ -123,8 +127,9 @@ private:
     int _retryConfigCount = 0;
     int _retryLockstateCount = 0;
     long _rssiPublishInterval = 0;
-    unsigned long _nextRetryTs = 0;
+    unsigned long _nextRetryTs = 0;    
     unsigned long _nextLockStateUpdateTs = 0;
+    unsigned long _nextHybridLockStateUpdateTs = 0;
     unsigned long _nextBatteryReportTs = 0;
     unsigned long _nextConfigUpdateTs = 0;
     unsigned long _waitAuthLogUpdateTs = 0;

@@ -15,12 +15,12 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- All ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.15 should work. Tested builds are provided for the ESP32, ESP32-S3 and ESP32-C3.
+- All ESP32 models with WIFI and BLE which are supported by Arduino Core 2.0.17 should work. Tested builds are provided for the ESP32, ESP32-S3 and ESP32-C3.
 - Untested builds are provided for the ESP32-Solo1.
 
 <b>Not supported ESP32 devices:</b>
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
-- The ESP32-C6 and ESP32-H2 are not supported by Arduino Core 2.0.15 and as such Nuki Hub is not compiled against these targets (at this time).
+- The ESP32-C6 and ESP32-H2 are not supported by Arduino Core 2.0.17 and as such Nuki Hub is not compiled against these targets (at this time).
 
 <b>Supported Nuki devices:</b>
 - Nuki Smart Lock 1.0
@@ -81,8 +81,13 @@ When pairing is successful, the web interface should show "Paired: Yes" (it migh
 MQTT nodes like lock state and battery level should now reflect the reported values from the lock.<br>
 <br>
 <b>Note: It is possible to run Nuki Hub alongside a Nuki Bridge.
-This is not recommended and will lead to excessive battery drain and can lead to either device missing updates.
+This is not recommended (unless when using [hybrid mode](/HYBRID.md)) and will lead to excessive battery drain and can lead to either device missing updates.
 Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
+
+## Hybrid mode
+
+Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0 or Nuki Lock 4.0 Pro in conjunction with Nuki Hub.<br>
+See [hybrid mode](/HYBRID.md) for more information.
 
 ## Support
 
@@ -124,6 +129,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 - Disable some extraneous non-JSON topics: Enable to not publish non-JSON keypad and config MQTT topics.
+- Enable hybrid official MQTT and Nuki Hub setup: Enable to combine the official MQTT over Thread/WiFi with BLE. Improves speed of state changes. Needs the official MQTT to be setup first. Also requires Nuki Hub to be paired as app and unregistered as a bridge using the Nuki app. See [hybrid mode](/HYBRID.md)
+- Enable sending actions through official MQTT: Enable to sent lock actions through the official MQTT topics (e.g. over Thread/WiFi) instead of using BLE. Needs "Enable hybrid official MQTT and Nuki Hub setup" to be enabled. See [hybrid mode](/HYBRID.md)
+- Time between status updates when official MQTT is offline (seconds): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki lock for the current lock state when the official MQTT is offline, default 600.
 
 #### IP Address assignment
 
@@ -150,13 +158,15 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Query interval keypad (Only available when a Keypad is detected): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current keypad state, default 1800.
 - Number of retries if command failed: Set to a positive integer to define the amount of times the Nuki Hub retries sending commands to the Nuki Lock or Opener when commands are not acknowledged by the device, default 3.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
-- Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
+- Lock: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README, ***unless when used in [Hybrid mode](/HYBRID.md)e (Official MQTT / Nuki Hub co-existance)***
+- Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
 - Presence detection timeout: Set to a positive integer to set the amount of seconds between updates to the presence/devices MQTT topic with the list of detected bluetooth devices, set to -1 to disable presence detection, default 60.
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 
 ### Access Level Configuration
 
 #### Nuki General Access Control
+- Publish Nuki configuration information: Enable to publish information about the configuration of the connected Nuki device(s) through MQTT.
 - Publish keypad entries information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Also publish keypad codes (Only available when a Keypad is detected): Enable to publish the actual keypad codes through MQTT, note that is could be considered a security risk
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
@@ -271,6 +281,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
 - battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
 - battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0.
+- battery/doorSensorCritical (only available in hybdrid mode): 1 if the battery level of a connected doorsensor is critical, otherwise 0.
 - battery/basicJson: The current battery state (critical, charging, level and keypad critical) of the Nuki Lock/Opener as JSON data.
 - battery/advancedJson: : The current battery state (critical, batteryDrain, batteryVoltage, lockAction, startVoltage, lowestVoltage, lockDistance, startTemperature, maxTurnCurrent and batteryResistance) of the Nuki Lock/Opener as JSON data.
 
@@ -478,9 +489,9 @@ To change Nuki Lock/Opener keypad settings set the `keypad/actionJson` topic to 
 | action           | Required | Required | Required | The action to execute                                                                                            | "delete", "add", "update"              |
 | codeId           | Required | Not used | Required | The code ID of the existing code to delete or update                                                             | Integer                                |
 | code             | Not used | Required | Optional | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
-| enabled          | Not used | Not used | Optional | Enable or disable the code, always enabled on add, disabled if not set on update                                 | 1 = enabled, 0 = disabled              |
-| name             | Not used | Required | Required | The name of the code to create or update                                                                         | String, max 20 chars                   |
-| timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, disabled if not set (requires enabled = 1)  | 1 = enabled, 0 = disabled              |
+| enabled          | Not used | Not used | Optional | Enable or disable the code, always enabled on add                                                                | 1 = enabled, 0 = disabled              |
+| name             | Not used | Required | Optional | The name of the code to create or update                                                                         | String, max 20 chars                   |
+| timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, requires enabled = 1                        | 1 = enabled, 0 = disabled              |
 | allowedFrom      | Not used | Optional | Optional | The start timestamp from which access should be allowed (requires enabled = 1 and timeLimited = 1)               | "YYYY-MM-DD HH:MM:SS"                  |
 | allowedUntil     | Not used | Optional | Optional | The end timestamp until access should be allowed (requires enabled = 1 and timeLimited = 1)                      | "YYYY-MM-DD HH:MM:SS"                  |
 | allowedWeekdays  | Not used | Optional | Optional | Weekdays on which access should be allowed (requires enabled = 1 and timeLimited = 1)     | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun"|
@@ -682,11 +693,11 @@ Navigate to "Nuki Configuration" and change the "MQTT Nuki Smartlock Path" or "M
 
 ### The Nuki battery is draining quickly.
 
-This often is a result of enabling "Register as app".<br>
+This often is a result of enabling "Register as app" when not using [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance).<br>
 Doing so will cause Nuki Hub to constantly query the lock and as such cause excessive battery drain.<br>
 To prevent this behaviour, unpair Nuki Hub, disable "Register as app", and re-pair.<br>
 <br>
-<b>Never enable "Register as app" unless you intend to use a Nuki Bridge in addition to Nuki Hub!</b>
+<b>Never enable "Register as app" unless you intend to use a Nuki Bridge in addition to Nuki Hub or you are using Hybrid mode!</b>
 
 ## Building from source
 <b>Docker (Preferred)</b><br>
