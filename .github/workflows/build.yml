@@ -44,14 +44,13 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
-          key: ${{ runner.os }}-pio
+            ~/.platformio/packages
+          key: ${{ runner.os }}-pio-${{ matrix.board }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
-      - name: Install ESPTool
-        run: pip install --upgrade esptool
+      - name: Install dependencies
+        run: make deps
       - name: Add version info
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
@@ -63,42 +62,8 @@ jobs:
             BOARD="${BOARD}_dbg"
           fi
           echo "::group::Building with PlatformIO"
-            pio run --environment ${BOARD}
+            make $BOARD
           echo "::endgroup::"
-          mkdir -p ${BUILD}/${VARIANT}
-          cp -v .pio/build/${BOARD}/firmware.bin ${BUILD}/${VARIANT}/nuki_hub_${VARIANT}.bin
-          cp -v .pio/build/${BOARD}/partitions.bin ${BUILD}/${VARIANT}/nuki_hub.partitions.bin
-          cp -v .pio/build/${BOARD}/bootloader.bin ${BUILD}/${VARIANT}/bootloader.bin
-          if [ "$BUILD" = "debug" ]; then
-            cp -v .pio/build/${BOARD}/firmware.elf ${BUILD}/${VARIANT}/nuki_hub_${VARIANT}.elf
-          fi
-          cp -v bin/boot_app0.bin ${BUILD}/${VARIANT}/boot_app0.bin
-          cp -v how-to-flash.txt ${BUILD}/${VARIANT}/how-to-flash.txt
-
-      - name: Pack webflash image
-        if: ${{ matrix.build == 'release' && matrix.board != 'esp32solo1' }}
-        env:
-          POSITION_BOOTLOADER: "0x0"
-          POSITION_PARTITIONS: "0x8000"
-          POSITION_BOOT_APP: "0xe000"
-          POSITION_APP: "0x10000"
-          CHIP: ${{ env.VARIANT }}
-          FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
-        run: |
-          if [ "$BOARD" = "esp32dev" ]; then
-            POSITION_BOOTLOADER="0x1000"
-          fi
-
-          esptool.py \
-            --chip ${CHIP} \
-            merge_bin -o ${FILES}/webflash_nuki_hub_${VARIANT}.bin \
-            --flash_mode dio \
-            --flash_freq keep \
-            --flash_size keep \
-            ${POSITION_BOOT_APP} bin/boot_app0.bin \
-            ${POSITION_BOOTLOADER} ${FILES}/bootloader.bin \
-            ${POSITION_APP} ${FILES}/nuki_hub_${VARIANT}.bin \
-            ${POSITION_PARTITIONS} ${FILES}/nuki_hub.partitions.bin
 
       - name: Add flash script
         env:
