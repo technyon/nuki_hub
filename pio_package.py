@@ -66,7 +66,8 @@ def package_last_files(source, target, env):
         file = Path(file)
         shutil.copy(file, f"{target_dir}/{file.name}")
 
-if env.get('BUILD_TYPE') == 'release':
+if env.get('BUILD_TYPE') == 'release' and \
+    not env.GetProjectOption("custom_build") == 'debug':
     env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)
 
 env.AddPostAction("$BUILD_DIR/firmware.bin", copy_files)
@@ -74,5 +75,5 @@ env.AddPostAction("$BUILD_DIR/firmware.bin", package_last_files)
 env.AddPostAction("$BUILD_DIR/partitions.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/bootloader.bin", copy_files)
 
-if env.get('BUILD_TYPE') == 'debug':
+if env.GetProjectOption("custom_build") == 'debug':
     env.AddPostAction("$BUILD_DIR/firmware.elf", copy_files)
