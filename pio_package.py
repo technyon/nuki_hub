@@ -13,7 +13,7 @@ def get_board_name(env):
 
 def create_target_dir(env):
     board = get_board_name(env)
-    target_dir = env.get('BUILD_TYPE') + '/' + board
+    target_dir = env.GetProjectOption("custom_build") + '/' + board
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
     return target_dir
@@ -66,8 +66,7 @@ def package_last_files(source, target, env):
         file = Path(file)
         shutil.copy(file, f"{target_dir}/{file.name}")
 
-if env.get('BUILD_TYPE') == 'release' and \
-    not env.GetProjectOption("custom_build") == 'debug':
+if env.GetProjectOption("custom_build") == 'release':
     env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)
 
 env.AddPostAction("$BUILD_DIR/firmware.bin", copy_files)
