@@ -66,7 +66,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     _maxTimeControlEntryCount = _preferences->getUInt(preference_lock_max_timecontrol_entry_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
-    _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries);
+    _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries, 200);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
@@ -87,7 +87,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
     }
 
-    if(!_nrOfRetries > -1)
+    if(_nrOfRetries == 200)
     {
         _nrOfRetries = 3;
         _preferences->putInt(preference_command_nr_of_retries, _nrOfRetries);
@@ -454,7 +454,7 @@ void NukiWrapper::updateBatteryState()
         Log->print(F("Querying lock battery state: "));
         result = _nukiLock.requestBatteryReport(&_batteryReport);
         _taskRunning = false;
-        if(!result == Nuki::CmdResult::Success) {
+        if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
         }
         else break;
@@ -513,7 +513,7 @@ void NukiWrapper::updateConfig()
                     _taskRunning = true;
                     result = _nukiLock.verifySecurityPin();
                     _taskRunning = false;
-                    if(!result == Nuki::CmdResult::Success) {
+                    if(result != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
@@ -596,7 +596,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
             Log->print(F("Retrieve log entries: "));
             result = _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
             _taskRunning = false;
-            if(!result == Nuki::CmdResult::Success) {
+            if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
@@ -673,7 +673,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
             Log->print(F("Querying lock keypad: "));
             result = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
             _taskRunning = false;
-            if(!result == Nuki::CmdResult::Success) {
+            if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
@@ -744,7 +744,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
             Log->print(F("Querying lock time control: "));
             result = _nukiLock.retrieveTimeControlEntries();
             _taskRunning = false;
-            if(!result == Nuki::CmdResult::Success) {
+            if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
@@ -1359,7 +1359,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                         else jsonResult[basicKeys[i]] = "invalidValue";
                     }
 
-                    if(!cmdResult == Nuki::CmdResult::Success) {
+                    if(cmdResult != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
@@ -1653,7 +1653,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                         else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
 
-                    if(!cmdResult == Nuki::CmdResult::Success) {
+                    if(cmdResult != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
@@ -1888,7 +1888,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             return;
         }
 
-        if(!result == Nuki::CmdResult::Success) {
+        if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
         }
         else break;
@@ -2014,7 +2014,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             }
             else if(strcmp(action, "add") == 0 || strcmp(action, "update") == 0)
             {
-                if(!name.length() > 0)
+                if(name.length() < 1)
                 {
                     if (strcmp(action, "update") != 0)
                     {
@@ -2231,7 +2231,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                             if (codeId != entry.codeId) continue;
                             else foundExisting = true;
 
-                            if(!name.length() > 0)
+                            if(name.length() < 1)
                             {
                                 memset(oldName, 0, sizeof(oldName));
                                 memcpy(oldName, entry.name, sizeof(entry.name));
@@ -2239,7 +2239,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                             if(code == 12) code = entry.code;
                             if(enabled == 2) enabled = entry.enabled;
                             if(timeLimited == 2) timeLimited = entry.timeLimited;
-                            if(!allowedFrom.length() > 0)
+                            if(allowedFrom.length() < 1)
                             {
                                 allowedFrom = "old";
                                 allowedFromAr[0] = entry.allowedFromYear;
@@ -2249,7 +2249,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                                 allowedFromAr[4] = entry.allowedFromMin;
                                 allowedFromAr[5] = entry.allowedFromSec;
                             }
-                            if(!allowedUntil.length() > 0)
+                            if(allowedUntil.length() < 1)
                             {
                                 allowedUntil = "old";
                                 allowedUntilAr[0] = entry.allowedUntilYear;
@@ -2259,15 +2259,15 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                                 allowedUntilAr[4] = entry.allowedUntilMin;
                                 allowedUntilAr[5] = entry.allowedUntilSec;
                             }
-                            if(!allowedWeekdays.length() > 0) allowedWeekdaysInt = entry.allowedWeekdays;
-                            if(!allowedFromTime.length() > 0)
+                            if(allowedWeekdays.length() < 1) allowedWeekdaysInt = entry.allowedWeekdays;
+                            if(allowedFromTime.length() < 1)
                             {
                                 allowedFromTime = "old";
                                 allowedFromTimeAr[0] = entry.allowedFromTimeHour;
                                 allowedFromTimeAr[1] = entry.allowedFromTimeMin;
                             }
 
-                            if(!allowedUntilTime.length() > 0)
+                            if(allowedUntilTime.length() < 1)
                             {
                                 allowedUntilTime = "old";
                                 allowedUntilTimeAr[0] = entry.allowedUntilTimeHour;
@@ -2293,7 +2293,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                     entry.codeId = codeId;
                     entry.code = code;
 
-                    if(!name.length() > 0)
+                    if(name.length() < 1)
                     {
                         size_t nameLen = strlen(oldName);
                         memcpy(&entry.name, oldName, nameLen > 20 ? 20 : nameLen);
@@ -2359,7 +2359,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                 return;
             }
 
-            if(!result == Nuki::CmdResult::Success) {
+            if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
@@ -2563,14 +2563,14 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                             else foundExisting = true;
 
                             if(enabled == 2) enabled = entry.enabled;
-                            if(!weekdays.length() > 0) weekdaysInt = entry.weekdays;
-                            if(!time.length() > 0)
+                            if(weekdays.length() < 1) weekdaysInt = entry.weekdays;
+                            if(time.length() < 1)
                             {
                                 time = "old";
                                 timeAr[0] = entry.timeHour;
                                 timeAr[1] = entry.timeMin;
                             }
-                            if(!lockAction.length() > 0) timeControlLockAction = entry.lockAction;                            
+                            if(lockAction.length() < 1) timeControlLockAction = entry.lockAction;                            
                         }
 
                         if(!foundExisting)
@@ -2612,7 +2612,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                 return;
             }
 
-            if(!result == Nuki::CmdResult::Success) {
+            if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
