@@ -25,14 +25,14 @@ public:
     void onResult(NimBLEAdvertisedDevice* advertisedDevice) override;
 
 private:
-    void buildCsv(const PdDevice& device);
+    void buildCsv(const std::shared_ptr<PdDevice>& device);
 
     Preferences* _preferences;
     BleScanner::Scanner* _bleScanner;
     Network* _network;
     char* _csv = {0};
     size_t _bufferSize = 0;
-    std::map<long long, PdDevice> _devices;
+    std::map<long long, std::shared_ptr<PdDevice>> _devices;
     int _timeout = 20000;
     int _csvIndex = 0;
 };

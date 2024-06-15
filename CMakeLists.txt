@@ -25,6 +25,7 @@ add_compile_definitions(TLS_KEY_MAX_SIZE=1800)
 add_compile_definitions(ESP_PLATFORM)
 add_compile_definitions(ESP32)
 add_compile_definitions(ARDUINO_ARCH_ESP32)
+# add_compile_definitions(CONFIG_BT_NIMBLE_PINNED_TO_CORE=1)
 
 include_directories(${PROJECT_NAME}
         PRIVATE
