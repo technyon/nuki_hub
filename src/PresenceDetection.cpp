@@ -45,17 +45,21 @@ char* PresenceDetection::generateCsv()
 
     _csvIndex = 0;
     long ts = millis();
-    for(auto it : _devices)
     {
-        if(ts - _timeout < it.second->timestamp)
-        {
-            buildCsv(it.second);
-        }
+        std::lock_guard<std::mutex> lock(mtx);
 
-        // Prevent csv buffer overflow
-        if(_csvIndex > _bufferSize - (sizeof(it.second->name) + sizeof(it.second->address) + 10))
+        for (auto it: _devices)
         {
-            break;
+            if (ts - _timeout < it.second->timestamp)
+            {
+                buildCsv(it.second);
+            }
+
+            // Prevent csv buffer overflow
+            if (_csvIndex > _bufferSize - (sizeof(it.second->name) + sizeof(it.second->address) + 10))
+            {
+                break;
+            }
         }
     }
 
@@ -131,8 +135,24 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 
     long long addr = strtoll(addrArrComp, nullptr, 16);
 
-    auto it = _devices.find(addr);
-    if(it == _devices.end())
+    bool found;
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto it = _devices.find(addr);
+        found = (it != _devices.end());
+
+        if(found)
+        {
+            it->second->timestamp = millis();
+            if(device->haveRSSI())
+            {
+                it->second->hasRssi = true;
+                it->second->rssi = device->getRSSI();
+            }
+        }
+    }
+
+    if(!found)
     {
 
         std::shared_ptr<PdDevice> pdDevice = std::make_shared<PdDevice>();
@@ -166,7 +186,10 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 
             pdDevice->timestamp = millis();
 
-            _devices[addr] = pdDevice;
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                _devices[addr] = pdDevice;
+            }
         }
         else if (device->haveManufacturerData())
         {
@@ -184,18 +207,12 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
                 {
                     pdDevice->timestamp = millis();
                     strcpy(pdDevice->name, oBeacon.getProximityUUID().toString().c_str());
-                    _devices[addr] = pdDevice;
+                    {
+                        std::lock_guard<std::mutex> lock(mtx);
+                        _devices[addr] = pdDevice;
+                    }
                 }
             }
-        }
-    }
-    else
-    {
-        it->second->timestamp = millis();
-        if(device->haveRSSI())
-        {
-            it->second->hasRssi = true;
-            it->second->rssi = device->getRSSI();
         }
     }
 

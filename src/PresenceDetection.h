@@ -4,6 +4,7 @@
 #include "BleScanner.h"
 #include "BleInterfaces.h"
 #include <memory>
+#include <mutex>
 
 struct PdDevice
 {
@@ -28,6 +29,8 @@ public:
 
 private:
     void buildCsv(const std::shared_ptr<PdDevice>& device);
+
+    std::mutex mtx;
 
     Preferences* _preferences;
     BleScanner::Scanner* _bleScanner;
