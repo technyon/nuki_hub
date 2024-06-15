@@ -103,26 +103,12 @@ void nukiTask(void *pvParameters)
     }
 }
 
-void presenceDetectionTask(void *pvParameters)
-{
-    while(true)
-    {
-        presenceDetection->update();
-    }
-}
-
-
 void setupTasks()
 {
     // configMAX_PRIORITIES is 25
 
     xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
     xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
-
-    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
-    {
-        xTaskCreatePinnedToCore(presenceDetectionTask, "prdet", preferences->getInt(preference_task_size_pd, PD_TASK_SIZE), NULL, 5, &presenceDetectionTaskHandle, 1);
-    }
 }
 
 void initEthServer(const NetworkDeviceType device)
@@ -282,7 +268,6 @@ void setup()
             preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
             preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
             preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
-            preferences->putInt(preference_task_size_pd, PD_TASK_SIZE);
             preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
             preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
             preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
@@ -314,11 +299,21 @@ void setup()
     gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
     Serial.print(gpioDesc.c_str());
 
+    bleScanner = new BleScanner::Scanner();
+    bleScanner->initialize("NukiHub");
+    bleScanner->setScanDuration(10);
+
+    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
+    {
+        presenceDetection = new PresenceDetection(preferences, bleScanner, CharBuffer::get(), CHAR_BUFFER_SIZE);
+        presenceDetection->initialize();
+    }
+
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    network = new Network(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
+    network = new Network(preferences, presenceDetection, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
     network->initialize();
 
     networkLock = new NetworkLock(network, preferences, CharBuffer::get(), buffer_size);
@@ -331,10 +326,6 @@ void setup()
     }
 
     initEthServer(network->networkDeviceType());
-
-    bleScanner = new BleScanner::Scanner();
-    bleScanner->initialize("NukiHub");
-    bleScanner->setScanDuration(10);
 
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
@@ -354,12 +345,6 @@ void setup()
     {
         webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi);
         webCfgServer->initialize();
-    }
-
-    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
-    {
-        presenceDetection = new PresenceDetection(preferences, bleScanner, network, CharBuffer::get(), CHAR_BUFFER_SIZE);
-        presenceDetection->initialize();
     }
 
     setupTasks();

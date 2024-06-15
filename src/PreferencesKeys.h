@@ -82,7 +82,6 @@
 #define preference_latest_version (char*)"latest"
 #define preference_task_size_network (char*)"tsksznetw"
 #define preference_task_size_nuki (char*)"tsksznuki"
-#define preference_task_size_pd (char*)"tskszpd"
 #define preference_authlog_max_entries (char*)"authmaxentry"
 #define preference_keypad_max_entries (char*)"kpmaxentry"
 #define preference_timecontrol_max_entries (char*)"tcmaxentry"
@@ -112,7 +111,7 @@ private:
             preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user, preference_cred_password,
             preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout, preference_official_hybrid, preference_query_interval_hybrid_lockstate,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_has_mac_saved, preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, 
-            preference_latest_version, preference_task_size_network, preference_task_size_nuki, preference_task_size_pd, preference_authlog_max_entries, preference_keypad_max_entries,
+            preference_latest_version, preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries,
             preference_timecontrol_max_entries
     };
     std::vector<char*> _redact =

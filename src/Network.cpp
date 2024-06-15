@@ -14,8 +14,9 @@ bool _versionPublished = false;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(Preferences *preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
+Network::Network(Preferences *preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
 : _preferences(preferences),
+  _presenceDetection(presenceDetection),
   _gpio(gpio),
   _buffer(buffer),
   _bufferSize(bufferSize)
@@ -332,15 +333,19 @@ bool Network::update()
 
     _lastConnectedTs = ts;
 
-    if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
+    if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
-        bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, _presenceCsv);
+        char* presenceCsv = _presenceDetection->generateCsv();
+
+//    if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
+        bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, presenceCsv);
         if(!success)
         {
             Log->println(F("Failed to publish presence CSV data."));
-            Log->println(_presenceCsv);
+            Log->println(presenceCsv);
         }
-        _presenceCsv = nullptr;
+
+        _lastPresenceTs = ts;
     }
 
     if(_device->signalStrength() != 127 && _rssiPublishInterval > 0 && ts - _lastRssiTs > _rssiPublishInterval)
@@ -3562,11 +3567,6 @@ void Network::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str) {
       strcpy(str, "undefined");
       break;
   }
-}
-
-void Network::publishPresenceDetection(char *csv)
-{
-    _presenceCsv = csv;
 }
 
 const NetworkDeviceType Network::networkDeviceType()

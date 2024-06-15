@@ -538,14 +538,6 @@ bool WebCfgServer::processArgs(String& message)
                 configChanged = true;
             }
         }
-        else if(key == "TSKPD")
-        {
-            if(value.toInt() > 1023 && value.toInt() < 4049)
-            {
-                _preferences->putInt(preference_task_size_pd, value.toInt());
-                configChanged = true;
-            }
-        }
         else if(key == "ALMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 51)
@@ -1398,7 +1390,6 @@ void WebCfgServer::buildAdvancedConfigHtml(String &response)
     printInputField(response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
     printInputField(response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
     printInputField(response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
-    printInputField(response, "TSKPD", "Task size Presence Detection (min 1024, max 4048)", _preferences->getInt(preference_task_size_pd, PD_TASK_SIZE), 6, "");
     printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "inputmaxauthlog");
     printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
     printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");

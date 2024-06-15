@@ -7,10 +7,9 @@
 #include "NimBLEBeacon.h"
 #include "NukiUtils.h"
 
-PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, Network* network, char* buffer, size_t bufferSize)
+PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scanner *bleScanner, char* buffer, size_t bufferSize)
 : _preferences(preferences),
   _bleScanner(bleScanner),
-  _network(network),
   _csv(buffer),
   _bufferSize(bufferSize)
 {
@@ -30,8 +29,6 @@ PresenceDetection::~PresenceDetection()
     _bleScanner->unsubscribe(this);
     _bleScanner = nullptr;
 
-    _network = nullptr;
-
     delete _csv;
     _csv = nullptr;
 }
@@ -41,19 +38,10 @@ void PresenceDetection::initialize()
     _bleScanner->subscribe(this);
 }
 
-void PresenceDetection::update()
+char* PresenceDetection::generateCsv()
 {
-    delay(3000);
-
-    if(_timeout < 0) return;
+    if(!enabled()) return nullptr;
     memset(_csv, 0, _bufferSize);
-
-    if(_devices.size() == 0)
-    {
-        strcpy(_csv, ";;");
-        _network->publishPresenceDetection(_csv);
-        return;
-    }
 
     _csvIndex = 0;
     long ts = millis();
@@ -71,11 +59,14 @@ void PresenceDetection::update()
         }
     }
 
-    _csv[_csvIndex-1] = 0x00;
+    if(_csvIndex == 0)
+    {
+        strcpy(_csv, ";;");
+        return _csv;
+    }
 
-//    Log->print("Devices found: ");
-//    Log->println(_devices.size());
-    _network->publishPresenceDetection(_csv);
+    _csv[_csvIndex-1] = 0x00;
+    return _csv;
 }
 
 
@@ -220,4 +211,9 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 //    }
 //    Log->println();
 
+}
+
+bool PresenceDetection::enabled()
+{
+    return _timeout > 0;
 }

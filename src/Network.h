@@ -11,6 +11,7 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include "NukiConstants.h"
+#include "PresenceDetection.h"
 
 enum class NetworkDeviceType
 {
@@ -28,7 +29,7 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+    explicit Network(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void initialize();
     bool update();
@@ -78,8 +79,6 @@ public:
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
 
     void clearWifiFallback();
-
-    void publishPresenceDetection(char* csv);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
     bool encryptionSupported();
@@ -133,6 +132,7 @@ private:
     HTTPClient https;
 
     Preferences* _preferences;
+    PresenceDetection* _presenceDetection;
     Gpio* _gpio;
     IPConfiguration* _ipConfiguration = nullptr;
     String _hostname;
@@ -149,7 +149,6 @@ private:
     char _maintenancePathPrefix[181] = {0};
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;
-    char* _presenceCsv = nullptr;
     bool _restartOnDisconnect = false;
     bool _firstConnect = true;
     bool _publishDebugInfo = false;
@@ -159,6 +158,7 @@ private:
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastUpdateCheckTs = 0;
+    unsigned long _lastPresenceTs = 0;
     unsigned long _lastRssiTs = 0;
     bool _mqttEnabled = true;
     static unsigned long _ignoreSubscriptionsTs;
