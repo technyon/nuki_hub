@@ -152,7 +152,7 @@ void NukiOpenerWrapper::update()
        (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the opener for ");
-        Log->print((millis() - lastReceivedBeaconTs) / 1000);
+        Log->print((ts - lastReceivedBeaconTs) / 1000);
         Log->println(" seconds, restarting device.");
         delay(200);
         restartEsp(RestartReason::BLEBeaconWatchdog);
