@@ -32,7 +32,7 @@ void Scanner::initialize(const std::string& deviceName, const bool wantDuplicate
   bleScan->setAdvertisedDeviceCallbacks(this, wantDuplicates);
   bleScan->setInterval(interval);
   bleScan->setWindow(window);
-  bleScan->setActiveScan(true);
+  bleScan->setActiveScan(false);
 }
 
 void Scanner::update() {

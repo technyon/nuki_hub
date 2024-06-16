@@ -154,7 +154,6 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 
     if(!found)
     {
-
         std::shared_ptr<PdDevice> pdDevice = std::make_shared<PdDevice>();
 
         int i=0;
@@ -203,15 +202,15 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
                 BLEBeacon oBeacon = BLEBeacon();
                 oBeacon.setData(strManufacturerData);
 
-                if(ENDIAN_CHANGE_U16(oBeacon.getMinor()) == 40004)
-                {
+//                if(ENDIAN_CHANGE_U16(oBeacon.getMinor()) == 40004)
+//                {
                     pdDevice->timestamp = millis();
                     strcpy(pdDevice->name, oBeacon.getProximityUUID().toString().c_str());
                     {
                         std::lock_guard<std::mutex> lock(mtx);
                         _devices[addr] = pdDevice;
                     }
-                }
+//                }
             }
         }
     }
