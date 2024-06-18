@@ -3,7 +3,9 @@
 #include "W5500Device.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
+#ifndef NUKI_HUB_UPDATER
 #include "../MqttTopics.h"
+#endif
 #include "sdkconfig.h"
 
 W5500Device::W5500Device(const String &hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, int variant)
@@ -27,8 +29,9 @@ W5500Device::W5500Device(const String &hostname, Preferences* preferences, const
         }
     }
     Log->println();
-
+    #ifndef NUKI_HUB_UPDATER
     _mqttClient = new espMqttClientW5500();
+    #endif
 }
 
 W5500Device::~W5500Device()
@@ -61,6 +64,7 @@ void W5500Device::initialize()
             break;
     }
 
+    #ifndef NUKI_HUB_UPDATER
     if(_preferences->getBool(preference_mqtt_log_enabled))
     {
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
@@ -70,6 +74,7 @@ void W5500Device::initialize()
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
+    #endif
 
     reconnect();
 }

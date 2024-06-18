@@ -8,6 +8,7 @@ void NetworkDevice::printError()
     Log->println(ESP.getFreeHeap());
 }
 
+#ifndef NUKI_HUB_UPDATER
 void NetworkDevice::update()
 {
     if (_mqttEnabled)
@@ -159,3 +160,8 @@ MqttClient *NetworkDevice::getMqttClient() const
         return _mqttClient;
     }
 }
+#else
+void NetworkDevice::update()
+{
+}
+#endif

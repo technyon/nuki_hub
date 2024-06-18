@@ -7,18 +7,28 @@
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
 #include <esp_wifi.h>
-#include <ArduinoJson.h>
 
-WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Network* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal)
+#ifndef NUKI_HUB_UPDATER
+#include "ArduinoJson.h"
+
+WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType)
 : _server(ethServer),
   _nuki(nuki),
   _nukiOpener(nukiOpener),
   _network(network),
   _gpio(gpio),
   _preferences(preferences),
-  _allowRestartToPortal(allowRestartToPortal)
+  _allowRestartToPortal(allowRestartToPortal),
+  _partitionType(partitionType)
+#else
+WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType)
+: _server(ethServer),
+  _network(network),
+  _preferences(preferences),
+  _allowRestartToPortal(allowRestartToPortal),
+  _partitionType(partitionType)
+#endif
 {
-    _confirmCode = generateConfirmCode();
     _hostname = _preferences->getString(preference_hostname);
     String str = _preferences->getString(preference_cred_user);
 
@@ -36,6 +46,8 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Net
         memcpy(&_credPassword, pass, str.length());
     }
 
+    #ifndef NUKI_HUB_UPDATER
+    _confirmCode = generateConfirmCode();
     _pinsConfigured = true;
 
     if(_nuki != nullptr && !_nuki->isPinSet())
@@ -48,6 +60,7 @@ WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, Net
     }
 
     _brokerConfigured = _preferences->getString(preference_mqtt_broker).length() > 0 && _preferences->getInt(preference_mqtt_broker_port) > 0;
+    #endif
 }
 
 void WebCfgServer::initialize()
@@ -57,7 +70,11 @@ void WebCfgServer::initialize()
             return _server.requestAuthentication();
         }
         String response = "";
+        #ifndef NUKI_HUB_UPDATER
         buildHtml(response);
+        #else
+        buildOtaHtml(response, _server.arg("errored") != "");
+        #endif
         _server.send(200, "text/html", response);
     });
     _server.on("/style.css", [&]() {
@@ -66,6 +83,13 @@ void WebCfgServer::initialize()
         }
         sendCss();
     });
+    _server.on("/favicon.ico", HTTP_GET, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        sendFavicon();
+    });
+    #ifndef NUKI_HUB_UPDATER
     _server.on("/status", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -73,12 +97,6 @@ void WebCfgServer::initialize()
         String response = "";
         buildStatusHtml(response);
         _server.send(200, "application/json", response);
-    });
-    _server.on("/favicon.ico", HTTP_GET, [&]() {
-        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
-            return _server.requestAuthentication();
-        }
-        sendFavicon();
     });
     _server.on("/acclvl", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -210,38 +228,6 @@ void WebCfgServer::initialize()
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::GpioConfigurationUpdated);
     });
-
-    _server.on("/ota", [&]() {
-        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
-            return _server.requestAuthentication();
-        }
-        String response = "";
-        buildOtaHtml(response, _server.arg("errored") != "");
-        _server.send(200, "text/html", response);
-    });
-    _server.on("/uploadota", HTTP_POST, [&]() {
-        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
-            return _server.requestAuthentication();
-        }
-
-        if (_ota.updateStarted() && _ota.updateCompleted()) {
-            String response = "";
-            buildOtaCompletedHtml(response);
-            _server.send(200, "text/html", response);
-            delay(2000);
-            restartEsp(RestartReason::OTACompleted);
-        } else {
-            _ota.restart();
-            _server.sendHeader("Location", "/ota?errored=true");
-            _server.send(302, "text/plain", "");
-        }
-    }, [&]() {
-        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
-            return _server.requestAuthentication();
-        }
-
-        handleOtaUpload();
-    });
     _server.on("/info", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -272,7 +258,64 @@ void WebCfgServer::initialize()
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::ConfigurationUpdated);
     });
+    #endif
+    _server.on("/ota", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildOtaHtml(response, _server.arg("errored") != "");
+        _server.send(200, "text/html", response);
+    });
+    _server.on("/reboottoota", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildConfirmHtml(response, "Rebooting to other partition", 2);
+        _server.send(200, "text/html", response);
+        esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
+        restartEsp(RestartReason::OTAReboot);
+    });
+    _server.on("/autoupdate", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater", 2);
+        _server.send(200, "text/html", response);
+        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        restartEsp(RestartReason::OTAReboot);
+    });
+    _server.on("/uploadota", HTTP_POST, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
 
+        if (_ota.updateStarted() && _ota.updateCompleted()) {
+            String response = "";
+            buildOtaCompletedHtml(response);
+            _server.send(200, "text/html", response);
+            delay(2000);
+            restartEsp(RestartReason::OTACompleted);
+        } else {
+            _ota.restart();
+            _server.sendHeader("Location", "/ota?errored=true");
+            _server.send(302, "text/plain", "");
+        }
+    }, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+
+        handleOtaUpload();
+    });
+    
+    const char *headerkeys[] = {"Content-Length"};
+    size_t headerkeyssize = sizeof(headerkeys) / sizeof(char *);
+    _server.collectHeaders(headerkeys, headerkeyssize);
+    
     _server.begin();
 
     _network->setKeepAliveCallback([&]()
@@ -281,12 +324,247 @@ void WebCfgServer::initialize()
         });
 }
 
+void WebCfgServer::update()
+{
+    if(_otaStartTs > 0 && (millis() - _otaStartTs) > 120000)
+    {
+        Log->println(F("OTA time out, restarting"));
+        delay(200);
+        restartEsp(RestartReason::OTATimeout);
+    }
+
+    if(!_enabled) return;
+
+    _server.handleClient();
+}
+
+void WebCfgServer::buildOtaHtml(String &response, bool errored)
+{
+    buildHtmlHeader(response);
+
+    if(errored) response.concat("<div>Over-the-air update errored. Please check the logs for more info</div><br/>");
+
+    if(_partitionType == 0)
+    {
+        response.concat("<h4 class=\"warning\">You are currently running Nuki Hub with an outdated partition scheme. Because of this you cannot use OTA to update to 8.36 or higher. Please check GitHub for instructions on how to update to 8.36 and the new partition scheme</h4>");
+        response.concat("<div id=\"gitdiv\"><button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+        response.concat(GITHUB_LATEST_RELEASE_URL);
+        response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
+        return;
+    }
+
+    response.concat("<h4>Auto update Nuki Hub</h4>");
+    response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
+    response.concat("<form id=\"autoupdform\" action=\"/autoupdate\" method=\"get\"><br><input type=\"submit\" value=\"Auto Update\" /></form><br><br>");
+
+    if(_partitionType == 1)
+    {
+        response.concat("<h4>Reboot to Nuki Hub Updater</h4>");
+        response.concat("Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update");
+        response.concat("<form id=\"rebootform\" action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br>");
+        response.concat("<h4>Update Nuki Hub Updater</h4>");
+        response.concat("Select the latest Nuki Hub updater binary to update the Nuki Hub updater");
+        response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub_updater.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+    }
+    else
+    {
+        response.concat("<h4>Reboot to Nuki Hub</h4>");
+        response.concat("Click on the button to reboot to Nuki Hub");
+        response.concat("<form id=\"rebootform\" action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br>");
+        response.concat("<h4>Update Nuki Hub</h4>");
+        response.concat("Select the latest Nuki Hub binary to update Nuki Hub");
+        response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+    }
+    response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form><br><br>");
+    response.concat("<div id=\"gitdiv\">");
+    response.concat("<h4>GitHub</h4><br>");
+    response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+    response.concat(GITHUB_LATEST_RELEASE_URL);
+    response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
+    response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
+    response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
+    response.concat("'); return false;\">Download latest binary from GitHub</button>");
+    response.concat("<br><br><button title=\"Download latest updater binary from GitHub\" onclick=\" window.open('");
+    response.concat(GITHUB_LATEST_UPDATER_BINARY_URL);
+    response.concat("'); return false;\">Download latest updater binary from GitHub</button></div>");
+    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
+    response.concat("<script type=\"text/javascript\">");
+    response.concat("window.addEventListener('load', function () {");
+    response.concat("	var button = document.getElementById(\"submitbtn\");");
+    response.concat("	button.addEventListener('click',hideshow,false);");
+    response.concat("	function hideshow() {");
+    response.concat("		document.getElementById('autoupdform').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('rebootform').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
+    response.concat("	}");
+    response.concat("});");
+    response.concat("</script>");
+    response.concat("</body></html>");
+}
+
+void WebCfgServer::buildOtaCompletedHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<div>Over-the-air update completed.<br>You will be forwarded automatically.</div>");
+    response.concat("<script type=\"text/javascript\">");
+    response.concat("window.addEventListener('load', function () {");
+    response.concat("   setTimeout(\"location.href = '/';\",10000);");
+    response.concat("});");
+    response.concat("</script>");
+    response.concat("</body></html>");
+}
+
+void WebCfgServer::buildHtmlHeader(String &response, String additionalHeader)
+{
+    response.concat("<html><head>");
+    response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
+    if(strcmp(additionalHeader.c_str(), "") != 0) response.concat(additionalHeader);
+    response.concat("<link rel='stylesheet' href='/style.css'>");
+    response.concat("<title>Nuki Hub</title></head><body>");
+
+    srand(millis());
+}
+
+void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
+{
+    unsigned long timeout = millis() + duration;
+    while(millis() < timeout)
+    {
+        _server.handleClient();
+        if(blocking)
+        {
+            delay(10);
+        }
+        else
+        {
+            vTaskDelay( 50 / portTICK_PERIOD_MS);
+        }
+    }
+}
+
+void WebCfgServer::handleOtaUpload()
+{
+    if (_server.uri() != "/uploadota")
+    {
+        return;
+    }
+
+    HTTPUpload& upload = _server.upload();
+
+    if(upload.filename == "")
+    {
+        Log->println("Invalid file for OTA upload");
+        return;
+    }
+
+    if(_partitionType == 1 && _server.header("Content-Length").toInt() > 1600000)
+    {
+        if(upload.totalSize < 2000) Log->println("Uploaded OTA file too large, are you trying to upload a Nuki Hub binary instead of a Nuki Hub updater binary?");
+        return;
+    }
+    else if(_partitionType == 2 && _server.header("Content-Length").toInt() < 1600000)
+    {
+        if(upload.totalSize < 2000) Log->println("Uploaded OTA file is too small, are you trying to upload a Nuki Hub updater binary instead of a Nuki Hub binary?");
+        return;
+    }
+
+    if (upload.status == UPLOAD_FILE_START)
+    {
+        String filename = upload.filename;
+        if (!filename.startsWith("/"))
+        {
+            filename = "/" + filename;
+        }
+        _otaStartTs = millis();
+        esp_task_wdt_config_t twdt_config = {
+            .timeout_ms = 30000,
+            .idle_core_mask = 0,
+            .trigger_panic = false,
+        };
+        esp_task_wdt_init(&twdt_config);
+
+        #ifndef NUKI_HUB_UPDATER
+        _network->disableAutoRestarts();
+        _network->disableMqtt();
+        if(_nuki != nullptr)
+        {
+            _nuki->disableWatchdog();
+        }
+        if(_nukiOpener != nullptr)
+        {
+            _nukiOpener->disableWatchdog();
+        }
+        #endif
+        Log->print("handleFileUpload Name: "); Log->println(filename);
+    }
+    else if (upload.status == UPLOAD_FILE_WRITE)
+    {
+        _transferredSize = _transferredSize + upload.currentSize;
+        Log->println(_transferredSize);
+        _ota.updateFirmware(upload.buf, upload.currentSize);
+    } else if (upload.status == UPLOAD_FILE_END)
+    {
+        Log->println();
+        Log->print("handleFileUpload Size: "); Log->println(upload.totalSize);
+    }
+    else if(upload.status == UPLOAD_FILE_ABORTED)
+    {
+        Log->println();
+        Log->println("OTA aborted, restarting ESP.");
+        restartEsp(RestartReason::OTAAborted);
+    }
+    else
+    {
+        Log->println();
+        Log->print("OTA unknown state: ");
+        Log->println((int)upload.status);
+        restartEsp(RestartReason::OTAUnknownState);
+    }
+}
+
+void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
+{
+    String delay(redirectDelay);
+    String header = "<meta http-equiv=\"Refresh\" content=\"" + delay + "; url=/\" />";
+
+    buildHtmlHeader(response, header);
+    response.concat(message);
+    response.concat("</body></html>");
+}
+
+void WebCfgServer::sendCss()
+{
+    // escaped by https://www.cescaper.com/
+    _server.sendHeader("Cache-Control", "public, max-age=3600");
+    _server.send(200, "text/css", stylecss, sizeof(stylecss));
+}
+
+void WebCfgServer::sendFavicon()
+{
+    _server.sendHeader("Cache-Control", "public, max-age=604800");
+    _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
+}
+
+#ifndef NUKI_HUB_UPDATER
 bool WebCfgServer::processArgs(String& message)
 {
     bool configChanged = false;
     bool aclLvlChanged = false;
     bool clearMqttCredentials = false;
     bool clearCredentials = false;
+    bool manPairLck = false;
+    bool manPairOpn = false;
+    unsigned char currentBleAddress[6];
+    unsigned char authorizationId[4] = {0x00};
+    unsigned char secretKeyK[32] = {0x00};
+    unsigned char pincode[2] = {0x00};
+    unsigned char currentBleAddressOpn[6];
+    unsigned char authorizationIdOpn[4] = {0x00};
+    unsigned char secretKeyKOpn[32] = {0x00};
+
     uint32_t aclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -430,6 +708,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_check_updates, (value == "1"));
             configChanged = true;
         }
+        else if(key == "UPDATEMQTT")
+        {
+            _preferences->putBool(preference_update_from_mqtt, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "OFFHYBRID")
         {
             _preferences->putBool(preference_official_hybrid, (value == "1"));
@@ -451,7 +734,7 @@ bool WebCfgServer::processArgs(String& message)
         {
             _preferences->putBool(preference_official_hybrid_retry, (value == "1"));
             configChanged = true;
-        }        
+        }
         else if(key == "DISNONJSON")
         {
             _preferences->putBool(preference_disable_non_json, (value == "1"));
@@ -573,6 +856,21 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "BTLPRST")
         {
             _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "OTAUPD")
+        {
+            _preferences->putString(preference_ota_updater_url, value);
+            configChanged = true;
+        }
+        else if(key == "OTAMAIN")
+        {
+            _preferences->putString(preference_ota_main_url, value);
+            configChanged = true;
+        }
+        else if(key == "SHOWSECRETS")
+        {
+            _preferences->putBool(preference_show_secrets, (value == "1"));
             configChanged = true;
         }
         else if(key == "ACLLVLCHANGED")
@@ -1032,6 +1330,7 @@ bool WebCfgServer::processArgs(String& message)
                 message = "Nuki Lock PIN saved";
                 _nuki->setPin(value.toInt());
             }
+            configChanged = true;
         }
         else if(key == "NUKIOPPIN" && _nukiOpener != nullptr)
         {
@@ -1045,7 +1344,68 @@ bool WebCfgServer::processArgs(String& message)
                 message = "Nuki Opener PIN saved";
                 _nukiOpener->setPin(value.toInt());
             }
+            configChanged = true;
         }
+        else if(key == "LCKMANPAIR" && (value == "1"))
+        {
+            manPairLck = true;
+        }
+        else if(key == "OPNMANPAIR" && (value == "1"))
+        {
+            manPairOpn = true;
+        }
+        else if(key == "LCKBLEADDR")
+        {
+            if(value.length() == 12) for(int i=0; i<value.length();i+=2) currentBleAddress[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+        }
+        else if(key == "LCKSECRETK")
+        {
+            Log->print(F("Secret key: "));
+            Log->println(value);
+            Log->print(F("Secret key length: "));
+            Log->println(value.length());
+            if(value.length() == 64) for(int i=0; i<value.length();i+=2) secretKeyK[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+        }
+        else if(key == "LCKAUTHID")
+        {
+            if(value.length() == 8) for(int i=0; i<value.length();i+=2) authorizationId[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+        }
+        else if(key == "OPNBLEADDR")
+        {
+            if(value.length() == 12) for(int i=0; i<value.length();i+=2) currentBleAddressOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+        }
+        else if(key == "OPNSECRETK")
+        {
+            if(value.length() == 64) for(int i=0; i<value.length();i+=2) secretKeyKOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+        }
+        else if(key == "OPNAUTHID")
+        {
+            if(value.length() == 8) for(int i=0; i<value.length();i+=2) authorizationIdOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+        }
+    }
+
+    if(manPairLck)
+    {
+        Log->println(F("Changing pairing"));
+        Preferences nukiBlePref;
+        nukiBlePref.begin("NukiHub", false);
+        nukiBlePref.putBytes("bleAddress", currentBleAddress, 6);
+        nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
+        nukiBlePref.putBytes("authorizationId", authorizationId, 4);
+        nukiBlePref.putBytes("securityPinCode", pincode, 2);
+
+        nukiBlePref.end();
+    }
+
+    if(manPairOpn)
+    {
+        Preferences nukiBlePref;
+        nukiBlePref.begin("NukiHubopener", false);
+        nukiBlePref.putBytes("bleAddress", currentBleAddressOpn, 6);
+        nukiBlePref.putBytes("secretKeyK", secretKeyKOpn, 32);
+        nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
+        nukiBlePref.putBytes("securityPinCode", pincode, 2);
+        nukiBlePref.end();
     }
 
     if(pass1 != "" && pass1 == pass2)
@@ -1088,7 +1448,6 @@ bool WebCfgServer::processArgs(String& message)
     return configChanged;
 }
 
-
 void WebCfgServer::processGpioArgs()
 {
     int count = _server.args();
@@ -1111,21 +1470,6 @@ void WebCfgServer::processGpioArgs()
     }
 
     _gpio->savePinConfiguration(pinConfiguration);
-}
-
-
-void WebCfgServer::update()
-{
-    if(_otaStartTs > 0 && (millis() - _otaStartTs) > 120000)
-    {
-        Log->println(F("OTA time out, restarting"));
-        delay(200);
-        restartEsp(RestartReason::OTATimeout);
-    }
-
-    if(!_enabled) return;
-
-    _server.handleClient();
 }
 
 void WebCfgServer::buildHtml(String& response)
@@ -1274,57 +1618,6 @@ void WebCfgServer::buildCredHtml(String &response)
     response.concat("</body></html>");
 }
 
-void WebCfgServer::buildOtaHtml(String &response, bool errored)
-{
-    buildHtmlHeader(response);
-
-    if(millis() < 60000)
-    {
-        response.concat("OTA functionality not ready. Please wait a moment and reload.");
-        response.concat("</body></html>");
-        return;
-    }
-
-    if (errored) {
-        response.concat("<div>Over-the-air update errored. Please check the logs for more info</div><br/>");
-    }
-
-    response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"100000\" />Choose the updated nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
-    response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form>");
-    response.concat("<div id=\"gitdiv\"><button title=\"Open latest release on GitHub\" onclick=\" window.open('");
-    response.concat(GITHUB_LATEST_RELEASE_URL);
-    response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
-    response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
-    response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
-    response.concat("'); return false;\">Download latest binary from GitHub</button></div>");
-    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
-    response.concat("<script type=\"text/javascript\">");
-    response.concat("window.addEventListener('load', function () {");
-    response.concat("	var button = document.getElementById(\"submitbtn\");");
-    response.concat("	button.addEventListener('click',hideshow,false);");
-    response.concat("	function hideshow() {");
-    response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response.concat("	}");
-    response.concat("});");
-    response.concat("</script>");
-    response.concat("</body></html>");
-}
-
-void WebCfgServer::buildOtaCompletedHtml(String &response)
-{
-    buildHtmlHeader(response);
-
-    response.concat("<div>Over-the-air update completed.<br>You will be forwarded automatically.</div>");
-    response.concat("<script type=\"text/javascript\">");
-    response.concat("window.addEventListener('load', function () {");
-    response.concat("   setTimeout(\"location.href = '/';\",10000);");
-    response.concat("});");
-    response.concat("</script>");
-    response.concat("</body></html>");
-}
-
 void WebCfgServer::buildMqttConfigHtml(String &response)
 {
     buildHtmlHeader(response);
@@ -1354,11 +1647,12 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
+    printCheckBox(response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
     printCheckBox(response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
     printCheckBox(response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
     printCheckBox(response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
     printInputField(response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
-    printCheckBox(response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");    
+    printCheckBox(response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
     response.concat("</table>");
     response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
 
@@ -1388,13 +1682,31 @@ void WebCfgServer::buildAdvancedConfigHtml(String &response)
     response.concat("</td></tr>");
     printCheckBox(response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
     printInputField(response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
+    response.concat("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
     printInputField(response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
+    response.concat("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
     printInputField(response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
     printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "inputmaxauthlog");
     printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
     printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");
-    response.concat("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
-    response.concat("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
+    printCheckBox(response, "SHOWSECRETS", "Show Pairing secrets on Info page (for 120s after next boot)", _preferences->getBool(preference_show_secrets), "");
+
+    if(_nuki != nullptr)
+    {
+        printCheckBox(response, "LCKMANPAIR", "Manually set lock pairing data (enable to save values below)", false, "");
+        printInputField(response, "LCKBLEADDR", "currentBleAddress", "", 12, "");
+        printInputField(response, "LCKSECRETK", "secretKeyK", "", 64, "");
+        printInputField(response, "LCKAUTHID", "authorizationId", "", 8, "");
+    }
+    if(_nukiOpener != nullptr)
+    {
+        printCheckBox(response, "OPNMANPAIR", "Manually set opener pairing data (enable to save values below)", false, "");
+        printInputField(response, "OPNBLEADDR", "currentBleAddress", "", 12, "");
+        printInputField(response, "OPNSECRETK", "secretKeyK", "", 64, "");
+        printInputField(response, "OPNAUTHID", "authorizationId", "", 8, "");
+    }
+    printInputField(response, "OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
+    printInputField(response, "OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
     response.concat("</table>");
 
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -1500,7 +1812,7 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     {
         printCheckBox(response, "KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
         printCheckBox(response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
-        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), ""); 
+        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
         printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
     printCheckBox(response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
@@ -1718,16 +2030,6 @@ void WebCfgServer::buildGpioConfigHtml(String &response)
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
-    response.concat("</body></html>");
-}
-
-void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay)
-{
-    String delay(redirectDelay);
-    String header = "<meta http-equiv=\"Refresh\" content=\"" + delay + "; url=/\" />";
-
-    buildHtmlHeader(response, header);
-    response.concat(message);
     response.concat("</body></html>");
 }
 
@@ -1980,6 +2282,68 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)advancedOpenerConfigAclPrefs[19] ? "Allowed\n" : "Disallowed\n");
     }
 
+    if(_preferences->getBool(preference_show_secrets))
+    {
+        if(_nuki != nullptr)
+        {
+            char tmp[16];
+            unsigned char currentBleAddress[6];
+            unsigned char authorizationId[4] = {0x00};
+            unsigned char secretKeyK[32] = {0x00};
+            Preferences nukiBlePref;
+            nukiBlePref.begin("NukiHub", false);
+            nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
+            nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
+            nukiBlePref.getBytes("authorizationId", authorizationId, 4);
+            nukiBlePref.end();
+            response.concat("Lock bleAddress: ");
+            for (int i = 0; i < 6; i++) {
+              sprintf(tmp, "%02x", currentBleAddress[i]);
+              response.concat(tmp);
+            }
+            response.concat("\nLock secretKeyK: ");
+            for (int i = 0; i < 32; i++) {
+              sprintf(tmp, "%02x", secretKeyK[i]);
+              response.concat(tmp);
+            }
+            response.concat("\nLock authorizationId: ");
+            for (int i = 0; i < 4; i++) {
+              sprintf(tmp, "%02x", authorizationId[i]);
+              response.concat(tmp);
+            }
+            response.concat("\n");
+        }
+        if(_nukiOpener != nullptr)
+        {
+            char tmp[16];
+            unsigned char currentBleAddressOpn[6];
+            unsigned char authorizationIdOpn[4] = {0x00};
+            unsigned char secretKeyKOpn[32] = {0x00};
+            Preferences nukiBlePref;
+            nukiBlePref.begin("NukiHubopener", false);
+            nukiBlePref.putBytes("bleAddress", currentBleAddressOpn, 6);
+            nukiBlePref.putBytes("secretKeyK", secretKeyKOpn, 32);
+            nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
+            nukiBlePref.end();
+            response.concat("Opener bleAddress: ");
+            for (int i = 0; i < 6; i++) {
+              sprintf(tmp, "%02x", currentBleAddressOpn[i]);
+              response.concat(tmp);
+            }
+            response.concat("\nOpener secretKeyK: ");
+            for (int i = 0; i < 32; i++) {
+              sprintf(tmp, "%02x", secretKeyKOpn[i]);
+              response.concat(tmp);
+            }
+            response.concat("\nOpener authorizationId: ");
+            for (int i = 0; i < 4; i++) {
+              sprintf(tmp, "%02x", authorizationIdOpn[i]);
+              response.concat(tmp);
+            }
+            response.concat("\n");
+        }
+    }
+
     response.concat("Network device: ");
     response.concat(_network->networkDeviceName());
     response.concat("\n");
@@ -2003,12 +2367,6 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.concat(", nuki: ");
     response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
-
-    if(_preferences->getInt(preference_presence_detection_timeout) >= 0)
-    {
-        response.concat(", pd: ");
-        response.concat(uxTaskGetStackHighWaterMark(presenceDetectionTaskHandle));
-    }
     response.concat("\n");
 
     _gpio->getConfigurationText(response, _gpio->pinConfiguration());
@@ -2125,17 +2483,6 @@ void WebCfgServer::processFactoryReset()
     restartEsp(RestartReason::NukiHubReset);
 }
 
-void WebCfgServer::buildHtmlHeader(String &response, String additionalHeader)
-{
-    response.concat("<html><head>");
-    response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    if(strcmp(additionalHeader.c_str(), "") != 0) response.concat(additionalHeader);
-    response.concat("<link rel='stylesheet' href='/style.css'>");
-    response.concat("<title>Nuki Hub</title></head><body>");
-
-    srand(millis());
-}
-
 void WebCfgServer::printInputField(String& response,
                                    const char *token,
                                    const char *description,
@@ -2162,14 +2509,17 @@ void WebCfgServer::printInputField(String& response,
     response.concat("</td><td>");
     response.concat("<input type=");
     response.concat(isPassword ? "\"password\"" : "\"text\"");
-    if(id)
+    if(strcmp(id, "") != 0)
     {
         response.concat(" id=\"");
         response.concat(id);
         response.concat("\"");
     }
+    if(strcmp(value, "") != 0)
+    {
     response.concat(" value=\"");
     response.concat(value);
+    }
     response.concat("\" name=\"");
     response.concat(token);
     response.concat("\" size=\"25\" maxlength=\"");
@@ -2258,7 +2608,7 @@ void WebCfgServer::printDropDown(String &response, const char *token, const char
     response.concat(token);
     response.concat("\">");
 
-    for(const auto option : options)
+    for(const auto& option : options)
     {
         if(option.first == preselectedValue)
         {
@@ -2339,101 +2689,6 @@ String WebCfgServer::generateConfirmCode()
     return String(code);
 }
 
-void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
-{
-    unsigned long timeout = millis() + duration;
-    while(millis() < timeout)
-    {
-        _server.handleClient();
-        if(blocking)
-        {
-            delay(10);
-        }
-        else
-        {
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
-        }
-    }
-}
-
-void WebCfgServer::handleOtaUpload()
-{
-    if (_server.uri() != "/uploadota")
-    {
-        return;
-    }
-    if(millis() < 60000)
-    {
-        return;
-    }
-
-    HTTPUpload& upload = _server.upload();
-
-    if(upload.filename == "")
-    {
-        Log->println("Invalid file for OTA upload");
-        return;
-    }
-
-    if (upload.status == UPLOAD_FILE_START)
-    {
-        String filename = upload.filename;
-        if (!filename.startsWith("/"))
-        {
-            filename = "/" + filename;
-        }
-        _otaStartTs = millis();
-        esp_task_wdt_init(30, false);
-        _network->disableAutoRestarts();
-        _network->disableMqtt();
-        if(_nuki != nullptr)
-        {
-            _nuki->disableWatchdog();
-        }
-        if(_nukiOpener != nullptr)
-        {
-            _nukiOpener->disableWatchdog();
-        }
-        Log->print("handleFileUpload Name: "); Log->println(filename);
-    }
-    else if (upload.status == UPLOAD_FILE_WRITE)
-    {
-        _transferredSize = _transferredSize + upload.currentSize;
-        Log->println(_transferredSize);
-        _ota.updateFirmware(upload.buf, upload.currentSize);
-    } else if (upload.status == UPLOAD_FILE_END)
-    {
-        Log->println();
-        Log->print("handleFileUpload Size: "); Log->println(upload.totalSize);
-    }
-    else if(upload.status == UPLOAD_FILE_ABORTED)
-    {
-        Log->println();
-        Log->println("OTA aborted, restarting ESP.");
-        restartEsp(RestartReason::OTAAborted);
-    }
-    else
-    {
-        Log->println();
-        Log->print("OTA unknown state: ");
-        Log->println((int)upload.status);
-        restartEsp(RestartReason::OTAUnknownState);
-    }
-}
-
-void WebCfgServer::sendCss()
-{
-    // escaped by https://www.cescaper.com/
-    _server.sendHeader("Cache-Control", "public, max-age=3600");
-    _server.send(200, "text/css", stylecss, sizeof(stylecss));
-}
-
-void WebCfgServer::sendFavicon()
-{
-    _server.sendHeader("Cache-Control", "public, max-age=604800");
-    _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
-}
-
 const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const
 {
     std::vector<std::pair<String, String>> options;
@@ -2446,7 +2701,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     options.push_back(std::make_pair("6", "M5STACK PoESP32 Unit"));
     options.push_back(std::make_pair("7", "LilyGO T-ETH-POE"));
     options.push_back(std::make_pair("8", "GL-S10"));
-    
+
     return options;
 }
 
@@ -2478,3 +2733,4 @@ String WebCfgServer::getPreselectionForGpio(const uint8_t &pin)
 
     return String((int8_t)PinRole::Disabled);
 }
+#endif

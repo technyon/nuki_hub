@@ -1,25 +1,36 @@
-#include "Network.h"
+#include "NukiNetwork.h"
 #include "PreferencesKeys.h"
 #include "networkDevices/W5500Device.h"
 #include "networkDevices/WifiDevice.h"
 #include "Logger.h"
 #include "Config.h"
-#include <ArduinoJson.h>
 #include "RestartReason.h"
+#if defined(CONFIG_IDF_TARGET_ESP32)
 #include "networkDevices/EthLan8720Device.h"
+#endif
 
-Network* Network::_inst = nullptr;
-unsigned long Network::_ignoreSubscriptionsTs = 0;
+#ifndef NUKI_HUB_UPDATER
+#include <ArduinoJson.h>
+
+unsigned long NukiNetwork::_ignoreSubscriptionsTs = 0;
 bool _versionPublished = false;
+#endif
+
+NukiNetwork* NukiNetwork::_inst = nullptr;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 
-Network::Network(Preferences *preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
+#ifndef NUKI_HUB_UPDATER
+NukiNetwork::NukiNetwork(Preferences *preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
 : _preferences(preferences),
   _presenceDetection(presenceDetection),
   _gpio(gpio),
   _buffer(buffer),
   _bufferSize(bufferSize)
+#else
+NukiNetwork::NukiNetwork(Preferences *preferences)
+: _preferences(preferences)    
+#endif
 {
     // Remove obsolete W5500 hardware detection configuration
     if(_preferences->getInt(preference_network_hardware_gpio) != 0)
@@ -30,6 +41,7 @@ Network::Network(Preferences *preferences, PresenceDetection* presenceDetection,
     _inst = this;
     _hostname = _preferences->getString(preference_hostname);
 
+    #ifndef NUKI_HUB_UPDATER
     memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
     size_t len = maintenancePathPrefix.length();
     for(int i=0; i < len; i++)
@@ -46,11 +58,12 @@ Network::Network(Preferences *preferences, PresenceDetection* presenceDetection,
     {
         _mqttConnectionStateTopic[i] = connectionStateTopic.charAt(i);
     }
+    #endif
 
     setupDevice();
 }
 
-void Network::setupDevice()
+void NukiNetwork::setupDevice()
 {
     _ipConfiguration = new IPConfiguration(_preferences);
 
@@ -94,6 +107,7 @@ void Network::setupDevice()
                 Log->println(F("W5500 on M5Stack Atom POE"));
                 _networkDeviceType = NetworkDeviceType::W5500;
                 break;
+            #if defined(CONFIG_IDF_TARGET_ESP32)
             case 4:
                 Log->println(F("Olimex ESP32-POE / ESP-POE-ISO"));
                 _networkDeviceType = NetworkDeviceType::Olimex_LAN8720;
@@ -114,6 +128,7 @@ void Network::setupDevice()
                 Log->println(F("GL-S10"));
                 _networkDeviceType = NetworkDeviceType::GL_S10;
                 break;
+            #endif
             default:
                 Log->println(F("Unknown hardware selected, falling back to Wi-Fi."));
                 _networkDeviceType = NetworkDeviceType::WiFi;
@@ -126,6 +141,7 @@ void Network::setupDevice()
         case NetworkDeviceType::W5500:
             _device = new W5500Device(_hostname, _preferences, _ipConfiguration, hardwareDetect);
             break;
+        #if defined(CONFIG_IDF_TARGET_ESP32)
         case NetworkDeviceType::Olimex_LAN8720:
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "Olimex (LAN8720)", ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
             break;
@@ -141,6 +157,7 @@ void Network::setupDevice()
         case NetworkDeviceType::LilyGO_T_ETH_POE:
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
             break;
+        #endif
         case NetworkDeviceType::WiFi:
             _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
             break;
@@ -149,6 +166,7 @@ void Network::setupDevice()
             break;
     }
 
+    #ifndef NUKI_HUB_UPDATER
     _device->mqttOnConnect([&](bool sessionPresent)
         {
             onMqttConnect(sessionPresent);
@@ -157,9 +175,68 @@ void Network::setupDevice()
         {
             onMqttDisconnect(reason);
         });
+    #endif
 }
 
-void Network::initialize()
+void NukiNetwork::reconfigureDevice()
+{
+    _device->reconfigure();
+}
+
+const String NukiNetwork::networkDeviceName() const
+{
+    return _device->deviceName();
+}
+
+const String NukiNetwork::networkBSSID() const
+{
+    return _device->BSSIDstr();
+}
+
+const NetworkDeviceType NukiNetwork::networkDeviceType()
+{
+    return _networkDeviceType;
+}
+
+void NukiNetwork::setKeepAliveCallback(std::function<void()> reconnectTick)
+{
+    _keepAliveCallback = reconnectTick;
+}
+
+void NukiNetwork::clearWifiFallback()
+{
+    memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
+}
+
+NetworkDevice *NukiNetwork::device()
+{
+    return _device;
+}
+
+#ifdef NUKI_HUB_UPDATER
+void NukiNetwork::initialize()
+{
+    _hostname = _preferences->getString(preference_hostname);
+
+    if(_hostname == "")
+    {
+        _hostname = "nukihub";
+        _preferences->putString(preference_hostname, _hostname);
+    }
+    strcpy(_hostnameArr, _hostname.c_str());
+    _device->initialize();
+
+    Log->print(F("Host name: "));
+    Log->println(_hostname);
+}
+
+bool NukiNetwork::update()
+{
+    _device->update();
+    return true;
+}
+#else
+void NukiNetwork::initialize()
 {
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
@@ -261,6 +338,8 @@ void Network::initialize()
                 buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
                 subscribe(_lockPath.c_str(), gpioPath);
                 break;
+            default:
+                break;
         }
     }
     _gpio->addCallback([this](const GpioAction& action, const int& pin)
@@ -269,16 +348,20 @@ void Network::initialize()
     });
 }
 
-bool Network::update()
+bool NukiNetwork::update()
 {
     unsigned long ts = millis();
 
-    if(ts > 120000 && ts < 125000 && _preferences->getInt(preference_bootloop_counter, 0) > 0)
+    if(ts > 120000 && ts < 125000)
     {
-        _preferences->putInt(preference_bootloop_counter, 0);
-        Log->println(F("Bootloop counter reset"));
+        if(_preferences->getBool(preference_show_secrets, false)) _preferences->putBool(preference_show_secrets, false);
+        
+        if(_preferences->getInt(preference_bootloop_counter, 0) > 0)
+        {
+            _preferences->putInt(preference_bootloop_counter, 0);
+            Log->println(F("Bootloop counter reset"));
+        }
     }
-
     _device->update();
 
     if(!_mqttEnabled)
@@ -336,8 +419,6 @@ bool Network::update()
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
         char* presenceCsv = _presenceDetection->generateCsv();
-
-//    if(_presenceCsv != nullptr && strlen(_presenceCsv) > 0)
         bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, presenceCsv);
         if(!success)
         {
@@ -364,7 +445,7 @@ bool Network::update()
     {
         publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60);
         publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
-        
+
         if(_publishDebugInfo)
         {
             publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
@@ -435,12 +516,12 @@ bool Network::update()
 }
 
 
-void Network::onMqttConnect(const bool &sessionPresent)
+void NukiNetwork::onMqttConnect(const bool &sessionPresent)
 {
     _connectReplyReceived = true;
 }
 
-void Network::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &reason)
+void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &reason)
 {
     _connectReplyReceived = true;
 
@@ -477,7 +558,7 @@ void Network::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &reaso
     }
 }
 
-bool Network::reconnect()
+bool NukiNetwork::reconnect()
 {
     _mqttConnectionState = 0;
     int port = _preferences->getInt(preference_mqtt_broker_port);
@@ -528,7 +609,7 @@ bool Network::reconnect()
             delay(100);
 
             _ignoreSubscriptionsTs = millis() + 2000;
-            _device->mqttOnMessage(Network::onMqttDataReceivedCallback);
+            _device->mqttOnMessage(NukiNetwork::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {
                 _device->mqttSubscribe(topic.c_str(), MQTT_QOS_LEVEL);
@@ -564,14 +645,14 @@ bool Network::reconnect()
     return _mqttConnectionState > 0;
 }
 
-void Network::subscribe(const char* prefix, const char *path)
+void NukiNetwork::subscribe(const char* prefix, const char *path)
 {
     char prefixedPath[500];
     buildMqttPath(prefixedPath, { prefix, path });
     _subscribedTopics.push_back(prefixedPath);
 }
 
-void Network::initTopic(const char *prefix, const char *path, const char *value)
+void NukiNetwork::initTopic(const char *prefix, const char *path, const char *value)
 {
     char prefixedPath[500];
     buildMqttPath(prefixedPath, { prefix, path });
@@ -580,7 +661,7 @@ void Network::initTopic(const char *prefix, const char *path, const char *value)
     _initTopics[pathStr] = valueStr;
 }
 
-void Network::buildMqttPath(char* outPath, std::initializer_list<const char*> paths)
+void NukiNetwork::buildMqttPath(char* outPath, std::initializer_list<const char*> paths)
 {
     int offset = 0;
     int pathCount = 0;
@@ -606,12 +687,12 @@ void Network::buildMqttPath(char* outPath, std::initializer_list<const char*> pa
     outPath[offset] = 0x00;
 }
 
-void Network::registerMqttReceiver(MqttReceiver* receiver)
+void NukiNetwork::registerMqttReceiver(MqttReceiver* receiver)
 {
     _mqttReceivers.push_back(receiver);
 }
 
-void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
+void NukiNetwork::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
     uint8_t value[800] = {0};
 
@@ -625,7 +706,7 @@ void Network::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProper
     _inst->onMqttDataReceived(properties, topic, value, len, index, total);
 }
 
-void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)
+void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)
 {
     parseGpioTopics(properties, topic, payload, len, index, total);
 
@@ -641,7 +722,7 @@ void Network::onMqttDataReceived(const espMqttClientTypes::MessageProperties& pr
 }
 
 
-void Network::parseGpioTopics(const espMqttClientTypes::MessageProperties &properties, const char *topic, const uint8_t *payload, size_t& len, size_t& index, size_t& total)
+void NukiNetwork::parseGpioTopics(const espMqttClientTypes::MessageProperties &properties, const char *topic, const uint8_t *payload, size_t& len, size_t& index, size_t& total)
 {
     char gpioPath[250];
     buildMqttPath(gpioPath, {_lockPath.c_str(), mqtt_topic_gpio_prefix, mqtt_topic_gpio_pin});
@@ -671,49 +752,34 @@ void Network::parseGpioTopics(const espMqttClientTypes::MessageProperties &prope
     }
 }
 
-void Network::gpioActionCallback(const GpioAction &action, const int &pin)
+void NukiNetwork::gpioActionCallback(const GpioAction &action, const int &pin)
 {
     _gpioTs[pin] = millis();
 }
 
-void Network::reconfigureDevice()
-{
-    _device->reconfigure();
-}
-
-void Network::setMqttPresencePath(char *path)
+void NukiNetwork::setMqttPresencePath(char *path)
 {
     memset(_mqttPresencePrefix, 0, sizeof(_mqttPresencePrefix));
     strcpy(_mqttPresencePrefix, path);
 }
 
-void Network::disableAutoRestarts()
+void NukiNetwork::disableAutoRestarts()
 {
     _networkTimeout = 0;
     _restartOnDisconnect = false;
 }
 
-int Network::mqttConnectionState()
+int NukiNetwork::mqttConnectionState()
 {
     return _mqttConnectionState;
 }
 
-bool Network::encryptionSupported()
+bool NukiNetwork::encryptionSupported()
 {
     return _device->supportsEncryption();
 }
 
-const String Network::networkDeviceName() const
-{
-    return _device->deviceName();
-}
-
-const String Network::networkBSSID() const
-{
-    return _device->BSSIDstr();
-}
-
-void Network::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision, bool retain)
+void NukiNetwork::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision, bool retain)
 {
     char str[30];
     dtostrf(value, 0, precision, str);
@@ -722,7 +788,7 @@ void Network::publishFloat(const char* prefix, const char* topic, const float va
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishInt(const char* prefix, const char *topic, const int value, bool retain)
+void NukiNetwork::publishInt(const char* prefix, const char *topic, const int value, bool retain)
 {
     char str[30];
     itoa(value, str, 10);
@@ -731,7 +797,7 @@ void Network::publishInt(const char* prefix, const char *topic, const int value,
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishUInt(const char* prefix, const char *topic, const unsigned int value, bool retain)
+void NukiNetwork::publishUInt(const char* prefix, const char *topic, const unsigned int value, bool retain)
 {
     char str[30];
     utoa(value, str, 10);
@@ -740,7 +806,7 @@ void Network::publishUInt(const char* prefix, const char *topic, const unsigned 
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishULong(const char* prefix, const char *topic, const unsigned long value, bool retain)
+void NukiNetwork::publishULong(const char* prefix, const char *topic, const unsigned long value, bool retain)
 {
     char str[30];
     utoa(value, str, 10);
@@ -749,7 +815,7 @@ void Network::publishULong(const char* prefix, const char *topic, const unsigned
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-void Network::publishBool(const char* prefix, const char *topic, const bool value, bool retain)
+void NukiNetwork::publishBool(const char* prefix, const char *topic, const bool value, bool retain)
 {
     char str[2] = {0};
     str[0] = value ? '1' : '0';
@@ -758,14 +824,14 @@ void Network::publishBool(const char* prefix, const char *topic, const bool valu
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
 }
 
-bool Network::publishString(const char* prefix, const char *topic, const char *value, bool retain)
+bool NukiNetwork::publishString(const char* prefix, const char *topic, const char *value, bool retain)
 {
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
     return _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value) > 0;
 }
 
-void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
+void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     JsonDocument json;
     json.clear();
@@ -997,23 +1063,47 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
         _lockPath.toCharArray(latest_version_topic,_lockPath.length() + 1);
         strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
 
-        publishHassTopic("update",
-                         "nuki_hub_update",
-                         uidString,
-                         "_nuki_hub_update",
-                         "NUKI Hub firmware update",
-                         name,
-                         baseTopic,
-                         _lockPath + mqtt_topic_info_nuki_hub_version,
-                         deviceType,
-                         "firmware",
-                         "",
-                         "diagnostic",
-                         "",
-                         { { (char*)"en", (char*)"true" },
-                           { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
-                           { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
-                           { (char*)"l_ver_t", (char*)latest_version_topic }});
+        if(!_preferences->getBool(preference_update_from_mqtt, false))
+        {
+            publishHassTopic("update",
+                             "nuki_hub_update",
+                             uidString,
+                             "_nuki_hub_update",
+                             "NUKI Hub firmware update",
+                             name,
+                             baseTopic,
+                             _lockPath + mqtt_topic_info_nuki_hub_version,
+                             deviceType,
+                             "firmware",
+                             "",
+                             "diagnostic",
+                             "",
+                             { { (char*)"en", (char*)"true" },
+                               { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
+                               { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
+                               { (char*)"l_ver_t", (char*)latest_version_topic }});
+        }
+        else
+        {
+            publishHassTopic("update",
+                             "nuki_hub_update",
+                             uidString,
+                             "_nuki_hub_update",
+                             "NUKI Hub firmware update",
+                             name,
+                             baseTopic,
+                             _lockPath + mqtt_topic_info_nuki_hub_version,
+                             deviceType,
+                             "firmware",
+                             "",
+                             "diagnostic",
+                             _lockPath + mqtt_topic_update,
+                             { { (char*)"en", (char*)"true" },
+                               { (char*)"pl_inst", (char*)"1" },                             
+                               { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
+                               { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
+                               { (char*)"l_ver_t", (char*)latest_version_topic }});
+        }        
     }
     else
     {
@@ -1105,8 +1195,7 @@ void Network::publishHASSConfig(char* deviceType, const char* baseTopic, char* n
                      { {(char*)"unit_of_meas", (char*)"dBm"} });
 }
 
-
-void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void NukiNetwork::publishHASSConfigAdditionalLockEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
@@ -2156,7 +2245,7 @@ void Network::publishHASSConfigAdditionalLockEntities(char *deviceType, const ch
     }
 }
 
-void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void NukiNetwork::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     publishHassTopic("binary_sensor",
                      "door_sensor",
@@ -2176,7 +2265,7 @@ void Network::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopi
                       {(char*)"pl_not_avail", (char*)"unavailable"}});
 }
 
-void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
@@ -3033,7 +3122,7 @@ void Network::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const 
     }
 }
 
-void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void NukiNetwork::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     publishHassTopic("sensor",
                      "last_action_authorization",
@@ -3073,7 +3162,7 @@ void Network::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic
                        { (char*)"val_tpl", (char*)"{{value_json.authorizationId}}" }});
 }
 
-void Network::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void NukiNetwork::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     // Keypad battery critical
         publishHassTopic("binary_sensor",
@@ -3127,7 +3216,7 @@ void Network::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, c
                        { (char*)"val_tpl", (char*)"{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first|default).completionStatus|default }}" }});
 }
 
-void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void NukiNetwork::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     if(_device->signalStrength() == 127)
     {
@@ -3150,7 +3239,7 @@ void Network::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic,
                      { {(char*)"unit_of_meas", (char*)"dBm"} });
 }
 
-void Network::publishHassTopic(const String& mqttDeviceType,
+void NukiNetwork::publishHassTopic(const String& mqttDeviceType,
                                const String& mqttDeviceName,
                                const String& uidString,
                                const String& uidStringPostfix,
@@ -3178,7 +3267,7 @@ void Network::publishHassTopic(const String& mqttDeviceType,
     }
 }
 
-String Network::createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
+String NukiNetwork::createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
     String path = discoveryTopic;
@@ -3193,7 +3282,7 @@ String Network::createHassTopicPath(const String& mqttDeviceType, const String& 
     return path;
 }
 
-void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
+void NukiNetwork::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
     String discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery);
 
@@ -3204,7 +3293,7 @@ void Network::removeHassTopic(const String& mqttDeviceType, const String& mqttDe
     }
 }
 
-void Network::removeTopic(const String& mqttPath, const String& mqttTopic)
+void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)
 {
     String path = mqttPath;
     path.concat(mqttTopic);
@@ -3217,7 +3306,7 @@ void Network::removeTopic(const String& mqttPath, const String& mqttTopic)
 }
 
 
-void Network::removeHASSConfig(char* uidString)
+void NukiNetwork::removeHASSConfig(char* uidString)
 {
     removeHassTopic((char*)"lock", (char*)"smartlock", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"battery_low", uidString);
@@ -3306,12 +3395,12 @@ void Network::removeHASSConfig(char* uidString)
     removeHassTopic((char*)"switch", (char*)"auto_unlatch", uidString);
 }
 
-void Network::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)
+void NukiNetwork::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)
 {
     removeHassTopic(deviceType, name, uidString);
 }
 
-JsonDocument Network::createHassJson(const String& uidString,
+JsonDocument NukiNetwork::createHassJson(const String& uidString,
                              const String& uidStringPostfix,
                              const String& displayName,
                              const String& name,
@@ -3383,7 +3472,7 @@ JsonDocument Network::createHassJson(const String& uidString,
     return json;
 }
 
-void Network::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
+void NukiNetwork::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
   switch (battype) {
     case Nuki::BatteryType::Alkali:
       strcpy(str, "Alkali");
@@ -3400,7 +3489,7 @@ void Network::batteryTypeToString(const Nuki::BatteryType battype, char* str) {
   }
 }
 
-void Network::advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str) {
+void NukiNetwork::advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str) {
   switch (advmode) {
     case Nuki::AdvertisingMode::Automatic:
       strcpy(str, "Automatic");
@@ -3420,7 +3509,7 @@ void Network::advertisingModeToString(const Nuki::AdvertisingMode advmode, char*
   }
 }
 
-void Network::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str) {
+void NukiNetwork::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str) {
   switch (timeZoneId) {
     case Nuki::TimeZoneId::Africa_Cairo:
       strcpy(str, "Africa/Cairo");
@@ -3569,38 +3658,19 @@ void Network::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str) {
   }
 }
 
-const NetworkDeviceType Network::networkDeviceType()
-{
-    return _networkDeviceType;
-}
-
-uint16_t Network::subscribe(const char *topic, uint8_t qos)
+uint16_t NukiNetwork::subscribe(const char *topic, uint8_t qos)
 {
     return _device->mqttSubscribe(topic, qos);
 }
 
-void Network::setKeepAliveCallback(std::function<void()> reconnectTick)
-{
-    _keepAliveCallback = reconnectTick;
-}
-
-void Network::addReconnectedCallback(std::function<void()> reconnectedCallback)
+void NukiNetwork::addReconnectedCallback(std::function<void()> reconnectedCallback)
 {
     _reconnectedCallbacks.push_back(reconnectedCallback);
 }
 
-void Network::clearWifiFallback()
-{
-    memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
-}
-
-void Network::disableMqtt()
+void NukiNetwork::disableMqtt()
 {
     _device->disableMqtt();
     _mqttEnabled = false;
 }
-
-NetworkDevice *Network::device()
-{
-    return _device;
-}
+#endif

@@ -8,10 +8,10 @@
 #include "Config.h"
 
 NukiWrapper* nukiInst;
-NetworkLock* networkInst;
+NukiNetworkLock* networkInst;
 Preferences* nukiLockPreferences = nullptr;
 
-NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NetworkLock* network, Gpio* gpio, Preferences* preferences)
+NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
   _deviceId(deviceId),
   _bleScanner(scanner),
@@ -131,6 +131,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     }
 
     _nukiLock.setEventHandler(this);
+    _nukiLock.setDisonnectTimeout(5000);
 
     Log->print(F("Lock state interval: "));
     Log->print(_intervalLockstate);
@@ -253,17 +254,7 @@ void NukiWrapper::update()
 
     if(_nextLockAction != (NukiLock::LockAction)0xff && ts > _nextRetryTs)
     {
-        int loop = 0;
-        while(_taskRunning && loop < 600)
-        {
-            Log->println("Waiting to run Nuki BLE command");
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
-            ++loop;
-        }
-
-        _taskRunning = true;
         Nuki::CmdResult cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
-        _taskRunning = false;
 
         char resultStr[15] = {0};
         NukiLock::cmdResultToString(cmdResult, resultStr);
@@ -376,28 +367,19 @@ void NukiWrapper::unpair()
 
 void NukiWrapper::updateKeyTurnerState()
 {
-    Nuki::CmdResult result;
+    Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
     while(_retryCount < _nrOfRetries)
     {
-        int loop = 0;
-        while(_taskRunning && loop < 600)
-        {
-            Log->println("Waiting to run Nuki BLE command");
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
-            ++loop;
-        }
-        _taskRunning = true;
         Log->print(F("Querying lock state: "));
         result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
-        _taskRunning = false;
-        if(!_nukiConfigValid) {
+        delay(250);
+
+        if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
         }
         else break;
-
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
     }
 
     char resultStr[15];
@@ -438,28 +420,18 @@ void NukiWrapper::updateKeyTurnerState()
 
 void NukiWrapper::updateBatteryState()
 {
-    Nuki::CmdResult result;
+    Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
     while(_retryCount < _nrOfRetries)
     {
-        int loop = 0;
-        while(_taskRunning && loop < 600)
-        {
-            Log->println("Waiting to run Nuki BLE command");
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
-            ++loop;
-        }
-        _taskRunning = true;
         Log->print(F("Querying lock battery state: "));
         result = _nukiLock.requestBatteryReport(&_batteryReport);
-        _taskRunning = false;
+        delay(250);
         if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
         }
         else break;
-
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
     }
 
     printCommandResult(result);
@@ -498,27 +470,17 @@ void NukiWrapper::updateConfig()
             const int pinStatus = _preferences->getInt(preference_lock_pin_status, 4);
 
             if(isPinSet()) {
-                Nuki::CmdResult result;
+                Nuki::CmdResult result = (Nuki::CmdResult)-1;
                 _retryCount = 0;
 
                 while(_retryCount < _nrOfRetries)
                 {
-                    int loop = 0;
-                    while(_taskRunning && loop < 600)
-                    {
-                        Log->println("Waiting to run Nuki BLE command");
-                        vTaskDelay( 50 / portTICK_PERIOD_MS);
-                        ++loop;
-                    }
-                    _taskRunning = true;
                     result = _nukiLock.verifySecurityPin();
-                    _taskRunning = false;
+                    delay(250);
                     if(result != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
-
-                    vTaskDelay( 1000 / portTICK_PERIOD_MS);
                 }
 
                 if(result != Nuki::CmdResult::Success)
@@ -580,28 +542,18 @@ void NukiWrapper::updateAuthData(bool retrieved)
     if(!retrieved)
     {
         delay(250);
-        Nuki::CmdResult result;
+        Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
         while(_retryCount < _nrOfRetries)
         {
-            int loop = 0;
-            while(_taskRunning && loop < 600)
-            {
-                Log->println("Waiting to run Nuki BLE command");
-                vTaskDelay( 50 / portTICK_PERIOD_MS);
-                ++loop;
-            }
-            _taskRunning = true;
             Log->print(F("Retrieve log entries: "));
             result = _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
-            _taskRunning = false;
+            delay(250);
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
-
-            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
 
         Log->println(result);
@@ -657,28 +609,18 @@ void NukiWrapper::updateKeypad(bool retrieved)
 
     if(!retrieved)
     {
-        Nuki::CmdResult result;
+        Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
         while(_retryCount < _nrOfRetries)
         {
-            int loop = 0;
-            while(_taskRunning && loop < 600)
-            {
-                Log->println("Waiting to run Nuki BLE command");
-                vTaskDelay( 50 / portTICK_PERIOD_MS);
-                ++loop;
-            }
-            _taskRunning = true;
             Log->print(F("Querying lock keypad: "));
             result = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-            _taskRunning = false;
+            delay(250);
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
-
-            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
 
         printCommandResult(result);
@@ -728,28 +670,18 @@ void NukiWrapper::updateTimeControl(bool retrieved)
 
     if(!retrieved)
     {
-        Nuki::CmdResult result;
+        Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
         while(_retryCount < _nrOfRetries)
         {
-            int loop = 0;
-            while(_taskRunning && loop < 600)
-            {
-                Log->println("Waiting to run Nuki BLE command");
-                vTaskDelay( 50 / portTICK_PERIOD_MS);
-                ++loop;
-            }
-            _taskRunning = true;
             Log->print(F("Querying lock time control: "));
             result = _nukiLock.retrieveTimeControlEntries();
-            _taskRunning = false;
+            delay(250);
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
             else break;
-
-            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
 
         printCommandResult(result);
@@ -1147,16 +1079,6 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
     nukiLockPreferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
     nukiLockPreferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
 
-    int loop = 0;
-    while(_taskRunning && loop < 600)
-    {
-        Log->println("Waiting to run Nuki BLE command");
-        vTaskDelay( 50 / portTICK_PERIOD_MS);
-        ++loop;
-    }
-
-    _taskRunning = true;
-
     for(int i=0; i < 16; i++)
     {
         if(json[basicKeys[i]])
@@ -1176,14 +1098,6 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
 
                 while(_retryCount < _nrOfRetries)
                 {
-                    int loop = 0;
-                    while(_taskRunning && loop < 600)
-                    {
-                        Log->println("Waiting to run Nuki BLE command");
-                        vTaskDelay( 50 / portTICK_PERIOD_MS);
-                        ++loop;
-                    }
-
                     if(strcmp(basicKeys[i], "name") == 0)
                     {
                         if(strlen(jsonchar) <= 32)
@@ -1359,12 +1273,11 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                         else jsonResult[basicKeys[i]] = "invalidValue";
                     }
 
-                    if(cmdResult != Nuki::CmdResult::Success) {
+                    delay(250);
+                    if(!cmdResult == Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
-
-                    vTaskDelay( 1000 / portTICK_PERIOD_MS);
                 }
 
                 if(cmdResult == Nuki::CmdResult::Success) basicUpdated = true;
@@ -1398,14 +1311,6 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
 
                 while(_retryCount < _nrOfRetries)
                 {
-                    int loop = 0;
-                    while(_taskRunning && loop < 600)
-                    {
-                        Log->println("Waiting to run Nuki BLE command");
-                        vTaskDelay( 50 / portTICK_PERIOD_MS);
-                        ++loop;
-                    }
-
                     if(strcmp(advancedKeys[j], "unlockedPositionOffsetDegrees") == 0)
                     {
                         const int16_t keyvalue = atoi(jsonchar);
@@ -1653,12 +1558,11 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                         else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
 
-                    if(cmdResult != Nuki::CmdResult::Success) {
+                    delay(250);
+                    if(!cmdResult == Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
-
-                    vTaskDelay( 1000 / portTICK_PERIOD_MS);
                 }
 
                 if(cmdResult == Nuki::CmdResult::Success) advancedUpdated = true;
@@ -1672,8 +1576,6 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
             else jsonResult[advancedKeys[j]] = "accessDenied";
         }
     }
-
-    _taskRunning = false;
 
     nukiLockPreferences->end();
 
@@ -1791,14 +1693,6 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
 
     while(_retryCount < _nrOfRetries)
     {
-        int loop = 0;
-        while(_taskRunning && loop < 600)
-        {
-            Log->println("Waiting to run Nuki BLE command");
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
-            ++loop;
-        }
-
         if(strcmp(command, "add") == 0)
         {
             if(name == "" || name == "--")
@@ -1822,9 +1716,8 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             size_t nameLen = name.length();
             memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
             entry.code = codeInt;
-            _taskRunning = true;
             result = _nukiLock.addKeypadEntry(entry);
-            _taskRunning = false;
+            delay(250);
             Log->print("Add keypad code: "); Log->println((int)result);
             updateKeypad(false);
         }
@@ -1836,9 +1729,8 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
                 return;
             }
 
-            _taskRunning = true;
             result = _nukiLock.deleteKeypadEntry(id);
-            _taskRunning = false;
+            delay(250);
             Log->print("Delete keypad code: "); Log->println((int)result);
             updateKeypad(false);
         }
@@ -1872,13 +1764,12 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
             entry.code = codeInt;
             entry.enabled = enabled == 0 ? 0 : 1;
-            _taskRunning = true;
             result = _nukiLock.updateKeypadEntry(entry);
-            _taskRunning = false;
+            delay(250);
             Log->print("Update keypad code: "); Log->println((int)result);
             updateKeypad(false);
         }
-        else if(command == "--")
+        else if(strcmp(command, "--") == 0)
         {
             return;
         }
@@ -1892,8 +1783,6 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             ++_retryCount;
         }
         else break;
-
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
     }
 
     if((int)result != -1)
@@ -1989,20 +1878,11 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
         while(_retryCount < _nrOfRetries)
         {
-            int loop = 0;
-            while(_taskRunning && loop < 600)
-            {
-                Log->println("Waiting to run Nuki BLE command");
-                vTaskDelay( 50 / portTICK_PERIOD_MS);
-                ++loop;
-            }
-
             if(strcmp(action, "delete") == 0) {
                 if(idExists)
                 {
-                    _taskRunning = true;
                     result = _nukiLock.deleteKeypadEntry(codeId);
-                    _taskRunning = false;
+                    delay(250);
                     Log->print(F("Delete keypad code: "));
                     Log->println((int)result);
                 }
@@ -2188,9 +2068,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                         entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
                     }
 
-                    _taskRunning = true;
                     result = _nukiLock.addKeypadEntry(entry);
-                    _taskRunning = false;
+                    delay(250);
                     Log->print(F("Add keypad code: "));
                     Log->println((int)result);
                 }
@@ -2208,17 +2087,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                         return;
                     }
 
-                    int loop = 0;
-                    while(_taskRunning && loop < 600)
-                    {
-                        Log->println("Waiting to run Nuki BLE command");
-                        vTaskDelay( 50 / portTICK_PERIOD_MS);
-                        ++loop;
-                    }
-
-                    _taskRunning = true;
                     Nuki::CmdResult resultKp = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-                    _taskRunning = false;
+                    delay(250);
                     bool foundExisting = false;
 
                     if(resultKp == Nuki::CmdResult::Success)
@@ -2346,9 +2216,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
                     }
 
-                    _taskRunning = true;
                     result = _nukiLock.updateKeypadEntry(entry);
-                    _taskRunning = false;
+                    delay(250);
                     Log->print(F("Update keypad code: "));
                     Log->println((int)result);
                 }
@@ -2363,8 +2232,6 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                 ++_retryCount;
             }
             else break;
-
-            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
 
         updateKeypad(false);
@@ -2453,20 +2320,11 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
         while(_retryCount < _nrOfRetries)
         {
-            int loop = 0;
-            while(_taskRunning && loop < 600)
-            {
-                Log->println("Waiting to run Nuki BLE command");
-                vTaskDelay( 50 / portTICK_PERIOD_MS);
-                ++loop;
-            }
-
             if(strcmp(action, "delete") == 0) {
                 if(idExists)
                 {
-                    _taskRunning = true;
                     result = _nukiLock.removeTimeControlEntry(entryId);
-                    _taskRunning = false;
+                    delay(250);
                     Log->print(F("Delete time control: "));
                     Log->println((int)result);
                 }
@@ -2525,9 +2383,8 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
 
-                    _taskRunning = true;
                     result = _nukiLock.addTimeControlEntry(entry);
-                    _taskRunning = false;
+                    delay(250);
                     Log->print(F("Add time control: "));
                     Log->println((int)result);
                 }
@@ -2539,17 +2396,8 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                         return;
                     }
 
-                    int loop = 0;
-                    while(_taskRunning && loop < 600)
-                    {
-                        Log->println("Waiting to run Nuki BLE command");
-                        vTaskDelay( 50 / portTICK_PERIOD_MS);
-                        ++loop;
-                    }
-
-                    _taskRunning = true;
                     Nuki::CmdResult resultTc = _nukiLock.retrieveTimeControlEntries();
-                    _taskRunning = false;
+                    delay(250);
                     bool foundExisting = false;
 
                     if(resultTc == Nuki::CmdResult::Success)
@@ -2570,7 +2418,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                                 timeAr[0] = entry.timeHour;
                                 timeAr[1] = entry.timeMin;
                             }
-                            if(lockAction.length() < 1) timeControlLockAction = entry.lockAction;                            
+                            if(lockAction.length() < 1) timeControlLockAction = entry.lockAction;
                         }
 
                         if(!foundExisting)
@@ -2599,9 +2447,8 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
 
-                    _taskRunning = true;
                     result = _nukiLock.updateTimeControlEntry(entry);
-                    _taskRunning = false;
+                    delay(250);
                     Log->print(F("Update time control: "));
                     Log->println((int)result);
                 }
@@ -2616,8 +2463,6 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                 ++_retryCount;
             }
             else break;
-
-            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
 
         if((int)result != -1)
@@ -2665,6 +2510,7 @@ void NukiWrapper::notify(Nuki::EventType eventType)
         {
             if(eventType == Nuki::EventType::KeyTurnerStatusUpdated)
             {
+                Log->println("KeyTurnerStatusUpdated");
                 _statusUpdated = true;
                 _network->publishStatusUpdated(_statusUpdated);
             }
@@ -2674,29 +2520,22 @@ void NukiWrapper::notify(Nuki::EventType eventType)
 
 void NukiWrapper::readConfig()
 {
-    Nuki::CmdResult result;
+    Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
     while(_retryCount < _nrOfRetries)
     {
-        int loop = 0;
-        while(_taskRunning && loop < 600)
-        {
-            Log->println("Waiting to run Nuki BLE command");
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
-            ++loop;
-        }
-        _taskRunning = true;
-        Log->print(F("Reading config. Result: "));
         result = _nukiLock.requestConfig(&_nukiConfig);
-        _taskRunning = false;
+        delay(250);
         _nukiConfigValid = result == Nuki::CmdResult::Success;
+
+        Log->print(F("Config valid: "));
+        Log->println(_nukiConfigValid);
         if(!_nukiConfigValid) {
             ++_retryCount;
+            Log->println("Retrying in 1s");
         }
         else break;
-
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
     }
 
     char resultStr[20];
@@ -2706,29 +2545,19 @@ void NukiWrapper::readConfig()
 
 void NukiWrapper::readAdvancedConfig()
 {
-    Nuki::CmdResult result;
+    Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
     while(_retryCount < _nrOfRetries)
     {
-        int loop = 0;
-        while(_taskRunning && loop < 600)
-        {
-            Log->println("Waiting to run Nuki BLE command");
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
-            ++loop;
-        }
-        _taskRunning = true;
          result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
-        _taskRunning = false;
+        delay(250);
         _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
 
         if(!_nukiAdvancedConfigValid) {
             ++_retryCount;
         }
         else break;
-
-        vTaskDelay( 1000 / portTICK_PERIOD_MS);
     }
 
     char resultStr[20];
@@ -2762,29 +2591,19 @@ void NukiWrapper::disableHASS()
 {
     if(!_nukiConfigValid) // only ask for config once to save battery life
     {
-        Nuki::CmdResult result;
+        Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
         while(_retryCount < _nrOfRetries)
         {
-            int loop = 0;
-            while(_taskRunning && loop < 600)
-            {
-                Log->println("Waiting to run Nuki BLE command");
-                vTaskDelay( 50 / portTICK_PERIOD_MS);
-                ++loop;
-            }
-            _taskRunning = true;
             result = _nukiLock.requestConfig(&_nukiConfig);
-            _taskRunning = false;
+            delay(250);
             _nukiConfigValid = result == Nuki::CmdResult::Success;
 
             if(!_nukiConfigValid) {
                 ++_retryCount;
             }
             else break;
-
-            vTaskDelay( 1000 / portTICK_PERIOD_MS);
         }
     }
 

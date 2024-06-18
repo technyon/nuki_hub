@@ -1,7 +1,9 @@
 #pragma once
 
+#ifndef NUKI_HUB_UPDATER
 #include "espMqttClient.h"
 #include "MqttClientSetup.h"
+#endif
 #include "IPConfiguration.h"
 
 enum class ReconnectStatus
@@ -35,6 +37,7 @@ public:
     virtual String localIP() = 0;
     virtual String BSSIDstr() = 0;
 
+    #ifndef NUKI_HUB_UPDATER
     virtual void mqttSetClientId(const char* clientId);
     virtual void mqttSetCleanSession(bool cleanSession);
     virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const char* payload);
@@ -51,16 +54,19 @@ public:
     virtual void disableMqtt();
 
     virtual uint16_t mqttSubscribe(const char* topic, uint8_t qos);
+    #endif
 
 protected:
+    #ifndef NUKI_HUB_UPDATER
     espMqttClient *_mqttClient = nullptr;
     espMqttClientSecure *_mqttClientSecure = nullptr;
 
     bool _useEncryption = false;
     bool _mqttEnabled = true;
-
+    
+    MqttClient *getMqttClient() const;
+    #endif
+    
     const String _hostname;
     const IPConfiguration* _ipConfiguration = nullptr;
-
-    MqttClient *getMqttClient() const;
 };

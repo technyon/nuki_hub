@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32dev, esp32-s3, esp32-c3, esp32solo1]
+        board: [esp32dev, esp32-s3, esp32-c3, esp32-c6]
         build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}
@@ -62,20 +62,20 @@ jobs:
             BOARD="${BOARD}_dbg"
           fi
           echo "::group::Building with PlatformIO"
+            if [ "$BUILD" = "release" ]; then
+              make updater_${BOARD}
+            fi
             make $BOARD
           echo "::endgroup::"
-
       - name: Add flash script
         env:
-          DOC: how-to-flash.txt
+          DOC: resources/how-to-flash.txt
           FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
         run: |
           BOARD=`echo $BOARD | tr '[:lower:]' '[:upper:]'`
 
           # fix for docs
-          if [ "$BOARD" = "ESP32SOLO1" ]; then
-            BOARD="ESP32Solo1"
-          elif [ "$BOARD" = "ESP32DEV" ]; then
+          if [ "$BOARD" = "ESP32DEV" ]; then
             BOARD="ESP32"
           fi
 

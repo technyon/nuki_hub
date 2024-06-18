@@ -19,6 +19,7 @@ enum class RestartReason
     OTATimeout,
     OTAAborted,
     OTAUnknownState,
+    OTAReboot,
     DeviceUnpaired,
     NukiHubReset,
     NotApplicable
@@ -99,6 +100,8 @@ inline static String getRestartReason()
             return "OTAAborted";
         case RestartReason::OTAUnknownState:
             return "OTAUnknownState";
+        case RestartReason::OTAReboot:
+            return "RebootToOTA";
         case RestartReason::DeviceUnpaired:
             return "DeviceUnpaired";
         case RestartReason::NukiHubReset:
@@ -142,9 +145,11 @@ inline static String getEspRestartReason()
     }
 }
 
+#ifndef NUKI_HUB_UPDATER
 inline bool rebuildGpio()
 {
     bool rebGpio = rebuildGpioRequested;
     rebuildGpioRequested = false;
     return restartReason_isValid && rebGpio;
 }
+#endif
