@@ -70,8 +70,10 @@ void NukiNetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
     }
 
+    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     _network->subscribe(_mqttPath, mqtt_topic_update);
     _network->initTopic(_mqttPath, mqtt_topic_update, "0");
+    #endif
 
     _network->subscribe(_mqttPath, mqtt_topic_webserver_action);
     _network->initTopic(_mqttPath, mqtt_topic_webserver_action, "--");
@@ -185,6 +187,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
+    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(value, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
     {
         Log->println(F("Update requested via MQTT."));
@@ -193,6 +196,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         delay(200);
         restartEsp(RestartReason::OTAReboot);
     }
+    #endif
     else if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
     {
         if(strcmp(value, "") == 0 ||

@@ -1,7 +1,11 @@
 #pragma once
 
 #include <WiFiClient.h>
+#if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+#include <WiFiClientSecure.h>
+#else
 #include <NetworkClientSecure.h>
+#endif
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #include "WiFiManager.h"

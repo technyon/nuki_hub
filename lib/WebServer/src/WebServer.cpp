@@ -108,9 +108,15 @@ static String md5str(String &in){
     return String(out);
   memset(_buf, 0x00, 16);
   mbedtls_md5_init(&_ctx);
+  #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+  mbedtls_md5_starts_ret(&_ctx);
+  mbedtls_md5_update_ret(&_ctx, (const uint8_t *)in.c_str(), in.length());
+  mbedtls_md5_finish_ret(&_ctx, _buf);
+  #else
   mbedtls_md5_starts(&_ctx);
   mbedtls_md5_update(&_ctx, (const uint8_t *)in.c_str(), in.length());
   mbedtls_md5_finish(&_ctx, _buf);
+  #endif
   for(i = 0; i < 16; i++) {
     sprintf(out + (i * 2), "%02x", _buf[i]);
   }

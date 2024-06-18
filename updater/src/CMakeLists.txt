@@ -1,4 +1,4 @@
-FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
+list(APPEND app_sources ${CMAKE_SOURCE_DIR}/src/main.cpp)
 list(APPEND app_sources ../../src/Config.h)
 list(APPEND app_sources ../../src/Logger.h)
 list(APPEND app_sources ../../src/NukiNetwork.h)

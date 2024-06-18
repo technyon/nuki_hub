@@ -161,13 +161,16 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         case HTTP_EVENT_DISCONNECTED:
             Log->println("HTTP_EVENT_DISCONNECTED");
             break;
+        #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
         case HTTP_EVENT_REDIRECT:
             Log->println("HTTP_EVENT_REDIRECT");
             break;
+        #endif        
     }
     return ESP_OK;
 }
 
+#if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
 void otaTask(void *pvParameter)
 {
     uint8_t partitionType = checkPartition();
@@ -211,12 +214,23 @@ void otaTask(void *pvParameter)
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
+#endif
 
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
 
-    if(ota) xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, 1);
+    if(ota) 
+    {
+        #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+        xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
+        #ifndef NUKI_HUB_UPDATER
+        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
+        #endif
+        #else
+        xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, 1);
+        #endif
+    }
     else
     {
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);

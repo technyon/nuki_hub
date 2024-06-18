@@ -1,5 +1,6 @@
 #pragma once
 
+#if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
 #ifndef CONFIG_IDF_TARGET_ESP32
 typedef enum {
     ETH_CLOCK_GPIO0_IN = 0,
@@ -19,9 +20,14 @@ typedef enum {
 #define ETH_PHY_MDIO        18
 #define ETH_PHY_POWER       -1
 #define ETH_RESET_PIN        1
+#endif
 
 #include <WiFiClient.h>
+#if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+#include <WiFiClientSecure.h>
+#else
 #include <NetworkClientSecure.h>
+#endif
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #ifndef NUKI_HUB_UPDATER

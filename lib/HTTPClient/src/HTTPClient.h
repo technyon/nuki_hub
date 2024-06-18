@@ -34,7 +34,11 @@
 #include <memory>
 #include <Arduino.h>
 #include <WiFiClient.h>
+#if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+#include <WiFiClientSecure.h>
+#else
 #include <NetworkClientSecure.h>
+#endif
 
 /// Cookie jar support
 #include <vector>

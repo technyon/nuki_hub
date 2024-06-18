@@ -277,6 +277,7 @@ void WebCfgServer::initialize()
         esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
         restartEsp(RestartReason::OTAReboot);
     });
+    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     _server.on("/autoupdate", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -288,6 +289,7 @@ void WebCfgServer::initialize()
         _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
         restartEsp(RestartReason::OTAReboot);
     });
+    #endif
     _server.on("/uploadota", HTTP_POST, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -353,9 +355,11 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
         return;
     }
 
+    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     response.concat("<h4>Auto update Nuki Hub</h4>");
     response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
     response.concat("<form id=\"autoupdform\" action=\"/autoupdate\" method=\"get\"><br><input type=\"submit\" value=\"Auto Update\" /></form><br><br>");
+    #endif
 
     if(_partitionType == 1)
     {
@@ -479,12 +483,16 @@ void WebCfgServer::handleOtaUpload()
             filename = "/" + filename;
         }
         _otaStartTs = millis();
+        #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+        esp_task_wdt_init(30, false);
+        #else
         esp_task_wdt_config_t twdt_config = {
             .timeout_ms = 30000,
             .idle_core_mask = 0,
             .trigger_panic = false,
         };
         esp_task_wdt_init(&twdt_config);
+        #endif
 
         #ifndef NUKI_HUB_UPDATER
         _network->disableAutoRestarts();

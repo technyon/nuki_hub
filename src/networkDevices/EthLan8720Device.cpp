@@ -75,10 +75,15 @@ void EthLan8720Device::initialize()
     delay(250);
 
     WiFi.setHostname(_hostname.c_str());
+    
+    #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+    _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
+    #else
     #ifdef CONFIG_IDF_TARGET_ESP32
     _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, ETH_RESET_PIN, _clock_mode);
     #else
     _hardwareInitialized = false;
+    #endif
     #endif
     ETH.setHostname(_hostname.c_str());
     if(!_ipConfiguration->dhcpEnabled())
