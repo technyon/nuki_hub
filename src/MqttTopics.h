@@ -85,6 +85,12 @@
 #define mqtt_topic_timecontrol_action "/timecontrol/action"
 #define mqtt_topic_timecontrol_command_result "/timecontrol/commandResult"
 
+#define mqtt_topic_auth "/authorization"
+#define mqtt_topic_auth_entries "/authorization/entries"
+#define mqtt_topic_auth_json "/authorization/json"
+#define mqtt_topic_auth_action "/authorization/action"
+#define mqtt_topic_auth_command_result "/authorization/commandResult"
+
 #define mqtt_topic_info_hardware_version "/info/hardwareVersion"
 #define mqtt_topic_info_firmware_version "/info/firmwareVersion"
 #define mqtt_topic_info_nuki_hub_version "/info/nukiHubVersion"

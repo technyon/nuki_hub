@@ -52,12 +52,14 @@ private:
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void onTimeControlCommandReceivedCallback(const char* value);
+    static void onAuthCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
 
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
+    void onAuthCommandReceived(const char* value);
 
     void updateKeyTurnerState();
     void updateBatteryState();
@@ -65,6 +67,7 @@ private:
     void updateAuthData(bool retrieved);
     void updateKeypad(bool retrieved);
     void updateTimeControl(bool retrieved);
+    void updateAuth(bool retrieved);
     void postponeBleWatchdog();
 
     void updateGpioOutputs();
@@ -108,6 +111,7 @@ private:
     unsigned long _nextRetryTs = 0;
     std::vector<uint16_t> _keypadCodeIds;
     std::vector<uint8_t> _timeControlIds;
+    std::vector<uint32_t> _authIds;
 
     NukiOpener::OpenerState _lastKeyTurnerState;
     NukiOpener::OpenerState _keyTurnerState;
@@ -128,6 +132,7 @@ private:
     bool _keypadEnabled = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
+    uint _maxAuthEntryCount = 0;
     bool _configRead = false;
     long _rssiPublishInterval = 0;
     unsigned long _nextLockStateUpdateTs = 0;
@@ -136,6 +141,7 @@ private:
     unsigned long _waitAuthLogUpdateTs = 0;
     unsigned long _waitKeypadUpdateTs = 0;
     unsigned long _waitTimeControlUpdateTs = 0;
+    unsigned long _waitAuthUpdateTs = 0;
     unsigned long _nextKeypadUpdateTs = 0;
     unsigned long _nextPairTs = 0;
     long _nextRssiTs = 0;

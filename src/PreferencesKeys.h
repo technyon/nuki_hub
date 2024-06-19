@@ -97,6 +97,12 @@
 #define preference_ota_updater_url (char*)"otaUpdUrl"
 #define preference_update_from_mqtt (char*)"updMqtt"
 #define preference_show_secrets (char*)"showSecr"
+#define preference_lock_max_auth_entry_count (char*)"maxauth"
+#define preference_opener_max_auth_entry_count (char*)"opmaxauth"
+#define preference_auth_control_enabled (char*)"authCtrlEna"
+#define preference_auth_topic_per_entry (char*)"authPerEntry"
+#define preference_auth_info_enabled (char*)"authInfoEna"
+#define preference_auth_max_entries (char*)"authmaxentry"
 
 class DebugPreferences
 {
@@ -118,7 +124,9 @@ private:
             preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout,
             preference_official_hybrid, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry, preference_has_mac_saved,
             preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version, preference_task_size_network, preference_task_size_nuki,
-            preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries, preference_update_from_mqtt, preference_show_secrets
+            preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries, preference_update_from_mqtt, preference_show_secrets,
+            preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count, preference_auth_control_enabled, preference_auth_topic_per_entry,
+            preference_auth_info_enabled, preference_auth_max_entries
     };
     std::vector<char*> _redact =
     {
@@ -134,7 +142,8 @@ private:
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_show_secrets,
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
-            preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt
+            preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled
     };
 
     const bool isRedacted(const char* key) const

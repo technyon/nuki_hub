@@ -411,6 +411,7 @@ void setup()
             preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
             preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
             preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
+            preferences->putInt(preference_auth_max_entries, MAX_AUTH);
             preferences->putInt(preference_bootloop_counter, 0);
         }
     }
