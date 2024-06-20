@@ -2,7 +2,7 @@
 
 #include "sdkconfig.h"
 
-#define NUKI_HUB_VERSION "8.34"
+#define NUKI_HUB_VERSION "8.35"
 #define NUKI_HUB_BUILD "unknownbuildnr"
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
