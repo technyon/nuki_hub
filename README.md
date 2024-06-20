@@ -439,7 +439,7 @@ When you are on the right application you can upload the new binary by clicking 
 After about a minute the new firmware should be installed afterwhich the ESP will reboot automatically to the updated binary.<br>
 Selecting the wrong binary will lead to an unsuccessfull update<br>
 <br>
-<b> Note for users upgrading from Nuki Hub 8.35 or lower:</v><br>
+<b> Note for users upgrading from Nuki Hub 8.35 or lower:</b><br>
 Updating to version 8.36 requires a change to the partition table of the ESP32.<br>
 Please follow the instructions for the [First time installation](#first-time-installation) once when updating to Nuki Hub 8.36 from an earlier version.<br>
 Your settings will not be affected when updating using the above instructions (do not select erase device when updating using Webflash).<br>
