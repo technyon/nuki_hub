@@ -163,7 +163,7 @@ jobs:
         with:
           prerelease: false
           allowUpdates: true
-          updateOnlyUnreleased: true
+          updateOnlyUnreleased: false
           draft: true
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
           artifacts: ${{ steps.zip.outputs.artifacts }}
