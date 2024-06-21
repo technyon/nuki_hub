@@ -64,7 +64,7 @@ void NukiOpenerWrapper::initialize()
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
-    if(_nrOfRetries == 200)
+    if(_nrOfRetries < 0 || _nrOfRetries == 200)
     {
         _nrOfRetries = 3;
         _preferences->putInt(preference_command_nr_of_retries, _nrOfRetries);
@@ -345,7 +345,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         Log->print(F("Querying opener state: "));
         result =_nukiOpener.requestOpenerState(&_keyTurnerState);
@@ -365,7 +365,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         _retryLockstateCount++;
         postponeBleWatchdog();
-        if(_retryLockstateCount < _nrOfRetries)
+        if(_retryLockstateCount < _nrOfRetries + 1)
         {
             _nextLockStateUpdateTs = millis() + _retryDelay;
         }
@@ -420,7 +420,7 @@ void NukiOpenerWrapper::updateBatteryState()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         Log->print(F("Querying opener battery state: "));
         result = _nukiOpener.requestBatteryReport(&_batteryReport);
@@ -470,7 +470,7 @@ void NukiOpenerWrapper::updateConfig()
                 Nuki::CmdResult result = (Nuki::CmdResult)-1;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     result = _nukiOpener.verifySecurityPin();
                     delay(250);
@@ -542,7 +542,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             Log->print(F("Retrieve log entries: "));
             result = _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
@@ -609,7 +609,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             Log->print(F("Querying opener keypad: "));
             result = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
@@ -670,7 +670,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             Log->print(F("Querying opener time control: "));
             result = _nukiOpener.retrieveTimeControlEntries();
@@ -975,7 +975,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     if(strcmp(basicKeys[i], "name") == 0)
                     {
@@ -1165,7 +1165,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     if(strcmp(advancedKeys[j], "intercomID") == 0)
                     {
@@ -1483,7 +1483,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         if(strcmp(command, "add") == 0)
         {
@@ -1671,7 +1671,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             if(strcmp(action, "delete") == 0) {
                 if(idExists)
@@ -2113,7 +2113,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             if(strcmp(action, "delete") == 0) {
                 if(idExists)
@@ -2315,7 +2315,7 @@ void NukiOpenerWrapper::readConfig()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
         delay(250);
@@ -2338,7 +2338,7 @@ void NukiOpenerWrapper::readAdvancedConfig()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
          result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
          delay(250);
@@ -2380,7 +2380,7 @@ void NukiOpenerWrapper::disableHASS()
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             result = _nukiOpener.requestConfig(&_nukiConfig);
             delay(250);

@@ -87,7 +87,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
     }
 
-    if(_nrOfRetries == 200)
+    if(_nrOfRetries < 0 || _nrOfRetries == 200)
     {
         _nrOfRetries = 3;
         _preferences->putInt(preference_command_nr_of_retries, _nrOfRetries);
@@ -370,7 +370,7 @@ void NukiWrapper::updateKeyTurnerState()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         Log->print(F("Querying lock state: "));
         result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
@@ -391,7 +391,7 @@ void NukiWrapper::updateKeyTurnerState()
     {
         _retryLockstateCount++;
         postponeBleWatchdog();
-        if(_retryLockstateCount < _nrOfRetries)
+        if(_retryLockstateCount < _nrOfRetries + 1)
         {
             _nextLockStateUpdateTs = millis() + _retryDelay;
         }
@@ -423,7 +423,7 @@ void NukiWrapper::updateBatteryState()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         Log->print(F("Querying lock battery state: "));
         result = _nukiLock.requestBatteryReport(&_batteryReport);
@@ -473,7 +473,7 @@ void NukiWrapper::updateConfig()
                 Nuki::CmdResult result = (Nuki::CmdResult)-1;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     result = _nukiLock.verifySecurityPin();
                     delay(250);
@@ -545,7 +545,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             Log->print(F("Retrieve log entries: "));
             result = _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
@@ -612,7 +612,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             Log->print(F("Querying lock keypad: "));
             result = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
@@ -673,7 +673,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             Log->print(F("Querying lock time control: "));
             result = _nukiLock.retrieveTimeControlEntries();
@@ -909,7 +909,7 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
         _statusUpdated = true;
         _network->publishStatusUpdated(_statusUpdated);
         NukiLock::lockstateToString((NukiLock::LockState)_network->_offState, str);
-        _network->publishString(mqtt_topic_lock_state, str);
+        _network->publishString(mqtt_topic_lock_state, str, true);
 
         Log->print(F("Lockstate: "));
         Log->println(str);
@@ -929,7 +929,7 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
         Log->print(F("Doorsensor state: "));
         Log->println(str);
 
-        _network->publishString(mqtt_topic_lock_door_sensor_state, str);
+        _network->publishString(mqtt_topic_lock_door_sensor_state, str, true);
     }
     else if(strcmp(topic, mqtt_topic_official_batteryCritical) == 0)
     {
@@ -938,7 +938,7 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
         Log->print(F("Battery critical: "));
         Log->println(_network->_offCritical);
 
-        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_critical, _network->_offCritical);
+        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_critical, _network->_offCritical, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_batteryCharging) == 0)
@@ -948,7 +948,7 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
         Log->print(F("Battery charging: "));
         Log->println(_network->_offCharging);
 
-        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_charging, _network->_offCharging);
+        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_charging, _network->_offCharging, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_batteryChargeState) == 0)
@@ -958,19 +958,19 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
         Log->print(F("Battery level: "));
         Log->println(_network->_offChargeState);
 
-        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishInt(mqtt_topic_battery_level, _network->_offChargeState);
+        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishInt(mqtt_topic_battery_level, _network->_offChargeState, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_keypadBatteryCritical) == 0)
     {
         _network->_offKeypadCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_keypad_critical, _network->_offKeypadCritical);
+        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_keypad_critical, _network->_offKeypadCritical, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_doorsensorBatteryCritical) == 0)
     {
         _network->_offDoorsensorCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_doorsensor_critical, _network->_offDoorsensorCritical);
+        if(!_preferences->getBool(preference_disable_non_json, false)) _network->publishBool(mqtt_topic_battery_doorsensor_critical, _network->_offDoorsensorCritical, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_commandResponse) == 0)
@@ -1000,11 +1000,11 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
 
         memset(&str, 0, sizeof(str));
         lockactionToString((NukiLock::LockAction)_network->_offLockAction, str);
-        _network->publishString(mqtt_topic_lock_last_lock_action, str);
+        _network->publishString(mqtt_topic_lock_last_lock_action, str, true);
 
         memset(&str, 0, sizeof(str));
         triggerToString((NukiLock::Trigger)_network->_offTrigger, str);
-        _network->publishString(mqtt_topic_lock_trigger, str);
+        _network->publishString(mqtt_topic_lock_trigger, str, true);
 
         if(_network->_offAuthId > 0 || _network->_offCodeId > 0)
         {
@@ -1030,7 +1030,7 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
         jsonBattery["keypadCritical"] = _network->_offKeypadCritical ? "1" : "0";
         jsonBattery["doorSensorCritical"] = _network->_offDoorsensorCritical ? "1" : "0";
         serializeJson(jsonBattery, _resbuf, sizeof(_resbuf));
-        _network->publishString(mqtt_topic_battery_basic_json, _resbuf);
+        _network->publishString(mqtt_topic_battery_basic_json, _resbuf, true);
     }
 }
 
@@ -1096,7 +1096,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     if(strcmp(basicKeys[i], "name") == 0)
                     {
@@ -1309,7 +1309,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     if(strcmp(advancedKeys[j], "unlockedPositionOffsetDegrees") == 0)
                     {
@@ -1691,7 +1691,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         if(strcmp(command, "add") == 0)
         {
@@ -1876,7 +1876,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             if(strcmp(action, "delete") == 0) {
                 if(idExists)
@@ -2318,7 +2318,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             if(strcmp(action, "delete") == 0) {
                 if(idExists)
@@ -2523,7 +2523,7 @@ void NukiWrapper::readConfig()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         result = _nukiLock.requestConfig(&_nukiConfig);
         delay(250);
@@ -2548,7 +2548,7 @@ void NukiWrapper::readAdvancedConfig()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
          result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
         delay(250);
@@ -2594,7 +2594,7 @@ void NukiWrapper::disableHASS()
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             result = _nukiLock.requestConfig(&_nukiConfig);
             delay(250);

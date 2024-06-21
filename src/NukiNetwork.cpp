@@ -419,7 +419,7 @@ bool NukiNetwork::update()
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
         char* presenceCsv = _presenceDetection->generateCsv();
-        bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, presenceCsv);
+        bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, presenceCsv, true);
         if(!success)
         {
             Log->println(F("Failed to publish presence CSV data."));
@@ -436,25 +436,25 @@ bool NukiNetwork::update()
 
         if(rssi != _lastRssi)
         {
-            publishInt(_maintenancePathPrefix, mqtt_topic_wifi_rssi, _device->signalStrength());
+            publishInt(_maintenancePathPrefix, mqtt_topic_wifi_rssi, _device->signalStrength(), true);
             _lastRssi = rssi;
         }
     }
 
     if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
     {
-        publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60);
-        publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
+        publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60, true);
+        publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
 
         if(_publishDebugInfo)
         {
-            publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size());
-            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_fw, getRestartReason().c_str());
-            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_esp, getEspRestartReason().c_str());
+            publishUInt(_maintenancePathPrefix, mqtt_topic_freeheap, esp_get_free_heap_size(), true);
+            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_fw, getRestartReason().c_str(), true);
+            publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_esp, getEspRestartReason().c_str(), true);
         }
         if (!_versionPublished) {
-            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_version, NUKI_HUB_VERSION);
-            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_build, NUKI_HUB_BUILD);
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_version, NUKI_HUB_VERSION, true);
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_build, NUKI_HUB_BUILD, true);
             _versionPublished = true;
         }
         _lastMaintenanceTs = ts;
@@ -479,7 +479,7 @@ bool NukiNetwork::update()
                 if (!jsonError)
                 {
                     _latestVersion = doc["tag_name"];
-                    publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion);
+                    publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
 
                     if (_latestVersion != _preferences->getString(preference_latest_version).c_str())
                     {
@@ -617,15 +617,15 @@ bool NukiNetwork::reconnect()
             if(_firstConnect)
             {
                 _firstConnect = false;
-                publishString(_maintenancePathPrefix, mqtt_topic_network_device, _device->deviceName().c_str());
+                publishString(_maintenancePathPrefix, mqtt_topic_network_device, _device->deviceName().c_str(), true);
                 for(const auto& it : _initTopics)
                 {
                     _device->mqttPublish(it.first.c_str(), MQTT_QOS_LEVEL, true, it.second.c_str());
                 }
             }
 
-            publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online");
-            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_ip, _device->localIP().c_str());
+            publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
+            publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_ip, _device->localIP().c_str(), true);
 
             _mqttConnectionState = 2;
             for(const auto& callback : _reconnectedCallbacks)
@@ -3159,7 +3159,7 @@ void NukiNetwork::publishHASSConfigAccessLog(char *deviceType, const char *baseT
                      "",
                      { { (char*)"ic", (char*)"mdi:format-list-bulleted" },
                        { (char*)"json_attr_t", (char*)rollingStateChr },
-                       { (char*)"val_tpl", (char*)"{{value_json.authorizationId}}" }});
+                       { (char*)"val_tpl", (char*)"{{value_json.index}}" }});
 }
 
 void NukiNetwork::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, char *name, char *uidString)
