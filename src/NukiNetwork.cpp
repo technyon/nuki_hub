@@ -710,11 +710,6 @@ void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties
 {
     parseGpioTopics(properties, topic, payload, len, index, total);
 
-    if(millis() < _ignoreSubscriptionsTs)
-    {
-        return;
-    }
-
     for(auto receiver : _mqttReceivers)
     {
         receiver->onMqttDataReceived(topic, (byte*)payload, index);

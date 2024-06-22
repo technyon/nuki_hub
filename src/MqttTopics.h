@@ -14,7 +14,7 @@
 #define mqtt_topic_lock_log "/lock/log"
 #define mqtt_topic_lock_log_latest "/lock/shortLog"
 #define mqtt_topic_lock_log_rolling "/lock/rollingLog"
-#define mqtt_topic_lock_log_rolling_last "lock/lastRollingLog"
+#define mqtt_topic_lock_log_rolling_last "/lock/lastRollingLog"
 #define mqtt_topic_lock_auth_id "/lock/authorizationId"
 #define mqtt_topic_lock_auth_name "/lock/authorizationName"
 #define mqtt_topic_lock_completionStatus "/lock/completionStatus"
