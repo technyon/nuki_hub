@@ -72,19 +72,50 @@ void NukiWrapper::initialize(const bool& firstStart)
 
     if(firstStart)
     {
+        _preferences->putBool(preference_network_wifi_fallback_disabled, false);
+        _preferences->putBool(preference_find_best_rssi, false);
+        _preferences->putBool(preference_check_updates, true);        
+        _preferences->putBool(preference_opener_continuous_mode, false);
+        _preferences->putBool(preference_network_wifi_fallback_disabled, false);
+        _preferences->putBool(preference_official_hybrid, false);
+        _preferences->putBool(preference_official_hybrid_actions, false);
+        _preferences->putBool(preference_official_hybrid_retry, false);
+        _preferences->putBool(preference_disable_non_json, false);
+        _preferences->putBool(preference_update_from_mqtt, false);
+        _preferences->putBool(preference_ip_dhcp_enabled, true);        
+        _preferences->putBool(preference_enable_bootloop_reset, false);
+        _preferences->putBool(preference_show_secrets, false);
+
+        _preferences->putBool(preference_conf_info_enabled, true);
+        _preferences->putBool(preference_keypad_info_enabled, false);
+        _preferences->putBool(preference_keypad_topic_per_entry, false);
+        _preferences->putBool(preference_keypad_publish_code, false);
+        _preferences->putBool(preference_keypad_control_enabled, false);
+        _preferences->putBool(preference_timecontrol_info_enabled, false);
+        _preferences->putBool(preference_timecontrol_topic_per_entry, false);
+        _preferences->putBool(preference_timecontrol_control_enabled, false);
+        _preferences->putBool(preference_publish_authdata, false);
+        _preferences->putBool(preference_register_as_app, false);
+        _preferences->putBool(preference_register_opener_as_app, false);
+
+        _preferences->putInt(preference_mqtt_broker_port, 1883);
+        _preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
+        _preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
+        _preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
+        _preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
+        _preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
+        _preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);        
+        _preferences->putInt(preference_query_interval_hybrid_lockstate, 600);
+        _preferences->putInt(preference_rssi_publish_interval, 60);
+        _preferences->putInt(preference_network_timeout, 60);
         _preferences->putInt(preference_command_nr_of_retries, 3);
         _preferences->putInt(preference_command_retry_delay, 1000);
         _preferences->putInt(preference_restart_ble_beacon_lost, 60);
-        uint32_t aclPrefs[17] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-        _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
-        uint32_t basicLockConfigAclPrefs[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-        _preferences->putBytes(preference_conf_lock_basic_acl, (byte*)(&basicLockConfigAclPrefs), sizeof(basicLockConfigAclPrefs));
-        uint32_t basicOpenerConfigAclPrefs[14] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-        _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
-        uint32_t advancedLockConfigAclPrefs[22] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-        _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
-        uint32_t advancedOpenerConfigAclPrefs[20] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-        _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
+        _preferences->putInt(preference_query_interval_lockstate, 1800);
+        _preferences->putInt(preference_query_interval_configuration, 3600);
+        _preferences->putInt(preference_query_interval_battery, 1800);
+        _preferences->putInt(preference_query_interval_keypad, 1800);
+        _preferences->putInt(preference_presence_detection_timeout, -1);
     }
 
     if(_nrOfRetries < 0 || _nrOfRetries == 200)
@@ -129,7 +160,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _restartBeaconTimeout = -1;
         _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
     }
-
+    
     _nukiLock.setEventHandler(this);
     _nukiLock.setDisonnectTimeout(5000);
 
