@@ -165,7 +165,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         case HTTP_EVENT_REDIRECT:
             Log->println("HTTP_EVENT_REDIRECT");
             break;
-        #endif        
+        #endif
     }
     return ESP_OK;
 }
@@ -220,7 +220,7 @@ void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
 
-    if(ota) 
+    if(ota)
     {
         #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
@@ -441,7 +441,7 @@ void setup()
 
     bleScanner = new BleScanner::Scanner();
     bleScanner->initialize("NukiHub");
-    bleScanner->setScanDuration(10*1000);
+    bleScanner->setScanDuration(10);
 
     if(preferences->getInt(preference_presence_detection_timeout) >= 0)
     {

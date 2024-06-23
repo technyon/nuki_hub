@@ -57,7 +57,7 @@ void Scanner::update() {
   #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
   bool result = bleScan->start(scanDuration, nullptr, false);
   #else
-  bool result = bleScan->start(scanDuration, false);
+  bool result = bleScan->start(scanDuration * 1000, false);
   #endif
   // if (!result) {
   //   scanErrors++;
