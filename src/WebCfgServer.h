@@ -45,6 +45,7 @@ public:
 
 private:
     #ifndef NUKI_HUB_UPDATER
+    void sendSettings();
     bool processArgs(String& message);
     void processGpioArgs();
     void buildHtml(String& response);

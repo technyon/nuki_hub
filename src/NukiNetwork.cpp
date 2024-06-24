@@ -395,7 +395,6 @@ bool NukiNetwork::update()
                 Log->println(F("Reconnect failed"));
                 break;
         }
-
     }
 
     if(!_device->mqttConnected())

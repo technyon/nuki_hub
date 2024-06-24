@@ -90,6 +90,12 @@ void WebCfgServer::initialize()
         sendFavicon();
     });
     #ifndef NUKI_HUB_UPDATER
+    _server.on("/export", HTTP_GET, [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        sendSettings();
+    });
     _server.on("/status", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -313,11 +319,11 @@ void WebCfgServer::initialize()
 
         handleOtaUpload();
     });
-    
+
     const char *headerkeys[] = {"Content-Length"};
     size_t headerkeyssize = sizeof(headerkeys) / sizeof(char *);
     _server.collectHeaders(headerkeys, headerkeyssize);
-    
+
     _server.begin();
 
     _network->setKeepAliveCallback([&]()
@@ -557,6 +563,182 @@ void WebCfgServer::sendFavicon()
 }
 
 #ifndef NUKI_HUB_UPDATER
+void WebCfgServer::sendSettings()
+{
+    bool redacted = false;
+    bool pairing = false;
+    String key = _server.argName(0);
+    String value = _server.arg(0);
+
+    if(key == "redacted" && value == "1")
+    {
+        redacted = true;
+    }
+
+    String key2 = _server.argName(1);
+    String value2 = _server.arg(1);
+
+    if(key2 == "pairing" && value2 == "1")
+    {
+        pairing = true;
+    }
+
+    JsonDocument json;
+    String jsonPretty;
+
+    DebugPreferences debugPreferences;
+
+    const std::vector<char*> keysPrefs = debugPreferences.getPreferencesKeys();
+    const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
+    const std::vector<char*> redactedPrefs = debugPreferences.getPreferencesRedactedKeys();
+    const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
+
+    for(const auto& key : keysPrefs)
+    {
+        if(strcmp(key, "showSecr") == 0) continue;
+        if(strcmp(key, "latest") == 0) continue;
+        if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end()) continue;
+        if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end()) json[key] = _preferences->getBool(key) ? "1" : "0";
+        else
+        {
+            switch(_preferences->getType(key))
+            {
+                case PT_I8:
+                    json[key] = String(_preferences->getChar(key));
+                    break;
+                case PT_I16:
+                    json[key] = String(_preferences->getShort(key));
+                    break;
+                case PT_I32:
+                    json[key] = String(_preferences->getInt(key));
+                    break;
+                case PT_I64:
+                    json[key] = String(_preferences->getLong64(key));
+                    break;
+                case PT_U8:
+                    json[key] = String(_preferences->getUChar(key));
+                    break;
+                case PT_U16:
+                    json[key] = String(_preferences->getUShort(key));
+                    break;
+                case PT_U32:
+                    json[key] = String(_preferences->getUInt(key));
+                    break;
+                case PT_U64:
+                    json[key] = String(_preferences->getULong64(key));
+                    break;
+                case PT_STR:
+                    json[key] = _preferences->getString(key);
+                    break;
+                default:
+                    json[key] = _preferences->getString(key);
+                    break;
+            }
+        }
+    }
+
+    if(pairing && _preferences->getBool(preference_show_secrets))
+    {
+        if(_nuki != nullptr)
+        {
+            unsigned char currentBleAddress[6];
+            unsigned char authorizationId[4] = {0x00};
+            unsigned char secretKeyK[32] = {0x00};
+            uint16_t storedPincode = 0000;
+            Preferences nukiBlePref;
+            nukiBlePref.begin("NukiHub", false);
+            nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
+            nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
+            nukiBlePref.getBytes("authorizationId", authorizationId, 4);
+            nukiBlePref.getBytes("securityPinCode", &storedPincode, 2);
+            nukiBlePref.end();
+            char text[255];
+            text[0] = '\0';
+            for(int i = 0 ; i < 6 ; i++) {
+                size_t offset = strlen(text);
+                sprintf(&(text[offset]), "%02x", currentBleAddress[i]);
+            }
+            json["bleAddressLock"] = text;
+            memset(text, 0, sizeof(text));
+            text[0] = '\0';
+            for(int i = 0 ; i < 32 ; i++) {
+                size_t offset = strlen(text);
+                sprintf(&(text[offset]), "%02x", secretKeyK[i]);
+            }
+            json["secretKeyKLock"] = text;
+            memset(text, 0, sizeof(text));
+            text[0] = '\0';
+            for(int i = 0 ; i < 4 ; i++) {
+                size_t offset = strlen(text);
+                sprintf(&(text[offset]), "%02x", authorizationId[i]);
+            }
+            json["authorizationIdLock"] = text;
+            memset(text, 0, sizeof(text));
+            json["securityPinCodeLock"] = storedPincode;
+        }
+        if(_nukiOpener != nullptr)
+        {
+            unsigned char currentBleAddressOpn[6];
+            unsigned char authorizationIdOpn[4] = {0x00};
+            unsigned char secretKeyKOpn[32] = {0x00};
+            uint16_t storedPincodeOpn = 0000;
+            Preferences nukiBlePref;
+            nukiBlePref.begin("NukiHubopener", false);
+            nukiBlePref.getBytes("bleAddress", currentBleAddressOpn, 6);
+            nukiBlePref.getBytes("secretKeyK", secretKeyKOpn, 32);
+            nukiBlePref.getBytes("authorizationId", authorizationIdOpn, 4);
+            nukiBlePref.getBytes("securityPinCode", &storedPincodeOpn, 2);
+            nukiBlePref.end();
+            char text[255];
+            text[0] = '\0';
+            for(int i = 0 ; i < 6 ; i++) {
+                size_t offset = strlen(text);
+                sprintf(&(text[offset]), "%02x", currentBleAddressOpn[i]);
+            }
+            json["bleAddressOpener"] = text;
+            memset(text, 0, sizeof(text));
+            text[0] = '\0';
+            for(int i = 0 ; i < 32 ; i++) {
+                size_t offset = strlen(text);
+                sprintf(&(text[offset]), "%02x", secretKeyKOpn[i]);
+            }
+            json["secretKeyKOpener"] = text;
+            memset(text, 0, sizeof(text));
+            text[0] = '\0';
+            for(int i = 0 ; i < 4 ; i++) {
+                size_t offset = strlen(text);
+                sprintf(&(text[offset]), "%02x", authorizationIdOpn[i]);
+            }
+            json["authorizationIdOpener"] = text;
+            memset(text, 0, sizeof(text));
+            json["securityPinCodeOpener"] = storedPincodeOpn;
+        }
+    }
+
+    for(const auto& key : bytePrefs)
+    {
+        size_t storedLength = _preferences->getBytesLength(key);
+        if(storedLength == 0) continue;
+        uint8_t serialized[storedLength];
+        memset(serialized, 0, sizeof(serialized));
+        size_t size = _preferences->getBytes(key, serialized, sizeof(serialized));
+        if(size == 0) continue;
+        char text[255];
+        text[0] = '\0';
+        for(int i = 0 ; i < size ; i++) {
+            size_t offset = strlen(text);
+            sprintf(&(text[offset]), "%02x", serialized[i]);
+        }
+        json[key] = text;
+        memset(text, 0, sizeof(text));
+    }
+
+    serializeJsonPretty(json, jsonPretty);
+
+    _server.sendHeader("Content-Disposition", "attachment; filename=nuki_hub.json");
+    _server.send(200, "application/json", jsonPretty);
+}
+
 bool WebCfgServer::processArgs(String& message)
 {
     bool configChanged = false;
@@ -2329,9 +2511,9 @@ void WebCfgServer::buildInfoHtml(String &response)
             unsigned char secretKeyKOpn[32] = {0x00};
             Preferences nukiBlePref;
             nukiBlePref.begin("NukiHubopener", false);
-            nukiBlePref.putBytes("bleAddress", currentBleAddressOpn, 6);
-            nukiBlePref.putBytes("secretKeyK", secretKeyKOpn, 32);
-            nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
+            nukiBlePref.getBytes("bleAddress", currentBleAddressOpn, 6);
+            nukiBlePref.getBytes("secretKeyK", secretKeyKOpn, 32);
+            nukiBlePref.getBytes("authorizationId", authorizationIdOpn, 4);
             nukiBlePref.end();
             response.concat("Opener bleAddress: ");
             for (int i = 0; i < 6; i++) {

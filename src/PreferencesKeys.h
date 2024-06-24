@@ -44,7 +44,6 @@
 #define preference_hostname (char*)"hostname"
 #define preference_network_timeout (char*)"nettmout"
 #define preference_restart_on_disconnect (char*)"restdisc"
-#define preference_restart_timer (char*)"resttmr"
 #define preference_restart_ble_beacon_lost (char*)"rstbcn"
 #define preference_query_interval_lockstate (char*)"lockStInterval"
 #define preference_query_interval_configuration (char*)"configInterval"
@@ -122,9 +121,7 @@ private:
     };
     std::vector<char*> _redact =
     {
-        preference_mqtt_user, preference_mqtt_password,
-        preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key,
-        preference_cred_user, preference_cred_password,
+        preference_mqtt_user, preference_mqtt_password, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_cred_user, preference_cred_password,
         preference_nuki_id_lock, preference_nuki_id_opener,
     };
     std::vector<char*> _boolPrefs =
@@ -135,6 +132,11 @@ private:
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt
+    };
+    std::vector<char*> _bytePrefs =
+    {
+            preference_acl, preference_conf_info_enabled, preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl,
+            preference_conf_opener_advanced_acl, preference_gpio_configuration
     };
 
     const bool isRedacted(const char* key) const
@@ -277,6 +279,26 @@ private:
     }
 
 public:
+    const std::vector<char*> getPreferencesKeys()
+    {
+        return _keys;
+    }
+
+    const std::vector<char*> getPreferencesRedactedKeys()
+    {
+        return _redact;
+    }
+
+    const std::vector<char*> getPreferencesBoolKeys()
+    {
+        return _boolPrefs;
+    }
+
+    const std::vector<char*> getPreferencesByteKeys()
+    {
+        return _bytePrefs;
+    }
+
     const String preferencesToString(Preferences *preferences)
     {
         String s = "";
