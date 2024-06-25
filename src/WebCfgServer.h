@@ -47,10 +47,12 @@ private:
     #ifndef NUKI_HUB_UPDATER
     void sendSettings();
     bool processArgs(String& message);
+    bool processImport(String& message);
     void processGpioArgs();
     void buildHtml(String& response);
     void buildAccLvlHtml(String& response);
     void buildCredHtml(String& response);
+    void buildImportExportHtml(String& response);
     void buildMqttConfigHtml(String& response);
     void buildStatusHtml(String& response);
     void buildAdvancedConfigHtml(String& response);

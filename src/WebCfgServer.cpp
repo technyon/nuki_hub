@@ -90,11 +90,44 @@ void WebCfgServer::initialize()
         sendFavicon();
     });
     #ifndef NUKI_HUB_UPDATER
+    _server.on("/import", [&]()
+    {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String message = "";
+        bool restart = processImport(message);
+        if(restart)
+        {
+            String response = "";
+            buildConfirmHtml(response, message);
+            _server.send(200, "text/html", response);
+            Log->println(F("Restarting"));
+
+            waitAndProcess(true, 1000);
+            restartEsp(RestartReason::ImportCompleted);
+        }
+        else
+        {
+            String response = "";
+            buildConfirmHtml(response, message, 3);
+            _server.send(200, "text/html", response);
+            waitAndProcess(false, 1000);
+        }
+    });
     _server.on("/export", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
         sendSettings();
+    });
+    _server.on("/impexpcfg", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildImportExportHtml(response);
+        _server.send(200, "text/html", response);
     });
     _server.on("/status", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -355,37 +388,37 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     if(_partitionType == 0)
     {
         response.concat("<h4 class=\"warning\">You are currently running Nuki Hub with an outdated partition scheme. Because of this you cannot use OTA to update to 8.36 or higher. Please check GitHub for instructions on how to update to 8.36 and the new partition scheme</h4>");
-        response.concat("<div id=\"gitdiv\"><button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+        response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
         response.concat(GITHUB_LATEST_RELEASE_URL);
         response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
         return;
     }
 
     #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
-    response.concat("<h4>Auto update Nuki Hub</h4>");
+    response.concat("<div id=\"autoupdform\"><h4>Auto update Nuki Hub</h4>");
     response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
-    response.concat("<form id=\"autoupdform\" action=\"/autoupdate\" method=\"get\"><br><input type=\"submit\" value=\"Auto Update\" /></form><br><br>");
+    response.concat("<form action=\"/autoupdate\" method=\"get\"><br><input type=\"submit\" value=\"Auto Update\" /></form><br><br></div>");
     #endif
 
     if(_partitionType == 1)
     {
-        response.concat("<h4>Reboot to Nuki Hub Updater</h4>");
+        response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub Updater</h4>");
         response.concat("Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update");
-        response.concat("<form id=\"rebootform\" action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br>");
-        response.concat("<h4>Update Nuki Hub Updater</h4>");
+        response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br></div>");
+        response.concat("<div id=\"upform\"><h4>Update Nuki Hub Updater</h4>");
         response.concat("Select the latest Nuki Hub updater binary to update the Nuki Hub updater");
-        response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub_updater.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+        response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub_updater.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     }
     else
     {
-        response.concat("<h4>Reboot to Nuki Hub</h4>");
+        response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub</h4>");
         response.concat("Click on the button to reboot to Nuki Hub");
-        response.concat("<form id=\"rebootform\" action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br>");
-        response.concat("<h4>Update Nuki Hub</h4>");
+        response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br></div>");
+        response.concat("<div id=\"upform\"><h4>Update Nuki Hub</h4>");
         response.concat("Select the latest Nuki Hub binary to update Nuki Hub");
-        response.concat("<form id=\"upform\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+        response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     }
-    response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form><br><br>");
+    response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form><br><br></div>");
     response.concat("<div id=\"gitdiv\">");
     response.concat("<h4>GitHub</h4><br>");
     response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
@@ -592,13 +625,19 @@ void WebCfgServer::sendSettings()
     const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
     const std::vector<char*> redactedPrefs = debugPreferences.getPreferencesRedactedKeys();
     const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
+    const std::vector<char*> charPrefs = debugPreferences.getPreferencesCharKeys();
 
     for(const auto& key : keysPrefs)
     {
-        if(strcmp(key, "showSecr") == 0) continue;
-        if(strcmp(key, "latest") == 0) continue;
+        if(strcmp(key, preference_show_secrets) == 0) continue;
+        if(strcmp(key, preference_latest_version) == 0) continue;
+        if(strcmp(key, preference_has_mac_saved) == 0) continue;
+        if(strcmp(key, preference_device_id_lock) == 0) continue;
+        if(strcmp(key, preference_device_id_opener) == 0) continue;
         if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end()) continue;
-        if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end()) json[key] = _preferences->getBool(key) ? "1" : "0";
+        if(std::find(charPrefs.begin(), charPrefs.end(), key) != charPrefs.end()) continue;
+        if(!_preferences->isKey(key)) json[key] = "";
+        else if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end()) json[key] = _preferences->getBool(key) ? "1" : "0";
         else
         {
             switch(_preferences->getType(key))
@@ -1550,10 +1589,6 @@ bool WebCfgServer::processArgs(String& message)
         }
         else if(key == "LCKSECRETK")
         {
-            Log->print(F("Secret key: "));
-            Log->println(value);
-            Log->print(F("Secret key length: "));
-            Log->println(value.length());
             if(value.length() == 64) for(int i=0; i<value.length();i+=2) secretKeyK[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
         }
         else if(key == "LCKAUTHID")
@@ -1576,7 +1611,7 @@ bool WebCfgServer::processArgs(String& message)
 
     if(manPairLck)
     {
-        Log->println(F("Changing pairing"));
+        Log->println(F("Changing lock pairing"));
         Preferences nukiBlePref;
         nukiBlePref.begin("NukiHub", false);
         nukiBlePref.putBytes("bleAddress", currentBleAddress, 6);
@@ -1589,6 +1624,7 @@ bool WebCfgServer::processArgs(String& message)
 
     if(manPairOpn)
     {
+        Log->println(F("Changing opener pairing"));
         Preferences nukiBlePref;
         nukiBlePref.begin("NukiHubopener", false);
         nukiBlePref.putBytes("bleAddress", currentBleAddressOpn, 6);
@@ -1638,6 +1674,172 @@ bool WebCfgServer::processArgs(String& message)
     return configChanged;
 }
 
+bool WebCfgServer::processImport(String& message)
+{
+    bool configChanged = false;
+    unsigned char currentBleAddress[6];
+    unsigned char authorizationId[4] = {0x00};
+    unsigned char secretKeyK[32] = {0x00};
+    unsigned char currentBleAddressOpn[6];
+    unsigned char authorizationIdOpn[4] = {0x00};
+    unsigned char secretKeyKOpn[32] = {0x00};
+
+    int count = _server.args();
+
+    for(int index = 0; index < count; index++)
+    {
+        String postKey = _server.argName(index);
+        String postValue = _server.arg(index);
+
+        if(postKey == "importjson")
+        {
+            JsonDocument doc;
+
+            DeserializationError error = deserializeJson(doc, postValue);
+            if (error)
+            {
+                Log->println("Invalid JSON for import");
+                message = "Invalid JSON, config not changed";
+                return configChanged;
+            }
+
+            DebugPreferences debugPreferences;
+
+            const std::vector<char*> keysPrefs = debugPreferences.getPreferencesKeys();
+            const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
+            const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
+            const std::vector<char*> charPrefs = debugPreferences.getPreferencesCharKeys();
+            const std::vector<char*> intPrefs = debugPreferences.getPreferencesIntKeys();
+
+            for(const auto& key : keysPrefs)
+            {
+                if(doc[key].isNull()) continue;
+                if(strcmp(key, preference_show_secrets) == 0) continue;
+                if(strcmp(key, preference_latest_version) == 0) continue;
+                if(strcmp(key, preference_has_mac_saved) == 0) continue;
+                if(strcmp(key, preference_device_id_lock) == 0) continue;
+                if(strcmp(key, preference_device_id_opener) == 0) continue;
+                if(std::find(charPrefs.begin(), charPrefs.end(), key) != charPrefs.end()) continue;
+                if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end())
+                {
+                    if (doc[key].as<String>().length() > 0) _preferences->putBool(key, (doc[key].as<String>() == "1" ? true : false));
+                    else _preferences->remove(key);
+                    continue;
+                }
+                if(std::find(intPrefs.begin(), intPrefs.end(), key) != intPrefs.end())
+                {
+                    if (doc[key].as<String>().length() > 0) _preferences->putInt(key, doc[key].as<int>());
+                    else _preferences->remove(key);
+                    continue;
+                }
+
+                if (doc[key].as<String>().length() > 0) _preferences->putString(key, doc[key].as<String>());
+                else _preferences->remove(key);
+            }
+
+            for(const auto& key : bytePrefs)
+            {
+                if(!doc[key].isNull() && doc[key].is<String>())
+                {
+                    String value = doc[key].as<String>();
+                    unsigned char tmpchar[32];
+                    for(int i=0; i<value.length();i+=2) tmpchar[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+                    _preferences->putBytes(key, (byte*)(&tmpchar), (value.length() / 2));
+                    memset(tmpchar, 0, sizeof(tmpchar));
+                }
+            }
+
+            Preferences nukiBlePref;
+            nukiBlePref.begin("NukiHub", false);
+
+            if(!doc["bleAddressLock"].isNull())
+            {
+                if (doc["bleAddressLock"].as<String>().length() == 12)
+                {
+                    String value = doc["bleAddressLock"].as<String>();
+                    for(int i=0; i<value.length();i+=2) currentBleAddress[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+                    nukiBlePref.putBytes("bleAddress", currentBleAddress, 6);
+                }
+                else _preferences->remove("bleAddressLock");
+            }
+            if(!doc["secretKeyKLock"].isNull())
+            {
+                if (doc["secretKeyKLock"].as<String>().length() == 64)
+                {
+                    String value = doc["secretKeyKLock"].as<String>();
+                    for(int i=0; i<value.length();i+=2) secretKeyK[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+                    nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
+                }
+                else _preferences->remove("secretKeyKLock");
+            }
+            if(!doc["authorizationIdLock"].isNull())
+            {
+                if (doc["authorizationIdLock"].as<String>().length() == 8)
+                {
+                    String value = doc["authorizationIdLock"].as<String>();
+                    for(int i=0; i<value.length();i+=2) authorizationId[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+                    nukiBlePref.putBytes("authorizationId", authorizationId, 4);
+                }
+                else _preferences->remove("authorizationIdLock");
+            }
+            nukiBlePref.end();
+            if(!doc["securityPinCodeLock"].isNull())
+            {
+                if(doc["securityPinCodeLock"].as<String>().length() > 0) _nuki->setPin(doc["securityPinCodeLock"].as<int>());
+                else _nuki->setPin(0xffff);
+            }
+            nukiBlePref.begin("NukiHubopener", false);
+            if(!doc["bleAddressOpener"].isNull())
+            {
+                if (doc["bleAddressOpener"].as<String>().length() == 12)
+                {
+                    String value = doc["bleAddressOpener"].as<String>();
+                    for(int i=0; i<value.length();i+=2) currentBleAddressOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+                    nukiBlePref.putBytes("bleAddress", currentBleAddressOpn, 6);
+                }
+                else _preferences->remove("bleAddressOpener");
+            }
+            if(!doc["secretKeyKOpener"].isNull())
+            {
+                if (doc["secretKeyKOpener"].as<String>().length() == 64)
+                {
+                    String value = doc["secretKeyKOpener"].as<String>();
+                    for(int i=0; i<value.length();i+=2) secretKeyKOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+                    nukiBlePref.putBytes("secretKeyK", secretKeyKOpn, 32);
+                }
+                else _preferences->remove("secretKeyKOpener");
+            }
+            if(!doc["authorizationIdOpener"].isNull())
+            {
+                if (doc["authorizationIdOpener"].as<String>().length() == 8)
+                {
+                    String value = doc["authorizationIdOpener"].as<String>();
+                    for(int i=0; i<value.length();i+=2) authorizationIdOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
+                    nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
+                }
+                else _preferences->remove("authorizationIdOpener");
+            }
+            nukiBlePref.end();
+            if(!doc["securityPinCodeOpener"].isNull())
+            {
+                if(doc["securityPinCodeOpener"].as<String>().length() > 0) _nukiOpener->setPin(doc["securityPinCodeOpener"].as<int>());
+                else _nukiOpener->setPin(0xffff);
+            }
+
+            configChanged = true;
+        }
+    }
+
+    if(configChanged)
+    {
+        message = "Configuration saved ... restarting.";
+        _enabled = false;
+        _preferences->end();
+    }
+
+    return configChanged;
+}
+
 void WebCfgServer::processGpioArgs()
 {
     int count = _server.args();
@@ -1660,6 +1862,34 @@ void WebCfgServer::processGpioArgs()
     }
 
     _gpio->savePinConfiguration(pinConfiguration);
+}
+
+void WebCfgServer::buildImportExportHtml(String &response)
+{
+    buildHtmlHeader(response);
+
+    response.concat("<div id=\"upform\"><h4>Import configuration</h4>");
+    response.concat("<form method=\"post\" action=\"import\"><textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
+    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form><br><br></div>");
+    response.concat("<div id=\"gitdiv\">");
+    response.concat("<h4>Export configuration</h4><br>");
+    response.concat("<button title=\"Basic export\" onclick=\" window.open('/export', '_self'); return false;\">Basic export</button>");
+    response.concat("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/export?redacted=1'); return false;\">Export with redacted settings</button>");if( _preferences->getBool(preference_show_secrets)) {
+        response.concat("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/export?redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
+    }
+    response.concat("</div><div id=\"msgdiv\" style=\"visibility:hidden\">Initiating config update. Please be patient.<br>You will be forwarded automatically when the import is complete.</div>");
+    response.concat("<script type=\"text/javascript\">");
+    response.concat("window.addEventListener('load', function () {");
+    response.concat("	var button = document.getElementById(\"submitbtn\");");
+    response.concat("	button.addEventListener('click',hideshow,false);");
+    response.concat("	function hideshow() {");
+    response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
+    response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
+    response.concat("	}");
+    response.concat("});");
+    response.concat("</script>");
+    response.concat("</body></html>");
 }
 
 void WebCfgServer::buildHtml(String& response)
@@ -1713,6 +1943,7 @@ void WebCfgServer::buildHtml(String& response)
     buildNavigationMenuEntry(response, "Credentials", "/cred", _pinsConfigured ? "" : "Please configure PIN");
     buildNavigationMenuEntry(response, "GPIO Configuration", "/gpiocfg");
     buildNavigationMenuEntry(response, "Firmware update", "/ota");
+    buildNavigationMenuEntry(response, "Import/Export Configuration", "/impexpcfg");
 
     // buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
     // buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");

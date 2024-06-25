@@ -138,7 +138,20 @@ private:
             preference_acl, preference_conf_info_enabled, preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl,
             preference_conf_opener_advanced_acl, preference_gpio_configuration
     };
-
+    std::vector<char*> _intPrefs =
+    {
+            preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_nuki_id_lock, preference_nuki_id_opener, preference_mqtt_broker_port,
+            preference_lock_pin_status, preference_opener_pin_status, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
+            preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_buffer_size, preference_network_hardware,
+            preference_rssi_publish_interval, preference_network_timeout, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
+            preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_command_nr_of_retries,
+            preference_command_retry_delay, preference_presence_detection_timeout, preference_query_interval_hybrid_lockstate, preference_latest_version,
+            preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries
+    };
+    std::vector<char*> _charPrefs =
+    {
+        preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2
+    };
     const bool isRedacted(const char* key) const
     {
         return std::find(_redact.begin(), _redact.end(), key) != _redact.end();
@@ -283,22 +296,26 @@ public:
     {
         return _keys;
     }
-
     const std::vector<char*> getPreferencesRedactedKeys()
     {
         return _redact;
     }
-
     const std::vector<char*> getPreferencesBoolKeys()
     {
         return _boolPrefs;
     }
-
     const std::vector<char*> getPreferencesByteKeys()
     {
         return _bytePrefs;
     }
-
+    const std::vector<char*> getPreferencesIntKeys()
+    {
+        return _intPrefs;
+    }
+    const std::vector<char*> getPreferencesCharKeys()
+    {
+        return _charPrefs;
+    }
     const String preferencesToString(Preferences *preferences)
     {
         String s = "";
