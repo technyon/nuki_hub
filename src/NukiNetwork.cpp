@@ -909,7 +909,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
                      "diagnostic",
                      "",
                      { {(char*)"unit_of_meas", (char*)"V"},
-                       {(char*)"val_tpl", (char*)"{{value_json.level}}" }});
+                       {(char*)"val_tpl", (char*)"{{value_json.batteryVoltage}}" }});
 
     // Trigger
     publishHassTopic("sensor",
