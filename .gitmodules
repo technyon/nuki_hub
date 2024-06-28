@@ -1,4 +1,4 @@
 [submodule "lib/nuki_ble"]
 	path = lib/nuki_ble
-	url = https://github.com/iranl/NukiBleEsp32
-	branch = arduino-core-3
+	url = https://github.com/technyon/nuki_ble
+	branch = core3
