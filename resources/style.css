@@ -105,7 +105,7 @@ h4 { font-size: 1.25rem }
 h5 { font-size: 1rem }
 h6 { font-size: .875rem }
 a { color: var(--nc-lk-1) }
-a:hover { color: var(--nc-lk-2) }
+a:hover { color: var(--nc-lk-2) !important; }
 abbr { cursor: help }
 abbr:hover { cursor: help }
 

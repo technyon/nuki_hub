@@ -62,8 +62,8 @@ typedef struct {
 } HTTPUpload;
 
 #include "detail/RequestHandler.h"
-#include "EthServer.h"
-#include "EthClient.h"
+#include <EthServer.h>
+#include <EthClient.h>
 
 namespace fs {
 class FS;

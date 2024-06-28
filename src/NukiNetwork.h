@@ -4,14 +4,17 @@
 #include <vector>
 #include <map>
 #include "networkDevices/NetworkDevice.h"
-#include "MqttReceiver.h"
 #include "networkDevices/IPConfiguration.h"
+#include <HTTPClient.h>
+
+#ifndef NUKI_HUB_UPDATER
+#include "MqttReceiver.h"
 #include "MqttTopics.h"
 #include "Gpio.h"
 #include <ArduinoJson.h>
-#include <HTTPClient.h>
 #include "NukiConstants.h"
 #include "PresenceDetection.h"
+#endif
 
 enum class NetworkDeviceType
 {
@@ -26,15 +29,27 @@ enum class NetworkDeviceType
 
 #define JSON_BUFFER_SIZE 1024
 
-class Network
+class NukiNetwork
 {
 public:
-    explicit Network(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
-
     void initialize();
     bool update();
-    void registerMqttReceiver(MqttReceiver* receiver);
     void reconfigureDevice();
+    void clearWifiFallback();
+
+    const String networkDeviceName() const;
+    const String networkBSSID() const;
+    const NetworkDeviceType networkDeviceType();
+    void setKeepAliveCallback(std::function<void()> reconnectTick);
+
+    NetworkDevice* device();
+
+    #ifdef NUKI_HUB_UPDATER
+    explicit NukiNetwork(Preferences* preferences);
+    #else
+    explicit NukiNetwork(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+
+    void registerMqttReceiver(MqttReceiver* receiver);
     void setMqttPresencePath(char* path);
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
@@ -78,29 +93,38 @@ public:
     void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
 
-    void clearWifiFallback();
-
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
     bool encryptionSupported();
-    const String networkDeviceName() const;
-    const String networkBSSID() const;
-
-    const NetworkDeviceType networkDeviceType();
 
     uint16_t subscribe(const char* topic, uint8_t qos);
 
-    void setKeepAliveCallback(std::function<void()> reconnectTick);
     void addReconnectedCallback(std::function<void()> reconnectedCallback);
-
-    NetworkDevice* device();
-
+    #endif
 private:
+    void setupDevice();
+    bool reconnect();
+
+    static NukiNetwork* _inst;
+
+    const char* _latestVersion;
+    HTTPClient https;
+
+    Preferences* _preferences;
+    IPConfiguration* _ipConfiguration = nullptr;
+    String _hostname;
+    char _hostnameArr[101] = {0};
+    NetworkDevice* _device = nullptr;
+
+    std::function<void()> _keepAliveCallback = nullptr;
+    std::vector<std::function<void()>> _reconnectedCallbacks;
+
+    NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
+
+    #ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void gpioActionCallback(const GpioAction& action, const int& pin);
-    void setupDevice();
-    bool reconnect();
 
     String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
     JsonDocument createHassJson(const String& uidString,
@@ -122,22 +146,13 @@ private:
 
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
 
-    static Network* _inst;
-
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
 
-    const char* _latestVersion;
-    HTTPClient https;
-
-    Preferences* _preferences;
     PresenceDetection* _presenceDetection;
     Gpio* _gpio;
-    IPConfiguration* _ipConfiguration = nullptr;
-    String _hostname;
-    char _hostnameArr[101] = {0};
-    NetworkDevice* _device = nullptr;
+
     int _mqttConnectionState = 0;
     bool _connectReplyReceived = false;
 
@@ -168,10 +183,6 @@ private:
     char* _buffer;
     const size_t _bufferSize;
 
-    std::function<void()> _keepAliveCallback = nullptr;
-    std::vector<std::function<void()>> _reconnectedCallbacks;
-
-    NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
-
     int8_t _lastRssi = 127;
+    #endif
 };

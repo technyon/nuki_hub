@@ -18,7 +18,8 @@ uint8_t WifiEthClient::connected()
 
 int WifiEthClient::setTimeout(uint32_t seconds)
 {
-    return _wifiClient->setTimeout(seconds);
+    _wifiClient->setTimeout(seconds);
+    return seconds;
 }
 
 size_t WifiEthClient::write(const char *buffer, size_t size)

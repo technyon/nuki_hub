@@ -1,11 +1,17 @@
 #pragma once
 
 #include <WiFiClient.h>
+#if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
 #include <WiFiClientSecure.h>
+#else
+#include <NetworkClientSecure.h>
+#endif
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #include "WiFiManager.h"
+#ifndef NUKI_HUB_UPDATER
 #include "espMqttClient.h"
+#endif
 #include "IPConfiguration.h"
 
 class WifiDevice : public NetworkDevice
@@ -39,7 +45,9 @@ private:
     bool _startAp = false;
     char* _path;
 
+    #ifndef NUKI_HUB_UPDATER
     char _ca[TLS_CA_MAX_SIZE] = {0};
     char _cert[TLS_CERT_MAX_SIZE] = {0};
     char _key[TLS_KEY_MAX_SIZE] = {0};
+    #endif
 };

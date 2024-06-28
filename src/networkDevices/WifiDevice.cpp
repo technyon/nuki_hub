@@ -2,8 +2,10 @@
 #include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
+#ifndef NUKI_HUB_UPDATER
 #include "../MqttTopics.h"
 #include "espMqttClient.h"
+#endif
 #include "../RestartReason.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
@@ -15,6 +17,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
 {
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
 
+    #ifndef NUKI_HUB_UPDATER
     _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
     size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
@@ -53,6 +56,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
+    #endif
 }
 
 const String WifiDevice::deviceName() const

@@ -38,7 +38,7 @@ EthClient* WifiEthServer::available()
         _wifiEthClient = nullptr;
     }
 
-    _wifiClient = _wifiServer.available();
+    _wifiClient = _wifiServer.accept();
     _wifiEthClient = new WifiEthClient(&_wifiClient);
     return _wifiEthClient;
 }

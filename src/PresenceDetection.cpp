@@ -213,6 +213,24 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 //                }
             }
         }
+        else
+        {
+            std::string nameStr = "-";
+            i=0;
+            len = nameStr.length();
+            while(i < len && i < sizeof(pdDevice->name)-1)
+            {
+                pdDevice->name[i] = nameStr.at(i);
+                ++i;
+            }
+
+            pdDevice->timestamp = millis();
+
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                _devices[addr] = pdDevice;
+            }
+        }
     }
 
 //    if(device->haveName())

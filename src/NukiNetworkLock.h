@@ -8,17 +8,17 @@
 #include <list>
 #include "NukiConstants.h"
 #include "NukiLockConstants.h"
-#include "Network.h"
+#include "NukiNetwork.h"
 #include "QueryCommand.h"
 #include "LockActionResult.h"
 
 #define LOCK_LOG_JSON_BUFFER_SIZE 2048
 
-class NetworkLock : public MqttReceiver
+class NukiNetworkLock : public MqttReceiver
 {
 public:
-    explicit NetworkLock(Network* network, Preferences* preferences, char* buffer, size_t bufferSize);
-    virtual ~NetworkLock();
+    explicit NukiNetworkLock(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize);
+    virtual ~NukiNetworkLock();
 
     void initialize();
 
@@ -99,7 +99,7 @@ private:
 
     void buildMqttPath(const char* path, char* outPath, bool offPath = false);
 
-    Network* _network;
+    NukiNetwork* _network;
     Preferences* _preferences;
 
     std::vector<char*> _offTopics;

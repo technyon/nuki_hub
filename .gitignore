@@ -11,7 +11,14 @@ webflash/*.bin
 .pio
 .vscode
 .project
-
+managed_components
+dependencies.lock
+sdkconfig.esp32*
+sdkconfig.updater_esp32*
+updater/src/*.cpp
+updater/src/*.h
+updater/src/networkDevices/*.cpp
+updater/src/networkDevices/*.h
 # Python venv
 /pyvenv.cfg
 /lib64

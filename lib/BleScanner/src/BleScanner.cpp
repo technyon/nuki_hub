@@ -24,12 +24,19 @@ void Scanner::initialize(const std::string& deviceName, const bool wantDuplicate
   if (!BLEDevice::getInitialized()) {
     if (wantDuplicates) {
       // reduce memory footprint, cache is not used anyway
+      #ifdef CONFIG_BTDM_BLE_SCAN_DUPL
       NimBLEDevice::setScanDuplicateCacheSize(10);
+      #endif
     }
     BLEDevice::init(deviceName);
   }
   bleScan = BLEDevice::getScan();
+
+  #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
   bleScan->setAdvertisedDeviceCallbacks(this, wantDuplicates);
+  #else
+  bleScan->setScanCallbacks(this, wantDuplicates);
+  #endif
   bleScan->setInterval(interval);
   bleScan->setWindow(window);
   bleScan->setActiveScan(false);
@@ -47,7 +54,11 @@ void Scanner::update() {
     log_w("Ble scanner max results not 0. Be aware of memory issue due to unbridled growth of results vector");
   }
 
+  #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
   bool result = bleScan->start(scanDuration, nullptr, false);
+  #else
+  bool result = bleScan->start(scanDuration * 1000, false);
+  #endif
   // if (!result) {
   //   scanErrors++;
   //   if (scanErrors % 100 == 0) {
