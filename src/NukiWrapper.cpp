@@ -87,7 +87,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
     }
 
-    if(_nrOfRetries == 200)
+    if(_nrOfRetries < 0 || _nrOfRetries == 200)
     {
         _nrOfRetries = 3;
         _preferences->putInt(preference_command_nr_of_retries, _nrOfRetries);
@@ -379,7 +379,7 @@ void NukiWrapper::updateKeyTurnerState()
     Nuki::CmdResult result;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         int loop = 0;
         while(_taskRunning && loop < 600)
@@ -441,7 +441,7 @@ void NukiWrapper::updateBatteryState()
     Nuki::CmdResult result;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         int loop = 0;
         while(_taskRunning && loop < 600)
@@ -501,7 +501,7 @@ void NukiWrapper::updateConfig()
                 Nuki::CmdResult result;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     int loop = 0;
                     while(_taskRunning && loop < 600)
@@ -583,7 +583,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
         Nuki::CmdResult result;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             int loop = 0;
             while(_taskRunning && loop < 600)
@@ -660,7 +660,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
         Nuki::CmdResult result;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             int loop = 0;
             while(_taskRunning && loop < 600)
@@ -731,7 +731,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
         Nuki::CmdResult result;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             int loop = 0;
             while(_taskRunning && loop < 600)
@@ -1174,7 +1174,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     int loop = 0;
                     while(_taskRunning && loop < 600)
@@ -1396,7 +1396,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
 
-                while(_retryCount < _nrOfRetries)
+                while(_retryCount < _nrOfRetries + 1)
                 {
                     int loop = 0;
                     while(_taskRunning && loop < 600)
@@ -1789,7 +1789,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         int loop = 0;
         while(_taskRunning && loop < 600)
@@ -1987,7 +1987,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             int loop = 0;
             while(_taskRunning && loop < 600)
@@ -2451,7 +2451,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             int loop = 0;
             while(_taskRunning && loop < 600)
@@ -2677,7 +2677,7 @@ void NukiWrapper::readConfig()
     Nuki::CmdResult result;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         int loop = 0;
         while(_taskRunning && loop < 600)
@@ -2709,7 +2709,7 @@ void NukiWrapper::readAdvancedConfig()
     Nuki::CmdResult result;
     _retryCount = 0;
 
-    while(_retryCount < _nrOfRetries)
+    while(_retryCount < _nrOfRetries + 1)
     {
         int loop = 0;
         while(_taskRunning && loop < 600)
@@ -2765,7 +2765,7 @@ void NukiWrapper::disableHASS()
         Nuki::CmdResult result;
         _retryCount = 0;
 
-        while(_retryCount < _nrOfRetries)
+        while(_retryCount < _nrOfRetries + 1)
         {
             int loop = 0;
             while(_taskRunning && loop < 600)

@@ -30,7 +30,7 @@ add_compile_definitions(ARDUINO_ARCH_ESP32)
 include_directories(${PROJECT_NAME}
         PRIVATE
         lib/Crc16
-        lib/NimBLE-Arduino/src
+        resources/NimBLE-Arduino/src
         lib/BleScanner/src
         lib/nuki_ble/src
         lib/WiFiManager
@@ -97,9 +97,9 @@ set(SRCFILES
         )
 
 file(GLOB_RECURSE SRCFILESREC
-        lib/NimBLE-Arduino/src/*.c
-        lib/NimBLE-Arduino/src/*.cpp
-        lib/NimBLE-Arduino/src/*.h
+        resources/NimBLE-Arduino/src/*.c
+        resources/NimBLE-Arduino/src/*.cpp
+        resources/NimBLE-Arduino/src/*.h
         lib/WebServer/src/*.cpp
         lib/WebServer/src/*.h
         lib/Ethernet/src/*.cpp
