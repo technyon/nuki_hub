@@ -75,7 +75,7 @@ void EthLan8720Device::initialize()
     delay(250);
 
     WiFi.setHostname(_hostname.c_str());
-    
+
     #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
     _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
     #else
@@ -91,16 +91,13 @@ void EthLan8720Device::initialize()
         ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
     }
 
-    if(_restartOnDisconnect)
+    WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
     {
-        WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
+        if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
         {
-            if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
-            {
-                onDisconnected();
-            }
-        });
-    }
+            onDisconnected();
+        }
+    });
 }
 
 void EthLan8720Device::reconfigure()
@@ -141,10 +138,8 @@ ReconnectStatus EthLan8720Device::reconnect()
 
 void EthLan8720Device::onDisconnected()
 {
-    if(millis() > 60000)
-    {
-        restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    }
+    if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    reconnect();
 }
 
 int8_t EthLan8720Device::signalStrength()

@@ -41,6 +41,18 @@ void NetworkDevice::mqttSetCleanSession(bool cleanSession)
     }
 }
 
+void NetworkDevice::mqttSetKeepAlive(uint16_t keepAlive)
+{
+    if (_useEncryption)
+    {
+        _mqttClientSecure->setKeepAlive(keepAlive);
+    }
+    else
+    {
+        _mqttClient->setKeepAlive(keepAlive);
+    }
+}
+
 uint16_t NetworkDevice::mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload)
 {
     return getMqttClient()->publish(topic, qos, retain, payload);

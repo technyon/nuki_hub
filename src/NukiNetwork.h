@@ -176,7 +176,6 @@ private:
     unsigned long _lastPresenceTs = 0;
     unsigned long _lastRssiTs = 0;
     bool _mqttEnabled = true;
-    static unsigned long _ignoreSubscriptionsTs;
     long _rssiPublishInterval = 0;
     std::map<uint8_t, unsigned long> _gpioTs;
 

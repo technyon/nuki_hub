@@ -111,16 +111,13 @@ void WifiDevice::initialize()
         Log->println(WiFi.localIP().toString());
     }
 
-    if(_restartOnDisconnect)
+    WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
     {
-        WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
+        if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
         {
-            if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
-            {
-                onDisconnected();
-            }
-        });
-    }
+            onDisconnected();
+        }
+    });
 }
 
 void WifiDevice::reconfigure()
@@ -142,16 +139,18 @@ bool WifiDevice::isConnected()
 
 ReconnectStatus WifiDevice::reconnect()
 {
-    delay(3000);
+    if(!isConnected())
+    {
+        _wm.autoConnect();
+        delay(3000);
+    }
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
 void WifiDevice::onDisconnected()
 {
-    if(millis() > 60000)
-    {
-        restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    }
+    if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    reconnect();
 }
 
 int8_t WifiDevice::signalStrength()

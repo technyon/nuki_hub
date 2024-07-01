@@ -1,0 +1,29 @@
+name: Test with Platformio
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          sudo apt update && sudo apt install -y valgrind
+          python -m pip install --upgrade pip
+          pip install platformio
+      - name: Start Mosquitto
+        uses: namoshek/mosquitto-github-action@v1
+        with:
+          version: '2.0'
+          ports: '1883:1883'
+          config: ${{ github.workspace }}/.github/etc/mosquitto.conf
+      - name: Test
+        run: |
+          pio test -e native -v

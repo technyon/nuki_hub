@@ -11,8 +11,6 @@
 
 #ifndef NUKI_HUB_UPDATER
 #include <ArduinoJson.h>
-
-unsigned long NukiNetwork::_ignoreSubscriptionsTs = 0;
 bool _versionPublished = false;
 #endif
 
@@ -296,6 +294,7 @@ void NukiNetwork::initialize()
 
     _device->mqttSetClientId(_hostnameArr);
     _device->mqttSetCleanSession(MQTT_CLEAN_SESSIONS);
+    _device->mqttSetKeepAlive(60);
 
     _networkTimeout = _preferences->getInt(preference_network_timeout);
     if(_networkTimeout == 0)
@@ -607,7 +606,6 @@ bool NukiNetwork::reconnect()
             _mqttConnectionState = 1;
             delay(100);
 
-            _ignoreSubscriptionsTs = millis() + 2000;
             _device->mqttOnMessage(NukiNetwork::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {

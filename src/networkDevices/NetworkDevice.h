@@ -40,6 +40,7 @@ public:
     #ifndef NUKI_HUB_UPDATER
     virtual void mqttSetClientId(const char* clientId);
     virtual void mqttSetCleanSession(bool cleanSession);
+    virtual void mqttSetKeepAlive(uint16_t keepAlive);
     virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const char* payload);
     virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const uint8_t* payload, size_t length);
     virtual bool mqttConnected() const;

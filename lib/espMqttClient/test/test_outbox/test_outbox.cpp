@@ -17,25 +17,25 @@ void test_outbox_create() {
 
 void test_outbox_emplace() {
   Outbox<uint32_t> outbox;
-  outbox.emplace(1);
-  // 1, current points to 1
+  outbox.emplace(523);
+  // 523, current points to 523
   TEST_ASSERT_NOT_NULL(outbox.getCurrent());
-  TEST_ASSERT_EQUAL_UINT32(1, *(outbox.getCurrent()));
+  TEST_ASSERT_EQUAL_UINT32(523, *(outbox.getCurrent()));
   TEST_ASSERT_FALSE(outbox.empty());
 
   outbox.next();
-  // 1, current points to nullptr
+  // 523, current points to nullptr
   TEST_ASSERT_NULL(outbox.getCurrent());
 
-  outbox.emplace(2);
-  // 1 2, current points to 2
+  outbox.emplace(286);
+  // 523 286, current points to 286
   TEST_ASSERT_NOT_NULL(outbox.getCurrent());
-  TEST_ASSERT_EQUAL_UINT32(2, *(outbox.getCurrent()));
+  TEST_ASSERT_EQUAL_UINT32(286, *(outbox.getCurrent()));
 
-  outbox.emplace(3);
-  // 1 2 3, current points to 2
+  outbox.emplace(364);
+  // 523 286 364, current points to 286
   TEST_ASSERT_NOT_NULL(outbox.getCurrent());
-  TEST_ASSERT_EQUAL_UINT32(2, *(outbox.getCurrent()));
+  TEST_ASSERT_EQUAL_UINT32(286, *(outbox.getCurrent()));
 }
 
 void test_outbox_emplaceFront() {

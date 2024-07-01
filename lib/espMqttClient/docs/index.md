@@ -10,12 +10,19 @@
 - TCP and TCP/TLS using standard WiFiClient and WiFiClientSecure connections
 - Virtually unlimited incoming and outgoing payload sizes
 - Readable and understandable code
-- Fully async clients available via [AsyncTCP](https://github.com/esphome/AsyncTCP) or [ESPAsnycTCP](https://github.com/esphome/ESPAsyncTCP) (no TLS supported)
+- Fully async clients available via [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) or [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP) (no TLS supported).
 - Supported platforms:
   - Espressif ESP8266 and ESP32 using the Arduino framework
+  - Espressif ESP32 using the ESP IDF, see [esp idf component](https://docs.espressif.com/projects/arduino-esp32/en/latest/esp-idf_component.html)
 - Basic Linux compatibility*. This includes WSL on Windows
 
     > Linux compatibility is mainly for automatic testing. It relies on a quick and dirty Arduino-style `Client` with a POSIX TCP client underneath and Arduino-style `IPAddress` class. These are lacking many features needed for proper Linux support.
+
+## Dependencies
+
+This libraries requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) and [ESPAsnycTCP](https://github.com/me-no-dev/ESPAsyncTCP). These libraries are not actively maintained and have some bugs. There are alternatives available on Github but make sure these alternatives fit in your project.
+
+Because of this, I have removed the explicit dependency. You will have to manually add the libraries so you can choose the version which best suites your code.
 
 # Contents
 
@@ -409,6 +416,23 @@ This macro is by default not enabled so you can add a single callbacks to an eve
 **Experimental**
 
 You can enable a watchdog on the MQTT task. This is experimental and will probably result in resets because some (framework) function calls block without feeding the dog.
+
+### EMC_USE_MEMPOOL 0
+
+**Experimental**
+
+When set to `1`, (outgoing) MQTT packets and the outbox data is stored in a memory pool. The memory pool is part of the espMqttClient object and is thus allocated in the same memory type. There are two pools: one to hold the outgoing packets (dynamic size elements) and one for the outbox itself (fixed-size elements).
+
+#### EMC_NUM_POOL_ELEMENTS 32
+
+This config variable is only used when enabling the memory pool. It defines
+- the number of elements in the outbox-pool
+- the number of blocks that will be allocated in the packet-pool
+
+#### EMC_SIZE_POOL_ELEMENTS 128
+
+This defines the size of one packet-pool element. Together with `EMC_NUM_POOL_ELEMENTS`, you get the total packet-pool size.
+The packet-pool can hold any size of element. The configuration only guarantees a minimum of `EMC_NUM_POOL_ELEMENTS` of size `EMC_SIZE_POOL_ELEMENTS` can fit in the pool.
 
 ### Logging
 

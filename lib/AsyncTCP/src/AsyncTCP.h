@@ -22,13 +22,34 @@
 #ifndef ASYNCTCP_H_
 #define ASYNCTCP_H_
 
+#define ASYNCTCP_VERSION "3.1.4"
+#define ASYNCTCP_VERSION_MAJOR 3
+#define ASYNCTCP_VERSION_MINOR 1
+#define ASYNCTCP_VERSION_REVISION 4
+#define ASYNCTCP_FORK_mathieucarbou
+
 #include "IPAddress.h"
-#include "sdkconfig.h"
+#if ESP_IDF_VERSION_MAJOR < 5
+#include "IPv6Address.h"
+#endif
 #include <functional>
+#include "lwip/ip_addr.h"
+#include "lwip/ip6_addr.h"
+
+#ifndef LIBRETINY
+#include "sdkconfig.h"
 extern "C" {
     #include "freertos/semphr.h"
     #include "lwip/pbuf.h"
 }
+#else
+extern "C" {
+    #include <semphr.h>
+    #include <lwip/pbuf.h>
+}
+#define CONFIG_ASYNC_TCP_RUNNING_CORE -1 //any available core
+#define CONFIG_ASYNC_TCP_USE_WDT 0
+#endif
 
 //If core is not defined, then we are running in Arduino or PIO
 #ifndef CONFIG_ASYNC_TCP_RUNNING_CORE
@@ -36,9 +57,24 @@ extern "C" {
 #define CONFIG_ASYNC_TCP_USE_WDT 1 //if enabled, adds between 33us and 200us per event
 #endif
 
+#ifndef CONFIG_ASYNC_TCP_STACK_SIZE
+#define CONFIG_ASYNC_TCP_STACK_SIZE 8192 * 2
+#endif
+
+#ifndef CONFIG_ASYNC_TCP_PRIORITY
+#define CONFIG_ASYNC_TCP_PRIORITY 10
+#endif
+
+#ifndef CONFIG_ASYNC_TCP_QUEUE_SIZE
+#define CONFIG_ASYNC_TCP_QUEUE_SIZE 64
+#endif
+
+#ifndef CONFIG_ASYNC_TCP_MAX_ACK_TIME
+#define CONFIG_ASYNC_TCP_MAX_ACK_TIME 5000
+#endif
+
 class AsyncClient;
 
-#define ASYNC_MAX_ACK_TIME 5000
 #define ASYNC_WRITE_FLAG_COPY 0x01 //will allocate new buffer to hold the data while sending (else will hold reference to the data given)
 #define ASYNC_WRITE_FLAG_MORE 0x02 //will not send PSH flag, meaning that there should be more data to be sent before the application should react.
 
@@ -65,8 +101,11 @@ class AsyncClient {
     bool operator!=(const AsyncClient &other) {
       return !(*this == other);
     }
-    bool connect(IPAddress ip, uint16_t port);
-    bool connect(const char* host, uint16_t port);
+    bool connect(const IPAddress& ip, uint16_t port);
+#if ESP_IDF_VERSION_MAJOR < 5
+    bool connect(const IPv6Address& ip, uint16_t port);
+#endif
+    bool connect(const char *host, uint16_t port);
     void close(bool now = false);
     void stop();
     int8_t abort();
@@ -99,16 +138,29 @@ class AsyncClient {
     void setNoDelay(bool nodelay);
     bool getNoDelay();
 
+    void setKeepAlive(uint32_t ms, uint8_t cnt);
+
     uint32_t getRemoteAddress();
     uint16_t getRemotePort();
     uint32_t getLocalAddress();
     uint16_t getLocalPort();
+#if LWIP_IPV6
+    ip6_addr_t getRemoteAddress6();
+    ip6_addr_t getLocalAddress6();
+#if ESP_IDF_VERSION_MAJOR < 5
+    IPv6Address remoteIP6();
+    IPv6Address localIP6();
+#else
+    IPAddress remoteIP6();
+    IPAddress localIP6();
+#endif
+#endif
 
     //compatibility
     IPAddress remoteIP();
-    uint16_t  remotePort();
+    uint16_t remotePort();
     IPAddress localIP();
-    uint16_t  localPort();
+    uint16_t localPort();
 
     void onConnect(AcConnectHandler cb, void* arg = 0);     //on successful connect
     void onDisconnect(AcConnectHandler cb, void* arg = 0);  //disconnected
@@ -133,13 +185,15 @@ class AsyncClient {
     static int8_t _s_lwip_fin(void *arg, struct tcp_pcb *tpcb, int8_t err);
     static void _s_error(void *arg, int8_t err);
     static int8_t _s_sent(void *arg, struct tcp_pcb *tpcb, uint16_t len);
-    static int8_t _s_connected(void* arg, void* tpcb, int8_t err);
+    static int8_t _s_connected(void* arg, struct tcp_pcb *tpcb, int8_t err);
     static void _s_dns_found(const char *name, struct ip_addr *ipaddr, void *arg);
 
     int8_t _recv(tcp_pcb* pcb, pbuf* pb, int8_t err);
     tcp_pcb * pcb(){ return _pcb; }
 
   protected:
+    bool _connect(ip_addr_t addr, uint16_t port);
+
     tcp_pcb* _pcb;
     int8_t  _closed_slot;
 
@@ -160,19 +214,19 @@ class AsyncClient {
     AcConnectHandler _poll_cb;
     void* _poll_cb_arg;
 
-    bool _pcb_busy;
-    uint32_t _pcb_sent_at;
     bool _ack_pcb;
+    uint32_t _tx_last_packet;
     uint32_t _rx_ack_len;
     uint32_t _rx_last_packet;
-    uint32_t _rx_since_timeout;
+    uint32_t _rx_timeout;
+    uint32_t _rx_last_ack;
     uint32_t _ack_timeout;
     uint16_t _connect_port;
 
     int8_t _close();
     void _free_closed_slot();
-    void _allocate_closed_slot();
-    int8_t _connected(void* pcb, int8_t err);
+    bool _allocate_closed_slot();
+    int8_t _connected(tcp_pcb* pcb, int8_t err);
     void _error(int8_t err);
     int8_t _poll(tcp_pcb* pcb);
     int8_t _sent(tcp_pcb* pcb, uint16_t len);
@@ -188,6 +242,9 @@ class AsyncClient {
 class AsyncServer {
   public:
     AsyncServer(IPAddress addr, uint16_t port);
+#if ESP_IDF_VERSION_MAJOR < 5
+    AsyncServer(IPv6Address addr, uint16_t port);
+#endif
     AsyncServer(uint16_t port);
     ~AsyncServer();
     void onClient(AcConnectHandler cb, void* arg);
@@ -203,7 +260,12 @@ class AsyncServer {
 
   protected:
     uint16_t _port;
+    bool _bind4 = false;
+    bool _bind6 = false;
     IPAddress _addr;
+#if ESP_IDF_VERSION_MAJOR < 5
+    IPv6Address _addr6;
+#endif
     bool _noDelay;
     tcp_pcb* _pcb;
     AcConnectHandler _connect_cb;

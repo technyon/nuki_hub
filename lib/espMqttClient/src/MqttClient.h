@@ -32,11 +32,12 @@ class MqttClient {
   bool disconnect(bool force = false);
   template <typename... Args>
   uint16_t subscribe(const char* topic, uint8_t qos, Args&&... args) {
-    uint16_t packetId = _getNextPacketId();
+    uint16_t packetId = 0;
     if (_state != State::connected) {
-      packetId = 0;
+      return packetId;
     } else {
       EMC_SEMAPHORE_TAKE();
+      packetId = _getNextPacketId();
       if (!_addPacket(packetId, topic, qos, std::forward<Args>(args) ...)) {
         emc_log_e("Could not create SUBSCRIBE packet");
         packetId = 0;
@@ -47,11 +48,12 @@ class MqttClient {
   }
   template <typename... Args>
   uint16_t unsubscribe(const char* topic, Args&&... args) {
-    uint16_t packetId = _getNextPacketId();
+    uint16_t packetId = 0;
     if (_state != State::connected) {
-      packetId = 0;
+      return packetId;
     } else {
       EMC_SEMAPHORE_TAKE();
+      packetId = _getNextPacketId();
       if (!_addPacket(packetId, topic, std::forward<Args>(args) ...)) {
         emc_log_e("Could not create UNSUBSCRIBE packet");
         packetId = 0;

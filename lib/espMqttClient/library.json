@@ -14,24 +14,10 @@
     "type": "git",
     "url": "https://github.com/bertmelis/espMqttClient.git"
   },
-  "version": "1.6.0",
+  "version": "1.7.0",
   "frameworks": "arduino",
   "platforms": ["espressif8266", "espressif32"],
   "headers": ["espMqttClient.h", "espMqttClientAsync.h"],
-  "dependencies": [
-    {
-      "owner": "esphome",
-      "name": "ESPAsyncTCP-esphome",
-      "version": ">=2.0.0",
-      "platforms": "espressif8266"
-    },
-    {
-      "owner": "esphome",
-      "name": "AsyncTCP-esphome",
-      "version": ">=2.1.1",
-      "platforms": "espressif32"
-    }
-  ],
   "build":
   {
     "libLDFMode": "deep+"
