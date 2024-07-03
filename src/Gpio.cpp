@@ -5,7 +5,7 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
-#include "../lib/gpio2go/src/Gpio2Go.h"
+#include "Gpio2Go.h"
 
 Gpio* Gpio::_inst = nullptr;
 unsigned long Gpio::_debounceTs = 0;

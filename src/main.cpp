@@ -186,8 +186,6 @@ void otaTask(void *pvParameter)
         updateUrl = preferences->getString(preference_ota_main_url);
         preferences->putString(preference_ota_main_url, "");
     }
-    Log->print(F("URL: "));
-    Log->println(updateUrl.c_str());
     Log->println("Starting OTA task");
     esp_http_client_config_t config = {
         .url = updateUrl.c_str(),

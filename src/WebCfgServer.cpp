@@ -393,6 +393,8 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
         response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
         return;
     }
+    
+    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
 
     #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     response.concat("<div id=\"autoupdform\"><h4>Auto update Nuki Hub</h4>");
@@ -430,7 +432,6 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("<br><br><button title=\"Download latest updater binary from GitHub\" onclick=\" window.open('");
     response.concat(GITHUB_LATEST_UPDATER_BINARY_URL);
     response.concat("'); return false;\">Download latest updater binary from GitHub</button></div>");
-    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");
     response.concat("	var button = document.getElementById(\"submitbtn\");");

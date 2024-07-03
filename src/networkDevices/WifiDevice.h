@@ -37,13 +37,16 @@ private:
     static void clearRtcInitVar(WiFiManager*);
 
     void onDisconnected();
+    void onConnected();
 
     WiFiManager _wm;
     Preferences* _preferences = nullptr;
 
     bool _restartOnDisconnect = false;
     bool _startAp = false;
+    bool _isReconnecting = false;
     char* _path;
+    unsigned long _disconnectTs = 0;
 
     #ifndef NUKI_HUB_UPDATER
     char _ca[TLS_CA_MAX_SIZE] = {0};

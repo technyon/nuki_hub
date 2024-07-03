@@ -27,7 +27,7 @@ NukiNetwork::NukiNetwork(Preferences *preferences, PresenceDetection* presenceDe
   _bufferSize(bufferSize)
 #else
 NukiNetwork::NukiNetwork(Preferences *preferences)
-: _preferences(preferences)    
+: _preferences(preferences)
 #endif
 {
     // Remove obsolete W5500 hardware detection configuration
@@ -294,7 +294,7 @@ void NukiNetwork::initialize()
 
     _device->mqttSetClientId(_hostnameArr);
     _device->mqttSetCleanSession(MQTT_CLEAN_SESSIONS);
-    _device->mqttSetKeepAlive(60);
+    _device->mqttSetKeepAlive(MQTT_KEEP_ALIVE);
 
     _networkTimeout = _preferences->getInt(preference_network_timeout);
     if(_networkTimeout == 0)
@@ -354,7 +354,7 @@ bool NukiNetwork::update()
     if(ts > 120000 && ts < 125000)
     {
         if(_preferences->getBool(preference_show_secrets, false)) _preferences->putBool(preference_show_secrets, false);
-        
+
         if(_preferences->getInt(preference_bootloop_counter, 0) > 0)
         {
             _preferences->putInt(preference_bootloop_counter, 0);
@@ -370,6 +370,8 @@ bool NukiNetwork::update()
 
     if(!_device->isConnected())
     {
+        _device->mqttDisconnect(true);
+
         if(_restartOnDisconnect && millis() > 60000)
         {
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
@@ -396,7 +398,7 @@ bool NukiNetwork::update()
         }
     }
 
-    if(!_device->mqttConnected())
+    if(!_device->mqttConnected() && _device->isConnected())
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
         {
@@ -410,7 +412,10 @@ bool NukiNetwork::update()
         {
             return false;
         }
+        delay(2000);
     }
+
+    if(!_device->mqttConnected() || !_device->isConnected()) return false;
 
     _lastConnectedTs = ts;
 
@@ -521,7 +526,7 @@ void NukiNetwork::onMqttConnect(const bool &sessionPresent)
 
 void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &reason)
 {
-    _connectReplyReceived = true;
+    _connectReplyReceived = false;
 
     Log->print("MQTT disconnected. Reason: ");
     switch(reason)
@@ -636,7 +641,7 @@ bool NukiNetwork::reconnect()
             _device->printError();
             _mqttConnectionState = 0;
             _nextReconnect = millis() + 5000;
-            _device->mqttDisconnect(true);
+            //_device->mqttDisconnect(true);
         }
     }
     return _mqttConnectionState > 0;
@@ -1091,11 +1096,11 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
                              "diagnostic",
                              _lockPath + mqtt_topic_update,
                              { { (char*)"en", (char*)"true" },
-                               { (char*)"pl_inst", (char*)"1" },                             
+                               { (char*)"pl_inst", (char*)"1" },
                                { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
                                { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
                                { (char*)"l_ver_t", (char*)latest_version_topic }});
-        }        
+        }
     }
     else
     {

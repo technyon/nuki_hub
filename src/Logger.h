@@ -3,6 +3,7 @@
 #define MQTT_LOGGER_GLOBAL
 
 #include "MqttLogger.h"
+#include "WebSerial.h"
 extern Print* Log;
 
 #endif

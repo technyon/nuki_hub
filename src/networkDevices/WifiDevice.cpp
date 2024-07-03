@@ -98,9 +98,9 @@ void WifiDevice::initialize()
 
     if(!res)
     {
-        esp_wifi_disconnect ();
-        esp_wifi_stop ();
-        esp_wifi_deinit ();
+        esp_wifi_disconnect();
+        esp_wifi_stop();
+        esp_wifi_deinit();
 
         Log->println(F("Failed to connect. Wait for ESP restart."));
         delay(1000);
@@ -116,6 +116,10 @@ void WifiDevice::initialize()
         if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
         {
             onDisconnected();
+        }
+        else if(event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
+        {
+            onConnected();
         }
     });
 }
@@ -139,17 +143,29 @@ bool WifiDevice::isConnected()
 
 ReconnectStatus WifiDevice::reconnect()
 {
-    if(!isConnected())
+    if(!isConnected() && !_isReconnecting)
     {
+        _isReconnecting = true;
         _wm.autoConnect();
-        delay(3000);
+        delay(10000);
+        _isReconnecting = false;
     }
+    
+    if(!isConnected() && _disconnectTs > millis() - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
+}
+
+void WifiDevice::onConnected()
+{
+    _isReconnecting = false;
+    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
 }
 
 void WifiDevice::onDisconnected()
 {
+    _disconnectTs = millis();
     if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    _wm.setEnableConfigPortal(false);
     reconnect();
 }
 
