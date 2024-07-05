@@ -7,6 +7,7 @@
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
+#include "Config.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
@@ -19,7 +20,6 @@
 #include "WebCfgServer.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
-#include "Config.h"
 #include "RestartReason.h"
 
 NukiNetworkLock* networkLock = nullptr;

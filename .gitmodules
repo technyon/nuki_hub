@@ -1,4 +1,3 @@
 [submodule "lib/nuki_ble"]
 	path = lib/nuki_ble
-	url = https://github.com/technyon/nuki_ble
-	branch = core3
+	url = https://github.com/I-Connect/NukiBleEsp32
