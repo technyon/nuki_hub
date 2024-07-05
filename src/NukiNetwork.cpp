@@ -351,16 +351,6 @@ bool NukiNetwork::update()
 {
     unsigned long ts = millis();
 
-    if(ts > 120000 && ts < 125000)
-    {
-        if(_preferences->getBool(preference_show_secrets, false)) _preferences->putBool(preference_show_secrets, false);
-
-        if(_preferences->getInt(preference_bootloop_counter, 0) > 0)
-        {
-            _preferences->putInt(preference_bootloop_counter, 0);
-            Log->println(F("Bootloop counter reset"));
-        }
-    }
     _device->update();
 
     if(!_mqttEnabled)
