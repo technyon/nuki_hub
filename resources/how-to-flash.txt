@@ -1,0 +1,94 @@
+Project homepage
+--
+https://github.com/technyon/nuki_hub
+
+Howto flash (Webflash)
+--
+
+-The easiest way to install is to use the web installer using a compatible browser like Chrome/Opera/Edge
+-Open https://technyon.github.io/nuki_hub/
+-Connect your ESP to the computer using USB
+-Click on "Connect"
+-Select your device from the list and click on "Connect"
+-Select "INSTALL NUKIHUB"
+-Optionally select "Erase device"
+-Click on "Next"
+-Click on "Install"
+
+NOTE: Webflash is not available for the ESP32-Solo1
+
+Howto flash (Espressif Flash Download Tools)
+--
+
+- Download the Espressif Flash Download Tools (https://www.espressif.com/en/support/download/other-tools)
+- Unpack and start tool
+- Add all four bin files with the corresponding address:
+
+ESP32
+e000 boot_app0.bin
+1000 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32.bin
+280000 nuki_hub_updater_esp32.bin
+
+ESP32-S3
+e000 boot_app0.bin
+0 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32s3.bin
+280000 nuki_hub_updater_esp32s3.bin
+
+ESP32-C3
+e000 boot_app0.bin
+0 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32c3.bin
+280000 nuki_hub_updater_esp32c3.bin
+
+ESP32-C6
+e000 boot_app0.bin
+0 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32c6.bin
+280000 nuki_hub_updater_esp32c6.bin
+
+ESP32SOLO1
+e000 boot_app0.bin
+1000 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32solo1.bin
+280000 nuki_hub_updater_esp32solo1.bin
+
+Make sure the checkmarks for all files are enabled.
+
+- Select the COM-Port the ESP device is connected to
+- Click "START"
+- The flash process should start. If it doesn't you eventually have to press a button (labeled BOOT or similar) or short the corresponding PIN on the ESP device
+
+
+Howto flash (esptool)
+--
+
+As an alternative to the Download Tools, you can also use the esptool from the Espressif SDK. The command line to flash looks like this:
+
+## ESP32
+
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32.bin 0x280000 nuki_hub_updater_esp32.bin 0x8000 nuki_hub.partitions.bin
+
+## ESP32-S3
+
+esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32s3.bin 0x280000 nuki_hub_updater_esp32s3.bin 0x8000 nuki_hub.partitions.bin
+
+## ESP32-C3
+
+esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32c3.bin 0x280000 nuki_hub_updater_esp32c3.bin 0x8000 nuki_hub.partitions.bin
+
+## ESP32-C6
+
+esptool.py --chip esp32c6 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32c6.bin 0x280000 nuki_hub_updater_esp32c6.bin 0x8000 nuki_hub.partitions.bin
+
+## ESP32SOLO1
+
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32solo1.bin 0x280000 nuki_hub_updater_esp32solo1.bin 0x8000 nuki_hub.partitions.bin
+
+Adjust the serial device and path to the binaries if necessary.

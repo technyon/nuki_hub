@@ -1,3 +1,4 @@
+#include <string>
 #include <cstring>
 #include <Arduino.h>
 #include "NukiDeviceId.h"

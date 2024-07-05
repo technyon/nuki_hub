@@ -10,12 +10,15 @@ default: esp32
 .PHONY: release
 release: $(BOARDS)
 
+.PHONY: updater
+release: updater_$(BOARDS)
+
 .PHONY: debug
 debug: $(DEBUG_BOARDS)
 
-# Target to build all boards in both release and debug modes
+# Target to build all boards in release, updater and debug modes
 .PHONY: all
-all: release debug
+all: release updater debug
 
 # Alias
 .PHONY: esp32
@@ -24,6 +27,10 @@ esp32: esp32dev
 esp%:
 	@echo "Building $@"
 	pio run --environment $@
+
+updater_esp%:
+	@echo "Building $@"
+	pio run -d updater --environment $@
 
 # Help target to display available build targets
 .PHONY: help
@@ -36,13 +43,14 @@ help:
 	@$(foreach board,$(DEBUG_BOARDS),echo "  make $(board)       - Build $(board) in debug mode";)
 	@echo "Available boards:"
 	@echo "  $(BOARDS)"
+	@echo "  updater_$(BOARDS)"
 	@echo "  $(DEBUG_BOARDS)"
 
 # Utility target to clean build artifacts
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
-	@-rm -rf release debug .pio/build
+	@-rm -rf release debug .pio/build updater/.pio/build
 
 # Install dependencies
 .PHONY: deps

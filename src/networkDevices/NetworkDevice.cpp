@@ -8,6 +8,7 @@ void NetworkDevice::printError()
     Log->println(ESP.getFreeHeap());
 }
 
+#ifndef NUKI_HUB_UPDATER
 void NetworkDevice::update()
 {
     if (_mqttEnabled)
@@ -37,6 +38,18 @@ void NetworkDevice::mqttSetCleanSession(bool cleanSession)
     else
     {
         _mqttClient->setCleanSession(cleanSession);
+    }
+}
+
+void NetworkDevice::mqttSetKeepAlive(uint16_t keepAlive)
+{
+    if (_useEncryption)
+    {
+        _mqttClientSecure->setKeepAlive(keepAlive);
+    }
+    else
+    {
+        _mqttClient->setKeepAlive(keepAlive);
     }
 }
 
@@ -159,3 +172,8 @@ MqttClient *NetworkDevice::getMqttClient() const
         return _mqttClient;
     }
 }
+#else
+void NetworkDevice::update()
+{
+}
+#endif

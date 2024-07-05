@@ -1,22 +1,38 @@
 {
-  "name":"AsyncTCP",
-  "description":"Asynchronous TCP Library for ESP32",
-  "keywords":"async,tcp",
-  "authors":
-  {
-    "name": "Hristo Gochkov",
-    "maintainer": true
-  },
-  "repository":
-  {
+  "name": "Async TCP",
+  "version": "3.1.4",
+  "description": "Asynchronous TCP Library for ESP32",
+  "keywords": "async,tcp",
+  "repository": {
     "type": "git",
-    "url": "https://github.com/me-no-dev/AsyncTCP.git"
+    "url": "https://github.com/mathieucarbou/AsyncTCP.git"
   },
-  "version": "1.1.1",
+  "authors": [
+    {
+      "name": "Hristo Gochkov"
+    },
+    {
+      "name": "Mathieu Carbou",
+      "maintainer": true
+    }
+  ],
   "license": "LGPL-3.0",
   "frameworks": "arduino",
-  "platforms": "espressif32",
+  "platforms": [
+    "espressif32",
+    "libretiny"
+  ],
   "build": {
     "libCompatMode": 2
-  }  
+  },
+  "export": {
+    "include": [
+      "examples",
+      "src",
+      "library.json",
+      "library.properties",
+      "LICENSE",
+      "README.md"
+    ]
+  }
 }

@@ -6,8 +6,10 @@
 #include "EthLan8720Device.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
+#ifndef NUKI_HUB_UPDATER
 #include "../MqttTopics.h"
 #include "espMqttClient.h"
+#endif
 #include "../RestartReason.h"
 
 EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
@@ -23,6 +25,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
 {
     _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
+    #ifndef NUKI_HUB_UPDATER
     size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
     size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
     size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
@@ -59,6 +62,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
+    #endif
 }
 
 const String EthLan8720Device::deviceName() const
@@ -71,23 +75,29 @@ void EthLan8720Device::initialize()
     delay(250);
 
     WiFi.setHostname(_hostname.c_str());
+
+    #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
     _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
+    #else
+    #ifdef CONFIG_IDF_TARGET_ESP32
+    _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, ETH_RESET_PIN, _clock_mode);
+    #else
+    _hardwareInitialized = false;
+    #endif
+    #endif
     ETH.setHostname(_hostname.c_str());
     if(!_ipConfiguration->dhcpEnabled())
     {
         ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
     }
 
-    if(_restartOnDisconnect)
+    WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
     {
-        WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
+        if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
         {
-            if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
-            {
-                onDisconnected();
-            }
-        });
-    }
+            onDisconnected();
+        }
+    });
 }
 
 void EthLan8720Device::reconfigure()
@@ -128,10 +138,8 @@ ReconnectStatus EthLan8720Device::reconnect()
 
 void EthLan8720Device::onDisconnected()
 {
-    if(millis() > 60000)
-    {
-        restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    }
+    if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    reconnect();
 }
 
 int8_t EthLan8720Device::signalStrength()

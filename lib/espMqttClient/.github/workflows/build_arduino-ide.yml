@@ -1,0 +1,62 @@
+name: Build with Arduino IDE
+on:
+  - push
+  - pull_request
+
+jobs:
+  build-for-esp8266:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        fqbn:
+          - esp8266:esp8266:generic
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: arduino/compile-sketches@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fqbn: ${{ matrix.fqbn }}
+          enable-deltas-report: true
+          platforms: |
+            - name: esp8266:esp8266
+              source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          sketch-paths: |
+            - examples/largepayload-esp8266
+            - examples/simple-esp8266
+            - examples/simpleAsync-esp8266
+            - examples/tls-esp8266
+          libraries: |
+            - name: espMqttClient
+              source-path: ./
+            - name: ESPAsyncTCP
+              source-url: https://github.com/me-no-dev/ESPAsyncTCP.git
+
+  build-for-esp32:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        fqbn:
+          - esp32:esp32:esp32
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: arduino/compile-sketches@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fqbn: ${{ matrix.fqbn }}
+          enable-deltas-report: true
+          platforms: |
+            - name: esp32:esp32
+              source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          sketch-paths: |
+            - examples/simple-esp32
+            - examples/simpleAsync-esp32
+            - examples/tls-esp32
+          libraries: |
+            - name: espMqttClient
+              source-path: ./
+            - name: AsyncTCP
+              source-url: https://github.com/me-no-dev/AsyncTCP.git

@@ -39,13 +39,13 @@ void connectToMqtt() {
 void WiFiEvent(WiFiEvent_t event) {
   Serial.printf("[WiFi-event] event: %d\n", event);
   switch(event) {
-    case SYSTEM_EVENT_STA_GOT_IP:
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
       Serial.println("WiFi connected");
       Serial.println("IP address: ");
       Serial.println(WiFi.localIP());
       connectToMqtt();
       break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
       Serial.println("WiFi lost connection");
       break;
     default:
@@ -128,7 +128,7 @@ void setup() {
   Serial.println();
   Serial.println();
 
-  WiFi.setAutoConnect(false);
+  WiFi.persistent(false);
   WiFi.setAutoReconnect(true);
   WiFi.onEvent(WiFiEvent);
 

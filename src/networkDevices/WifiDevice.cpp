@@ -2,8 +2,10 @@
 #include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
+#ifndef NUKI_HUB_UPDATER
 #include "../MqttTopics.h"
 #include "espMqttClient.h"
+#endif
 #include "../RestartReason.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
@@ -15,6 +17,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
 {
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
 
+    #ifndef NUKI_HUB_UPDATER
     _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
     size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
@@ -53,6 +56,7 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
     }
+    #endif
 }
 
 const String WifiDevice::deviceName() const
@@ -94,9 +98,9 @@ void WifiDevice::initialize()
 
     if(!res)
     {
-        esp_wifi_disconnect ();
-        esp_wifi_stop ();
-        esp_wifi_deinit ();
+        esp_wifi_disconnect();
+        esp_wifi_stop();
+        esp_wifi_deinit();
 
         Log->println(F("Failed to connect. Wait for ESP restart."));
         delay(1000);
@@ -107,16 +111,17 @@ void WifiDevice::initialize()
         Log->println(WiFi.localIP().toString());
     }
 
-    if(_restartOnDisconnect)
+    WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
     {
-        WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
+        if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
         {
-            if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
-            {
-                onDisconnected();
-            }
-        });
-    }
+            onDisconnected();
+        }
+        else if(event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
+        {
+            onConnected();
+        }
+    });
 }
 
 void WifiDevice::reconfigure()
@@ -138,16 +143,30 @@ bool WifiDevice::isConnected()
 
 ReconnectStatus WifiDevice::reconnect()
 {
-    delay(3000);
+    if(!isConnected() && !_isReconnecting)
+    {
+        _isReconnecting = true;
+        _wm.autoConnect();
+        delay(10000);
+        _isReconnecting = false;
+    }
+    
+    if(!isConnected() && _disconnectTs > millis() - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
+}
+
+void WifiDevice::onConnected()
+{
+    _isReconnecting = false;
+    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
 }
 
 void WifiDevice::onDisconnected()
 {
-    if(millis() > 60000)
-    {
-        restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    }
+    _disconnectTs = millis();
+    if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    _wm.setEnableConfigPortal(false);
+    reconnect();
 }
 
 int8_t WifiDevice::signalStrength()

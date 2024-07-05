@@ -1,8 +1,10 @@
 #pragma once
 
 #include "NetworkDevice.h"
+#ifndef NUKI_HUB_UPDATER
 #include "espMqttClient.h"
 #include "espMqttClientW5500.h"
+#endif
 #include <Ethernet.h>
 #include <Preferences.h>
 

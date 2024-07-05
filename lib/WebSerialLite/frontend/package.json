@@ -1,0 +1,9 @@
+{
+	"scripts": {
+		"build": "node finalize.js"
+	},
+	"dependencies": {
+		"@gfx/zopfli": "^1.0.15",
+		"html-minifier-terser": "^7.1.0"
+	}
+}

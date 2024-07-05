@@ -2,31 +2,51 @@ name: Async TCP CI
 
 on:
   push:
-    branches:
-    - master
-    - release/*
   pull_request:
+  workflow_dispatch:
 
 jobs:
-
   build-arduino:
-    name: Arduino on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.config }}
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        config: [arduino-cli.yaml, arduino-cli-dev.yaml]
     steps:
-    - uses: actions/checkout@v1
-    - name: Build Tests
-      run: bash ./.github/scripts/on-push.sh 0 1
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v1
+      - name: Download board
+        run: |
+          arduino-cli --config-file ${{ matrix.config }} core update-index
+          arduino-cli --config-file ${{ matrix.config }} board listall
+          arduino-cli --config-file ${{ matrix.config }} core install esp32:esp32
+      - name: Compile Sketch
+        run: arduino-cli --config-file ${{ matrix.config }} --library ./src/ compile --fqbn esp32:esp32:esp32 ./examples/ClientServer/Client/Client.ino
+      - name: Compile Sketch with IPv6
+        env:
+          LWIP_IPV6: true
+        run: arduino-cli --config-file ${{ matrix.config }} --library ./src/ compile --fqbn esp32:esp32:esp32 ./examples/ClientServer/Client/Client.ino
 
   build-pio:
-    name: PlatformIO on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.board }} ${{ matrix.env }}
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest]
+        board: [esp32dev, esp32-s3-devkitc-1]
+        env: [arduino-2, arduino-3]
     steps:
-    - uses: actions/checkout@v1
-    - name: Build Tests
-      run: bash ./.github/scripts/on-push.sh 1 1
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: ${{ matrix.env }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: pip install platformio
+      - run: sed -i -e 's/esp32dev/${{ matrix.board }}/g' platformio.ini
+      - run: pio run -e ${{ matrix.env }}
