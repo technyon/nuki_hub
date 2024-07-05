@@ -7,9 +7,9 @@
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
-#include "Config.h"
 
 #ifndef NUKI_HUB_UPDATER
+#include "Config.h"
 #include "NukiWrapper.h"
 #include "NukiNetworkLock.h"
 #include "PresenceDetection.h"
@@ -133,6 +133,44 @@ void nukiTask(void *pvParameters)
             nukiOpener->update();
         }
 
+    }
+}
+
+void bootloopDetection()
+{
+    uint64_t cmp = IS_VALID_DETECT;
+    bool bootloopIsValid = (bootloopValidDetect == cmp);
+    Log->println(bootloopIsValid);
+
+    if(!bootloopIsValid)
+    {
+        bootloopCounter = (int8_t)0;
+        bootloopValidDetect = IS_VALID_DETECT;
+        return;
+    }
+
+    if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
+        esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
+        esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
+        true ||
+        esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
+    {
+        bootloopCounter++;
+        Log->print(F("Bootloop counter incremented: "));
+        Log->println(bootloopCounter);
+
+        if(bootloopCounter == 10)
+        {
+            Log->print(F("Bootloop detected."));
+
+            preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
+            preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
+            preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
+            preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
+            preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
+            preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
+            bootloopCounter = 0;
+        }
     }
 }
 #endif
@@ -397,44 +435,6 @@ bool initPreferences()
     #endif
 }
 
-void bootloopDetection()
-{
-    uint64_t cmp = IS_VALID_DETECT;
-    bool bootloopIsValid = (bootloopValidDetect == cmp);
-    Log->println(bootloopIsValid);
-
-    if(!bootloopIsValid)
-    {
-        bootloopCounter = (int8_t)0;
-        bootloopValidDetect = IS_VALID_DETECT;
-        return;
-    }
-
-    if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
-        esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
-        esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
-        true ||
-        esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
-    {
-        bootloopCounter++;
-        Log->print(F("Bootloop counter incremented: "));
-        Log->println(bootloopCounter);
-
-        if(bootloopCounter == 10)
-        {
-            Log->print(F("Bootloop detected."));
-
-            preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
-            preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
-            preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
-            preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
-            preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
-            preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
-            bootloopCounter = 0;
-        }
-    }
-}
-
 void setup()
 {
     Serial.begin(115200);
@@ -446,10 +446,12 @@ void setup()
 
     initializeRestartReason();
     
+    #ifndef NUKI_HUB_UPDATER
     if(preferences->getBool(preference_enable_bootloop_reset, false))
     {
         bootloopDetection();
     }
+    #endif
 
     #ifdef NUKI_HUB_UPDATER
     Log->print(F("Nuki Hub OTA version ")); Log->println(NUKI_HUB_VERSION);
