@@ -29,7 +29,12 @@ enum class NetworkDeviceType
 class Network
 {
 public:
-    explicit Network(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+    explicit Network(Preferences* preferences,
+                     PresenceDetection* presenceDetection,
+                     Gpio* gpio,
+                     const String& maintenancePathPrefix,
+                     char* buffer,
+                     size_t bufferSize);
 
     void initialize();
     bool update();
@@ -174,4 +179,5 @@ private:
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
 
     int8_t _lastRssi = 127;
+
 };

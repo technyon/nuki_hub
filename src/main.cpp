@@ -15,6 +15,8 @@
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 
+#define IS_VALID_DETECT 0xa00ab00bc00bd00d;
+
 Network* network = nullptr;
 NetworkLock* networkLock = nullptr;
 NetworkOpener* networkOpener = nullptr;
@@ -36,6 +38,10 @@ unsigned long restartTs = (2^32) - 5 * 60000;
 RTC_NOINIT_ATTR int restartReason;
 RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
 RTC_NOINIT_ATTR bool rebuildGpioRequested;
+RTC_NOINIT_ATTR uint64_t bootloopValidDetect;
+RTC_NOINIT_ATTR int8_t bootloopCounter;
+
+
 bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
 
@@ -47,6 +53,13 @@ void networkTask(void *pvParameters)
 {
     while(true)
     {
+        unsigned long ts = millis();
+        if(ts > 120000 && ts < 125000 && bootloopCounter > 0)
+        {
+            bootloopCounter = (int8_t)0;
+            Log->println(F("Bootloop counter reset"));
+        }
+
         bool connected = network->update();
         if(connected && openerEnabled)
         {
@@ -241,38 +254,60 @@ bool initPreferences()
     return firstStart;
 }
 
-void setup()
+void bootloopDetection()
 {
-    Serial.begin(115200);
-    Log = &Serial;
+    uint64_t cmp = IS_VALID_DETECT;
+    bool bootloopIsValid = (bootloopValidDetect == cmp);
+    Log->println(bootloopIsValid);
 
-    Log->print(F("Nuki Hub version ")); Log->println(NUKI_HUB_VERSION);
-    
-    Log->print(F("Nuki Hub build ")); Log->println(NUKI_HUB_BUILD);
-
-    bool firstStart = initPreferences();
-
-    initializeRestartReason();
-
-    if(preferences->getBool(preference_enable_bootloop_reset, false) &&
-    (esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
-    esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
-    esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
-    esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT))
+    if(!bootloopIsValid)
     {
-        preferences->putInt(preference_bootloop_counter, preferences->getInt(preference_bootloop_counter, 0) + 1);
-        Log->println(F("Bootloop counter incremented"));
-        
-        if(preferences->getInt(preference_bootloop_counter) == 10)
+        bootloopCounter = (int8_t)0;
+        bootloopValidDetect = IS_VALID_DETECT;
+        return;
+    }
+
+    if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
+        esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
+        esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
+        true ||
+        esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
+    {
+        bootloopCounter++;
+        Log->print(F("Bootloop counter incremented: "));
+        Log->println(bootloopCounter);
+
+        if(bootloopCounter == 10)
         {
+            Log->print(F("Bootloop detected."));
+
             preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
             preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
             preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
             preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
             preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
             preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
-            preferences->putInt(preference_bootloop_counter, 0);
+            bootloopCounter = 0;
         }
+    }
+}
+
+void setup()
+{
+    Serial.begin(115200);
+    Log = &Serial;
+
+    Log->print(F("Nuki Hub version ")); Log->println(NUKI_HUB_VERSION);
+    Log->print(F("Nuki Hub build ")); Log->println(NUKI_HUB_BUILD);
+
+    bool firstStart = initPreferences();
+    preferences->remove(preference_bootloop_counter);
+
+    initializeRestartReason();
+
+    if(preferences->getBool(preference_enable_bootloop_reset, false))
+    {
+        bootloopDetection();
     }
 
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
