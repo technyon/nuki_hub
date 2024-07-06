@@ -32,7 +32,7 @@ void Scanner::initialize(const std::string& deviceName, const bool wantDuplicate
   }
   bleScan = BLEDevice::getScan();
 
-  #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+  #ifndef BLESCANNER_USE_LATEST_NIMBLE
   bleScan->setAdvertisedDeviceCallbacks(this, wantDuplicates);
   #else
   bleScan->setScanCallbacks(this, wantDuplicates);
@@ -54,7 +54,7 @@ void Scanner::update() {
     log_w("Ble scanner max results not 0. Be aware of memory issue due to unbridled growth of results vector");
   }
 
-  #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+  #ifndef BLESCANNER_USE_LATEST_NIMBLE
   bool result = bleScan->start(scanDuration, nullptr, false);
   #else
   bool result = bleScan->start(scanDuration * 1000, false);
