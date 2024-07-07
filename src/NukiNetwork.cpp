@@ -321,18 +321,18 @@ void NukiNetwork::initialize()
                 if(rebGpio)
                 {
                     buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
-                    publishString(_lockPath.c_str(), gpioPath, "input");
+                    publishString(_lockPath.c_str(), gpioPath, "input", false);
                     buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                    publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str());
+                    publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str(), false);
                 }
                 break;
             case PinRole::GeneralOutput:
                 if(rebGpio)
                 {
                     buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
-                    publishString(_lockPath.c_str(), gpioPath, "output");
+                    publishString(_lockPath.c_str(), gpioPath, "output", false);
                     buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                    publishString(_lockPath.c_str(), gpioPath, "0");
+                    publishString(_lockPath.c_str(), gpioPath, "0", false);
                 }
                 buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
                 subscribe(_lockPath.c_str(), gpioPath);
@@ -504,7 +504,7 @@ bool NukiNetwork::update()
             uint8_t pinState = digitalRead(pin) == HIGH ? 1 : 0;
             char gpioPath[250];
             buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pin)).c_str(), mqtt_topic_gpio_state});
-            publishInt(_lockPath.c_str(), gpioPath, pinState);
+            publishInt(_lockPath.c_str(), gpioPath, pinState, false);
 
             Log->print(F("GPIO "));
             Log->print(pin);
@@ -774,7 +774,7 @@ bool NukiNetwork::encryptionSupported()
     return _device->supportsEncryption();
 }
 
-void NukiNetwork::publishFloat(const char* prefix, const char* topic, const float value, const uint8_t precision, bool retain)
+void NukiNetwork::publishFloat(const char* prefix, const char* topic, const float value, bool retain, const uint8_t precision)
 {
     char str[30];
     dtostrf(value, 0, precision, str);
