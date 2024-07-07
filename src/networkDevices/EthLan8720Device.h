@@ -1,17 +1,17 @@
 #pragma once
 
 #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
-#ifndef CONFIG_IDF_TARGET_ESP32
-typedef enum {
-    ETH_CLOCK_GPIO0_IN = 0,
-    ETH_CLOCK_GPIO16_OUT = 2,
-    ETH_CLOCK_GPIO17_OUT = 3
-} eth_clock_mode_t;
+    #ifndef CONFIG_IDF_TARGET_ESP32
+//        typedef enum {
+//            ETH_CLOCK_GPIO0_IN = 0,
+//            ETH_CLOCK_GPIO16_OUT = 2,
+//            ETH_CLOCK_GPIO17_OUT = 3
+//        } eth_clock_mode_t;
 
-#define ETH_PHY_TYPE ETH_PHY_MAX
-#else
-#define ETH_PHY_TYPE        ETH_PHY_LAN8720
-#endif
+        #define ETH_PHY_TYPE ETH_PHY_MAX
+    #else
+        #define ETH_PHY_TYPE        ETH_PHY_LAN8720
+    #endif
 
 #define ETH_CLK_MODE        ETH_CLOCK_GPIO0_IN
 
