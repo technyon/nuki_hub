@@ -72,7 +72,6 @@ private:
     bool _startAp = false;
     char* _path;
     bool _hardwareInitialized = false;
-    bool _lastConnected = false;
 
     const std::string _deviceName;
     uint8_t _phy_addr;

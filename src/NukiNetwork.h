@@ -167,6 +167,7 @@ private:
     bool _restartOnDisconnect = false;
     bool _firstConnect = true;
     bool _publishDebugInfo = false;
+    bool _logIp = true;
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
 

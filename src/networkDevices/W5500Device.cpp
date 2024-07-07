@@ -180,17 +180,7 @@ bool W5500Device::supportsEncryption()
 
 bool W5500Device::isConnected()
 {
-    bool connected = (Ethernet.linkStatus() == EthernetLinkStatus::LinkON && _maintainResult == 0 && _hasDHCPAddress);
-
-    if(_lastConnected == false && connected == true)
-    {
-        Serial.print(F("Ethernet connected. IP address: "));
-        Serial.println(Ethernet.localIP().toString());
-    }
-
-    _lastConnected = connected;
-
-    return connected;
+    return (Ethernet.linkStatus() == EthernetLinkStatus::LinkON && _maintainResult == 0 && _hasDHCPAddress);
 }
 
 void W5500Device::initializeMacAddress(byte *mac)

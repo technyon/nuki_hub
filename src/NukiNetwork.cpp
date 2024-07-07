@@ -380,12 +380,20 @@ bool NukiNetwork::update()
                 break;
             case ReconnectStatus::Success:
                 memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
-                Log->println(F("Reconnect successful"));
+                Log->print(F("Reconnect successful: IP: "));
+                Log->println(_device->localIP());
                 break;
             case ReconnectStatus::Failure:
                 Log->println(F("Reconnect failed"));
                 break;
         }
+    }
+
+    if(_logIp && device()->isConnected() && !_device->localIP().equals("0.0.0.0"))
+    {
+        _logIp = false;
+        Log->print(F("IP: "));
+        Log->println(_device->localIP());
     }
 
     if(!_device->mqttConnected() && _device->isConnected())

@@ -112,17 +112,7 @@ bool EthLan8720Device::supportsEncryption()
 
 bool EthLan8720Device::isConnected()
 {
-    bool connected = ETH.linkUp();
-
-    if(_lastConnected == false && connected == true)
-    {
-        Serial.print(F("Ethernet connected. IP address: "));
-        Serial.println(ETH.localIP().toString());
-    }
-
-    _lastConnected = connected;
-
-    return connected;
+    return ETH.linkUp();
 }
 
 ReconnectStatus EthLan8720Device::reconnect()
