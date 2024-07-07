@@ -98,7 +98,6 @@ void Gpio::init()
                 Gpio2Go::configurePin(entry.pin, PinMode::InputPullup, InterruptMode::Change, 300);
                 break;
             default:
-                pinMode(entry.pin, OUTPUT);
                 break;
         }
 
