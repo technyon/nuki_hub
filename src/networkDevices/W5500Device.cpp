@@ -44,7 +44,7 @@ const String W5500Device::deviceName() const
 
 void W5500Device::initialize()
 {
-    WiFi.mode(WIFI_OFF);
+    WiFi.mode(WIFI_STA);
 
     resetDevice();
 
