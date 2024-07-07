@@ -2,11 +2,11 @@
 
 #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     #ifndef CONFIG_IDF_TARGET_ESP32
-//        typedef enum {
-//            ETH_CLOCK_GPIO0_IN = 0,
-//            ETH_CLOCK_GPIO16_OUT = 2,
-//            ETH_CLOCK_GPIO17_OUT = 3
-//        } eth_clock_mode_t;
+        typedef enum {
+            ETH_CLOCK_GPIO0_IN = 0,
+            ETH_CLOCK_GPIO16_OUT = 2,
+            ETH_CLOCK_GPIO17_OUT = 3
+        } eth_clock_mode_t;
 
         #define ETH_PHY_TYPE ETH_PHY_MAX
     #else
