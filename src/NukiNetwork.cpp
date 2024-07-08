@@ -360,8 +360,11 @@ bool NukiNetwork::update()
 
     if(!_device->isConnected())
     {
-        _device->mqttDisconnect(true);
-
+        if(_firstDisconnected) {
+            _firstDisconnected = false;
+            _device->mqttDisconnect(true);
+        }
+        
         if(_restartOnDisconnect && millis() > 60000)
         {
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
@@ -394,17 +397,11 @@ bool NukiNetwork::update()
         _logIp = false;
         Log->print(F("IP: "));
         Log->println(_device->localIP());
+        _firstDisconnected = true;
     }
 
     if(!_device->mqttConnected() && _device->isConnected())
     {
-        if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
-        {
-            Log->println("Network timeout has been reached, restarting ...");
-            delay(200);
-            restartEsp(RestartReason::NetworkTimeoutWatchdog);
-        }
-
         bool success = reconnect();
         if(!success)
         {
@@ -413,8 +410,19 @@ bool NukiNetwork::update()
         delay(2000);
     }
 
-    if(!_device->mqttConnected() || !_device->isConnected()) return false;
-
+    if(!_device->mqttConnected() || !_device->isConnected())
+    {
+        if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
+        {
+            Log->println("Network timeout has been reached, restarting ...");
+            delay(200);
+            restartEsp(RestartReason::NetworkTimeoutWatchdog);
+        }
+        
+        delay(2000);
+        return false;
+    }
+    
     _lastConnectedTs = ts;
 
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))

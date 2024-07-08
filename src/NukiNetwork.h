@@ -155,6 +155,7 @@ private:
 
     int _mqttConnectionState = 0;
     bool _connectReplyReceived = false;
+    bool _firstDisconnected = true;
 
     unsigned long _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
