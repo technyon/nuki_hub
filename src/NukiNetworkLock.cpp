@@ -64,16 +64,16 @@ void NukiNetworkLock::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_config_action);
 
+    _network->subscribe(_mqttPath, mqtt_topic_reset);
+    _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
+
     if(_preferences->getBool(preference_update_from_mqtt, false))
     {
-        _network->subscribe(_mqttPath, mqtt_topic_reset);
-        _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
+        #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
+        _network->subscribe(_mqttPath, mqtt_topic_update);
+        _network->initTopic(_mqttPath, mqtt_topic_update, "0");
+        #endif
     }
-
-    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
-    _network->subscribe(_mqttPath, mqtt_topic_update);
-    _network->initTopic(_mqttPath, mqtt_topic_update, "0");
-    #endif
 
     _network->subscribe(_mqttPath, mqtt_topic_webserver_action);
     _network->initTopic(_mqttPath, mqtt_topic_webserver_action, "--");
@@ -263,16 +263,16 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         switch(lockActionResult)
         {
             case LockActionResult::Success:
-                publishString(mqtt_topic_lock_action, "ack");
+                publishString(mqtt_topic_lock_action, "ack", false);
                 break;
             case LockActionResult::UnknownAction:
-                publishString(mqtt_topic_lock_action, "unknown_action");
+                publishString(mqtt_topic_lock_action, "unknown_action", false);
                 break;
             case LockActionResult::AccessDenied:
-                publishString(mqtt_topic_lock_action, "denied");
+                publishString(mqtt_topic_lock_action, "denied", false);
                 break;
             case LockActionResult::Failed:
-                publishString(mqtt_topic_lock_action, "error");
+                publishString(mqtt_topic_lock_action, "error", false);
                 break;
         }
     }
@@ -677,7 +677,7 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
         {
             _lastRollingLog = log.index;
             serializeJson(entry, _buffer, _bufferSize);
-            publishString(mqtt_topic_lock_log_rolling, _buffer);
+            publishString(mqtt_topic_lock_log_rolling, _buffer, true);
             publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
         }
     }
@@ -1260,7 +1260,7 @@ void NukiNetworkLock::publishTimeControlCommandResult(const char* result)
 
 void NukiNetworkLock::publishStatusUpdated(const bool statusUpdated)
 {
-    publishBool(mqtt_topic_lock_status_updated, statusUpdated);
+    publishBool(mqtt_topic_lock_status_updated, statusUpdated, true);
 }
 
 void NukiNetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
@@ -1375,9 +1375,9 @@ void NukiNetworkLock::publishOffAction(const int value)
     _network->publishInt(_offMqttPath, mqtt_topic_official_lock_action, value, false);
 }
 
-void NukiNetworkLock::publishFloat(const char *topic, const float value, const uint8_t precision, bool retain)
+void NukiNetworkLock::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)
 {
-    _network->publishFloat(_mqttPath, topic, value, precision, retain);
+    _network->publishFloat(_mqttPath, topic, value, retain, precision);
 }
 
 void NukiNetworkLock::publishInt(const char *topic, const int value, bool retain)

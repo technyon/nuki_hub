@@ -146,7 +146,23 @@ ReconnectStatus WifiDevice::reconnect()
     if(!isConnected() && !_isReconnecting)
     {
         _isReconnecting = true;
-        _wm.autoConnect();
+        WiFi.disconnect();
+        delay(1000);
+        if(!_preferences->getBool(preference_find_best_rssi, false)) WiFi.reconnect();
+        else 
+        {
+            if(WiFi.getMode() & WIFI_STA){
+                WiFi.mode(WIFI_OFF);
+                int timeout = millis()+1200;
+                while(WiFi.getMode()!= WIFI_OFF && millis()<timeout){
+                    delay(0);
+                }
+            }
+            delay(5000);
+            _wm.WiFi_scanNetworks(true, false);
+            delay(5000);
+            _wm.wifiConnectDefault();
+        }
         delay(10000);
         _isReconnecting = false;
     }

@@ -161,16 +161,16 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
         switch(lockActionResult)
         {
             case LockActionResult::Success:
-                publishString(mqtt_topic_lock_action, "ack");
+                publishString(mqtt_topic_lock_action, "ack", false);
                 break;
             case LockActionResult::UnknownAction:
-                publishString(mqtt_topic_lock_action, "unknown_action");
+                publishString(mqtt_topic_lock_action, "unknown_action", false);
                 break;
             case LockActionResult::AccessDenied:
-                publishString(mqtt_topic_lock_action, "denied");
+                publishString(mqtt_topic_lock_action, "denied", false);
                 break;
             case LockActionResult::Failed:
-                publishString(mqtt_topic_lock_action, "error");
+                publishString(mqtt_topic_lock_action, "error", false);
                 break;
         }
     }
@@ -302,10 +302,10 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
 
     if(keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
     {
-        publishString(mqtt_topic_lock_continuous_mode, "on");
+        publishString(mqtt_topic_lock_continuous_mode, "on", true);
         json["continuous_mode"] = 1;
     } else {
-        publishString(mqtt_topic_lock_continuous_mode, "off");
+        publishString(mqtt_topic_lock_continuous_mode, "off", true);
         json["continuous_mode"] = 0;
     }
 
@@ -1159,7 +1159,7 @@ void NukiNetworkOpener::publishTimeControlCommandResult(const char* result)
 
 void NukiNetworkOpener::publishStatusUpdated(const bool statusUpdated)
 {
-    publishBool(mqtt_topic_lock_status_updated, statusUpdated);
+    publishBool(mqtt_topic_lock_status_updated, statusUpdated, true);
 }
 
 void NukiNetworkOpener::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
@@ -1188,9 +1188,9 @@ void NukiNetworkOpener::setTimeControlCommandReceivedCallback(void (*timeControl
     _timeControlCommandReceivedReceivedCallback = timeControlCommandReceivedReceivedCallback;
 }
 
-void NukiNetworkOpener::publishFloat(const char *topic, const float value, const uint8_t precision, bool retain)
+void NukiNetworkOpener::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)
 {
-    _network->publishFloat(_mqttPath, topic, value, precision, retain);
+    _network->publishFloat(_mqttPath, topic, value, retain, precision);
 }
 
 void NukiNetworkOpener::publishInt(const char *topic, const int value, bool retain)
