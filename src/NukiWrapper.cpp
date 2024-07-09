@@ -116,7 +116,9 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_query_interval_configuration, 3600);
         _preferences->putInt(preference_query_interval_battery, 1800);
         _preferences->putInt(preference_query_interval_keypad, 1800);
+#if PRESENCE_DETECTION_ENABLED
         _preferences->putInt(preference_presence_detection_timeout, -1);
+#endif
     }
 
     if(_nrOfRetries < 0 || _nrOfRetries == 200)

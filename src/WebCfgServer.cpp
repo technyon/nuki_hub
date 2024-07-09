@@ -1025,11 +1025,13 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_command_retry_delay, value.toInt());
             configChanged = true;
         }
+#if PRESENCE_DETECTION_ENABLED
         else if(key == "PRDTMO")
         {
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
             configChanged = true;
         }
+#endif
         else if(key == "RSBC")
         {
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
@@ -2424,7 +2426,9 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
     if(_nuki != nullptr) printCheckBox(response, "REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
     if(_nukiOpener != nullptr) printCheckBox(response, "REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
+#if PRESENCE_DETECTION_ENABLED
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10, "");
+#endif
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");

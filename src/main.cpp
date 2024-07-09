@@ -363,11 +363,13 @@ void setup()
     bleScanner->initialize("NukiHub");
     bleScanner->setScanDuration(10);
 
+#if PRESENCE_DETECTION_ENABLED
     if(preferences->getInt(preference_presence_detection_timeout) >= 0)
     {
         presenceDetection = new PresenceDetection(preferences, bleScanner, CharBuffer::get(), buffer_size);
         presenceDetection->initialize();
     }
+#endif
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
