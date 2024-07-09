@@ -213,8 +213,8 @@ void NukiWrapper::update()
         }
     }
 
-    unsigned long ts = millis();
-    unsigned long lastReceivedBeaconTs = _nukiLock.getLastReceivedBeaconTs();
+    long ts = millis();
+    long lastReceivedBeaconTs = _nukiLock.getLastReceivedBeaconTs();
     uint8_t queryCommands = _network->queryCommands();
 
     if(_restartBeaconTimeout > 0 &&

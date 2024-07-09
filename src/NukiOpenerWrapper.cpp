@@ -142,8 +142,8 @@ void NukiOpenerWrapper::update()
         }
     }
 
-    unsigned long ts = millis();
-    unsigned long lastReceivedBeaconTs = _nukiOpener.getLastReceivedBeaconTs();
+    long ts = millis();
+    long lastReceivedBeaconTs = _nukiOpener.getLastReceivedBeaconTs();
     uint8_t queryCommands = _network->queryCommands();
 
     if(_restartBeaconTimeout > 0 &&
