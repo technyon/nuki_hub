@@ -127,7 +127,7 @@ ReconnectStatus EthLan8720Device::reconnect()
 
 void EthLan8720Device::onDisconnected()
 {
-    if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    if(_restartOnDisconnect && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
     reconnect();
 }
 

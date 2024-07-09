@@ -57,6 +57,7 @@ public:
     void publishInt(const char* topic, const int value, bool retain);
     void publishUInt(const char* topic, const unsigned int value, bool retain);
     void publishULong(const char* topic, const unsigned long value, bool retain);
+    void publishLongLong(const char* topic, int64_t value, bool retain);    
     void publishBool(const char* topic, const bool value, bool retain);
     bool publishString(const char* topic, const String& value, bool retain);
     bool publishString(const char* topic, const std::string& value, bool retain);
@@ -81,7 +82,7 @@ public:
     uint32_t _offCodeId = 0;
     uint8_t _offContext = 0;
     uint32_t _authId = 0;
-    unsigned long _offCommandExecutedTs = 0;
+    int64_t _offCommandExecutedTs = 0;
     NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
     char _nukiName[33];
     char _authName[33];
@@ -107,7 +108,7 @@ private:
     char _offMqttPath[181] = {0};
 
     bool _firstTunerStatePublish = true;
-    unsigned long _lastMaintenanceTs = 0;
+    int64_t _lastMaintenanceTs = 0;
     bool _haEnabled = false;
     bool _reconnected = false;
 

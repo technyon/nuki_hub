@@ -60,6 +60,7 @@ public:
     void publishInt(const char* prefix, const char* topic, const int value, bool retain);
     void publishUInt(const char* prefix, const char* topic, const unsigned int value, bool retain);
     void publishULong(const char* prefix, const char* topic, const unsigned long value, bool retain);
+    void publishLongLong(const char* prefix, const char* topic, int64_t value, bool retain);
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain);
     bool publishString(const char* prefix, const char* topic, const char* value, bool retain);
 
@@ -157,7 +158,7 @@ private:
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
 
-    unsigned long _nextReconnect = 0;
+    int64_t _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
@@ -172,14 +173,14 @@ private:
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
 
-    unsigned long _lastConnectedTs = 0;
-    unsigned long _lastMaintenanceTs = 0;
-    unsigned long _lastUpdateCheckTs = 0;
-    unsigned long _lastPresenceTs = 0;
-    unsigned long _lastRssiTs = 0;
+    int64_t _lastConnectedTs = 0;
+    int64_t _lastMaintenanceTs = 0;
+    int64_t _lastUpdateCheckTs = 0;
+    int64_t _lastPresenceTs = 0;
+    int64_t _lastRssiTs = 0;
     bool _mqttEnabled = true;
-    long _rssiPublishInterval = 0;
-    std::map<uint8_t, unsigned long> _gpioTs;
+    int _rssiPublishInterval = 0;
+    std::map<uint8_t, int64_t> _gpioTs;
 
     char* _buffer;
     const size_t _bufferSize;

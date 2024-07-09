@@ -46,7 +46,7 @@ private:
     bool _startAp = false;
     bool _isReconnecting = false;
     char* _path;
-    unsigned long _disconnectTs = 0;
+    int64_t _disconnectTs = 0;
 
     #ifndef NUKI_HUB_UPDATER
     char _ca[TLS_CA_MAX_SIZE] = {0};
