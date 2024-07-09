@@ -55,13 +55,13 @@ public:
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
-    void publishFloat(const char* topic, const float value, const uint8_t precision = 2, bool retain = false);
-    void publishInt(const char* topic, const int value, bool retain = false);
-    void publishUInt(const char* topic, const unsigned int value, bool retain = false);
-    void publishBool(const char* topic, const bool value, bool retain = false);
-    void publishString(const char* topic, const String& value, bool retain = false);
-    void publishString(const char* topic, const std::string& value, bool retain = false);
-    void publishString(const char* topic, const char* value, bool retain = false);
+    void publishFloat(const char* topic, const float value, bool retain, const uint8_t precision = 2);
+    void publishInt(const char* topic, const int value, bool retain);
+    void publishUInt(const char* topic, const unsigned int value, bool retain);
+    void publishBool(const char* topic, const bool value, bool retain);
+    void publishString(const char* topic, const String& value, bool retain);
+    void publishString(const char* topic, const std::string& value, bool retain);
+    void publishString(const char* topic, const char* value, bool retain);
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
 
     void buildMqttPath(const char* path, char* outPath);

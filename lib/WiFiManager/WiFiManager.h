@@ -629,7 +629,7 @@ public:
     boolean       _preloadwifiscan        = false; // preload wifiscan if true
     unsigned int  _scancachetime          = 30000; // ms cache time for preload scans
     boolean       _asyncScan              = false; // perform wifi network scan async
-    
+    bool          wifiConnectDefault();
 protected:
 
     boolean       _autoforcerescan        = false;  // automatically force rescan if scan networks is 0, ignoring cache
@@ -659,7 +659,6 @@ protected:
 
     uint8_t       connectWifi(String ssid, String pass, bool connect = true);
     bool          setSTAConfig();
-    bool          wifiConnectDefault();
     bool          wifiConnectNew(String ssid, String pass,bool connect = true);
 
     uint8_t       waitForConnectResult();
@@ -669,6 +668,7 @@ protected:
     // webserver handlers
 public:
     void          handleNotFound();
+    bool          WiFi_scanNetworks(bool force,bool async);
 protected:
     void          HTTPSend(const String &content);
     void          handleRoot();
@@ -710,7 +710,6 @@ protected:
     String        WiFi_SSID(bool persistent = true) const;
     String        WiFi_psk(bool persistent = true) const;
     bool          WiFi_scanNetworks();
-    bool          WiFi_scanNetworks(bool force,bool async);
     bool          WiFi_scanNetworks(unsigned int cachetime,bool async);
     bool          WiFi_scanNetworks(unsigned int cachetime);
     void          WiFi_scanComplete(int networksFound);
