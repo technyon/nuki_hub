@@ -55,7 +55,9 @@ void NukiNetworkLock::initialize()
         _preferences->putString(preference_mqtt_lock_path, _mqttPath);
     }
 
+#if PRESENCE_DETECTION_ENABLED
     _network->setMqttPresencePath(_mqttPath);
+#endif
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
 
