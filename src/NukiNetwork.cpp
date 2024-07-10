@@ -425,6 +425,7 @@ bool NukiNetwork::update()
     
     _lastConnectedTs = ts;
 
+#if PRESENCE_DETECTION_ENABLED
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
         char* presenceCsv = _presenceDetection->generateCsv();
@@ -437,6 +438,7 @@ bool NukiNetwork::update()
 
         _lastPresenceTs = ts;
     }
+#endif
 
     if(_device->signalStrength() != 127 && _rssiPublishInterval > 0 && ts - _lastRssiTs > _rssiPublishInterval)
     {
@@ -760,11 +762,13 @@ void NukiNetwork::gpioActionCallback(const GpioAction &action, const int &pin)
     _gpioTs[pin] = millis();
 }
 
+#if PRESENCE_DETECTION_ENABLED
 void NukiNetwork::setMqttPresencePath(char *path)
 {
     memset(_mqttPresencePrefix, 0, sizeof(_mqttPresencePrefix));
     strcpy(_mqttPresencePrefix, path);
 }
+#endif
 
 void NukiNetwork::disableAutoRestarts()
 {

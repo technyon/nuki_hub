@@ -50,7 +50,9 @@ public:
     explicit NukiNetwork(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void registerMqttReceiver(MqttReceiver* receiver);
+#if PRESENCE_DETECTION_ENABLED
     void setMqttPresencePath(char* path);
+#endif
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
 
@@ -175,7 +177,9 @@ private:
     unsigned long _lastConnectedTs = 0;
     unsigned long _lastMaintenanceTs = 0;
     unsigned long _lastUpdateCheckTs = 0;
+#if PRESENCE_DETECTION_ENABLED
     unsigned long _lastPresenceTs = 0;
+#endif
     unsigned long _lastRssiTs = 0;
     bool _mqttEnabled = true;
     long _rssiPublishInterval = 0;
