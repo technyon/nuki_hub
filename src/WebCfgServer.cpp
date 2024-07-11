@@ -321,11 +321,21 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater", 2);
+        String response = "";        
+        String key = _server.argName(0);
+        if(key == "beta")
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2);
+            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
+        }
+        else
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2);
+            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        }
         _server.send(200, "text/html", response);
-        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
         restartEsp(RestartReason::OTAReboot);
     });
     #endif
@@ -393,7 +403,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
         response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
         return;
     }
-    
+
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
 
     #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
