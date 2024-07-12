@@ -97,6 +97,8 @@ public:
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
     bool encryptionSupported();
+    bool mqttRecentlyConnected();
+    bool pathEquals(const char* prefix, const char* path, const char* referencePath);
 
     uint16_t subscribe(const char* topic, uint8_t qos);
 
@@ -156,6 +158,7 @@ private:
     Gpio* _gpio;
 
     int _mqttConnectionState = 0;
+    long _mqttConnectedTs = -1;
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
 

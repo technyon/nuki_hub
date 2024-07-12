@@ -616,6 +616,7 @@ bool NukiNetwork::reconnect()
         if (_device->mqttConnected())
         {
             Log->println(F("MQTT connected"));
+            _mqttConnectedTs = millis();
             _mqttConnectionState = 1;
             delay(100);
 
@@ -718,6 +719,8 @@ void NukiNetwork::onMqttDataReceivedCallback(const espMqttClientTypes::MessagePr
 
 void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)
 {
+    if(_mqttConnectedTs == -1 || (millis() - _mqttConnectedTs < 2000)) return;
+
     parseGpioTopics(properties, topic, payload, len, index, total);
 
     for(auto receiver : _mqttReceivers)
@@ -784,6 +787,22 @@ int NukiNetwork::mqttConnectionState()
 bool NukiNetwork::encryptionSupported()
 {
     return _device->supportsEncryption();
+}
+
+bool NukiNetwork::mqttRecentlyConnected()
+{
+    return _mqttConnectedTs != -1 && (millis() - _mqttConnectedTs < 6000);
+}
+
+bool NukiNetwork::pathEquals(const char* prefix, const char* path, const char* referencePath)
+{
+    char prefixedPath[500];
+    buildMqttPath(prefixedPath, { prefix, path });
+
+    Log->println(prefixedPath);
+    Log->println(referencePath);
+
+    return strcmp(prefixedPath, referencePath) == 0;
 }
 
 void NukiNetwork::publishFloat(const char* prefix, const char* topic, const float value, bool retain, const uint8_t precision)

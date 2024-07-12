@@ -182,6 +182,11 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 {
     char* value = (char*)payload;
 
+    if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
+    {
+        Log->println("MQTT recently connected, ignoring lock action.");
+    }
+
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
     {
         Log->println(F("Restart requested via MQTT."));
