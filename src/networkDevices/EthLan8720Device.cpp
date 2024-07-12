@@ -97,6 +97,34 @@ void EthLan8720Device::initialize()
             onDisconnected();
         }
     });
+
+    if(_ipConfiguration->dhcpEnabled())
+    {
+        waitForIpAddressWithTimeout();
+    }
+}
+
+void EthLan8720Device::waitForIpAddressWithTimeout()
+{
+    int count = 50;
+
+    Log->print(F("LAN8720: Obtaining IP address via DHCP"));
+
+    while(count > 0 && localIP().equals("0.0.0.0"))
+    {
+        Log->print(F("."));
+        count--;
+        delay(100);
+    }
+
+    if(localIP().equals("0.0.0.0"))
+    {
+        Log->println(F(" Failed"));
+    }
+    else
+    {
+        Log->println(localIP());
+    }
 }
 
 void EthLan8720Device::reconfigure()

@@ -136,6 +136,7 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
         Log->println("MQTT recently connected, ignoring opener action.");
+        return;
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))

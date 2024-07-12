@@ -798,10 +798,6 @@ bool NukiNetwork::pathEquals(const char* prefix, const char* path, const char* r
 {
     char prefixedPath[500];
     buildMqttPath(prefixedPath, { prefix, path });
-
-    Log->println(prefixedPath);
-    Log->println(referencePath);
-
     return strcmp(prefixedPath, referencePath) == 0;
 }
 
