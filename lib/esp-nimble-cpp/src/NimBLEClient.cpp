@@ -193,7 +193,9 @@ bool NimBLEClient::connect(const NimBLEAddress &address, bool deleteAttributes) 
         return false;
     }
 
-    if(isConnected() || m_connEstablished || m_pTaskData != nullptr) {
+    ble_gap_conn_desc desc;
+
+    if(ble_gap_conn_find(m_conn_id, &desc) == 0 && (isConnected() || m_connEstablished || m_pTaskData != nullptr)) {
         NIMBLE_LOGE(LOG_TAG, "Client busy, connected to %s, id=%d",
                     std::string(m_peerAddress).c_str(), getConnId());
         return false;
@@ -293,6 +295,8 @@ bool NimBLEClient::connect(const NimBLEAddress &address, bool deleteAttributes) 
         if(isConnected()) {
             NIMBLE_LOGE(LOG_TAG, "Connect timeout - no response");
             disconnect();
+            NIMBLE_LOGE(LOG_TAG, "Connect timeout - cancelling");
+            ble_gap_conn_cancel();
         } else {
         // workaround; if the controller doesn't cancel the connection
         // at the timeout, cancel it here.
