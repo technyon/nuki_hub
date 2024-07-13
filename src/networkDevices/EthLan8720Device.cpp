@@ -106,7 +106,7 @@ void EthLan8720Device::initialize()
 
 void EthLan8720Device::waitForIpAddressWithTimeout()
 {
-    int count = 50;
+    int count = 100;
 
     Log->print(F("LAN8720: Obtaining IP address via DHCP"));
 
