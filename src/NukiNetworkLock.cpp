@@ -591,7 +591,6 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
             if(log.index > authIndex)
             {
                 authIndex = log.index;
-                _authFound = true;
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
                 memcpy(_authName, authName, sizeof(authName));

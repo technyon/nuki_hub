@@ -1081,8 +1081,6 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
 
         if(_network->_offAuthId > 0 || _network->_offCodeId > 0)
         {
-            _network->_authFound = true;
-
             if(_network->_offCodeId > 0) _network->_authId = _network->_offCodeId;
             else _network->_authId = _network->_offAuthId;
 
