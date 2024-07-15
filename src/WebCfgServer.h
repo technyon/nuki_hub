@@ -107,7 +107,7 @@ private:
     bool _allowRestartToPortal = false;
     uint8_t _partitionType = 0;
     uint32_t _transferredSize = 0;
-    unsigned long _otaStartTs = 0;
+    int64_t _otaStartTs = 0;
     String _hostname;
     bool _enabled = true;
 };

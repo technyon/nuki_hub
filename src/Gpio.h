@@ -122,7 +122,7 @@ private:
     std::vector<std::function<void(const GpioAction&, const int&)>> _callbacks;
 
     static Gpio* _inst;
-    static unsigned long _debounceTs;
+    static int64_t _debounceTs;
 
     Preferences* _preferences = nullptr;
 };

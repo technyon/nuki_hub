@@ -10,7 +10,7 @@ struct PdDevice
 {
     char address[18] = {0};
     char name[37] = {0};
-    unsigned long timestamp = 0;
+    int64_t timestamp = 0;
     int rssi = 0;
     bool hasRssi = false;
 };
@@ -36,7 +36,7 @@ private:
     BleScanner::Scanner* _bleScanner;
     char* _csv = {0};
     size_t _bufferSize = 0;
-    std::map<long long, std::shared_ptr<PdDevice>> _devices;
+    std::map<int64_t, std::shared_ptr<PdDevice>> _devices;
     int _timeout = 20000;
     int _csvIndex = 0;
 };

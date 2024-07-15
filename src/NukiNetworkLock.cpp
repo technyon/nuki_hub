@@ -1428,6 +1428,11 @@ void NukiNetworkLock::publishULong(const char *topic, const unsigned long value,
     return _network->publishULong(_mqttPath, topic, value, retain);
 }
 
+void NukiNetworkLock::publishLongLong(const char *topic, int64_t value, bool retain)
+{
+    return _network->publishLongLong(_mqttPath, topic, value, retain);
+}
+
 String NukiNetworkLock::concat(String a, String b)
 {
     String c = a;

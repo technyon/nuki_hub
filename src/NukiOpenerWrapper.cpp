@@ -142,8 +142,8 @@ void NukiOpenerWrapper::update()
         }
     }
 
-    long ts = millis();
-    long lastReceivedBeaconTs = _nukiOpener.getLastReceivedBeaconTs();
+    int64_t lastReceivedBeaconTs = _nukiOpener.getLastReceivedBeaconTs();
+    int64_t ts = (esp_timer_get_time() / 1000);
     uint8_t queryCommands = _network->queryCommands();
 
     if(_restartBeaconTimeout > 0 &&
@@ -256,7 +256,7 @@ void NukiOpenerWrapper::update()
 
                 _network->publishRetry(std::to_string(_retryCount + 1));
 
-                _nextRetryTs = millis() + _retryDelay;
+                _nextRetryTs = (esp_timer_get_time() / 1000) + _retryDelay;
 
                 ++_retryCount;
             }
@@ -367,7 +367,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
         postponeBleWatchdog();
         if(_retryLockstateCount < _nrOfRetries + 1)
         {
-            _nextLockStateUpdateTs = millis() + _retryDelay;
+            _nextLockStateUpdateTs = (esp_timer_get_time() / 1000) + _retryDelay;
         }
         return;
     }
@@ -523,7 +523,7 @@ void NukiOpenerWrapper::updateConfig()
     }
     if(!expectedConfig && _retryConfigCount < 11)
     {
-        unsigned long ts = millis();
+        int64_t ts = (esp_timer_get_time() / 1000);
         _nextConfigUpdateTs = ts + 60000;
     }
 }
@@ -557,7 +557,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            _waitAuthLogUpdateTs = millis() + 5000;
+            _waitAuthLogUpdateTs = (esp_timer_get_time() / 1000) + 5000;
             delay(100);
 
             std::list<NukiOpener::LogEntry> log;
@@ -623,7 +623,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            _waitKeypadUpdateTs = millis() + 5000;
+            _waitKeypadUpdateTs = (esp_timer_get_time() / 1000) + 5000;
         }
     }
     else
@@ -684,7 +684,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            _waitTimeControlUpdateTs = millis() + 5000;
+            _waitTimeControlUpdateTs = (esp_timer_get_time() / 1000) + 5000;
         }
     }
     else
@@ -724,7 +724,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
 
 void NukiOpenerWrapper::postponeBleWatchdog()
 {
-    _disableBleWatchdogTs = millis() + 15000;
+    _disableBleWatchdogTs = (esp_timer_get_time() / 1000) + 15000;
 }
 
 NukiOpener::LockAction NukiOpenerWrapper::lockActionToEnum(const char *str)
@@ -1411,7 +1411,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     if(basicUpdated || advancedUpdated) jsonResult["general"] = "success";
     else jsonResult["general"] = "noChange";
 
-    _nextConfigUpdateTs = millis() + 300;
+    _nextConfigUpdateTs = (esp_timer_get_time() / 1000) + 300;
 
     serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
     _network->publishConfigCommandResult(_resbuf);
@@ -2266,7 +2266,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
             _network->publishTimeControlCommandResult(resultStr);
         }
 
-        _nextConfigUpdateTs = millis() + 300;
+        _nextConfigUpdateTs = (esp_timer_get_time() / 1000) + 300;
     }
     else
     {
