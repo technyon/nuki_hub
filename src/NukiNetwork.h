@@ -50,7 +50,9 @@ public:
     explicit NukiNetwork(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void registerMqttReceiver(MqttReceiver* receiver);
+#if PRESENCE_DETECTION_ENABLED
     void setMqttPresencePath(char* path);
+#endif
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
 
@@ -96,6 +98,8 @@ public:
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
     bool encryptionSupported();
+    bool mqttRecentlyConnected();
+    bool pathEquals(const char* prefix, const char* path, const char* referencePath);
 
     uint16_t subscribe(const char* topic, uint8_t qos);
 
@@ -155,6 +159,7 @@ private:
     Gpio* _gpio;
 
     int _mqttConnectionState = 0;
+    long _mqttConnectedTs = -1;
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
 
@@ -172,11 +177,12 @@ private:
     bool _logIp = true;
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
-
     int64_t _lastConnectedTs = 0;
     int64_t _lastMaintenanceTs = 0;
     int64_t _lastUpdateCheckTs = 0;
+    #if PRESENCE_DETECTION_ENABLED
     int64_t _lastPresenceTs = 0;
+    #endif
     int64_t _lastRssiTs = 0;
     bool _mqttEnabled = true;
     int _rssiPublishInterval = 0;

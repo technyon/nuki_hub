@@ -67,6 +67,7 @@ public:
 
 private:
     void onDisconnected();
+    void waitForIpAddressWithTimeout();
 
     bool _restartOnDisconnect = false;
     bool _startAp = false;

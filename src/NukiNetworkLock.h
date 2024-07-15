@@ -84,9 +84,7 @@ public:
     uint32_t _authId = 0;
     int64_t _offCommandExecutedTs = 0;
     NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
-    char _nukiName[33];
-    char _authName[33];
-    bool _authFound = false;
+
 
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath, bool offPath = false);
@@ -118,6 +116,9 @@ private:
     int _keypadCommandEnabled = 1;
     uint8_t _queryCommands = 0;
     uint32_t _lastRollingLog = 0;
+
+    char _nukiName[33];
+    char _authName[33];
 
     char* _buffer;
     size_t _bufferSize;

@@ -55,7 +55,9 @@ void NukiNetworkLock::initialize()
         _preferences->putString(preference_mqtt_lock_path, _mqttPath);
     }
 
+#if PRESENCE_DETECTION_ENABLED
     _network->setMqttPresencePath(_mqttPath);
+#endif
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
 
@@ -179,6 +181,12 @@ void NukiNetworkLock::initialize()
 void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* value = (char*)payload;
+
+    if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
+    {
+        Log->println("MQTT recently connected, ignoring lock action.");
+        return;
+    }
 
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
     {
@@ -583,7 +591,6 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
             if(log.index > authIndex)
             {
                 authIndex = log.index;
-                _authFound = true;
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
                 memcpy(_authName, authName, sizeof(authName));

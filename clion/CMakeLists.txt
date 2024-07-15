@@ -1,0 +1,80 @@
+cmake_minimum_required(VERSION 3.16.0)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(nukihub)
+
+set(SRCFILES
+        ../src/Config.h
+        ../src/NukiDeviceId.cpp
+        ../src/CharBuffer.cpp
+        ../src/NukiNetwork.cpp
+        ../src/MqttReceiver.h
+        ../src/NukiNetworkLock.cpp
+        ../src/NukiNetworkOpener.cpp
+        ../src/networkDevices/NetworkDevice.h
+        ../src/networkDevices/NetworkDevice.cpp
+        ../src/networkDevices/WifiDevice.cpp
+        ../src/networkDevices/W5500Device.cpp
+        ../src/networkDevices/EthLan8720Device.cpp
+        ../src/networkDevices/ClientSyncW5500.cpp
+        ../src/networkDevices/espMqttClientW5500.cpp
+        ../src/networkDevices/IPConfiguration.cpp
+        ../src/LockActionResult.h
+        ../src/QueryCommand.h
+        ../src/NukiWrapper.cpp
+        ../src/NukiOpenerWrapper.cpp
+        ../src/MqttTopics.h
+        ../src/Ota.cpp
+        ../src/WebCfgServerConstants.h
+        ../src/WebCfgServer.cpp
+        ../src/PresenceDetection.cpp
+        ../src/PreferencesKeys.h
+        ../src/Gpio.cpp
+        ../src/Logger.cpp
+        ../src/RestartReason.h
+        #        include/RTOS.h
+        ../lib/WiFiManager/WiFiManager.cpp
+        ../lib/WiFiManager/wm_consts_en.h
+        ../lib/WiFiManager/wm_strings_en.h
+        ../lib/nuki_ble/src/NukiBle.cpp
+        ../lib/nuki_ble/src/NukiBle.hpp
+        ../lib/nuki_ble/src/NukiLock.cpp
+        ../lib/nuki_ble/src/NukiOpener.cpp
+        ../lib/nuki_ble/src/NukiConstants.h
+        ../lib/nuki_ble/src/NukiOpenerConstants.h
+        ../lib/nuki_ble/src/NukiLockConstants.h
+        ../lib/nuki_ble/src/NukiDataTypes.h
+        ../lib/nuki_ble/src/NukiUtils.cpp
+        ../lib/nuki_ble/src/NukiLockUtils.cpp
+        ../lib/nuki_ble/src/NukiOpenerUtils.cpp
+        ../lib/gpio2go/src/Gpio2Go.cpp
+        ../lib/gpio2go/src/InterruptMode.h
+        ../lib/gpio2go/src/PinMode.h
+        ../lib/BleScanner/src/BleInterfaces.h
+        ../lib/BleScanner/src/BleScanner.cpp
+        ../lib/MqttLogger/src/MqttLogger.cpp
+        ../lib/AsyncTCP/src/AsyncTCP.cpp
+)
+
+file(GLOB_RECURSE SRCFILESREC
+        lib/NimBLE-Arduino/src/*.c
+        lib/NimBLE-Arduino/src/*.cpp
+        lib/NimBLE-Arduino/src/*.h
+        lib/WebServer/src/*.cpp
+        lib/WebServer/src/*.h
+        lib/Ethernet/src/*.cpp
+        lib/Ethernet/src/*.h
+        lib/espMqttClient/src/*.cpp
+        lib/espMqttClient/src/*.h
+        lib/espMqttClient/src/Packets/*.cpp
+        lib/espMqttClient/src/Packets/*.h
+        lib/espMqttClient/src/Transport/*.cpp
+        lib/espMqttClient/src/Transport/*.h
+        lib/ArduinoJson/src/*.h
+        lib/ArduinoJson/src/*.hpp
+)
+
+add_executable(dummy
+        ../src/main.cpp
+        ${SRCFILES}
+        ${SRCFILESREC}
+)

@@ -352,7 +352,9 @@ void setup()
     Serial.print(gpioDesc.c_str());
 
     bleScanner = new BleScanner::Scanner();
-    bleScanner->initialize("NukiHub");
+    // Scan interval and window according to Nuki recommendations:
+    // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
+    bleScanner->initialize("NukiHub", true, 40, 40);
     bleScanner->setScanDuration(10);
 
 #if PRESENCE_DETECTION_ENABLED

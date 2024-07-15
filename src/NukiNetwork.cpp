@@ -425,6 +425,7 @@ bool NukiNetwork::update()
     
     _lastConnectedTs = ts;
 
+#if PRESENCE_DETECTION_ENABLED
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
         char* presenceCsv = _presenceDetection->generateCsv();
@@ -437,6 +438,7 @@ bool NukiNetwork::update()
 
         _lastPresenceTs = ts;
     }
+#endif
 
     if(_device->signalStrength() != 127 && _rssiPublishInterval > 0 && ts - _lastRssiTs > _rssiPublishInterval)
     {
@@ -614,6 +616,7 @@ bool NukiNetwork::reconnect()
         if (_device->mqttConnected())
         {
             Log->println(F("MQTT connected"));
+            _mqttConnectedTs = millis();
             _mqttConnectionState = 1;
             delay(100);
 
@@ -716,6 +719,8 @@ void NukiNetwork::onMqttDataReceivedCallback(const espMqttClientTypes::MessagePr
 
 void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)
 {
+    if(_mqttConnectedTs == -1 || (millis() - _mqttConnectedTs < 2000)) return;
+
     parseGpioTopics(properties, topic, payload, len, index, total);
 
     for(auto receiver : _mqttReceivers)
@@ -760,11 +765,13 @@ void NukiNetwork::gpioActionCallback(const GpioAction &action, const int &pin)
     _gpioTs[pin] = (esp_timer_get_time() / 1000);
 }
 
+#if PRESENCE_DETECTION_ENABLED
 void NukiNetwork::setMqttPresencePath(char *path)
 {
     memset(_mqttPresencePrefix, 0, sizeof(_mqttPresencePrefix));
     strcpy(_mqttPresencePrefix, path);
 }
+#endif
 
 void NukiNetwork::disableAutoRestarts()
 {
@@ -780,6 +787,18 @@ int NukiNetwork::mqttConnectionState()
 bool NukiNetwork::encryptionSupported()
 {
     return _device->supportsEncryption();
+}
+
+bool NukiNetwork::mqttRecentlyConnected()
+{
+    return _mqttConnectedTs != -1 && (millis() - _mqttConnectedTs < 6000);
+}
+
+bool NukiNetwork::pathEquals(const char* prefix, const char* path, const char* referencePath)
+{
+    char prefixedPath[500];
+    buildMqttPath(prefixedPath, { prefix, path });
+    return strcmp(prefixedPath, referencePath) == 0;
 }
 
 void NukiNetwork::publishFloat(const char* prefix, const char* topic, const float value, bool retain, const uint8_t precision)
