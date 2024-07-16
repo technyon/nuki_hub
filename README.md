@@ -158,7 +158,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
 - Lock: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README, ***unless when used in [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance)***
 - Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
-- Presence detection timeout: Set to a positive integer to set the amount of seconds between updates to the presence/devices MQTT topic with the list of detected bluetooth devices, set to -1 to disable presence detection, default -1.
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 
 ### Access Level Configuration
@@ -311,10 +310,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
 - maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/RestartReason.h) for possible values
 - maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See [RestartReason.h](/RestartReason.h) for possible values
-
-### Misc
-
-- presence/devices: List of detected bluetooth devices as CSV, which be used for presence detection (by a third party application, Nuki Hub has no mechanism in place to act on the presence of absence of device). Because Nuki Hub uses passive scanning (which has no impact on battery life of nearby devices) only device MAC addresses and RSSI values are available and not device names or other information about the devices.
 
 ## Changing Nuki Lock/Opener Configuration
 
