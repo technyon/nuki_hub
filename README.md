@@ -571,10 +571,10 @@ To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson
 |------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | action           | Required | Required | Required | The action to execute                                                                    | "delete", "add", "update"                                      |
 | entryId          | Required | Not used | Required | The entry ID of the existing entry to delete or update                                   | Integer                                                        |
-| enabled          | Not used | Not used | Optional | Enable or disable the entry, always enabled on add, disabled if not set on update        | 1 = enabled, 0 = disabled                                      |
+| enabled          | Not used | Not used | Optional | Enable or disable the entry, always enabled on add                                       | 1 = enabled, 0 = disabled                                      |
 | weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued (requires enabled = 1)       | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
-| time             | Not used | Required | Required | The time on which the chosen lock action should be executed (requires enabled = 1)       | "HH:MM"                                                        |
-| lockAction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time (requires enabled = 1) | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM                                                            |
+| time             | Not used | Required | Optional | The time on which the chosen lock action should be executed (requires enabled = 1)       | "HH:MM"                                                        |
+| lockAction       | Not used | Required | Optional | The lock action that should be executed on the chosen weekdays at the chosen time (requires enabled = 1) | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM                                                            |
 
 Examples:
 - Delete: `{ "action": "delete", "entryId": "1234" }`
