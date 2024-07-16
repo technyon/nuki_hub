@@ -377,7 +377,7 @@ void WebCfgServer::initialize()
 
 void WebCfgServer::update()
 {
-    if(_otaStartTs > 0 && (millis() - _otaStartTs) > 120000)
+    if(_otaStartTs > 0 && ((esp_timer_get_time() / 1000) - _otaStartTs) > 120000)
     {
         Log->println(F("OTA time out, restarting"));
         delay(200);
@@ -479,13 +479,13 @@ void WebCfgServer::buildHtmlHeader(String &response, String additionalHeader)
     response.concat("<link rel='stylesheet' href='/style.css'>");
     response.concat("<title>Nuki Hub</title></head><body>");
 
-    srand(millis());
+    srand(esp_timer_get_time() / 1000);
 }
 
 void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
 {
-    unsigned long timeout = millis() + duration;
-    while(millis() < timeout)
+    int64_t timeout = esp_timer_get_time() + (duration * 1000);
+    while(esp_timer_get_time() < timeout)
     {
         _server.handleClient();
         if(blocking)
@@ -532,7 +532,7 @@ void WebCfgServer::handleOtaUpload()
         {
             filename = "/" + filename;
         }
-        _otaStartTs = millis();
+        _otaStartTs = esp_timer_get_time() / 1000;
         #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
         esp_task_wdt_init(30, false);
         #else
@@ -2792,7 +2792,7 @@ void WebCfgServer::buildInfoHtml(String &response)
     }
 
     response.concat("Uptime: ");
-    response.concat(millis() / 1000 / 60);
+    response.concat(esp_timer_get_time() / 1000 / 1000 / 60);
     response.concat(" minutes\n");
 
     response.concat("Heap: ");

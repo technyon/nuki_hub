@@ -153,8 +153,8 @@ ReconnectStatus WifiDevice::reconnect()
         {
             if(WiFi.getMode() & WIFI_STA){
                 WiFi.mode(WIFI_OFF);
-                int timeout = millis()+1200;
-                while(WiFi.getMode()!= WIFI_OFF && millis()<timeout){
+                int timeout = (esp_timer_get_time() / 1000)+1200;
+                while(WiFi.getMode()!= WIFI_OFF && (esp_timer_get_time() / 1000)<timeout){
                     delay(0);
                 }
             }
@@ -167,7 +167,7 @@ ReconnectStatus WifiDevice::reconnect()
         _isReconnecting = false;
     }
     
-    if(!isConnected() && _disconnectTs > millis() - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
+    if(!isConnected() && _disconnectTs > (esp_timer_get_time() / 1000) - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
@@ -179,8 +179,8 @@ void WifiDevice::onConnected()
 
 void WifiDevice::onDisconnected()
 {
-    _disconnectTs = millis();
-    if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    _disconnectTs = (esp_timer_get_time() / 1000);
+    if(_restartOnDisconnect && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
     _wm.setEnableConfigPortal(false);
     reconnect();
 }

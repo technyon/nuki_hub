@@ -4,7 +4,7 @@ The purpose of this mode is to have Nuki Hub work in conjunction with the offici
 
 ### Requirements ###
 
-- ESP32 running Nuki Hub 8.35/8.36 or higher
+- ESP32 running Nuki Hub 8.35 or higher
 - For WiFi: Nuki lock 3.0 Pro or Nuki Lock 4.0 Pro
 - For Thread: Nuki Lock 4.0 or Nuki Lock 4.0 Pro. Note that you do ***NOT*** need to buy the remote access addon for the Nuki Lock 4.0
 - For Thread: The Nuki Lock needs to have network access to the same MQTT server as the one that Nuki Hub is conected to. Depending if the MQTT server is reachable over IPv6 you might need an OpenThread Border router that supports NAT64 and has this enabled. Currently this means an Apple Device or Home Assistant with the Matter server and OpenThread Border Router

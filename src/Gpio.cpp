@@ -8,7 +8,7 @@
 #include "Gpio2Go.h"
 
 Gpio* Gpio::_inst = nullptr;
-unsigned long Gpio::_debounceTs = 0;
+int64_t Gpio::_debounceTs = 0;
 const uint Gpio::_debounceTime = GPIO_DEBOUNCE_TIME;
 
 Gpio::Gpio(Preferences* preferences)
@@ -277,79 +277,79 @@ void Gpio::addCallback(std::function<void(const GpioAction&, const int&)> callba
 
 void Gpio::isrLock()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::Lock, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrUnlock()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::Unlock, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrUnlatch()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::Unlatch, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrLockNgo()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::LockNgo, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrLockNgoUnlatch()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::LockNgoUnlatch, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrElectricStrikeActuation()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::ElectricStrikeActuation, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrActivateRTO()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::ActivateRTO, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrActivateCM()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::ActivateCM, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrDeactivateRtoCm()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::DeactivateRtoCm, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrDeactivateRTO()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::DeactivateRTO, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::isrDeactivateCM()
 {
-    if(millis() < _debounceTs) return;
+    if((esp_timer_get_time() / 1000) < _debounceTs) return;
     _inst->notify(GpioAction::DeactivateCM, -1);
-    _debounceTs = millis() + _debounceTime;
+    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::setPinOutput(const uint8_t& pin, const uint8_t& state)

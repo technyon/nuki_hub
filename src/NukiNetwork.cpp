@@ -349,7 +349,7 @@ void NukiNetwork::initialize()
 
 bool NukiNetwork::update()
 {
-    unsigned long ts = millis();
+    int64_t ts = (esp_timer_get_time() / 1000);
 
     _device->update();
 
@@ -365,7 +365,7 @@ bool NukiNetwork::update()
             _device->mqttDisconnect(true);
         }
         
-        if(_restartOnDisconnect && millis() > 60000)
+        if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000)
         {
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
@@ -506,8 +506,8 @@ bool NukiNetwork::update()
     for(const auto& gpioTs : _gpioTs)
     {
         uint8_t pin = gpioTs.first;
-        unsigned long ts = gpioTs.second;
-        if(ts != 0 && ((millis() - ts) >= GPIO_DEBOUNCE_TIME))
+        int64_t ts = gpioTs.second;
+        if(ts != 0 && (((esp_timer_get_time() / 1000) - ts) >= GPIO_DEBOUNCE_TIME))
         {
             _gpioTs[pin] = 0;
 
@@ -574,12 +574,12 @@ bool NukiNetwork::reconnect()
     _mqttConnectionState = 0;
     int port = _preferences->getInt(preference_mqtt_broker_port);
 
-    while (!_device->mqttConnected() && millis() > _nextReconnect)
+    while (!_device->mqttConnected() && (esp_timer_get_time() / 1000) > _nextReconnect)
     {
         if(strcmp(_mqttBrokerAddr, "") == 0)
         {
             Log->println(F("MQTT Broker not configured, aborting connection attempt."));
-            _nextReconnect = millis() + 5000;
+            _nextReconnect = (esp_timer_get_time() / 1000) + 5000;
             return false;
         }
 
@@ -601,9 +601,9 @@ bool NukiNetwork::reconnect()
         _device->mqttSetServer(_mqttBrokerAddr, port);
         _device->mqttConnect();
 
-        unsigned long timeout = millis() + 60000;
+        int64_t timeout = (esp_timer_get_time() / 1000) + 60000;
 
-        while(!_connectReplyReceived && millis() < timeout)
+        while(!_connectReplyReceived && (esp_timer_get_time() / 1000) < timeout)
         {
             delay(50);
             _device->update();
@@ -649,7 +649,7 @@ bool NukiNetwork::reconnect()
             Log->print(F("MQTT connect failed, rc="));
             _device->printError();
             _mqttConnectionState = 0;
-            _nextReconnect = millis() + 5000;
+            _nextReconnect = (esp_timer_get_time() / 1000) + 5000;
             //_device->mqttDisconnect(true);
         }
     }
@@ -762,7 +762,7 @@ void NukiNetwork::parseGpioTopics(const espMqttClientTypes::MessageProperties &p
 
 void NukiNetwork::gpioActionCallback(const GpioAction &action, const int &pin)
 {
-    _gpioTs[pin] = millis();
+    _gpioTs[pin] = (esp_timer_get_time() / 1000);
 }
 
 #if PRESENCE_DETECTION_ENABLED
@@ -835,6 +835,27 @@ void NukiNetwork::publishULong(const char* prefix, const char *topic, const unsi
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, str);
+}
+
+void NukiNetwork::publishLongLong(const char* prefix, const char *topic, int64_t value, bool retain)
+{
+    static char result[21] = "";
+    memset(&result[0], 0, sizeof(result));
+    char temp[21] = "";
+    char c;
+    uint8_t base = 10;
+
+    while (value) 
+    {
+        int num = value % base;
+        value /= base;
+        c = '0' + num;
+        sprintf(temp, "%c%s", c, result);
+        strcpy(result, temp);
+    }
+    char path[200] = {0};
+    buildMqttPath(path, { prefix, topic });
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, result);
 }
 
 void NukiNetwork::publishBool(const char* prefix, const char *topic, const bool value, bool retain)

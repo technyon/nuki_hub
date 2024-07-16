@@ -39,7 +39,7 @@ bool openerEnabled = false;
 TaskHandle_t nukiTaskHandle = nullptr;
 TaskHandle_t presenceDetectionTaskHandle = nullptr;
 
-unsigned long restartTs = (2^32) - 5 * 60000;
+int64_t restartTs = ((2^64) - (5 * 1000 * 60000)) / 1000;
 
 #else
 #include "../../src/WebCfgServer.h"
@@ -49,7 +49,7 @@ unsigned long restartTs = (2^32) - 5 * 60000;
 #include "../../src/RestartReason.h"
 #include "../../src/NukiNetwork.h"
 
-unsigned long restartTs = 10 * 60000;
+int64_t restartTs = 10 * 1000 * 60000;
 
 #endif
 
@@ -77,7 +77,7 @@ void networkTask(void *pvParameters)
     
     while(true)
     {
-        unsigned long ts = millis();
+        int64_t ts = (esp_timer_get_time() / 1000);
         if(ts > 120000 && ts < 125000 && bootloopCounter > 0)
         {
             bootloopCounter = (int8_t)0;
@@ -99,14 +99,6 @@ void networkTask(void *pvParameters)
         #else
         webCfgServer->update();
         #endif
-
-        // millis() is about to overflow. Restart device to prevent problems with overflow
-        if(millis() > restartTs)
-        {
-            Log->println(F("Restart timer expired, restarting device."));
-            delay(200);
-            restartEsp(RestartReason::RestartTimer);
-        }
         
         if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
         {
@@ -398,7 +390,9 @@ void setup()
     Serial.print(gpioDesc.c_str());
 
     bleScanner = new BleScanner::Scanner();
-    bleScanner->initialize("NukiHub");
+    // Scan interval and window according to Nuki recommendations:
+    // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
+    bleScanner->initialize("NukiHub", true, 40, 40);
     bleScanner->setScanDuration(10);
 
 #if PRESENCE_DETECTION_ENABLED

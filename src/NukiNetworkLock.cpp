@@ -591,7 +591,6 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
             if(log.index > authIndex)
             {
                 authIndex = log.index;
-                _authFound = true;
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
                 memcpy(_authName, authName, sizeof(authName));
@@ -1427,6 +1426,11 @@ bool NukiNetworkLock::publishString(const char *topic, const char *value, bool r
 void NukiNetworkLock::publishULong(const char *topic, const unsigned long value, bool retain)
 {
     return _network->publishULong(_mqttPath, topic, value, retain);
+}
+
+void NukiNetworkLock::publishLongLong(const char *topic, int64_t value, bool retain)
+{
+    return _network->publishLongLong(_mqttPath, topic, value, retain);
 }
 
 String NukiNetworkLock::concat(String a, String b)

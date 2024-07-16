@@ -106,7 +106,7 @@ void EthLan8720Device::initialize()
 
 void EthLan8720Device::waitForIpAddressWithTimeout()
 {
-    int count = 50;
+    int count = 100;
 
     Log->print(F("LAN8720: Obtaining IP address via DHCP"));
 
@@ -155,7 +155,7 @@ ReconnectStatus EthLan8720Device::reconnect()
 
 void EthLan8720Device::onDisconnected()
 {
-    if(_restartOnDisconnect && (millis() > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    if(_restartOnDisconnect && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
     reconnect();
 }
 

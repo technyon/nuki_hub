@@ -44,7 +44,7 @@ char* PresenceDetection::generateCsv()
     memset(_csv, 0, _bufferSize);
 
     _csvIndex = 0;
-    long ts = millis();
+    int64_t ts = esp_timer_get_time() / 1000;
     {
         std::lock_guard<std::mutex> lock(mtx);
 
@@ -133,7 +133,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
     addrArrComp[10] = addressStr.at(15);
     addrArrComp[11] = addressStr.at(16);
 
-    long long addr = strtoll(addrArrComp, nullptr, 16);
+    int64_t addr = strtoll(addrArrComp, nullptr, 16);
 
     bool found;
     {
@@ -143,7 +143,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 
         if(found)
         {
-            it->second->timestamp = millis();
+            it->second->timestamp = esp_timer_get_time() / 1000;
             if(device->haveRSSI())
             {
                 it->second->hasRssi = true;
@@ -183,7 +183,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
                 ++i;
             }
 
-            pdDevice->timestamp = millis();
+            pdDevice->timestamp = esp_timer_get_time() / 1000;
 
             {
                 std::lock_guard<std::mutex> lock(mtx);
@@ -204,7 +204,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
 
 //                if(ENDIAN_CHANGE_U16(oBeacon.getMinor()) == 40004)
 //                {
-                    pdDevice->timestamp = millis();
+                    pdDevice->timestamp = esp_timer_get_time() / 1000;
                     strcpy(pdDevice->name, oBeacon.getProximityUUID().toString().c_str());
                     {
                         std::lock_guard<std::mutex> lock(mtx);
@@ -224,7 +224,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
                 ++i;
             }
 
-            pdDevice->timestamp = millis();
+            pdDevice->timestamp = esp_timer_get_time() / 1000;
 
             {
                 std::lock_guard<std::mutex> lock(mtx);
