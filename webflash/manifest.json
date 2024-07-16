@@ -19,6 +19,12 @@
       "parts": [
         { "path": "webflash_nuki_hub_esp32c3.bin", "offset": 0 }
       ]
+    },
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        { "path": "webflash_nuki_hub_esp32c6.bin", "offset": 0 }
+      ]
     }
   ]
 }
