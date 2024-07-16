@@ -321,13 +321,19 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";        
+        String response = "";
         String key = _server.argName(0);
         if(key == "beta")
         {
             buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2);
             _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
             _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
+        }
+        else if(key == "master")
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest development version", 2);
+            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
         }
         else
         {
@@ -397,7 +403,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
 
     if(_partitionType == 0)
     {
-        response.concat("<h4 class=\"warning\">You are currently running Nuki Hub with an outdated partition scheme. Because of this you cannot use OTA to update to 8.36 or higher. Please check GitHub for instructions on how to update to 8.36 and the new partition scheme</h4>");
+        response.concat("<h4 class=\"warning\">You are currently running Nuki Hub with an outdated partition scheme. Because of this you cannot use OTA to update to 9.00 or higher. Please check GitHub for instructions on how to update to 9.00 and the new partition scheme</h4>");
         response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
         response.concat(GITHUB_LATEST_RELEASE_URL);
         response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
@@ -407,13 +413,18 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
 
     #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
-    response.concat("<div id=\"autoupdform\"><h4>Auto update Nuki Hub</h4>");
+    response.concat("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
     response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
-    response.concat("<form action=\"/autoupdate\" method=\"get\"><br><input type=\"submit\" value=\"Auto Update\" /></form><br><br></div>");
+    response.concat("<div style=\"clear: both\"></div>");
+    response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
+    response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate?beta\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: yellow\"  value=\"Update to latest beta\"></form>");
+    response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate?master\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    response.concat("<div style=\"clear: both\"></div><br><br></div>");
     #endif
-
+    
     if(_partitionType == 1)
     {
+        response.concat("<h4><a onclick=\"hideshowmanual();\">Manually update Nuki Hub</a></h4><div id=\"manualupdate\" style=\"display: none\">");
         response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub Updater</h4>");
         response.concat("Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update");
         response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br></div>");
@@ -423,6 +434,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     }
     else
     {
+        response.concat("<div id=\"manualupdate\">");
         response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub</h4>");
         response.concat("Click on the button to reboot to Nuki Hub");
         response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br></div>");
@@ -441,7 +453,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("'); return false;\">Download latest binary from GitHub</button>");
     response.concat("<br><br><button title=\"Download latest updater binary from GitHub\" onclick=\" window.open('");
     response.concat(GITHUB_LATEST_UPDATER_BINARY_URL);
-    response.concat("'); return false;\">Download latest updater binary from GitHub</button></div>");
+    response.concat("'); return false;\">Download latest updater binary from GitHub</button></div></div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");
     response.concat("	var button = document.getElementById(\"submitbtn\");");
@@ -454,6 +466,14 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
     response.concat("	}");
     response.concat("});");
+    response.concat("function hideshowmanual() {");
+    response.concat("	var x = document.getElementById(\"manualupdate\");");
+    response.concat("	if (x.style.display === \"none\") {");
+    response.concat("	    x.style.display = \"block\";");
+    response.concat("	} else {");
+    response.concat("	    x.style.display = \"none\";");
+    response.concat("    }");
+    response.concat("}");
     response.concat("</script>");
     response.concat("</body></html>");
 }
@@ -1887,9 +1907,8 @@ void WebCfgServer::buildImportExportHtml(String &response)
     response.concat("<div id=\"gitdiv\">");
     response.concat("<h4>Export configuration</h4><br>");
     response.concat("<button title=\"Basic export\" onclick=\" window.open('/export', '_self'); return false;\">Basic export</button>");
-    response.concat("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/export?redacted=1'); return false;\">Export with redacted settings</button>");if( _preferences->getBool(preference_show_secrets)) {
-        response.concat("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/export?redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
-    }
+    response.concat("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/export?redacted=1'); return false;\">Export with redacted settings</button>");
+    response.concat("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/export?redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
     response.concat("</div><div id=\"msgdiv\" style=\"visibility:hidden\">Initiating config update. Please be patient.<br>You will be forwarded automatically when the import is complete.</div>");
     response.concat("<script type=\"text/javascript\">");
     response.concat("window.addEventListener('load', function () {");

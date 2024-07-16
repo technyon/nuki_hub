@@ -2,7 +2,7 @@
 
 #include "sdkconfig.h"
 
-#define NUKI_HUB_VERSION "8.35"
+#define NUKI_HUB_VERSION "9.00"
 #define NUKI_HUB_BUILD "unknownbuildnr"
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
@@ -13,27 +13,37 @@
 #define GITHUB_LATEST_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_updater_esp32c3.bin"
 #define GITHUB_BETA_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_esp32c3.bin"
 #define GITHUB_BETA_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_updater_esp32c3.bin"
+#define GITHUB_MASTER_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_esp32c3.bin"
+#define GITHUB_MASTER_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_updater_esp32c3.bin"
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
 #define GITHUB_LATEST_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_esp32s3.bin"
 #define GITHUB_LATEST_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_updater_esp32s3.bin"
 #define GITHUB_BETA_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_esp32s3.bin"
 #define GITHUB_BETA_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_updater_esp32s3.bin"
+#define GITHUB_MASTER_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_esp32s3.bin"
+#define GITHUB_MASTER_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_updater_esp32s3.bin"
 #elif defined(CONFIG_IDF_TARGET_ESP32C6)
 #define GITHUB_LATEST_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_esp32c6.bin"
 #define GITHUB_LATEST_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_updater_esp32c6.bin"
 #define GITHUB_BETA_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_esp32c6.bin"
 #define GITHUB_BETA_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_updater_esp32c6.bin"
+#define GITHUB_MASTER_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_esp32c6.bin"
+#define GITHUB_MASTER_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_updater_esp32c6.bin"
 #else
 #if defined(FRAMEWORK_ARDUINO_SOLO1)
 #define GITHUB_LATEST_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_esp32solo1.bin"
 #define GITHUB_LATEST_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_updater_esp32solo1.bin"
 #define GITHUB_BETA_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_esp32solo1.bin"
 #define GITHUB_BETA_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_updater_esp32solo1.bin"
+#define GITHUB_MASTER_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_esp32solo1.bin"
+#define GITHUB_MASTER_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_updater_esp32solo1.bin"
 #else
 #define GITHUB_LATEST_RELEASE_BINARY_URL "https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_esp32.bin"
 #define GITHUB_LATEST_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_updater_esp32.bin"
 #define GITHUB_BETA_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_esp32.bin"
 #define GITHUB_BETA_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/beta/nuki_hub_updater_esp32.bin"
+#define GITHUB_MASTER_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_esp32.bin"
+#define GITHUB_MASTER_UPDATER_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/master/nuki_hub_updater_esp32.bin"
 #endif
 #endif
 
