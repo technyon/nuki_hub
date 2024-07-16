@@ -541,7 +541,7 @@ void WebCfgServer::handleOtaUpload()
             .idle_core_mask = 0,
             .trigger_panic = false,
         };
-        esp_task_wdt_init(&twdt_config);
+        esp_task_wdt_reconfigure(&twdt_config);
         #endif
 
         #ifndef NUKI_HUB_UPDATER

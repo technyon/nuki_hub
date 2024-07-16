@@ -7,6 +7,7 @@
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
+#include <esp_task_wdt.h>
 
 #ifndef NUKI_HUB_UPDATER
 #include "Config.h"
@@ -72,6 +73,8 @@ TaskHandle_t networkTaskHandle = nullptr;
 
 void networkTask(void *pvParameters)
 {
+    int64_t networkLoopTs = 0;
+    
     while(true)
     {
         int64_t ts = (esp_timer_get_time() / 1000);
@@ -96,6 +99,14 @@ void networkTask(void *pvParameters)
         #else
         webCfgServer->update();
         #endif
+        
+        if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
+        {
+            Log->println("networkTask is running");
+            networkLoopTs = esp_timer_get_time() / 1000;
+        }
+        
+        esp_task_wdt_reset();
 
         delay(100);
     }
@@ -104,6 +115,8 @@ void networkTask(void *pvParameters)
 #ifndef NUKI_HUB_UPDATER
 void nukiTask(void *pvParameters)
 {
+    int64_t nukiLoopTs = 0;
+    
     while(true)
     {
         bleScanner->update();
@@ -124,7 +137,14 @@ void nukiTask(void *pvParameters)
         {
             nukiOpener->update();
         }
-
+        
+        if((esp_timer_get_time() / 1000) - nukiLoopTs > 120000)
+        {
+            Log->println("nukiTask is running");
+            nukiLoopTs = esp_timer_get_time() / 1000;
+        }
+        
+        esp_task_wdt_reset();
     }
 }
 
@@ -254,29 +274,47 @@ void otaTask(void *pvParameter)
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+    
+    esp_task_wdt_reset();
 }
 #endif
 
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
+    
+    #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
+    esp_task_wdt_init(300, true);
+    #else
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = 300000,
+        .idle_core_mask = 0,
+        .trigger_panic = true,
+    };
+    esp_task_wdt_reconfigure(&twdt_config);
+    #endif
 
     if(ota)
     {
         #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
+        esp_task_wdt_add(networkTaskHandle);
         #ifndef NUKI_HUB_UPDATER
         xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
+        esp_task_wdt_add(nukiTaskHandle);
         #endif
         #else
         xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, 1);
+        esp_task_wdt_add(otaTaskHandle);
         #endif
     }
     else
     {
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
+        esp_task_wdt_add(networkTaskHandle);
         #ifndef NUKI_HUB_UPDATER
         xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
+        esp_task_wdt_add(nukiTaskHandle);
         #endif
     }
 }
