@@ -1,6 +1,8 @@
-name: NukiHub Beta
+name: NukiHub Nightly
 on:
   workflow_dispatch:
+  schedule:
+  - cron: "30 0 * * *"
 
 permissions:
   contents: write
@@ -31,8 +33,12 @@ jobs:
           echo "VARIANT=${VARIANT}" | tee -a ${GITHUB_ENV}
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: recursive
+      - name: Get new commits
+        run: echo "NEW_COMMIT_COUNT=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_ENV
       - uses: actions/cache@v4
+        if: ${{ env.NEW_COMMIT_COUNT > 1 }}
         with:
           path: |
             ~/.cache/pip
@@ -89,8 +95,8 @@ jobs:
         with:
           name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
           path: ${{ matrix.build }}/${{ env.VARIANT }}
-  ota-beta:
-    name: Create beta from latest master
+  ota-nightly:
+    name: Create nightly from latest master
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -103,16 +109,16 @@ jobs:
         with:
           path: release
           pattern: '*-release-assets'
-      - name: Copy binaries to ota/beta
+      - name: Copy binaries to ota/master
         run: |
-          mkdir -p ota/beta/
-          cp -vf release/*/nuki_hub_*.bin ota/beta/
+          mkdir -p ota/master/
+          cp -vf release/*/nuki_hub_*.bin ota/master/
           rm -rf release
       - name: Commit binaries to master
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update beta binaries"
-          file_pattern: 'ota/beta/*.bin'
+          commit_message: "Update master binaries"
+          file_pattern: 'ota/master/*.bin'
           branch: master
           skip_dirty_check: true
           skip_fetch: true

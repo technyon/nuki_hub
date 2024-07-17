@@ -95,38 +95,6 @@ jobs:
         with:
           name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
           path: ${{ matrix.build }}/${{ env.VARIANT }}
-  ota-master:
-    name: Update bin from latest master
-    needs: build
-    runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/master' && github.event_name == 'push')
-    steps:
-      - name: Git Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - name: Download release assets
-        uses: actions/download-artifact@v4
-        with:
-          path: release
-          pattern: '*-release-assets'
-      - name: Download debug assets
-        uses: actions/download-artifact@v4
-        with:
-          path: debug
-          pattern: '*-debug-assets'
-      - name: Copy binaries to ota/master
-        run: |
-          cp -vf release/*/nuki_hub_*.bin ota/master/
-          cp -vf debug/*/nuki_hub_*.bin ota/master/debug/
-          rm -rf release
-          rm -rf debug
-      - name: Commit binaries to master
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Update master binaries"
-          file_pattern: 'ota/master/*.bin ota/master/debug/*.bin'
-          branch: master
   release:
     name: Release new version
     needs: build
@@ -198,16 +166,22 @@ jobs:
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
           artifacts: ${{ steps.zip.outputs.artifacts }}
           artifactContentType: application/zip
-      - name: Copy binaries to ota and webflash
+      - name: Copy binaries to ota and webflash and remove beta
         run: |
           cp -vf release/*/nuki_hub_*.bin ota/
           cp -vf release/*/webflash_nuki_hub_*.bin webflash/
           rm -rf release
           rm -rf debug
           rm -rf NukiHub-*.zip
+          git rm -r --cached ota/beta/*.bin
       - name: Commit binaries to master
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update binaries for version ${{ steps.get_version.outputs.VERSION }}"
-          file_pattern: 'ota/*.bin webflash/*.bin'
+          file_pattern: 'ota/*.bin ota/beta/*.bin ota/beta/debug/*.bin webflash/*.bin'
           branch: master
+          skip_dirty_check: true    
+          skip_fetch: true    
+          skip_checkout: true
+          disable_globbing: true
+          add_options: '-f'
