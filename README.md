@@ -158,7 +158,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
 - Lock: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README, ***unless when used in [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance)***
 - Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
-- Presence detection timeout: Set to a positive integer to set the amount of seconds between updates to the presence/devices MQTT topic with the list of detected bluetooth devices, set to -1 to disable presence detection, default -1.
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 
 ### Access Level Configuration
@@ -311,10 +310,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
 - maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/RestartReason.h) for possible values
 - maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See [RestartReason.h](/RestartReason.h) for possible values
-
-### Misc
-
-- presence/devices: List of detected bluetooth devices as CSV, which be used for presence detection (by a third party application, Nuki Hub has no mechanism in place to act on the presence of absence of device). Because Nuki Hub uses passive scanning (which has no impact on battery life of nearby devices) only device MAC addresses and RSSI values are available and not device names or other information about the devices.
 
 ## Changing Nuki Lock/Opener Configuration
 
@@ -571,10 +566,10 @@ To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson
 |------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | action           | Required | Required | Required | The action to execute                                                                    | "delete", "add", "update"                                      |
 | entryId          | Required | Not used | Required | The entry ID of the existing entry to delete or update                                   | Integer                                                        |
-| enabled          | Not used | Not used | Optional | Enable or disable the entry, always enabled on add, disabled if not set on update        | 1 = enabled, 0 = disabled                                      |
+| enabled          | Not used | Not used | Optional | Enable or disable the entry, always enabled on add                                       | 1 = enabled, 0 = disabled                                      |
 | weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued (requires enabled = 1)       | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
-| time             | Not used | Required | Required | The time on which the chosen lock action should be executed (requires enabled = 1)       | "HH:MM"                                                        |
-| lockAction       | Not used | Required | Required | The lock action that should be executed on the chosen weekdays at the chosen time (requires enabled = 1) | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM                                                            |
+| time             | Not used | Required | Optional | The time on which the chosen lock action should be executed (requires enabled = 1)       | "HH:MM"                                                        |
+| lockAction       | Not used | Required | Optional | The lock action that should be executed on the chosen weekdays at the chosen time (requires enabled = 1) | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM                                                            |
 
 Examples:
 - Delete: `{ "action": "delete", "entryId": "1234" }`
