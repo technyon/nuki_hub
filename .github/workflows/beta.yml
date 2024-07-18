@@ -1,11 +1,5 @@
-name: NukiHub
+name: NukiHub Beta
 on:
-  push:
-    branches: ["*"]
-    tags: ["*"]
-  pull_request:
-    branches: ["*"]
-    tags: ["*"]
   workflow_dispatch:
 
 permissions:
@@ -19,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [esp32dev, esp32-s3, esp32-c3, esp32-c6, esp32solo1]
-        build: [release, debug]
+        build: [release]
     env:
       BOARD: ${{ matrix.board }}
       VARIANT: ${{ matrix.name || matrix.board }}
@@ -95,15 +89,11 @@ jobs:
         with:
           name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
           path: ${{ matrix.build }}/${{ env.VARIANT }}
-  release:
-    name: Release new version
+  ota-beta:
+    name: Create beta from latest master
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags')
     steps:
-      - name: Get the version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
       - name: Git Checkout
         uses: actions/checkout@v4
         with:
@@ -113,75 +103,19 @@ jobs:
         with:
           path: release
           pattern: '*-release-assets'
-      - name: Download debug assets
-        uses: actions/download-artifact@v4
-        with:
-          path: debug
-          pattern: '*-debug-assets'
-      - name: Build zip archives
-        id: zip
-        env:
-          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - name: Copy binaries to ota/beta
         run: |
-          NUKI="NukiHub-${VERSION}"
-          ARTIFACTS=""
-
-          for FOLDER in release/*; do
-            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
-            ZIPFILE="${NUKI}-${MODEL}.zip"
-
-            echo "${FOLDER} -- ${ZIPFILE}"
-            cd $FOLDER
-
-            zip -9r ../../${ZIPFILE} * -x "webflash_nuki_hub_*.bin"
-            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
-
-            cd ../..
-          done
-
-          for FOLDER in debug/*; do
-            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
-            ZIPFILE="${NUKI}-${MODEL}-DEBUG.zip"
-
-            echo "${FOLDER} -- ${ZIPFILE}"
-            cd $FOLDER
-
-            zip -9r ../../${ZIPFILE} *
-            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
-
-            cd ../..
-          done
-
-          # remove last character
-          ARTIFACTS="${ARTIFACTS%?}"
-          echo "artifacts=${ARTIFACTS}" | tee -a ${GITHUB_OUTPUT}
-      - name: Create Release
-        id: create_release
-        uses: ncipollo/release-action@v1
-        with:
-          prerelease: false
-          allowUpdates: true
-          updateOnlyUnreleased: false
-          draft: true
-          name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
-          artifacts: ${{ steps.zip.outputs.artifacts }}
-          artifactContentType: application/zip
-      - name: Copy binaries to ota and webflash and remove beta
-        run: |
-          cp -vf release/*/nuki_hub_*.bin ota/
-          cp -vf release/*/webflash_nuki_hub_*.bin webflash/
+          mkdir -p ota/beta/
+          cp -vf release/*/nuki_hub_*.bin ota/beta/
           rm -rf release
-          rm -rf debug
-          rm -rf NukiHub-*.zip
-          git rm -r --cached ota/beta/*.bin
       - name: Commit binaries to master
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update binaries for version ${{ steps.get_version.outputs.VERSION }}"
-          file_pattern: 'ota/*.bin ota/beta/*.bin ota/beta/debug/*.bin webflash/*.bin'
+          commit_message: "Update beta binaries"
+          file_pattern: 'ota/beta/*.bin'
           branch: master
-          skip_dirty_check: true    
-          skip_fetch: true    
+          skip_dirty_check: true
+          skip_fetch: true
           skip_checkout: true
           disable_globbing: true
           add_options: '-f'
