@@ -7,6 +7,7 @@
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_LATEST_RELEASE_API_URL (char*)"https://api.github.com/repos/technyon/nuki_hub/releases/latest"
+#define GITHUB_OTA_MANIFEST_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/manifest.json"
 
 #if defined(CONFIG_IDF_TARGET_ESP32C3)
 #define GITHUB_LATEST_RELEASE_BINARY_URL (char*)"https://github.com/technyon/nuki_hub/raw/master/ota/nuki_hub_esp32c3.bin"

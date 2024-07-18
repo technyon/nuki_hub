@@ -6,7 +6,7 @@ cmake-build-debug
 cmake-build-release
 cmake-build-release-s3
 bin/*
-ota/*
+ota/*.bin
 webflash/*.bin
 .pio
 .vscode

@@ -166,6 +166,9 @@ jobs:
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
           artifacts: ${{ steps.zip.outputs.artifacts }}
           artifactContentType: application/zip
+      - name: Add version info
+        env:
+          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
       - name: Copy binaries to ota and webflash and remove beta
         run: |
           cp -vf release/*/nuki_hub_*.bin ota/
@@ -174,11 +177,13 @@ jobs:
           rm -rf debug
           rm -rf NukiHub-*.zip
           git rm -r --cached ota/beta/*.bin
+          python3 resources/ota_manifest.py release $Version
+          python3 resources/ota_manifest.py beta none
       - name: Commit binaries to master
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update binaries for version ${{ steps.get_version.outputs.VERSION }}"
-          file_pattern: 'ota/*.bin ota/beta/*.bin ota/beta/debug/*.bin webflash/*.bin'
+          file_pattern: 'ota/*.bin ota/manifest.json ota/beta/*.bin webflash/*.bin'
           branch: master
           skip_dirty_check: true    
           skip_fetch: true    
