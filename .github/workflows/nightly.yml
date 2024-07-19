@@ -115,11 +115,12 @@ jobs:
           mkdir -p ota/master/
           cp -vf release/*/nuki_hub_*.bin ota/master/
           rm -rf release
+          python3 resources/ota_manifest.py master $Version
       - name: Commit binaries to master
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update master binaries"
-          file_pattern: 'ota/master/*.bin'
+          file_pattern: 'ota/master/*.bin ota/manifest.json'
           branch: master
           skip_dirty_check: true
           skip_fetch: true
