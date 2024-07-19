@@ -477,8 +477,9 @@ bool NukiNetwork::update()
         {
             _lastUpdateCheckTs = ts;
 
+            https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
             https.useHTTP10(true);
-            https.begin(GITHUB_LATEST_RELEASE_API_URL);
+            https.begin(GITHUB_OTA_MANIFEST_URL);
 
             int httpResponseCode = https.GET();
 
@@ -489,7 +490,7 @@ bool NukiNetwork::update()
 
                 if (!jsonError)
                 {
-                    _latestVersion = doc["tag_name"];
+                    _latestVersion = doc["release"]["version"];
                     publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
 
                     if (_latestVersion != _preferences->getString(preference_latest_version).c_str())

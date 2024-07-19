@@ -9,6 +9,7 @@
 #include <esp_wifi.h>
 
 #ifndef NUKI_HUB_UPDATER
+#include <HTTPClient.h>
 #include "ArduinoJson.h"
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType)
@@ -419,9 +420,63 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
     response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate?beta\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
     response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate?master\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
-    response.concat("<div style=\"clear: both\"></div><br><br></div>");
+    response.concat("<div style=\"clear: both\"></div><br>");
+
+    response.concat("<b>Current version: </b>");
+    response.concat(NUKI_HUB_VERSION);
+    response.concat(" (");
+    response.concat(NUKI_HUB_BUILD);
+    response.concat(")<br>");
+
+    #ifndef NUKI_HUB_UPDATER
+    HTTPClient https;
+    https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    https.setTimeout(2500);
+    https.useHTTP10(true);
+    https.begin(GITHUB_OTA_MANIFEST_URL);
+
+    int httpResponseCode = https.GET();
+
+    if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+    {
+        JsonDocument doc;
+        DeserializationError jsonError = deserializeJson(doc, https.getStream());
+
+        if (!jsonError)
+        {
+            response.concat("<b>Latest release version: </b>");
+            response.concat(doc["release"]["version"].as<const char*>());
+            response.concat(" (");
+            response.concat(doc["release"]["build"].as<const char*>());
+            response.concat("), ");
+            response.concat(doc["release"]["time"].as<const char*>());
+            response.concat("<br>");
+            response.concat("<b>Latest beta version: </b>");
+            response.concat(doc["beta"]["version"].as<const char*>());
+            if(doc["beta"]["version"] != "No beta available")
+            {
+                response.concat(" (");
+                response.concat(doc["beta"]["build"].as<const char*>());
+                response.concat("), ");
+                response.concat(doc["beta"]["time"].as<const char*>());
+            }
+            response.concat("<br>");
+            response.concat("<b>Latest development version: </b>");
+            response.concat(doc["master"]["version"].as<const char*>());
+            response.concat(" (");
+            response.concat(doc["master"]["build"].as<const char*>());
+            response.concat("), ");
+            response.concat(doc["master"]["time"].as<const char*>());
+            response.concat("<br>");
+        }
+    }
+
+    https.end();
     #endif
-    
+
+    response.concat("<br></div>");
+    #endif
+
     if(_partitionType == 1)
     {
         response.concat("<h4><a onclick=\"hideshowmanual();\">Manually update Nuki Hub</a></h4><div id=\"manualupdate\" style=\"display: none\">");
@@ -2512,6 +2567,12 @@ void WebCfgServer::buildInfoHtml(String &response)
     response.concat("Nuki Hub build: ");
     response.concat(NUKI_HUB_BUILD);
     response.concat("\n");
+    response.concat("Nuki Hub build type: ");
+    #ifndef DEBUG_NUKIHUB
+    response.concat("Release\n");
+    #else
+    response.concat("Debug\n");
+    #endif
 
     response.concat(debugPreferences.preferencesToString(_preferences));
 
