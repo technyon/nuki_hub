@@ -1,4 +1,4 @@
-name: NukiHub Beta
+name: NukiHub Release
 on:
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [esp32dev, esp32-s3, esp32-c3, esp32-c6, esp32solo1]
-        build: [release]
+        build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}
       VARIANT: ${{ matrix.name || matrix.board }}
@@ -89,8 +89,8 @@ jobs:
         with:
           name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
           path: ${{ matrix.build }}/${{ env.VARIANT }}
-  ota-beta:
-    name: Create beta from latest master
+  release:
+    name: Release new version
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -98,24 +98,88 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+      - name: Get the version
+        id: get_version
+        run: echo "VERSION=$(cat src/Config.h | grep -oP '(?<=#define NUKI_HUB_VERSION \")(.*)(?=\")')" >> $GITHUB_OUTPUT
       - name: Download release assets
         uses: actions/download-artifact@v4
         with:
           path: release
           pattern: '*-release-assets'
-      - name: Copy binaries to ota/beta
+      - name: Download debug assets
+        uses: actions/download-artifact@v4
+        with:
+          path: debug
+          pattern: '*-debug-assets'
+      - name: Build zip archives
+        id: zip
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+        run: |
+          NUKI="NukiHub-${VERSION}"
+          ARTIFACTS=""
+
+          for FOLDER in release/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            ZIPFILE="${NUKI}-${MODEL}.zip"
+
+            echo "${FOLDER} -- ${ZIPFILE}"
+            cd $FOLDER
+
+            zip -9r ../../${ZIPFILE} * -x "webflash_nuki_hub_*.bin"
+            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
+
+            cd ../..
+          done
+
+          for FOLDER in debug/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            ZIPFILE="${NUKI}-${MODEL}-DEBUG.zip"
+
+            echo "${FOLDER} -- ${ZIPFILE}"
+            cd $FOLDER
+
+            zip -9r ../../${ZIPFILE} *
+            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
+
+            cd ../..
+          done
+
+          # remove last character
+          ARTIFACTS="${ARTIFACTS%?}"
+          echo "artifacts=${ARTIFACTS}" | tee -a ${GITHUB_OUTPUT}
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          prerelease: false
+          allowUpdates: true
+          updateOnlyUnreleased: false
+          draft: false
+          generateReleaseNotes: true
+          makeLatest: true
+          name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
+          artifactErrorsFailBuild: true
+          artifacts: ${{ steps.zip.outputs.artifacts }}
+          artifactContentType: application/zip
+          tag: ${{ steps.get_version.outputs.VERSION }}
+      - name: Copy binaries to ota and webflash and remove beta
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
-          mkdir -p ota/beta/
-          cp -vf release/*/nuki_hub_*.bin ota/beta/
+          cp -vf release/*/nuki_hub_*.bin ota/
+          cp -vf release/*/webflash_nuki_hub_*.bin webflash/
           rm -rf release
-          python3 resources/ota_manifest.py beta $Version
+          rm -rf debug
+          rm -rf NukiHub-*.zip
+          git rm -r --cached ota/beta/*.bin
+          python3 resources/ota_manifest.py release $Version
+          python3 resources/ota_manifest.py beta none
       - name: Commit binaries to master
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update beta binaries"
-          file_pattern: 'ota/beta/*.bin ota/manifest.json'
+          commit_message: "Update binaries for version ${{ steps.get_version.outputs.VERSION }}"
+          file_pattern: 'ota/*.bin ota/manifest.json ota/beta/*.bin webflash/*.bin'
           branch: master
           skip_dirty_check: true
           skip_fetch: true
