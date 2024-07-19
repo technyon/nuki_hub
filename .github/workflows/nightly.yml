@@ -111,6 +111,8 @@ jobs:
           path: release
           pattern: '*-release-assets'
       - name: Copy binaries to ota/master
+        env:
+          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           mkdir -p ota/master/
           cp -vf release/*/nuki_hub_*.bin ota/master/

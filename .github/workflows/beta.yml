@@ -110,6 +110,8 @@ jobs:
           rm -rf release
           python3 resources/ota_manifest.py beta $Version
       - name: Commit binaries to master
+        env:
+          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update beta binaries"

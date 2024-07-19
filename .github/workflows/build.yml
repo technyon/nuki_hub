@@ -166,10 +166,9 @@ jobs:
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
           artifacts: ${{ steps.zip.outputs.artifacts }}
           artifactContentType: application/zip
-      - name: Add version info
+      - name: Copy binaries to ota and webflash and remove beta
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
-      - name: Copy binaries to ota and webflash and remove beta
         run: |
           cp -vf release/*/nuki_hub_*.bin ota/
           cp -vf release/*/webflash_nuki_hub_*.bin webflash/
