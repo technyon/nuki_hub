@@ -10,7 +10,7 @@ permissions:
 jobs:
   build:
     name: Build ${{ matrix.board }} (${{ matrix.build }})
-    if: github.repository == ‘technyon/nuki_hub’
+    if: github.repository == 'technyon/nuki_hub'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
