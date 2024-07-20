@@ -1,0 +1,188 @@
+name: NukiHub Release
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.board }} (${{ matrix.build }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [esp32dev, esp32-s3, esp32-c3, esp32-c6, esp32solo1]
+        build: [release, debug]
+    env:
+      BOARD: ${{ matrix.board }}
+      VARIANT: ${{ matrix.name || matrix.board }}
+      BUILD: ${{ matrix.build }}
+    steps:
+      - name: Fix variant name
+        run: |
+          # remove dash character
+          export VARIANT=${VARIANT//-/}
+
+          if [ "$VARIANT" = "esp32dev" ]; then
+            VARIANT="esp32"
+          fi
+
+          echo "VARIANT=${VARIANT}" | tee -a ${GITHUB_ENV}
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+            ~/.platformio/packages
+          key: ${{ runner.os }}-pio-${{ matrix.board }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: make deps
+      - name: Add version info
+        env:
+          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+        run: |
+          sed -i "s/unknownbuildnr/$Version/g" src/Config.h
+      - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
+        run: |
+          if [ "$BUILD" = "debug" ]; then
+            BOARD="${BOARD}_dbg"
+          fi
+          echo "::group::Building with PlatformIO"
+            if [ "$BUILD" = "release" ]; then
+              make updater_${BOARD}
+            fi
+            make $BOARD
+          echo "::endgroup::"
+      - name: Add flash script
+        env:
+          DOC: resources/how-to-flash.txt
+          FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
+        run: |
+          BOARD=`echo $BOARD | tr '[:lower:]' '[:upper:]'`
+
+          # fix for docs
+          if [ "$BOARD" = "ESP32DEV" ]; then
+            BOARD="ESP32"
+          fi
+
+          # look for documentation on flash and copy the command
+          command=`sed -n '/^Howto flash (esptool)$/,$p' ${DOC} | sed -n '/^## '"${BOARD}"'$/,\${ n; n; p; }' | head -n1`
+
+          if [ -z "$command" ]; then
+            echo "::error::Command not found in document ${DOC} for board ${BOARD}"
+            exit 1
+          fi
+
+          echo -n "Command: "
+          echo "$command" | tee ${FILES}/flash.sh
+          chmod a+x ${FILES}/flash.sh
+
+      - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
+          path: ${{ matrix.build }}/${{ env.VARIANT }}
+  release:
+    name: Release new version
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Get the version
+        id: get_version
+        run: echo "VERSION=$(cat src/Config.h | grep -oP '(?<=#define NUKI_HUB_VERSION \")(.*)(?=\")')" >> $GITHUB_OUTPUT
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+          pattern: '*-release-assets'
+      - name: Download debug assets
+        uses: actions/download-artifact@v4
+        with:
+          path: debug
+          pattern: '*-debug-assets'
+      - name: Build zip archives
+        id: zip
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+        run: |
+          NUKI="NukiHub-${VERSION}"
+          ARTIFACTS=""
+
+          for FOLDER in release/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            ZIPFILE="${NUKI}-${MODEL}.zip"
+
+            echo "${FOLDER} -- ${ZIPFILE}"
+            cd $FOLDER
+
+            zip -9r ../../${ZIPFILE} * -x "webflash_nuki_hub_*.bin"
+            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
+
+            cd ../..
+          done
+
+          for FOLDER in debug/*; do
+            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
+            ZIPFILE="${NUKI}-${MODEL}-DEBUG.zip"
+
+            echo "${FOLDER} -- ${ZIPFILE}"
+            cd $FOLDER
+
+            zip -9r ../../${ZIPFILE} *
+            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
+
+            cd ../..
+          done
+
+          # remove last character
+          ARTIFACTS="${ARTIFACTS%?}"
+          echo "artifacts=${ARTIFACTS}" | tee -a ${GITHUB_OUTPUT}
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          prerelease: false
+          allowUpdates: true
+          updateOnlyUnreleased: false
+          draft: false
+          generateReleaseNotes: true
+          makeLatest: true
+          name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
+          artifactErrorsFailBuild: true
+          artifacts: ${{ steps.zip.outputs.artifacts }}
+          artifactContentType: application/zip
+          tag: ${{ steps.get_version.outputs.VERSION }}
+      - name: Copy binaries to ota and webflash and remove beta
+        env:
+          Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+        run: |
+          cp -vf release/*/nuki_hub_*.bin ota/
+          cp -vf release/*/webflash_nuki_hub_*.bin webflash/
+          rm -rf release
+          rm -rf debug
+          rm -rf NukiHub-*.zip
+          git rm -r --cached ota/beta/*.bin
+          python3 resources/ota_manifest.py release $Version
+          python3 resources/ota_manifest.py beta none
+      - name: Commit binaries to master
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update binaries for version ${{ steps.get_version.outputs.VERSION }}"
+          file_pattern: 'ota/*.bin ota/manifest.json ota/beta/*.bin webflash/*.bin'
+          branch: master
+          skip_dirty_check: true
+          skip_fetch: true
+          skip_checkout: true
+          disable_globbing: true
+          add_options: '-f'
