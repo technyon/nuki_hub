@@ -48,7 +48,7 @@ jobs:
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
-          sed -i "s/unknownbuildnr/$Version (${BUILD})/g" src/Config.h
+          sed -i "s/unknownbuildnr/$Version/g" src/Config.h
       - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
           if [ "$BUILD" = "debug" ]; then
