@@ -510,6 +510,9 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
         {
             publishBool(mqtt_topic_battery_keypad_critical, keypadCritical, true);
         }
+
+        serializeJson(jsonBattery, _buffer, _bufferSize);
+        publishString(mqtt_topic_battery_basic_json, _buffer, true);
     }
     else
     {
@@ -522,9 +525,6 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_lock_json, _buffer, true);
-
-    serializeJson(jsonBattery, _buffer, _bufferSize);
-    publishString(mqtt_topic_battery_basic_json, _buffer, true);
 
     _firstTunerStatePublish = false;
 }
