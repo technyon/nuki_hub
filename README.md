@@ -123,6 +123,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
 - MQTT Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
 - Restart on disconnect: Enable to restart the Nuki Hub when disconnected from the network.
+- Reconnect network on MQTT connection failure: Enable to force reconnection to the network when connection to the MQTT broker fails (after 15 tries).
 - Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 - Allow updating using MQTT: Enable to allow starting the Nuki Hub update process using MQTT. Will also enable the Home Assistant update functionality if auto discovery is enabled.
@@ -435,8 +436,8 @@ After about a minute the new firmware should be installed afterwhich the ESP wil
 Selecting the wrong binary will lead to an unsuccessfull update<br>
 <br>
 <b> Note for users upgrading from Nuki Hub 8.35 or lower:</b><br>
-Updating to version 8.36 requires a change to the partition table of the ESP32.<br>
-Please follow the instructions for the [First time installation](#first-time-installation) once when updating to Nuki Hub 8.36 from an earlier version.<br>
+Updating to version 9.00 requires a change to the partition table of the ESP32.<br>
+Please follow the instructions for the [First time installation](#first-time-installation) once when updating to Nuki Hub 9.00 from an earlier version.<br>
 Your settings will not be affected when updating using the above instructions (do not select erase device when updating using Webflash).<br>
 
 ## MQTT Encryption (optional; Wi-Fi and LAN8720 only)

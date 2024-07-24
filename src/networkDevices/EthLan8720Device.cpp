@@ -143,7 +143,7 @@ bool EthLan8720Device::isConnected()
     return ETH.linkUp();
 }
 
-ReconnectStatus EthLan8720Device::reconnect()
+ReconnectStatus EthLan8720Device::reconnect(bool force)
 {
     if(!_hardwareInitialized)
     {
