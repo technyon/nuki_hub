@@ -762,7 +762,7 @@ void WebCfgServer::sendSettings()
         }
     }
 
-    if(pairing && _preferences->getBool(preference_show_secrets))
+    if(pairing)
     {
         if(_nuki != nullptr)
         {

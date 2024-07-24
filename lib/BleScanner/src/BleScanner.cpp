@@ -30,6 +30,7 @@ void Scanner::initialize(const std::string& deviceName, const bool wantDuplicate
     }
     BLEDevice::init(deviceName);
   }
+
   bleScan = BLEDevice::getScan();
 
   #ifndef BLESCANNER_USE_LATEST_NIMBLE
@@ -96,6 +97,11 @@ void Scanner::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
   for (const auto& subscriber : subscribers) {
     subscriber->onResult(advertisedDevice);
   }
+}
+
+void Scanner::whitelist(BLEAddress bleAddress) {
+  BLEDevice::whiteListAdd(bleAddress);   
+  bleScan->setFilterPolicy(BLE_HCI_SCAN_FILT_USE_WL);
 }
 
 } // namespace BleScanner
