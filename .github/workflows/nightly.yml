@@ -8,9 +8,24 @@ permissions:
   contents: write
 
 jobs:
+  check-commits:
+    name: Count commits in last 24h
+    if: github.repository == 'technyon/nuki_hub'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Get new commits
+        run: echo "NEW_COMMIT_COUNT=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_ENV
+      - name: Check if commits larger than 1
+        if: ${{ env.NEW_COMMIT_COUNT > 1 }}
+        run: echo
   build:
     name: Build ${{ matrix.board }} (${{ matrix.build }})
     if: github.repository == 'technyon/nuki_hub'
+    needs: check-commits
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -34,12 +49,8 @@ jobs:
           echo "VARIANT=${VARIANT}" | tee -a ${GITHUB_ENV}
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           submodules: recursive
-      - name: Get new commits
-        run: echo "NEW_COMMIT_COUNT=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_ENV
       - uses: actions/cache@v4
-        if: ${{ env.NEW_COMMIT_COUNT > 1 }}
         with:
           path: |
             ~/.cache/pip
@@ -98,6 +109,7 @@ jobs:
           path: ${{ matrix.build }}/${{ env.VARIANT }}
   ota-nightly:
     name: Create nightly from latest master
+    if: github.repository == 'technyon/nuki_hub'
     needs: build
     runs-on: ubuntu-latest
     steps:
