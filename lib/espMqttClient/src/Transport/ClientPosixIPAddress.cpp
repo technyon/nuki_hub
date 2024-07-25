@@ -29,4 +29,12 @@ IPAddress::operator uint32_t() {
   return _address;
 }
 
+bool IPAddress::operator==(IPAddress other) {
+  return _address == other._address;
+}
+
+bool IPAddress::operator!=(IPAddress other) {
+  return _address != other._address;
+}
+
 #endif

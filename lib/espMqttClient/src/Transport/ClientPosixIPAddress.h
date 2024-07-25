@@ -18,8 +18,10 @@ class IPAddress {
  public:
   IPAddress();
   IPAddress(uint8_t p0, uint8_t p1, uint8_t p2, uint8_t p3);
-  explicit IPAddress(uint32_t address);
+  IPAddress(uint32_t address);  // NOLINT(runtime/explicit)
   operator uint32_t();
+  bool operator==(IPAddress other);
+  bool operator!=(IPAddress other);
 
  protected:
   uint32_t _address;
