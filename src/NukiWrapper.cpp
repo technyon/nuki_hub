@@ -300,32 +300,23 @@ void NukiWrapper::update()
         updateKeypad(false);
     }
 
-    if(_nextLockAction != (NukiLock::LockAction)0xff && ts > _nextRetryTs)
+    if(_nextLockAction != (NukiLock::LockAction)0xff)
     {
-        Nuki::CmdResult cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
-
-        char resultStr[15] = {0};
-        NukiLock::cmdResultToString(cmdResult, resultStr);
-
-        _network->publishCommandResult(resultStr);
-
-        Log->print(F("Lock action result: "));
-        Log->println(resultStr);
-
-        if(cmdResult == Nuki::CmdResult::Success)
+        _retryCount = 0;
+        Nuki::CmdResult cmdResult;
+        
+        while(_retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
         {
-            _retryCount = 0;
-            _nextLockAction = (NukiLock::LockAction) 0xff;
-            _network->publishRetry("--");
+            cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
+            char resultStr[15] = {0};
+            NukiLock::cmdResultToString(cmdResult, resultStr);
 
-            if(_intervalLockstate > 10)
-            {
-                _nextLockStateUpdateTs = ts + 10 * 1000;
-            }
-        }
-        else
-        {
-            if(_retryCount < _nrOfRetries)
+            _network->publishCommandResult(resultStr);
+
+            Log->print(F("Lock action result: "));
+            Log->println(resultStr);
+            
+            if(cmdResult != Nuki::CmdResult::Success)
             {
                 Log->print(F("Lock: Last command failed, retrying after "));
                 Log->print(_retryDelay);
@@ -336,20 +327,27 @@ void NukiWrapper::update()
 
                 _network->publishRetry(std::to_string(_retryCount + 1));
 
-                _nextRetryTs = (esp_timer_get_time() / 1000) + _retryDelay;
+                delay(_retryDelay);
 
                 ++_retryCount;
-            }
-            else
-            {
-                Log->println(F("Lock: Maximum number of retries exceeded, aborting."));
-                _network->publishRetry("failed");
-                _retryCount = 0;
-                _nextRetryTs = 0;
-                _nextLockAction = (NukiLock::LockAction) 0xff;
-            }
+            }            
+            postponeBleWatchdog();
         }
-        postponeBleWatchdog();
+        
+        if(cmdResult == Nuki::CmdResult::Success)
+        {
+            _nextLockAction = (NukiLock::LockAction) 0xff;
+            _network->publishRetry("--");
+            _retryCount = 0;
+            if(_intervalLockstate > 10) _nextLockStateUpdateTs = ts + 10 * 1000;
+        }
+        else
+        {
+            Log->println(F("Lock: Maximum number of retries exceeded, aborting."));
+            _network->publishRetry("failed");
+            _retryCount = 0;
+            _nextLockAction = (NukiLock::LockAction) 0xff;
+        }
     }
 
     if(_clearAuthData)

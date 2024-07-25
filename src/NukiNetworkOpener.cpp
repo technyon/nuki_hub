@@ -69,7 +69,7 @@ void NukiNetworkOpener::initialize()
         //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
     
-    if(!_preferences->getBool(preference_conf_info_enabled, false))
+    if(!_preferences->getBool(preference_conf_info_enabled, true))
     {
         _network->removeTopic(_mqttPath, mqtt_topic_config_basic_json);
         _network->removeTopic(_mqttPath, mqtt_topic_config_advanced_json);
@@ -156,7 +156,7 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
            strcmp(value, "denied") == 0 ||
            strcmp(value, "error") == 0) return;
 
-        Log->print(F("Lock action received: "));
+        Log->print(F("Opener action received: "));
         Log->println(value);
         LockActionResult lockActionResult = LockActionResult::Failed;
         if(_lockActionReceivedCallback != NULL)

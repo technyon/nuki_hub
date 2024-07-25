@@ -24,10 +24,10 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId
 
     nukiOpenerInst = this;
 
-    memset(&_lastKeyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
-    memset(&_lastBatteryReport, sizeof(NukiLock::BatteryReport), 0);
-    memset(&_batteryReport, sizeof(NukiLock::BatteryReport), 0);
-    memset(&_keyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
+    memset(&_lastKeyTurnerState, sizeof(NukiOpener::OpenerState), 0);
+    memset(&_lastBatteryReport, sizeof(NukiOpener::BatteryReport), 0);
+    memset(&_batteryReport, sizeof(NukiOpener::BatteryReport), 0);
+    memset(&_keyTurnerState, sizeof(NukiOpener::OpenerState), 0);
     _keyTurnerState.lockState = NukiOpener::LockState::Undefined;
 
     network->setLockActionReceivedCallback(nukiOpenerInst->onLockActionReceivedCallback);
@@ -106,7 +106,7 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.setConnectTimeout(3);
     _nukiOpener.setDisconnectTimeout(5000);
 
-    Log->print(F("Lock state interval: "));
+    Log->print(F("Opener state interval: "));
     Log->print(_intervalLockstate);
     Log->print(F(" | Battery interval: "));
     Log->print(_intervalBattery);
@@ -220,33 +220,23 @@ void NukiOpenerWrapper::update()
         updateKeypad(false);
     }
 
-    if(_nextLockAction != (NukiOpener::LockAction)0xff && ts > _nextRetryTs)
+    if(_nextLockAction != (NukiOpener::LockAction)0xff)
     {
-        Nuki::CmdResult cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
-        delay(250);
-
-        char resultStr[15] = {0};
-        NukiOpener::cmdResultToString(cmdResult, resultStr);
-
-        _network->publishCommandResult(resultStr);
-
-        Log->print(F("Lock action result: "));
-        Log->println(resultStr);
-
-        if(cmdResult == Nuki::CmdResult::Success)
+        _retryCount = 0;
+        Nuki::CmdResult cmdResult;
+        
+        while(_retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
         {
-            _retryCount = 0;
-            _nextLockAction = (NukiOpener::LockAction) 0xff;
-            _network->publishRetry("--");
+            cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
+            char resultStr[15] = {0};
+            NukiOpener::cmdResultToString(cmdResult, resultStr);
 
-            if(_intervalLockstate > 10)
-            {
-                _nextLockStateUpdateTs = ts + 10 * 1000;
-            }
-        }
-        else
-        {
-            if(_retryCount < _nrOfRetries)
+            _network->publishCommandResult(resultStr);
+
+            Log->print(F("Opener action result: "));
+            Log->println(resultStr);
+
+            if(cmdResult != Nuki::CmdResult::Success)
             {
                 Log->print(F("Opener: Last command failed, retrying after "));
                 Log->print(_retryDelay);
@@ -257,20 +247,27 @@ void NukiOpenerWrapper::update()
 
                 _network->publishRetry(std::to_string(_retryCount + 1));
 
-                _nextRetryTs = (esp_timer_get_time() / 1000) + _retryDelay;
+                delay(_retryDelay);
 
                 ++_retryCount;
-            }
-            else
-            {
-                Log->println(F("Opener: Maximum number of retries exceeded, aborting."));
-                _network->publishRetry("failed");
-                _retryCount = 0;
-                _nextRetryTs = 0;
-                _nextLockAction = (NukiOpener::LockAction) 0xff;
-            }
+            }            
+            postponeBleWatchdog();
         }
-        postponeBleWatchdog();
+        
+        if(cmdResult == Nuki::CmdResult::Success)
+        {
+            _nextLockAction = (NukiOpener::LockAction) 0xff;
+            _network->publishRetry("--");
+            _retryCount = 0;
+            if(_intervalLockstate > 10) _nextLockStateUpdateTs = ts + 10 * 1000;
+        }
+        else
+        {
+            Log->println(F("Opener: Maximum number of retries exceeded, aborting."));
+            _network->publishRetry("failed");
+            _retryCount = 0;
+            _nextLockAction = (NukiOpener::LockAction) 0xff;
+        }
     }
 
     if(_clearAuthData)
@@ -460,7 +457,7 @@ void NukiOpenerWrapper::updateConfig()
             _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2 > 0;
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
-            if(_preferences->getBool(preference_conf_info_enabled, false)) _network->publishConfig(_nukiConfig);
+            if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishConfig(_nukiConfig);
             _retryConfigCount = 0;
 
             if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl(false);
@@ -514,7 +511,7 @@ void NukiOpenerWrapper::updateConfig()
     }
     if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_opener, 0) == _nukiConfig.nukiId)
     {
-        if(_preferences->getBool(preference_conf_info_enabled, false)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
         _retryConfigCount = 0;
     }
     else
@@ -632,7 +629,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         std::list<NukiOpener::KeypadEntry> entries;
         _nukiOpener.getKeypadEntries(&entries);
 
-        Log->print(F("Lock keypad codes: "));
+        Log->print(F("Opener keypad codes: "));
         Log->println(entries.size());
 
         entries.sort([](const NukiOpener::KeypadEntry& a, const NukiOpener::KeypadEntry& b) { return a.codeId < b.codeId; });
