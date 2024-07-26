@@ -173,7 +173,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     }
     
     _nukiLock.setEventHandler(this);
-    _nukiLock.setDisonnectTimeout(5000);
+    _nukiLock.setDisconnectTimeout(5000);
 
     Log->print(F("Lock state interval: "));
     Log->print(_intervalLockstate);
