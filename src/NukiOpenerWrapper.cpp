@@ -48,6 +48,19 @@ NukiOpenerWrapper::~NukiOpenerWrapper()
 void NukiOpenerWrapper::initialize()
 {
     _nukiOpener.initialize();
+    
+    esp_power_level_t powerLevel;
+    
+    if(_preferences->getInt(preference_ble_tx_power, 9) >= 9) powerLevel = ESP_PWR_LVL_P9;
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= 6) powerLevel = ESP_PWR_LVL_P6;
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= 3) powerLevel = ESP_PWR_LVL_P6;
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= 0) powerLevel = ESP_PWR_LVL_P3;
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -3) powerLevel = ESP_PWR_LVL_N3;
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -6) powerLevel = ESP_PWR_LVL_N6;
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -9) powerLevel = ESP_PWR_LVL_N9;
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -12) powerLevel = ESP_PWR_LVL_N12;   
+    
+    _nukiOpener.setPower(powerLevel);
     _nukiOpener.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);

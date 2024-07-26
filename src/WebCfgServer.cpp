@@ -1110,6 +1110,14 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putInt(preference_command_retry_delay, value.toInt());
             configChanged = true;
         }
+        else if(key == "TXPWR")
+        {
+            if(value.toInt() >= -12 && value.toInt() <= 9)
+            {
+                _preferences->putInt(preference_ble_tx_power, value.toInt());
+                configChanged = true;
+            }
+        }
 #if PRESENCE_DETECTION_ENABLED
         else if(key == "PRDTMO")
         {
@@ -2514,6 +2522,8 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10, "");
 #endif
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
+    printInputField(response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
+    
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");

@@ -333,7 +333,7 @@ void setupTasks(bool ota)
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
         esp_task_wdt_add(networkTaskHandle);
         #ifndef NUKI_HUB_UPDATER
-        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
+        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
         esp_task_wdt_add(nukiTaskHandle);
         #endif
     }
