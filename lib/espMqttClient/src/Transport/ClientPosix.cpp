@@ -27,12 +27,12 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
 
   _sockfd = ::socket(AF_INET, SOCK_STREAM, 0);
   if (_sockfd < 0) {
-    emc_log_e("Error %d opening socket", errno);
+    emc_log_e("Error %d: \"%s\" opening socket", errno, strerror(errno));
   }
 
   int flag = 1;
   if (setsockopt(_sockfd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int)) < 0) {
-    emc_log_e("Error %d disabling nagle", errno);
+    emc_log_e("Error %d: \"%s\" disabling nagle", errno, strerror(errno));
   }
 
   memset(&_host, 0, sizeof(_host));
@@ -47,15 +47,17 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
     return false;
   }
 
-  emc_log_i("Connected");
+  emc_log_i("Socket connected");
   return true;
 }
 
-bool ClientPosix::connect(const char* host, uint16_t port) {
-  // tbi
-  (void) host;
-  (void) port;
-  return false;
+bool ClientPosix::connect(const char* hostname, uint16_t port) {
+  IPAddress ipAddress = _hostToIP(hostname);
+  if (ipAddress == IPAddress(0)) {
+    emc_log_e("No such host '%s'", hostname);
+    return false;
+  }
+  return connect(ipAddress, port);
 }
 
 size_t ClientPosix::write(const uint8_t* buf, size_t size) {
@@ -85,6 +87,42 @@ bool ClientPosix::connected() {
 
 bool ClientPosix::disconnected() {
   return _sockfd < 0;
+}
+
+IPAddress ClientPosix::_hostToIP(const char* hostname) {
+  IPAddress returnIP(0);
+  struct addrinfo hints, *servinfo, *p;
+  struct sockaddr_in *h;
+  int rv;
+
+// Set up request addrinfo struct
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  emc_log_i("Looking for '%s'", hostname);
+
+// ask for host data
+  if ((rv = getaddrinfo(hostname, NULL, &hints, &servinfo)) != 0) {
+    emc_log_e("getaddrinfo: %s", gai_strerror(rv));
+    return returnIP;
+  }
+
+  // loop through all the results and connect to the first we can
+  for (p = servinfo; p != NULL; p = p->ai_next) {
+    h = (struct sockaddr_in *)p->ai_addr;
+    returnIP = ::htonl(h->sin_addr.s_addr);
+    if (returnIP != IPAddress(0)) break;
+  }
+  // Release allocated memory
+  freeaddrinfo(servinfo);
+
+  if (returnIP != IPAddress(0)) {
+    emc_log_i("Host '%s' = %u", hostname, (uint32_t)returnIP);
+  } else {
+    emc_log_e("No IP for '%s' found", hostname);
+  }
+  return returnIP;
 }
 
 }  // namespace espMqttClientInternals

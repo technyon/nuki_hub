@@ -11,12 +11,12 @@ the LICENSE file.
 
 #pragma once
 
+#include "MqttClient.h"
+
 #if EMC_MULTIPLE_CALLBACKS
 #include <list>
 #include <utility>
 #endif
-
-#include "MqttClient.h"
 
 template <typename T>
 class MqttClientSetup : public MqttClient {
