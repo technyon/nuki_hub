@@ -679,6 +679,12 @@ void NukiWrapper::updateKeypad(bool retrieved)
 {
     if(!_preferences->getBool(preference_keypad_info_enabled)) return;
 
+    if(!isPinValid())
+    {
+        Log->println(F("No valid Nuki Lock PIN set"));
+        return;
+    }
+
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
@@ -739,6 +745,12 @@ void NukiWrapper::updateKeypad(bool retrieved)
 void NukiWrapper::updateTimeControl(bool retrieved)
 {
     if(!_preferences->getBool(preference_timecontrol_info_enabled)) return;
+
+    if(!isPinValid())
+    {
+        Log->println(F("No valid Nuki Lock PIN set"));
+        return;
+    }
 
     if(!retrieved)
     {
