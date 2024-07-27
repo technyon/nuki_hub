@@ -103,7 +103,7 @@ void NukiOpenerWrapper::initialize()
     }
 
     _nukiOpener.setEventHandler(this);
-    _nukiOpener.setDisonnectTimeout(5000);
+    _nukiOpener.setDisconnectTimeout(5000);
 
     Log->print(F("Lock state interval: "));
     Log->print(_intervalLockstate);
