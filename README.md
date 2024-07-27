@@ -10,7 +10,7 @@ It exposes the lock state (and much more) through MQTT and allows executing comm
 
 ***Nuki Hub does not integrate with the Nuki mobile app, it can't register itself as a bridge in the official Nuki mobile app.***
 
-***Note: With Nuki Hub 835, do NOT set the number of retries to 0. It will cause Nuki Hub to not execute lock commands.***
+***Note: With Nuki Hub 8.35, do NOT set the number of retries to 0. It will cause Nuki Hub to not execute lock commands.***
 
 
 Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
