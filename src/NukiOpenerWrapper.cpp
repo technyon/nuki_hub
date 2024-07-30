@@ -48,9 +48,9 @@ NukiOpenerWrapper::~NukiOpenerWrapper()
 void NukiOpenerWrapper::initialize()
 {
     _nukiOpener.initialize();
-    
+
     esp_power_level_t powerLevel;
-    
+
     if(_preferences->getInt(preference_ble_tx_power, 9) >= 9) powerLevel = ESP_PWR_LVL_P9;
     else if(_preferences->getInt(preference_ble_tx_power, 9) >= 6) powerLevel = ESP_PWR_LVL_P6;
     else if(_preferences->getInt(preference_ble_tx_power, 9) >= 3) powerLevel = ESP_PWR_LVL_P6;
@@ -58,8 +58,8 @@ void NukiOpenerWrapper::initialize()
     else if(_preferences->getInt(preference_ble_tx_power, 9) >= -3) powerLevel = ESP_PWR_LVL_N3;
     else if(_preferences->getInt(preference_ble_tx_power, 9) >= -6) powerLevel = ESP_PWR_LVL_N6;
     else if(_preferences->getInt(preference_ble_tx_power, 9) >= -9) powerLevel = ESP_PWR_LVL_N9;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -12) powerLevel = ESP_PWR_LVL_N12;   
-    
+    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -12) powerLevel = ESP_PWR_LVL_N12;
+
     _nukiOpener.setPower(powerLevel);
     _nukiOpener.registerBleScanner(_bleScanner);
 
@@ -237,7 +237,7 @@ void NukiOpenerWrapper::update()
     {
         _retryCount = 0;
         Nuki::CmdResult cmdResult;
-        
+
         while(_retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
         {
             cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
@@ -263,10 +263,10 @@ void NukiOpenerWrapper::update()
                 delay(_retryDelay);
 
                 ++_retryCount;
-            }            
+            }
             postponeBleWatchdog();
         }
-        
+
         if(cmdResult == Nuki::CmdResult::Success)
         {
             _nextLockAction = (NukiOpener::LockAction) 0xff;
@@ -360,7 +360,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         Log->print(F("Querying opener state: "));
         result =_nukiOpener.requestOpenerState(&_keyTurnerState);
-        delay(250);
+        
         if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
         }
@@ -484,7 +484,7 @@ void NukiOpenerWrapper::updateConfig()
                 while(_retryCount < _nrOfRetries + 1)
                 {
                     result = _nukiOpener.verifySecurityPin();
-                    delay(250);
+                    
                     if(result != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
@@ -549,7 +549,6 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
 
     if(!retrieved)
     {
-        delay(250);
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         _retryCount = 0;
 
@@ -557,7 +556,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         {
             Log->print(F("Retrieve log entries: "));
             result = _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
-            delay(250);
+            
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
@@ -630,7 +629,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         {
             Log->print(F("Querying opener keypad: "));
             result = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-            delay(250);
+            
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
@@ -697,7 +696,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         {
             Log->print(F("Querying opener time control: "));
             result = _nukiOpener.retrieveTimeControlEntries();
-            delay(250);
+            
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
@@ -1532,7 +1531,6 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
             entry.code = codeInt;
             result = _nukiOpener.addKeypadEntry(entry);
-            delay(250);
             Log->print("Add keypad code: ");
             Log->println((int)result);
             updateKeypad(false);
@@ -1546,7 +1544,6 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             }
 
             result = _nukiOpener.deleteKeypadEntry(id);
-            delay(250);
             Log->print("Delete keypad code: ");
             Log->println((int)result);
             updateKeypad(false);
@@ -1582,8 +1579,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             entry.code = codeInt;
             entry.enabled = enabled == 0 ? 0 : 1;
             result = _nukiOpener.updateKeypadEntry(entry);
-            delay(250);
-            Log->print("Update keypad code: "); 
+            Log->print("Update keypad code: ");
             Log->println((int)result);
             updateKeypad(false);
         }
@@ -1700,7 +1696,6 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiOpener.deleteKeypadEntry(codeId);
-                    delay(250);
                     Log->print(F("Delete keypad code: "));
                     Log->println((int)result);
                 }
@@ -1887,7 +1882,6 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     }
 
                     result = _nukiOpener.addKeypadEntry(entry);
-                    delay(250);
                     Log->print(F("Add keypad code: "));
                     Log->println((int)result);
                 }
@@ -1906,11 +1900,11 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     }
 
                     Nuki::CmdResult resultKp = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-                    delay(250);
                     bool foundExisting = false;
 
                     if(resultKp == Nuki::CmdResult::Success)
                     {
+                        delay(250);
                         std::list<NukiOpener::KeypadEntry> entries;
                         _nukiOpener.getKeypadEntries(&entries);
 
@@ -2035,7 +2029,6 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     }
 
                     result = _nukiOpener.updateKeypadEntry(entry);
-                    delay(250);
                     Log->print(F("Update keypad code: "));
                     Log->println((int)result);
                 }
@@ -2142,7 +2135,6 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiOpener.removeTimeControlEntry(entryId);
-                    delay(250);
                     Log->print(F("Delete time control: "));
                     Log->println((int)result);
                 }
@@ -2201,7 +2193,6 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.addTimeControlEntry(entry);
-                    delay(250);
                     Log->print(F("Add time control: "));
                     Log->println((int)result);
                 }
@@ -2214,11 +2205,11 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                     }
 
                     Nuki::CmdResult resultTc = _nukiOpener.retrieveTimeControlEntries();
-                    delay(250);
                     bool foundExisting = false;
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
+                        delay(250);
                         std::list<NukiOpener::TimeControlEntry> timeControlEntries;
                         _nukiOpener.getTimeControlEntries(&timeControlEntries);
 
@@ -2264,7 +2255,6 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.updateTimeControlEntry(entry);
-                    delay(250);
                     Log->print(F("Update time control: "));
                     Log->println((int)result);
                 }
@@ -2341,7 +2331,6 @@ void NukiOpenerWrapper::readConfig()
     while(_retryCount < _nrOfRetries + 1)
     {
         Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
-        delay(250);
         _nukiConfigValid = result == Nuki::CmdResult::Success;
 
         if(!_nukiConfigValid) {
@@ -2352,6 +2341,7 @@ void NukiOpenerWrapper::readConfig()
 
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
+    Log->print(F("Opener config result: "));
     Log->println(resultStr);
     postponeBleWatchdog();
 }
@@ -2364,7 +2354,6 @@ void NukiOpenerWrapper::readAdvancedConfig()
     while(_retryCount < _nrOfRetries + 1)
     {
          result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
-         delay(250);
         _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
 
         if(!_nukiAdvancedConfigValid) {
@@ -2375,6 +2364,7 @@ void NukiOpenerWrapper::readAdvancedConfig()
 
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
+    Log->print(F("Opener advanced config result: "));
     Log->println(resultStr);
     postponeBleWatchdog();
 }
@@ -2406,7 +2396,6 @@ void NukiOpenerWrapper::disableHASS()
         while(_retryCount < _nrOfRetries + 1)
         {
             result = _nukiOpener.requestConfig(&_nukiConfig);
-            delay(250);
             _nukiConfigValid = result == Nuki::CmdResult::Success;
 
             if(!_nukiConfigValid) {

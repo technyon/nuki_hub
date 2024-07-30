@@ -126,13 +126,14 @@ private:
     int _retryConfigCount = 0;
     int _retryLockstateCount = 0;
     int _rssiPublishInterval = 0;
-    int64_t _nextRetryTs = 0;    
+    int64_t _statusUpdatedTs = 0;
+    int64_t _nextRetryTs = 0;
     int64_t _nextLockStateUpdateTs = 0;
     int64_t _nextHybridLockStateUpdateTs = 0;
     int64_t _nextBatteryReportTs = 0;
     int64_t _nextConfigUpdateTs = 0;
     int64_t _waitAuthLogUpdateTs = 0;
-    int64_t _waitKeypadUpdateTs = 0;    
+    int64_t _waitKeypadUpdateTs = 0;
     int64_t _waitTimeControlUpdateTs = 0;
     int64_t _nextKeypadUpdateTs = 0;
     int64_t _nextRssiTs = 0;
