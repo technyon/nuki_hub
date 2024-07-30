@@ -20,8 +20,8 @@ jobs:
       - name: Get new commits
         run: echo "NEW_COMMIT_COUNT=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_ENV
       - name: Check if commits larger than 1
-        if: ${{ env.NEW_COMMIT_COUNT > 1 }}
-        run: echo
+        if: ${{ env.NEW_COMMIT_COUNT < 2 }}
+        run: exit 1
   build:
     name: Build ${{ matrix.board }} (${{ matrix.build }})
     if: github.repository == 'technyon/nuki_hub'
