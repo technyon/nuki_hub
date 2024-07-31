@@ -23,7 +23,7 @@ public:
     const String deviceName() const override;
 
     virtual void initialize();
-    virtual ReconnectStatus reconnect();
+    virtual ReconnectStatus reconnect(bool force = false);
     virtual void reconfigure();
 
     bool supportsEncryption() override;

@@ -1013,6 +1013,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
             configChanged = true;
         }
+        else if(key == "RECNWTMQTTDIS")
+        {
+            _preferences->putBool(preference_recon_netw_on_mqtt_discon, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "MQTTLOG")
         {
             _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
@@ -2000,6 +2005,12 @@ void WebCfgServer::buildHtml(String& response)
         {
             String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
             printParameter(response, "Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
+            
+            if(_preferences->getBool(preference_official_hybrid, false))
+            {
+                String offConnected = _nuki->offConnected() ? "Yes": "No";
+                printParameter(response, "Nuki Lock hybrid mode connected", offConnected.c_str(), "", "lockHybrid");
+            }
         }
     }
     if(_nukiOpener != nullptr)
@@ -2153,6 +2164,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6, "");
     printInputField(response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
+    printCheckBox(response, "RECNWTMQTTDIS", "Reconnect network on MQTT connection failure", _preferences->getBool(preference_recon_netw_on_mqtt_discon), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");

@@ -104,6 +104,7 @@
 #define mqtt_topic_restart_reason_esp "/maintenance/restartReasonNukiEsp"
 #define mqtt_topic_mqtt_connection_state "/maintenance/mqttConnectionState"
 #define mqtt_topic_network_device "/maintenance/networkDevice"
+#define mqtt_hybrid_state "/maintenance/hybridConnected"
 
 #define mqtt_topic_presence "/presence/devices"
 

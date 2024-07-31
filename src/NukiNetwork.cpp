@@ -237,6 +237,8 @@ bool NukiNetwork::update()
 void NukiNetwork::initialize()
 {
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
+    _checkUpdates = _preferences->getBool(preference_check_updates, false);
+    _reconnectNetworkOnMqttDisconnect = _preferences->getBool(preference_recon_netw_on_mqtt_discon, false);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
     _hostname = _preferences->getString(preference_hostname);
@@ -358,20 +360,22 @@ bool NukiNetwork::update()
         return true;
     }
 
-    if(!_device->isConnected())
+    if(!_device->isConnected() || (_mqttConnectCounter > 15 && _reconnectNetworkOnMqttDisconnect && !_firstConnect))
     {
+        _mqttConnectCounter = 0;
+
         if(_firstDisconnected) {
             _firstDisconnected = false;
             _device->mqttDisconnect(true);
         }
-        
+
         if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000)
         {
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
 
         Log->println(F("Network not connected. Trying reconnect."));
-        ReconnectStatus reconnectStatus = _device->reconnect();
+        ReconnectStatus reconnectStatus = _device->reconnect(true);
 
         switch(reconnectStatus)
         {
@@ -405,8 +409,11 @@ bool NukiNetwork::update()
         bool success = reconnect();
         if(!success)
         {
+            delay(2000);
+            _mqttConnectCounter++;
             return false;
         }
+        _mqttConnectCounter = 0;
         delay(2000);
     }
 
@@ -418,11 +425,11 @@ bool NukiNetwork::update()
             delay(200);
             restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
-        
+
         delay(2000);
         return false;
     }
-    
+
     _lastConnectedTs = ts;
 
 #if PRESENCE_DETECTION_ENABLED
@@ -471,7 +478,7 @@ bool NukiNetwork::update()
         _lastMaintenanceTs = ts;
     }
 
-    if(_preferences->getBool(preference_check_updates))
+    if(_checkUpdates)
     {
         if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
         {
@@ -846,7 +853,7 @@ void NukiNetwork::publishLongLong(const char* prefix, const char *topic, int64_t
     char c;
     uint8_t base = 10;
 
-    while (value) 
+    while (value)
     {
         int num = value % base;
         value /= base;
@@ -1014,6 +1021,105 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
                        { (char*)"pl_off", (char*)"0" },
                        { (char*)"stat_on", (char*)"1" },
                        { (char*)"stat_off", (char*)"0" }});
+
+     // Network device
+    publishHassTopic("sensor",
+                     "network_device",
+                     uidString,
+                     "_network_device",
+                     "Network device",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_network_device,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { (char*)"en", (char*)"true" }});
+
+    // Nuki Hub Webserver enabled
+    publishHassTopic("switch",
+                     "webserver",
+                     uidString,
+                     "_webserver",
+                     "Nuki Hub webserver enabled",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_webserver_state,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     _lockPath + mqtt_topic_webserver_action,
+                     { { (char*)"pl_on", (char*)"1" },
+                       { (char*)"pl_off", (char*)"0" },
+                       { (char*)"stat_on", (char*)"1" },
+                       { (char*)"stat_off", (char*)"0" }});
+
+     // Uptime
+    publishHassTopic("sensor",
+                     "uptime",
+                     uidString,
+                     "_uptime",
+                     "Uptime",
+                     name,
+                     baseTopic,
+                     _lockPath + mqtt_topic_uptime,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+                     { { (char*)"en", (char*)"true" }});
+
+    if(_preferences->getBool(preference_mqtt_log_enabled, false))
+    {
+         // MQTT Log
+        publishHassTopic("sensor",
+                         "mqtt_log",
+                         uidString,
+                         "_mqtt_log",
+                         "MQTT Log",
+                         name,
+                         baseTopic,
+                         _lockPath + mqtt_topic_log,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         { { (char*)"en", (char*)"true" }});
+    }
+    else
+    {
+        removeHassTopic((char*)"sensor", (char*)"mqtt_log", uidString);
+    }
+
+    if(_preferences->getBool(preference_official_hybrid, false))
+    {
+        // Hybrid connected
+        publishHassTopic("binary_sensor",
+                         "hybrid_connected",
+                         uidString,
+                         "_hybrid_connected",
+                         "Hybrid connected",
+                         name,
+                         baseTopic,
+                         _lockPath + mqtt_hybrid_state,
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+                         { {(char*)"pl_on", (char*)"1"},
+                           {(char*)"pl_off", (char*)"0"},
+                           { (char*)"en", (char*)"true" }});
+    }
+    else
+    {
+        removeHassTopic((char*)"binary_sensor", (char*)"hybrid_connected", uidString);
+    }
 
     // Firmware version
     publishHassTopic("sensor",
@@ -3437,6 +3543,11 @@ void NukiNetwork::removeHASSConfig(char* uidString)
     removeHassTopic((char*)"number", (char*)"unlocked_position_offset_degrees", uidString);
     removeHassTopic((char*)"switch", (char*)"pairing_enabled", uidString);
     removeHassTopic((char*)"switch", (char*)"auto_unlatch", uidString);
+    removeHassTopic((char*)"sensor", (char*)"network_device", uidString);
+    removeHassTopic((char*)"switch", (char*)"webserver", uidString);
+    removeHassTopic((char*)"sensor", (char*)"uptime", uidString);
+    removeHassTopic((char*)"sensor", (char*)"mqtt_log", uidString);
+    removeHassTopic((char*)"binary_sensor", (char*)"hybrid_connected", uidString);
 }
 
 void NukiNetwork::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)

@@ -864,6 +864,11 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
     nukiInst->onConfigUpdateReceived(value);
 }
 
+bool NukiWrapper::offConnected()
+{
+    return _network->_offConnected;
+}
+
 Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str)
 {
     if(strcmp(str, "Automatic") == 0) return Nuki::AdvertisingMode::Automatic;
@@ -972,6 +977,7 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
         Log->print(F("Connected: "));
         Log->println((strcmp(value, "true") == 0 ? 1 : 0));
         _network->_offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
+        _network->publishBool(mqtt_hybrid_state, _network->_offConnected, true);
 
         if(!_network->_offConnected) _nextHybridLockStateUpdateTs = (esp_timer_get_time() / 1000) + _intervalHybridLockstate * 1000;
         else _nextHybridLockStateUpdateTs = 0;
