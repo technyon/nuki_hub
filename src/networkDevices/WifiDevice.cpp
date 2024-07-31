@@ -72,6 +72,7 @@ void WifiDevice::initialize()
     _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
     // reduced timeout if ESP is set to restart on disconnect
     _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi));
+    _wm.setConnectTimeout(5);
     _wm.setConfigPortalTimeout(_restartOnDisconnect ? 60 * 3 : 60 * 30);
     _wm.setShowInfoUpdate(false);
     _wm.setMenu(wm_menu);
@@ -141,32 +142,25 @@ bool WifiDevice::isConnected()
     return WiFi.isConnected();
 }
 
-ReconnectStatus WifiDevice::reconnect()
+ReconnectStatus WifiDevice::reconnect(bool force)
 {
-    if(!isConnected() && !_isReconnecting)
+    if((!isConnected() || force) && !_isReconnecting)
     {
         _isReconnecting = true;
         WiFi.disconnect();
-        delay(1000);
-        if(!_preferences->getBool(preference_find_best_rssi, false)) WiFi.reconnect();
-        else 
+        int loop = 0;
+        
+        while(isConnected() && loop <20)
         {
-            if(WiFi.getMode() & WIFI_STA){
-                WiFi.mode(WIFI_OFF);
-                int timeout = (esp_timer_get_time() / 1000)+1200;
-                while(WiFi.getMode()!= WIFI_OFF && (esp_timer_get_time() / 1000)<timeout){
-                    delay(0);
-                }
-            }
-            delay(5000);
-            _wm.WiFi_scanNetworks(true, false);
-            delay(5000);
-            _wm.wifiConnectDefault();
+          delay(100);
+          loop++;
         }
-        delay(10000);
+        
+        _wm.resetScan();
+        _wm.autoConnect();
         _isReconnecting = false;
     }
-    
+
     if(!isConnected() && _disconnectTs > (esp_timer_get_time() / 1000) - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }

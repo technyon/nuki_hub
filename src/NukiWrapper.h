@@ -37,6 +37,7 @@ public:
     const bool isPaired() const;
     const bool hasKeypad() const;
     bool hasDoorSensor() const;
+    bool offConnected();
     const BLEAddress getBleAddress() const;
 
     std::string firmwareVersion() const;

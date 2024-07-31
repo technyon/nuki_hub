@@ -23,7 +23,7 @@ public:
 
     virtual void initialize();
     virtual void reconfigure();
-    virtual ReconnectStatus reconnect();
+    virtual ReconnectStatus reconnect(bool force = false);
     bool supportsEncryption() override;
 
     virtual bool isConnected();

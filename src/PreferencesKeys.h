@@ -98,6 +98,7 @@
 #define preference_update_from_mqtt (char*)"updMqtt"
 #define preference_show_secrets (char*)"showSecr"
 #define preference_ble_tx_power (char*)"bleTxPwr"
+#define preference_recon_netw_on_mqtt_discon (char*)"recNtwMqttDis"
 
 inline bool initPreferences(Preferences* preferences)
 {
@@ -250,7 +251,7 @@ private:
             preference_official_hybrid, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry, preference_has_mac_saved,
             preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version, preference_task_size_network, preference_task_size_nuki,
             preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries, preference_update_from_mqtt, preference_show_secrets,
-            preference_ble_tx_power
+            preference_ble_tx_power, preference_recon_netw_on_mqtt_discon
     };
     std::vector<char*> _redact =
     {
@@ -264,7 +265,8 @@ private:
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_show_secrets,
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
-            preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt
+            preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
+            preference_recon_netw_on_mqtt_discon
     };
     std::vector<char*> _bytePrefs =
     {
