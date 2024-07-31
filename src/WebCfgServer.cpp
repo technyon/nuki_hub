@@ -2000,6 +2000,12 @@ void WebCfgServer::buildHtml(String& response)
         {
             String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
             printParameter(response, "Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
+            
+            if(_preferences->getBool(preference_official_hybrid, false))
+            {
+                String offConnected = _nuki->offConnected() ? "Yes": "No";
+                printParameter(response, "Nuki Lock hybrid mode connected", offConnected.c_str(), "", "lockHybrid");
+            }
         }
     }
     if(_nukiOpener != nullptr)
