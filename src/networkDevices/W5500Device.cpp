@@ -79,7 +79,7 @@ void W5500Device::initialize()
     reconnect();
 }
 
-ReconnectStatus W5500Device::reconnect()
+ReconnectStatus W5500Device::reconnect(bool force)
 {
     _hasDHCPAddress = false;
 

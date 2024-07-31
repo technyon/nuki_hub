@@ -1124,6 +1124,9 @@ bool WiFiManager::wifiConnectNew(String ssid, String pass,bool connect){
   WiFi.persistent(true);
 
   if (_findBestRSSI) {
+    WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+    WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
+    
     #ifdef WM_DEBUG_LEVEL
     DEBUG_WM(F("find best RSSI: TRUE"));
     #endif
@@ -1689,6 +1692,10 @@ bool WiFiManager::WiFi_scanNetworks(bool force,bool async){
       #endif
     }
     return false;
+}
+
+void WiFiManager::resetScan(){
+    _numNetworks = 0;
 }
 
 String WiFiManager::WiFiManager::getScanItemOut(){
@@ -4013,7 +4020,7 @@ String WiFiManager::WiFi_psk(bool persistent) const {
       #ifdef WM_DEBUG_LEVEL
         DEBUG_WM(WM_DEBUG_VERBOSE,F("[Event] SYSTEM_EVENT_STA_DISCONNECTED, reconnecting"));
         #endif
-        WiFi.reconnect();
+        //WiFi.reconnect();
       #endif
   }
   else if(event == ARDUINO_EVENT_WIFI_SCAN_DONE && _asyncScan){

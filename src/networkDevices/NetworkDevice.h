@@ -24,7 +24,7 @@ public:
     virtual const String deviceName() const = 0;
 
     virtual void initialize() = 0;
-    virtual ReconnectStatus reconnect() = 0;
+    virtual ReconnectStatus reconnect(bool force = false) = 0;
     virtual void reconfigure() = 0;
     virtual void printError();
     virtual bool supportsEncryption() = 0;

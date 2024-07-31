@@ -279,6 +279,9 @@ class WiFiManager
 
     // erase wifi credentials
     void          resetSettings();
+    
+    // reset wifi scan
+    void          resetScan();
 
     // reboot esp
     void          reboot();

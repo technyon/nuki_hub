@@ -159,6 +159,7 @@ private:
     Gpio* _gpio;
 
     int _mqttConnectionState = 0;
+    int _mqttConnectCounter = 0;
     long _mqttConnectedTs = -1;
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
@@ -172,6 +173,8 @@ private:
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;
     bool _restartOnDisconnect = false;
+    bool _checkUpdates = false;
+    bool _reconnectNetworkOnMqttDisconnect = false;
     bool _firstConnect = true;
     bool _publishDebugInfo = false;
     bool _logIp = true;

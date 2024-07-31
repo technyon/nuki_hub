@@ -237,6 +237,8 @@ bool NukiNetwork::update()
 void NukiNetwork::initialize()
 {
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
+    _checkUpdates = _preferences->getBool(preference_check_updates, false);
+    _reconnectNetworkOnMqttDisconnect = _preferences->getBool(preference_recon_netw_on_mqtt_discon, false);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
 
     _hostname = _preferences->getString(preference_hostname);
@@ -358,8 +360,10 @@ bool NukiNetwork::update()
         return true;
     }
 
-    if(!_device->isConnected())
+    if(!_device->isConnected() || (_mqttConnectCounter > 15 && _reconnectNetworkOnMqttDisconnect && !_firstConnect))
     {
+        _mqttConnectCounter = 0;
+
         if(_firstDisconnected) {
             _firstDisconnected = false;
             _device->mqttDisconnect(true);
@@ -371,7 +375,7 @@ bool NukiNetwork::update()
         }
 
         Log->println(F("Network not connected. Trying reconnect."));
-        ReconnectStatus reconnectStatus = _device->reconnect();
+        ReconnectStatus reconnectStatus = _device->reconnect(true);
 
         switch(reconnectStatus)
         {
@@ -405,8 +409,11 @@ bool NukiNetwork::update()
         bool success = reconnect();
         if(!success)
         {
+            delay(2000);
+            _mqttConnectCounter++;
             return false;
         }
+        _mqttConnectCounter = 0;
         delay(2000);
     }
 
@@ -471,7 +478,7 @@ bool NukiNetwork::update()
         _lastMaintenanceTs = ts;
     }
 
-    if(_preferences->getBool(preference_check_updates))
+    if(_checkUpdates)
     {
         if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
         {
