@@ -19,12 +19,11 @@ jobs:
           submodules: recursive
       - name: Get new commits
         run: echo "NEW_COMMIT_COUNT=$(git log --oneline --since '24 hours ago' | wc -l)" >> $GITHUB_ENV
-      - name: Check if commits larger than 1
-        if: ${{ env.NEW_COMMIT_COUNT < 2 }}
+      - name: Check if commits larger than 0
+        if: ${{ env.NEW_COMMIT_COUNT < 1 }}
         run: exit 1
   build:
     name: Build ${{ matrix.board }} (${{ matrix.build }})
-    if: github.repository == 'technyon/nuki_hub'
     needs: check-commits
     runs-on: ubuntu-latest
     strategy:
@@ -67,6 +66,7 @@ jobs:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           sed -i "s/unknownbuildnr/$Version/g" src/Config.h
+          python3 resources/config_version.py master
       - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
           if [ "$BUILD" = "debug" ]; then
@@ -109,14 +109,27 @@ jobs:
           path: ${{ matrix.build }}/${{ env.VARIANT }}
   ota-nightly:
     name: Create nightly from latest master
-    if: github.repository == 'technyon/nuki_hub'
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: binary
+      - name: Git Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: master
+          sparse-checkout: |
+              resources/ota_manifest.py
+              src/Config.h
+      - name: Git Commands
+        run: |
+          git checkout --orphan newBinary
+          git branch -D binary
+          git branch -M binary
+          git rm --cached --ignore-unmatch -r *
       - name: Download release assets
         uses: actions/download-artifact@v4
         with:
@@ -127,17 +140,23 @@ jobs:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           mkdir -p ota/master/
+          mkdir -p resources/
+          mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/master/
-          rm -rf release
+          cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
+          cp -vf master/src/Config.h src/Config.h
           python3 resources/ota_manifest.py master $Version
-      - name: Commit binaries to master
+          find * -not -path "ota*" -not -path "webflash*" -delete
+          rm -rf .github .gitignore .gitmodules
+      - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update master binaries"
-          file_pattern: 'ota/master/*.bin ota/manifest.json'
-          branch: master
+          commit_message: "Update binaries"
+          file_pattern: 'ota/* ota/master/* ota/beta/* webflash/*'
+          branch: binary
           skip_dirty_check: true
           skip_fetch: true
           skip_checkout: true
           disable_globbing: true
           add_options: '-f'
+          push_options: '-f'

@@ -426,7 +426,9 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat(NUKI_HUB_VERSION);
     response.concat(" (");
     response.concat(NUKI_HUB_BUILD);
-    response.concat(")<br>");
+    response.concat("), ");
+    response.concat(NUKI_HUB_DATE);
+    response.concat("<br>");
 
     #ifndef NUKI_HUB_UPDATER
     HTTPClient https;

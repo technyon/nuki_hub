@@ -1,5 +1,5 @@
-import shutil
-import os
+import re, shutil, os
+from datetime import datetime, timezone
 
 if not os.path.exists('src/networkDevices/'):
     os.mkdir('src/networkDevices')
@@ -30,3 +30,13 @@ shutil.copy("../src/networkDevices/IPConfiguration.cpp", "src/networkDevices/IPC
 shutil.copy("../src/networkDevices/NetworkDevice.cpp", "src/networkDevices/NetworkDevice.cpp")
 shutil.copy("../src/networkDevices/W5500Device.cpp", "src/networkDevices/W5500Device.cpp")
 shutil.copy("../src/networkDevices/WifiDevice.cpp", "src/networkDevices/WifiDevice.cpp")
+
+regex = r"\#define NUKI_HUB_DATE \"(.*)\""
+content_new = ""
+
+with open ('src/Config.h', 'r' ) as readfile:
+    file_content = readfile.read()
+    content_new = re.sub(regex, "#define NUKI_HUB_DATE \"" + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S") + "\"", file_content, flags = re.M)
+
+with open('src/Config.h', 'w') as writefile:
+    writefile.write(content_new)

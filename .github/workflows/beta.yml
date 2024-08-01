@@ -49,6 +49,7 @@ jobs:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           sed -i "s/unknownbuildnr/$Version/g" src/Config.h
+          python3 resources/config_version.py beta
       - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
           if [ "$BUILD" = "debug" ]; then
@@ -97,7 +98,21 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: binary
+      - name: Git Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: master
+          sparse-checkout: |
+              resources/ota_manifest.py
+              src/Config.h
+      - name: Git Commands
+        run: |
+          git checkout --orphan newBinary
+          git branch -D binary
+          git branch -M binary
+          git rm --cached --ignore-unmatch -r *
       - name: Download release assets
         uses: actions/download-artifact@v4
         with:
@@ -108,17 +123,23 @@ jobs:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           mkdir -p ota/beta/
+          mkdir -p resources/
+          mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/beta/
-          rm -rf release
+          cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
+          cp -vf master/src/Config.h src/Config.h
           python3 resources/ota_manifest.py beta $Version
-      - name: Commit binaries to master
+          find * -not -path "ota*" -not -path "webflash*" -delete
+          rm -rf .github .gitignore .gitmodules
+      - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update beta binaries"
-          file_pattern: 'ota/beta/*.bin ota/manifest.json'
-          branch: master
+          commit_message: "Update binaries"
+          file_pattern: 'ota/* ota/master/* ota/beta/* webflash/*'
+          branch: binary
           skip_dirty_check: true
           skip_fetch: true
           skip_checkout: true
           disable_globbing: true
           add_options: '-f'
+          push_options: '-f'
