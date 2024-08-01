@@ -2,18 +2,21 @@
     "release": {
         "time": "2024-07-18 00:00:00",
         "version": "8.35",
+        "fullversion": "8.35",
         "build": ""
     },
     "beta": {
-        "time": "2024-08-01 12:16:59",
+        "time": "2024-08-01 14:05:28",
         "version": "9.00",
-        "build": "10197996440.3.1",
-        "number": 2
+        "fullversion": "9.00-beta4",
+        "build": "10199751147.8.1",
+        "number": 4
     },
     "master": {
-        "time": "2024-08-01 12:08:53",
+        "time": "2024-08-01 14:21:27",
         "version": "9.00",
-        "build": "10197866641.16.1",
-        "number": 2
+        "fullversion": "9.00-master4",
+        "build": "10199923947.18.1",
+        "number": 4
     }
 }
