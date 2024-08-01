@@ -447,15 +447,15 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
         if (!jsonError)
         {
             response.concat("<b>Latest release version: </b>");
-            response.concat(doc["release"]["version"].as<const char*>());
+            response.concat(doc["release"]["fullversion"].as<const char*>());
             response.concat(" (");
             response.concat(doc["release"]["build"].as<const char*>());
             response.concat("), ");
             response.concat(doc["release"]["time"].as<const char*>());
             response.concat("<br>");
             response.concat("<b>Latest beta version: </b>");
-            response.concat(doc["beta"]["version"].as<const char*>());
-            if(doc["beta"]["version"] != "No beta available")
+            response.concat(doc["beta"]["fullversion"].as<const char*>());
+            if(doc["beta"]["fullversion"] != "No beta available")
             {
                 response.concat(" (");
                 response.concat(doc["beta"]["build"].as<const char*>());
@@ -464,7 +464,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
             }
             response.concat("<br>");
             response.concat("<b>Latest development version: </b>");
-            response.concat(doc["master"]["version"].as<const char*>());
+            response.concat(doc["master"]["fullversion"].as<const char*>());
             response.concat(" (");
             response.concat(doc["master"]["build"].as<const char*>());
             response.concat("), ");
