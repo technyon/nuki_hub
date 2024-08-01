@@ -22,7 +22,7 @@ args = parser.parse_args()
 with open('ota/manifest.json', 'r+') as json_file:
     data = json.load(json_file)
     if (args.build == 'none'):
-        data[args.ota_type]['time'] = "0000-00-00 00:00:00"
+        data[args.ota_type]['time'] = "0000-00-00"
         data[args.ota_type]['version'] = "No beta available"
         data[args.ota_type]['fullversion'] = "No beta available"
         data[args.ota_type]['build'] = ""
@@ -35,7 +35,7 @@ with open('ota/manifest.json', 'r+') as json_file:
         else:
             data[args.ota_type]['number'] = 1
 
-        data[args.ota_type]['time'] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        data[args.ota_type]['time'] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         data[args.ota_type]['version'] = str(version)
         
         if (args.ota_type == "release"):
