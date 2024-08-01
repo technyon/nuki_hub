@@ -35,7 +35,12 @@ with open('ota/manifest.json', 'r+') as json_file:
             data[args.ota_type]['number'] = 1
 
         data[args.ota_type]['time'] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        data[args.ota_type]['version'] = version
+        
+        if (args.ota_type == "release"):
+            data[args.ota_type]['version'] = str(version)
+        else:
+            data[args.ota_type]['version'] = str(version) + "-" + args.ota_type + str(number)
+            
         data[args.ota_type]['build'] = args.build
     json_file.seek(0)
     json.dump(data, json_file, indent=4)
