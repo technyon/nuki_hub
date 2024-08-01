@@ -314,6 +314,7 @@ void WebCfgServer::initialize()
         String response = "";
         buildConfirmHtml(response, "Rebooting to other partition", 2);
         _server.send(200, "text/html", response);
+        waitAndProcess(true, 1000);
         esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
         restartEsp(RestartReason::OTAReboot);
     });
@@ -343,6 +344,7 @@ void WebCfgServer::initialize()
             _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
         }
         _server.send(200, "text/html", response);
+        waitAndProcess(true, 1000);
         restartEsp(RestartReason::OTAReboot);
     });
     #endif
