@@ -418,8 +418,8 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
     response.concat("<div style=\"clear: both\"></div>");
     response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
-    response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate?beta\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
-    response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate?master\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
+    response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
     response.concat("<div style=\"clear: both\"></div><br>");
 
     response.concat("<b>Current version: </b>");
@@ -2007,7 +2007,7 @@ void WebCfgServer::buildHtml(String& response)
         {
             String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
             printParameter(response, "Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
-            
+
             if(_preferences->getBool(preference_official_hybrid, false))
             {
                 String offConnected = _nuki->offConnected() ? "Yes": "No";
