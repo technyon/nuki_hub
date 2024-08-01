@@ -244,16 +244,13 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         case HTTP_EVENT_DISCONNECTED:
             Log->println("HTTP_EVENT_DISCONNECTED");
             break;
-        #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
         case HTTP_EVENT_REDIRECT:
             Log->println("HTTP_EVENT_REDIRECT");
             break;
-        #endif
     }
     return ESP_OK;
 }
 
-#if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
 void otaTask(void *pvParameter)
 {
     uint8_t partitionType = checkPartition();
@@ -297,36 +294,21 @@ void otaTask(void *pvParameter)
 
     esp_task_wdt_reset();
 }
-#endif
 
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
-
-    #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-    esp_task_wdt_init(300, true);
-    #else
     esp_task_wdt_config_t twdt_config = {
         .timeout_ms = 300000,
         .idle_core_mask = 0,
         .trigger_panic = true,
     };
     esp_task_wdt_reconfigure(&twdt_config);
-    #endif
 
     if(ota)
     {
-        #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-        xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
-        esp_task_wdt_add(networkTaskHandle);
-        #ifndef NUKI_HUB_UPDATER
-        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
-        esp_task_wdt_add(nukiTaskHandle);
-        #endif
-        #else
         xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, 1);
         esp_task_wdt_add(otaTaskHandle);
-        #endif
     }
     else
     {
