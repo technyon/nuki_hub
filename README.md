@@ -22,8 +22,8 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 <b>Supported ESP32 devices:</b>
 - Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.1.4 and Arduino Core 3.0.1.
 - Tested stable builds are provided for the ESP32, ESP32-S3 and ESP32-C3.
-- Support for the ESP32-C6 is ***HIGHLY*** experimental. Expect frequent crashes, especially when running Nuki Hub paired as an app (when not using in Hybrid mode). Pairing is also not supported yet and needs to be done manually on the /advanced page of the web configurator.
-- The ESP32-Solo1 is not supported by ESP-IDF 5.1 and as such can't be build using Arduino Core 3 and ESP-IDF 5.1. Untested build against Arduino Core 2.0.14 and ESP-IDF 4.4 are provided.
+- Support for the ESP32-C6 is experimental. There could be more frequent crashes than on other ESP32 devices and connections with the Nuki device could be slower than on other ESP32 devices.
+- The ESP32-Solo1 is not supported by ESP-IDF 5.1 and as such can't be build using Arduino Core 3 and ESP-IDF 5.1. Untested builds against Arduino Core 2.0.14 and ESP-IDF 4.4 are provided.
 
 <b>Not supported ESP32 devices:</b>
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
@@ -165,7 +165,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Lock: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README, ***unless when used in [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance)***
 - Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
-
+- BLE transmit power in dB: Set to a integer between -12 and 9 to set the Bluetooth transmit power, default 9.
 ### Access Level Configuration
 
 #### Nuki General Access Control

@@ -74,14 +74,19 @@ TaskHandle_t networkTaskHandle = nullptr;
 void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
-    
+    bool secrets = preferences->getBool(preference_show_secrets);
+
     while(true)
     {
         int64_t ts = (esp_timer_get_time() / 1000);
-        if(ts > 120000 && ts < 125000 && bootloopCounter > 0)
+        if(ts > 120000 && ts < 125000)
         {
-            bootloopCounter = (int8_t)0;
-            Log->println(F("Bootloop counter reset"));
+            if(secrets) preferences->putBool(preference_show_secrets, false);
+            if(bootloopCounter > 0)
+            {
+                bootloopCounter = (int8_t)0;
+                Log->println(F("Bootloop counter reset"));
+            }
         }
 
         bool connected = network->update();
@@ -99,13 +104,13 @@ void networkTask(void *pvParameters)
         #else
         webCfgServer->update();
         #endif
-        
+
         if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
         {
             Log->println("networkTask is running");
             networkLoopTs = esp_timer_get_time() / 1000;
         }
-        
+
         esp_task_wdt_reset();
 
         delay(100);
@@ -116,7 +121,8 @@ void networkTask(void *pvParameters)
 void nukiTask(void *pvParameters)
 {
     int64_t nukiLoopTs = 0;
-    
+    bool whiteListed = false;
+
     while(true)
     {
         bleScanner->update();
@@ -128,6 +134,20 @@ void nukiTask(void *pvParameters)
         {
             delay(5000);
         }
+        #ifndef PRESENCE_DETECTION_ENABLED
+        else if (!whiteListed)
+        {
+            whiteListed = true;
+            if(lockEnabled)
+            {
+                bleScanner->whitelist(nuki->getBleAddress());
+            }
+            if(openerEnabled)
+            {
+                bleScanner->whitelist(nukiOpener->getBleAddress());
+            }
+        }
+        #endif
 
         if(lockEnabled)
         {
@@ -137,13 +157,13 @@ void nukiTask(void *pvParameters)
         {
             nukiOpener->update();
         }
-        
+
         if((esp_timer_get_time() / 1000) - nukiLoopTs > 120000)
         {
             Log->println("nukiTask is running");
             nukiLoopTs = esp_timer_get_time() / 1000;
         }
-        
+
         esp_task_wdt_reset();
     }
 }
@@ -274,7 +294,7 @@ void otaTask(void *pvParameter)
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    
+
     esp_task_wdt_reset();
 }
 #endif
@@ -282,7 +302,7 @@ void otaTask(void *pvParameter)
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
-    
+
     #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
     esp_task_wdt_init(300, true);
     #else
@@ -313,7 +333,7 @@ void setupTasks(bool ota)
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
         esp_task_wdt_add(networkTaskHandle);
         #ifndef NUKI_HUB_UPDATER
-        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
+        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
         esp_task_wdt_add(nukiTaskHandle);
         #endif
     }
@@ -349,7 +369,7 @@ void setup()
     uint8_t partitionType = checkPartition();
 
     initializeRestartReason();
-    
+
     #ifndef NUKI_HUB_UPDATER
     if(preferences->getBool(preference_enable_bootloop_reset, false))
     {
@@ -393,7 +413,7 @@ void setup()
     // Scan interval and window according to Nuki recommendations:
     // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
     bleScanner->initialize("NukiHub", true, 40, 40);
-    bleScanner->setScanDuration(10);
+    bleScanner->setScanDuration(0);
 
 #if PRESENCE_DETECTION_ENABLED
     if(preferences->getInt(preference_presence_detection_timeout) >= 0)

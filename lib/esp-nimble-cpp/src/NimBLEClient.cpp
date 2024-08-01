@@ -295,8 +295,6 @@ bool NimBLEClient::connect(const NimBLEAddress &address, bool deleteAttributes) 
         if(isConnected()) {
             NIMBLE_LOGE(LOG_TAG, "Connect timeout - no response");
             disconnect();
-            NIMBLE_LOGE(LOG_TAG, "Connect timeout - cancelling");
-            ble_gap_conn_cancel();
         } else {
         // workaround; if the controller doesn't cancel the connection
         // at the timeout, cancel it here.

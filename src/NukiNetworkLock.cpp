@@ -113,7 +113,7 @@ void NukiNetworkLock::initialize()
         //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
 
-    if(!_preferences->getBool(preference_conf_info_enabled, false))
+    if(!_preferences->getBool(preference_conf_info_enabled, true))
     {
         _network->removeTopic(_mqttPath, mqtt_topic_config_basic_json);
         _network->removeTopic(_mqttPath, mqtt_topic_config_advanced_json);
