@@ -41,7 +41,7 @@ with open('ota/manifest.json', 'r+') as json_file:
         if (args.ota_type == "release"):
             data[args.ota_type]['fullversion'] = str(version)
         else:
-            data[args.ota_type]['fullversion'] = str(version) + "-" + args.ota_type + str(number)
+            data[args.ota_type]['fullversion'] = str(version) + "-" + args.ota_type + str(data[args.ota_type]['number'])
             
         data[args.ota_type]['build'] = args.build
     json_file.seek(0)
