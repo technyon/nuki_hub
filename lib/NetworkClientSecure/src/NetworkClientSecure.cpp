@@ -305,9 +305,11 @@ int NetworkClientSecure::available() {
   res = data_to_read(sslclient.get());
 
   if (res < 0 && !_stillinPlainStart) {
-    log_e("Closing connection on failed available check");
+    if (res != MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+      log_e("Closing connection on failed available check");
+    }
     stop();
-    return peeked ? peeked : res;
+    return peeked;
   }
   return res + peeked;
 }
@@ -337,9 +339,9 @@ void NetworkClientSecure::setCACert(const char *rootCA) {
   _use_insecure = false;
 }
 
-void NetworkClientSecure::setCACertBundle(const uint8_t *bundle) {
-  if (bundle != NULL) {
-    esp_crt_bundle_set(bundle, sizeof(bundle));
+void NetworkClientSecure::setCACertBundle(const uint8_t *bundle, size_t size) {
+  if (bundle != NULL && size > 0) {
+    esp_crt_bundle_set(bundle, size);
     attach_ssl_certificate_bundle(sslclient.get(), true);
     _use_ca_bundle = true;
   } else {
@@ -347,6 +349,11 @@ void NetworkClientSecure::setCACertBundle(const uint8_t *bundle) {
     attach_ssl_certificate_bundle(sslclient.get(), false);
     _use_ca_bundle = false;
   }
+}
+
+void NetworkClientSecure::setDefaultCACertBundle() {
+    attach_ssl_certificate_bundle(sslclient.get(), true);
+    _use_ca_bundle = true;
 }
 
 void NetworkClientSecure::setCertificate(const char *client_ca) {

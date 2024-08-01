@@ -10,6 +10,7 @@
 
 #ifndef NUKI_HUB_UPDATER
 #include <HTTPClient.h>
+#include <NetworkClientSecure.h>
 #include "ArduinoJson.h"
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType)
@@ -433,49 +434,64 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("<br>");
 
     #ifndef NUKI_HUB_UPDATER
-    HTTPClient https;
-    https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    https.setTimeout(2500);
-    https.useHTTP10(true);
-    https.begin(GITHUB_OTA_MANIFEST_URL);
-
-    int httpResponseCode = https.GET();
-
-    if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
-    {
-        JsonDocument doc;
-        DeserializationError jsonError = deserializeJson(doc, https.getStream());
-
-        if (!jsonError)
+    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
+    NetworkClientSecure *client = new NetworkClientSecure;
+    if (client) {
+        client->setDefaultCACertBundle();
         {
-            response.concat("<b>Latest release version: </b>");
-            response.concat(doc["release"]["fullversion"].as<const char*>());
-            response.concat(" (");
-            response.concat(doc["release"]["build"].as<const char*>());
-            response.concat("), ");
-            response.concat(doc["release"]["time"].as<const char*>());
-            response.concat("<br>");
-            response.concat("<b>Latest beta version: </b>");
-            response.concat(doc["beta"]["fullversion"].as<const char*>());
-            if(doc["beta"]["fullversion"] != "No beta available")
-            {
-                response.concat(" (");
-                response.concat(doc["beta"]["build"].as<const char*>());
-                response.concat("), ");
-                response.concat(doc["beta"]["time"].as<const char*>());
-            }
-            response.concat("<br>");
-            response.concat("<b>Latest development version: </b>");
-            response.concat(doc["master"]["fullversion"].as<const char*>());
-            response.concat(" (");
-            response.concat(doc["master"]["build"].as<const char*>());
-            response.concat("), ");
-            response.concat(doc["master"]["time"].as<const char*>());
-            response.concat("<br>");
-        }
-    }
+    #endif
+            HTTPClient https;
+            https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+            https.setTimeout(2500);
+            https.useHTTP10(true);
 
-    https.end();
+            #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
+            if (https.begin(*client, GITHUB_OTA_MANIFEST_URL)) {
+            #else
+            if (https.begin(GITHUB_OTA_MANIFEST_URL)) {  
+            #endif
+                int httpResponseCode = https.GET();
+
+                if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                {
+                    JsonDocument doc;
+                    DeserializationError jsonError = deserializeJson(doc, https.getStream());
+
+                    if (!jsonError)
+                    {
+                        response.concat("<b>Latest release version: </b>");
+                        response.concat(doc["release"]["fullversion"].as<const char*>());
+                        response.concat(" (");
+                        response.concat(doc["release"]["build"].as<const char*>());
+                        response.concat("), ");
+                        response.concat(doc["release"]["time"].as<const char*>());
+                        response.concat("<br>");
+                        response.concat("<b>Latest beta version: </b>");
+                        response.concat(doc["beta"]["fullversion"].as<const char*>());
+                        if(doc["beta"]["fullversion"] != "No beta available")
+                        {
+                            response.concat(" (");
+                            response.concat(doc["beta"]["build"].as<const char*>());
+                            response.concat("), ");
+                            response.concat(doc["beta"]["time"].as<const char*>());
+                        }
+                        response.concat("<br>");
+                        response.concat("<b>Latest development version: </b>");
+                        response.concat(doc["master"]["fullversion"].as<const char*>());
+                        response.concat(" (");
+                        response.concat(doc["master"]["build"].as<const char*>());
+                        response.concat("), ");
+                        response.concat(doc["master"]["time"].as<const char*>());
+                        response.concat("<br>");
+                    }
+                }
+                https.end();
+            }
+    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
+        }
+        delete client;
+    }
+    #endif
     #endif
 
     response.concat("<br></div>");
@@ -2539,7 +2555,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 #endif
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     printInputField(response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
-    
+
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
