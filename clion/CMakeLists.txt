@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16.0)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(nukihub)
 
+add_compile_definitions(CONFIG_IDF_TARGET_ESP32)
+
 set(SRCFILES
         ../src/Config.h
         ../src/NukiDeviceId.cpp
@@ -53,6 +55,7 @@ set(SRCFILES
         ../lib/BleScanner/src/BleScanner.cpp
         ../lib/MqttLogger/src/MqttLogger.cpp
         ../lib/AsyncTCP/src/AsyncTCP.cpp
+        ../src/networkDevices/LAN8720Definitions.h
 )
 
 file(GLOB_RECURSE SRCFILESREC

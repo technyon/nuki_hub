@@ -4,7 +4,7 @@
 
 #define NUKI_HUB_VERSION "9.00"
 #define NUKI_HUB_BUILD "unknownbuildnr"
-#define NUKI_HUB_DATE "unknownbuilddate"
+#define NUKI_HUB_DATE "2024-08-04"
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_LATEST_RELEASE_API_URL (char*)"https://api.github.com/repos/technyon/nuki_hub/releases/latest"
