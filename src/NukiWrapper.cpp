@@ -342,7 +342,7 @@ void NukiWrapper::update()
             _waitTimeControlUpdateTs = 0;
             updateTimeControl(true);
         }
-        if(_hassEnabled && _configRead && _network->reconnected())
+        if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && _network->reconnected())
         {
             setupHASS();
         }
@@ -467,7 +467,7 @@ void NukiWrapper::updateKeyTurnerState()
     }
 
     _retryLockstateCount = 0;
-    
+
     const NukiLock::LockState& lockState = _keyTurnerState.lockState;
 
     if(lockState != _lastKeyTurnerState.lockState) _statusUpdatedTs = esp_timer_get_time() / 1000;
@@ -489,10 +489,10 @@ void NukiWrapper::updateKeyTurnerState()
     }
     else if(!_network->_offConnected && (esp_timer_get_time() / 1000) < _statusUpdatedTs + 10000)
     {
-        _statusUpdated = true; 
+        _statusUpdated = true;
         Log->println(F("Lock: Keep updating status on intermediate lock state"));
     }
-    
+
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     char lockStateStr[20];
@@ -516,7 +516,7 @@ void NukiWrapper::updateBatteryState()
         Log->print(_retryCount + 1);
         Log->print("): ");
         result = _nukiLock.requestBatteryReport(&_batteryReport);
-        
+
         if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
         }
@@ -534,10 +534,9 @@ void NukiWrapper::updateBatteryState()
 
 void NukiWrapper::updateConfig()
 {
-    readConfig();
-    readAdvancedConfig();
-    _configRead = true;
     bool expectedConfig = true;
+
+    readConfig();
 
     if(_nukiConfigValid)
     {
@@ -545,7 +544,7 @@ void NukiWrapper::updateConfig()
         {
             char uidString[20];
             itoa(_nukiConfig.nukiId, uidString, 16);
-            Log->print(F("Saving Nuki ID to preferences ("));
+            Log->print(F("Saving Lock Nuki ID to preferences ("));
             Log->print(_nukiConfig.nukiId);
             Log->print(" / ");
             Log->print(uidString);
@@ -559,8 +558,6 @@ void NukiWrapper::updateConfig()
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
             if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishConfig(_nukiConfig);
-            _retryConfigCount = 0;
-
             if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl(false);
 
             const int pinStatus = _preferences->getInt(preference_lock_pin_status, 4);
@@ -605,32 +602,42 @@ void NukiWrapper::updateConfig()
         }
         else
         {
-            Log->println(F("Invalid/Unexpected config recieved, retrying"));
+            Log->println(F("Invalid/Unexpected lock config recieved, ID does not matched saved ID"));
             expectedConfig = false;
-            ++_retryConfigCount;
         }
     }
     else
     {
-        Log->println(F("Invalid/Unexpected config recieved, retrying"));
+        Log->println(F("Invalid/Unexpected lock config recieved, Config is not valid"));
         expectedConfig = false;
-        ++_retryConfigCount;
     }
-    if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_lock, 0) == _nukiConfig.nukiId)
+
+    if(expectedConfig)
     {
-        if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        readAdvancedConfig();
+
+        if(_nukiAdvancedConfigValid)
+        {
+            if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        }
+        else
+        {
+            Log->println(F("Invalid/Unexpected lock advanced config recieved, Advanced config is not valid"));
+            expectedConfig = false;
+        }
+    }
+
+    if(expectedConfig && _nukiConfigValid && _nukiAdvancedConfigValid)
+    {
         _retryConfigCount = 0;
+        Log->println(F("Done retrieving lock config and advanced config"));
     }
     else
     {
-        Log->println(F("Invalid/Unexpected advanced config recieved, retrying"));
-        expectedConfig = false;
         ++_retryConfigCount;
-    }
-    if(!expectedConfig && _retryConfigCount < 11)
-    {
+        Log->println(F("Invalid/Unexpected lock config and/or advanced config recieved, retrying in 10 seconds"));
         int64_t ts = (esp_timer_get_time() / 1000);
-        _nextConfigUpdateTs = ts + 60000;
+        _nextConfigUpdateTs = ts + 10000;
     }
 }
 
@@ -1158,7 +1165,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
     JsonDocument jsonResult;
     char _resbuf[2048];
 
-    if(!_configRead || !_nukiConfigValid)
+    if(!_nukiConfigValid)
     {
         jsonResult["general"] = "configNotReady";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
@@ -1791,7 +1798,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
 
     if(!_hasKeypad)
     {
-        if(_configRead)
+        if(_nukiConfigValid)
         {
             _network->publishKeypadCommandResult("KeypadNotAvailable");
         }
@@ -1927,7 +1934,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
     if(!_hasKeypad)
     {
-        if(_configRead && _nukiConfigValid)
+        if(_nukiConfigValid)
         {
             _network->publishKeypadJsonCommandResult("keypadNotAvailable");
             return;
@@ -2367,7 +2374,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
 void NukiWrapper::onTimeControlCommandReceived(const char *value)
 {
-    if(!_configRead || !_nukiConfigValid)
+    if(!_nukiConfigValid)
     {
         _network->publishTimeControlCommandResult("configNotReady");
         return;
@@ -2641,17 +2648,18 @@ void NukiWrapper::readConfig()
         result = _nukiLock.requestConfig(&_nukiConfig);
         _nukiConfigValid = result == Nuki::CmdResult::Success;
 
-        if(!_nukiConfigValid) {
+        char resultStr[20];
+        NukiLock::cmdResultToString(result, resultStr);
+        Log->print(F("Lock config result: "));
+        Log->println(resultStr);
+
+        if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
-            Log->println("Retrying in 1s");
+            Log->println("Failed to retrieve lock config, retrying in 1s");
+            delay(1000);
         }
         else break;
     }
-
-    char resultStr[20];
-    NukiLock::cmdResultToString(result, resultStr);
-    Log->print(F("Lock config result: "));
-    Log->println(resultStr);
 }
 
 void NukiWrapper::readAdvancedConfig()
@@ -2664,16 +2672,18 @@ void NukiWrapper::readAdvancedConfig()
          result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
         _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
 
-        if(!_nukiAdvancedConfigValid) {
+        char resultStr[20];
+        NukiLock::cmdResultToString(result, resultStr);
+        Log->print(F("Lock advanced config result: "));
+        Log->println(resultStr);
+
+        if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
+            Log->println("Failed to retrieve lock advanced config, retrying in 1s");
+            delay(1000);
         }
         else break;
     }
-
-    char resultStr[20];
-    NukiLock::cmdResultToString(result, resultStr);
-    Log->print(F("Lock advanced config result: "));
-    Log->println(resultStr);
 }
 
 void NukiWrapper::setupHASS()
@@ -2700,30 +2710,9 @@ bool NukiWrapper::hasDoorSensor() const
 
 void NukiWrapper::disableHASS()
 {
-    if(!_nukiConfigValid)
-    {
-        Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        _retryCount = 0;
-
-        while(_retryCount < _nrOfRetries + 1)
-        {
-            result = _nukiLock.requestConfig(&_nukiConfig);
-            _nukiConfigValid = result == Nuki::CmdResult::Success;
-
-            if(!_nukiConfigValid) {
-                ++_retryCount;
-            }
-            else break;
-        }
-    }
-
-    if(_nukiConfigValid)
-    {
-        char uidString[20];
-        itoa(_nukiConfig.nukiId, uidString, 16);
-        _network->removeHASSConfig(uidString);
-    }
-    else Log->println(F("Unable to disable HASS. Invalid config received."));
+    char uidString[20];
+    itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
+    _network->removeHASSConfig(uidString);
 }
 
 const BLEAddress NukiWrapper::getBleAddress() const
@@ -2777,4 +2766,3 @@ void NukiWrapper::updateGpioOutputs()
         }
     }
 }
-
