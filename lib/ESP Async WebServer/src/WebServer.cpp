@@ -21,6 +21,8 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+using namespace asyncsrv;
+
 bool ON_STA_FILTER(AsyncWebServerRequest* request) {
   return WiFi.localIP() == request->client()->localIP();
 }
@@ -145,7 +147,7 @@ void AsyncWebServer::_attachHandler(AsyncWebServerRequest* request) {
     }
   }
 
-  request->addInterestingHeader(F("ANY"));
+  request->addInterestingHeader(T_ANY);
   request->setHandler(_catchAllHandler);
 }
 

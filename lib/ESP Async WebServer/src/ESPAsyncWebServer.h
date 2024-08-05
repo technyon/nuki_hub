@@ -43,10 +43,12 @@
   #error Platform not supported
 #endif
 
-#define ASYNCWEBSERVER_VERSION          "3.0.6"
+#include "literals.h"
+
+#define ASYNCWEBSERVER_VERSION          "3.1.2"
 #define ASYNCWEBSERVER_VERSION_MAJOR    3
-#define ASYNCWEBSERVER_VERSION_MINOR    0
-#define ASYNCWEBSERVER_VERSION_REVISION 6
+#define ASYNCWEBSERVER_VERSION_MINOR    1
+#define ASYNCWEBSERVER_VERSION_REVISION 2
 #define ASYNCWEBSERVER_FORK_mathieucarbou
 
 #ifdef ASYNCWEBSERVER_REGEX
@@ -151,7 +153,7 @@ class AsyncWebHeader {
 
     const String& name() const { return _name; }
     const String& value() const { return _value; }
-    String toString() const { return _name + F(": ") + _value + F("\r\n"); }
+    String toString() const { return _name + (char)0x3a + (char)0x20 /*": "*/ + _value + asyncsrv::T_rn; }
 };
 
 /*
@@ -347,7 +349,9 @@ class AsyncWebServerRequest {
 
     size_t params() const; // get arguments count
     bool hasParam(const String& name, bool post = false, bool file = false) const;
-    bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const;
+#ifdef ESP8266
+    bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const { return hasParam(String(data).c_str(), post, file); };
+#endif
 
     /**
      * @brief Get the Request parameter by name
@@ -509,10 +513,13 @@ class AsyncWebServerResponse {
     size_t _ackedLength;
     size_t _writtenLength;
     WebResponseState _state;
-    const char* _responseCodeToString(int code);
 
   public:
+#ifndef ESP8266
+    static const char* responseCodeToString(int code);
+#else
     static const __FlashStringHelper* responseCodeToString(int code);
+#endif
 
   public:
     AsyncWebServerResponse();

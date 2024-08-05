@@ -298,6 +298,10 @@ void WebCfgServer::initialize()
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::ConfigurationUpdated);
     });
+    _server.on("/webserial", [&]() {
+        _server.sendHeader("Location", (String)"http://" + _network->localIP() + ":81/webserial");
+        _server.send(302, "text/plain", "");
+    });    
     #endif
     _server.on("/ota", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -1025,6 +1029,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "MQTTLOG")
         {
             _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "WEBLOG")
+        {
+            _preferences->putBool(preference_webserial_enabled, (value == "1"));
             configChanged = true;
         }
         else if(key == "CHECKUPDATE")
@@ -2062,6 +2071,11 @@ void WebCfgServer::buildHtml(String& response)
     {
         buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
     }
+    
+    if(_preferences->getBool(preference_webserial_enabled, false))
+    {
+        buildNavigationMenuEntry(response, "Open Webserial", "/webserial");
+    }
 
     if(_allowRestartToPortal)
     {
@@ -2178,6 +2192,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(response, "RECNWTMQTTDIS", "Reconnect network on MQTT connection failure", _preferences->getBool(preference_recon_netw_on_mqtt_discon), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
+    printCheckBox(response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");    
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
     printCheckBox(response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
@@ -2539,7 +2554,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 #endif
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     printInputField(response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
-    
+
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
