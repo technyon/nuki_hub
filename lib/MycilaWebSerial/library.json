@@ -1,0 +1,40 @@
+{
+  "name": "MycilaWebSerial",
+  "version": "6.3.0",
+  "keywords": "MycilaWebSerial, serial, monitor, ESP8266, ESP32, webpage, websocket, wireless",
+  "description": "MycilaWebSerial is a webpage based Serial Monitor to log, monitor, or debug your code remotely.",
+  "homepage": "https://github.com/mathieucarbou/MycilaWebSerial",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mathieucarbou/MycilaWebSerial.git"
+  },
+  "authors": [
+    {
+      "name": "Mathieu Carbou",
+      "email": "mathieu.carbou@gmail.com",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": ["espressif8266", "espressif32"],
+  "headers": ["MycilaWebSerial.h"],
+  "dependencies": [
+    {
+      "owner": "mathieucarbou",
+      "name": "ESPAsyncWebServer",
+      "version": "^3.1.2",
+      "platforms": ["espressif8266", "espressif32"]
+    }
+  ],
+  "export": {
+    "include": [
+      "examples",
+      "src",
+      "library.json",
+      "library.properties",
+      "LICENSE",
+      "README.md"
+    ]
+  }
+}

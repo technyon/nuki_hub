@@ -125,6 +125,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Restart on disconnect: Enable to restart the Nuki Hub when disconnected from the network.
 - Reconnect network on MQTT connection failure: Enable to force reconnection to the network when connection to the MQTT broker fails (after 15 tries).
 - Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
+- Enable WebSerial logging : Enable to publish debug log information to `http://NUKIHUBIP:81/webserial`.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 - Allow updating using MQTT: Enable to allow starting the Nuki Hub update process using MQTT. Will also enable the Home Assistant update functionality if auto discovery is enabled.
 - Disable some extraneous non-JSON topics: Enable to not publish non-JSON keypad and config MQTT topics.
