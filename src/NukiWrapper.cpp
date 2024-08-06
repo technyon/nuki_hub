@@ -343,6 +343,11 @@ void NukiWrapper::update()
             _waitTimeControlUpdateTs = 0;
             updateTimeControl(true);
         }
+        if(_waitAuthUpdateTs != 0 && ts > _waitAuthUpdateTs)
+        {
+            _waitAuthUpdateTs = 0;
+            updateAuth(true);
+        }
         if(_hassEnabled && _configRead && _network->reconnected())
         {
             setupHASS();
@@ -2657,7 +2662,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
 void NukiWrapper::onAuthCommandReceived(const char *value)
 {
-    if(!_configRead || !_nukiConfigValid)
+    if(!_nukiConfigValid)
     {
         _network->publishTimeControlCommandResult("configNotReady");
         return;

@@ -158,8 +158,6 @@ private:
     Gpio* _gpio;
 
     int _mqttConnectionState = 0;
-    bool _connectReplyReceived = false;
-    int _mqttConnectionState = 0;
     int _mqttConnectCounter = 0;
     long _mqttConnectedTs = -1;
     bool _connectReplyReceived = false;

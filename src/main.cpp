@@ -58,29 +58,11 @@ WebCfgServer* webCfgServer = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
 
-#else
-#include "../../src/WebCfgServer.h"
-#include "../../src/Logger.h"
-#include "../../src/PreferencesKeys.h"
-#include "../../src/Config.h"
-#include "../../src/RestartReason.h"
-#include "../../src/NukiNetwork.h"
-
-unsigned long restartTs = 10 * 60000;
-
-#endif
-
-NukiNetwork* network = nullptr;
-WebCfgServer* webCfgServer = nullptr;
-Preferences* preferences = nullptr;
-EthServer* ethServer = nullptr;
-
 RTC_NOINIT_ATTR int restartReason;
 RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
 RTC_NOINIT_ATTR bool rebuildGpioRequested;
 RTC_NOINIT_ATTR uint64_t bootloopValidDetect;
 RTC_NOINIT_ATTR int8_t bootloopCounter;
-
 
 bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
@@ -183,7 +165,6 @@ void nukiTask(void *pvParameters)
         esp_task_wdt_reset();
     }
 }
-#endif
 
 void bootloopDetection()
 {
@@ -379,7 +360,7 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     bool firstStart = initPreferences(preferences);
-    
+
     uint8_t partitionType = checkPartition();
 
     initializeRestartReason();

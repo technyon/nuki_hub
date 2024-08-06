@@ -108,6 +108,12 @@ void NukiNetworkOpener::initialize()
         _network->subscribe(_mqttPath, mqtt_topic_timecontrol_action);
         _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     }
+    
+    if(_preferences->getBool(preference_auth_control_enabled))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_auth_action);
+        _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
+    }
 
     if(_preferences->getBool(preference_publish_authdata, false))
     {
@@ -279,6 +285,18 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
         }
 
         publishString(mqtt_topic_timecontrol_action, "--", true);
+    }
+    
+    if(comparePrefixedPath(topic, mqtt_topic_auth_action))
+    {
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+
+        if(_authCommandReceivedReceivedCallback != NULL)
+        {
+            _authCommandReceivedReceivedCallback(value);
+        }
+
+        publishString(mqtt_topic_auth_action, "--", true);
     }
 }
 
@@ -957,7 +975,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
     {
         while(index < maxKeypadCodeCount)
         {
-            NukiOpener::KeypadEntry entry;
+            NukiLock::KeypadEntry entry;
             memset(&entry, 0, sizeof(entry));
             String basePath = mqtt_topic_keypad;
             basePath.concat("/code_");
@@ -1310,7 +1328,7 @@ void NukiNetworkOpener::publishTimeControlCommandResult(const char* result)
 
 void NukiNetworkOpener::publishAuthCommandResult(const char* result)
 {
-    publishString(mqtt_topic_auth_command_result, result);
+    publishString(mqtt_topic_auth_command_result, result, true);
 }
 
 void NukiNetworkOpener::publishStatusUpdated(const bool statusUpdated)

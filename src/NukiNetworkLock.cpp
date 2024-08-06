@@ -65,17 +65,8 @@ void NukiNetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_config_action);
-
-    if(_preferences->getBool(preference_update_from_mqtt, false))
-    {
-        _network->subscribe(_mqttPath, mqtt_topic_reset);
-        _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
-    }
-
-    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
-    _network->subscribe(_mqttPath, mqtt_topic_update);
-    _network->initTopic(_mqttPath, mqtt_topic_update, "0");
-    #endif
+    _network->subscribe(_mqttPath, mqtt_topic_reset);
+    _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
 
     if(_preferences->getBool(preference_update_from_mqtt, false))
     {
@@ -408,7 +399,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
             _authCommandReceivedReceivedCallback(value);
         }
 
-        publishString(mqtt_topic_auth_action, "--");
+        publishString(mqtt_topic_auth_action, "--", true);
     }
 }
 
@@ -1439,7 +1430,7 @@ void NukiNetworkLock::publishTimeControlCommandResult(const char* result)
 
 void NukiNetworkLock::publishAuthCommandResult(const char* result)
 {
-    publishString(mqtt_topic_auth_command_result, result);
+    publishString(mqtt_topic_auth_command_result, result, true);
 }
 
 void NukiNetworkLock::publishStatusUpdated(const bool statusUpdated)

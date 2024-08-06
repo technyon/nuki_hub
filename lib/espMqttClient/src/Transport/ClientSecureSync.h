@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2022 Bert Melis. All rights reserved.
 
-This work is licensed under the terms of the MIT license.
+This work is licensed under the terms of the MIT license.  
 For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
@@ -10,11 +10,7 @@ the LICENSE file.
 
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 
-#ifdef FRAMEWORK_ARDUINO_SOLO1
 #include <WiFiClientSecure.h>  // includes IPAddress
-#else
-#include <NetworkClientSecure.h>  // includes IPAddress
-#endif
 
 #include "Transport.h"
 
@@ -30,11 +26,7 @@ class ClientSecureSync : public Transport {
   void stop() override;
   bool connected() override;
   bool disconnected() override;
-  #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
   WiFiClientSecure client;
-  #else
-  NetworkClientSecure client;
-  #endif
 };
 
 }  // namespace espMqttClientInternals

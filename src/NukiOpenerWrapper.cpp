@@ -2365,7 +2365,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
 void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 {
-    if(!_configRead || !_nukiConfigValid)
+    if(!_nukiConfigValid)
     {
         _network->publishTimeControlCommandResult("configNotReady");
         return;
@@ -2443,7 +2443,6 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiOpener.deleteAuthorizationEntry(authId);
-                    delay(250);
                     Log->print(F("Delete authorization: "));
                     Log->println((int)result);
                 }
@@ -2635,7 +2634,6 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiOpener.addAuthorizationEntry(entry);
-                    delay(250);
                     Log->print(F("Add authorization: "));
                     Log->println((int)result);
                 }
@@ -2654,11 +2652,11 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     Nuki::CmdResult resultAuth = _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
-                    delay(250);
                     bool foundExisting = false;
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
+                        delay(250);
                         std::list<NukiOpener::AuthorizationEntry> entries;
                         _nukiOpener.getAuthorizationEntries(&entries);
 
@@ -2783,7 +2781,6 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiOpener.updateAuthorizationEntry(entry);
-                    delay(250);
                     Log->print(F("Update authorization: "));
                     Log->println((int)result);
                 }
