@@ -375,13 +375,12 @@ void WebCfgServer::initialize()
     const char *headerkeys[] = {"Content-Length"};
     size_t headerkeyssize = sizeof(headerkeys) / sizeof(char *);
     _server.collectHeaders(headerkeys, headerkeyssize);
-
     _server.begin();
 
     _network->setKeepAliveCallback([&]()
-        {
-            update();
-        });
+    {
+        update();
+    });
 }
 
 void WebCfgServer::update()
@@ -557,7 +556,6 @@ void WebCfgServer::buildHtmlHeader(String &response, String additionalHeader)
     if(strcmp(additionalHeader.c_str(), "") != 0) response.concat(additionalHeader);
     response.concat("<link rel='stylesheet' href='/style.css'>");
     response.concat("<title>Nuki Hub</title></head><body>");
-
     srand(esp_timer_get_time() / 1000);
 }
 
@@ -1179,6 +1177,14 @@ bool WebCfgServer::processArgs(String& message)
                 configChanged = true;
             }
         }
+        else if(key == "AUTHMAX")
+        {
+            if(value.toInt() > 0 && value.toInt() < 51)
+            {
+                _preferences->putInt(preference_auth_max_entries, value.toInt());
+                configChanged = true;
+            }
+        }
         else if(key == "BUFFSIZE")
         {
             if(value.toInt() > 4095 && value.toInt() < 32769)
@@ -1236,6 +1242,11 @@ bool WebCfgServer::processArgs(String& message)
             _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
             configChanged = true;
         }
+        else if(key == "AUTHPUB")
+        {
+            _preferences->putBool(preference_auth_info_enabled, (value == "1"));
+            configChanged = true;
+        }
         else if(key == "KPPER")
         {
             _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
@@ -1249,6 +1260,16 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "TCENA")
         {
             _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "AUTHPER")
+        {
+            _preferences->putBool(preference_auth_topic_per_entry, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "AUTHENA")
+        {
+            _preferences->putBool(preference_auth_control_enabled, (value == "1"));
             configChanged = true;
         }
         else if(key == "PUBAUTH")
@@ -2221,6 +2242,7 @@ void WebCfgServer::buildAdvancedConfigHtml(String &response)
     printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "inputmaxauthlog");
     printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
     printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");
+    printInputField(response, "AUTHMAX", "Max authorization entries (min 1, max 50)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "inputmaxauth");
     printCheckBox(response, "SHOWSECRETS", "Show Pairing secrets on Info page (for 120s after next boot)", _preferences->getBool(preference_show_secrets), "");
 
     if(_nuki != nullptr)
@@ -2243,7 +2265,7 @@ void WebCfgServer::buildAdvancedConfigHtml(String &response)
 
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");
-    response.concat("</body><script>window.onload=function(){ document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var charbuf = 0; var networktask = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>32768) { charbuf = 32768; } if(networktask<12288) { networktask = 12288; } else if (networktask>32768) { networktask = 32768; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
+    response.concat("</body><script>window.onload=function(){ document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxauth\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var auth = document.getElementById(\"inputmaxauth\").value; var charbuf = 0; var networktask = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; var sizeauth = 0; if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } if(auth > 0) { sizeauth = 120 * auth; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol && sizeauthlog>sizeauth) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol && sizekeypad>sizeauth) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} else if(sizeauth>sizeauthlog && sizeauth>sizetimecontrol && sizeauth>sizekeypad) { charbuf = sizeauth; networktask = 10240 + sizeauth;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>32768) { charbuf = 32768; } if(networktask<12288) { networktask = 12288; } else if (networktask>32768) { networktask = 32768; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
 }
 
 void WebCfgServer::buildStatusHtml(String &response)
@@ -2350,7 +2372,10 @@ void WebCfgServer::buildAccLvlHtml(String &response)
     printCheckBox(response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
     printCheckBox(response, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
     printCheckBox(response, "TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
-    printCheckBox(response, "PUBAUTH", "Publish authorization log (may reduce battery life)", _preferences->getBool(preference_publish_authdata), "");
+    printCheckBox(response, "AUTHPUB", "Publish authorization entries information", _preferences->getBool(preference_auth_info_enabled), "");
+    printCheckBox(response, "AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
+    printCheckBox(response, "AUTHENA", "Add, modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
+    printCheckBox(response, "PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
     response.concat("</table><br>");
     if(_nuki != nullptr)
     {
@@ -2539,7 +2564,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 #endif
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     printInputField(response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
-    
+
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");

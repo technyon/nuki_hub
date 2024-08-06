@@ -58,6 +58,23 @@ WebCfgServer* webCfgServer = nullptr;
 Preferences* preferences = nullptr;
 EthServer* ethServer = nullptr;
 
+#else
+#include "../../src/WebCfgServer.h"
+#include "../../src/Logger.h"
+#include "../../src/PreferencesKeys.h"
+#include "../../src/Config.h"
+#include "../../src/RestartReason.h"
+#include "../../src/NukiNetwork.h"
+
+unsigned long restartTs = 10 * 60000;
+
+#endif
+
+NukiNetwork* network = nullptr;
+WebCfgServer* webCfgServer = nullptr;
+Preferences* preferences = nullptr;
+EthServer* ethServer = nullptr;
+
 RTC_NOINIT_ATTR int restartReason;
 RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
 RTC_NOINIT_ATTR bool rebuildGpioRequested;
@@ -112,7 +129,6 @@ void networkTask(void *pvParameters)
         }
 
         esp_task_wdt_reset();
-
         delay(100);
     }
 }
@@ -167,6 +183,7 @@ void nukiTask(void *pvParameters)
         esp_task_wdt_reset();
     }
 }
+#endif
 
 void bootloopDetection()
 {
@@ -201,6 +218,7 @@ void bootloopDetection()
             preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
             preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
             preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
+            preferences->putInt(preference_auth_max_entries, MAX_AUTH);
             bootloopCounter = 0;
         }
     }
@@ -294,7 +312,6 @@ void otaTask(void *pvParameter)
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-
     esp_task_wdt_reset();
 }
 #endif
@@ -302,7 +319,6 @@ void otaTask(void *pvParameter)
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
-
     #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
     esp_task_wdt_init(300, true);
     #else
@@ -355,8 +371,6 @@ void initEthServer(const NetworkDeviceType device)
     }
 }
 
-
-
 void setup()
 {
     Serial.begin(115200);
@@ -365,7 +379,7 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     bool firstStart = initPreferences(preferences);
-
+    
     uint8_t partitionType = checkPartition();
 
     initializeRestartReason();
@@ -415,13 +429,13 @@ void setup()
     bleScanner->initialize("NukiHub", true, 40, 40);
     bleScanner->setScanDuration(0);
 
-#if PRESENCE_DETECTION_ENABLED
+    #if PRESENCE_DETECTION_ENABLED
     if(preferences->getInt(preference_presence_detection_timeout) >= 0)
     {
         presenceDetection = new PresenceDetection(preferences, bleScanner, CharBuffer::get(), buffer_size);
         presenceDetection->initialize();
     }
-#endif
+    #endif
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);

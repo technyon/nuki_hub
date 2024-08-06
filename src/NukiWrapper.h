@@ -52,12 +52,14 @@ private:
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void onTimeControlCommandReceivedCallback(const char* value);
+    static void onAuthCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
+    void onAuthCommandReceived(const char* value);
 
     void updateKeyTurnerState();
     void updateBatteryState();
@@ -65,6 +67,7 @@ private:
     void updateAuthData(bool retrieved);
     void updateKeypad(bool retrieved);
     void updateTimeControl(bool retrieved);
+    void updateAuth(bool retrieved);
     void postponeBleWatchdog();
 
     void updateGpioOutputs();
@@ -100,6 +103,7 @@ private:
     bool _clearAuthData = false;
     std::vector<uint16_t> _keypadCodeIds;
     std::vector<uint8_t> _timeControlIds;
+    std::vector<uint32_t> _authIds;
 
     NukiLock::KeyTurnerState _lastKeyTurnerState;
     NukiLock::KeyTurnerState _keyTurnerState;
@@ -120,6 +124,7 @@ private:
     bool _keypadEnabled = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
+    uint _maxAuthEntryCount = 0;
     bool _configRead = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
@@ -136,6 +141,7 @@ private:
     int64_t _waitAuthLogUpdateTs = 0;
     int64_t _waitKeypadUpdateTs = 0;
     int64_t _waitTimeControlUpdateTs = 0;
+    int64_t _waitAuthUpdateTs = 0;
     int64_t _nextKeypadUpdateTs = 0;
     int64_t _nextRssiTs = 0;
     int64_t _lastRssi = 0;

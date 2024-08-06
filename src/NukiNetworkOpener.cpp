@@ -68,7 +68,7 @@ void NukiNetworkOpener::initialize()
         _network->removeTopic(_mqttPath, mqtt_topic_battery_keypad_critical);
         //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
-    
+
     if(!_preferences->getBool(preference_conf_info_enabled, true))
     {
         _network->removeTopic(_mqttPath, mqtt_topic_config_basic_json);
@@ -500,7 +500,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                 memset(str, 0, sizeof(str));
                 NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
                 entry["action"] = str;
-                
+
                 switch(log.data[1])
                 {
                     case 0:
@@ -526,7 +526,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                     NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
                     entry["completionStatus"] = str;
                 }
-                
+
                 entry["codeId"] = 256U*log.data[4]+log.data[3];
                 break;
             case NukiOpener::LoggingType::DoorbellRecognition:
@@ -582,7 +582,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                 entry["codeId"] = 256U*log.data[7]+log.data[6];
                 break;
         }
-        
+
         if(log.index > _lastRollingLog)
         {
             _lastRollingLog = log.index;
@@ -653,7 +653,7 @@ void NukiNetworkOpener::publishConfig(const NukiOpener::Config &config)
     itoa(config.nukiId, uidString, 16);
 
     JsonDocument json;
-    
+
     memset(_nukiName, 0, sizeof(_nukiName));
     memcpy(_nukiName, config.name, sizeof(config.name));
 
@@ -957,7 +957,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
     {
         while(index < maxKeypadCodeCount)
         {
-            NukiLock::KeypadEntry entry;
+            NukiOpener::KeypadEntry entry;
             memset(&entry, 0, sizeof(entry));
             String basePath = mqtt_topic_keypad;
             basePath.concat("/code_");
@@ -1001,7 +1001,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
             _network->removeTopic(codeTopic, "createdSec");
             _network->removeTopic(codeTopic, "lockCount");
         }
-        
+
         for(int j=entries.size(); j<maxKeypadCodeCount; j++)
         {
             String codesTopic = _mqttPath;
@@ -1084,7 +1084,7 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
         memset(str, 0, sizeof(str));
         NukiOpener::lockactionToString(entry.lockAction, str);
         jsonEntry["lockAction"] = str;
-        
+
         if(_preferences->getBool(preference_timecontrol_topic_per_entry, false))
         {
             String basePath = mqtt_topic_timecontrol;
@@ -1093,7 +1093,6 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
             jsonEntry["index"] = index;
             serializeJson(jsonEntry, _buffer, _bufferSize);
             publishString(basePath.c_str(), _buffer, true);
-                        
             String basePathPrefix = "~";
             basePathPrefix.concat(basePath);
             const char *basePathPrefixChr = basePathPrefix.c_str();
@@ -1103,7 +1102,7 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
             std::string mqttDeviceName = std::string("timecontrol_") + std::to_string(index);
             std::string uidStringPostfix = std::string("_") + mqttDeviceName;
             std::string displayName = std::string("Timecontrol - ") + std::to_string(entry.entryId);
-            
+
             _network->publishHassTopic("switch",
                              mqttDeviceName.c_str(),
                              uidString,
@@ -1124,13 +1123,13 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
                                { (char*)"stat_on", (char*)"1" },
                                { (char*)"stat_off", (char*)"0" }});
         }
-        
+
         ++index;
     }
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_timecontrol_json, _buffer, true);
-    
+
     for(int j=timeControlEntries.size(); j<maxTimeControlEntryCount; j++)
     {
         String entriesTopic = _mqttPath;
@@ -1138,6 +1137,152 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
         entriesTopic.concat("/");
         _network->removeTopic(entriesTopic, (char*)std::to_string(j).c_str());
         std::string mqttDeviceName = std::string("timecontrol_") + std::to_string(j);
+        _network->removeHassTopic((char*)"switch", (char*)mqttDeviceName.c_str(), uidString);
+    }
+}
+
+void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEntry>& authEntries, uint maxAuthEntryCount)
+{
+    uint index = 0;
+    char str[50];
+    char uidString[20];
+    itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
+    String baseTopic = _preferences->getString(preference_mqtt_opener_path);
+    JsonDocument json;
+
+    for(const auto& entry : authEntries)
+    {
+        auto jsonEntry = json.add<JsonVariant>();
+
+        jsonEntry["authId"] = entry.authId;
+        jsonEntry["idType"] = entry.idType; //CONSIDER INT TO STRING
+        jsonEntry["enabled"] = entry.enabled;
+        jsonEntry["name"] = entry.name;
+        jsonEntry["remoteAllowed"] = entry.remoteAllowed;
+        char createdDT[20];
+        sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.createdYear, entry.createdMonth, entry.createdDay, entry.createdHour, entry.createdMinute, entry.createdSecond);
+        jsonEntry["dateCreated"] = createdDT;
+        jsonEntry["lockCount"] = entry.lockCount;
+        char lastActiveDT[20];
+        sprintf(lastActiveDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.lastActYear, entry.lastActMonth, entry.lastActDay, entry.lastActHour, entry.lastActMinute, entry.lastActSecond);
+        jsonEntry["dateLastActive"] = lastActiveDT;
+        jsonEntry["timeLimited"] = entry.timeLimited;
+        char allowedFromDT[20];
+        sprintf(allowedFromDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedFromYear, entry.allowedFromMonth, entry.allowedFromDay, entry.allowedFromHour, entry.allowedFromMinute, entry.allowedFromSecond);
+        jsonEntry["allowedFrom"] = allowedFromDT;
+        char allowedUntilDT[20];
+        sprintf(allowedUntilDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedUntilYear, entry.allowedUntilMonth, entry.allowedUntilDay, entry.allowedUntilHour, entry.allowedUntilMinute, entry.allowedUntilSecond);
+        jsonEntry["allowedUntil"] = allowedUntilDT;
+
+        uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
+        JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
+
+        while(allowedWeekdaysInt > 0) {
+            if(allowedWeekdaysInt >= 64)
+            {
+                weekdays.add("mon");
+                allowedWeekdaysInt -= 64;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 32)
+            {
+                weekdays.add("tue");
+                allowedWeekdaysInt -= 32;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 16)
+            {
+                weekdays.add("wed");
+                allowedWeekdaysInt -= 16;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 8)
+            {
+                weekdays.add("thu");
+                allowedWeekdaysInt -= 8;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 4)
+            {
+                weekdays.add("fri");
+                allowedWeekdaysInt -= 4;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 2)
+            {
+                weekdays.add("sat");
+                allowedWeekdaysInt -= 2;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 1)
+            {
+                weekdays.add("sun");
+                allowedWeekdaysInt -= 1;
+                continue;
+            }
+        }
+
+        char allowedFromTimeT[5];
+        sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
+        jsonEntry["allowedFromTime"] = allowedFromTimeT;
+        char allowedUntilTimeT[5];
+        sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
+        jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
+
+        if(_preferences->getBool(preference_auth_topic_per_entry, false))
+        {
+            String basePath = mqtt_topic_auth;
+            basePath.concat("/entries/");
+            basePath.concat(std::to_string(index).c_str());
+            jsonEntry["index"] = index;
+            serializeJson(jsonEntry, _buffer, _bufferSize);
+            publishString(basePath.c_str(), _buffer, true);
+
+            String basePathPrefix = "~";
+            basePathPrefix.concat(basePath);
+            const char *basePathPrefixChr = basePathPrefix.c_str();
+
+            std::string baseCommand = std::string("{ \"action\": \"update\", \"authId\": \"") + std::to_string(entry.authId);
+            std::string enaCommand = baseCommand + (char*)"\", \"enabled\": \"1\" }";
+            std::string disCommand = baseCommand + (char*)"\", \"enabled\": \"0\" }";
+            std::string mqttDeviceName = std::string("auth_") + std::to_string(index);
+            std::string uidStringPostfix = std::string("_") + mqttDeviceName;
+            std::string displayName = std::string("Authorization - ") + std::to_string(entry.authId);
+
+            _network->publishHassTopic("switch",
+                             mqttDeviceName.c_str(),
+                             uidString,
+                             uidStringPostfix.c_str(),
+                             displayName.c_str(),
+                             _nukiName,
+                             baseTopic.c_str(),
+                             String("~") + basePath.c_str(),
+                             (char*)"Opener",
+                             "",
+                             "",
+                             "diagnostic",
+                             String("~") + mqtt_topic_auth_action,
+                             { { (char*)"json_attr_t", (char*)basePathPrefixChr },
+                               { (char*)"pl_on", (char*)enaCommand.c_str() },
+                               { (char*)"pl_off", (char*)disCommand.c_str() },
+                               { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
+                               { (char*)"stat_on", (char*)"1" },
+                               { (char*)"stat_off", (char*)"0" }});
+        }
+
+        ++index;
+    }
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_auth_json, _buffer, true);
+
+    for(int j=authEntries.size(); j<maxAuthEntryCount; j++)
+    {
+        String entriesTopic = _mqttPath;
+        entriesTopic.concat(mqtt_topic_auth_entries);
+        entriesTopic.concat("/");
+        _network->removeTopic(entriesTopic, (char*)std::to_string(j).c_str());
+        std::string mqttDeviceName = std::string("auth_") + std::to_string(j);
         _network->removeHassTopic((char*)"switch", (char*)mqttDeviceName.c_str(), uidString);
     }
 }
@@ -1161,6 +1306,11 @@ void NukiNetworkOpener::publishKeypadJsonCommandResult(const char* result)
 void NukiNetworkOpener::publishTimeControlCommandResult(const char* result)
 {
     publishString(mqtt_topic_timecontrol_command_result, result, true);
+}
+
+void NukiNetworkOpener::publishAuthCommandResult(const char* result)
+{
+    publishString(mqtt_topic_auth_command_result, result);
 }
 
 void NukiNetworkOpener::publishStatusUpdated(const bool statusUpdated)
@@ -1192,6 +1342,11 @@ void NukiNetworkOpener::setKeypadJsonCommandReceivedCallback(void (*keypadJsonCo
 void NukiNetworkOpener::setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char *))
 {
     _timeControlCommandReceivedReceivedCallback = timeControlCommandReceivedReceivedCallback;
+}
+
+void NukiNetworkOpener::setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char *))
+{
+    _authCommandReceivedReceivedCallback = authCommandReceivedReceivedCallback;
 }
 
 void NukiNetworkOpener::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)

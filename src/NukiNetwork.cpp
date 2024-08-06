@@ -352,7 +352,6 @@ void NukiNetwork::initialize()
 bool NukiNetwork::update()
 {
     int64_t ts = (esp_timer_get_time() / 1000);
-
     _device->update();
 
     if(!_mqttEnabled)
@@ -432,11 +431,12 @@ bool NukiNetwork::update()
 
     _lastConnectedTs = ts;
 
-#if PRESENCE_DETECTION_ENABLED
+    #if PRESENCE_DETECTION_ENABLED
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
         char* presenceCsv = _presenceDetection->generateCsv();
         bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, presenceCsv, true);
+
         if(!success)
         {
             Log->println(F("Failed to publish presence CSV data."));
@@ -445,7 +445,7 @@ bool NukiNetwork::update()
 
         _lastPresenceTs = ts;
     }
-#endif
+    #endif
 
     if(_device->signalStrength() != 127 && _rssiPublishInterval > 0 && ts - _lastRssiTs > _rssiPublishInterval)
     {
@@ -627,7 +627,6 @@ bool NukiNetwork::reconnect()
             _mqttConnectedTs = millis();
             _mqttConnectionState = 1;
             delay(100);
-
             _device->mqttOnMessage(NukiNetwork::onMqttDataReceivedCallback);
             for(const String& topic : _subscribedTopics)
             {
