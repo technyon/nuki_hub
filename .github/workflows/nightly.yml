@@ -158,5 +158,5 @@ jobs:
           skip_fetch: true
           skip_checkout: true
           disable_globbing: true
-          add_options: '-f'
+          add_options: '-f --ignore-missing'
           push_options: '-f'
