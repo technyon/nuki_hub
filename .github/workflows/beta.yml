@@ -52,13 +52,12 @@ jobs:
           python3 resources/config_version.py beta
       - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
+          ORIGBOARD="${BOARD}"
           if [ "$BUILD" = "debug" ]; then
             BOARD="${BOARD}_dbg"
           fi
           echo "::group::Building with PlatformIO"
-            if [ "$BUILD" = "release" ]; then
-              make updater_${BOARD}
-            fi
+            make updater_${ORIGBOARD}
             make $BOARD
           echo "::endgroup::"
       - name: Add flash script
@@ -118,24 +117,39 @@ jobs:
         with:
           path: release
           pattern: '*-release-assets'
+      - name: Download debug assets
+        uses: actions/download-artifact@v4
+        with:
+          path: debug
+          pattern: '*-debug-assets'
       - name: Copy binaries to ota/beta
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           mkdir -p ota/beta/
+          mkdir -p ota/debug/beta/
+          mkdir -p ota/master/
+          mkdir -p ota/debug/master/
+          mkdir -p webflash/
           mkdir -p resources/
           mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/beta/
+          cp -vf debug/*/nuki_hub_*.bin ota/debug/beta/
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/src/Config.h src/Config.h
           python3 resources/ota_manifest.py beta $Version
           find * -not -path "ota*" -not -path "webflash*" -delete
           rm -rf .github .gitignore .gitmodules
+          touch ota/beta/empty
+          touch ota/master/empty
+          touch ota/debug/beta/empty
+          touch ota/debug/master/empty
+          touch webflash/empty
       - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update binaries"
-          file_pattern: 'ota/* ota/master/* ota/beta/* webflash/*'
+          file_pattern: 'ota/* ota/debug/* ota/master/* ota/debug/master/* ota/beta/* ota/debug/beta/* webflash/*'
           branch: binary
           skip_dirty_check: true
           skip_fetch: true

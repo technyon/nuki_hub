@@ -28,8 +28,7 @@ def copy_files(source, target, env):
         shutil.copy(file, f"{target_dir}/nuki_hub.{file.name}")
     elif "firmware" in file.stem:
         shutil.copy(file, f"{target_dir}/nuki_hub_{board}{file.suffix}")
-        if env.GetProjectOption("custom_build") == 'release':
-            shutil.copy(f"{project_dir}/updater/release/{board}/updater.bin", f"{target_dir}/nuki_hub_updater_{board}{file.suffix}")
+        shutil.copy(f"{project_dir}/updater/release/{board}/updater.bin", f"{target_dir}/nuki_hub_updater_{board}{file.suffix}")
     else:
         shutil.copy(file, f"{target_dir}/{file.name}")
 
@@ -73,8 +72,7 @@ def package_last_files(source, target, env):
         shutil.copy(file, f"{target_dir}/{file.name}")
         
 env.AddPostAction("$BUILD_DIR/firmware.bin", copy_files)
-if env.GetProjectOption("custom_build") == 'release':
-    env.AddPostAction("$PROJECT_DIR/updater/release/" + get_board_name(env) + "/updater.bin", copy_files)
+env.AddPostAction("$PROJECT_DIR/updater/release/" + get_board_name(env) + "/updater.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/firmware.bin", package_last_files)
 env.AddPostAction("$BUILD_DIR/partitions.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/bootloader.bin", copy_files)
@@ -82,5 +80,4 @@ env.AddPostAction("$BUILD_DIR/bootloader.bin", copy_files)
 if env.GetProjectOption("custom_build") == 'debug':
     env.AddPostAction("$BUILD_DIR/firmware.elf", copy_files)
 
-if env.GetProjectOption("custom_build") == 'release':
-    env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)
+env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)

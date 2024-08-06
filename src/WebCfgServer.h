@@ -61,6 +61,7 @@ private:
     void buildConfigureWifiHtml(String& response);
     void buildInfoHtml(String& response);
     void processUnpair(bool opener);
+    void processUpdate();
     void processFactoryReset();
     void printInputField(String& response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* id, const bool& isPassword = false, const bool& showLengthRestriction = false);
     void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength, const char* id);
@@ -87,8 +88,8 @@ private:
     String _confirmCode = "----";
     #endif
 
-    void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5);    
-    void buildOtaHtml(String& response, bool errored);
+    void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5, bool redirect = false);    
+    void buildOtaHtml(String& response, bool errored, bool debug = false);
     void buildOtaCompletedHtml(String& response);
     void sendCss();
     void sendFavicon();
