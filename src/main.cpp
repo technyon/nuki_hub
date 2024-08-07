@@ -108,12 +108,13 @@ int _log_vprintf(const char *fmt, va_list args) {
 
 void setReroute(){
     esp_log_set_vprintf(_log_vprintf);
-    #ifdef DEBUG_NUKIHUB
     if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
-    else esp_log_level_set("*", ESP_LOG_DEBUG);
-    esp_log_level_set("nvs", ESP_LOG_INFO);
-    esp_log_level_set("wifi", ESP_LOG_INFO);
-    #endif
+    else 
+    {
+        esp_log_level_set("*", ESP_LOG_DEBUG);
+        esp_log_level_set("nvs", ESP_LOG_INFO);
+        esp_log_level_set("wifi", ESP_LOG_INFO);
+    }
 }
 #endif
 
@@ -139,11 +140,13 @@ void networkTask(void *pvParameters)
         bool connected = network->update();
 
         #ifndef NUKI_HUB_UPDATER
+        #ifdef DEBUG_NUKIHUB
         if(connected && reroute)
         {
             reroute = false;
             setReroute();
         }
+        #endif
         if(connected && openerEnabled) networkOpener->update();
         if(preferences->getBool(preference_webserver_enabled, true)) webCfgServer->update();
         #else
@@ -405,14 +408,6 @@ void setup()
     esp_log_level_set("*", ESP_LOG_ERROR);
     Serial.begin(115200);
     Log = &Serial;
-
-    #ifndef NUKI_HUB_UPDATER
-    //stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
-    //static char linebuf[1024];
-    //setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
-    //esp_rom_install_channel_putc(1, &ets_putc_handler);
-    //ets_install_putc1(&ets_putc_handler);
-    #endif
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
