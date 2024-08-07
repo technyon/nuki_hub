@@ -140,6 +140,7 @@ jobs:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           mkdir -p ota/master/
+          mkdir -p ota/beta/
           mkdir -p resources/
           mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/master/
@@ -148,6 +149,7 @@ jobs:
           python3 resources/ota_manifest.py master $Version
           find * -not -path "ota*" -not -path "webflash*" -delete
           rm -rf .github .gitignore .gitmodules
+          touch ota/beta/empty
       - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
