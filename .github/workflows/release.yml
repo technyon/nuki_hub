@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32dev, esp32-s3, esp32-c3, esp32-c6, esp32solo1]
+        board: [esp32dev, esp32-s3, esp32-c3, esp32-c6]
         build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}

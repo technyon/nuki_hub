@@ -5,6 +5,8 @@
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
+#include <HTTPClient.h>
+#include <NetworkClientSecure.h>
 #if defined(CONFIG_IDF_TARGET_ESP32)
 #include "networkDevices/EthLan8720Device.h"
 #endif
@@ -483,33 +485,41 @@ bool NukiNetwork::update()
         {
             _lastUpdateCheckTs = ts;
 
-            https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-            https.useHTTP10(true);
-            https.begin(GITHUB_OTA_MANIFEST_URL);
-
-            int httpResponseCode = https.GET();
-
-            if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
-            {
-                JsonDocument doc;
-                DeserializationError jsonError = deserializeJson(doc, https.getStream());
-
-                if (!jsonError)
+            NetworkClientSecure *client = new NetworkClientSecure;
+            if (client) {
+                client->setDefaultCACertBundle();
                 {
-                    String currentVersion = NUKI_HUB_VERSION;
+                    HTTPClient https;
+                    https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+                    https.useHTTP10(true);
 
-                    if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["version"];
-                    else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["version"];
-                    else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["version"];
-                    else _latestVersion = doc["release"]["version"];
+                    if (https.begin(*client, GITHUB_OTA_MANIFEST_URL)) {
+                        int httpResponseCode = https.GET();
 
-                    publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
+                        if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                        {
+                            JsonDocument doc;
+                            DeserializationError jsonError = deserializeJson(doc, https.getStream());
 
-                    if(strcmp(_latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0) _preferences->putString(preference_latest_version, _latestVersion);
+                            if (!jsonError)
+                            {
+                                String currentVersion = NUKI_HUB_VERSION;
+
+                                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["version"];
+                                else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["version"];
+                                else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["version"];
+                                else _latestVersion = doc["release"]["version"];
+
+                                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
+
+                                if(strcmp(_latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0) _preferences->putString(preference_latest_version, _latestVersion);
+                            }
+                        }
+                    }                    
+                    https.end();
                 }
+                delete client;
             }
-
-            https.end();
         }
     }
 
@@ -3867,5 +3877,10 @@ void NukiNetwork::disableMqtt()
 {
     _device->disableMqtt();
     _mqttEnabled = false;
+}
+
+String NukiNetwork::localIP()
+{
+    return _device->localIP();
 }
 #endif

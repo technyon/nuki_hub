@@ -52,15 +52,21 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 
-    if(preferences->getBool(preference_mqtt_log_enabled))
+    if(preferences->getBool(preference_mqtt_log_enabled) || preferences->getBool(preference_webserial_enabled))
     {
+        MqttLoggerMode mode;
+      
+        if(preferences->getBool(preference_mqtt_log_enabled) && preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::SerialAndWeb;
+        else mode = MqttLoggerMode::MqttAndSerial;
+        
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
         String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, mode);
     }
     #endif
 }
@@ -76,13 +82,11 @@ void EthLan8720Device::initialize()
 
     WiFi.setHostname(_hostname.c_str());
 
-#if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-    _hardwareInitialized = ETH.begin(_phy_addr, _power, _mdc, _mdio, _type, _clock_mode, _use_mac_from_efuse);
-#elif CONFIG_IDF_TARGET_ESP32
+    #if CONFIG_IDF_TARGET_ESP32
     _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
-#else
+    #else
     _hardwareInitialized = false;
-#endif
+    #endif
 
     ETH.setHostname(_hostname.c_str());
     if(!_ipConfiguration->dhcpEnabled())
