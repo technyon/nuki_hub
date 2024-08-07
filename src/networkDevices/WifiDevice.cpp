@@ -46,15 +46,21 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 
-    if(preferences->getBool(preference_mqtt_log_enabled))
+    if(preferences->getBool(preference_mqtt_log_enabled) || preferences->getBool(preference_webserial_enabled))
     {
+        MqttLoggerMode mode;
+      
+        if(preferences->getBool(preference_mqtt_log_enabled) && preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::SerialAndWeb;
+        else mode = MqttLoggerMode::MqttAndSerial;
+        
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
         String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, mode);
     }
     #endif
 }
@@ -72,7 +78,7 @@ void WifiDevice::initialize()
     _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
     // reduced timeout if ESP is set to restart on disconnect
     _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi));
-    _wm.setConnectTimeout(5);
+    _wm.setConnectTimeout(20);
     _wm.setConfigPortalTimeout(_restartOnDisconnect ? 60 * 3 : 60 * 30);
     _wm.setShowInfoUpdate(false);
     _wm.setMenu(wm_menu);

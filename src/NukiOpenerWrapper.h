@@ -133,7 +133,6 @@ private:
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;
-    bool _configRead = false;
     int _rssiPublishInterval = 0;
     int64_t _nextLockStateUpdateTs = 0;
     int64_t _nextBatteryReportTs = 0;

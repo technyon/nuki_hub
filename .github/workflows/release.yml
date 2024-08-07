@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32dev, esp32-s3, esp32-c3, esp32-c6, esp32solo1]
+        board: [esp32dev, esp32-s3, esp32-c3, esp32-c6]
         build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}
@@ -51,13 +51,12 @@ jobs:
           sed -i "s/unknownbuildnr/$Version/g" src/Config.h
       - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
+          ORIGBOARD="${BOARD}"
           if [ "$BUILD" = "debug" ]; then
             BOARD="${BOARD}_dbg"
           fi
           echo "::group::Building with PlatformIO"
-            if [ "$BUILD" = "release" ]; then
-              make updater_${BOARD}
-            fi
+            make updater_${ORIGBOARD}
             make $BOARD
           echo "::endgroup::"
       - name: Add flash script
@@ -181,10 +180,15 @@ jobs:
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
-          mkdir -p ota/
+          mkdir -p ota/beta/
+          mkdir -p ota/debug/beta/
+          mkdir -p ota/master/
+          mkdir -p ota/debug/master/
+          mkdir -p webflash/
           mkdir -p resources/
           mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/
+          cp -vf debug/*/nuki_hub_*.bin ota/debug/
           cp -vf release/*/webflash_nuki_hub_*.bin webflash/
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/src/Config.h src/Config.h
@@ -192,12 +196,18 @@ jobs:
           python3 resources/ota_manifest.py beta none
           find * -not -path "ota*" -not -path "webflash*" -delete
           rm -rf ota/beta/*.bin
+          rm -rf ota/debug/beta/*.bin
           rm -rf .github .gitignore .gitmodules
+          touch ota/beta/empty
+          touch ota/master/empty
+          touch ota/debug/beta/empty
+          touch ota/debug/master/empty
+          touch webflash/empty
       - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update binaries"
-          file_pattern: 'ota/* ota/master/* webflash/*'
+          file_pattern: 'ota/* ota/debug/* ota/master/* ota/debug/master/* ota/beta/* ota/debug/beta/* webflash/*'
           branch: binary
           skip_dirty_check: true
           skip_fetch: true

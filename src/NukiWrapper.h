@@ -125,7 +125,6 @@ private:
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;
-    bool _configRead = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryCount = 0;

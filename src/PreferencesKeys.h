@@ -14,6 +14,7 @@
 #define preference_mqtt_user (char*)"mqttuser"
 #define preference_mqtt_password (char*)"mqttpass"
 #define preference_mqtt_log_enabled (char*)"mqttlog"
+#define preference_webserial_enabled (char*)"weblog"
 #define preference_webserver_enabled (char*)"websrvena"
 #define preference_lock_enabled (char*)"lockena"
 #define preference_lock_pin_status (char*)"lockpin"
@@ -258,7 +259,7 @@ private:
             preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version, preference_task_size_network, preference_task_size_nuki,
             preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries, preference_update_from_mqtt, preference_show_secrets,
             preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count, preference_auth_control_enabled, preference_auth_topic_per_entry,
-            preference_auth_info_enabled, preference_auth_max_entries, preference_ble_tx_power, preference_recon_netw_on_mqtt_discon
+            preference_auth_info_enabled, preference_auth_max_entries, preference_ble_tx_power, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled
     };
     std::vector<char*> _redact =
     {
@@ -273,7 +274,7 @@ private:
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
-            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_recon_netw_on_mqtt_discon
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled
     };
     std::vector<char*> _bytePrefs =
     {

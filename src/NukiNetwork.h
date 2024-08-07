@@ -5,7 +5,6 @@
 #include <map>
 #include "networkDevices/NetworkDevice.h"
 #include "networkDevices/IPConfiguration.h"
-#include <HTTPClient.h>
 
 #ifndef NUKI_HUB_UPDATER
 #include "MqttReceiver.h"
@@ -55,6 +54,7 @@ public:
     #endif
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
+    String localIP();
 
     void subscribe(const char* prefix, const char* path);
     void initTopic(const char* prefix, const char* path, const char* value);
@@ -111,7 +111,6 @@ private:
     static NukiNetwork* _inst;
 
     const char* _latestVersion;
-    HTTPClient https;
 
     Preferences* _preferences;
     IPConfiguration* _ipConfiguration = nullptr;

@@ -22,6 +22,14 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
+#include <AsyncTCP.h>
+#include <DNSServer.h>
+#include <ESPAsyncWebServer.h>
+#include <WString.h>
+#include <MycilaWebSerial.h>
+
+AsyncWebServer webserialserver(81);
+char log_print_buffer[1024];
 
 NukiNetworkLock* networkLock = nullptr;
 NukiNetworkOpener* networkOpener = nullptr;
@@ -70,6 +78,45 @@ RestartReason currentRestartReason = RestartReason::NotApplicable;
 TaskHandle_t otaTaskHandle = nullptr;
 TaskHandle_t networkTaskHandle = nullptr;
 
+#ifndef NUKI_HUB_UPDATER
+ssize_t write_fn(void* cookie, const char* buf, ssize_t size)
+{
+  Log->write((uint8_t *)buf, (size_t)size);
+
+  return size;
+}
+
+void ets_putc_handler(char c)
+{
+    static char buf[1024];
+    static size_t buf_pos = 0;
+    buf[buf_pos] = c;
+    buf_pos++;
+    if (c == '\n' || buf_pos == sizeof(buf)) {
+        write_fn(NULL, buf, buf_pos);
+        buf_pos = 0;
+    }
+}
+
+int _log_vprintf(const char *fmt, va_list args) {
+    int ret = vsnprintf(log_print_buffer, sizeof(log_print_buffer), fmt, args);
+    if (ret >= 0){
+        Log->write((uint8_t *)log_print_buffer, (size_t)ret);
+    }
+    return 0; //return vprintf(fmt, args);
+}
+
+void setReroute(){
+    esp_log_set_vprintf(_log_vprintf);
+    #ifdef DEBUG_NUKIHUB
+    if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
+    else esp_log_level_set("*", ESP_LOG_DEBUG);
+    esp_log_level_set("nvs", ESP_LOG_INFO);
+    esp_log_level_set("wifi", ESP_LOG_INFO);
+    #endif
+}
+#endif
+
 void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
@@ -91,6 +138,8 @@ void networkTask(void *pvParameters)
         bool connected = network->update();
 
         #ifndef NUKI_HUB_UPDATER
+        if(connected) setReroute();
+
         if(connected && openerEnabled)
         {
             networkOpener->update();
@@ -243,16 +292,13 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         case HTTP_EVENT_DISCONNECTED:
             Log->println("HTTP_EVENT_DISCONNECTED");
             break;
-        #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
         case HTTP_EVENT_REDIRECT:
             Log->println("HTTP_EVENT_REDIRECT");
             break;
-        #endif
     }
     return ESP_OK;
 }
 
-#if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
 void otaTask(void *pvParameter)
 {
     uint8_t partitionType = checkPartition();
@@ -295,35 +341,21 @@ void otaTask(void *pvParameter)
     }
     esp_task_wdt_reset();
 }
-#endif
 
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
-    #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-    esp_task_wdt_init(300, true);
-    #else
     esp_task_wdt_config_t twdt_config = {
         .timeout_ms = 300000,
         .idle_core_mask = 0,
         .trigger_panic = true,
     };
     esp_task_wdt_reconfigure(&twdt_config);
-    #endif
 
     if(ota)
     {
-        #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-        xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
-        esp_task_wdt_add(networkTaskHandle);
-        #ifndef NUKI_HUB_UPDATER
-        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 1);
-        esp_task_wdt_add(nukiTaskHandle);
-        #endif
-        #else
         xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, 1);
         esp_task_wdt_add(otaTaskHandle);
-        #endif
     }
     else
     {
@@ -354,8 +386,17 @@ void initEthServer(const NetworkDeviceType device)
 
 void setup()
 {
+    esp_log_level_set("*", ESP_LOG_ERROR);
     Serial.begin(115200);
     Log = &Serial;
+
+    #ifndef NUKI_HUB_UPDATER
+    stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
+    static char linebuf[1024];
+    setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
+    esp_rom_install_channel_putc(1, &ets_putc_handler);
+    //ets_install_putc1(&ets_putc_handler);
+    #endif
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
@@ -456,6 +497,12 @@ void setup()
         webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType);
         webCfgServer->initialize();
     }
+
+    WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
+    WebSerial.begin(&webserialserver);
+    WebSerial.setBuffer(1024);
+    webserialserver.onNotFound([](AsyncWebServerRequest* request) { request->redirect("/webserial"); });
+    webserialserver.begin();
     #endif
 
     if((partitionType==1 && preferences->getString(preference_ota_updater_url).length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url).length() > 0)) setupTasks(true);
