@@ -211,7 +211,7 @@ void NukiOpenerWrapper::update()
         _waitTimeControlUpdateTs = 0;
         updateTimeControl(true);
     }
-    if(_hassEnabled && _configRead && _network->reconnected())
+    if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && _network->reconnected())
     {
         setupHASS();
     }
@@ -360,7 +360,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     {
         Log->print(F("Querying opener state: "));
         result =_nukiOpener.requestOpenerState(&_keyTurnerState);
-        
+
         if(result != Nuki::CmdResult::Success) {
             ++_retryCount;
         }
@@ -453,15 +453,21 @@ void NukiOpenerWrapper::updateBatteryState()
 
 void NukiOpenerWrapper::updateConfig()
 {
-    readConfig();
-    readAdvancedConfig();
-    _configRead = true;
     bool expectedConfig = true;
+
+    readConfig();
 
     if(_nukiConfigValid)
     {
-        if(_preferences->getUInt(preference_nuki_id_opener, 0) == 0 || _retryConfigCount == 10)
+        if(_preferences->getUInt(preference_nuki_id_opener, 0) == 0  || _retryConfigCount == 10)
         {
+            char uidString[20];
+            itoa(_nukiConfig.nukiId, uidString, 16);
+            Log->print(F("Saving Opener Nuki ID to preferences ("));
+            Log->print(_nukiConfig.nukiId);
+            Log->print(" / ");
+            Log->print(uidString);
+            Log->println(")");
             _preferences->putUInt(preference_nuki_id_opener, _nukiConfig.nukiId);
         }
 
@@ -471,8 +477,6 @@ void NukiOpenerWrapper::updateConfig()
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
             if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishConfig(_nukiConfig);
-            _retryConfigCount = 0;
-
             if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl(false);
 
             const int pinStatus = _preferences->getInt(preference_opener_pin_status, 4);
@@ -480,11 +484,12 @@ void NukiOpenerWrapper::updateConfig()
             if(isPinSet()) {
                 Nuki::CmdResult result = (Nuki::CmdResult)-1;
                 _retryCount = 0;
+                Log->println(F("Nuki opener PIN is set"));
 
                 while(_retryCount < _nrOfRetries + 1)
                 {
                     result = _nukiOpener.verifySecurityPin();
-                    
+
                     if(result != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
@@ -493,12 +498,14 @@ void NukiOpenerWrapper::updateConfig()
 
                 if(result != Nuki::CmdResult::Success)
                 {
+                    Log->println(F("Nuki opener PIN is invalid"));
                     if(pinStatus != 2) {
                         _preferences->putInt(preference_opener_pin_status, 2);
                     }
                 }
                 else
                 {
+                    Log->println(F("Nuki opener PIN is valid"));
                     if(pinStatus != 1) {
                         _preferences->putInt(preference_opener_pin_status, 1);
                     }
@@ -506,6 +513,7 @@ void NukiOpenerWrapper::updateConfig()
             }
             else
             {
+                Log->println(F("Nuki opener PIN is not set"));
                 if(pinStatus != 0) {
                     _preferences->putInt(preference_opener_pin_status, 0);
                 }
@@ -513,29 +521,42 @@ void NukiOpenerWrapper::updateConfig()
         }
         else
         {
+            Log->println(F("Invalid/Unexpected opener config recieved, ID does not matched saved ID"));
             expectedConfig = false;
-            ++_retryConfigCount;
         }
     }
     else
     {
+        Log->println(F("Invalid/Unexpected opener config recieved, Config is not valid"));
         expectedConfig = false;
-        ++_retryConfigCount;
     }
-    if(_nukiAdvancedConfigValid && _preferences->getUInt(preference_nuki_id_opener, 0) == _nukiConfig.nukiId)
+
+    if(expectedConfig)
     {
-        if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        readAdvancedConfig();
+
+        if(_nukiAdvancedConfigValid)
+        {
+            if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishAdvancedConfig(_nukiAdvancedConfig);
+        }
+        else
+        {
+            Log->println(F("Invalid/Unexpected opener advanced config recieved, Advanced config is not valid"));
+            expectedConfig = false;
+        }
+    }
+
+    if(expectedConfig && _nukiConfigValid && _nukiAdvancedConfigValid)
+    {
         _retryConfigCount = 0;
+        Log->println(F("Done retrieving opener config and advanced config"));
     }
     else
     {
-        expectedConfig = false;
         ++_retryConfigCount;
-    }
-    if(!expectedConfig && _retryConfigCount < 11)
-    {
+        Log->println(F("Invalid/Unexpected opener config and/or advanced config recieved, retrying in 10 seconds"));
         int64_t ts = (esp_timer_get_time() / 1000);
-        _nextConfigUpdateTs = ts + 60000;
+        _nextConfigUpdateTs = ts + 10000;
     }
 }
 
@@ -556,7 +577,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         {
             Log->print(F("Retrieve log entries: "));
             result = _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
-            
+
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
@@ -629,7 +650,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         {
             Log->print(F("Querying opener keypad: "));
             result = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-            
+
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
@@ -696,7 +717,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         {
             Log->print(F("Querying opener time control: "));
             result = _nukiOpener.retrieveTimeControlEntries();
-            
+
             if(result != Nuki::CmdResult::Success) {
                 ++_retryCount;
             }
@@ -940,7 +961,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     JsonDocument jsonResult;
     char _resbuf[2048];
 
-    if(!_configRead || !_nukiConfigValid)
+    if(!_nukiConfigValid)
     {
         jsonResult["general"] = "configNotReady";
         serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
@@ -1488,7 +1509,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
 
     if(!_hasKeypad)
     {
-        if(_configRead)
+        if(_nukiConfigValid)
         {
             _network->publishKeypadCommandResult("KeypadNotAvailable");
         }
@@ -1624,7 +1645,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
     if(!_hasKeypad)
     {
-        if(_configRead && _nukiConfigValid)
+        if(_nukiConfigValid)
         {
             _network->publishKeypadJsonCommandResult("keypadNotAvailable");
             return;
@@ -2064,7 +2085,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
 void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 {
-    if(!_configRead || !_nukiConfigValid)
+    if(!_nukiConfigValid)
     {
         _network->publishTimeControlCommandResult("configNotReady");
         return;
@@ -2388,30 +2409,9 @@ void NukiOpenerWrapper::setupHASS()
 
 void NukiOpenerWrapper::disableHASS()
 {
-    if(!_nukiConfigValid) // only ask for config once to save battery life
-    {
-        Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        _retryCount = 0;
-
-        while(_retryCount < _nrOfRetries + 1)
-        {
-            result = _nukiOpener.requestConfig(&_nukiConfig);
-            _nukiConfigValid = result == Nuki::CmdResult::Success;
-
-            if(!_nukiConfigValid) {
-                ++_retryCount;
-            }
-            else break;
-        }
-    }
-
-    if(_nukiConfigValid)
-    {
-        char uidString[20];
-        itoa(_nukiConfig.nukiId, uidString, 16);
-        _network->removeHASSConfig(uidString);
-    }
-    else Log->println(F("Unable to disable HASS. Invalid config received."));
+    char uidString[20];
+    itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
+    _network->removeHASSConfig(uidString);
 }
 
 void NukiOpenerWrapper::printCommandResult(Nuki::CmdResult result)
