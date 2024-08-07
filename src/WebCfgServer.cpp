@@ -48,8 +48,9 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferenc
         memcpy(&_credPassword, pass, str.length());
     }
 
-    #ifndef NUKI_HUB_UPDATER
     _confirmCode = generateConfirmCode();
+
+    #ifndef NUKI_HUB_UPDATER
     _pinsConfigured = true;
 
     if(_nuki != nullptr && !_nuki->isPinSet())
@@ -499,8 +500,6 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
     {
         response.concat("<span id=\"currentver\" style=\"display: none;\">currentver</span><span id=\"latestver\" style=\"display: none;\">latestver</span><span id=\"devver\" style=\"display: none;\">devver</span><span id=\"betaver\" style=\"display: none;\">betaver</span>");
     }
-
-    https.end();
     #endif
     response.concat("<br></div>");
 
@@ -711,6 +710,12 @@ void WebCfgServer::sendFavicon()
 {
     _server.sendHeader("Cache-Control", "public, max-age=604800");
     _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
+}
+
+String WebCfgServer::generateConfirmCode()
+{
+    int code = random(1000,9999);
+    return String(code);
 }
 
 #ifndef NUKI_HUB_UPDATER
@@ -3327,13 +3332,6 @@ void WebCfgServer::printParameter(String& response, const char *description, con
     response.concat("</td>");
     response.concat("</tr>");
 
-}
-
-
-String WebCfgServer::generateConfirmCode()
-{
-    int code = random(1000,9999);
-    return String(code);
 }
 
 const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const

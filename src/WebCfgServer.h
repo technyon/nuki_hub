@@ -77,17 +77,16 @@ private:
     String pinStateToString(uint8_t value);
 
     void printParameter(String& response, const char* description, const char* value, const char *link = "", const char *id = "");
-
-    String generateConfirmCode();
     
     NukiWrapper* _nuki = nullptr;
     NukiOpenerWrapper* _nukiOpener = nullptr;
     Gpio* _gpio = nullptr;
     bool _pinsConfigured = false;
     bool _brokerConfigured = false;
-    String _confirmCode = "----";
     #endif
 
+    String generateConfirmCode();
+    String _confirmCode = "----";
     void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5, bool redirect = false);    
     void buildOtaHtml(String& response, bool errored, bool debug = false);
     void buildOtaCompletedHtml(String& response);
