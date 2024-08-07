@@ -33,6 +33,12 @@ extern "C"{
 #include "esp_task_wdt.h"
 #endif
 
+// Required for:
+// https://github.com/espressif/arduino-esp32/blob/3.0.3/libraries/Network/src/NetworkInterface.cpp#L37-L47
+#if ESP_IDF_VERSION_MAJOR >= 5
+#include <NetworkInterface.h>
+#endif
+
 /*
  * TCP/IP Event Task
  * */
@@ -439,7 +445,7 @@ static esp_err_t _tcp_write(tcp_pcb * pcb, int8_t closed_slot, const char* data,
 static err_t _tcp_recved_api(struct tcpip_api_call_data *api_call_msg){
     tcp_api_call_t * msg = (tcp_api_call_t *)api_call_msg;
     msg->err = ERR_CONN;
-    if(msg->closed_slot == -1 || !_closed_slots[msg->closed_slot]) {
+    if(msg->closed_slot != -1 && !_closed_slots[msg->closed_slot]) {
         msg->err = 0;
         tcp_recved(msg->pcb, msg->received);
     }
@@ -723,8 +729,8 @@ bool AsyncClient::_connect(ip_addr_t addr, uint16_t port){
     tcp_recv(pcb, &_tcp_recv);
     tcp_sent(pcb, &_tcp_sent);
     tcp_poll(pcb, &_tcp_poll, 1);
-    _tcp_connect(pcb, _closed_slot, &addr, port,(tcp_connected_fn)&_tcp_connected);
-    return true;
+    esp_err_t err =_tcp_connect(pcb, _closed_slot, &addr, port,(tcp_connected_fn)&_tcp_connected);
+    return err == ESP_OK;
 }
 
 bool AsyncClient::connect(const IPAddress& ip, uint16_t port){
@@ -1006,7 +1012,7 @@ int8_t AsyncClient::_recv(tcp_pcb* pcb, pbuf* pb, int8_t err) {
 
 int8_t AsyncClient::_poll(tcp_pcb* pcb){
     if(!_pcb){
-        log_d("pcb is NULL");
+        // log_d("pcb is NULL");
         return ERR_OK;
     }
     if(pcb != _pcb){
@@ -1091,11 +1097,8 @@ size_t AsyncClient::write(const char* data) {
 
 size_t AsyncClient::write(const char* data, size_t size, uint8_t apiflags) {
     size_t will_send = add(data, size, apiflags);
-    if(!will_send) {
+    if(!will_send || !send()) {
         return 0;
-    }
-    while (connected() && !send()) {
-        taskYIELD();
     }
     return will_send;
 }
