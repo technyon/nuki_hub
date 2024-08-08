@@ -52,7 +52,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 
-    if(preferences->getBool(preference_mqtt_log_enabled))
+    if(preferences->getBool(preference_mqtt_log_enabled, false))
     {
         _path = new char[200];
         memset(_path, 0, sizeof(_path));

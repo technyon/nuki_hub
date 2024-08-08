@@ -31,8 +31,8 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferenc
   _partitionType(partitionType)
 #endif
 {
-    _hostname = _preferences->getString(preference_hostname);
-    String str = _preferences->getString(preference_cred_user);
+    _hostname = _preferences->getString(preference_hostname, "");
+    String str = _preferences->getString(preference_cred_user, "");
 
     if(str.length() > 0)
     {
@@ -43,7 +43,7 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferenc
         const char *user = str.c_str();
         memcpy(&_credUser, user, str.length());
 
-        str = _preferences->getString(preference_cred_password);
+        str = _preferences->getString(preference_cred_password, "");
         const char *pass = str.c_str();
         memcpy(&_credPassword, pass, str.length());
     }
@@ -1126,13 +1126,13 @@ bool WebCfgServer::processArgs(String& message)
                 configChanged = true;
             }
         }
-#if PRESENCE_DETECTION_ENABLED
+        #if PRESENCE_DETECTION_ENABLED
         else if(key == "PRDTMO")
         {
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
             configChanged = true;
         }
-#endif
+        #endif
         else if(key == "RSBC")
         {
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
@@ -1722,8 +1722,8 @@ bool WebCfgServer::processArgs(String& message)
         nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
         nukiBlePref.putBytes("authorizationId", authorizationId, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
-
         nukiBlePref.end();
+        configChanged = true;
     }
 
     if(manPairOpn)
@@ -1736,6 +1736,7 @@ bool WebCfgServer::processArgs(String& message)
         nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
         nukiBlePref.end();
+        configChanged = true;
     }
 
     if(pass1 != "" && pass1 == pass2)
@@ -1864,7 +1865,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) currentBleAddress[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("bleAddress", currentBleAddress, 6);
                 }
-                else _preferences->remove("bleAddressLock");
             }
             if(!doc["secretKeyKLock"].isNull())
             {
@@ -1874,7 +1874,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) secretKeyK[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
                 }
-                else _preferences->remove("secretKeyKLock");
             }
             if(!doc["authorizationIdLock"].isNull())
             {
@@ -1884,7 +1883,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) authorizationId[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("authorizationId", authorizationId, 4);
                 }
-                else _preferences->remove("authorizationIdLock");
             }
             nukiBlePref.end();
             if(!doc["securityPinCodeLock"].isNull())
@@ -1901,7 +1899,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) currentBleAddressOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("bleAddress", currentBleAddressOpn, 6);
                 }
-                else _preferences->remove("bleAddressOpener");
             }
             if(!doc["secretKeyKOpener"].isNull())
             {
@@ -1911,7 +1908,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) secretKeyKOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("secretKeyK", secretKeyKOpn, 32);
                 }
-                else _preferences->remove("secretKeyKOpener");
             }
             if(!doc["authorizationIdOpener"].isNull())
             {
@@ -1921,7 +1917,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) authorizationIdOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
                 }
-                else _preferences->remove("authorizationIdOpener");
             }
             nukiBlePref.end();
             if(!doc["securityPinCodeOpener"].isNull())

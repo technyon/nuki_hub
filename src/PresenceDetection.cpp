@@ -13,7 +13,7 @@ PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scann
   _csv(buffer),
   _bufferSize(bufferSize)
 {
-    _timeout = _preferences->getInt(preference_presence_detection_timeout) * 1000;
+    _timeout = _preferences->getInt(preference_presence_detection_timeout, 0) * 1000;
     if(_timeout == 0)
     {
         _timeout = 60000;

@@ -65,7 +65,7 @@ void W5500Device::initialize()
     }
 
     #ifndef NUKI_HUB_UPDATER
-    if(_preferences->getBool(preference_mqtt_log_enabled))
+    if(_preferences->getBool(preference_mqtt_log_enabled, false))
     {
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
@@ -191,7 +191,7 @@ void W5500Device::initializeMacAddress(byte *mac)
     mac[1] = 0x08;  // wiznet prefix
     mac[2] = 0xDC;  // wiznet prefix
 
-    if(_preferences->getBool(preference_has_mac_saved))
+    if(_preferences->getBool(preference_has_mac_saved, false))
     {
         mac[3] = _preferences->getChar(preference_has_mac_byte_0);
         mac[4] = _preferences->getChar(preference_has_mac_byte_1);

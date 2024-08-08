@@ -74,7 +74,8 @@ TaskHandle_t networkTaskHandle = nullptr;
 void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
-    bool secrets = preferences->getBool(preference_show_secrets);
+    bool secrets = preferences->getBool(preference_show_secrets, false);
+    bool webEnabled = preferences->getBool(preference_webserver_enabled, true);
 
     while(true)
     {
@@ -97,7 +98,7 @@ void networkTask(void *pvParameters)
             networkOpener->update();
         }
 
-        if(preferences->getBool(preference_webserver_enabled, true))
+        if(webEnabled)
         {
             webCfgServer->update();
         }
@@ -389,7 +390,7 @@ void setup()
     gpio = new Gpio(preferences);
     String gpioDesc;
     gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
-    Serial.print(gpioDesc.c_str());
+    Log->print(gpioDesc.c_str());
 
     bleScanner = new BleScanner::Scanner();
     // Scan interval and window according to Nuki recommendations:
@@ -397,13 +398,13 @@ void setup()
     bleScanner->initialize("NukiHub", true, 40, 40);
     bleScanner->setScanDuration(0);
 
-#if PRESENCE_DETECTION_ENABLED
+    #if PRESENCE_DETECTION_ENABLED
     if(preferences->getInt(preference_presence_detection_timeout) >= 0)
     {
         presenceDetection = new PresenceDetection(preferences, bleScanner, CharBuffer::get(), buffer_size);
         presenceDetection->initialize();
     }
-#endif
+    #endif
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
@@ -445,7 +446,7 @@ void setup()
     }
     #endif
 
-    if((partitionType==1 && preferences->getString(preference_ota_updater_url).length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url).length() > 0)) setupTasks(true);
+    if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0)) setupTasks(true);
     else setupTasks(false);
 }
 

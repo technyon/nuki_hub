@@ -152,6 +152,7 @@ private:
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
+    String _discoveryTopic;
 
     PresenceDetection* _presenceDetection;
     Gpio* _gpio;

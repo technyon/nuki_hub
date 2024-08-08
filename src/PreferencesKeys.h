@@ -102,12 +102,12 @@
 
 inline bool initPreferences(Preferences* preferences)
 {
-#ifdef NUKI_HUB_UPDATER
+    #ifdef NUKI_HUB_UPDATER
     bool firstStart = false;
     return firstStart;
-#else
+    #else
     bool firstStart = !preferences->getBool(preference_started_before);
-#endif
+    #endif
 
     preferences->remove(preference_bootloop_counter);
 

@@ -51,14 +51,16 @@ void NukiOpenerWrapper::initialize()
 
     esp_power_level_t powerLevel;
 
-    if(_preferences->getInt(preference_ble_tx_power, 9) >= 9) powerLevel = ESP_PWR_LVL_P9;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= 6) powerLevel = ESP_PWR_LVL_P6;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= 3) powerLevel = ESP_PWR_LVL_P6;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= 0) powerLevel = ESP_PWR_LVL_P3;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -3) powerLevel = ESP_PWR_LVL_N3;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -6) powerLevel = ESP_PWR_LVL_N6;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -9) powerLevel = ESP_PWR_LVL_N9;
-    else if(_preferences->getInt(preference_ble_tx_power, 9) >= -12) powerLevel = ESP_PWR_LVL_N12;
+    int pwrLvl = _preferences->getInt(preference_ble_tx_power, 9);
+
+    if(pwrLvl >= 9) powerLevel = ESP_PWR_LVL_P9;
+    else if(pwrLvl >= 6) powerLevel = ESP_PWR_LVL_P6;
+    else if(pwrLvl >= 3) powerLevel = ESP_PWR_LVL_P6;
+    else if(pwrLvl >= 0) powerLevel = ESP_PWR_LVL_P3;
+    else if(pwrLvl >= -3) powerLevel = ESP_PWR_LVL_N3;
+    else if(pwrLvl >= -6) powerLevel = ESP_PWR_LVL_N6;
+    else if(pwrLvl >= -9) powerLevel = ESP_PWR_LVL_N9;
+    else if(pwrLvl >= -12) powerLevel = ESP_PWR_LVL_N12;
 
     _nukiOpener.setPower(powerLevel);
     _nukiOpener.registerBleScanner(_bleScanner);
@@ -76,6 +78,8 @@ void NukiOpenerWrapper::initialize()
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries, 200);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
+    _preferences->getBytes(preference_conf_opener_basic_acl, &_basicOpenerConfigAclPrefs, sizeof(_basicOpenerConfigAclPrefs));
+    _preferences->getBytes(preference_conf_opener_advanced_acl, &_advancedOpenerConfigAclPrefs, sizeof(_advancedOpenerConfigAclPrefs));
 
     if(_nrOfRetries < 0 || _nrOfRetries == 200)
     {
@@ -473,7 +477,7 @@ void NukiOpenerWrapper::updateConfig()
             if(_preferences->getBool(preference_conf_info_enabled, true)) _network->publishConfig(_nukiConfig);
             _retryConfigCount = 0;
 
-            if(_preferences->getBool(preference_timecontrol_info_enabled)) updateTimeControl(false);
+            if(_preferences->getBool(preference_timecontrol_info_enabled, false)) updateTimeControl(false);
 
             const int pinStatus = _preferences->getInt(preference_opener_pin_status, 4);
 
@@ -972,13 +976,6 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     const char *advancedKeys[20] = {"intercomID", "busModeSwitch", "shortCircuitDuration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection"};
     bool basicUpdated = false;
     bool advancedUpdated = false;
-    uint32_t basicOpenerConfigAclPrefs[16];
-    uint32_t advancedOpenerConfigAclPrefs[20];
-
-    nukiOpenerPreferences = new Preferences();
-    nukiOpenerPreferences->begin("nukihub", true);
-    nukiOpenerPreferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
-    nukiOpenerPreferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
     for(int i=0; i < 14; i++)
     {
@@ -992,7 +989,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                 continue;
             }
 
-            if((int)basicOpenerConfigAclPrefs[i] == 1)
+            if((int)_basicOpenerConfigAclPrefs[i] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
@@ -1182,7 +1179,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                 continue;
             }
 
-            if((int)advancedOpenerConfigAclPrefs[j] == 1)
+            if((int)_advancedOpenerConfigAclPrefs[j] == 1)
             {
                 cmdResult = Nuki::CmdResult::Error;
                 _retryCount = 0;
@@ -1428,8 +1425,6 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         }
     }
 
-    nukiOpenerPreferences->end();
-
     if(basicUpdated || advancedUpdated) jsonResult["general"] = "success";
     else jsonResult["general"] = "noChange";
 
@@ -1480,7 +1475,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
 {
     if(_preferences->getBool(preference_disable_non_json, false)) return;
 
-    if(!_preferences->getBool(preference_keypad_control_enabled))
+    if(!_preferences->getBool(preference_keypad_control_enabled, false))
     {
         _network->publishKeypadCommandResult("KeypadControlDisabled");
         return;
@@ -1616,7 +1611,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
         return;
     }
 
-    if(!_preferences->getBool(preference_keypad_control_enabled))
+    if(!_preferences->getBool(preference_keypad_control_enabled, false))
     {
         _network->publishKeypadJsonCommandResult("keypadControlDisabled");
         return;
@@ -2076,7 +2071,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
         return;
     }
 
-    if(!_preferences->getBool(preference_timecontrol_control_enabled))
+    if(!_preferences->getBool(preference_timecontrol_control_enabled, false))
     {
         _network->publishTimeControlCommandResult("timeControlControlDisabled");
         return;
@@ -2378,7 +2373,7 @@ void NukiOpenerWrapper::setupHASS()
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
 
-    if(_preferences->getBool(preference_opener_continuous_mode)) _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), _publishAuthData, _hasKeypad, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
+    if(_preferences->getBool(preference_opener_continuous_mode, false)) _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), _publishAuthData, _hasKeypad, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
     else _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), _publishAuthData, _hasKeypad, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
 
     _hassSetupCompleted = true;
