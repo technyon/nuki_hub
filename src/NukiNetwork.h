@@ -5,7 +5,6 @@
 #include <map>
 #include "networkDevices/NetworkDevice.h"
 #include "networkDevices/IPConfiguration.h"
-#include <HTTPClient.h>
 
 #ifndef NUKI_HUB_UPDATER
 #include "MqttReceiver.h"
@@ -113,7 +112,6 @@ private:
     static NukiNetwork* _inst;
 
     const char* _latestVersion;
-    HTTPClient https;
 
     Preferences* _preferences;
     IPConfiguration* _ipConfiguration = nullptr;
