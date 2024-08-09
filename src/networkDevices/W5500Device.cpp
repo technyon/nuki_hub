@@ -65,14 +65,20 @@ void W5500Device::initialize()
     }
 
     #ifndef NUKI_HUB_UPDATER
-    if(_preferences->getBool(preference_mqtt_log_enabled, false))
+    if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
     {
+        MqttLoggerMode mode;
+      
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
+        else mode = MqttLoggerMode::MqttAndSerial;
+        
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         _path = new char[pathStr.length() + 1];
         memset(_path, 0, sizeof(_path));
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, mode);
     }
     #endif
 

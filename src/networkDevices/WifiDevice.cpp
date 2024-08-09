@@ -46,15 +46,21 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 
-    if(preferences->getBool(preference_mqtt_log_enabled, false))
+    if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
     {
+        MqttLoggerMode mode;
+      
+        if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
+        else mode = MqttLoggerMode::MqttAndSerial;
+        
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
         String pathStr = preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, MqttLoggerMode::MqttAndSerial);
+        Log = new MqttLogger(*getMqttClient(), _path, mode);
     }
     #endif
 }
