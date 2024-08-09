@@ -391,14 +391,6 @@ void setup()
     Serial.begin(115200);
     Log = &Serial;
 
-    #ifndef NUKI_HUB_UPDATER
-    stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
-    static char linebuf[1024];
-    setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
-    esp_rom_install_channel_putc(1, &ets_putc_handler);
-    //ets_install_putc1(&ets_putc_handler);
-    #endif
-
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     bool firstStart = initPreferences(preferences);
