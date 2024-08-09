@@ -5,6 +5,8 @@
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+#include "Literals.hpp"
+
 template <typename T>
 static void checkVariant(T value, const char* expected_data,
                          size_t expected_len) {
@@ -129,21 +131,70 @@ TEST_CASE("serialize MsgPack value") {
 
   SECTION("str 16") {
     std::string shortest(256, '?');
-    checkVariant(shortest.c_str(), std::string("\xDA\x01\x00", 3) + shortest);
+    checkVariant(shortest.c_str(), "\xDA\x01\x00"_s + shortest);
 
     std::string longest(65535, '?');
-    checkVariant(longest.c_str(), std::string("\xDA\xFF\xFF", 3) + longest);
+    checkVariant(longest.c_str(), "\xDA\xFF\xFF"_s + longest);
   }
 
   SECTION("str 32") {
     std::string shortest(65536, '?');
-    checkVariant(shortest.c_str(),
-                 std::string("\xDB\x00\x01\x00\x00", 5) + shortest);
+    checkVariant(shortest.c_str(), "\xDB\x00\x01\x00\x00"_s + shortest);
   }
 
   SECTION("serialized(const char*)") {
     checkVariant(serialized("\xDA\xFF\xFF"), "\xDA\xFF\xFF");
     checkVariant(serialized("\xDB\x00\x01\x00\x00", 5), "\xDB\x00\x01\x00\x00");
+  }
+
+  SECTION("bin 8") {
+    checkVariant(MsgPackBinary("?", 1), "\xC4\x01?");
+  }
+
+  SECTION("bin 16") {
+    auto str = std::string(256, '?');
+    checkVariant(MsgPackBinary(str.data(), str.size()), "\xC5\x01\x00"_s + str);
+  }
+
+  // bin 32 is tested in string_length_size_4.cpp
+
+  SECTION("fixext 1") {
+    checkVariant(MsgPackExtension(1, "\x02", 1), "\xD4\x01\x02");
+  }
+
+  SECTION("fixext 2") {
+    checkVariant(MsgPackExtension(1, "\x03\x04", 2), "\xD5\x01\x03\x04");
+  }
+
+  SECTION("fixext 4") {
+    checkVariant(MsgPackExtension(1, "\x05\x06\x07\x08", 4),
+                 "\xD6\x01\x05\x06\x07\x08");
+  }
+
+  SECTION("fixext 8") {
+    checkVariant(MsgPackExtension(1, "????????", 8), "\xD7\x01????????");
+  }
+
+  SECTION("fixext 16") {
+    checkVariant(MsgPackExtension(1, "????????????????", 16),
+                 "\xD8\x01????????????????");
+  }
+
+  SECTION("ext 8") {
+    checkVariant(MsgPackExtension(2, "???", 3), "\xC7\x03\x02???");
+    checkVariant(MsgPackExtension(2, "?????", 5), "\xC7\x05\x02?????");
+    checkVariant(MsgPackExtension(2, "???????", 7), "\xC7\x07\x02???????");
+    checkVariant(MsgPackExtension(2, "?????????", 9), "\xC7\x09\x02?????????");
+    checkVariant(MsgPackExtension(2, "???????????????", 15),
+                 "\xC7\x0F\x02???????????????");
+    checkVariant(MsgPackExtension(2, "?????????????????", 17),
+                 "\xC7\x11\x02?????????????????");
+  }
+
+  SECTION("ext 16") {
+    auto str = std::string(256, '?');
+    checkVariant(MsgPackExtension(2, str.data(), str.size()),
+                 "\xC8\x01\x00\x02"_s + str);
   }
 
   SECTION("serialize round double as integer") {  // Issue #1718

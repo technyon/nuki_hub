@@ -1,6 +1,21 @@
 ArduinoJson: change log
 =======================
 
+v7.1.0 (2024-06-27)
+------
+
+* Add `ARDUINOJSON_STRING_LENGTH_SIZE` to the namespace name
+* Add support for MsgPack binary (PR #2078 by @Sanae6)
+* Add support for MsgPack extension
+* Make string support even more generic (PR #2084 by @d-a-v)
+* Optimize `deserializeMsgPack()`
+* Allow using a `JsonVariant` as a key or index (issue #2080)
+  Note: works only for reading, not for writing
+* Support `ElementProxy` and `MemberProxy` in `JsonDocument`'s constructor
+* Don't add partial objects when allocation fails (issue #2081)
+* Read MsgPack's 64-bit integers even if `ARDUINOJSON_USE_LONG_LONG` is `0`
+  (they are set to `null` if they don't fit in a `long`)
+
 v7.0.4 (2024-03-12)
 ------
 

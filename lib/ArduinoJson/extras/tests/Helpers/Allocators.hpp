@@ -10,6 +10,8 @@
 
 #include <sstream>
 
+namespace {
+
 struct FailingAllocator : ArduinoJson::Allocator {
   static FailingAllocator* instance() {
     static FailingAllocator allocator;
@@ -54,31 +56,31 @@ class AllocatorLogEntry {
 
 inline AllocatorLogEntry Allocate(size_t s) {
   char buffer[32];
-  sprintf(buffer, "allocate(%zu)", s);
+  snprintf(buffer, sizeof(buffer), "allocate(%zu)", s);
   return AllocatorLogEntry(buffer);
 }
 
 inline AllocatorLogEntry AllocateFail(size_t s) {
   char buffer[32];
-  sprintf(buffer, "allocate(%zu) -> nullptr", s);
+  snprintf(buffer, sizeof(buffer), "allocate(%zu) -> nullptr", s);
   return AllocatorLogEntry(buffer);
 }
 
 inline AllocatorLogEntry Reallocate(size_t s1, size_t s2) {
   char buffer[32];
-  sprintf(buffer, "reallocate(%zu, %zu)", s1, s2);
+  snprintf(buffer, sizeof(buffer), "reallocate(%zu, %zu)", s1, s2);
   return AllocatorLogEntry(buffer);
 }
 
 inline AllocatorLogEntry ReallocateFail(size_t s1, size_t s2) {
   char buffer[32];
-  sprintf(buffer, "reallocate(%zu, %zu) -> nullptr", s1, s2);
+  snprintf(buffer, sizeof(buffer), "reallocate(%zu, %zu) -> nullptr", s1, s2);
   return AllocatorLogEntry(buffer);
 }
 
 inline AllocatorLogEntry Deallocate(size_t s) {
   char buffer[32];
-  sprintf(buffer, "deallocate(%zu)", s);
+  snprintf(buffer, sizeof(buffer), "deallocate(%zu)", s);
   return AllocatorLogEntry(buffer);
 }
 
@@ -260,6 +262,7 @@ class TimebombAllocator : public ArduinoJson::Allocator {
   size_t countdown_ = 0;
   Allocator* upstream_;
 };
+}  // namespace
 
 inline size_t sizeofPoolList(size_t n = ARDUINOJSON_INITIAL_POOL_COUNT) {
   return sizeof(ArduinoJson::detail::VariantPool) * n;

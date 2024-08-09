@@ -1,6 +1,12 @@
 #ifndef NIMBLECONNINFO_H_
 #define NIMBLECONNINFO_H_
 
+#if defined(CONFIG_NIMBLE_CPP_IDF)
+#include "host/ble_gap.h"
+#else
+#include "nimble/nimble/host/include/host/ble_gap.h"
+#endif
+
 #include "NimBLEAddress.h"
 
 /**

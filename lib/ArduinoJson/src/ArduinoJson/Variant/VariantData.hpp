@@ -82,6 +82,21 @@ class VariantData {
     return var->addElement(resources);
   }
 
+  template <typename T>
+  bool addValue(T&& value, ResourceManager* resources) {
+    auto array = isNull() ? &toArray() : asArray();
+    return detail::ArrayData::addValue(array, detail::forward<T>(value),
+                                       resources);
+  }
+
+  template <typename T>
+  static bool addValue(VariantData* var, T&& value,
+                       ResourceManager* resources) {
+    if (!var)
+      return false;
+    return var->addValue(value, resources);
+  }
+
   bool asBoolean() const {
     switch (type()) {
       case VALUE_IS_BOOLEAN:
@@ -338,13 +353,13 @@ class VariantData {
   }
 
   template <typename T>
-  typename enable_if<is_signed<T>::value>::type setInteger(T value) {
+  enable_if_t<is_signed<T>::value> setInteger(T value) {
     setType(VALUE_IS_SIGNED_INTEGER);
     content_.asSignedInteger = value;
   }
 
   template <typename T>
-  typename enable_if<is_unsigned<T>::value>::type setInteger(T value) {
+  enable_if_t<is_unsigned<T>::value> setInteger(T value) {
     setType(VALUE_IS_UNSIGNED_INTEGER);
     content_.asUnsignedInteger = static_cast<JsonUInt>(value);
   }

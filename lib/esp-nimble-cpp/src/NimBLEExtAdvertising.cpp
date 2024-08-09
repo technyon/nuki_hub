@@ -100,12 +100,8 @@ bool NimBLEExtAdvertising::setInstanceData(uint8_t inst_id, NimBLEExtAdvertiseme
             if (rc != 0) {
                 NIMBLE_LOGE(LOG_TAG, "Invalid advertisement data: rc = %d", rc);
             } else {
-                if (adv.m_advAddress != NimBLEAddress("")) {
-                    ble_addr_t addr;
-                    memcpy(&addr.val, adv.m_advAddress.getNative(), 6);
-                    // Custom advertising address must be random.
-                    addr.type = BLE_OWN_ADDR_RANDOM;
-                    rc = ble_gap_ext_adv_set_addr(inst_id, &addr);
+                if (!adv.m_advAddress.isNull()) {
+                    rc = ble_gap_ext_adv_set_addr(inst_id, adv.m_advAddress.getBase());
                 }
 
                 if (rc != 0) {
@@ -341,7 +337,7 @@ int NimBLEExtAdvertising::handleGapEvent(struct ble_gap_event *event, void *arg)
                 case BLE_HS_EOS:
                 case BLE_HS_ECONTROLLER:
                 case BLE_HS_ENOTSYNCED:
-                    NIMBLE_LOGC(LOG_TAG, "host reset, rc = %d", event->adv_complete.reason);
+                    NIMBLE_LOGE(LOG_TAG, "host reset, rc = %d", event->adv_complete.reason);
                     NimBLEDevice::onReset(event->adv_complete.reason);
                     return 0;
                 default:
@@ -388,7 +384,7 @@ void NimBLEExtAdvertisingCallbacks::onScanRequest(NimBLEExtAdvertising *pAdv,
  * * BLE_HCI_LE_PHY_CODED
  */
 NimBLEExtAdvertisement::NimBLEExtAdvertisement(uint8_t priPhy, uint8_t secPhy)
-:   m_advAddress("")
+:   m_advAddress{}
 {
     memset (&m_params, 0, sizeof(m_params));
     m_params.own_addr_type = NimBLEDevice::m_own_addr_type;
@@ -493,10 +489,7 @@ void NimBLEExtAdvertisement::setScanFilter(bool scanRequestWhitelistOnly, bool c
  * @param [in] addr The address of the peer to direct the advertisements.
  */
 void NimBLEExtAdvertisement::setDirectedPeer(const NimBLEAddress & addr) {
-    ble_addr_t peerAddr;
-    memcpy(&peerAddr.val, addr.getNative(), 6);
-    peerAddr.type = addr.getType();
-    m_params.peer = peerAddr;
+    m_params.peer = *addr.getBase();
 } // setDirectedPeer
 
 
@@ -768,21 +761,9 @@ void NimBLEExtAdvertisement::setServices(const bool complete, const uint8_t size
     for(auto &it : v_uuid){
         if(it.bitSize() != size) {
             NIMBLE_LOGE(LOG_TAG, "Service UUID(%d) invalid", size);
-            return;
+            continue;
         } else {
-            switch(size) {
-                case 16:
-                    uuids += std::string((char*)&it.getNative()->u16.value, 2);
-                    break;
-                case 32:
-                    uuids += std::string((char*)&it.getNative()->u32.value, 4);
-                    break;
-                case 128:
-                    uuids += std::string((char*)&it.getNative()->u128.value, 16);
-                    break;
-                default:
-                    return;
-            }
+            uuids += std::string(reinterpret_cast<const char*>(it.getValue()), size / 8);
         }
     }
 
@@ -796,35 +777,30 @@ void NimBLEExtAdvertisement::setServices(const bool complete, const uint8_t size
  * @param [in] data The data to be associated with the service data advertised.
  */
 void NimBLEExtAdvertisement::setServiceData(const NimBLEUUID &uuid, const std::string &data) {
-    char cdata[2];
-    switch (uuid.bitSize()) {
-        case 16: {
+    uint8_t size = uuid.bitSize() / 8;
+    char cdata[2] = {static_cast<char>(1 + size), BLE_HS_ADV_TYPE_SVC_DATA_UUID16};
+    switch (size) {
+        case 2: {
             // [Len] [0x16] [UUID16] data
-            cdata[0] = data.length() + 3;
-            cdata[1] = BLE_HS_ADV_TYPE_SVC_DATA_UUID16;  // 0x16
-            addData(std::string(cdata, 2) + std::string((char*) &uuid.getNative()->u16.value, 2) + data);
             break;
         }
-
-        case 32: {
-            // [Len] [0x20] [UUID32] data
-            cdata[0] = data.length() + 5;
-            cdata[1] = BLE_HS_ADV_TYPE_SVC_DATA_UUID32; // 0x20
-            addData(std::string(cdata, 2) + std::string((char*) &uuid.getNative()->u32.value, 4) + data);
-            break;
-        }
-
-        case 128: {
+        case 16: {
             // [Len] [0x21] [UUID128] data
-            cdata[0] = data.length() + 17;
             cdata[1] = BLE_HS_ADV_TYPE_SVC_DATA_UUID128;  // 0x21
-            addData(std::string(cdata, 2) + std::string((char*) &uuid.getNative()->u128.value, 16) + data);
+            break;
+        }
+
+        case 4: {
+            // [Len] [0x20] [UUID32] data
+            cdata[1] = BLE_HS_ADV_TYPE_SVC_DATA_UUID32; // 0x20
             break;
         }
 
         default:
             return;
     }
+
+    addData(std::string(cdata, 2) + std::string(reinterpret_cast<const char*>(uuid.getValue()), size) + data);
 } // setServiceData
 
 

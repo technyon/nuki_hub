@@ -27,6 +27,12 @@
 #include "nimble/nimble/host/services/gatt/include/services/gatt/ble_svc_gatt.h"
 #endif
 
+#include <limits.h>
+#include <algorithm>
+
+#define NIMBLE_SERVER_GET_PEER_NAME_ON_CONNECT_CB 0
+#define NIMBLE_SERVER_GET_PEER_NAME_ON_AUTH_CB 1
+
 static const char* LOG_TAG = "NimBLEServer";
 static NimBLEServerCallbacks defaultCallbacks;
 
@@ -47,6 +53,7 @@ NimBLEServer::NimBLEServer() {
 #endif
     m_svcChanged            = false;
     m_deleteCallbacks       = true;
+    m_getPeerNameOnConnect  = false;
 } // NimBLEServer
 
 
@@ -186,9 +193,8 @@ void NimBLEServer::start() {
 
     int rc = ble_gatts_start();
     if (rc != 0) {
-        NIMBLE_LOGE(LOG_TAG, "ble_gatts_start; rc=%d, %s", rc,
-                            NimBLEUtils::returnCodeToString(rc));
-        abort();
+        NIMBLE_LOGE(LOG_TAG, "ble_gatts_start; rc=%d, %s", rc, NimBLEUtils::returnCodeToString(rc));
+        return;
     }
 
 #if CONFIG_NIMBLE_CPP_LOG_LEVEL >= 4
@@ -212,8 +218,8 @@ void NimBLEServer::start() {
     // Get the assigned service handles and build a vector of characteristics
     // with Notify / Indicate capabilities for event handling
     for(auto &svc : m_svcVec) {
-        if(svc->m_removed == 0) {
-            rc = ble_gatts_find_svc(&svc->getUUID().getNative()->u, &svc->m_handle);
+        if(svc->getRemoved() == 0) {
+            rc = ble_gatts_find_svc(svc->getUUID().getBase(), &svc->m_handle);
             if(rc != 0) {
                 NIMBLE_LOGW(LOG_TAG, "GATT Server started without service: %s, Service %s",
                             svc->getUUID().toString().c_str(), svc->isStarted() ? "missing" : "not started");
@@ -227,6 +233,13 @@ void NimBLEServer::start() {
             if((chr->m_properties & BLE_GATT_CHR_F_INDICATE) ||
                 (chr->m_properties & BLE_GATT_CHR_F_NOTIFY)) {
                 m_notifyChrVec.push_back(chr);
+            }
+
+            for (auto &desc : chr->m_dscVec) {
+                ble_gatts_find_dsc(svc->getUUID().getBase(),
+                chr->getUUID().getBase(),
+                desc->getUUID().getBase(),
+                &desc->m_handle);
             }
         }
     }
@@ -274,6 +287,14 @@ void NimBLEServer::advertiseOnDisconnect(bool aod) {
 } // advertiseOnDisconnect
 #endif
 
+/**
+ * @brief Set the server to automatically read the name from the connected peer before
+ * the onConnect callback is called and enables the override callback with name parameter.
+ * @param [in] enable Enable reading the connected peer name upon connection.
+ */
+void NimBLEServer::getPeerNameOnConnect(bool enable) {
+    m_getPeerNameOnConnect = enable;
+} // getPeerNameOnConnect
 
 /**
  * @brief Return the number of connected clients.
@@ -311,12 +332,8 @@ NimBLEConnInfo NimBLEServer::getPeerInfo(size_t index) {
  * @param [in] address The address of the peer.
  */
 NimBLEConnInfo NimBLEServer::getPeerInfo(const NimBLEAddress& address) {
-    ble_addr_t peerAddr;
-    memcpy(&peerAddr.val, address.getNative(),6);
-    peerAddr.type = address.getType();
-
     NimBLEConnInfo peerInfo;
-    int rc = ble_gap_conn_find_by_addr(&peerAddr, &peerInfo.m_desc);
+    int rc = ble_gap_conn_find_by_addr(address.getBase(), &peerInfo.m_desc);
     if (rc != 0) {
         NIMBLE_LOGE(LOG_TAG, "Peer info not found");
     }
@@ -340,6 +357,113 @@ NimBLEConnInfo NimBLEServer::getPeerIDInfo(uint16_t id) {
     return peerInfo;
 } // getPeerIDInfo
 
+/**
+ * @brief Callback that is called after reading from the peer name characteristic.
+ * @details This will check the task pointer in the task data struct to determine
+ * the action to take once the name has been read. If there is a task waiting then
+ * it will be woken, if not, the the RC value is checked to determine which callback
+ * should be called.
+ */
+int NimBLEServer::peerNameCB(uint16_t conn_handle,
+                             const struct ble_gatt_error *error,
+                             struct ble_gatt_attr *attr,
+                             void *arg) {
+    ble_task_data_t *pTaskData = (ble_task_data_t*)arg;
+    std::string *name = (std::string*)pTaskData->buf;
+    int rc = error->status;
+
+    if (rc == 0) {
+        if (attr) {
+            name->append(OS_MBUF_DATA(attr->om, char*), OS_MBUF_PKTLEN(attr->om));
+            return rc;
+        }
+    }
+
+    if (rc == BLE_HS_EDONE) {
+        // No ask means this was read for a callback.
+        if (pTaskData->task == nullptr) {
+            NimBLEServer* pServer = (NimBLEServer*)pTaskData->pATT;
+            NimBLEConnInfo peerInfo{};
+            ble_gap_conn_find(conn_handle, &peerInfo.m_desc);
+
+            // Use the rc value as a flag to indicate which callback should be called.
+            if (pTaskData->rc == NIMBLE_SERVER_GET_PEER_NAME_ON_CONNECT_CB) {
+                pServer->m_pServerCallbacks->onConnect(pServer, peerInfo, *name);
+            } else if (pTaskData->rc == NIMBLE_SERVER_GET_PEER_NAME_ON_AUTH_CB) {
+                pServer->m_pServerCallbacks->onAuthenticationComplete(peerInfo, *name);
+            }
+        }
+    } else {
+        NIMBLE_LOGE(LOG_TAG, "NimBLEServerPeerNameCB rc=%d; %s", rc, NimBLEUtils::returnCodeToString(rc));
+    }
+
+    if (pTaskData->task != nullptr) {
+        pTaskData->rc = rc;
+        xTaskNotifyGive(pTaskData->task);
+    } else {
+        // If the read was triggered for callback use then these were allocated.
+        delete name;
+        delete pTaskData;
+    }
+
+    return rc;
+}
+
+/**
+ * @brief Internal method that sends the read command.
+ */
+std::string NimBLEServer::getPeerNameInternal(uint16_t conn_handle, TaskHandle_t task, int cb_type) {
+    std::string *buf = new std::string{};
+    ble_task_data_t *taskData = new ble_task_data_t{this, task, cb_type, buf};
+    ble_uuid16_t uuid {{BLE_UUID_TYPE_16}, BLE_SVC_GAP_CHR_UUID16_DEVICE_NAME};
+    int rc = ble_gattc_read_by_uuid(conn_handle,
+                                    1,
+                                    0xffff,
+                                    &uuid.u,
+                                    NimBLEServer::peerNameCB,
+                                    taskData);
+    if (rc != 0) {
+        NIMBLE_LOGE(LOG_TAG, "ble_gattc_read_by_uuid rc=%d, %s", rc, NimBLEUtils::returnCodeToString(rc));
+        NimBLEConnInfo peerInfo{};
+        ble_gap_conn_find(conn_handle, &peerInfo.m_desc);
+        if (cb_type == NIMBLE_SERVER_GET_PEER_NAME_ON_CONNECT_CB) {
+            m_pServerCallbacks->onConnect(this, peerInfo, *buf);
+        } else if (cb_type == NIMBLE_SERVER_GET_PEER_NAME_ON_AUTH_CB) {
+            m_pServerCallbacks->onAuthenticationComplete(peerInfo, *buf);
+        }
+        delete buf;
+        delete taskData;
+    } else if (task != nullptr) {
+#ifdef ulTaskNotifyValueClear
+        // Clear the task notification value to ensure we block
+        ulTaskNotifyValueClear(task, ULONG_MAX);
+#endif
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        rc = taskData->rc;
+        std::string name{*(std::string*)taskData->buf};
+        delete buf;
+        delete taskData;
+
+        if (rc != 0 && rc != BLE_HS_EDONE) {
+            NIMBLE_LOGE(LOG_TAG, "getPeerName rc=%d %s", rc, NimBLEUtils::returnCodeToString(rc));
+        }
+
+        return name;
+    }
+    // TaskData and name buffer will be deleted in the callback.
+    return "";
+}
+
+/**
+ * @brief Get the name of the connected peer.
+ * @param connInfo A reference to a NimBLEConnInfo instance to read the name from.
+ * @returns A string containing the name.
+ * @note This is a blocking call and should NOT be called from any callbacks!
+ */
+std::string NimBLEServer::getPeerName(const NimBLEConnInfo& connInfo) {
+    std::string name = getPeerNameInternal(connInfo.getConnHandle(), xTaskGetCurrentTaskHandle());
+    return name;
+}
 
 /**
  * @brief Handle a GATT Server Event.
@@ -366,16 +490,22 @@ int NimBLEServer::handleGapEvent(struct ble_gap_event *event, void *arg) {
 #if !CONFIG_BT_NIMBLE_EXT_ADV
                 NimBLEDevice::startAdvertising();
 #endif
-            }
-            else {
-                pServer->m_connectedPeersVec.push_back(event->connect.conn_handle);
-
+            } else {
                 rc = ble_gap_conn_find(event->connect.conn_handle, &peerInfo.m_desc);
                 if (rc != 0) {
                     return 0;
                 }
 
-                pServer->m_pServerCallbacks->onConnect(pServer, peerInfo);
+                pServer->m_connectedPeersVec.push_back(event->connect.conn_handle);
+
+                if (pServer->m_getPeerNameOnConnect) {
+                    pServer->getPeerNameInternal(event->connect.conn_handle,
+                                                 nullptr,
+                                                 NIMBLE_SERVER_GET_PEER_NAME_ON_CONNECT_CB);
+                } else {
+                    pServer->m_pServerCallbacks->onConnect(pServer, peerInfo);
+                }
+
             }
 
             return 0;
@@ -390,7 +520,7 @@ int NimBLEServer::handleGapEvent(struct ble_gap_event *event, void *arg) {
                 case BLE_HS_EOS:
                 case BLE_HS_ECONTROLLER:
                 case BLE_HS_ENOTSYNCED:
-                    NIMBLE_LOGC(LOG_TAG, "Disconnect - host reset, rc=%d", event->disconnect.reason);
+                    NIMBLE_LOGE(LOG_TAG, "Disconnect - host reset, rc=%d", event->disconnect.reason);
                     NimBLEDevice::onReset(event->disconnect.reason);
                     break;
                 default:
@@ -438,7 +568,7 @@ int NimBLEServer::handleGapEvent(struct ble_gap_event *event, void *arg) {
                         }
                     }
 
-                    it->setSubscribe(event);
+                    it->setSubscribe(event, peerInfo);
                     break;
                 }
             }
@@ -526,7 +656,13 @@ int NimBLEServer::handleGapEvent(struct ble_gap_event *event, void *arg) {
                 return BLE_ATT_ERR_INVALID_HANDLE;
             }
 
-            pServer->m_pServerCallbacks->onAuthenticationComplete(peerInfo);
+            if (pServer->m_getPeerNameOnConnect) {
+                pServer->getPeerNameInternal(event->enc_change.conn_handle,
+                                             nullptr,
+                                             NIMBLE_SERVER_GET_PEER_NAME_ON_AUTH_CB);
+            } else {
+                pServer->m_pServerCallbacks->onAuthenticationComplete(peerInfo);
+            }
             return 0;
         } // BLE_GAP_EVENT_ENC_CHANGE
 
@@ -592,6 +728,68 @@ int NimBLEServer::handleGapEvent(struct ble_gap_event *event, void *arg) {
 
 
 /**
+ * @brief STATIC callback to handle events from the NimBLE stack.
+ */
+int NimBLEServer::handleGattEvent(uint16_t conn_handle, uint16_t attr_handle,
+                                  struct ble_gatt_access_ctxt *ctxt, void *arg) {
+    NIMBLE_LOGD(LOG_TAG, "Gatt %s event", (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR ||
+                ctxt->op == BLE_GATT_ACCESS_OP_READ_DSC) ? "Read" : "Write");
+    auto pAtt = static_cast<NimBLELocalValueAttribute*>(arg);
+    const auto& val = pAtt->getAttVal();
+    NimBLEConnInfo peerInfo{};
+    ble_gap_conn_find(conn_handle, &peerInfo.m_desc);
+
+    switch(ctxt->op) {
+        case BLE_GATT_ACCESS_OP_READ_DSC:
+        case BLE_GATT_ACCESS_OP_READ_CHR: {
+            // If the packet header is only 8 bytes this is a follow up of a long read
+            // so we don't want to call the onRead() callback again.
+            if(ctxt->om->om_pkthdr_len > 8 ||
+                conn_handle == BLE_HS_CONN_HANDLE_NONE ||
+                val.size() <= (ble_att_mtu(conn_handle) - 3)) {
+                pAtt->readEvent(peerInfo);
+            }
+
+            ble_npl_hw_enter_critical();
+            int rc = os_mbuf_append(ctxt->om, val.data(), val.size());
+            ble_npl_hw_exit_critical(0);
+            return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+
+        case BLE_GATT_ACCESS_OP_WRITE_DSC:
+        case BLE_GATT_ACCESS_OP_WRITE_CHR: {
+            uint16_t att_max_len = val.max_size();
+            if (ctxt->om->om_len > att_max_len) {
+                return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+            }
+
+            uint8_t buf[att_max_len];
+            uint16_t len = ctxt->om->om_len;
+            memcpy(buf, ctxt->om->om_data,len);
+
+            os_mbuf *next;
+            next = SLIST_NEXT(ctxt->om, om_next);
+            while(next != NULL){
+                if((len + next->om_len) > att_max_len) {
+                    return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+                }
+                memcpy(&buf[len], next->om_data, next->om_len);
+                len += next->om_len;
+                next = SLIST_NEXT(next, om_next);
+            }
+
+            pAtt->writeEvent(buf, len, peerInfo);
+            return 0;
+        }
+
+        default:
+            break;
+    }
+
+    return BLE_ATT_ERR_UNLIKELY;
+} // handleGattEvent
+
+/**
  * @brief Set the server callbacks.
  *
  * As a %BLE server operates, it will generate server level events such as a new client connecting or a previous client
@@ -633,7 +831,7 @@ void NimBLEServer::removeService(NimBLEService* service, bool deleteSvc) {
     // Check if the service was already removed and if so check if this
     // is being called to delete the object and do so if requested.
     // Otherwise, ignore the call and return.
-    if(service->m_removed > 0) {
+    if(service->getRemoved() > 0) {
         if(deleteSvc) {
             for(auto it = m_svcVec.begin(); it != m_svcVec.end(); ++it) {
                 if ((*it) == service) {
@@ -652,7 +850,7 @@ void NimBLEServer::removeService(NimBLEService* service, bool deleteSvc) {
         return;
     }
 
-    service->m_removed = deleteSvc ? NIMBLE_ATT_REMOVE_DELETE : NIMBLE_ATT_REMOVE_HIDE;
+    service->setRemoved(deleteSvc ? NIMBLE_ATT_REMOVE_DELETE : NIMBLE_ATT_REMOVE_HIDE);
     serviceChanged();
 #if !CONFIG_BT_NIMBLE_EXT_ADV
     NimBLEDevice::getAdvertising()->removeServiceUUID(service->getUUID());
@@ -676,12 +874,12 @@ void NimBLEServer::addService(NimBLEService* service) {
 
     // If adding a service that was not removed add it and return.
     // Else reset GATT and send service changed notification.
-    if(service->m_removed == 0) {
+    if(service->getRemoved() == 0) {
         m_svcVec.push_back(service);
         return;
     }
 
-    service->m_removed = 0;
+    service->setRemoved(0);
     serviceChanged();
 }
 
@@ -700,8 +898,8 @@ void NimBLEServer::resetGATT() {
     ble_svc_gatt_init();
 
     for(auto it = m_svcVec.begin(); it != m_svcVec.end(); ) {
-        if ((*it)->m_removed > 0) {
-            if ((*it)->m_removed == NIMBLE_ATT_REMOVE_DELETE) {
+        if ((*it)->getRemoved() > 0) {
+            if ((*it)->getRemoved() == NIMBLE_ATT_REMOVE_DELETE) {
                 delete *it;
                 it = m_svcVec.erase(it);
             } else {
@@ -857,6 +1055,10 @@ void NimBLEServerCallbacks::onConnect(NimBLEServer* pServer, NimBLEConnInfo& con
     NIMBLE_LOGD("NimBLEServerCallbacks", "onConnect(): Default");
 } // onConnect
 
+void NimBLEServerCallbacks::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, std::string& name) {
+    NIMBLE_LOGD("NimBLEServerCallbacks", "onConnect(): Default");
+} // onConnect
+
 void NimBLEServerCallbacks::onDisconnect(NimBLEServer* pServer,
                                          NimBLEConnInfo& connInfo, int reason) {
     NIMBLE_LOGD("NimBLEServerCallbacks", "onDisconnect(): Default");
@@ -881,6 +1083,10 @@ void NimBLEServerCallbacks::onIdentity(const NimBLEConnInfo& connInfo){
 } // onIdentity
 
 void NimBLEServerCallbacks::onAuthenticationComplete(const NimBLEConnInfo& connInfo){
+    NIMBLE_LOGD("NimBLEServerCallbacks", "onAuthenticationComplete: default");
+} // onAuthenticationComplete
+
+void NimBLEServerCallbacks::onAuthenticationComplete(const NimBLEConnInfo& connInfo, const std::string& name){
     NIMBLE_LOGD("NimBLEServerCallbacks", "onAuthenticationComplete: default");
 } // onAuthenticationComplete
 

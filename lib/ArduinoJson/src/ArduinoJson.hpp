@@ -36,6 +36,7 @@
 #include "ArduinoJson/Array/ElementProxy.hpp"
 #include "ArduinoJson/Array/Utilities.hpp"
 #include "ArduinoJson/Collection/CollectionImpl.hpp"
+#include "ArduinoJson/Memory/ResourceManagerImpl.hpp"
 #include "ArduinoJson/Memory/VariantPoolImpl.hpp"
 #include "ArduinoJson/Object/MemberProxy.hpp"
 #include "ArduinoJson/Object/ObjectImpl.hpp"
@@ -47,7 +48,9 @@
 #include "ArduinoJson/Json/JsonDeserializer.hpp"
 #include "ArduinoJson/Json/JsonSerializer.hpp"
 #include "ArduinoJson/Json/PrettyJsonSerializer.hpp"
+#include "ArduinoJson/MsgPack/MsgPackBinary.hpp"
 #include "ArduinoJson/MsgPack/MsgPackDeserializer.hpp"
+#include "ArduinoJson/MsgPack/MsgPackExtension.hpp"
 #include "ArduinoJson/MsgPack/MsgPackSerializer.hpp"
 
 #include "ArduinoJson/compatibility.hpp"
