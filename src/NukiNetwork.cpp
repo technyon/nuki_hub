@@ -216,7 +216,6 @@ NetworkDevice *NukiNetwork::device()
 void NukiNetwork::initialize()
 {
     _hostname = _preferences->getString(preference_hostname, "");
-    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
 
     if(_hostname == "")
     {

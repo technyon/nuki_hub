@@ -2576,31 +2576,158 @@ void WebCfgServer::buildConfigureWifiHtml(String &response)
 
 void WebCfgServer::buildInfoHtml(String &response)
 {
-    DebugPreferences debugPreferences;
+    uint32_t aclPrefs[17];
+    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
     buildHtmlHeader(response);
-    response.concat("<h3>System Information</h3> <pre>");
-
-    response.concat("Nuki Hub version: ");
+    response.concat("<h3>System Information</h3><pre>");
+    response.concat("------------ NUKI HUB GENERAL ------------\n");
+    response.concat("Version: ");
     response.concat(NUKI_HUB_VERSION);
-    response.concat("\n");
-    response.concat("Nuki Hub build: ");
+    response.concat("\nBuild: ");
     response.concat(NUKI_HUB_BUILD);
-    response.concat("\n");
-    response.concat("Nuki Hub build type: ");
+    response.concat("\nBuild type: ");
     #ifndef DEBUG_NUKIHUB
     response.concat("Release\n");
     #else
     response.concat("Debug\n");
     #endif
+    response.concat("Uptime: ");
+    response.concat(esp_timer_get_time() / 1000 / 1000 / 60);
+    response.concat(" minutes\n");
+    response.concat("Last restart reason FW: ");
+    response.concat(getRestartReason());
+    response.concat("\nLast restart reason ESP: ");
+    response.concat(getEspRestartReason());
+    response.concat("\nFree heap: ");
+    response.concat(esp_get_free_heap_size());
+    response.concat("\nNetwork task stack size: ");
+    response.concat(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE));
+    response.concat("\nNetwork task stack high watermark: ");
+    response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
+    response.concat("\Nuki task stack size: ");
+    response.concat(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE));
+    response.concat("\n Nuki task stack high watermark: ");
+    response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
+    response.concat("\nConfig version: ");
+    response.concat(_preferences->getString(preference_config_version, ""));
+    response.concat("\nCheck for updates: ");
+    response.concat(_preferences->getBool(preference_check_updates, false) ? "True" : "False");
+    response.concat("\nLatest version: ");
+    response.concat(_preferences->getString(preference_latest_version, ""));
+    response.concat("\nAllow update from MQTT: ");
+    response.concat(_preferences->getBool(preference_update_from_mqtt, false) ? "True" : "False");
+    response.concat("\n");
+    response.concat("\nWeb configurator username: ");
+    response.concat(_preferences->getString(preference_cred_user, "").length > 0 ? "***" : "Not set");
+    response.concat("\nWeb configurator password: ");
+    response.concat(_preferences->getString(preference_cred_password, "").length > 0 ? "***" : "Not set");
 
-    response.concat(debugPreferences.preferencesToString(_preferences));
+    preference_enable_bootloop_reset
+    preference_mqtt_log_enabled
+    preference_webserver_enabled
+    preference_publish_debug_info
+
+    response.concat("------------ NETWORK ------------\n");
+
+    response.concat("Network connected: ");
+    response.concat();
+    response.concat("\nIP Address: ");
+    response.concat();
+    response.concat("\n");
+
+    response.concat("Network device: ");
+    response.concat(_network->networkDeviceName());
+    response.concat("\n");
+
+    if(_network->networkDeviceName() == "Built-in Wi-Fi")
+    {
+        response.concat("BSSID of AP: ");
+        response.concat(_network->networkBSSID());
+        response.concat("\n");
+    }
+
+    preference_ip_dhcp_enabled
+    preference_ip_address
+    preference_ip_subnet
+    preference_ip_gateway
+    preference_ip_dns_server
+    preference_has_mac_saved
+    preference_has_mac_byte_0
+    preference_has_mac_byte_1
+    preference_has_mac_byte_2
+    preference_network_wifi_fallback_disabled
+    preference_find_best_rssi
+    preference_rssi_publish_interval
+    preference_hostname
+    preference_network_timeout
+    preference_restart_on_disconnect
+    preference_recon_netw_on_mqtt_discon
+
+    response.concat("------------ MQTT ------------\n");
 
     response.concat("MQTT connected: ");
     response.concat(_network->mqttConnectionState() > 0 ? "Yes\n" : "No\n");
 
-    uint32_t aclPrefs[17];
-    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    preference_mqtt_broker
+    preference_mqtt_broker_port
+    preference_mqtt_user
+    preference_mqtt_password
+    preference_mqtt_lock_path
+    preference_mqtt_opener_path
+    preference_mqtt_ca
+    preference_mqtt_crt
+    preference_mqtt_key
+
+    response.concat("------------ BLUETOOTH ------------\n");
+
+    preference_ble_tx_power
+    preference_command_nr_of_retries
+    preference_command_retry_delay
+    preference_restart_ble_beacon_lost
+
+    preference_query_interval_lockstate
+    preference_query_interval_battery
+
+    preference_disable_non_json
+    preference_conf_info_enabled
+    preference_query_interval_configuration
+
+    preference_keypad_info_enabled
+    preference_keypad_topic_per_entry
+    preference_keypad_control_enabled
+    preference_keypad_publish_code
+    preference_keypad_max_entries
+    preference_query_interval_keypad
+
+    preference_timecontrol_control_enabled
+    preference_timecontrol_topic_per_entry
+    preference_timecontrol_info_enabled
+    preference_timecontrol_max_entries
+
+    preference_publish_authdata
+    preference_authlog_max_entries
+
+    response.concat("------------ HOME ASSISTANT ------------\n");
+
+    preference_mqtt_hass_discovery
+    preference_mqtt_hass_cu_url
+
+    response.concat("------------ NUKI LOCK ------------\n");
+
+    preference_lock_enabled
+    preference_lock_pin_status
+    preference_device_id_lock
+    preference_nuki_id_lock
+    preference_lock_max_keypad_code_count
+    preference_lock_max_timecontrol_entry_count
+    preference_register_as_app
+
+    response.concat("------------ HYBRID MODE ------------\n");
+    preference_official_hybrid
+    preference_official_hybrid_actions
+    preference_official_hybrid_retry
+    preference_query_interval_hybrid_lockstate
 
     if(_nuki != nullptr)
     {
@@ -2715,7 +2842,48 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)advancedLockConfigAclPrefs[20] ? "Allowed\n" : "Disallowed\n");
         response.concat("Lock config ACL (Auto update enabled): ");
         response.concat((int)advancedLockConfigAclPrefs[21] ? "Allowed\n" : "Disallowed\n");
+
+        if(_preferences->getBool(preference_show_secrets))
+        {
+            char tmp[16];
+            unsigned char currentBleAddress[6];
+            unsigned char authorizationId[4] = {0x00};
+            unsigned char secretKeyK[32] = {0x00};
+            Preferences nukiBlePref;
+            nukiBlePref.begin("NukiHub", false);
+            nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
+            nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
+            nukiBlePref.getBytes("authorizationId", authorizationId, 4);
+            nukiBlePref.end();
+            response.concat("Lock bleAddress: ");
+            for (int i = 0; i < 6; i++) {
+              sprintf(tmp, "%02x", currentBleAddress[i]);
+              response.concat(tmp);
+            }
+            response.concat("\nLock secretKeyK: ");
+            for (int i = 0; i < 32; i++) {
+              sprintf(tmp, "%02x", secretKeyK[i]);
+              response.concat(tmp);
+            }
+            response.concat("\nLock authorizationId: ");
+            for (int i = 0; i < 4; i++) {
+              sprintf(tmp, "%02x", authorizationId[i]);
+              response.concat(tmp);
+            }
+            response.concat("\n");
+        }
     }
+
+    response.concat("------------ NUKI OPENER ------------\n");
+
+    preference_device_id_opener
+    preference_nuki_id_opener
+    preference_opener_enabled
+    preference_opener_pin_status
+    preference_opener_continuous_mode
+    preference_opener_max_keypad_code_count
+    preference_opener_max_timecontrol_entry_count
+    preference_register_opener_as_app
 
     if(_nukiOpener != nullptr)
     {
@@ -2816,40 +2984,8 @@ void WebCfgServer::buildInfoHtml(String &response)
         response.concat((int)advancedOpenerConfigAclPrefs[18] ? "Allowed\n" : "Disallowed\n");
         response.concat("Opener config ACL (Automatic battery type detection): ");
         response.concat((int)advancedOpenerConfigAclPrefs[19] ? "Allowed\n" : "Disallowed\n");
-    }
 
-    if(_preferences->getBool(preference_show_secrets))
-    {
-        if(_nuki != nullptr)
-        {
-            char tmp[16];
-            unsigned char currentBleAddress[6];
-            unsigned char authorizationId[4] = {0x00};
-            unsigned char secretKeyK[32] = {0x00};
-            Preferences nukiBlePref;
-            nukiBlePref.begin("NukiHub", false);
-            nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
-            nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
-            nukiBlePref.getBytes("authorizationId", authorizationId, 4);
-            nukiBlePref.end();
-            response.concat("Lock bleAddress: ");
-            for (int i = 0; i < 6; i++) {
-              sprintf(tmp, "%02x", currentBleAddress[i]);
-              response.concat(tmp);
-            }
-            response.concat("\nLock secretKeyK: ");
-            for (int i = 0; i < 32; i++) {
-              sprintf(tmp, "%02x", secretKeyK[i]);
-              response.concat(tmp);
-            }
-            response.concat("\nLock authorizationId: ");
-            for (int i = 0; i < 4; i++) {
-              sprintf(tmp, "%02x", authorizationId[i]);
-              response.concat(tmp);
-            }
-            response.concat("\n");
-        }
-        if(_nukiOpener != nullptr)
+        if(_preferences->getBool(preference_show_secrets))
         {
             char tmp[16];
             unsigned char currentBleAddressOpn[6];
@@ -2880,40 +3016,8 @@ void WebCfgServer::buildInfoHtml(String &response)
         }
     }
 
-    response.concat("Network device: ");
-    response.concat(_network->networkDeviceName());
-    response.concat("\n");
-
-    if(_network->networkDeviceName() == "Built-in Wi-Fi")
-    {
-        response.concat("BSSID of AP: ");
-        response.concat(_network->networkBSSID());
-        response.concat("\n");
-    }
-
-    response.concat("Uptime: ");
-    response.concat(esp_timer_get_time() / 1000 / 1000 / 60);
-    response.concat(" minutes\n");
-
-    response.concat("Heap: ");
-    response.concat(esp_get_free_heap_size());
-    response.concat("\n");
-
-    response.concat("Stack watermarks: nw: ");
-    response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
-    response.concat(", nuki: ");
-    response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
-    response.concat("\n");
-
+    response.concat("------------ GPIO ------------\n");
     _gpio->getConfigurationText(response, _gpio->pinConfiguration());
-
-    response.concat("Restart reason FW: ");
-    response.concat(getRestartReason());
-    response.concat( "\n");
-
-    response.concat("Restart reason ESP: ");
-    response.concat(getEspRestartReason());
-    response.concat("\n");
 
     response.concat("</pre> </body></html>");
 }
