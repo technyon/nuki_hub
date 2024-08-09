@@ -3836,4 +3836,9 @@ String NukiNetwork::localIP()
 {
     return _device->localIP();
 }
+
+bool NukiNetwork::isConnected()
+{
+    return _device->isConnected();
+}
 #endif

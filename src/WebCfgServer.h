@@ -109,5 +109,6 @@ private:
     uint32_t _transferredSize = 0;
     int64_t _otaStartTs = 0;
     String _hostname;
+    String _response;
     bool _enabled = true;
 };

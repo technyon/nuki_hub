@@ -55,6 +55,7 @@ public:
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
     String localIP();
+    bool isConnected();
 
     void subscribe(const char* prefix, const char* path);
     void initTopic(const char* prefix, const char* path, const char* value);
