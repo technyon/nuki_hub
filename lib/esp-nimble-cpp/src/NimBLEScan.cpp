@@ -111,28 +111,16 @@ int NimBLEScan::handleGapEvent(ble_gap_event* event, void* arg) {
                     return 0;
                 }
 
-                advertisedDevice = new NimBLEAdvertisedDevice();
-                advertisedDevice->setAddress(advertisedAddress);
-                advertisedDevice->setAdvType(event_type, isLegacyAdv);
-#if CONFIG_BT_NIMBLE_EXT_ADV
-                advertisedDevice->setSetId(disc.sid);
-                advertisedDevice->setPrimaryPhy(disc.prim_phy);
-                advertisedDevice->setSecondaryPhy(disc.sec_phy);
-                advertisedDevice->setPeriodicInterval(disc.periodic_adv_itvl);
-#endif
+                advertisedDevice = new NimBLEAdvertisedDevice(event, event_type);
                 pScan->m_scanResults.m_advertisedDevicesVector.push_back(advertisedDevice);
                 NIMBLE_LOGI(LOG_TAG, "New advertiser: %s", advertisedAddress.toString().c_str());
             } else if (advertisedDevice != nullptr) {
+                advertisedDevice->update(event, event_type);
                 NIMBLE_LOGI(LOG_TAG, "Updated advertiser: %s", advertisedAddress.toString().c_str());
             } else {
                 // Scan response from unknown device
                 return 0;
             }
-
-            advertisedDevice->m_timestamp = time(nullptr);
-            advertisedDevice->setRSSI(disc.rssi);
-            advertisedDevice->setPayload(disc.data, disc.length_data, (isLegacyAdv &&
-                                         event_type == BLE_HCI_ADV_RPT_EVTYPE_SCAN_RSP));
 
             if (pScan->m_pScanCallbacks) {
                 if (advertisedDevice->m_callbackSent == 0 || !pScan->m_scan_params.filter_duplicates) {
@@ -359,7 +347,7 @@ bool NimBLEScan::start(uint32_t duration, bool is_continue) {
         case BLE_HS_EOS:
         case BLE_HS_ECONTROLLER:
         case BLE_HS_ENOTSYNCED:
-            NIMBLE_LOGC(LOG_TAG, "Unable to scan - Host Reset");
+            NIMBLE_LOGE(LOG_TAG, "Unable to scan - Host Reset");
             break;
 
         default:

@@ -142,7 +142,7 @@ void notifyTask(void * parameter){
             if(pSvc) {
                 NimBLECharacteristic* pChr = pSvc->getCharacteristic("F00D");
                 if(pChr) {
-                    pChr->notify(true);
+                    pChr->notify();
                 }
             }
         }
