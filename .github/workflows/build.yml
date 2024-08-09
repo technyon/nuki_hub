@@ -57,13 +57,12 @@ jobs:
           sed -i "s/unknownbuildnr/$Version/g" src/Config.h
       - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
+          ORIGBOARD="${BOARD}"
           if [ "$BUILD" = "debug" ]; then
             BOARD="${BOARD}_dbg"
           fi
           echo "::group::Building with PlatformIO"
-            if [ "$BUILD" = "release" ]; then
-              make updater_${BOARD}
-            fi
+            make updater_${ORIGBOARD}
             make $BOARD
           echo "::endgroup::"
       - name: Add flash script
