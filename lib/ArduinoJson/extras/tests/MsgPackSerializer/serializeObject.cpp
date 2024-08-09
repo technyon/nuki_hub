@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <catch.hpp>
 
+#include "Literals.hpp"
+
 static void check(const JsonObject object, const char* expected_data,
                   size_t expected_len) {
   std::string expected(expected_data, expected_data + expected_len);
@@ -44,7 +46,7 @@ TEST_CASE("serialize MsgPack object") {
   SECTION("map 16") {
     for (int i = 0; i < 16; ++i) {
       char key[16];
-      sprintf(key, "i%X", i);
+      snprintf(key, sizeof(key), "i%X", i);
       object[key] = i;
     }
 
@@ -60,7 +62,7 @@ TEST_CASE("serialize MsgPack object") {
   //
   //   for (int i = 0; i < 65536; ++i) {
   //     char kv[16];
-  //     sprintf(kv, "%04x", i);
+  //     snprintf(kv, sizeof(kv), "%04x", i);
   //     object[kv] = kv;
   //     expected += '\xA4';
   //     expected += kv;
@@ -77,7 +79,7 @@ TEST_CASE("serialize MsgPack object") {
   }
 
   SECTION("serialized(std::string)") {
-    object["hello"] = serialized(std::string("\xDB\x00\x01\x00\x00", 5));
+    object["hello"] = serialized("\xDB\x00\x01\x00\x00"_s);
     check(object, "\x81\xA5hello\xDB\x00\x01\x00\x00");
   }
 }

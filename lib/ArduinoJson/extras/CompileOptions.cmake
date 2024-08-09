@@ -1,3 +1,7 @@
+if(NOT DEFINED COVERAGE)
+	set(COVERAGE OFF)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 	add_compile_options(
 		-pedantic
@@ -30,7 +34,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	if((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8) AND(NOT ${COVERAGE}))
+	if((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9) AND(NOT ${COVERAGE}))
 		add_compile_options(-g -Og)
 	else() # GCC 4.8
 		add_compile_options(
