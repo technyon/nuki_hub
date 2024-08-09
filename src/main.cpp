@@ -108,12 +108,13 @@ int _log_vprintf(const char *fmt, va_list args) {
 
 void setReroute(){
     esp_log_set_vprintf(_log_vprintf);
-    #ifdef DEBUG_NUKIHUB
     if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
-    else esp_log_level_set("*", ESP_LOG_DEBUG);
-    esp_log_level_set("nvs", ESP_LOG_INFO);
-    esp_log_level_set("wifi", ESP_LOG_INFO);
-    #endif
+    else 
+    {
+        esp_log_level_set("*", ESP_LOG_DEBUG);
+        esp_log_level_set("nvs", ESP_LOG_INFO);
+        esp_log_level_set("wifi", ESP_LOG_INFO);
+    }
 }
 #endif
 
@@ -121,6 +122,7 @@ void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
     bool secrets = preferences->getBool(preference_show_secrets);
+    bool reroute = true;
 
     while(true)
     {
@@ -138,17 +140,15 @@ void networkTask(void *pvParameters)
         bool connected = network->update();
 
         #ifndef NUKI_HUB_UPDATER
-        if(connected) setReroute();
-
-        if(connected && openerEnabled)
+        #ifdef DEBUG_NUKIHUB
+        if(connected && reroute)
         {
-            networkOpener->update();
+            reroute = false;
+            setReroute();
         }
-
-        if(preferences->getBool(preference_webserver_enabled, true))
-        {
-            webCfgServer->update();
-        }
+        #endif
+        if(connected && openerEnabled) networkOpener->update();
+        if(preferences->getBool(preference_webserver_enabled, true)) webCfgServer->update();
         #else
         webCfgServer->update();
         #endif

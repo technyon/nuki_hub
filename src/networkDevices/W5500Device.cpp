@@ -65,12 +65,12 @@ void W5500Device::initialize()
     }
 
     #ifndef NUKI_HUB_UPDATER
-    if(_preferences->getBool(preference_mqtt_log_enabled) || _preferences->getBool(preference_webserial_enabled))
+    if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
     {
         MqttLoggerMode mode;
       
-        if(_preferences->getBool(preference_mqtt_log_enabled) && _preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (_preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::SerialAndWeb;
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
         else mode = MqttLoggerMode::MqttAndSerial;
         
         String pathStr = _preferences->getString(preference_mqtt_lock_path);

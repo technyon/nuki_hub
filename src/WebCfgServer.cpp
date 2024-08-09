@@ -409,6 +409,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
     }
 
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
+
     response.concat("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
     response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
     response.concat("<div style=\"clear: both\"></div>");
@@ -439,6 +440,7 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
 
     #ifndef NUKI_HUB_UPDATER
     bool manifestSuccess = false;  
+
     NetworkClientSecure *client = new NetworkClientSecure;
     if (client) {
         client->setDefaultCACertBundle();
