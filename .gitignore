@@ -24,3 +24,7 @@ updater/src/networkDevices/*.h
 /lib64
 /lib/python3*
 sdkconfig
+# NodeJS en pnpm
+.pnpm
+node_modules
+pnpm-lock.yaml

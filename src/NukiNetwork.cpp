@@ -3838,4 +3838,9 @@ void NukiNetwork::disableMqtt()
     _device->disableMqtt();
     _mqttEnabled = false;
 }
+
+String NukiNetwork::localIP()
+{
+    return _device->localIP();
+}
 #endif
