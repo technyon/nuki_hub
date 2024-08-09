@@ -83,7 +83,7 @@ void EthLan8720Device::initialize()
 #else
     _hardwareInitialized = false;
 #endif
-
+//    bool begin(eth_phy_type_t type, int32_t phy_addr, int cs, int irq, int rst, SPIClass &spi, uint8_t spi_freq_mhz = ETH_PHY_SPI_FREQ_MHZ);
     ETH.setHostname(_hostname.c_str());
     if(!_ipConfiguration->dhcpEnabled())
     {
