@@ -23,9 +23,44 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
   _clock_mode(clock_mode),
   _use_mac_from_efuse(use_mac_from_efuse)
 {
+    init(preferences);
+}
+
+EthLan8720Device::EthLan8720Device(const String &hostname,
+                                   Preferences *preferences,
+                                   const IPConfiguration *ipConfiguration,
+                                   const std::string &deviceName,
+                                   uint8_t phy_addr,
+                                   int cs,
+                                   int irq,
+                                   int rst,
+                                   spi_host_device_t spi_host,
+                                   int spi_sck,
+                                   int spi_miso,
+                                   int spi_mosi,
+                                   uint8_t spi_freq_mhz,
+                                   eth_phy_type_t ethtype)
+        : NetworkDevice(hostname, ipConfiguration),
+          _deviceName(deviceName),
+          _phy_addr(phy_addr),
+          _cs(cs),
+          _irq(irq),
+          _rst(rst),
+          _spi_host(spi_host),
+          _spi_sck(spi_sck),
+          _spi_miso(spi_miso),
+          _spi_mosi(spi_mosi),
+          _spi_freq_mhz(spi_freq_mhz),
+          _type(ethtype)
+{
+    init(preferences);
+}
+
+void EthLan8720Device::init(Preferences* preferences)
+{
     _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
     size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
     size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
@@ -55,11 +90,11 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
     if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
     {
         MqttLoggerMode mode;
-      
+
         if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
         else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
         else mode = MqttLoggerMode::MqttAndSerial;
-        
+
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
@@ -68,7 +103,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*getMqttClient(), _path, mode);
     }
-    #endif
+#endif
 }
 
 const String EthLan8720Device::deviceName() const

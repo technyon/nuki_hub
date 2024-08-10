@@ -128,6 +128,10 @@ void NukiNetwork::setupDevice()
                 Log->println(F("GL-S10"));
                 _networkDeviceType = NetworkDeviceType::GL_S10;
                 break;
+            case 9:
+                Log->println(F("ETH01-Evo"));
+                _networkDeviceType = NetworkDeviceType::ETH01_Evo;
+                break;
             #endif
             default:
                 Log->println(F("Unknown hardware selected, falling back to Wi-Fi."));
@@ -155,6 +159,9 @@ void NukiNetwork::setupDevice()
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "GL-S10", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);
             break;
         case NetworkDeviceType::LilyGO_T_ETH_POE:
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
+            break;
+        case NetworkDeviceType::ETH01_Evo:
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
             break;
         #endif

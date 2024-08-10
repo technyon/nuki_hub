@@ -14,6 +14,8 @@ set(SRCFILES
         ../src/NukiNetworkOpener.cpp
         ../src/networkDevices/NetworkDevice.h
         ../src/networkDevices/NetworkDevice.cpp
+        ../src/networkDevices/LAN8720Definitions.h
+        ../src/networkDevices/DM9051Definitions.h
         ../src/networkDevices/WifiDevice.cpp
         ../src/networkDevices/W5500Device.cpp
         ../src/networkDevices/EthLan8720Device.cpp
@@ -55,7 +57,6 @@ set(SRCFILES
         ../lib/BleScanner/src/BleScanner.cpp
         ../lib/MqttLogger/src/MqttLogger.cpp
         ../lib/AsyncTCP/src/AsyncTCP.cpp
-        ../src/networkDevices/LAN8720Definitions.h
 )
 
 file(GLOB_RECURSE SRCFILESREC
