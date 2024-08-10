@@ -53,6 +53,7 @@ EthLan8720Device::EthLan8720Device(const String &hostname,
           _spi_freq_mhz(spi_freq_mhz),
           _type(ethtype)
 {
+    spi = new SPIClass(HSPI);
     init(preferences);
 }
 

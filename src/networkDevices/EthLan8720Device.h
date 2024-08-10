@@ -12,6 +12,7 @@
 #include <ETH.h>
 #include <cstdint>
 #include <hal/spi_types.h>
+#include <SPI.h>
 
 class EthLan8720Device : public NetworkDevice
 {
@@ -89,6 +90,9 @@ private:
     eth_phy_type_t _type;
     eth_clock_mode_t _clock_mode;
     bool _use_mac_from_efuse;
+
+    SPIClass* spi = nullptr;
+
     #ifndef NUKI_HUB_UPDATER
     char _ca[TLS_CA_MAX_SIZE] = {0};
     char _cert[TLS_CERT_MAX_SIZE] = {0};
