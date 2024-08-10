@@ -2,11 +2,7 @@
 
 #include "LAN8720Definitions.h"
 #include <WiFiClient.h>
-#if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-#include <WiFiClientSecure.h>
-#else
 #include <NetworkClientSecure.h>
-#endif
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #ifndef NUKI_HUB_UPDATER

@@ -1,8 +1,0 @@
-# bundle exec jekyll serve --host=0.0.0.0
-
-title: WebSerialLite
-description: "WebSerial is a Serial Monitor for ESP32 that can be accessed remotely via a web browser."
-remote_theme: pages-themes/cayman@v0.2.0
-plugins:
-  - jekyll-remote-theme
-  

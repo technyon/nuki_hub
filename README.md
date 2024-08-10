@@ -10,22 +10,17 @@ It exposes the lock state (and much more) through MQTT and allows executing comm
 
 ***Nuki Hub does not integrate with the Nuki mobile app, it can't register itself as a bridge in the official Nuki mobile app.***
 
-***Note: With Nuki Hub 8.35, do NOT set the number of retries to 0. It will cause Nuki Hub to not execute lock commands.***
-
-
 Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
-
-
 
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.1.4 and Arduino Core 3.0.1.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.1.4 and Arduino Core 3.0.2.
 - Tested stable builds are provided for the ESP32, ESP32-S3 and ESP32-C3.
 - Support for the ESP32-C6 is experimental. There could be more frequent crashes than on other ESP32 devices and connections with the Nuki device could be slower than on other ESP32 devices.
-- The ESP32-Solo1 is not supported by ESP-IDF 5.1 and as such can't be build using Arduino Core 3 and ESP-IDF 5.1. Untested builds against Arduino Core 2.0.14 and ESP-IDF 4.4 are provided.
 
 <b>Not supported ESP32 devices:</b>
+- The ESP32-Solo1 is not supported by ESP-IDF 5.1 and as such can't be build using Arduino Core 3 and ESP-IDF 5.1. Release 9.0 was the last (untested) release for the Solo1 which for the Solo1 is built against Arduino Core 2.0.14 and ESP-IDF 4.4.
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
 - The ESP32-H2 has no Wi-FI and Nuki Hub is not compiled against this target because of this (at this time).
 
@@ -130,6 +125,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Restart on disconnect: Enable to restart the Nuki Hub when disconnected from the network.
 - Reconnect network on MQTT connection failure: Enable to force reconnection to the network when connection to the MQTT broker fails (after 15 tries).
 - Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
+- Enable WebSerial logging : Enable to publish debug log information to `http://NUKIHUBIP:81/webserial`.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
 - Allow updating using MQTT: Enable to allow starting the Nuki Hub update process using MQTT. Will also enable the Home Assistant update functionality if auto discovery is enabled.
 - Disable some extraneous non-JSON topics: Enable to not publish non-JSON keypad and config MQTT topics.

@@ -10,6 +10,7 @@
 
 #ifndef NUKI_HUB_UPDATER
 #include <HTTPClient.h>
+#include <NetworkClientSecure.h>
 #include "ArduinoJson.h"
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, EthServer* ethServer, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType)
@@ -298,6 +299,10 @@ void WebCfgServer::initialize()
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::ConfigurationUpdated);
     });
+    _server.on("/webserial", [&]() {
+        _server.sendHeader("Location", (String)"http://" + _network->localIP() + ":81/webserial");
+        _server.send(302, "text/plain", "");
+    });    
     #endif
     _server.on("/ota", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -318,7 +323,6 @@ void WebCfgServer::initialize()
         esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
         restartEsp(RestartReason::OTAReboot);
     });
-    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     _server.on("/autoupdate", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -347,7 +351,6 @@ void WebCfgServer::initialize()
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::OTAReboot);
     });
-    #endif
     _server.on("/uploadota", HTTP_POST, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -415,7 +418,6 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
 
     response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
 
-    #if (ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 0))
     response.concat("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
     response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
     response.concat("<div style=\"clear: both\"></div>");
@@ -433,53 +435,58 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored)
     response.concat("<br>");
 
     #ifndef NUKI_HUB_UPDATER
-    HTTPClient https;
-    https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    https.setTimeout(2500);
-    https.useHTTP10(true);
-    https.begin(GITHUB_OTA_MANIFEST_URL);
-
-    int httpResponseCode = https.GET();
-
-    if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
-    {
-        JsonDocument doc;
-        DeserializationError jsonError = deserializeJson(doc, https.getStream());
-
-        if (!jsonError)
+    NetworkClientSecure *client = new NetworkClientSecure;
+    if (client) {
+        client->setDefaultCACertBundle();
         {
-            response.concat("<b>Latest release version: </b>");
-            response.concat(doc["release"]["fullversion"].as<const char*>());
-            response.concat(" (");
-            response.concat(doc["release"]["build"].as<const char*>());
-            response.concat("), ");
-            response.concat(doc["release"]["time"].as<const char*>());
-            response.concat("<br>");
-            response.concat("<b>Latest beta version: </b>");
-            response.concat(doc["beta"]["fullversion"].as<const char*>());
-            if(doc["beta"]["fullversion"] != "No beta available")
-            {
-                response.concat(" (");
-                response.concat(doc["beta"]["build"].as<const char*>());
-                response.concat("), ");
-                response.concat(doc["beta"]["time"].as<const char*>());
+            HTTPClient https;
+            https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+            https.setTimeout(2500);
+            https.useHTTP10(true);
+
+            if (https.begin(*client, GITHUB_OTA_MANIFEST_URL)) {
+                int httpResponseCode = https.GET();
+
+                if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                {
+                    JsonDocument doc;
+                    DeserializationError jsonError = deserializeJson(doc, https.getStream());
+
+                    if (!jsonError)
+                    {
+                        response.concat("<b>Latest release version: </b>");
+                        response.concat(doc["release"]["fullversion"].as<const char*>());
+                        response.concat(" (");
+                        response.concat(doc["release"]["build"].as<const char*>());
+                        response.concat("), ");
+                        response.concat(doc["release"]["time"].as<const char*>());
+                        response.concat("<br>");
+                        response.concat("<b>Latest beta version: </b>");
+                        response.concat(doc["beta"]["fullversion"].as<const char*>());
+                        if(doc["beta"]["fullversion"] != "No beta available")
+                        {
+                            response.concat(" (");
+                            response.concat(doc["beta"]["build"].as<const char*>());
+                            response.concat("), ");
+                            response.concat(doc["beta"]["time"].as<const char*>());
+                        }
+                        response.concat("<br>");
+                        response.concat("<b>Latest development version: </b>");
+                        response.concat(doc["master"]["fullversion"].as<const char*>());
+                        response.concat(" (");
+                        response.concat(doc["master"]["build"].as<const char*>());
+                        response.concat("), ");
+                        response.concat(doc["master"]["time"].as<const char*>());
+                        response.concat("<br>");
+                    }
+                }
+                https.end();
             }
-            response.concat("<br>");
-            response.concat("<b>Latest development version: </b>");
-            response.concat(doc["master"]["fullversion"].as<const char*>());
-            response.concat(" (");
-            response.concat(doc["master"]["build"].as<const char*>());
-            response.concat("), ");
-            response.concat(doc["master"]["time"].as<const char*>());
-            response.concat("<br>");
         }
+        delete client;
     }
-
-    https.end();
     #endif
-
     response.concat("<br></div>");
-    #endif
 
     if(_partitionType == 1)
     {
@@ -612,16 +619,12 @@ void WebCfgServer::handleOtaUpload()
             filename = "/" + filename;
         }
         _otaStartTs = esp_timer_get_time() / 1000;
-        #if (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-        esp_task_wdt_init(30, false);
-        #else
         esp_task_wdt_config_t twdt_config = {
             .timeout_ms = 30000,
             .idle_core_mask = 0,
             .trigger_panic = false,
         };
         esp_task_wdt_reconfigure(&twdt_config);
-        #endif
 
         #ifndef NUKI_HUB_UPDATER
         _network->disableAutoRestarts();
@@ -1025,6 +1028,11 @@ bool WebCfgServer::processArgs(String& message)
         else if(key == "MQTTLOG")
         {
             _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+            configChanged = true;
+        }
+        else if(key == "WEBLOG")
+        {
+            _preferences->putBool(preference_webserial_enabled, (value == "1"));
             configChanged = true;
         }
         else if(key == "CHECKUPDATE")
@@ -2062,6 +2070,11 @@ void WebCfgServer::buildHtml(String& response)
     {
         buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
     }
+    
+    if(_preferences->getBool(preference_webserial_enabled, false))
+    {
+        buildNavigationMenuEntry(response, "Open Webserial", "/webserial");
+    }
 
     if(_allowRestartToPortal)
     {
@@ -2178,6 +2191,7 @@ void WebCfgServer::buildMqttConfigHtml(String &response)
     printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(response, "RECNWTMQTTDIS", "Reconnect network on MQTT connection failure", _preferences->getBool(preference_recon_netw_on_mqtt_discon), "");
     printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
+    printCheckBox(response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");    
     printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
     printCheckBox(response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
@@ -2539,7 +2553,7 @@ void WebCfgServer::buildNukiConfigHtml(String &response)
 #endif
     printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     printInputField(response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
-    
+
     response.concat("</table>");
     response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.concat("</form>");

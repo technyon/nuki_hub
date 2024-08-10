@@ -73,8 +73,10 @@ void MqttLogger::sendBuffer()
 {
     if (this->bufferCnt > 0)
     {
-        bool doSerial = this->mode==MqttLoggerMode::SerialOnly || this->mode==MqttLoggerMode::MqttAndSerial;
-        if (this->mode!=MqttLoggerMode::SerialOnly && this->client != NULL && this->client->connected()) 
+        bool doSerial = this->mode==MqttLoggerMode::SerialOnly || this->mode==MqttLoggerMode::MqttAndSerial || this->mode==MqttLoggerMode::MqttAndSerialAndWeb || this->mode==MqttLoggerMode::SerialAndWeb;
+        bool doWebSerial = this->mode==MqttLoggerMode::MqttAndSerialAndWeb || this->mode==MqttLoggerMode::SerialAndWeb;
+        
+        if (this->mode!=MqttLoggerMode::SerialOnly && this->mode!=MqttLoggerMode::SerialAndWeb && this->client != NULL && this->client->connected()) 
         {
             this->client->publish(topic, 0, true, this->buffer, this->bufferCnt);
         } else if (this->mode == MqttLoggerMode::MqttAndSerialFallback)
@@ -85,6 +87,11 @@ void MqttLogger::sendBuffer()
         {
             Serial.write(this->buffer, this->bufferCnt);
             Serial.println();
+        }
+        if (doWebSerial)
+        {
+            WebSerial.write(this->buffer, this->bufferCnt);
+            WebSerial.println();
         }
         this->bufferCnt=0;
     }
@@ -113,4 +120,12 @@ size_t MqttLogger::write(uint8_t character)
         }
     }
     return 1;
+}
+
+size_t MqttLogger::write(const uint8_t *buffer, size_t size) {
+  size_t n = 0;
+  while (size--) {
+    n += write(*buffer++);
+  }
+  return n;
 }

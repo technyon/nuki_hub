@@ -7,8 +7,6 @@ from pathlib import Path
 
 def get_board_name(env):
     board = env.get('BOARD_MCU')
-    if env.get('BOARD') == 'esp32-solo1':
-        board = env.get('BOARD').replace('-', '')
     return board
 
 def create_target_dir(env):
@@ -36,9 +34,6 @@ def copy_files(source, target, env):
 def merge_bin(source, target, env):
     #if not env.get('BUILD_TYPE') in ['release']:
     #    return
-
-    if env.get('BOARD') in ['esp32-solo1']:
-        return
 
     board = get_board_name(env)
     chip = env.get('BOARD_MCU')

@@ -1,7 +1,0 @@
-.DS_Store
-.lh
-/.pio
-/.vscode/*
-!/.vscode/settings.json
-/logs
-/frontend/node_modules
