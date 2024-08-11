@@ -31,6 +31,7 @@ idf_component_register(
     "esp32c2"
     "esp32c3"
     "esp32c6"
+    "esp32h2"
   INCLUDE_DIRS
     "src"
   SRCS
@@ -38,6 +39,7 @@ idf_component_register(
     "src/NimBLEAddress.cpp"
     "src/NimBLEAdvertisedDevice.cpp"
     "src/NimBLEAdvertising.cpp"
+    "src/NimBLEAttValue.cpp"
     "src/NimBLEBeacon.cpp"
     "src/NimBLECharacteristic.cpp"
     "src/NimBLEClient.cpp"
@@ -50,6 +52,7 @@ idf_component_register(
     "src/NimBLERemoteCharacteristic.cpp"
     "src/NimBLERemoteDescriptor.cpp"
     "src/NimBLERemoteService.cpp"
+    "src/NimBLERemoteValueAttribute.cpp"
     "src/NimBLEScan.cpp"
     "src/NimBLEServer.cpp"
     "src/NimBLEService.cpp"

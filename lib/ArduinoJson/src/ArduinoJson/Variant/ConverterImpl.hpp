@@ -54,16 +54,17 @@ struct Converter {
 };
 
 template <typename T>
-struct Converter<
-    T, typename detail::enable_if<detail::is_integral<T>::value &&
-                                  !detail::is_same<bool, T>::value &&
-                                  !detail::is_same<char, T>::value>::type>
+struct Converter<T, detail::enable_if_t<detail::is_integral<T>::value &&
+                                        !detail::is_same<bool, T>::value &&
+                                        !detail::is_same<char, T>::value>>
     : private detail::VariantAttorney {
-  static void toJson(T src, JsonVariant dst) {
+  static bool toJson(T src, JsonVariant dst) {
     ARDUINOJSON_ASSERT_INTEGER_TYPE_IS_SUPPORTED(T);
     auto data = getData(dst);
-    if (data)
-      data->setInteger(src, getResourceManager(dst));
+    if (!data)
+      return false;
+    data->setInteger(src, getResourceManager(dst));
+    return true;
   }
 
   static T fromJson(JsonVariantConst src) {
@@ -79,10 +80,10 @@ struct Converter<
 };
 
 template <typename T>
-struct Converter<T, typename detail::enable_if<detail::is_enum<T>::value>::type>
+struct Converter<T, detail::enable_if_t<detail::is_enum<T>::value>>
     : private detail::VariantAttorney {
-  static void toJson(T src, JsonVariant dst) {
-    dst.set(static_cast<JsonInteger>(src));
+  static bool toJson(T src, JsonVariant dst) {
+    return dst.set(static_cast<JsonInteger>(src));
   }
 
   static T fromJson(JsonVariantConst src) {
@@ -98,10 +99,12 @@ struct Converter<T, typename detail::enable_if<detail::is_enum<T>::value>::type>
 
 template <>
 struct Converter<bool> : private detail::VariantAttorney {
-  static void toJson(bool src, JsonVariant dst) {
+  static bool toJson(bool src, JsonVariant dst) {
     auto data = getData(dst);
-    if (data)
-      data->setBoolean(src, getResourceManager(dst));
+    if (!data)
+      return false;
+    data->setBoolean(src, getResourceManager(dst));
+    return true;
   }
 
   static bool fromJson(JsonVariantConst src) {
@@ -116,13 +119,14 @@ struct Converter<bool> : private detail::VariantAttorney {
 };
 
 template <typename T>
-struct Converter<
-    T, typename detail::enable_if<detail::is_floating_point<T>::value>::type>
+struct Converter<T, detail::enable_if_t<detail::is_floating_point<T>::value>>
     : private detail::VariantAttorney {
-  static void toJson(T src, JsonVariant dst) {
+  static bool toJson(T src, JsonVariant dst) {
     auto data = getData(dst);
-    if (data)
-      data->setFloat(static_cast<JsonFloat>(src), getResourceManager(dst));
+    if (!data)
+      return false;
+    data->setFloat(static_cast<JsonFloat>(src), getResourceManager(dst));
+    return true;
   }
 
   static T fromJson(JsonVariantConst src) {
@@ -173,8 +177,8 @@ struct Converter<JsonString> : private detail::VariantAttorney {
 };
 
 template <typename T>
-inline typename detail::enable_if<detail::IsString<T>::value>::type
-convertToJson(const T& src, JsonVariant dst) {
+inline detail::enable_if_t<detail::IsString<T>::value> convertToJson(
+    const T& src, JsonVariant dst) {
   using namespace detail;
   auto data = VariantAttorney::getData(dst);
   auto resources = VariantAttorney::getResourceManager(dst);
@@ -305,19 +309,6 @@ inline bool canConvertFromJson(JsonVariantConst src, const std::string_view&) {
 
 #endif
 
-namespace detail {
-template <typename T>
-struct ConverterNeedsWriteableRef {
- protected:  // <- to avoid GCC's "all member functions in class are private"
-  static int probe(T (*f)(ArduinoJson::JsonVariant));
-  static char probe(T (*f)(ArduinoJson::JsonVariantConst));
-
- public:
-  static const bool value =
-      sizeof(probe(Converter<T>::fromJson)) == sizeof(int);
-};
-}  // namespace detail
-
 template <>
 struct Converter<JsonArrayConst> : private detail::VariantAttorney {
   static void toJson(JsonArrayConst src, JsonVariant dst) {
@@ -352,13 +343,6 @@ struct Converter<JsonArray> : private detail::VariantAttorney {
     auto data = getData(src);
     auto resources = getResourceManager(src);
     return JsonArray(data != 0 ? data->asArray() : 0, resources);
-  }
-
-  static detail::InvalidConversion<JsonVariantConst, JsonArray> fromJson(
-      JsonVariantConst);
-
-  static bool checkJson(JsonVariantConst) {
-    return false;
   }
 
   static bool checkJson(JsonVariant src) {
@@ -401,13 +385,6 @@ struct Converter<JsonObject> : private detail::VariantAttorney {
     auto data = getData(src);
     auto resources = getResourceManager(src);
     return JsonObject(data != 0 ? data->asObject() : 0, resources);
-  }
-
-  static detail::InvalidConversion<JsonVariantConst, JsonObject> fromJson(
-      JsonVariantConst);
-
-  static bool checkJson(JsonVariantConst) {
-    return false;
   }
 
   static bool checkJson(JsonVariant src) {
