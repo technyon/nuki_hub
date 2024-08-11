@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         board: [esp32dev, esp32-s3, esp32-c3, esp32-c6]
-        build: [release]
+        build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}
       VARIANT: ${{ matrix.name || matrix.board }}
