@@ -49,34 +49,34 @@ private:
     bool processArgs(String& message);
     bool processImport(String& message);
     void processGpioArgs();
-    void buildHtml(String& response);
-    void buildAccLvlHtml(String& response);
-    void buildCredHtml(String& response);
-    void buildImportExportHtml(String& response);
-    void buildMqttConfigHtml(String& response);
-    void buildStatusHtml(String& response);
-    void buildAdvancedConfigHtml(String& response);
-    void buildNukiConfigHtml(String& response);
-    void buildGpioConfigHtml(String& response);
-    void buildConfigureWifiHtml(String& response);
-    void buildInfoHtml(String& response);
+    void buildHtml();
+    void buildAccLvlHtml();
+    void buildCredHtml();
+    void buildImportExportHtml();
+    void buildMqttConfigHtml();
+    void buildStatusHtml();
+    void buildAdvancedConfigHtml();
+    void buildNukiConfigHtml();
+    void buildGpioConfigHtml();
+    void buildConfigureWifiHtml();
+    void buildInfoHtml();
     void processUnpair(bool opener);
     void processUpdate();
     void processFactoryReset();
-    void printInputField(String& response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* id, const bool& isPassword = false, const bool& showLengthRestriction = false);
-    void printInputField(String& response, const char* token, const char* description, const int value, size_t maxLength, const char* id);
-    void printCheckBox(String& response, const char* token, const char* description, const bool value, const char* htmlClass);
-    void printTextarea(String& response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
-    void printDropDown(String &response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options);
-    void buildNavigationButton(String& response, const char* caption, const char* targetPath, const char* labelText = "");
-    void buildNavigationMenuEntry(String &response, const char *title, const char *targetPath, const char* warningMessage = "");
+    void printInputField(const char* token, const char* description, const char* value, const size_t& maxLength, const char* id, const bool& isPassword = false, const bool& showLengthRestriction = false);
+    void printInputField(const char* token, const char* description, const int value, size_t maxLength, const char* id);
+    void printCheckBox(const char* token, const char* description, const bool value, const char* htmlClass);
+    void printTextarea(const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
+    void printDropDown(const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options);
+    void buildNavigationButton(const char* caption, const char* targetPath, const char* labelText = "");
+    void buildNavigationMenuEntry(const char *title, const char *targetPath, const char* warningMessage = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
     String getPreselectionForGpio(const uint8_t& pin);
     String pinStateToString(uint8_t value);
 
-    void printParameter(String& response, const char* description, const char* value, const char *link = "", const char *id = "");
+    void printParameter(const char* description, const char* value, const char *link = "", const char *id = "");
     
     NukiWrapper* _nuki = nullptr;
     NukiOpenerWrapper* _nukiOpener = nullptr;
@@ -87,12 +87,12 @@ private:
 
     String generateConfirmCode();
     String _confirmCode = "----";
-    void buildConfirmHtml(String& response, const String &message, uint32_t redirectDelay = 5, bool redirect = false);    
-    void buildOtaHtml(String& response, bool errored, bool debug = false);
-    void buildOtaCompletedHtml(String& response);
+    void buildConfirmHtml(const String &message, uint32_t redirectDelay = 5, bool redirect = false);    
+    void buildOtaHtml(bool errored, bool debug = false);
+    void buildOtaCompletedHtml();
     void sendCss();
     void sendFavicon();
-    void buildHtmlHeader(String& response, String additionalHeader = "");
+    void buildHtmlHeader(String additionalHeader = "");
     void waitAndProcess(const bool blocking, const uint32_t duration);
     void handleOtaUpload();
 

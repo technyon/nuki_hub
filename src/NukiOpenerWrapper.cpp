@@ -1,5 +1,4 @@
 #include "NukiOpenerWrapper.h"
-#include <RTOS.h>
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
 #include "Logger.h"
