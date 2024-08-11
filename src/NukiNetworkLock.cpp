@@ -198,8 +198,28 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(value, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
     {
         Log->println(F("Update requested via MQTT."));
-        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        String currentVersion = NUKI_HUB_VERSION;
+        
+        if(atof(_preferences->getString(preference_latest_version).c_str()) >= atof(currentVersion.c_str()))
+        {
+            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        }
+        else if(currentVersion.indexOf("beta") > 0)
+        {
+            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_RELEASE_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_BETA_UPDATER_BINARY_URL);
+        }
+        else if(currentVersion.indexOf("master") > 0)
+        {
+            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_RELEASE_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+        }
+        else
+        {
+            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        }
         delay(200);
         restartEsp(RestartReason::OTAReboot);
     }

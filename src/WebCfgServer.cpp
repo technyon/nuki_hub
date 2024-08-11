@@ -48,8 +48,9 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferenc
         memcpy(&_credPassword, pass, str.length());
     }
 
-    #ifndef NUKI_HUB_UPDATER
     _confirmCode = generateConfirmCode();
+
+    #ifndef NUKI_HUB_UPDATER
     _pinsConfigured = true;
 
     if(_nuki != nullptr && !_nuki->isPinSet())
@@ -313,6 +314,14 @@ void WebCfgServer::initialize()
         buildOtaHtml(_response, _server.arg("errored") != "");
         _server.send(200, "text/html", _response);
     });
+    _server.on("/otadebug", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        String response = "";
+        buildOtaHtml(response, _server.arg("errored") != "", true);
+        _server.send(200, "text/html", response);
+    });
     _server.on("/reboottoota", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
@@ -328,29 +337,12 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        _response = "";
-        String key = _server.argName(0);
-        if(key == "beta")
-        {
-            buildConfirmHtml(_response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2);
-            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
-        }
-        else if(key == "master")
-        {
-            buildConfirmHtml(_response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest development version", 2);
-            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-        }
-        else
-        {
-            buildConfirmHtml(_response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2);
-            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-        }
-        _server.send(200, "text/html", _response);
-        waitAndProcess(true, 1000);
-        restartEsp(RestartReason::OTAReboot);
+        #ifndef NUKI_HUB_UPDATER
+        processUpdate();
+        #else
+        _server.sendHeader("Location", "/");
+        _server.send(302, "text/plain", "");
+        #endif
     });
     _server.on("/uploadota", HTTP_POST, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -402,7 +394,7 @@ void WebCfgServer::update()
     _server.handleClient();
 }
 
-void WebCfgServer::buildOtaHtml(String &_response, bool errored)
+void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
 {
     buildHtmlHeader(_response);
 
@@ -418,24 +410,37 @@ void WebCfgServer::buildOtaHtml(String &_response, bool errored)
     }
 
     _response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
-
     _response.concat("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
     _response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
     _response.concat("<div style=\"clear: both\"></div>");
-    _response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
-    _response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
-    _response.concat("<form onsubmit=\"return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial');\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+
+    String release_type;
+
+    if(debug) release_type = "debug";
+    else release_type = "release";
+    
+    #ifndef DEBUG_NUKIHUB
+    String build_type = "release";
+    #else
+    String build_type = "debug";
+    #endif
+    
+    _response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('latestver') && \"" + release_type + "\" == \"" + build_type + "\") { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
+    _response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('betaver') && \"" + release_type + "\" == \"" + build_type + "\") { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
+    _response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('devver') && \"" + release_type + "\" == \"" + build_type + "\") { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
     _response.concat("<div style=\"clear: both\"></div><br>");
 
-    _response.concat("<b>Current version: </b>");
+    _response.concat("<b>Current version: </b><span id=\"currentver\">");
     _response.concat(NUKI_HUB_VERSION);
     _response.concat(" (");
     _response.concat(NUKI_HUB_BUILD);
-    _response.concat("), ");
+    _response.concat(")</span>, ");
     _response.concat(NUKI_HUB_DATE);
     _response.concat("<br>");
 
     #ifndef NUKI_HUB_UPDATER
+    bool manifestSuccess = false;  
+
     NetworkClientSecure *client = new NetworkClientSecure;
     if (client) {
         client->setDefaultCACertBundle();
@@ -455,28 +460,34 @@ void WebCfgServer::buildOtaHtml(String &_response, bool errored)
 
                     if (!jsonError)
                     {
-                        _response.concat("<b>Latest release version: </b>");
+                        manifestSuccess = true;
+                        _response.concat("<b>Latest release version: </b><span id=\"latestver\">");
                         _response.concat(doc["release"]["fullversion"].as<const char*>());
                         _response.concat(" (");
                         _response.concat(doc["release"]["build"].as<const char*>());
-                        _response.concat("), ");
+                        _response.concat(")</span>, ");
                         _response.concat(doc["release"]["time"].as<const char*>());
                         _response.concat("<br>");
-                        _response.concat("<b>Latest beta version: </b>");
-                        _response.concat(doc["beta"]["fullversion"].as<const char*>());
+                        _response.concat("<b>Latest beta version: </b><span id=\"betaver\">");
                         if(doc["beta"]["fullversion"] != "No beta available")
                         {
+                            _response.concat(doc["beta"]["fullversion"].as<const char*>());
                             _response.concat(" (");
                             _response.concat(doc["beta"]["build"].as<const char*>());
-                            _response.concat("), ");
+                            _response.concat(")</span>, ");
                             _response.concat(doc["beta"]["time"].as<const char*>());
                         }
+                        else
+                        {
+                            _response.concat(doc["beta"]["fullversion"].as<const char*>());
+                            _response.concat("</span>");
+                        }
                         _response.concat("<br>");
-                        _response.concat("<b>Latest development version: </b>");
+                        _response.concat("<b>Latest development version: </b><span id=\"devver\">");
                         _response.concat(doc["master"]["fullversion"].as<const char*>());
                         _response.concat(" (");
                         _response.concat(doc["master"]["build"].as<const char*>());
-                        _response.concat("), ");
+                        _response.concat(")</span>, ");
                         _response.concat(doc["master"]["time"].as<const char*>());
                         _response.concat("<br>");
                     }
@@ -485,6 +496,11 @@ void WebCfgServer::buildOtaHtml(String &_response, bool errored)
             }
         }
         delete client;
+    }
+    
+    if(!manifestSuccess)
+    {
+        _response.concat("<span id=\"currentver\" style=\"display: none;\">currentver</span><span id=\"latestver\" style=\"display: none;\">latestver</span><span id=\"devver\" style=\"display: none;\">devver</span><span id=\"betaver\" style=\"display: none;\">betaver</span>");
     }
     #endif
     _response.concat("<br></div>");
@@ -666,12 +682,21 @@ void WebCfgServer::handleOtaUpload()
     }
 }
 
-void WebCfgServer::buildConfirmHtml(String &_response, const String &message, uint32_t redirectDelay)
+void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay, bool redirect)
 {
-    String delay(redirectDelay);
-    String header = "<meta http-equiv=\"Refresh\" content=\"" + delay + "; url=/\" />";
+    String header;
 
-    buildHtmlHeader(_response, header);
+    if(!redirect)
+    {
+        String delay(redirectDelay);
+        header = "<meta http-equiv=\"Refresh\" content=\"" + delay + "; url=/\" />";
+    }
+    else
+    {
+        String delay(redirectDelay * 1000);
+        header = "<script type=\"text/JavaScript\">function Redirect() { window.location.href = \"/\"; } setTimeout(function() { Redirect(); }, " + delay + "); </script>";
+    }
+    buildHtmlHeader(response, header);
     _response.concat(message);
     _response.concat("</body></html>");
 }
@@ -687,6 +712,12 @@ void WebCfgServer::sendFavicon()
 {
     _server.sendHeader("Cache-Control", "public, max-age=604800");
     _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
+}
+
+String WebCfgServer::generateConfirmCode()
+{
+    int code = random(1000,9999);
+    return String(code);
 }
 
 #ifndef NUKI_HUB_UPDATER
@@ -3165,6 +3196,72 @@ void WebCfgServer::processUnpair(bool opener)
     restartEsp(RestartReason::DeviceUnpaired);
 }
 
+void WebCfgServer::processUpdate()
+{
+    String response = "";
+    String key = _server.argName(0);
+    String key2 = _server.argName(1);
+    String key3 = _server.argName(2);
+    String value3 = _server.arg(2);
+    String key4 = _server.argName(3);
+
+    if(key3 != "token" || value3 != _confirmCode)
+    {
+        buildConfirmHtml(response, "Confirm code is invalid.", 3, true);
+        _server.send(200, "text/html", response);
+        return;
+    }
+
+    if(key == "beta")
+    {
+        if(key2 == "debug")
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG BETA version", 2, true);
+            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL_DBG);
+            _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL_DBG);
+        }
+        else
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
+            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
+        }
+    }
+    else if(key == "master")
+    {
+        if(key2 == "debug")
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG DEVELOPMENT version", 2, true);
+            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL_DBG);
+            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL_DBG);
+        }
+        else
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
+            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
+        }
+    }
+    else
+    {
+        if(key2 == "debug")
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG RELEASE version", 2, true);
+            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
+            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
+        }
+        else
+        {
+            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
+            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        }
+    }
+    _server.send(200, "text/html", response);
+    waitAndProcess(true, 1000);
+    restartEsp(RestartReason::OTAReboot);
+}
+
 void WebCfgServer::processFactoryReset()
 {
     bool resetWifi = false;
@@ -3425,13 +3522,6 @@ void WebCfgServer::printParameter(String& _response, const char *description, co
     _response.concat("</td>");
     _response.concat("</tr>");
 
-}
-
-
-String WebCfgServer::generateConfirmCode()
-{
-    int code = random(1000,9999);
-    return String(code);
 }
 
 const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const

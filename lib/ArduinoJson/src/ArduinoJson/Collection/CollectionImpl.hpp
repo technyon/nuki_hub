@@ -63,13 +63,25 @@ inline CollectionData::iterator CollectionData::addSlot(
   return iterator(slot, slot.id());
 }
 
+inline void CollectionData::addSlot(SlotWithId slot,
+                                    ResourceManager* resources) {
+  if (tail_ != NULL_SLOT) {
+    auto tail = resources->getSlot(tail_);
+    tail->setNext(slot.id());
+    tail_ = slot.id();
+  } else {
+    head_ = slot.id();
+    tail_ = slot.id();
+  }
+}
+
 inline void CollectionData::clear(ResourceManager* resources) {
   auto next = head_;
   while (next != NULL_SLOT) {
     auto currId = next;
     auto slot = resources->getSlot(next);
     next = slot->next();
-    releaseSlot(SlotWithId(slot, currId), resources);
+    resources->freeSlot(SlotWithId(slot, currId));
   }
 
   head_ = NULL_SLOT;
@@ -102,7 +114,7 @@ inline void CollectionData::remove(iterator it, ResourceManager* resources) {
     head_ = next;
   if (next == NULL_SLOT)
     tail_ = prev.id();
-  releaseSlot({it.slot_, it.currentId_}, resources);
+  resources->freeSlot({it.slot_, it.currentId_});
 }
 
 inline size_t CollectionData::nesting(const ResourceManager* resources) const {
@@ -120,14 +132,6 @@ inline size_t CollectionData::size(const ResourceManager* resources) const {
   for (auto it = createIterator(resources); !it.done(); it.next(resources))
     count++;
   return count;
-}
-
-inline void CollectionData::releaseSlot(SlotWithId slot,
-                                        ResourceManager* resources) {
-  if (slot->ownsKey())
-    resources->dereferenceString(slot->key());
-  slot->data()->setNull(resources);
-  resources->freeSlot(slot);
 }
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

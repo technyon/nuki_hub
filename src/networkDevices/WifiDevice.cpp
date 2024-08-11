@@ -77,8 +77,8 @@ void WifiDevice::initialize()
     wm_menu.push_back("exit");
     _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
     // reduced timeout if ESP is set to restart on disconnect
-    _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi, false));
-    _wm.setConnectTimeout(5);
+    _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi));
+    _wm.setConnectTimeout(20);
     _wm.setConfigPortalTimeout(_restartOnDisconnect ? 60 * 3 : 60 * 30);
     _wm.setShowInfoUpdate(false);
     _wm.setMenu(wm_menu);
