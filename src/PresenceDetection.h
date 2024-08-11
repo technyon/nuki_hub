@@ -5,6 +5,7 @@
 #include "BleInterfaces.h"
 #include <memory>
 #include <mutex>
+#include <map>
 
 struct PdDevice
 {
