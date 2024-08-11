@@ -9,11 +9,13 @@ permissions:
 
 jobs:
   check-commits:
-    name: Count commits in last 24h
+    name: Get new commits since last successful run
     if: github.repository == 'technyon/nuki_hub'
     runs-on: ubuntu-latest
     outputs:
       has-commits: ${{ steps.commits.outputs.NEW_COMMIT_COUNT }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
