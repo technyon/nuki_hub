@@ -21,7 +21,8 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
   _mdio(mdio),
   _type(ethtype),
   _clock_mode(clock_mode),
-  _use_mac_from_efuse(use_mac_from_efuse)
+  _use_mac_from_efuse(use_mac_from_efuse),
+  _useSpi(false)
 {
     init(preferences);
 }
@@ -51,9 +52,10 @@ EthLan8720Device::EthLan8720Device(const String &hostname,
           _spi_miso(spi_miso),
           _spi_mosi(spi_mosi),
           _spi_freq_mhz(spi_freq_mhz),
-          _type(ethtype)
+          _type(ethtype),
+          _useSpi(true)
 {
-    spi = new SPIClass(HSPI);
+    _spi = new SPIClass(HSPI);
     init(preferences);
 }
 
@@ -118,8 +120,15 @@ void EthLan8720Device::initialize()
 
     WiFi.setHostname(_hostname.c_str());
 
-    #if CONFIG_IDF_TARGET_ESP32
-    _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32C3)
+    if(_useSpi)
+    {
+        _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, *_spi, _spi_freq_mhz);
+    }
+    else
+    {
+        _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+    }
     #else
     _hardwareInitialized = false;
 #endif

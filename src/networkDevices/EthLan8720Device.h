@@ -90,8 +90,9 @@ private:
     eth_phy_type_t _type;
     eth_clock_mode_t _clock_mode;
     bool _use_mac_from_efuse;
+    bool _useSpi = false;
 
-    SPIClass* spi = nullptr;
+    SPIClass* _spi = nullptr;
 
     #ifndef NUKI_HUB_UPDATER
     char _ca[TLS_CA_MAX_SIZE] = {0};
