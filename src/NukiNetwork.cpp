@@ -161,7 +161,21 @@ void NukiNetwork::setupDevice()
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
             break;
         case NetworkDeviceType::ETH01_Evo:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "ETH01-Evo",
+            ETH_PHY_ADDR_ETH01EVO,
+            ETH_PHY_CS_ETH01EVO,
+            ETH_PHY_IRQ_ETH01EVO,
+            ETH_PHY_RST_ETH01EVO,
+            ETH_PHY_SPI_HOST_ETH01EVO,
+            ETH_PHY_SPI_SCK_ETH01EVO,
+            ETH_PHY_SPI_MISO_ETH01EVO,
+            ETH_PHY_SPI_MOSI_ETH01EVO,
+            ETH_PHY_SPI_FREQ_MHZ,
+            ETH_PHY_TYPE_DM9051);
+
+
+//            , 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_DM9051, ETH_CLOCK_GPIO17_OUT
+
             break;
         #endif
         case NetworkDeviceType::WiFi:
