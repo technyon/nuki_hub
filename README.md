@@ -48,7 +48,7 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 ## Support Nuki Hub development
 
 If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
-REF2P8WSFGJCN<br>
+REFZDJ2QKXTG2<br>
 This will also give you a 10% discount on your order.<br>
 <br>
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:<br>
