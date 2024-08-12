@@ -1,0 +1,9 @@
+dependencies:
+  idf:
+    version: '>=4.1'
+description: Library for communicating with cellular modems in command and data modes
+documentation: https://docs.espressif.com/projects/esp-protocols/esp_modem/docs/latest/index.html
+issues: https://github.com/espressif/esp-protocols/issues
+repository: https://github.com/espressif/esp-protocols.git
+url: https://github.com/espressif/esp-protocols/tree/master/components/esp_modem
+version: 1.1.0
