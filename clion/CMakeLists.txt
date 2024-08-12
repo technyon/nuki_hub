@@ -23,7 +23,6 @@ set(SRCFILES
         ../src/NukiWrapper.cpp
         ../src/NukiOpenerWrapper.cpp
         ../src/MqttTopics.h
-        ../src/Ota.cpp
         ../src/WebCfgServerConstants.h
         ../src/WebCfgServer.cpp
         ../src/PresenceDetection.cpp
@@ -59,8 +58,8 @@ file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c
         lib/NimBLE-Arduino/src/*.cpp
         lib/NimBLE-Arduino/src/*.h
-        lib/WebServer/src/*.cpp
-        lib/WebServer/src/*.h
+        lib/ESP Async WebServer/src/*.cpp
+        lib/ESP Async WebServer/src/*.h
         lib/Ethernet/src/*.cpp
         lib/Ethernet/src/*.h
         lib/espMqttClient/src/*.cpp

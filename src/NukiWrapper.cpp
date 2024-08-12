@@ -144,14 +144,12 @@ void NukiWrapper::initialize(const bool& firstStart)
         _nrOfRetries = 3;
         _preferences->putInt(preference_command_nr_of_retries, _nrOfRetries);
     }
-
-    if(_retryDelay <= 100)
+    if(_retryDelay < 100)
     {
         Log->println("Invalid retryDelay, revert to default (100)");
         _retryDelay = 100;
         _preferences->putInt(preference_command_retry_delay, _retryDelay);
     }
-
     if(_intervalLockstate == 0)
     {
         Log->println("Invalid intervalLockstate, revert to default (1800)");

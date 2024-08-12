@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32dev, esp32-s3, esp32-c3, esp32-c6, esp32-solo1]
+        board: [esp32, esp32-s3, esp32-c3, esp32-c6, esp32-solo1]
         build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}
@@ -23,11 +23,6 @@ jobs:
         run: |
           # remove dash character
           export VARIANT=${VARIANT//-/}
-
-          if [ "$VARIANT" = "esp32dev" ]; then
-            VARIANT="esp32"
-          fi
-
           echo "VARIANT=${VARIANT}" | tee -a ${GITHUB_ENV}
       - uses: actions/checkout@v4
         with:

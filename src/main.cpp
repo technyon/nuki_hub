@@ -1,16 +1,14 @@
 #define IS_VALID_DETECT 0xa00ab00bc00bd00d;
 
 #include "Arduino.h"
-#include "hardware/W5500EthServer.h"
-#include "hardware/WifiEthServer.h"
 #include "esp_crt_bundle.h"
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include <esp_task_wdt.h>
+#include "Config.h"
 
 #ifndef NUKI_HUB_UPDATER
-#include "Config.h"
 #include "NukiWrapper.h"
 #include "NukiNetworkLock.h"
 #include "PresenceDetection.h"
@@ -28,7 +26,6 @@
 #include <WString.h>
 #include <MycilaWebSerial.h>
 
-AsyncWebServer webserialserver(81);
 char log_print_buffer[1024];
 
 NukiNetworkLock* networkLock = nullptr;
@@ -53,7 +50,6 @@ int64_t restartTs = ((2^64) - (5 * 1000 * 60000)) / 1000;
 #include "../../src/WebCfgServer.h"
 #include "../../src/Logger.h"
 #include "../../src/PreferencesKeys.h"
-#include "../../src/Config.h"
 #include "../../src/RestartReason.h"
 #include "../../src/NukiNetwork.h"
 
@@ -61,10 +57,10 @@ int64_t restartTs = 10 * 1000 * 60000;
 
 #endif
 
+AsyncWebServer* asyncServer = nullptr;
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 Preferences* preferences = nullptr;
-EthServer* ethServer = nullptr;
 
 RTC_NOINIT_ATTR int restartReason;
 RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
@@ -109,7 +105,7 @@ int _log_vprintf(const char *fmt, va_list args) {
 void setReroute(){
     esp_log_set_vprintf(_log_vprintf);
     if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
-    else 
+    else
     {
         esp_log_level_set("*", ESP_LOG_DEBUG);
         esp_log_level_set("nvs", ESP_LOG_INFO);
@@ -149,9 +145,6 @@ void networkTask(void *pvParameters)
         }
         #endif
         if(connected && openerEnabled) networkOpener->update();
-        if(preferences->getBool(preference_webserver_enabled, true)) webCfgServer->update();
-        #else
-        webCfgServer->update();
         #endif
 
         if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
@@ -370,22 +363,6 @@ void setupTasks(bool ota)
     }
 }
 
-void initEthServer(const NetworkDeviceType device)
-{
-    switch (device)
-    {
-        case NetworkDeviceType::W5500:
-            ethServer = new W5500EthServer(80);
-            break;
-        case NetworkDeviceType::WiFi:
-            ethServer = new WifiEthServer(80);
-            break;
-        default:
-            ethServer = new WifiEthServer(80);
-            break;
-    }
-}
-
 void setup()
 {
     esp_log_level_set("*", ESP_LOG_ERROR);
@@ -413,9 +390,11 @@ void setup()
 
     network = new NukiNetwork(preferences);
     network->initialize();
-    initEthServer(network->networkDeviceType());
-    webCfgServer = new WebCfgServer(network, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType);
+    asyncServer = new AsyncWebServer(80);
+    webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
     webCfgServer->initialize();
+    asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
+    asyncServer->begin();
     #else
     Log->print(F("Nuki Hub version ")); Log->println(NUKI_HUB_VERSION);
     Log->print(F("Nuki Hub build ")); Log->println(NUKI_HUB_BUILD);
@@ -470,8 +449,6 @@ void setup()
         networkOpener->initialize();
     }
 
-    initEthServer(network->networkDeviceType());
-
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
     {
@@ -486,17 +463,27 @@ void setup()
         nukiOpener->initialize();
     }
 
-    if(preferences->getBool(preference_webserver_enabled, true))
+    if(preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false))
     {
-        webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, ethServer, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType);
-        webCfgServer->initialize();
-    }
+      asyncServer = new AsyncWebServer(80);
 
-    WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
-    WebSerial.begin(&webserialserver);
-    WebSerial.setBuffer(1024);
-    webserialserver.onNotFound([](AsyncWebServerRequest* request) { request->redirect("/webserial"); });
-    webserialserver.begin();
+      if(preferences->getBool(preference_webserver_enabled, true))
+      {
+          webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
+          webCfgServer->initialize();
+          asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
+      }
+      else asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/webserial"); });
+
+      if(preferences->getBool(preference_webserial_enabled, false))
+      {
+        WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
+        WebSerial.begin(asyncServer);
+        WebSerial.setBuffer(1024);
+      }
+
+      asyncServer->begin();
+    }
     #endif
 
     if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0)) setupTasks(true);

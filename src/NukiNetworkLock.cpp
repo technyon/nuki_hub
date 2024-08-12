@@ -1,5 +1,4 @@
 #include "NukiNetworkLock.h"
-#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "Arduino.h"
 #include "Config.h"
 #include "MqttTopics.h"

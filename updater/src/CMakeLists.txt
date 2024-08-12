@@ -1,8 +1,7 @@
 list(APPEND app_sources ${CMAKE_SOURCE_DIR}/src/main.cpp)
-list(APPEND app_sources ../../src/Config.h)
+list(APPEND app_sources ${CMAKE_SOURCE_DIR}/src/Config.h)
 list(APPEND app_sources ../../src/Logger.h)
 list(APPEND app_sources ../../src/NukiNetwork.h)
-list(APPEND app_sources ../../src/Ota.h)
 list(APPEND app_sources ../../src/PreferencesKeys.h)
 list(APPEND app_sources ../../src/RestartReason.h)
 list(APPEND app_sources ../../src/WebCfgServer.h)
@@ -10,7 +9,6 @@ list(APPEND app_sources ../../src/WebCfgServerConstants.h)
 
 list(APPEND app_sources ../../src/Logger.cpp)
 list(APPEND app_sources ../../src/NukiNetwork.cpp)
-list(APPEND app_sources ../../src/Ota.cpp)
 list(APPEND app_sources ../../src/WebCfgServer.cpp)
 
 list(APPEND app_sources ../../src/networkDevices/EthLan8720Device.h)

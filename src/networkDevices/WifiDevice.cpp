@@ -92,11 +92,13 @@ void WifiDevice::initialize()
     _wm.setAPCallback(clearRtcInitVar);
 
     bool res = false;
+    bool connectedFromPortal = false;
 
     if(_startAp)
     {
         Log->println(F("Opening Wi-Fi configuration portal."));
         res = _wm.startConfigPortal();
+        connectedFromPortal = true;
     }
     else
     {
@@ -116,6 +118,13 @@ void WifiDevice::initialize()
     else {
         Log->print(F("Wi-Fi connected: "));
         Log->println(WiFi.localIP().toString());
+        
+        if(connectedFromPortal)
+        {
+            Log->println(F("Connected using WifiManager portal. Wait for ESP restart."));
+            delay(1000);
+            restartEsp(RestartReason::ConfigurationUpdated);
+        }
     }
 
     WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
