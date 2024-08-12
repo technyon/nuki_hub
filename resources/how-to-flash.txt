@@ -50,6 +50,13 @@ e000 boot_app0.bin
 10000 nuki_hub_esp32c6.bin
 280000 nuki_hub_updater_esp32c6.bin
 
+ESP32-SOLO1
+e000 boot_app0.bin
+1000 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32-solo1.bin
+280000 nuki_hub_updater_esp32-solo1.bin
+
 Make sure the checkmarks for all files are enabled.
 
 - Select the COM-Port the ESP device is connected to
@@ -77,5 +84,9 @@ esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_res
 ## ESP32-C6
 
 esptool.py --chip esp32c6 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 bootloader.bin 0x10000 nuki_hub_esp32c6.bin 0x280000 nuki_hub_updater_esp32c6.bin 0x8000 nuki_hub.partitions.bin
+
+## ESP32-SOLO1
+
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32-solo1.bin 0x280000 nuki_hub_updater_esp32-solo1.bin 0x8000 nuki_hub.partitions.bin
 
 Adjust the serial device and path to the binaries if necessary.
