@@ -6,6 +6,8 @@ from pathlib import Path
 
 def get_board_name(env):
     board = env.get('BOARD_MCU')
+    if env.get('BOARD') == 'esp32-solo1':
+        board = env.get('BOARD').replace('-', '')
     return board
 
 def create_target_dir(env):
@@ -64,7 +66,7 @@ def package_last_files(source, target, env):
     for file in files:
         file = Path(file)
         shutil.copy(file, f"{target_dir}/{file.name}")
-        
+
 env.AddPostAction("$BUILD_DIR/firmware.bin", copy_files)
 env.AddPostAction("$PROJECT_DIR/updater/release/" + get_board_name(env) + "/updater.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/firmware.bin", package_last_files)
