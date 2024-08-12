@@ -2,6 +2,7 @@
 
 #include "LAN8720Definitions.h"
 #include "DM9051Definitions.h"
+#include "W5500Definitions.h"
 #include <WiFiClient.h>
 #include <NetworkClientSecure.h>
 #include <Preferences.h>

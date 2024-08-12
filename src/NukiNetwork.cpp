@@ -142,8 +142,18 @@ void NukiNetwork::setupDevice()
     switch (_networkDeviceType)
     {
         case NetworkDeviceType::W5500:
-            _device = new W5500Device(_hostname, _preferences, _ipConfiguration, hardwareDetect);
-            break;
+//            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101);
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5Stack Atom POE",
+                                           ETH_PHY_ADDR_M5_W5500,
+                                           ETH_PHY_CS_M5_W5500,
+                                           ETH_PHY_IRQ_M5_W5500,
+                                           ETH_PHY_RST_M5_W5500,
+                                           ETH_PHY_SPI_HOST_M5_W5500,
+                                           ETH_PHY_SPI_SCK_M5_W5500,
+                                           ETH_PHY_SPI_MISO_M5_W5500,
+                                           ETH_PHY_SPI_MOSI_M5_W5500,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
         #if defined(CONFIG_IDF_TARGET_ESP32)
         case NetworkDeviceType::Olimex_LAN8720:
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "Olimex (LAN8720)", ETH_PHY_ADDR_LAN8720, 12, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
@@ -152,7 +162,18 @@ void NukiNetwork::setupDevice()
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "WT32-ETH01", 1, 16);
             break;
         case NetworkDeviceType::M5STACK_PoESP32_Unit:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101);
+//            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101);
+            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit",
+                                           ETH_PHY_ADDR_M5_W5500,
+                                           ETH_PHY_CS_M5_W5500,
+                                           ETH_PHY_IRQ_M5_W5500,
+                                           ETH_PHY_RST_M5_W5500,
+                                           ETH_PHY_SPI_HOST_M5_W5500,
+                                           ETH_PHY_SPI_SCK_M5_W5500,
+                                           ETH_PHY_SPI_MISO_M5_W5500,
+                                           ETH_PHY_SPI_MOSI_M5_W5500,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
             break;
         case NetworkDeviceType::GL_S10:
             _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "GL-S10", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);

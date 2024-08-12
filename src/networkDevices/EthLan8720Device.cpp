@@ -55,10 +55,11 @@ EthLan8720Device::EthLan8720Device(const String &hostname,
           _type(ethtype),
           _useSpi(true)
 {
-    _spi = new SPIClass(HSPI);
+    _spi = new SPIClass(VSPI);
+//    _spi->begin(_spi_sck, _spi_miso, _spi_mosi, _cs);
     init(preferences);
 }
-
+//void begin(int8_t sck = -1, int8_t miso = -1, int8_t mosi = -1, int8_t ss = -1);
 void EthLan8720Device::init(Preferences* preferences)
 {
     _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
