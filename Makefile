@@ -2,6 +2,7 @@
 PLATFORMIO_INI := platformio.ini
 BOARDS := $(shell grep -oP '(?<=\[env:)[^\]]+' $(PLATFORMIO_INI) | grep -v '_dbg')
 DEBUG_BOARDS := $(shell grep -oP '(?<=\[env:)[^\]]+' $(PLATFORMIO_INI) | grep '_dbg')
+UPDATER_BOARDS := $(shell grep -oP '(?<=\[env:)[^\]]+' $(PLATFORMIO_INI) | grep -v '_dbg' | sed 's/^/updater_/')
 
 # Default target
 .PHONY: default
@@ -11,7 +12,7 @@ default: esp32
 release: $(BOARDS)
 
 .PHONY: updater
-release: updater_$(BOARDS)
+updater: $(UPDATER_BOARDS)
 
 .PHONY: debug
 debug: $(DEBUG_BOARDS)
@@ -40,6 +41,7 @@ help:
 	@echo "  make deps             - Install software dependencies (PlatformIO)"
 	@echo "  make all              - Build all boards in both release and debug modes"
 	@$(foreach board,$(BOARDS),echo "  make $(board)       - Build $(board) in release mode";)
+	@$(foreach board,$(UPDATER_BOARDS),echo "  make $(board)       - Build updater for $(board) in release mode";)
 	@$(foreach board,$(DEBUG_BOARDS),echo "  make $(board)       - Build $(board) in debug mode";)
 	@echo "Available boards:"
 	@echo "  $(BOARDS)"
