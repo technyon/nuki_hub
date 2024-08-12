@@ -8,7 +8,7 @@ NukiDeviceId::NukiDeviceId(Preferences* preferences, const std::string& preferen
 : _preferences(preferences),
   _preferencesId(preferencesId)
 {
-    _deviceId = _preferences->getUInt(_preferencesId.c_str());
+    _deviceId = _preferences->getUInt(_preferencesId.c_str(), 0);
 
     if(_deviceId == 0)
     {

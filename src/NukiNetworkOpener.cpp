@@ -35,7 +35,8 @@ void NukiNetworkOpener::initialize()
         _preferences->putString(preference_mqtt_opener_path, _mqttPath);
     }
 
-    _haEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
+    _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
@@ -50,7 +51,7 @@ void NukiNetworkOpener::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
 
-    if(_preferences->getBool(preference_disable_non_json, false))
+    if(_disableNonJSON)
     {
         _network->removeTopic(_mqttPath, mqtt_topic_keypad_command_action);
         _network->removeTopic(_mqttPath, mqtt_topic_keypad_command_id);
@@ -81,9 +82,9 @@ void NukiNetworkOpener::initialize()
         _network->removeTopic(_mqttPath, mqtt_topic_config_single_lock);
     }
 
-    if(_preferences->getBool(preference_keypad_control_enabled))
+    if(_preferences->getBool(preference_keypad_control_enabled, false))
     {
-        if(!_preferences->getBool(preference_disable_non_json, false))
+        if(!_disableNonJSON)
         {
             _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
             _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
@@ -103,7 +104,7 @@ void NukiNetworkOpener::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
     }
 
-    if(_preferences->getBool(preference_timecontrol_control_enabled))
+    if(_preferences->getBool(preference_timecontrol_control_enabled, false))
     {
         _network->subscribe(_mqttPath, mqtt_topic_timecontrol_action);
         _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
@@ -181,7 +182,7 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
         }
     }
 
-    if(!_preferences->getBool(preference_disable_non_json, false))
+    if(!_disableNonJSON)
     {
         if(comparePrefixedPath(topic, mqtt_topic_keypad_command_action))
         {
@@ -367,7 +368,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
     bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
     jsonBattery["critical"] = critical ? "1" : "0";
 
-    if((_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState) && !_preferences->getBool(preference_disable_non_json, false))
+    if((_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState) && !_disableNonJSON)
     {
         publishBool(mqtt_topic_battery_critical, critical, true);
     }
@@ -623,7 +624,7 @@ void NukiNetworkOpener::publishLockstateCommandResult(const char *resultStr)
 
 void NukiNetworkOpener::publishBatteryReport(const NukiOpener::BatteryReport& batteryReport)
 {
-    if(!_preferences->getBool(preference_disable_non_json, false))
+    if(!_disableNonJSON)
     {
         publishFloat(mqtt_topic_battery_voltage, (float)batteryReport.batteryVoltage / 1000.0, true);
     }
@@ -697,7 +698,7 @@ void NukiNetworkOpener::publishConfig(const NukiOpener::Config &config)
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_basic_json, _buffer, true);
 
-    if(!_preferences->getBool(preference_disable_non_json, false))
+    if(!_disableNonJSON)
     {
         publishBool(mqtt_topic_config_button_enabled, config.buttonEnabled == 1, true);
         publishBool(mqtt_topic_config_led_enabled, config.ledFlashEnabled == 1, true);
@@ -753,7 +754,7 @@ void NukiNetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_advanced_json, _buffer, true);
 
-    if(!_preferences->getBool(preference_disable_non_json, false))
+    if(!_disableNonJSON)
     {
         publishUInt(mqtt_topic_config_sound_level, config.soundLevel, true);
     }
@@ -808,6 +809,8 @@ void NukiNetworkOpener::removeHASSConfig(char* uidString)
 
 void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
 {
+    bool publishCode = _preferences->getBool(preference_keypad_publish_code, false);
+    bool topicPerEntry = _preferences->getBool(preference_keypad_topic_per_entry, false);
     uint index = 0;
     char uidString[20];
     itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
@@ -825,11 +828,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
 
         jsonEntry["codeId"] = entry.codeId;
 
-        if(_preferences->getBool(preference_keypad_publish_code, false))
-        {
-            jsonEntry["code"] = entry.code;
-        }
-
+        if(publishCode) jsonEntry["code"] = entry.code;
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
         char createdDT[20];
@@ -902,7 +901,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
         sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
         jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
 
-        if(_preferences->getBool(preference_keypad_topic_per_entry, false))
+        if(topicPerEntry)
         {
             basePath = mqtt_topic_keypad;
             basePath.concat("/codes/");
@@ -953,7 +952,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_keypad_json, _buffer, true);
 
-    if(!_preferences->getBool(preference_disable_non_json, false))
+    if(!_disableNonJSON)
     {
         while(index < maxKeypadCodeCount)
         {
@@ -967,7 +966,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
             ++index;
         }
 
-        if(!_preferences->getBool(preference_keypad_publish_code, false))
+        if(!publishCode)
         {
             for(int i=0; i<maxKeypadCodeCount; i++)
             {
@@ -1016,6 +1015,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
 
 void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeControlEntry>& timeControlEntries, uint maxTimeControlEntryCount)
 {
+    bool topicPerEntry = _preferences->getBool(preference_timecontrol_topic_per_entry, false);
     uint index = 0;
     char str[50];
     char uidString[20];
@@ -1085,7 +1085,7 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
         NukiOpener::lockactionToString(entry.lockAction, str);
         jsonEntry["lockAction"] = str;
         
-        if(_preferences->getBool(preference_timecontrol_topic_per_entry, false))
+        if(topicPerEntry)
         {
             String basePath = mqtt_topic_timecontrol;
             basePath.concat("/entries/");
@@ -1149,7 +1149,7 @@ void NukiNetworkOpener::publishConfigCommandResult(const char* result)
 
 void NukiNetworkOpener::publishKeypadCommandResult(const char* result)
 {
-    if(_preferences->getBool(preference_disable_non_json, false)) return;
+    if(_disableNonJSON) return;
     publishString(mqtt_topic_keypad_command_result, result, true);
 }
 
@@ -1180,7 +1180,7 @@ void NukiNetworkOpener::setConfigUpdateReceivedCallback(void (*configUpdateRecei
 
 void NukiNetworkOpener::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled))
 {
-    if(_preferences->getBool(preference_disable_non_json, false)) return;
+    if(_disableNonJSON) return;
     _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
 }
 
@@ -1237,7 +1237,7 @@ void NukiNetworkOpener::publishString(const char* topic, const char* value, bool
 
 void NukiNetworkOpener::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)
 {
-    if(_preferences->getBool(preference_disable_non_json, false)) return;
+    if(_disableNonJSON) return;
 
     char codeName[sizeof(entry.name) + 1];
     memset(codeName, 0, sizeof(codeName));
