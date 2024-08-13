@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16.0)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(nukihub)
 
+add_compile_definitions(CONFIG_IDF_TARGET_ESP32)
+
 set(SRCFILES
         ../src/Config.h
         ../src/NukiDeviceId.cpp
@@ -12,6 +14,9 @@ set(SRCFILES
         ../src/NukiNetworkOpener.cpp
         ../src/networkDevices/NetworkDevice.h
         ../src/networkDevices/NetworkDevice.cpp
+        ../src/networkDevices/LAN8720Definitions.h
+        ../src/networkDevices/DM9051Definitions.h
+        ../src/networkDevices/W5500Definitions.h
         ../src/networkDevices/WifiDevice.cpp
         ../src/networkDevices/W5500Device.cpp
         ../src/networkDevices/EthLan8720Device.cpp

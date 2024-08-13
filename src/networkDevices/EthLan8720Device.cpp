@@ -21,11 +21,50 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
   _mdio(mdio),
   _type(ethtype),
   _clock_mode(clock_mode),
-  _use_mac_from_efuse(use_mac_from_efuse)
+  _use_mac_from_efuse(use_mac_from_efuse),
+  _useSpi(false)
+{
+    init(preferences);
+}
+
+EthLan8720Device::EthLan8720Device(const String &hostname,
+                                   Preferences *preferences,
+                                   const IPConfiguration *ipConfiguration,
+                                   const std::string &deviceName,
+                                   uint8_t phy_addr,
+                                   int cs,
+                                   int irq,
+                                   int rst,
+                                   spi_host_device_t spi_host,
+                                   int spi_sck,
+                                   int spi_miso,
+                                   int spi_mosi,
+                                   uint8_t spi_freq_mhz,
+                                   eth_phy_type_t ethtype)
+        : NetworkDevice(hostname, ipConfiguration),
+          _deviceName(deviceName),
+          _phy_addr(phy_addr),
+          _cs(cs),
+          _irq(irq),
+          _rst(rst),
+          _spi_host(spi_host),
+          _spi_sck(spi_sck),
+          _spi_miso(spi_miso),
+          _spi_mosi(spi_mosi),
+          _spi_freq_mhz(spi_freq_mhz),
+          _type(ethtype),
+          _useSpi(true)
+{
+    _spi = new SPIClass(VSPI);
+//    _spi->begin(_spi_sck, _spi_miso, _spi_mosi, _cs);
+    init(preferences);
+}
+//void begin(int8_t sck = -1, int8_t miso = -1, int8_t mosi = -1, int8_t ss = -1);
+void EthLan8720Device::init(Preferences* preferences)
 {
     _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
     size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
     size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
@@ -55,11 +94,11 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
     if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
     {
         MqttLoggerMode mode;
-      
+
         if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
         else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
         else mode = MqttLoggerMode::MqttAndSerial;
-        
+
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
@@ -68,7 +107,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*getMqttClient(), _path, mode);
     }
-    #endif
+#endif
 }
 
 const String EthLan8720Device::deviceName() const
@@ -82,11 +121,19 @@ void EthLan8720Device::initialize()
 
     WiFi.setHostname(_hostname.c_str());
 
-    #if CONFIG_IDF_TARGET_ESP32
-    _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32C3)
+    if(_useSpi)
+    {
+        _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, *_spi, _spi_freq_mhz);
+    }
+    else
+    {
+        _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+    }
     #else
     _hardwareInitialized = false;
-    #endif
+#endif
+//    bool begin(eth_phy_type_t type, int32_t phy_addr, int cs, int irq, int rst, SPIClass &spi, uint8_t spi_freq_mhz = ETH_PHY_SPI_FREQ_MHZ);
 
     ETH.setHostname(_hostname.c_str());
     if(!_ipConfiguration->dhcpEnabled())

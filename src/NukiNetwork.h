@@ -23,7 +23,8 @@ enum class NetworkDeviceType
     WT32_LAN8720,
     M5STACK_PoESP32_Unit,
     LilyGO_T_ETH_POE,
-    GL_S10
+    GL_S10,
+    ETH01_Evo
 };
 
 #define JSON_BUFFER_SIZE 1024
