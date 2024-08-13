@@ -76,7 +76,7 @@ In a browser navigate to the IP address assigned to the ESP32 via DHCP (often fo
 Next click on "Edit" below "MQTT and Network Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required by your MQTT broker.<br>
 <br>
 The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this.<br>
-In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
+In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 
 ## Pairing with a Nuki Lock or Opener
 
@@ -114,9 +114,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
 - Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "[Home Assistant Discovery](#home-assistant-discovery-optional)" section of this README.
-- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
-- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
-- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
+- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
+- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
+- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
 - Connect to AP with the best signal in an environment with multiple APs with the same SSID: Enable to perform a scan for the Access Point with the best signal strenght for the specified SSID in a multi AP/Mesh environment.
@@ -302,7 +302,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Maintanence
 
-- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using Wi-Fi will be set to "Built-in Wi-Fi". If using Ethernet will be set to "Wiznet W5500", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit", "LilyGO T-ETH-POE" or "GL-S10".
+- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using Wi-Fi will be set to "Built-in Wi-Fi". If using Ethernet will be set to "Wiznet W5500", "ETH01-Evo", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit", "LilyGO T-ETH-POE" or "GL-S10".
 - maintenance/reset: Set to 1 to trigger a reboot of the ESP. Auto-resets to 0.
 - maintenance/update: Set to 1 to auto update Nuki Hub to the latest version from GitHub. Requires the setting "Allow updating using MQTT" to be enabled. Auto-resets to 0.
 - maintenance/mqttConnectionState: Last Will and Testament (LWT) topic. "online" when Nuki Hub is connected to the MQTT broker, "offline" if Nuki Hub is not connected to the MQTT broker.
@@ -441,7 +441,7 @@ Updating to version 9.00 requires a change to the partition table of the ESP32.<
 Please follow the instructions for the [First time installation](#first-time-installation) once when updating to Nuki Hub 9.00 from an earlier version.<br>
 Your settings will not be affected when updating using the above instructions (do not select erase device when updating using Webflash).<br>
 
-## MQTT Encryption (optional; Wi-Fi and LAN8720 only)
+## MQTT Encryption (optional)
 
 The communication via MQTT can be SSL encrypted.<br>
 To enable SSL encryption, supply the necessary information in the MQTT Configuration page.<br>

@@ -1,9 +1,4 @@
-//#define ETH_CLK_MODE ETH_CLOCK_GPIO17_OUT
-//#define ETH_PHY_POWER 12
-
-#include <WiFi.h>
-#include <ETH.h>
-#include "EthLan8720Device.h"
+#include "EthernetDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #ifndef NUKI_HUB_UPDATER
@@ -12,7 +7,7 @@
 #endif
 #include "../RestartReason.h"
 
-EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
+EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
 : NetworkDevice(hostname, ipConfiguration),
   _deviceName(deviceName),
   _phy_addr(phy_addr),
@@ -27,7 +22,7 @@ EthLan8720Device::EthLan8720Device(const String& hostname, Preferences* preferen
     init(preferences);
 }
 
-EthLan8720Device::EthLan8720Device(const String &hostname,
+EthernetDevice::EthernetDevice(const String &hostname,
                                    Preferences *preferences,
                                    const IPConfiguration *ipConfiguration,
                                    const std::string &deviceName,
@@ -35,7 +30,6 @@ EthLan8720Device::EthLan8720Device(const String &hostname,
                                    int cs,
                                    int irq,
                                    int rst,
-                                   spi_host_device_t spi_host,
                                    int spi_sck,
                                    int spi_miso,
                                    int spi_mosi,
@@ -47,7 +41,6 @@ EthLan8720Device::EthLan8720Device(const String &hostname,
           _cs(cs),
           _irq(irq),
           _rst(rst),
-          _spi_host(spi_host),
           _spi_sck(spi_sck),
           _spi_miso(spi_miso),
           _spi_mosi(spi_mosi),
@@ -55,12 +48,10 @@ EthLan8720Device::EthLan8720Device(const String &hostname,
           _type(ethtype),
           _useSpi(true)
 {
-    _spi = new SPIClass(VSPI);
-//    _spi->begin(_spi_sck, _spi_miso, _spi_mosi, _cs);
     init(preferences);
 }
-//void begin(int8_t sck = -1, int8_t miso = -1, int8_t mosi = -1, int8_t ss = -1);
-void EthLan8720Device::init(Preferences* preferences)
+
+void EthernetDevice::init(Preferences* preferences)
 {
     _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
 
@@ -110,91 +101,87 @@ void EthLan8720Device::init(Preferences* preferences)
 #endif
 }
 
-const String EthLan8720Device::deviceName() const
+const String EthernetDevice::deviceName() const
 {
     return _deviceName.c_str();
 }
 
-void EthLan8720Device::initialize()
+void EthernetDevice::initialize()
 {
     delay(250);
 
-    WiFi.setHostname(_hostname.c_str());
+    Log->println(F("Init Ethernet"));
 
-#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32C3)
     if(_useSpi)
     {
-        _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, *_spi, _spi_freq_mhz);
+        Log->println(F("Use SPI"));
+        SPI.begin(_spi_sck, _spi_miso, _spi_mosi);
+        _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
     }
+    #ifdef CONFIG_IDF_TARGET_ESP32
     else
     {
+        Log->println(F("Use RMII"));
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
     }
-    #else
-    _hardwareInitialized = false;
-#endif
-//    bool begin(eth_phy_type_t type, int32_t phy_addr, int cs, int irq, int rst, SPIClass &spi, uint8_t spi_freq_mhz = ETH_PHY_SPI_FREQ_MHZ);
+    #endif
 
-    ETH.setHostname(_hostname.c_str());
-    if(!_ipConfiguration->dhcpEnabled())
+    if(_hardwareInitialized)
     {
-        ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
-    }
+        Log->println(F("Ethernet hardware Initialized"));
 
-    WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
-    {
-        if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED)
+        Network.onEvent([&](arduino_event_id_t event, arduino_event_info_t info)
         {
-            onDisconnected();
-        }
-    });
-
-    if(_ipConfiguration->dhcpEnabled())
-    {
-        waitForIpAddressWithTimeout();
+            switch (event) {
+                case ARDUINO_EVENT_ETH_START:
+                    Log->println("ETH Started");
+                    ETH.setHostname(_hostname.c_str());
+                    if(!_ipConfiguration->dhcpEnabled()) ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+                    break;
+                case ARDUINO_EVENT_ETH_CONNECTED:
+                    Log->println("ETH Connected");
+                    break;
+                case ARDUINO_EVENT_ETH_GOT_IP:
+                    Log->printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif));
+                    Log->println(ETH);
+                    break;
+                case ARDUINO_EVENT_ETH_LOST_IP:
+                    Log->println("ETH Lost IP");
+                    onDisconnected();
+                    break;
+                case ARDUINO_EVENT_ETH_DISCONNECTED:
+                    Log->println("ETH Disconnected");
+                    onDisconnected();
+                    break;
+                case ARDUINO_EVENT_ETH_STOP:
+                    Log->println("ETH Stopped");
+                    onDisconnected();
+                    break;
+                default:
+                    break;
+            }
+        });
     }
+    else Log->println(F("Failed to initialize ethernet hardware"));
 }
 
-void EthLan8720Device::waitForIpAddressWithTimeout()
-{
-    int count = 100;
-
-    Log->print(F("LAN8720: Obtaining IP address via DHCP"));
-
-    while(count > 0 && localIP().equals("0.0.0.0"))
-    {
-        Log->print(F("."));
-        count--;
-        delay(100);
-    }
-
-    if(localIP().equals("0.0.0.0"))
-    {
-        Log->println(F(" Failed"));
-    }
-    else
-    {
-        Log->println(localIP());
-    }
-}
-
-void EthLan8720Device::reconfigure()
+void EthernetDevice::reconfigure()
 {
     delay(200);
-    restartEsp(RestartReason::ReconfigureLAN8720);
+    restartEsp(RestartReason::ReconfigureETH);
 }
 
-bool EthLan8720Device::supportsEncryption()
+bool EthernetDevice::supportsEncryption()
 {
     return true;
 }
 
-bool EthLan8720Device::isConnected()
+bool EthernetDevice::isConnected()
 {
     return ETH.linkUp();
 }
 
-ReconnectStatus EthLan8720Device::reconnect(bool force)
+ReconnectStatus EthernetDevice::reconnect(bool force)
 {
     if(!_hardwareInitialized)
     {
@@ -204,23 +191,23 @@ ReconnectStatus EthLan8720Device::reconnect(bool force)
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
-void EthLan8720Device::onDisconnected()
+void EthernetDevice::onDisconnected()
 {
     if(_restartOnDisconnect && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
     reconnect();
 }
 
-int8_t EthLan8720Device::signalStrength()
+int8_t EthernetDevice::signalStrength()
 {
     return -1;
 }
 
-String EthLan8720Device::localIP()
+String EthernetDevice::localIP()
 {
     return ETH.localIP().toString();
 }
 
-String EthLan8720Device::BSSIDstr()
+String EthernetDevice::BSSIDstr()
 {
     return "";
 }

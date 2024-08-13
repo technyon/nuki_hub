@@ -223,6 +223,12 @@ inline bool initPreferences(Preferences* preferences)
                     }
                 }
             }
+            if (configVer < 901)
+            {
+                #if defined(CONFIG_IDF_TARGET_ESP32S3)
+                if (preferences->getInt(preference_network_hardware) == 3) preferences->putInt(preference_network_hardware, 10);
+                #endif
+            }
 
             preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);
         }

@@ -18,10 +18,7 @@ set(SRCFILES
         ../src/networkDevices/DM9051Definitions.h
         ../src/networkDevices/W5500Definitions.h
         ../src/networkDevices/WifiDevice.cpp
-        ../src/networkDevices/W5500Device.cpp
-        ../src/networkDevices/EthLan8720Device.cpp
-        ../src/networkDevices/ClientSyncW5500.cpp
-        ../src/networkDevices/espMqttClientW5500.cpp
+        ../src/networkDevices/EthernetDevice.cpp
         ../src/networkDevices/IPConfiguration.cpp
         ../src/LockActionResult.h
         ../src/QueryCommand.h
@@ -65,8 +62,6 @@ file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.h
         lib/ESP Async WebServer/src/*.cpp
         lib/ESP Async WebServer/src/*.h
-        lib/Ethernet/src/*.cpp
-        lib/Ethernet/src/*.h
         lib/espMqttClient/src/*.cpp
         lib/espMqttClient/src/*.h
         lib/espMqttClient/src/Packets/*.cpp

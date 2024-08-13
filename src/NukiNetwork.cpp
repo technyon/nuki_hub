@@ -1,15 +1,12 @@
 #include "NukiNetwork.h"
 #include "PreferencesKeys.h"
-#include "networkDevices/W5500Device.h"
-#include "networkDevices/WifiDevice.h"
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
 #include <HTTPClient.h>
 #include <NetworkClientSecure.h>
-#if defined(CONFIG_IDF_TARGET_ESP32)
-#include "networkDevices/EthLan8720Device.h"
-#endif
+#include "networkDevices/WifiDevice.h"
+#include "networkDevices/EthernetDevice.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include <ArduinoJson.h>
@@ -99,14 +96,13 @@ void NukiNetwork::setupDevice()
                 _networkDeviceType = NetworkDeviceType::WiFi;
                 break;
             case 2:
-                Log->print(F("Generic W5500"));
+                Log->println(F("Generic W5500"));
                 _networkDeviceType = NetworkDeviceType::W5500;
                 break;
             case 3:
                 Log->println(F("W5500 on M5Stack Atom POE"));
-                _networkDeviceType = NetworkDeviceType::W5500;
+                _networkDeviceType = NetworkDeviceType::W5500M5;
                 break;
-            #if defined(CONFIG_IDF_TARGET_ESP32)
             case 4:
                 Log->println(F("Olimex ESP32-POE / ESP-POE-ISO"));
                 _networkDeviceType = NetworkDeviceType::Olimex_LAN8720;
@@ -131,7 +127,10 @@ void NukiNetwork::setupDevice()
                 Log->println(F("ETH01-Evo"));
                 _networkDeviceType = NetworkDeviceType::ETH01_Evo;
                 break;
-            #endif
+            case 10:
+                Log->println(F("W5500 on M5Stack Atom POE S3"));
+                _networkDeviceType = NetworkDeviceType::W5500M5S3;
+                break;
             default:
                 Log->println(F("Unknown hardware selected, falling back to Wi-Fi."));
                 _networkDeviceType = NetworkDeviceType::WiFi;
@@ -142,61 +141,77 @@ void NukiNetwork::setupDevice()
     switch (_networkDeviceType)
     {
         case NetworkDeviceType::W5500:
-//            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101);
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5Stack Atom POE",
-                                           ETH_PHY_ADDR_M5_W5500,
-                                           ETH_PHY_CS_M5_W5500,
-                                           ETH_PHY_IRQ_M5_W5500,
-                                           ETH_PHY_RST_M5_W5500,
-                                           ETH_PHY_SPI_HOST_M5_W5500,
-                                           ETH_PHY_SPI_SCK_M5_W5500,
-                                           ETH_PHY_SPI_MISO_M5_W5500,
-                                           ETH_PHY_SPI_MOSI_M5_W5500,
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "Generic W5500",
+                                           ETH_PHY_ADDR_W5500,
+                                           ETH_PHY_CS_GENERIC_W5500,
+                                           ETH_PHY_IRQ_GENERIC_W5500,
+                                           ETH_PHY_RST_GENERIC_W5500,
+                                           ETH_PHY_SPI_SCK_GENERIC_W5500,
+                                           ETH_PHY_SPI_MISO_GENERIC_W5500,
+                                           ETH_PHY_SPI_MOSI_GENERIC_W5500,
                                            ETH_PHY_SPI_FREQ_MHZ,
                                            ETH_PHY_W5500);
-        #if defined(CONFIG_IDF_TARGET_ESP32)
-        case NetworkDeviceType::Olimex_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "Olimex (LAN8720)", ETH_PHY_ADDR_LAN8720, 12, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
             break;
-        case NetworkDeviceType::WT32_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "WT32-ETH01", 1, 16);
-            break;
-        case NetworkDeviceType::M5STACK_PoESP32_Unit:
-//            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101);
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit",
-                                           ETH_PHY_ADDR_M5_W5500,
+        case NetworkDeviceType::W5500M5:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "M5Stack Atom POE",
+                                           ETH_PHY_ADDR_W5500,
                                            ETH_PHY_CS_M5_W5500,
                                            ETH_PHY_IRQ_M5_W5500,
                                            ETH_PHY_RST_M5_W5500,
-                                           ETH_PHY_SPI_HOST_M5_W5500,
                                            ETH_PHY_SPI_SCK_M5_W5500,
                                            ETH_PHY_SPI_MISO_M5_W5500,
                                            ETH_PHY_SPI_MOSI_M5_W5500,
                                            ETH_PHY_SPI_FREQ_MHZ,
                                            ETH_PHY_W5500);
             break;
-        case NetworkDeviceType::GL_S10:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "GL-S10", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);
-            break;
-        case NetworkDeviceType::LilyGO_T_ETH_POE:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
+        case NetworkDeviceType::W5500M5S3:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "M5Stack Atom POE S3",
+                                           ETH_PHY_ADDR_W5500,
+                                           ETH_PHY_CS_M5_W5500_S3,
+                                           ETH_PHY_IRQ_M5_W5500,
+                                           ETH_PHY_RST_M5_W5500,
+                                           ETH_PHY_SPI_SCK_M5_W5500_S3,
+                                           ETH_PHY_SPI_MISO_M5_W5500_S3,
+                                           ETH_PHY_SPI_MOSI_M5_W5500_S3,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
             break;
         case NetworkDeviceType::ETH01_Evo:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "ETH01-Evo",
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "ETH01-Evo",
             ETH_PHY_ADDR_ETH01EVO,
             ETH_PHY_CS_ETH01EVO,
             ETH_PHY_IRQ_ETH01EVO,
             ETH_PHY_RST_ETH01EVO,
-            ETH_PHY_SPI_HOST_ETH01EVO,
             ETH_PHY_SPI_SCK_ETH01EVO,
             ETH_PHY_SPI_MISO_ETH01EVO,
             ETH_PHY_SPI_MOSI_ETH01EVO,
             ETH_PHY_SPI_FREQ_MHZ,
             ETH_PHY_TYPE_DM9051);
-
-
-//            , 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_DM9051, ETH_CLOCK_GPIO17_OUT
-
+            break;
+        case NetworkDeviceType::M5STACK_PoESP32_Unit:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit",
+                                           ETH_PHY_ADDR_W5500,
+                                           ETH_PHY_CS_M5_W5500,
+                                           ETH_PHY_IRQ_M5_W5500,
+                                           ETH_PHY_RST_M5_W5500,
+                                           ETH_PHY_SPI_SCK_M5_W5500,
+                                           ETH_PHY_SPI_MISO_M5_W5500,
+                                           ETH_PHY_SPI_MOSI_M5_W5500,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
+            break;
+        #if defined(CONFIG_IDF_TARGET_ESP32)
+        case NetworkDeviceType::Olimex_LAN8720:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "Olimex (LAN8720)", ETH_PHY_ADDR_LAN8720, 12, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
+            break;
+        case NetworkDeviceType::WT32_LAN8720:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "WT32-ETH01", 1, 16);
+            break;
+        case NetworkDeviceType::GL_S10:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "GL-S10", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);
+            break;
+        case NetworkDeviceType::LilyGO_T_ETH_POE:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
             break;
         #endif
         case NetworkDeviceType::WiFi:

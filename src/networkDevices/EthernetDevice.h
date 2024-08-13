@@ -1,25 +1,25 @@
 #pragma once
 
+#include <ETH.h>
+#include <cstdint>
+#include <hal/spi_types.h>
+#include <SPI.h>
 #include "LAN8720Definitions.h"
 #include "DM9051Definitions.h"
 #include "W5500Definitions.h"
-#include <WiFiClient.h>
+#include <NetworkClient.h>
 #include <NetworkClientSecure.h>
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #ifndef NUKI_HUB_UPDATER
 #include "espMqttClient.h"
 #endif
-#include <ETH.h>
-#include <cstdint>
-#include <hal/spi_types.h>
-#include <SPI.h>
 
-class EthLan8720Device : public NetworkDevice
+class EthernetDevice : public NetworkDevice
 {
 
 public:
-    EthLan8720Device(const String& hostname,
+    EthernetDevice(const String& hostname,
                      Preferences* preferences,
                      const IPConfiguration* ipConfiguration,
                      const std::string& deviceName,
@@ -31,20 +31,19 @@ public:
                      eth_clock_mode_t clock_mode = ETH_CLK_MODE_LAN8720,
                      bool use_mac_from_efuse = false);
 
-    EthLan8720Device(const String& hostname,
+    EthernetDevice(const String& hostname,
                      Preferences* preferences,
                      const IPConfiguration* ipConfiguration,
                      const std::string& deviceName,
                      uint8_t phy_addr,
-                     int cs, //  ETH_PHY_CS_ETH01EVO
-                     int irq, // ETH_PHY_IRQ_ETH01EVO
-                     int rst, // ETH_PHY_RST_ETH01EVO
-                     spi_host_device_t spi_host, // ETH_PHY_SPI_HOST_ETH01EVO
-                     int spi_sck, // ETH_PHY_SPI_SCK_ETH01EVO
-                     int spi_miso, // ETH_PHY_SPI_MISO_ETH01EVO
-                     int spi_mosi, // ETH_PHY_SPI_MOSI_ETH01EVO
-                     uint8_t spi_freq_mhz = ETH_PHY_SPI_FREQ_MHZ,
-                     eth_phy_type_t ethtype = ETH_PHY_TYPE_DM9051);
+                     int cs,
+                     int irq,
+                     int rst,
+                     int spi_sck,
+                     int spi_miso,
+                     int spi_mosi,
+                     uint8_t spi_freq_mhz,
+                     eth_phy_type_t ethtype);
 
     const String deviceName() const override;
 
@@ -78,11 +77,10 @@ private:
     int _mdc;
     int _mdio;
 
-    // DM9051
+    // W55000 and DM9051
     int _cs;
     int _irq;
     int _rst;
-    spi_host_device_t _spi_host;
     int _spi_sck;
     int _spi_miso;
     int _spi_mosi;
@@ -92,8 +90,6 @@ private:
     eth_clock_mode_t _clock_mode;
     bool _use_mac_from_efuse;
     bool _useSpi = false;
-
-    SPIClass* _spi = nullptr;
 
     #ifndef NUKI_HUB_UPDATER
     char _ca[TLS_CA_MAX_SIZE] = {0};

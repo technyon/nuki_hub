@@ -11,16 +11,14 @@ list(APPEND app_sources ../../src/Logger.cpp)
 list(APPEND app_sources ../../src/NukiNetwork.cpp)
 list(APPEND app_sources ../../src/WebCfgServer.cpp)
 
-list(APPEND app_sources ../../src/networkDevices/EthLan8720Device.h)
+list(APPEND app_sources ../../src/networkDevices/EthernetDevice.h)
 list(APPEND app_sources ../../src/networkDevices/IPConfiguration.h)
 list(APPEND app_sources ../../src/networkDevices/NetworkDevice.h)
-list(APPEND app_sources ../../src/networkDevices/W5500Device.h)
 list(APPEND app_sources ../../src/networkDevices/WifiDevice.h)
 
-list(APPEND app_sources ../../src/networkDevices/EthLan8720Device.cpp)
+list(APPEND app_sources ../../src/networkDevices/EthernetDevice.cpp)
 list(APPEND app_sources ../../src/networkDevices/IPConfiguration.cpp)
 list(APPEND app_sources ../../src/networkDevices/NetworkDevice.cpp)
-list(APPEND app_sources ../../src/networkDevices/W5500Device.cpp)
 list(APPEND app_sources ../../src/networkDevices/WifiDevice.cpp)
 
 idf_component_register(SRCS ${app_sources})

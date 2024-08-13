@@ -84,11 +84,11 @@ void WebCfgServer::initialize()
         sendFavicon(request);
     });
     #ifndef NUKI_HUB_UPDATER
-    _asyncServer->on("/import", [&](AsyncWebServerRequest *request){
+    _asyncServer->on("/import", HTTP_POST, [&](AsyncWebServerRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         String message = "";
         bool restart = processImport(request, message);
-        buildConfirmHtml(request, message, 3);        
+        buildConfirmHtml(request, message, 3);
         if(restart)
         {
             Log->println(F("Restarting"));
@@ -145,15 +145,15 @@ void WebCfgServer::initialize()
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         buildConfigureWifiHtml(request);
     });
-    _asyncServer->on("/unpairlock", HTTP_GET, [&](AsyncWebServerRequest *request){
+    _asyncServer->on("/unpairlock", HTTP_POST, [&](AsyncWebServerRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         processUnpair(request, false);
     });
-    _asyncServer->on("/unpairopener", HTTP_GET, [&](AsyncWebServerRequest *request){
+    _asyncServer->on("/unpairopener", HTTP_POST, [&](AsyncWebServerRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         processUnpair(request, true);
     });
-    _asyncServer->on("/factoryreset", HTTP_GET, [&](AsyncWebServerRequest *request){
+    _asyncServer->on("/factoryreset", HTTP_POST, [&](AsyncWebServerRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         processFactoryReset(request);
     });
@@ -2011,8 +2011,6 @@ void WebCfgServer::buildCredHtml(AsyncWebServerRequest *request)
         response->print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
         response->print("</form>");
     }
-
-    _confirmCode = generateConfirmCode();
     if(_nuki != nullptr)
     {
         response->print("<br><br><h3>Unpair Nuki Lock</h3>");
@@ -2025,7 +2023,6 @@ void WebCfgServer::buildCredHtml(AsyncWebServerRequest *request)
         response->print("</table>");
         response->print("<br><button type=\"submit\">OK</button></form>");
     }
-
     if(_nukiOpener != nullptr)
     {
         response->print("<br><br><h3>Unpair Nuki Opener</h3>");
@@ -3091,9 +3088,9 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
 void WebCfgServer::processUnpair(AsyncWebServerRequest *request, bool opener)
 {
     String value = "";
-    if(request->hasParam("CONFIRMTOKEN"))
+    if(request->hasParam("CONFIRMTOKEN", true))
     {
-        const AsyncWebParameter* p = request->getParam("CONFIRMTOKEN");
+        const AsyncWebParameter* p = request->getParam("CONFIRMTOKEN", true);
         if(p->value() != "") value = p->value();
     }
 
@@ -3185,9 +3182,9 @@ void WebCfgServer::processUpdate(AsyncWebServerRequest *request)
 void WebCfgServer::processFactoryReset(AsyncWebServerRequest *request)
 {
     String value = "";
-    if(request->hasParam("CONFIRMTOKEN"))
+    if(request->hasParam("CONFIRMTOKEN", true))
     {
-        const AsyncWebParameter* p = request->getParam("CONFIRMTOKEN");
+        const AsyncWebParameter* p = request->getParam("CONFIRMTOKEN", true);
         if(p->value() != "") value = p->value();
     }
 
@@ -3200,9 +3197,9 @@ void WebCfgServer::processFactoryReset(AsyncWebServerRequest *request)
     else
     {
         String value2 = "";
-        if(request->hasParam("WIFI"))
+        if(request->hasParam("WIFI", true))
         {
-            const AsyncWebParameter* p = request->getParam("WIFI");
+            const AsyncWebParameter* p = request->getParam("WIFI", true);
             if(p->value() != "") value = p->value();
         }
 
@@ -3466,6 +3463,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     options.push_back(std::make_pair("1", "Wi-Fi only"));
     options.push_back(std::make_pair("2", "Generic W5500"));
     options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
+    options.push_back(std::make_pair("10", "M5Stack Atom POE S3 (W5500)"));
     options.push_back(std::make_pair("4", "Olimex ESP32-POE / ESP-POE-ISO"));
     options.push_back(std::make_pair("5", "WT32-ETH01"));
     options.push_back(std::make_pair("6", "M5STACK PoESP32 Unit"));

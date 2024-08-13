@@ -372,10 +372,12 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     bool firstStart = initPreferences(preferences);
-
+    bool doOta = false;
     uint8_t partitionType = checkPartition();
 
     initializeRestartReason();
+
+    if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0)) doOta = true;
 
     #ifndef NUKI_HUB_UPDATER
     if(preferences->getBool(preference_enable_bootloop_reset, false))
@@ -390,11 +392,15 @@ void setup()
 
     network = new NukiNetwork(preferences);
     network->initialize();
-    asyncServer = new AsyncWebServer(80);
-    webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
-    webCfgServer->initialize();
-    asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
-    asyncServer->begin();
+
+    if(!doOta)
+    {
+        asyncServer = new AsyncWebServer(80);
+        webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
+        webCfgServer->initialize();
+        asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
+        asyncServer->begin();
+    }
     #else
     Log->print(F("Nuki Hub version ")); Log->println(NUKI_HUB_VERSION);
     Log->print(F("Nuki Hub build ")); Log->println(NUKI_HUB_BUILD);
@@ -465,28 +471,31 @@ void setup()
 
     if(preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false))
     {
-      asyncServer = new AsyncWebServer(80);
+        if(!doOta)
+        {
+            asyncServer = new AsyncWebServer(80);
 
-      if(preferences->getBool(preference_webserver_enabled, true))
-      {
-          webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
-          webCfgServer->initialize();
-          asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
-      }
-      else asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/webserial"); });
+            if(preferences->getBool(preference_webserver_enabled, true))
+            {
+                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
+                webCfgServer->initialize();
+                asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
+            }
+            else asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/webserial"); });
 
-      if(preferences->getBool(preference_webserial_enabled, false))
-      {
-        WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
-        WebSerial.begin(asyncServer);
-        WebSerial.setBuffer(1024);
-      }
+            if(preferences->getBool(preference_webserial_enabled, false))
+            {
+              WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
+              WebSerial.begin(asyncServer);
+              WebSerial.setBuffer(1024);
+            }
 
-      asyncServer->begin();
+            asyncServer->begin();
+        }
     }
     #endif
 
-    if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0)) setupTasks(true);
+    if(doOta) setupTasks(true);
     else setupTasks(false);
 }
 
