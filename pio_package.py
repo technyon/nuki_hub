@@ -1,8 +1,7 @@
 """ PlatformIO POST script execution to copy artifacts """
 
 Import("env")
-import os
-import shutil
+import re, shutil, os
 from pathlib import Path
 
 def get_board_name(env):
@@ -65,7 +64,7 @@ def package_last_files(source, target, env):
     for file in files:
         file = Path(file)
         shutil.copy(file, f"{target_dir}/{file.name}")
-        
+
 env.AddPostAction("$BUILD_DIR/firmware.bin", copy_files)
 env.AddPostAction("$PROJECT_DIR/updater/release/" + get_board_name(env) + "/updater.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/firmware.bin", package_last_files)
@@ -76,3 +75,13 @@ if env.GetProjectOption("custom_build") == 'debug':
     env.AddPostAction("$BUILD_DIR/firmware.elf", copy_files)
 
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)
+
+regex = r"\#define NUKI_HUB_DATE \"(.*)\""
+content_new = ""
+
+with open ('src/Config.h', 'r' ) as readfile:
+    file_content = readfile.read()
+    content_new = re.sub(regex, "#define NUKI_HUB_DATE \"unknownbuilddate\"", file_content, flags = re.M)
+
+with open('src/Config.h', 'w') as writefile:
+    writefile.write(content_new)

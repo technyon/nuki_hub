@@ -112,6 +112,8 @@ private:
     int64_t _lastMaintenanceTs = 0;
     bool _haEnabled = false;
     bool _reconnected = false;
+    bool _disableNonJSON = false;
+    bool _offEnabled = false;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";

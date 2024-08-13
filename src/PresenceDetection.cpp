@@ -13,7 +13,7 @@ PresenceDetection::PresenceDetection(Preferences* preferences, BleScanner::Scann
   _csv(buffer),
   _bufferSize(bufferSize)
 {
-    _timeout = _preferences->getInt(preference_presence_detection_timeout) * 1000;
+    _timeout = _preferences->getInt(preference_presence_detection_timeout, 0) * 1000;
     if(_timeout == 0)
     {
         _timeout = 60000;
@@ -95,18 +95,15 @@ void PresenceDetection::buildCsv(const std::shared_ptr<PdDevice>& device)
     _csv[_csvIndex] = ';';
     ++_csvIndex;
 
-    if(device->hasRssi)
-    {
-        char rssiStr[20] = {0};
-        itoa(device->rssi, rssiStr, 10);
+    char rssiStr[20] = {0};
+    itoa(device->rssi, rssiStr, 10);
 
-        int i=0;
-        while(rssiStr[i] != 0x00 && i < 20)
-        {
-            _csv[_csvIndex] = rssiStr[i];
-            ++_csvIndex;
-            ++i;
-        }
+    int j=0;
+    while(rssiStr[j] != 0x00 && j < 20)
+    {
+        _csv[_csvIndex] = rssiStr[j];
+        ++_csvIndex;
+        ++j;
     }
 
     _csv[_csvIndex] = '\n';
@@ -144,11 +141,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
         if(found)
         {
             it->second->timestamp = esp_timer_get_time() / 1000;
-            if(device->haveRSSI())
-            {
-                it->second->hasRssi = true;
-                it->second->rssi = device->getRSSI();
-            }
+            it->second->rssi = device->getRSSI();
         }
     }
 
@@ -164,11 +157,7 @@ void PresenceDetection::onResult(NimBLEAdvertisedDevice *device)
             ++i;
         }
 
-        if(device->haveRSSI())
-        {
-            pdDevice->hasRssi = true;
-            pdDevice->rssi = device->getRSSI();
-        }
+        pdDevice->rssi = device->getRSSI();
 
         std::string nameStr = "-";
         if(device->haveName())

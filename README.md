@@ -15,8 +15,9 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.1.4 and Arduino Core 3.0.2.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.1.4 and Arduino Core 3.0.4.
 - Tested stable builds are provided for the ESP32, ESP32-S3 and ESP32-C3.
+- Untested builds are provided for the ESP32-Solo1.
 - Support for the ESP32-C6 is experimental. There could be more frequent crashes than on other ESP32 devices and connections with the Nuki device could be slower than on other ESP32 devices.
 
 <b>Not supported ESP32 devices:</b>
@@ -48,7 +49,7 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 ## Support Nuki Hub development
 
 If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
-REF2P8WSFGJCN<br>
+REFZDJ2QKXTG2<br>
 This will also give you a 10% discount on your order.<br>
 <br>
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:<br>

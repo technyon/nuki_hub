@@ -13,12 +13,12 @@ RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
 : NetworkDevice(hostname, ipConfiguration),
   _preferences(preferences),
-  _wm(preferences->getString(preference_cred_user).c_str(), preferences->getString(preference_cred_password).c_str())
+  _wm(preferences->getString(preference_cred_user, "").c_str(), preferences->getString(preference_cred_password, "").c_str())
 {
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
 
     #ifndef NUKI_HUB_UPDATER
-    _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
+    _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect, false);
 
     size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
     size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
@@ -46,12 +46,12 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 
-    if(preferences->getBool(preference_mqtt_log_enabled) || preferences->getBool(preference_webserial_enabled))
+    if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
     {
         MqttLoggerMode mode;
       
-        if(preferences->getBool(preference_mqtt_log_enabled) && preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::SerialAndWeb;
+        if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
         else mode = MqttLoggerMode::MqttAndSerial;
         
         _path = new char[200];
@@ -75,7 +75,7 @@ void WifiDevice::initialize()
     std::vector<const char *> wm_menu;
     wm_menu.push_back("wifi");
     wm_menu.push_back("exit");
-    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
+    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
     // reduced timeout if ESP is set to restart on disconnect
     _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi));
     _wm.setConnectTimeout(20);
@@ -167,14 +167,14 @@ ReconnectStatus WifiDevice::reconnect(bool force)
         _isReconnecting = false;
     }
 
-    if(!isConnected() && _disconnectTs > (esp_timer_get_time() / 1000) - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
+    if(!isConnected() && _disconnectTs > (esp_timer_get_time() / 1000) - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
 void WifiDevice::onConnected()
 {
     _isReconnecting = false;
-    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled));
+    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
 }
 
 void WifiDevice::onDisconnected()

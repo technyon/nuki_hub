@@ -31,8 +31,8 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferenc
   _partitionType(partitionType)
 #endif
 {
-    _hostname = _preferences->getString(preference_hostname);
-    String str = _preferences->getString(preference_cred_user);
+    _hostname = _preferences->getString(preference_hostname, "");
+    String str = _preferences->getString(preference_cred_user, "");
 
     if(str.length() > 0)
     {
@@ -43,13 +43,14 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferenc
         const char *user = str.c_str();
         memcpy(&_credUser, user, str.length());
 
-        str = _preferences->getString(preference_cred_password);
+        str = _preferences->getString(preference_cred_password, "");
         const char *pass = str.c_str();
         memcpy(&_credPassword, pass, str.length());
     }
 
-    #ifndef NUKI_HUB_UPDATER
     _confirmCode = generateConfirmCode();
+
+    #ifndef NUKI_HUB_UPDATER
     _pinsConfigured = true;
 
     if(_nuki != nullptr && !_nuki->isPinSet())
@@ -67,17 +68,18 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, EthServer* ethServer, Preferenc
 
 void WebCfgServer::initialize()
 {
+    _response.reserve(8192);
     _server.on("/", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
+        _response = "";
         #ifndef NUKI_HUB_UPDATER
-        buildHtml(response);
+        buildHtml();
         #else
-        buildOtaHtml(response, _server.arg("errored") != "");
+        buildOtaHtml(_server.arg("errored") != "");
         #endif
-        _server.send(200, "text/html", response);
+        _server.send(200, "text/html", _response);
     });
     _server.on("/style.css", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -101,9 +103,9 @@ void WebCfgServer::initialize()
         bool restart = processImport(message);
         if(restart)
         {
-            String response = "";
-            buildConfirmHtml(response, message);
-            _server.send(200, "text/html", response);
+            _response = "";
+            buildConfirmHtml(message);
+            _server.send(200, "text/html", _response);
             Log->println(F("Restarting"));
 
             waitAndProcess(true, 1000);
@@ -111,9 +113,9 @@ void WebCfgServer::initialize()
         }
         else
         {
-            String response = "";
-            buildConfirmHtml(response, message, 3);
-            _server.send(200, "text/html", response);
+            _response = "";
+            buildConfirmHtml(message, 3);
+            _server.send(200, "text/html", _response);
             waitAndProcess(false, 1000);
         }
     });
@@ -127,73 +129,73 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildImportExportHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildImportExportHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/status", HTTP_GET, [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildStatusHtml(response);
-        _server.send(200, "application/json", response);
+        _response = "";
+        buildStatusHtml();
+        _server.send(200, "application/json", _response);
     });
     _server.on("/acclvl", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildAccLvlHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildAccLvlHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/advanced", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildAdvancedConfigHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildAdvancedConfigHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/cred", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildCredHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildCredHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/mqttconfig", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildMqttConfigHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildMqttConfigHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/nukicfg", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildNukiConfigHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildNukiConfigHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/gpiocfg", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildGpioConfigHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildGpioConfigHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/wifi", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildConfigureWifiHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildConfigureWifiHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/unpairlock", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -222,9 +224,9 @@ void WebCfgServer::initialize()
         }
         if(_allowRestartToPortal)
         {
-            String response = "";
-            buildConfirmHtml(response, "Restarting. Connect to ESP access point to reconfigure Wi-Fi.", 0);
-            _server.send(200, "text/html", response);
+            _response = "";
+            buildConfirmHtml("Restarting. Connect to ESP access point to reconfigure Wi-Fi.", 0);
+            _server.send(200, "text/html", _response);
             waitAndProcess(true, 2000);
             _network->reconfigureDevice();
         }
@@ -238,9 +240,9 @@ void WebCfgServer::initialize()
         bool restart = processArgs(message);
         if(restart)
         {
-            String response = "";
-            buildConfirmHtml(response, message);
-            _server.send(200, "text/html", response);
+            _response = "";
+            buildConfirmHtml(message);
+            _server.send(200, "text/html", _response);
             Log->println(F("Restarting"));
 
             waitAndProcess(true, 1000);
@@ -248,9 +250,9 @@ void WebCfgServer::initialize()
         }
         else
         {
-            String response = "";
-            buildConfirmHtml(response, message, 3);
-            _server.send(200, "text/html", response);
+            _response = "";
+            buildConfirmHtml(message, 3);
+            _server.send(200, "text/html", _response);
             waitAndProcess(false, 1000);
         }
     });
@@ -261,9 +263,9 @@ void WebCfgServer::initialize()
         }
         processGpioArgs();
 
-        String response = "";
-        buildConfirmHtml(response, "");
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildConfirmHtml("");
+        _server.send(200, "text/html", _response);
         Log->println(F("Restarting"));
 
         waitAndProcess(true, 1000);
@@ -273,16 +275,16 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildInfoHtml(response);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildInfoHtml();
+        _server.send(200, "text/html", _response);
     });
     _server.on("/debugon", [&]() {
         _preferences->putBool(preference_publish_debug_info, true);
 
-        String response = "";
-        buildConfirmHtml(response, "OK");
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildConfirmHtml("OK");
+        _server.send(200, "text/html", _response);
         Log->println(F("Restarting"));
 
         waitAndProcess(true, 1000);
@@ -291,9 +293,9 @@ void WebCfgServer::initialize()
     _server.on("/debugoff", [&]() {
         _preferences->putBool(preference_publish_debug_info, false);
 
-        String response = "";
-        buildConfirmHtml(response, "OK");
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildConfirmHtml("OK");
+        _server.send(200, "text/html", _response);
         Log->println(F("Restarting"));
 
         waitAndProcess(true, 1000);
@@ -302,15 +304,23 @@ void WebCfgServer::initialize()
     _server.on("/webserial", [&]() {
         _server.sendHeader("Location", (String)"http://" + _network->localIP() + ":81/webserial");
         _server.send(302, "text/plain", "");
-    });    
+    });
     #endif
     _server.on("/ota", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildOtaHtml(response, _server.arg("errored") != "");
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildOtaHtml(_server.arg("errored") != "");
+        _server.send(200, "text/html", _response);
+    });
+    _server.on("/otadebug", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        _response = "";
+        buildOtaHtml(_server.arg("errored") != "", true);
+        _server.send(200, "text/html", _response);
     });
     _server.on("/otadebug", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -324,12 +334,22 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildConfirmHtml(response, "Rebooting to other partition", 2);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildConfirmHtml("Rebooting to other partition", 2);
+        _server.send(200, "text/html", _response);
         waitAndProcess(true, 1000);
         esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
         restartEsp(RestartReason::OTAReboot);
+    });
+    _server.on("/reboot", [&]() {
+        if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
+            return _server.requestAuthentication();
+        }
+        _response = "";
+        buildConfirmHtml("Rebooting", 2);
+        _server.send(200, "text/html", _response);
+        waitAndProcess(true, 1000);
+        restartEsp(RestartReason::RequestedViaWebServer);
     });
     _server.on("/autoupdate", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -348,9 +368,9 @@ void WebCfgServer::initialize()
         }
 
         if (_ota.updateStarted() && _ota.updateCompleted()) {
-            String response = "";
-            buildOtaCompletedHtml(response);
-            _server.send(200, "text/html", response);
+            _response = "";
+            buildOtaCompletedHtml();
+            _server.send(200, "text/html", _response);
             delay(2000);
             restartEsp(RestartReason::OTACompleted);
         } else {
@@ -391,52 +411,53 @@ void WebCfgServer::update()
     _server.handleClient();
 }
 
-void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
+void WebCfgServer::buildOtaHtml(bool errored, bool debug)
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
 
-    if(errored) response.concat("<div>Over-the-air update errored. Please check the logs for more info</div><br/>");
+    if(errored) _response.concat("<div>Over-the-air update errored. Please check the logs for more info</div><br/>");
 
     if(_partitionType == 0)
     {
-        response.concat("<h4 class=\"warning\">You are currently running Nuki Hub with an outdated partition scheme. Because of this you cannot use OTA to update to 9.00 or higher. Please check GitHub for instructions on how to update to 9.00 and the new partition scheme</h4>");
-        response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
-        response.concat(GITHUB_LATEST_RELEASE_URL);
-        response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
+        _response.concat("<h4 class=\"warning\">You are currently running Nuki Hub with an outdated partition scheme. Because of this you cannot use OTA to update to 9.00 or higher. Please check GitHub for instructions on how to update to 9.00 and the new partition scheme</h4>");
+        _response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+        _response.concat(GITHUB_LATEST_RELEASE_URL);
+        _response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
         return;
     }
 
-    response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
-    response.concat("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
-    response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
-    response.concat("<div style=\"clear: both\"></div>");
+    _response.concat("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
+    _response.concat("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
+    _response.concat("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
+    _response.concat("<div style=\"clear: both\"></div>");
 
     String release_type;
 
     if(debug) release_type = "debug";
     else release_type = "release";
-    
+
     #ifndef DEBUG_NUKIHUB
     String build_type = "release";
     #else
     String build_type = "debug";
     #endif
-    
-    response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('latestver') && \"" + release_type + "\" == \"" + build_type + "\") { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
-    response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('betaver') && \"" + release_type + "\" == \"" + build_type + "\") { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
-    response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('devver') && \"" + release_type + "\" == \"" + build_type + "\") { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
-    response.concat("<div style=\"clear: both\"></div><br>");
 
-    response.concat("<b>Current version: </b><span id=\"currentver\">");
-    response.concat(NUKI_HUB_VERSION);
-    response.concat(" (");
-    response.concat(NUKI_HUB_BUILD);
-    response.concat(")</span>, ");
-    response.concat(NUKI_HUB_DATE);
-    response.concat("<br>");
+    _response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('latestver') && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
+    _response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('betaver') && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
+    _response.concat("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('devver') && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    _response.concat("<div style=\"clear: both\"></div><br>");
+
+    _response.concat("<b>Current version: </b><span id=\"currentver\">");
+    _response.concat(NUKI_HUB_VERSION);
+    _response.concat(" (");
+    _response.concat(NUKI_HUB_BUILD);
+    _response.concat(")</span>, ");
+    _response.concat(NUKI_HUB_DATE);
+    _response.concat("<br>");
 
     #ifndef NUKI_HUB_UPDATER
-    bool manifestSuccess = false;  
+    bool manifestSuccess = false;
+
     NetworkClientSecure *client = new NetworkClientSecure;
     if (client) {
         client->setDefaultCACertBundle();
@@ -447,9 +468,9 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
             https.useHTTP10(true);
 
             if (https.begin(*client, GITHUB_OTA_MANIFEST_URL)) {
-                int httpResponseCode = https.GET();
+                int http_responseCode = https.GET();
 
-                if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                if (http_responseCode == HTTP_CODE_OK || http_responseCode == HTTP_CODE_MOVED_PERMANENTLY)
                 {
                     JsonDocument doc;
                     DeserializationError jsonError = deserializeJson(doc, https.getStream());
@@ -457,35 +478,35 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
                     if (!jsonError)
                     {
                         manifestSuccess = true;
-                        response.concat("<b>Latest release version: </b><span id=\"latestver\">");
-                        response.concat(doc["release"]["fullversion"].as<const char*>());
-                        response.concat(" (");
-                        response.concat(doc["release"]["build"].as<const char*>());
-                        response.concat(")</span>, ");
-                        response.concat(doc["release"]["time"].as<const char*>());
-                        response.concat("<br>");
-                        response.concat("<b>Latest beta version: </b><span id=\"betaver\">");
+                        _response.concat("<b>Latest release version: </b><span id=\"latestver\">");
+                        _response.concat(doc["release"]["fullversion"].as<const char*>());
+                        _response.concat(" (");
+                        _response.concat(doc["release"]["build"].as<const char*>());
+                        _response.concat(")</span>, ");
+                        _response.concat(doc["release"]["time"].as<const char*>());
+                        _response.concat("<br>");
+                        _response.concat("<b>Latest beta version: </b><span id=\"betaver\">");
                         if(doc["beta"]["fullversion"] != "No beta available")
                         {
-                            response.concat(doc["beta"]["fullversion"].as<const char*>());
-                            response.concat(" (");
-                            response.concat(doc["beta"]["build"].as<const char*>());
-                            response.concat(")</span>, ");
-                            response.concat(doc["beta"]["time"].as<const char*>());
+                            _response.concat(doc["beta"]["fullversion"].as<const char*>());
+                            _response.concat(" (");
+                            _response.concat(doc["beta"]["build"].as<const char*>());
+                            _response.concat(")</span>, ");
+                            _response.concat(doc["beta"]["time"].as<const char*>());
                         }
                         else
                         {
-                            response.concat(doc["beta"]["fullversion"].as<const char*>());
-                            response.concat("</span>");
+                            _response.concat(doc["beta"]["fullversion"].as<const char*>());
+                            _response.concat("</span>");
                         }
-                        response.concat("<br>");
-                        response.concat("<b>Latest development version: </b><span id=\"devver\">");
-                        response.concat(doc["master"]["fullversion"].as<const char*>());
-                        response.concat(" (");
-                        response.concat(doc["master"]["build"].as<const char*>());
-                        response.concat(")</span>, ");
-                        response.concat(doc["master"]["time"].as<const char*>());
-                        response.concat("<br>");
+                        _response.concat("<br>");
+                        _response.concat("<b>Latest development version: </b><span id=\"devver\">");
+                        _response.concat(doc["master"]["fullversion"].as<const char*>());
+                        _response.concat(" (");
+                        _response.concat(doc["master"]["build"].as<const char*>());
+                        _response.concat(")</span>, ");
+                        _response.concat(doc["master"]["time"].as<const char*>());
+                        _response.concat("<br>");
                     }
                 }
                 https.end();
@@ -493,92 +514,90 @@ void WebCfgServer::buildOtaHtml(String &response, bool errored, bool debug)
         }
         delete client;
     }
-    
+
     if(!manifestSuccess)
     {
-        response.concat("<span id=\"currentver\" style=\"display: none;\">currentver</span><span id=\"latestver\" style=\"display: none;\">latestver</span><span id=\"devver\" style=\"display: none;\">devver</span><span id=\"betaver\" style=\"display: none;\">betaver</span>");
+        _response.concat("<span id=\"currentver\" style=\"display: none;\">currentver</span><span id=\"latestver\" style=\"display: none;\">latestver</span><span id=\"devver\" style=\"display: none;\">devver</span><span id=\"betaver\" style=\"display: none;\">betaver</span>");
     }
-
-    https.end();
     #endif
-    response.concat("<br></div>");
+    _response.concat("<br></div>");
 
     if(_partitionType == 1)
     {
-        response.concat("<h4><a onclick=\"hideshowmanual();\">Manually update Nuki Hub</a></h4><div id=\"manualupdate\" style=\"display: none\">");
-        response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub Updater</h4>");
-        response.concat("Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update");
-        response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br></div>");
-        response.concat("<div id=\"upform\"><h4>Update Nuki Hub Updater</h4>");
-        response.concat("Select the latest Nuki Hub updater binary to update the Nuki Hub updater");
-        response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub_updater.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+        _response.concat("<h4><a onclick=\"hideshowmanual();\">Manually update Nuki Hub</a></h4><div id=\"manualupdate\" style=\"display: none\">");
+        _response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub Updater</h4>");
+        _response.concat("Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update");
+        _response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br></div>");
+        _response.concat("<div id=\"upform\"><h4>Update Nuki Hub Updater</h4>");
+        _response.concat("Select the latest Nuki Hub updater binary to update the Nuki Hub updater");
+        _response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub_updater.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     }
     else
     {
-        response.concat("<div id=\"manualupdate\">");
-        response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub</h4>");
-        response.concat("Click on the button to reboot to Nuki Hub");
-        response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br></div>");
-        response.concat("<div id=\"upform\"><h4>Update Nuki Hub</h4>");
-        response.concat("Select the latest Nuki Hub binary to update Nuki Hub");
-        response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+        _response.concat("<div id=\"manualupdate\">");
+        _response.concat("<div id=\"rebootform\"><h4>Reboot to Nuki Hub</h4>");
+        _response.concat("Click on the button to reboot to Nuki Hub");
+        _response.concat("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br></div>");
+        _response.concat("<div id=\"upform\"><h4>Update Nuki Hub</h4>");
+        _response.concat("Select the latest Nuki Hub binary to update Nuki Hub");
+        _response.concat("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
     }
-    response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form><br><br></div>");
-    response.concat("<div id=\"gitdiv\">");
-    response.concat("<h4>GitHub</h4><br>");
-    response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
-    response.concat(GITHUB_LATEST_RELEASE_URL);
-    response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
-    response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
-    response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
-    response.concat("'); return false;\">Download latest binary from GitHub</button>");
-    response.concat("<br><br><button title=\"Download latest updater binary from GitHub\" onclick=\" window.open('");
-    response.concat(GITHUB_LATEST_UPDATER_BINARY_URL);
-    response.concat("'); return false;\">Download latest updater binary from GitHub</button></div></div>");
-    response.concat("<script type=\"text/javascript\">");
-    response.concat("window.addEventListener('load', function () {");
-    response.concat("	var button = document.getElementById(\"submitbtn\");");
-    response.concat("	button.addEventListener('click',hideshow,false);");
-    response.concat("	function hideshow() {");
-    response.concat("		document.getElementById('autoupdform').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('rebootform').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response.concat("	}");
-    response.concat("});");
-    response.concat("function hideshowmanual() {");
-    response.concat("	var x = document.getElementById(\"manualupdate\");");
-    response.concat("	if (x.style.display === \"none\") {");
-    response.concat("	    x.style.display = \"block\";");
-    response.concat("	} else {");
-    response.concat("	    x.style.display = \"none\";");
-    response.concat("    }");
-    response.concat("}");
-    response.concat("</script>");
-    response.concat("</body></html>");
+    _response.concat("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form><br><br></div>");
+    _response.concat("<div id=\"gitdiv\">");
+    _response.concat("<h4>GitHub</h4><br>");
+    _response.concat("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+    _response.concat(GITHUB_LATEST_RELEASE_URL);
+    _response.concat("', '_blank'); return false;\">Open latest release on GitHub</button>");
+    _response.concat("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
+    _response.concat(GITHUB_LATEST_RELEASE_BINARY_URL);
+    _response.concat("'); return false;\">Download latest binary from GitHub</button>");
+    _response.concat("<br><br><button title=\"Download latest updater binary from GitHub\" onclick=\" window.open('");
+    _response.concat(GITHUB_LATEST_UPDATER_BINARY_URL);
+    _response.concat("'); return false;\">Download latest updater binary from GitHub</button></div></div>");
+    _response.concat("<script type=\"text/javascript\">");
+    _response.concat("window.addEventListener('load', function () {");
+    _response.concat("	var button = document.getElementById(\"submitbtn\");");
+    _response.concat("	button.addEventListener('click',hideshow,false);");
+    _response.concat("	function hideshow() {");
+    _response.concat("		document.getElementById('autoupdform').style.visibility = 'hidden';");
+    _response.concat("		document.getElementById('rebootform').style.visibility = 'hidden';");
+    _response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
+    _response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
+    _response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
+    _response.concat("	}");
+    _response.concat("});");
+    _response.concat("function hideshowmanual() {");
+    _response.concat("	var x = document.getElementById(\"manualupdate\");");
+    _response.concat("	if (x.style.display === \"none\") {");
+    _response.concat("	    x.style.display = \"block\";");
+    _response.concat("	} else {");
+    _response.concat("	    x.style.display = \"none\";");
+    _response.concat("    }");
+    _response.concat("}");
+    _response.concat("</script>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildOtaCompletedHtml(String &response)
+void WebCfgServer::buildOtaCompletedHtml()
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
 
-    response.concat("<div>Over-the-air update completed.<br>You will be forwarded automatically.</div>");
-    response.concat("<script type=\"text/javascript\">");
-    response.concat("window.addEventListener('load', function () {");
-    response.concat("   setTimeout(\"location.href = '/';\",10000);");
-    response.concat("});");
-    response.concat("</script>");
-    response.concat("</body></html>");
+    _response.concat("<div>Over-the-air update completed.<br>You will be forwarded automatically.</div>");
+    _response.concat("<script type=\"text/javascript\">");
+    _response.concat("window.addEventListener('load', function () {");
+    _response.concat("   setTimeout(\"location.href = '/';\",10000);");
+    _response.concat("});");
+    _response.concat("</script>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildHtmlHeader(String &response, String additionalHeader)
+void WebCfgServer::buildHtmlHeader(String additionalHeader)
 {
-    response.concat("<html><head>");
-    response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    if(strcmp(additionalHeader.c_str(), "") != 0) response.concat(additionalHeader);
-    response.concat("<link rel='stylesheet' href='/style.css'>");
-    response.concat("<title>Nuki Hub</title></head><body>");
+    _response.concat("<html><head>");
+    _response.concat("<meta name='viewport' content='width=device-width, initial-scale=1'>");
+    if(strcmp(additionalHeader.c_str(), "") != 0) _response.concat(additionalHeader);
+    _response.concat("<link rel='stylesheet' href='/style.css'>");
+    _response.concat("<title>Nuki Hub</title></head><body>");
     srand(esp_timer_get_time() / 1000);
 }
 
@@ -679,7 +698,7 @@ void WebCfgServer::handleOtaUpload()
     }
 }
 
-void WebCfgServer::buildConfirmHtml(String &response, const String &message, uint32_t redirectDelay, bool redirect)
+void WebCfgServer::buildConfirmHtml(const String &message, uint32_t redirectDelay, bool redirect)
 {
     String header;
 
@@ -693,9 +712,9 @@ void WebCfgServer::buildConfirmHtml(String &response, const String &message, uin
         String delay(redirectDelay * 1000);
         header = "<script type=\"text/JavaScript\">function Redirect() { window.location.href = \"/\"; } setTimeout(function() { Redirect(); }, " + delay + "); </script>";
     }
-    buildHtmlHeader(response, header);
-    response.concat(message);
-    response.concat("</body></html>");
+    buildHtmlHeader(header);
+    _response.concat(message);
+    _response.concat("</body></html>");
 }
 
 void WebCfgServer::sendCss()
@@ -709,6 +728,12 @@ void WebCfgServer::sendFavicon()
 {
     _server.sendHeader("Cache-Control", "public, max-age=604800");
     _server.send(200, "image/png", (const char*)favicon_32x32, sizeof(favicon_32x32));
+}
+
+String WebCfgServer::generateConfirmCode()
+{
+    int code = random(1000,9999);
+    return String(code);
 }
 
 #ifndef NUKI_HUB_UPDATER
@@ -1158,13 +1183,13 @@ bool WebCfgServer::processArgs(String& message)
                 configChanged = true;
             }
         }
-#if PRESENCE_DETECTION_ENABLED
+        #if PRESENCE_DETECTION_ENABLED
         else if(key == "PRDTMO")
         {
             _preferences->putInt(preference_presence_detection_timeout, value.toInt());
             configChanged = true;
         }
-#endif
+        #endif
         else if(key == "RSBC")
         {
             _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
@@ -1777,8 +1802,8 @@ bool WebCfgServer::processArgs(String& message)
         nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
         nukiBlePref.putBytes("authorizationId", authorizationId, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
-
         nukiBlePref.end();
+        configChanged = true;
     }
 
     if(manPairOpn)
@@ -1791,6 +1816,7 @@ bool WebCfgServer::processArgs(String& message)
         nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
         nukiBlePref.end();
+        configChanged = true;
     }
 
     if(pass1 != "" && pass1 == pass2)
@@ -1919,7 +1945,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) currentBleAddress[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("bleAddress", currentBleAddress, 6);
                 }
-                else _preferences->remove("bleAddressLock");
             }
             if(!doc["secretKeyKLock"].isNull())
             {
@@ -1929,7 +1954,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) secretKeyK[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
                 }
-                else _preferences->remove("secretKeyKLock");
             }
             if(!doc["authorizationIdLock"].isNull())
             {
@@ -1939,7 +1963,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) authorizationId[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("authorizationId", authorizationId, 4);
                 }
-                else _preferences->remove("authorizationIdLock");
             }
             nukiBlePref.end();
             if(!doc["securityPinCodeLock"].isNull())
@@ -1956,7 +1979,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) currentBleAddressOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("bleAddress", currentBleAddressOpn, 6);
                 }
-                else _preferences->remove("bleAddressOpener");
             }
             if(!doc["secretKeyKOpener"].isNull())
             {
@@ -1966,7 +1988,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) secretKeyKOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("secretKeyK", secretKeyKOpn, 32);
                 }
-                else _preferences->remove("secretKeyKOpener");
             }
             if(!doc["authorizationIdOpener"].isNull())
             {
@@ -1976,7 +1997,6 @@ bool WebCfgServer::processImport(String& message)
                     for(int i=0; i<value.length();i+=2) authorizationIdOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                     nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
                 }
-                else _preferences->remove("authorizationIdOpener");
             }
             nukiBlePref.end();
             if(!doc["securityPinCodeOpener"].isNull())
@@ -2023,59 +2043,59 @@ void WebCfgServer::processGpioArgs()
     _gpio->savePinConfiguration(pinConfiguration);
 }
 
-void WebCfgServer::buildImportExportHtml(String &response)
+void WebCfgServer::buildImportExportHtml()
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
 
-    response.concat("<div id=\"upform\"><h4>Import configuration</h4>");
-    response.concat("<form method=\"post\" action=\"import\"><textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
-    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form><br><br></div>");
-    response.concat("<div id=\"gitdiv\">");
-    response.concat("<h4>Export configuration</h4><br>");
-    response.concat("<button title=\"Basic export\" onclick=\" window.open('/export', '_self'); return false;\">Basic export</button>");
-    response.concat("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/export?redacted=1'); return false;\">Export with redacted settings</button>");
-    response.concat("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/export?redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
-    response.concat("</div><div id=\"msgdiv\" style=\"visibility:hidden\">Initiating config update. Please be patient.<br>You will be forwarded automatically when the import is complete.</div>");
-    response.concat("<script type=\"text/javascript\">");
-    response.concat("window.addEventListener('load', function () {");
-    response.concat("	var button = document.getElementById(\"submitbtn\");");
-    response.concat("	button.addEventListener('click',hideshow,false);");
-    response.concat("	function hideshow() {");
-    response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
-    response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response.concat("	}");
-    response.concat("});");
-    response.concat("</script>");
-    response.concat("</body></html>");
+    _response.concat("<div id=\"upform\"><h4>Import configuration</h4>");
+    _response.concat("<form method=\"post\" action=\"import\"><textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
+    _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form><br><br></div>");
+    _response.concat("<div id=\"gitdiv\">");
+    _response.concat("<h4>Export configuration</h4><br>");
+    _response.concat("<button title=\"Basic export\" onclick=\" window.open('/export', '_self'); return false;\">Basic export</button>");
+    _response.concat("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/export?redacted=1'); return false;\">Export with redacted settings</button>");
+    _response.concat("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/export?redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
+    _response.concat("</div><div id=\"msgdiv\" style=\"visibility:hidden\">Initiating config update. Please be patient.<br>You will be forwarded automatically when the import is complete.</div>");
+    _response.concat("<script type=\"text/javascript\">");
+    _response.concat("window.addEventListener('load', function () {");
+    _response.concat("	var button = document.getElementById(\"submitbtn\");");
+    _response.concat("	button.addEventListener('click',hideshow,false);");
+    _response.concat("	function hideshow() {");
+    _response.concat("		document.getElementById('upform').style.visibility = 'hidden';");
+    _response.concat("		document.getElementById('gitdiv').style.visibility = 'hidden';");
+    _response.concat("		document.getElementById('msgdiv').style.visibility = 'visible';");
+    _response.concat("	}");
+    _response.concat("});");
+    _response.concat("</script>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildHtml(String& response)
+void WebCfgServer::buildHtml()
 {
     String header = "<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
-    buildHtmlHeader(response, header);
+    buildHtmlHeader(header);
 
-    response.concat("<br><h3>Info</h3>\n");
-    response.concat("<table>");
+    _response.concat("<br><h3>Info</h3>\n");
+    _response.concat("<table>");
 
-    printParameter(response, "Hostname", _hostname.c_str(), "", "hostname");
-    printParameter(response, "MQTT Connected", _network->mqttConnectionState() > 0 ? "Yes" : "No", "", "mqttState");
+    printParameter("Hostname", _hostname.c_str(), "", "hostname");
+    printParameter("MQTT Connected", _network->mqttConnectionState() > 0 ? "Yes" : "No", "", "mqttState");
     if(_nuki != nullptr)
     {
         char lockStateArr[20];
         NukiLock::lockstateToString(_nuki->keyTurnerState().lockState, lockStateArr);
-        printParameter(response, "Nuki Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No", "", "lockPaired");
-        printParameter(response, "Nuki Lock state", lockStateArr, "", "lockState");
+        printParameter("Nuki Lock paired", _nuki->isPaired() ? ("Yes (BLE Address " + _nuki->getBleAddress().toString() + ")").c_str() : "No", "", "lockPaired");
+        printParameter("Nuki Lock state", lockStateArr, "", "lockState");
 
         if(_nuki->isPaired())
         {
             String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
-            printParameter(response, "Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
+            printParameter("Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
 
             if(_preferences->getBool(preference_official_hybrid, false))
             {
                 String offConnected = _nuki->offConnected() ? "Yes": "No";
-                printParameter(response, "Nuki Lock hybrid mode connected", offConnected.c_str(), "", "lockHybrid");
+                printParameter("Nuki Lock hybrid mode connected", offConnected.c_str(), "", "lockHybrid");
             }
         }
     }
@@ -2083,231 +2103,219 @@ void WebCfgServer::buildHtml(String& response)
     {
         char openerStateArr[20];
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, openerStateArr);
-        printParameter(response, "Nuki Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No", "", "openerPaired");
+        printParameter("Nuki Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No", "", "openerPaired");
 
-        if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode) printParameter(response, "Nuki Opener state", "Open (Continuous Mode)", "", "openerState");
-        else printParameter(response, "Nuki Opener state", openerStateArr, "", "openerState");
+        if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode) printParameter("Nuki Opener state", "Open (Continuous Mode)", "", "openerState");
+        else printParameter("Nuki Opener state", openerStateArr, "", "openerState");
 
         if(_nukiOpener->isPaired())
         {
             String openerState = pinStateToString(_preferences->getInt(preference_opener_pin_status, 4));
-            printParameter(response, "Nuki Opener PIN status", openerState.c_str(), "", "openerPin");
+            printParameter("Nuki Opener PIN status", openerState.c_str(), "", "openerPin");
         }
     }
-
-    printParameter(response, "Firmware", NUKI_HUB_VERSION, "/info", "firmware");
-
-    if(_preferences->getBool(preference_check_updates)) printParameter(response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
-
-    response.concat("</table><br>");
-    response.concat("<ul id=\"tblnav\">");
-    buildNavigationMenuEntry(response, "MQTT and Network Configuration", "/mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
-    buildNavigationMenuEntry(response, "Nuki Configuration", "/nukicfg");
-    buildNavigationMenuEntry(response, "Access Level Configuration", "/acclvl");
-    buildNavigationMenuEntry(response, "Credentials", "/cred", _pinsConfigured ? "" : "Please configure PIN");
-    buildNavigationMenuEntry(response, "GPIO Configuration", "/gpiocfg");
-    buildNavigationMenuEntry(response, "Firmware update", "/ota");
-    buildNavigationMenuEntry(response, "Import/Export Configuration", "/impexpcfg");
-
-    // buildNavigationButton(response, "Edit", "/mqttconfig", _brokerConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure MQTT broker</em></font>");
-    // buildNavigationButton(response, "Edit", "/cred", _pinsConfigured ? "" : "<font color=\"#f07000\"><em>(!) Please configure PIN</em></font>");
-
+    printParameter("Firmware", NUKI_HUB_VERSION, "/info", "firmware");
+    if(_preferences->getBool(preference_check_updates)) printParameter("Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
+    _response.concat("</table><br>");
+    _response.concat("<ul id=\"tblnav\">");
+    buildNavigationMenuEntry("MQTT and Network Configuration", "/mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
+    buildNavigationMenuEntry("Nuki Configuration", "/nukicfg");
+    buildNavigationMenuEntry("Access Level Configuration", "/acclvl");
+    buildNavigationMenuEntry("Credentials", "/cred", _pinsConfigured ? "" : "Please configure PIN");
+    buildNavigationMenuEntry("GPIO Configuration", "/gpiocfg");
+    buildNavigationMenuEntry("Firmware update", "/ota");
+    buildNavigationMenuEntry("Import/Export Configuration", "/impexpcfg");
     if(_preferences->getBool(preference_publish_debug_info, false))
     {
-        buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
+        buildNavigationMenuEntry("Advanced Configuration", "/advanced");
     }
-    
     if(_preferences->getBool(preference_webserial_enabled, false))
     {
-        buildNavigationMenuEntry(response, "Open Webserial", "/webserial");
+        buildNavigationMenuEntry("Open Webserial", "/webserial");
     }
-
     if(_allowRestartToPortal)
     {
-        buildNavigationMenuEntry(response, "Configure Wi-Fi", "/wifi");
+        buildNavigationMenuEntry("Configure Wi-Fi", "/wifi");
     }
-
-    response.concat("</ul></body></html>");
+    buildNavigationMenuEntry("Reboot Nuki Hub", "/reboot");
+    _response.concat("</ul></body></html>");
 }
 
 
-void WebCfgServer::buildCredHtml(String &response)
+void WebCfgServer::buildCredHtml()
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
 
-    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
-    response.concat("<h3>Credentials</h3>");
-    response.concat("<table>");
-    printInputField(response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "", false, true);
-    printInputField(response, "CREDPASS", "Password", "*", 30, "", true, true);
-    printInputField(response, "CREDPASSRE", "Retype password", "*", 30, "", true);
-    response.concat("</table>");
-    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.concat("</form>");
+    _response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    _response.concat("<h3>Credentials</h3>");
+    _response.concat("<table>");
+    printInputField("CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "", false, true);
+    printInputField("CREDPASS", "Password", "*", 30, "", true, true);
+    printInputField("CREDPASSRE", "Retype password", "*", 30, "", true);
+    _response.concat("</table>");
+    _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    _response.concat("</form>");
 
     if(_nuki != nullptr)
     {
-        response.concat("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
-        response.concat("<h3>Nuki Lock PIN</h3>");
-        response.concat("<table>");
-        printInputField(response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, "", true);
-        response.concat("</table>");
-        response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-        response.concat("</form>");
+        _response.concat("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+        _response.concat("<h3>Nuki Lock PIN</h3>");
+        _response.concat("<table>");
+        printInputField("NUKIPIN", "PIN Code (# to clear)", "*", 20, "", true);
+        _response.concat("</table>");
+        _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        _response.concat("</form>");
     }
 
     if(_nukiOpener != nullptr)
     {
-        response.concat("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
-        response.concat("<h3>Nuki Opener PIN</h3>");
-        response.concat("<table>");
-        printInputField(response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, "", true);
-        response.concat("</table>");
-        response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-        response.concat("</form>");
+        _response.concat("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+        _response.concat("<h3>Nuki Opener PIN</h3>");
+        _response.concat("<table>");
+        printInputField("NUKIOPPIN", "PIN Code (# to clear)", "*", 20, "", true);
+        _response.concat("</table>");
+        _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        _response.concat("</form>");
     }
 
     _confirmCode = generateConfirmCode();
     if(_nuki != nullptr)
     {
-        response.concat("<br><br><h3>Unpair Nuki Lock</h3>");
-        response.concat("<form class=\"adapt\" method=\"post\" action=\"/unpairlock\">");
-        response.concat("<table>");
+        _response.concat("<br><br><h3>Unpair Nuki Lock</h3>");
+        _response.concat("<form class=\"adapt\" method=\"post\" action=\"/unpairlock\">");
+        _response.concat("<table>");
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
-        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
-        response.concat("</table>");
-        response.concat("<br><button type=\"submit\">OK</button></form>");
+        printInputField("CONFIRMTOKEN", message.c_str(), "", 10, "");
+        _response.concat("</table>");
+        _response.concat("<br><button type=\"submit\">OK</button></form>");
     }
 
     if(_nukiOpener != nullptr)
     {
-        response.concat("<br><br><h3>Unpair Nuki Opener</h3>");
-        response.concat("<form class=\"adapt\" method=\"post\" action=\"/unpairopener\">");
-        response.concat("<table>");
+        _response.concat("<br><br><h3>Unpair Nuki Opener</h3>");
+        _response.concat("<form class=\"adapt\" method=\"post\" action=\"/unpairopener\">");
+        _response.concat("<table>");
         String message = "Type ";
         message.concat(_confirmCode);
         message.concat(" to confirm unpair");
-        printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
-        response.concat("</table>");
-        response.concat("<br><button type=\"submit\">OK</button></form>");
+        printInputField("CONFIRMTOKEN", message.c_str(), "", 10, "");
+        _response.concat("</table>");
+        _response.concat("<br><button type=\"submit\">OK</button></form>");
     }
 
-    response.concat("<br><br><h3>Factory reset Nuki Hub</h3>");
-    response.concat("<h4 class=\"warning\">This will reset all settings to default and unpair Nuki Lock and/or Opener. Optionally will also reset WiFi settings and reopen WiFi manager portal.</h4>");
-    response.concat("<form class=\"adapt\" method=\"post\" action=\"/factoryreset\">");
-    response.concat("<table>");
+    _response.concat("<br><br><h3>Factory reset Nuki Hub</h3>");
+    _response.concat("<h4 class=\"warning\">This will reset all settings to default and unpair Nuki Lock and/or Opener. Optionally will also reset WiFi settings and reopen WiFi manager portal.</h4>");
+    _response.concat("<form class=\"adapt\" method=\"post\" action=\"/factoryreset\">");
+    _response.concat("<table>");
     String message = "Type ";
     message.concat(_confirmCode);
     message.concat(" to confirm factory reset");
-    printInputField(response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
-    printCheckBox(response, "WIFI", "Also reset WiFi settings", false, "");
-    response.concat("</table>");
-    response.concat("<br><button type=\"submit\">OK</button></form>");
-    response.concat("</body></html>");
+    printInputField("CONFIRMTOKEN", message.c_str(), "", 10, "");
+    printCheckBox("WIFI", "Also reset WiFi settings", false, "");
+    _response.concat("</table>");
+    _response.concat("<br><button type=\"submit\">OK</button></form>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildMqttConfigHtml(String &response)
+void WebCfgServer::buildMqttConfigHtml()
 {
-    buildHtmlHeader(response);
-    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
-    response.concat("<h3>Basic MQTT and Network Configuration</h3>");
-    response.concat("<table>");
-    printInputField(response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100, "");
-    printInputField(response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100, "");
-    printInputField(response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
-    printInputField(response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
-    printInputField(response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
-    response.concat("</table><br>");
+    buildHtmlHeader();
+    _response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    _response.concat("<h3>Basic MQTT and Network Configuration</h3>");
+    _response.concat("<table>");
+    printInputField("HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100, "");
+    printInputField("MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100, "");
+    printInputField("MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
+    printInputField("MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
+    printInputField("MQTTPASS", "MQTT Password", "*", 30, "", true, true);
+    _response.concat("</table><br>");
+    _response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
+    _response.concat("<table>");
+    printInputField("HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
+    printInputField("HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
+    if(_nukiOpener != nullptr) printCheckBox("OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
+    printTextarea("MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
+    printTextarea("MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
+    printTextarea("MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
+    printDropDown("NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
+    printCheckBox("NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled), "");
+    printCheckBox("BESTRSSI", "Connect to AP with the best signal in an environment with multiple APs with the same SSID", _preferences->getBool(preference_find_best_rssi), "");
+    printInputField("RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6, "");
+    printInputField("NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
+    printCheckBox("RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
+    printCheckBox("RECNWTMQTTDIS", "Reconnect network on MQTT connection failure", _preferences->getBool(preference_recon_netw_on_mqtt_discon), "");
+    printCheckBox("MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
+    printCheckBox("WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
+    printCheckBox("CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
+    printCheckBox("UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
+    printCheckBox("DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
+    printCheckBox("OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
+    printCheckBox("HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
+    printInputField("HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
+    printCheckBox("HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
+    _response.concat("</table>");
+    _response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
+    _response.concat("<h3>IP Address assignment</h3>");
+    _response.concat("<table>");
+    printCheckBox("DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
+    printInputField("IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15, "");
+    printInputField("IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15, "");
+    printInputField("IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
+    printInputField("DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
+    _response.concat("</table>");
 
-    response.concat("<h3>Advanced MQTT and Network Configuration</h3>");
-    response.concat("<table>");
-    printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
-    printInputField(response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
-    if(_nukiOpener != nullptr) printCheckBox(response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
-    printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
-    printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
-    printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
-    printDropDown(response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions());
-    printCheckBox(response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled), "");
-    printCheckBox(response, "BESTRSSI", "Connect to AP with the best signal in an environment with multiple APs with the same SSID", _preferences->getBool(preference_find_best_rssi), "");
-    printInputField(response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6, "");
-    printInputField(response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
-    printCheckBox(response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
-    printCheckBox(response, "RECNWTMQTTDIS", "Reconnect network on MQTT connection failure", _preferences->getBool(preference_recon_netw_on_mqtt_discon), "");
-    printCheckBox(response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
-    printCheckBox(response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");    
-    printCheckBox(response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
-    printCheckBox(response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
-    printCheckBox(response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
-    printCheckBox(response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
-    printCheckBox(response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
-    printInputField(response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
-    printCheckBox(response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
-    response.concat("</table>");
-    response.concat("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
-
-    response.concat("<h3>IP Address assignment</h3>");
-    response.concat("<table>");
-    printCheckBox(response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
-    printInputField(response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15, "");
-    printInputField(response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15, "");
-    printInputField(response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
-    printInputField(response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
-    response.concat("</table>");
-
-    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.concat("</form>");
-    response.concat("</body></html>");
+    _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    _response.concat("</form>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildAdvancedConfigHtml(String &response)
+void WebCfgServer::buildAdvancedConfigHtml()
 {
-    buildHtmlHeader(response);
-    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
-    response.concat("<h3>Advanced Configuration</h3>");
-    response.concat("<h4 class=\"warning\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash nukihub using USB/serial</h4>");
-    response.concat("<table>");
-    response.concat("<tr><td>Current bootloop prevention state</td><td>");
-    response.concat(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
-    response.concat("</td></tr>");
-    printCheckBox(response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
-    printInputField(response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
-    response.concat("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
-    printInputField(response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
-    response.concat("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
-    printInputField(response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
-    printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "inputmaxauthlog");
-    printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
-    printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");
-    printInputField(response, "AUTHMAX", "Max authorization entries (min 1, max 50)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "inputmaxauth");
-    printCheckBox(response, "SHOWSECRETS", "Show Pairing secrets on Info page (for 120s after next boot)", _preferences->getBool(preference_show_secrets), "");
+    buildHtmlHeader();
+    _response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    _response.concat("<h3>Advanced Configuration</h3>");
+    _response.concat("<h4 class=\"warning\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash nukihub using USB/serial</h4>");
+    _response.concat("<table>");
+    _response.concat("<tr><td>Current bootloop prevention state</td><td>");
+    _response.concat(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
+    _response.concat("</td></tr>");
+    printCheckBox("BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
+    printInputField("BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
+    _response.concat("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
+    printInputField("TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
+    _response.concat("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
+    printInputField("TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
+    printInputField("ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "inputmaxauthlog");
+    printInputField("KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
+    printInputField("TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");
+    printInputField("AUTHMAX", "Max authorization entries (min 1, max 50)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "inputmaxauth");
+    printCheckBox("SHOWSECRETS", "Show Pairing secrets on Info page (for 120s after next boot)", _preferences->getBool(preference_show_secrets), "");
 
     if(_nuki != nullptr)
     {
-        printCheckBox(response, "LCKMANPAIR", "Manually set lock pairing data (enable to save values below)", false, "");
-        printInputField(response, "LCKBLEADDR", "currentBleAddress", "", 12, "");
-        printInputField(response, "LCKSECRETK", "secretKeyK", "", 64, "");
-        printInputField(response, "LCKAUTHID", "authorizationId", "", 8, "");
+        printCheckBox("LCKMANPAIR", "Manually set lock pairing data (enable to save values below)", false, "");
+        printInputField("LCKBLEADDR", "currentBleAddress", "", 12, "");
+        printInputField("LCKSECRETK", "secretKeyK", "", 64, "");
+        printInputField("LCKAUTHID", "authorizationId", "", 8, "");
     }
     if(_nukiOpener != nullptr)
     {
-        printCheckBox(response, "OPNMANPAIR", "Manually set opener pairing data (enable to save values below)", false, "");
-        printInputField(response, "OPNBLEADDR", "currentBleAddress", "", 12, "");
-        printInputField(response, "OPNSECRETK", "secretKeyK", "", 64, "");
-        printInputField(response, "OPNAUTHID", "authorizationId", "", 8, "");
+        printCheckBox("OPNMANPAIR", "Manually set opener pairing data (enable to save values below)", false, "");
+        printInputField("OPNBLEADDR", "currentBleAddress", "", 12, "");
+        printInputField("OPNSECRETK", "secretKeyK", "", 64, "");
+        printInputField("OPNAUTHID", "authorizationId", "", 8, "");
     }
-    printInputField(response, "OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
-    printInputField(response, "OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
-    response.concat("</table>");
-
-    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.concat("</form>");
-    response.concat("</body><script>window.onload=function(){ document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxauth\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var auth = document.getElementById(\"inputmaxauth\").value; var charbuf = 0; var networktask = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; var sizeauth = 0; if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } if(auth > 0) { sizeauth = 120 * auth; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol && sizeauthlog>sizeauth) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol && sizekeypad>sizeauth) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} else if(sizeauth>sizeauthlog && sizeauth>sizetimecontrol && sizeauth>sizekeypad) { charbuf = sizeauth; networktask = 10240 + sizeauth;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>32768) { charbuf = 32768; } if(networktask<12288) { networktask = 12288; } else if (networktask>32768) { networktask = 32768; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
+    printInputField("OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
+    printInputField("OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
+    _response.concat("</table>");
+    _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    _response.concat("</form>");
+    _response.concat("</body><script>window.onload=function(){ document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var charbuf = 0; var networktask = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>32768) { charbuf = 32768; } if(networktask<12288) { networktask = 12288; } else if (networktask>32768) { networktask = 32768; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
 }
 
-void WebCfgServer::buildStatusHtml(String &response)
+void WebCfgServer::buildStatusHtml()
 {
     JsonDocument json;
     char _resbuf[2048];
@@ -2372,7 +2380,7 @@ void WebCfgServer::buildStatusHtml(String &response)
     if(mqttDone && lockDone && openerDone && latestDone) json["stop"] = 1;
 
     serializeJson(json, _resbuf, sizeof(_resbuf));
-    response = _resbuf;
+    _response = _resbuf;
 }
 
 String WebCfgServer::pinStateToString(uint8_t value) {
@@ -2389,33 +2397,33 @@ String WebCfgServer::pinStateToString(uint8_t value) {
     }
 }
 
-void WebCfgServer::buildAccLvlHtml(String &response)
+void WebCfgServer::buildAccLvlHtml()
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
-    response.concat("<form method=\"post\" action=\"savecfg\">");
-    response.concat("<input type=\"hidden\" name=\"ACLLVLCHANGED\" value=\"1\">");
-    response.concat("<h3>Nuki General Access Control</h3>");
-    response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
-    printCheckBox(response, "CONFPUB", "Publish Nuki configuration information", _preferences->getBool(preference_conf_info_enabled, true), "");
+    _response.concat("<form method=\"post\" action=\"savecfg\">");
+    _response.concat("<input type=\"hidden\" name=\"ACLLVLCHANGED\" value=\"1\">");
+    _response.concat("<h3>Nuki General Access Control</h3>");
+    _response.concat("<table><tr><th>Setting</th><th>Enabled</th></tr>");
+    printCheckBox("CONFPUB", "Publish Nuki configuration information", _preferences->getBool(preference_conf_info_enabled, true), "");
 
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
-        printCheckBox(response, "KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
-        printCheckBox(response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
-        printCheckBox(response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
-        printCheckBox(response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
+        printCheckBox("KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
+        printCheckBox("KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
+        printCheckBox("KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
+        printCheckBox("KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
-    printCheckBox(response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
-    printCheckBox(response, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
-    printCheckBox(response, "TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
-    printCheckBox(response, "AUTHPUB", "Publish authorization entries information", _preferences->getBool(preference_auth_info_enabled), "");
-    printCheckBox(response, "AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
-    printCheckBox(response, "AUTHENA", "Add, modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
-    printCheckBox(response, "PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
-    response.concat("</table><br>");
+    printCheckBox("TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
+    printCheckBox("TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
+    printCheckBox("TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
+    printCheckBox("AUTHPUB", "Publish authorization entries information", _preferences->getBool(preference_auth_info_enabled), "");
+    printCheckBox("AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
+    printCheckBox("AUTHENA", "Add, modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
+    printCheckBox("PUBAUTH", "Publish authorization log (may reduce battery life)", _preferences->getBool(preference_publish_authdata), "");
+    _response.concat("</table><br>");
     if(_nuki != nullptr)
     {
         uint32_t basicLockConfigAclPrefs[16];
@@ -2423,71 +2431,71 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         uint32_t advancedLockConfigAclPrefs[22];
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
 
-        response.concat("<h3>Nuki Lock Access Control</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
-        response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
+        _response.concat("<h3>Nuki Lock Access Control</h3>");
+        _response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        _response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        _response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLLCKLCK", "Lock", ((int)aclPrefs[0] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKUNLCK", "Unlock", ((int)aclPrefs[1] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKUNLTCH", "Unlatch", ((int)aclPrefs[2] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKLNG", "Lock N Go", ((int)aclPrefs[3] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKLNGU", "Lock N Go Unlatch", ((int)aclPrefs[4] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKFLLCK", "Full Lock", ((int)aclPrefs[5] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKFOB1", "Fob Action 1", ((int)aclPrefs[6] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKFOB2", "Fob Action 2", ((int)aclPrefs[7] == 1), "chk_access_lock");
-        printCheckBox(response, "ACLLCKFOB3", "Fob Action 3", ((int)aclPrefs[8] == 1), "chk_access_lock");
-        response.concat("</table><br>");
+        printCheckBox("ACLLCKLCK", "Lock", ((int)aclPrefs[0] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKUNLCK", "Unlock", ((int)aclPrefs[1] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKUNLTCH", "Unlatch", ((int)aclPrefs[2] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKLNG", "Lock N Go", ((int)aclPrefs[3] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKLNGU", "Lock N Go Unlatch", ((int)aclPrefs[4] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKFLLCK", "Full Lock", ((int)aclPrefs[5] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKFOB1", "Fob Action 1", ((int)aclPrefs[6] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKFOB2", "Fob Action 2", ((int)aclPrefs[7] == 1), "chk_access_lock");
+        printCheckBox("ACLLCKFOB3", "Fob Action 3", ((int)aclPrefs[8] == 1), "chk_access_lock");
+        _response.concat("</table><br>");
 
-        response.concat("<h3>Nuki Lock Config Control (Requires PIN to be set)</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
-        response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
+        _response.concat("<h3>Nuki Lock Config Control (Requires PIN to be set)</h3>");
+        _response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        _response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        _response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "CONFLCKNAME", "Name", ((int)basicLockConfigAclPrefs[0] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKLAT", "Latitude", ((int)basicLockConfigAclPrefs[1] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKLONG", "Longitude", ((int)basicLockConfigAclPrefs[2] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKAUNL", "Auto unlatch", ((int)basicLockConfigAclPrefs[3] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKPRENA", "Pairing enabled", ((int)basicLockConfigAclPrefs[4] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKBTENA", "Button enabled", ((int)basicLockConfigAclPrefs[5] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKLEDENA", "LED flash enabled", ((int)basicLockConfigAclPrefs[6] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKLEDBR", "LED brightness", ((int)basicLockConfigAclPrefs[7] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKTZOFF", "Timezone offset", ((int)basicLockConfigAclPrefs[8] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKDSTM", "DST mode", ((int)basicLockConfigAclPrefs[9] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKFOB1", "Fob Action 1", ((int)basicLockConfigAclPrefs[10] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKFOB2", "Fob Action 2", ((int)basicLockConfigAclPrefs[11] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKFOB3", "Fob Action 3", ((int)basicLockConfigAclPrefs[12] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKSGLLCK", "Single Lock", ((int)basicLockConfigAclPrefs[13] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKADVM", "Advertising Mode", ((int)basicLockConfigAclPrefs[14] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKTZID", "Timezone ID", ((int)basicLockConfigAclPrefs[15] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKNAME", "Name", ((int)basicLockConfigAclPrefs[0] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKLAT", "Latitude", ((int)basicLockConfigAclPrefs[1] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKLONG", "Longitude", ((int)basicLockConfigAclPrefs[2] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKAUNL", "Auto unlatch", ((int)basicLockConfigAclPrefs[3] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKPRENA", "Pairing enabled", ((int)basicLockConfigAclPrefs[4] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKBTENA", "Button enabled", ((int)basicLockConfigAclPrefs[5] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKLEDENA", "LED flash enabled", ((int)basicLockConfigAclPrefs[6] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKLEDBR", "LED brightness", ((int)basicLockConfigAclPrefs[7] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKTZOFF", "Timezone offset", ((int)basicLockConfigAclPrefs[8] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKDSTM", "DST mode", ((int)basicLockConfigAclPrefs[9] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKFOB1", "Fob Action 1", ((int)basicLockConfigAclPrefs[10] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKFOB2", "Fob Action 2", ((int)basicLockConfigAclPrefs[11] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKFOB3", "Fob Action 3", ((int)basicLockConfigAclPrefs[12] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKSGLLCK", "Single Lock", ((int)basicLockConfigAclPrefs[13] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKADVM", "Advertising Mode", ((int)basicLockConfigAclPrefs[14] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKTZID", "Timezone ID", ((int)basicLockConfigAclPrefs[15] == 1), "chk_config_lock");
 
-        printCheckBox(response, "CONFLCKUPOD", "Unlocked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[0] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKLPOD", "Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[1] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKSLPOD", "Single Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[2] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKUTLTOD", "Unlocked To Locked Transition Offset Degrees", ((int)advancedLockConfigAclPrefs[3] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKLNGT", "Lock n Go timeout", ((int)advancedLockConfigAclPrefs[4] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKSBPA", "Single button press action", ((int)advancedLockConfigAclPrefs[5] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKDBPA", "Double button press action", ((int)advancedLockConfigAclPrefs[6] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKDC", "Detached cylinder", ((int)advancedLockConfigAclPrefs[7] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKBATT", "Battery type", ((int)advancedLockConfigAclPrefs[8] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKABTD", "Automatic battery type detection", ((int)advancedLockConfigAclPrefs[9] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKUNLD", "Unlatch duration", ((int)advancedLockConfigAclPrefs[10] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKALT", "Auto lock timeout", ((int)advancedLockConfigAclPrefs[11] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKAUNLD", "Auto unlock disabled", ((int)advancedLockConfigAclPrefs[12] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKNMENA", "Nightmode enabled", ((int)advancedLockConfigAclPrefs[13] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKNMST", "Nightmode start time", ((int)advancedLockConfigAclPrefs[14] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKNMET", "Nightmode end time", ((int)advancedLockConfigAclPrefs[15] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKNMALENA", "Nightmode auto lock enabled", ((int)advancedLockConfigAclPrefs[16] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKNMAULD", "Nightmode auto unlock disabled", ((int)advancedLockConfigAclPrefs[17] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKNMLOS", "Nightmode immediate lock on start", ((int)advancedLockConfigAclPrefs[18] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKALENA", "Auto lock enabled", ((int)advancedLockConfigAclPrefs[19] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1), "chk_config_lock");
-        printCheckBox(response, "CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1), "chk_config_lock");
-        response.concat("</table><br>");
+        printCheckBox("CONFLCKUPOD", "Unlocked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[0] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKLPOD", "Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[1] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKSLPOD", "Single Locked Position Offset Degrees", ((int)advancedLockConfigAclPrefs[2] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKUTLTOD", "Unlocked To Locked Transition Offset Degrees", ((int)advancedLockConfigAclPrefs[3] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKLNGT", "Lock n Go timeout", ((int)advancedLockConfigAclPrefs[4] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKSBPA", "Single button press action", ((int)advancedLockConfigAclPrefs[5] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKDBPA", "Double button press action", ((int)advancedLockConfigAclPrefs[6] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKDC", "Detached cylinder", ((int)advancedLockConfigAclPrefs[7] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKBATT", "Battery type", ((int)advancedLockConfigAclPrefs[8] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKABTD", "Automatic battery type detection", ((int)advancedLockConfigAclPrefs[9] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKUNLD", "Unlatch duration", ((int)advancedLockConfigAclPrefs[10] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKALT", "Auto lock timeout", ((int)advancedLockConfigAclPrefs[11] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKAUNLD", "Auto unlock disabled", ((int)advancedLockConfigAclPrefs[12] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKNMENA", "Nightmode enabled", ((int)advancedLockConfigAclPrefs[13] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKNMST", "Nightmode start time", ((int)advancedLockConfigAclPrefs[14] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKNMET", "Nightmode end time", ((int)advancedLockConfigAclPrefs[15] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKNMALENA", "Nightmode auto lock enabled", ((int)advancedLockConfigAclPrefs[16] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKNMAULD", "Nightmode auto unlock disabled", ((int)advancedLockConfigAclPrefs[17] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKNMLOS", "Nightmode immediate lock on start", ((int)advancedLockConfigAclPrefs[18] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKALENA", "Auto lock enabled", ((int)advancedLockConfigAclPrefs[19] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1), "chk_config_lock");
+        printCheckBox("CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1), "chk_config_lock");
+        _response.concat("</table><br>");
     }
     if(_nukiOpener != nullptr)
     {
@@ -2496,127 +2504,127 @@ void WebCfgServer::buildAccLvlHtml(String &response)
         uint32_t advancedOpenerConfigAclPrefs[20];
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
-        response.concat("<h3>Nuki Opener Access Control</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
-        response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
+        _response.concat("<h3>Nuki Opener Access Control</h3>");
+        _response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        _response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        _response.concat("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "ACLOPNUNLCK", "Activate Ring-to-Open", ((int)aclPrefs[9] == 1), "chk_access_opener");
-        printCheckBox(response, "ACLOPNLCK", "Deactivate Ring-to-Open", ((int)aclPrefs[10] == 1), "chk_access_opener");
-        printCheckBox(response, "ACLOPNUNLTCH", "Electric Strike Actuation", ((int)aclPrefs[11] == 1), "chk_access_opener");
-        printCheckBox(response, "ACLOPNUNLCKCM", "Activate Continuous Mode", ((int)aclPrefs[12] == 1), "chk_access_opener");
-        printCheckBox(response, "ACLOPNLCKCM", "Deactivate Continuous Mode", ((int)aclPrefs[13] == 1), "chk_access_opener");
-        printCheckBox(response, "ACLOPNFOB1", "Fob Action 1", ((int)aclPrefs[14] == 1), "chk_access_opener");
-        printCheckBox(response, "ACLOPNFOB2", "Fob Action 2", ((int)aclPrefs[15] == 1), "chk_access_opener");
-        printCheckBox(response, "ACLOPNFOB3", "Fob Action 3", ((int)aclPrefs[16] == 1), "chk_access_opener");
-        response.concat("</table><br>");
+        printCheckBox("ACLOPNUNLCK", "Activate Ring-to-Open", ((int)aclPrefs[9] == 1), "chk_access_opener");
+        printCheckBox("ACLOPNLCK", "Deactivate Ring-to-Open", ((int)aclPrefs[10] == 1), "chk_access_opener");
+        printCheckBox("ACLOPNUNLTCH", "Electric Strike Actuation", ((int)aclPrefs[11] == 1), "chk_access_opener");
+        printCheckBox("ACLOPNUNLCKCM", "Activate Continuous Mode", ((int)aclPrefs[12] == 1), "chk_access_opener");
+        printCheckBox("ACLOPNLCKCM", "Deactivate Continuous Mode", ((int)aclPrefs[13] == 1), "chk_access_opener");
+        printCheckBox("ACLOPNFOB1", "Fob Action 1", ((int)aclPrefs[14] == 1), "chk_access_opener");
+        printCheckBox("ACLOPNFOB2", "Fob Action 2", ((int)aclPrefs[15] == 1), "chk_access_opener");
+        printCheckBox("ACLOPNFOB3", "Fob Action 3", ((int)aclPrefs[16] == 1), "chk_access_opener");
+        _response.concat("</table><br>");
 
-        response.concat("<h3>Nuki Opener Config Control (Requires PIN to be set)</h3>");
-        response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
-        response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
+        _response.concat("<h3>Nuki Opener Config Control (Requires PIN to be set)</h3>");
+        _response.concat("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
+        _response.concat("<input type=\"button\" value=\"Disallow all\" onclick=\"");
+        _response.concat("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        _response.concat("<table><tr><th>Change</th><th>Allowed</th></tr>");
 
-        printCheckBox(response, "CONFOPNNAME", "Name", ((int)basicOpenerConfigAclPrefs[0] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNLAT", "Latitude", ((int)basicOpenerConfigAclPrefs[1] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNLONG", "Longitude", ((int)basicOpenerConfigAclPrefs[2] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNPRENA", "Pairing enabled", ((int)basicOpenerConfigAclPrefs[3] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNBTENA", "Button enabled", ((int)basicOpenerConfigAclPrefs[4] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNLEDENA", "LED flash enabled", ((int)basicOpenerConfigAclPrefs[5] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNTZOFF", "Timezone offset", ((int)basicOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNDSTM", "DST mode", ((int)basicOpenerConfigAclPrefs[7] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNFOB1", "Fob Action 1", ((int)basicOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNFOB2", "Fob Action 2", ((int)basicOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNFOB3", "Fob Action 3", ((int)basicOpenerConfigAclPrefs[10] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNOPM", "Operating Mode", ((int)basicOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNADVM", "Advertising Mode", ((int)basicOpenerConfigAclPrefs[12] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNTZID", "Timezone ID", ((int)basicOpenerConfigAclPrefs[13] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNNAME", "Name", ((int)basicOpenerConfigAclPrefs[0] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNLAT", "Latitude", ((int)basicOpenerConfigAclPrefs[1] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNLONG", "Longitude", ((int)basicOpenerConfigAclPrefs[2] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNPRENA", "Pairing enabled", ((int)basicOpenerConfigAclPrefs[3] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNBTENA", "Button enabled", ((int)basicOpenerConfigAclPrefs[4] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNLEDENA", "LED flash enabled", ((int)basicOpenerConfigAclPrefs[5] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNTZOFF", "Timezone offset", ((int)basicOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNDSTM", "DST mode", ((int)basicOpenerConfigAclPrefs[7] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNFOB1", "Fob Action 1", ((int)basicOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNFOB2", "Fob Action 2", ((int)basicOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNFOB3", "Fob Action 3", ((int)basicOpenerConfigAclPrefs[10] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNOPM", "Operating Mode", ((int)basicOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNADVM", "Advertising Mode", ((int)basicOpenerConfigAclPrefs[12] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNTZID", "Timezone ID", ((int)basicOpenerConfigAclPrefs[13] == 1), "chk_config_opener");
 
-        printCheckBox(response, "CONFOPNICID", "Intercom ID", ((int)advancedOpenerConfigAclPrefs[0] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNBUSMS", "BUS mode Switch", ((int)advancedOpenerConfigAclPrefs[1] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSCDUR", "Short Circuit Duration", ((int)advancedOpenerConfigAclPrefs[2] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNESD", "Eletric Strike Delay", ((int)advancedOpenerConfigAclPrefs[3] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNRESD", "Random Electric Strike Delay", ((int)advancedOpenerConfigAclPrefs[4] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNESDUR", "Electric Strike Duration", ((int)advancedOpenerConfigAclPrefs[5] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNDRTOAR", "Disable RTO after ring", ((int)advancedOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNRTOT", "RTO timeout", ((int)advancedOpenerConfigAclPrefs[7] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNDRBSUP", "Doorbell suppression", ((int)advancedOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNDRBSUPDUR", "Doorbell suppression duration", ((int)advancedOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSRING", "Sound Ring", ((int)advancedOpenerConfigAclPrefs[10] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSOPN", "Sound Open", ((int)advancedOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSRTO", "Sound RTO", ((int)advancedOpenerConfigAclPrefs[12] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSCM", "Sound CM", ((int)advancedOpenerConfigAclPrefs[13] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSCFRM", "Sound confirmation", ((int)advancedOpenerConfigAclPrefs[14] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSLVL", "Sound level", ((int)advancedOpenerConfigAclPrefs[15] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNSBPA", "Single button press action", ((int)advancedOpenerConfigAclPrefs[16] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNDBPA", "Double button press action", ((int)advancedOpenerConfigAclPrefs[17] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1), "chk_config_opener");
-        printCheckBox(response, "CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1), "chk_config_opener");
-        response.concat("</table><br>");
+        printCheckBox("CONFOPNICID", "Intercom ID", ((int)advancedOpenerConfigAclPrefs[0] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNBUSMS", "BUS mode Switch", ((int)advancedOpenerConfigAclPrefs[1] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSCDUR", "Short Circuit Duration", ((int)advancedOpenerConfigAclPrefs[2] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNESD", "Eletric Strike Delay", ((int)advancedOpenerConfigAclPrefs[3] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNRESD", "Random Electric Strike Delay", ((int)advancedOpenerConfigAclPrefs[4] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNESDUR", "Electric Strike Duration", ((int)advancedOpenerConfigAclPrefs[5] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNDRTOAR", "Disable RTO after ring", ((int)advancedOpenerConfigAclPrefs[6] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNRTOT", "RTO timeout", ((int)advancedOpenerConfigAclPrefs[7] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNDRBSUP", "Doorbell suppression", ((int)advancedOpenerConfigAclPrefs[8] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNDRBSUPDUR", "Doorbell suppression duration", ((int)advancedOpenerConfigAclPrefs[9] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSRING", "Sound Ring", ((int)advancedOpenerConfigAclPrefs[10] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSOPN", "Sound Open", ((int)advancedOpenerConfigAclPrefs[11] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSRTO", "Sound RTO", ((int)advancedOpenerConfigAclPrefs[12] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSCM", "Sound CM", ((int)advancedOpenerConfigAclPrefs[13] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSCFRM", "Sound confirmation", ((int)advancedOpenerConfigAclPrefs[14] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSLVL", "Sound level", ((int)advancedOpenerConfigAclPrefs[15] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNSBPA", "Single button press action", ((int)advancedOpenerConfigAclPrefs[16] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNDBPA", "Double button press action", ((int)advancedOpenerConfigAclPrefs[17] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1), "chk_config_opener");
+        printCheckBox("CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1), "chk_config_opener");
+        _response.concat("</table><br>");
     }
-    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.concat("</form>");
-    response.concat("</body></html>");
+    _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    _response.concat("</form>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildNukiConfigHtml(String &response)
+void WebCfgServer::buildNukiConfigHtml()
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
 
-    response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
-    response.concat("<h3>Basic Nuki Configuration</h3>");
-    response.concat("<table>");
-    printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled), "");
+    _response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    _response.concat("<h3>Basic Nuki Configuration</h3>");
+    _response.concat("<table>");
+    printCheckBox("LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled), "");
 
     if(_preferences->getBool(preference_lock_enabled))
     {
-        printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
+        printInputField("MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
     }
 
-    printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
+    printCheckBox("OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
 
     if(_preferences->getBool(preference_opener_enabled))
     {
-        printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180, "");
+        printInputField("MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180, "");
     }
-    response.concat("</table><br>");
+    _response.concat("</table><br>");
 
-    response.concat("<h3>Advanced Nuki Configuration</h3>");
-    response.concat("<table>");
+    _response.concat("<h3>Advanced Nuki Configuration</h3>");
+    _response.concat("<table>");
 
-    printInputField(response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10, "");
-    printInputField(response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10, "");
-    printInputField(response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10, "");
+    printInputField("LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10, "");
+    printInputField("CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10, "");
+    printInputField("BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10, "");
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
-        printInputField(response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10, "");
+        printInputField("KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10, "");
     }
-    printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10, "");
-    printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
-    if(_nuki != nullptr) printCheckBox(response, "REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
-    if(_nukiOpener != nullptr) printCheckBox(response, "REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
+    printInputField("NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10, "");
+    printInputField("TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
+    if(_nuki != nullptr) printCheckBox("REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
+    if(_nukiOpener != nullptr) printCheckBox("REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
 #if PRESENCE_DETECTION_ENABLED
-    printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10, "");
+    printInputField("PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10, "");
 #endif
-    printInputField(response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
-    printInputField(response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
+    printInputField("RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
+    printInputField("TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
 
-    response.concat("</table>");
-    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.concat("</form>");
-    response.concat("</body></html>");
+    _response.concat("</table>");
+    _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    _response.concat("</form>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildGpioConfigHtml(String &response)
+void WebCfgServer::buildGpioConfigHtml()
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
 
-    response.concat("<form method=\"post\" action=\"savegpiocfg\">");
-    response.concat("<h3>GPIO Configuration</h3>");
-    response.concat("<table>");
+    _response.concat("<form method=\"post\" action=\"savegpiocfg\">");
+    _response.concat("<h3>GPIO Configuration</h3>");
+    _response.concat("<table>");
 
     const auto& availablePins = _gpio->availablePins();
     for(const auto& pin : availablePins)
@@ -2624,273 +2632,379 @@ void WebCfgServer::buildGpioConfigHtml(String &response)
         String pinStr = String(pin);
         String pinDesc = "Gpio " + pinStr;
 
-        printDropDown(response, pinStr.c_str(), pinDesc.c_str(), getPreselectionForGpio(pin), getGpioOptions());
+        printDropDown(pinStr.c_str(), pinDesc.c_str(), getPreselectionForGpio(pin), getGpioOptions());
     }
 
-    response.concat("</table>");
-    response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.concat("</form>");
-    response.concat("</body></html>");
+    _response.concat("</table>");
+    _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    _response.concat("</form>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildConfigureWifiHtml(String &response)
+void WebCfgServer::buildConfigureWifiHtml()
 {
-    buildHtmlHeader(response);
+    buildHtmlHeader();
 
-    response.concat("<h3>Wi-Fi</h3>");
-    response.concat("Click confirm to restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
-    buildNavigationButton(response, "Confirm", "/wifimanager");
+    _response.concat("<h3>Wi-Fi</h3>");
+    _response.concat("Click confirm to restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
+    buildNavigationButton("Confirm", "/wifimanager");
 
-    response.concat("</body></html>");
+    _response.concat("</body></html>");
 }
 
-void WebCfgServer::buildInfoHtml(String &response)
+void WebCfgServer::buildInfoHtml()
 {
-    DebugPreferences debugPreferences;
-
-    buildHtmlHeader(response);
-    response.concat("<h3>System Information</h3> <pre>");
-
-    response.concat("Nuki Hub version: ");
-    response.concat(NUKI_HUB_VERSION);
-    response.concat("\n");
-    response.concat("Nuki Hub build: ");
-    response.concat(NUKI_HUB_BUILD);
-    response.concat("\n");
-    response.concat("Nuki Hub build type: ");
-    #ifndef DEBUG_NUKIHUB
-    response.concat("Release\n");
-    #else
-    response.concat("Debug\n");
-    #endif
-
-    response.concat(debugPreferences.preferencesToString(_preferences));
-
-    response.concat("MQTT connected: ");
-    response.concat(_network->mqttConnectionState() > 0 ? "Yes\n" : "No\n");
-
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    buildHtmlHeader();
+    _response.concat("<h3>System Information</h3><pre>");
+    _response.concat("------------ NUKI HUB ------------");
+    _response.concat("\nVersion: ");
+    _response.concat(NUKI_HUB_VERSION);
+    _response.concat("\nBuild: ");
+    _response.concat(NUKI_HUB_BUILD);
+    #ifndef DEBUG_NUKIHUB
+    _response.concat("\nBuild type: Release");
+    #else
+    _response.concat("\nBuild type: Debug");
+    #endif
+    _response.concat("\nBuild date: ");
+    _response.concat(NUKI_HUB_DATE);
+    _response.concat("\nUptime (min): ");
+    _response.concat(esp_timer_get_time() / 1000 / 1000 / 60);
+    _response.concat("\nConfig version: ");
+    _response.concat(_preferences->getInt(preference_config_version));
+    _response.concat("\nLast restart reason FW: ");
+    _response.concat(getRestartReason());
+    _response.concat("\nLast restart reason ESP: ");
+    _response.concat(getEspRestartReason());
+    _response.concat("\nFree heap: ");
+    _response.concat(esp_get_free_heap_size());
+    _response.concat("\nNetwork task stack high watermark: ");
+    _response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
+    _response.concat("\nNuki task stack high watermark: ");
+    _response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
+    _response.concat("\n\n------------ GENERAL SETTINGS ------------");
+    _response.concat("\nNetwork task stack size: ");
+    _response.concat(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE));
+    _response.concat("\nNuki task stack size: ");
+    _response.concat(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE));
+    _response.concat("\nCheck for updates: ");
+    _response.concat(_preferences->getBool(preference_check_updates, false) ? "Yes" : "No");
+    _response.concat("\nLatest version: ");
+    _response.concat(_preferences->getString(preference_latest_version, ""));
+    _response.concat("\nAllow update from MQTT: ");
+    _response.concat(_preferences->getBool(preference_update_from_mqtt, false) ? "Yes" : "No");
+    _response.concat("\nWeb configurator username: ");
+    _response.concat(_preferences->getString(preference_cred_user, "").length() > 0 ? "***" : "Not set");
+    _response.concat("\nWeb configurator password: ");
+    _response.concat(_preferences->getString(preference_cred_password, "").length() > 0 ? "***" : "Not set");
+    _response.concat("\nWeb configurator enabled: ");
+    _response.concat(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
+    _response.concat("\nPublish debug information enabled: ");
+    _response.concat(_preferences->getBool(preference_publish_debug_info, false) ? "Yes" : "No");
+    _response.concat("\nMQTT log enabled: ");
+    _response.concat(_preferences->getBool(preference_mqtt_log_enabled, false) ? "Yes" : "No");
+    _response.concat("\nWebserial enabled: ");
+    _response.concat(_preferences->getBool(preference_webserial_enabled, false) ? "Yes" : "No");
+    _response.concat("\nBootloop protection enabled: ");
+    _response.concat(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Yes" : "No");
+    _response.concat("\n\n------------ NETWORK ------------");
+    _response.concat("\nNetwork device: ");
+    _response.concat(_network->networkDeviceName());
+    _response.concat("\nNetwork connected: ");
+    _response.concat(_network->isConnected() ? "Yes" : "No");
+    if(_network->isConnected())
+    {
+        _response.concat("\nIP Address: ");
+        _response.concat(_network->localIP());
+        if(_network->networkDeviceName() == "Built-in Wi-Fi")
+        {
+            _response.concat("\nSSID: ");
+            _response.concat(WiFi.SSID());
+            _response.concat("\nBSSID of AP: ");
+            _response.concat(_network->networkBSSID());
+            _response.concat("\nESP32 MAC address: ");
+            _response.concat(WiFi.macAddress());
+        }
+        else
+        {
+            /*
+            preference_has_mac_saved
+            preference_has_mac_byte_0
+            preference_has_mac_byte_1
+            preference_has_mac_byte_2
+            */
+        }
+    }
+    _response.concat("\n\n------------ NETWORK SETTINGS ------------");
+    _response.concat("\nNuki Hub hostname: ");
+    _response.concat(_preferences->getString(preference_hostname, ""));
+    if(_preferences->getBool(preference_ip_dhcp_enabled, true)) _response.concat("\nDHCP enabled: Yes");
+    else
+    {
+        _response.concat("\nDHCP enabled: No");
+        _response.concat("\nStatic IP address: ");
+        _response.concat(_preferences->getString(preference_ip_address, ""));
+        _response.concat("\nStatic IP subnet: ");
+        _response.concat(_preferences->getString(preference_ip_subnet, ""));
+        _response.concat("\nStatic IP gateway: ");
+        _response.concat(_preferences->getString(preference_ip_gateway, ""));
+        _response.concat("\nStatic IP DNS server: ");
+        _response.concat(_preferences->getString(preference_ip_dns_server, ""));
+    }
 
+    _response.concat("\nFallback to Wi-Fi / Wi-Fi config portal disabled: ");
+    _response.concat(_preferences->getBool(preference_network_wifi_fallback_disabled, false) ? "Yes" : "No");
+    if(_network->networkDeviceName() == "Built-in Wi-Fi")
+    {
+        _response.concat("\nConnect to AP with the best signal enabled: ");
+        _response.concat(_preferences->getBool(preference_find_best_rssi, false) ? "Yes" : "No");
+        _response.concat("\nRSSI Publish interval (s): ");
+
+        if(_preferences->getInt(preference_rssi_publish_interval, 60) < 0) _response.concat("Disabled");
+        else _response.concat(_preferences->getInt(preference_rssi_publish_interval, 60));
+    }
+    _response.concat("\nRestart ESP32 on network disconnect enabled: ");
+    _response.concat(_preferences->getBool(preference_restart_on_disconnect, false) ? "Yes" : "No");
+    _response.concat("\nReconnect network on MQTT connection failure enabled: ");
+    _response.concat(_preferences->getBool(preference_recon_netw_on_mqtt_discon, false) ? "Yes" : "No");
+    _response.concat("\nMQTT Timeout until restart (s): ");
+    if(_preferences->getInt(preference_network_timeout, 60) < 0) _response.concat("Disabled");
+    else _response.concat(_preferences->getInt(preference_network_timeout, 60));
+    _response.concat("\n\n------------ MQTT ------------");
+    _response.concat("\nMQTT connected: ");
+    _response.concat(_network->mqttConnectionState() > 0 ? "Yes" : "No");
+    _response.concat("\nMQTT broker address: ");
+    _response.concat(_preferences->getString(preference_mqtt_broker, ""));
+    _response.concat("\nMQTT broker port: ");
+    _response.concat(_preferences->getInt(preference_mqtt_broker_port, 1883));
+    _response.concat("\nMQTT username: ");
+    _response.concat(_preferences->getString(preference_mqtt_user, "").length() > 0 ? "***" : "Not set");
+    _response.concat("\nMQTT password: ");
+    _response.concat(_preferences->getString(preference_mqtt_password, "").length() > 0 ? "***" : "Not set");
     if(_nuki != nullptr)
     {
+        _response.concat("\nMQTT lock base topic: ");
+        _response.concat(_preferences->getString(preference_mqtt_lock_path, ""));
+    }
+    if(_nukiOpener != nullptr)
+    {
+        _response.concat("\nMQTT opener base topic: ");
+        _response.concat(_preferences->getString(preference_mqtt_lock_path, ""));
+    }
+    _response.concat("\nMQTT SSL CA: ");
+    _response.concat(_preferences->getString(preference_mqtt_ca, "").length() > 0 ? "***" : "Not set");
+    _response.concat("\nMQTT SSL CRT: ");
+    _response.concat(_preferences->getString(preference_mqtt_crt, "").length() > 0 ? "***" : "Not set");
+    _response.concat("\nMQTT SSL Key: ");
+    _response.concat(_preferences->getString(preference_mqtt_key, "").length() > 0 ? "***" : "Not set");
+    _response.concat("\n\n------------ BLUETOOTH ------------");
+    _response.concat("\nBluetooth TX power (dB): ");
+    _response.concat(_preferences->getInt(preference_ble_tx_power, 9));
+    _response.concat("\nBluetooth command nr of retries: ");
+    _response.concat(_preferences->getInt(preference_command_nr_of_retries, 3));
+    _response.concat("\nBluetooth command retry delay (ms): ");
+    _response.concat(_preferences->getInt(preference_command_retry_delay, 100));
+    _response.concat("\nSeconds until reboot when no BLE beacons recieved: ");
+    _response.concat(_preferences->getInt(preference_restart_ble_beacon_lost, 60));
+    _response.concat("\n\n------------ QUERY / PUBLISH SETTINGS ------------");
+    _response.concat("\nLock/Opener state query interval (s): ");
+    _response.concat(_preferences->getInt(preference_query_interval_lockstate, 1800));
+    _response.concat("\nPublish Nuki device authorization log: ");
+    _response.concat(_preferences->getBool(preference_publish_authdata, false) ? "Yes" : "No");
+    _response.concat("\nMax authorization log entries to retrieve: ");
+    _response.concat(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG));
+    _response.concat("\nBattery state query interval (s): ");
+    _response.concat(_preferences->getInt(preference_query_interval_battery, 1800));
+    _response.concat("\nMost non-JSON MQTT topics disabled: ");
+    _response.concat(_preferences->getBool(preference_disable_non_json, false) ? "Yes" : "No");
+    _response.concat("\nPublish Nuki device config: ");
+    _response.concat(_preferences->getBool(preference_conf_info_enabled, false) ? "Yes" : "No");
+    _response.concat("\nConfig query interval (s): ");
+    _response.concat(_preferences->getInt(preference_query_interval_configuration, 3600));
+    _response.concat("\nPublish Keypad info: ");
+    _response.concat(_preferences->getBool(preference_keypad_info_enabled, false) ? "Yes" : "No");
+    _response.concat("\nKeypad query interval (s): ");
+    _response.concat(_preferences->getInt(preference_query_interval_keypad, 1800));
+    _response.concat("\nEnable Keypad control: ");
+    _response.concat(_preferences->getBool(preference_keypad_control_enabled, false) ? "Yes" : "No");
+    _response.concat("\nPublish Keypad topic per entry: ");
+    _response.concat(_preferences->getBool(preference_keypad_topic_per_entry, false) ? "Yes" : "No");
+    _response.concat("\nPublish Keypad codes: ");
+    _response.concat(_preferences->getBool(preference_keypad_publish_code, false) ? "Yes" : "No");
+    _response.concat("\nMax keypad entries to retrieve: ");
+    _response.concat(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+    _response.concat("\nPublish timecontrol info: ");
+    _response.concat(_preferences->getBool(preference_timecontrol_info_enabled, false) ? "Yes" : "No");
+    _response.concat("\nKeypad query interval (s): ");
+    _response.concat(_preferences->getInt(preference_query_interval_keypad, 1800));
+    _response.concat("\nEnable timecontrol control: ");
+    _response.concat(_preferences->getBool(preference_timecontrol_control_enabled, false) ? "Yes" : "No");
+    _response.concat("\nPublish timecontrol topic per entry: ");
+    _response.concat(_preferences->getBool(preference_timecontrol_topic_per_entry, false) ? "Yes" : "No");
+    _response.concat("\nMax timecontrol entries to retrieve: ");
+    _response.concat(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL));
+    _response.concat("\n\n------------ HOME ASSISTANT ------------");
+    _response.concat("\nHome Assistant auto discovery enabled: ");
+    if(_preferences->getString(preference_mqtt_hass_discovery, "").length() > 0)
+    {
+        _response.concat("Yes");
+        _response.concat("\nHome Assistant auto discovery topic: ");
+        _response.concat(_preferences->getString(preference_mqtt_hass_discovery, "") + "/");
+        _response.concat("\nNuki Hub configuration URL for HA: ");
+        _response.concat(_preferences->getString(preference_mqtt_hass_cu_url, "").length() > 0 ? _preferences->getString(preference_mqtt_hass_cu_url, "") : "http://" + _network->localIP());
+    }
+    else _response.concat("No");
+    _response.concat("\n\n------------ NUKI LOCK ------------");
+    if(_nuki == nullptr || !_preferences->getBool(preference_lock_enabled, true)) _response.concat("\nLock enabled: No");
+    else
+    {
+        _response.concat("\nLock enabled: Yes");
+        _response.concat("\nPaired: ");
+        _response.concat(_nuki->isPaired() ? "Yes" : "No");
+        _response.concat("\nNuki Hub device ID: ");
+        _response.concat(_preferences->getUInt(preference_device_id_lock, 0));
+        _response.concat("\nNuki device ID: ");
+        _response.concat(_preferences->getUInt(preference_nuki_id_lock, 0) > 0 ? "***" : "Not set");
+        _response.concat("\nFirmware version: ");
+        _response.concat(_nuki->firmwareVersion().c_str());
+        _response.concat("\nHardware version: ");
+        _response.concat(_nuki->hardwareVersion().c_str());
+        _response.concat("\nValid PIN set: ");
+        _response.concat(_nuki->isPaired() ? _nuki->isPinValid() ? "Yes" : "No" : "-");
+        _response.concat("\nHas door sensor: ");
+        _response.concat(_nuki->hasDoorSensor() ? "Yes" : "No");
+        _response.concat("\nHas keypad: ");
+        _response.concat(_nuki->hasKeypad() ? "Yes" : "No");
+        if(_nuki->hasKeypad())
+        {
+            _response.concat("\nKeypad highest entries count: ");
+            _response.concat(_preferences->getInt(preference_lock_max_keypad_code_count, 0));
+        }
+        _response.concat("\nTimecontrol highest entries count: ");
+        _response.concat(_preferences->getInt(preference_lock_max_timecontrol_entry_count, 0));
+        _response.concat("\nRegister as: ");
+        _response.concat(_preferences->getBool(preference_register_as_app, false) ? "App" : "Bridge");
+        _response.concat("\n\n------------ HYBRID MODE ------------");
+        if(!_preferences->getBool(preference_official_hybrid, false)) _response.concat("\nHybrid mode enabled: No");
+        else
+        {
+            _response.concat("\nHybrid mode enabled: Yes");
+            _response.concat("\nHybrid mode connected: ");
+            _response.concat(_nuki->offConnected() ? "Yes": "No");
+            _response.concat("\nSending actions through official MQTT enabled: ");
+            _response.concat(_preferences->getBool(preference_official_hybrid_actions, false) ? "Yes" : "No");
+            if(_preferences->getBool(preference_official_hybrid_actions, false))
+            {
+                _response.concat("\nRetry actions through BLE enabled: ");
+                _response.concat(_preferences->getBool(preference_official_hybrid_retry, false) ? "Yes" : "No");
+            }
+            _response.concat("\nTime between status updates when official MQTT is offline (s): ");
+            _response.concat(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600));
+        }
         uint32_t basicLockConfigAclPrefs[16];
         _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
         uint32_t advancedLockConfigAclPrefs[22];
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
+        _response.concat("\n\n------------ NUKI LOCK ACL ------------");
+        _response.concat("\nLock: ");
+        _response.concat((int)aclPrefs[0] ? "Allowed" : "Disallowed");
+        _response.concat("\nUnlock: ");
+        _response.concat((int)aclPrefs[1] ? "Allowed" : "Disallowed");
+        _response.concat("\nUnlatch: ");
+        _response.concat((int)aclPrefs[2] ? "Allowed" : "Disallowed");
+        _response.concat("\nLock N Go: ");
+        _response.concat((int)aclPrefs[3] ? "Allowed" : "Disallowed");
+        _response.concat("\nLock N Go Unlatch: ");
+        _response.concat((int)aclPrefs[4] ? "Allowed" : "Disallowed");
+        _response.concat("\nFull Lock: ");
+        _response.concat((int)aclPrefs[5] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 1: ");
+        _response.concat((int)aclPrefs[6] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 2: ");
+        _response.concat((int)aclPrefs[7] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 3: ");
+        _response.concat((int)aclPrefs[8] ? "Allowed" : "Disallowed");
+        _response.concat("\n\n------------ NUKI LOCK CONFIG ACL ------------");
+        _response.concat("\nName: ");
+        _response.concat((int)basicLockConfigAclPrefs[0] ? "Allowed" : "Disallowed");
+        _response.concat("\nLatitude: ");
+        _response.concat((int)basicLockConfigAclPrefs[1] ? "Allowed" : "Disallowed");
+        _response.concat("\nLongitude: ");
+        _response.concat((int)basicLockConfigAclPrefs[2] ? "Allowed" : "Disallowed");
+        _response.concat("\nAuto Unlatch: ");
+        _response.concat((int)basicLockConfigAclPrefs[3] ? "Allowed" : "Disallowed");
+        _response.concat("\nPairing enabled: ");
+        _response.concat((int)basicLockConfigAclPrefs[4] ? "Allowed" : "Disallowed");
+        _response.concat("\nButton enabled: ");
+        _response.concat((int)basicLockConfigAclPrefs[5] ? "Allowed" : "Disallowed");
+        _response.concat("\nLED flash enabled: ");
+        _response.concat((int)basicLockConfigAclPrefs[6] ? "Allowed" : "Disallowed");
+        _response.concat("\nLED brightness: ");
+        _response.concat((int)basicLockConfigAclPrefs[7] ? "Allowed" : "Disallowed");
+        _response.concat("\nTimezone offset: ");
+        _response.concat((int)basicLockConfigAclPrefs[8] ? "Allowed" : "Disallowed");
+        _response.concat("\nDST mode: ");
+        _response.concat((int)basicLockConfigAclPrefs[9] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 1: ");
+        _response.concat((int)basicLockConfigAclPrefs[10] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 2: ");
+        _response.concat((int)basicLockConfigAclPrefs[11] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 3: ");
+        _response.concat((int)basicLockConfigAclPrefs[12] ? "Allowed" : "Disallowed");
+        _response.concat("\nSingle Lock: ");
+        _response.concat((int)basicLockConfigAclPrefs[13] ? "Allowed" : "Disallowed");
+        _response.concat("\nAdvertising Mode: ");
+        _response.concat((int)basicLockConfigAclPrefs[14] ? "Allowed" : "Disallowed");
+        _response.concat("\nTimezone ID: ");
+        _response.concat((int)basicLockConfigAclPrefs[15] ? "Allowed" : "Disallowed");
+        _response.concat("\nUnlocked Position Offset Degrees: ");
+        _response.concat((int)advancedLockConfigAclPrefs[0] ? "Allowed" : "Disallowed");
+        _response.concat("\nLocked Position Offset Degrees: ");
+        _response.concat((int)advancedLockConfigAclPrefs[1] ? "Allowed" : "Disallowed");
+        _response.concat("\nSingle Locked Position Offset Degrees: ");
+        _response.concat((int)advancedLockConfigAclPrefs[2] ? "Allowed" : "Disallowed");
+        _response.concat("\nUnlocked To Locked Transition Offset Degrees: ");
+        _response.concat((int)advancedLockConfigAclPrefs[3] ? "Allowed" : "Disallowed");
+        _response.concat("\nLock n Go timeout: ");
+        _response.concat((int)advancedLockConfigAclPrefs[4] ? "Allowed" : "Disallowed");
+        _response.concat("\nSingle button press action: ");
+        _response.concat((int)advancedLockConfigAclPrefs[5] ? "Allowed" : "Disallowed");
+        _response.concat("\nDouble button press action: ");
+        _response.concat((int)advancedLockConfigAclPrefs[6] ? "Allowed" : "Disallowed");
+        _response.concat("\nDetached cylinder: ");
+        _response.concat((int)advancedLockConfigAclPrefs[7] ? "Allowed" : "Disallowed");
+        _response.concat("\nBattery type: ");
+        _response.concat((int)advancedLockConfigAclPrefs[8] ? "Allowed" : "Disallowed");
+        _response.concat("\nAutomatic battery type detection: ");
+        _response.concat((int)advancedLockConfigAclPrefs[9] ? "Allowed" : "Disallowed");
+        _response.concat("\nUnlatch duration: ");
+        _response.concat((int)advancedLockConfigAclPrefs[10] ? "Allowed" : "Disallowed");
+        _response.concat("\nAuto lock timeout: ");
+        _response.concat((int)advancedLockConfigAclPrefs[11] ? "Allowed" : "Disallowed");
+        _response.concat("\nAuto unlock disabled: ");
+        _response.concat((int)advancedLockConfigAclPrefs[12] ? "Allowed" : "Disallowed");
+        _response.concat("\nNightmode enabled: ");
+        _response.concat((int)advancedLockConfigAclPrefs[13] ? "Allowed" : "Disallowed");
+        _response.concat("\nNightmode start time: ");
+        _response.concat((int)advancedLockConfigAclPrefs[14] ? "Allowed" : "Disallowed");
+        _response.concat("\nNightmode end time: ");
+        _response.concat((int)advancedLockConfigAclPrefs[15] ? "Allowed" : "Disallowed");
+        _response.concat("\nNightmode auto lock enabled: ");
+        _response.concat((int)advancedLockConfigAclPrefs[16] ? "Allowed" : "Disallowed");
+        _response.concat("\nNightmode auto unlock disabled: ");
+        _response.concat((int)advancedLockConfigAclPrefs[17] ? "Allowed" : "Disallowed");
+        _response.concat("\nNightmode immediate lock on start: ");
+        _response.concat((int)advancedLockConfigAclPrefs[18] ? "Allowed" : "Disallowed");
+        _response.concat("\nAuto lock enabled: ");
+        _response.concat((int)advancedLockConfigAclPrefs[19] ? "Allowed" : "Disallowed");
+        _response.concat("\nImmediate auto lock enabled: ");
+        _response.concat((int)advancedLockConfigAclPrefs[20] ? "Allowed" : "Disallowed");
+        _response.concat("\nAuto update enabled: ");
+        _response.concat((int)advancedLockConfigAclPrefs[21] ? "Allowed" : "Disallowed");
 
-        response.concat("Lock firmware version: ");
-        response.concat(_nuki->firmwareVersion().c_str());
-        response.concat("\nLock hardware version: ");
-        response.concat(_nuki->hardwareVersion().c_str());
-        response.concat("\nLock paired: ");
-        response.concat(_nuki->isPaired() ? "Yes\n" : "No\n");
-        response.concat("Lock valid PIN set: ");
-        response.concat(_nuki->isPaired() ? _nuki->isPinValid() ? "Yes\n" : "No\n" : "-\n");
-        response.concat("Lock has door sensor: ");
-        response.concat(_nuki->hasDoorSensor() ? "Yes\n" : "No\n");
-        response.concat("Lock has keypad: ");
-        response.concat(_nuki->hasKeypad() ? "Yes\n" : "No\n");
-        response.concat("Lock ACL (Lock): ");
-        response.concat((int)aclPrefs[0] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Unlock): ");
-        response.concat((int)aclPrefs[1] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Unlatch): ");
-        response.concat((int)aclPrefs[2] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Lock N Go): ");
-        response.concat((int)aclPrefs[3] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Lock N Go Unlatch): ");
-        response.concat((int)aclPrefs[4] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Full Lock): ");
-        response.concat((int)aclPrefs[5] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Fob Action 1): ");
-        response.concat((int)aclPrefs[6] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Fob Action 2): ");
-        response.concat((int)aclPrefs[7] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock ACL (Fob Action 3): ");
-        response.concat((int)aclPrefs[8] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Name): ");
-        response.concat((int)basicLockConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Latitude): ");
-        response.concat((int)basicLockConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Longitude): ");
-        response.concat((int)basicLockConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Auto Unlatch): ");
-        response.concat((int)basicLockConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Pairing enabled): ");
-        response.concat((int)basicLockConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Button enabled): ");
-        response.concat((int)basicLockConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (LED flash enabled): ");
-        response.concat((int)basicLockConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (LED brightness): ");
-        response.concat((int)basicLockConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Timezone offset): ");
-        response.concat((int)basicLockConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (DST mode): ");
-        response.concat((int)basicLockConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Fob Action 1): ");
-        response.concat((int)basicLockConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Fob Action 2): ");
-        response.concat((int)basicLockConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Fob Action 3): ");
-        response.concat((int)basicLockConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Single Lock): ");
-        response.concat((int)basicLockConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Advertising Mode): ");
-        response.concat((int)basicLockConfigAclPrefs[14] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Timezone ID): ");
-        response.concat((int)basicLockConfigAclPrefs[15] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Unlocked Position Offset Degrees): ");
-        response.concat((int)advancedLockConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Locked Position Offset Degrees): ");
-        response.concat((int)advancedLockConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Single Locked Position Offset Degrees): ");
-        response.concat((int)advancedLockConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Unlocked To Locked Transition Offset Degrees): ");
-        response.concat((int)advancedLockConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Lock n Go timeout): ");
-        response.concat((int)advancedLockConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Single button press action): ");
-        response.concat((int)advancedLockConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Double button press action): ");
-        response.concat((int)advancedLockConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Detached cylinder): ");
-        response.concat((int)advancedLockConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Battery type): ");
-        response.concat((int)advancedLockConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Automatic battery type detection): ");
-        response.concat((int)advancedLockConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Unlatch duration): ");
-        response.concat((int)advancedLockConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Auto lock timeout): ");
-        response.concat((int)advancedLockConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Auto unlock disabled): ");
-        response.concat((int)advancedLockConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Nightmode enabled): ");
-        response.concat((int)advancedLockConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Nightmode start time): ");
-        response.concat((int)advancedLockConfigAclPrefs[14] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Nightmode end time): ");
-        response.concat((int)advancedLockConfigAclPrefs[15] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Nightmode auto lock enabled): ");
-        response.concat((int)advancedLockConfigAclPrefs[16] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Nightmode auto unlock disabled): ");
-        response.concat((int)advancedLockConfigAclPrefs[17] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Nightmode immediate lock on start): ");
-        response.concat((int)advancedLockConfigAclPrefs[18] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Auto lock enabled): ");
-        response.concat((int)advancedLockConfigAclPrefs[19] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Immediate auto lock enabled): ");
-        response.concat((int)advancedLockConfigAclPrefs[20] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Lock config ACL (Auto update enabled): ");
-        response.concat((int)advancedLockConfigAclPrefs[21] ? "Allowed\n" : "Disallowed\n");
-    }
-
-    if(_nukiOpener != nullptr)
-    {
-        uint32_t basicOpenerConfigAclPrefs[14];
-        _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
-        uint32_t advancedOpenerConfigAclPrefs[20];
-        _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
-        response.concat("Opener firmware version: ");
-        response.concat(_nukiOpener->firmwareVersion().c_str());
-        response.concat("\nOpener hardware version: ");
-        response.concat(_nukiOpener->hardwareVersion().c_str());        response.concat("\nOpener paired: ");
-        response.concat(_nukiOpener->isPaired() ? "Yes\n" : "No\n");
-        response.concat("Opener valid PIN set: ");
-        response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinValid() ? "Yes\n" : "No\n" : "-\n");
-        response.concat("Opener has keypad: ");
-        response.concat(_nukiOpener->hasKeypad() ? "Yes\n" : "No\n");
-        response.concat("Opener ACL (Activate Ring-to-Open): ");
-        response.concat((int)aclPrefs[9] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener ACL (Deactivate Ring-to-Open): ");
-        response.concat((int)aclPrefs[10] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener ACL (Electric Strike Actuation): ");
-        response.concat((int)aclPrefs[11] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener ACL (Activate Continuous Mode): ");
-        response.concat((int)aclPrefs[12] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener ACL (Deactivate Continuous Mode): ");
-        response.concat((int)aclPrefs[13] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener ACL (Fob Action 1): ");
-        response.concat((int)aclPrefs[14] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener ACL (Fob Action 2): ");
-        response.concat((int)aclPrefs[15] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener ACL (Fob Action 3): ");
-        response.concat((int)aclPrefs[16] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Name): ");
-        response.concat((int)basicOpenerConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Latitude): ");
-        response.concat((int)basicOpenerConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Longitude): ");
-        response.concat((int)basicOpenerConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Pairing enabled): ");
-        response.concat((int)basicOpenerConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Button enabled): ");
-        response.concat((int)basicOpenerConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (LED flash enabled): ");
-        response.concat((int)basicOpenerConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Timezone offset): ");
-        response.concat((int)basicOpenerConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (DST mode): ");
-        response.concat((int)basicOpenerConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Fob Action 1): ");
-        response.concat((int)basicOpenerConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Fob Action 2): ");
-        response.concat((int)basicOpenerConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Fob Action 3): ");
-        response.concat((int)basicOpenerConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Operating Mode): ");
-        response.concat((int)basicOpenerConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Advertising Mode): ");
-        response.concat((int)basicOpenerConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Timezone ID): ");
-        response.concat((int)basicOpenerConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Intercom ID): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[0] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (BUS mode Switch): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[1] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Short Circuit Duration): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[2] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Eletric Strike Delay): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[3] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Random Electric Strike Delay): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[4] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Electric Strike Duration): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[5] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Disable RTO after ring): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[6] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (RTO timeout): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[7] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Doorbell suppression): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[8] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Doorbell suppression duration): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[9] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Sound Ring): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[10] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Sound Open): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[11] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Sound RTO): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[12] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Sound CM): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[13] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Sound confirmation): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[14] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Sound level): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[15] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Single button press action): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[16] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Double button press action): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[17] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Battery type): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[18] ? "Allowed\n" : "Disallowed\n");
-        response.concat("Opener config ACL (Automatic battery type detection): ");
-        response.concat((int)advancedOpenerConfigAclPrefs[19] ? "Allowed\n" : "Disallowed\n");
-    }
-
-    if(_preferences->getBool(preference_show_secrets))
-    {
-        if(_nuki != nullptr)
+        if(_preferences->getBool(preference_show_secrets))
         {
             char tmp[16];
             unsigned char currentBleAddress[6];
@@ -2902,24 +3016,149 @@ void WebCfgServer::buildInfoHtml(String &response)
             nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
             nukiBlePref.getBytes("authorizationId", authorizationId, 4);
             nukiBlePref.end();
-            response.concat("Lock bleAddress: ");
-            for (int i = 0; i < 6; i++) {
-              sprintf(tmp, "%02x", currentBleAddress[i]);
-              response.concat(tmp);
+            _response.concat("\n\n------------ NUKI LOCK PAIRING ------------");
+            _response.concat("\nBLE Address: ");
+            for (int i = 0; i < 6; i++)
+            {
+                sprintf(tmp, "%02x", currentBleAddress[i]);
+                _response.concat(tmp);
             }
-            response.concat("\nLock secretKeyK: ");
-            for (int i = 0; i < 32; i++) {
-              sprintf(tmp, "%02x", secretKeyK[i]);
-              response.concat(tmp);
+            _response.concat("\nSecretKeyK: ");
+            for (int i = 0; i < 32; i++)
+            {
+                sprintf(tmp, "%02x", secretKeyK[i]);
+                _response.concat(tmp);
             }
-            response.concat("\nLock authorizationId: ");
-            for (int i = 0; i < 4; i++) {
-              sprintf(tmp, "%02x", authorizationId[i]);
-              response.concat(tmp);
+            _response.concat("\nAuthorizationId: ");
+            for (int i = 0; i < 4; i++)
+            {
+                sprintf(tmp, "%02x", authorizationId[i]);
+                _response.concat(tmp);
             }
-            response.concat("\n");
         }
-        if(_nukiOpener != nullptr)
+    }
+
+    _response.concat("\n\n------------ NUKI OPENER ------------");
+    if(_nukiOpener == nullptr || !_preferences->getBool(preference_opener_enabled, true)) _response.concat("\nOpener enabled: No");
+    else
+    {
+        _response.concat("\nOpener enabled: Yes");
+        _response.concat("\nPaired: ");
+        _response.concat(_nukiOpener->isPaired() ? "Yes" : "No");
+        _response.concat("\nNuki Hub device ID: ");
+        _response.concat(_preferences->getUInt(preference_device_id_opener, 0));
+        _response.concat("\nNuki device ID: ");
+        _response.concat(_preferences->getUInt(preference_nuki_id_opener, 0) > 0 ? "***" : "Not set");
+        _response.concat("\nFirmware version: ");
+        _response.concat(_nukiOpener->firmwareVersion().c_str());
+        _response.concat("\nHardware version: ");
+        _response.concat(_nukiOpener->hardwareVersion().c_str());
+        _response.concat("\nOpener valid PIN set: ");
+        _response.concat(_nukiOpener->isPaired() ? _nukiOpener->isPinValid() ? "Yes" : "No" : "-");
+        _response.concat("\nOpener has keypad: ");
+        _response.concat(_nukiOpener->hasKeypad() ? "Yes" : "No");
+        if(_nuki->hasKeypad())
+        {
+            _response.concat("\nKeypad highest entries count: ");
+            _response.concat(_preferences->getInt(preference_opener_max_keypad_code_count, 0));
+        }
+        _response.concat("\nTimecontrol highest entries count: ");
+        _response.concat(_preferences->getInt(preference_opener_max_timecontrol_entry_count, 0));
+        _response.concat("\nRegister as: ");
+        _response.concat(_preferences->getBool(preference_register_opener_as_app, false) ? "App" : "Bridge");
+        _response.concat("\nNuki Opener Lock/Unlock action set to Continuous mode in Home Assistant: ");
+        _response.concat(_preferences->getBool(preference_opener_continuous_mode, false) ? "Yes" : "No");
+        uint32_t basicOpenerConfigAclPrefs[14];
+        _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
+        uint32_t advancedOpenerConfigAclPrefs[20];
+        _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
+        _response.concat("\n\n------------ NUKI OPENER ACL ------------");
+        _response.concat("\nActivate Ring-to-Open: ");
+        _response.concat((int)aclPrefs[9] ? "Allowed" : "Disallowed");
+        _response.concat("\nDeactivate Ring-to-Open: ");
+        _response.concat((int)aclPrefs[10] ? "Allowed" : "Disallowed");
+        _response.concat("\nElectric Strike Actuation: ");
+        _response.concat((int)aclPrefs[11] ? "Allowed" : "Disallowed");
+        _response.concat("\nActivate Continuous Mode: ");
+        _response.concat((int)aclPrefs[12] ? "Allowed" : "Disallowed");
+        _response.concat("\nDeactivate Continuous Mode: ");
+        _response.concat((int)aclPrefs[13] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 1: ");
+        _response.concat((int)aclPrefs[14] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 2: ");
+        _response.concat((int)aclPrefs[15] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 3: ");
+        _response.concat((int)aclPrefs[16] ? "Allowed" : "Disallowed");
+        _response.concat("\n\n------------ NUKI OPENER CONFIG ACL ------------");
+        _response.concat("\nName: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[0] ? "Allowed" : "Disallowed");
+        _response.concat("\nLatitude: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[1] ? "Allowed" : "Disallowed");
+        _response.concat("\nLongitude: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[2] ? "Allowed" : "Disallowed");
+        _response.concat("\nPairing enabled: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[3] ? "Allowed" : "Disallowed");
+        _response.concat("\nButton enabled: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[4] ? "Allowed" : "Disallowed");
+        _response.concat("\nLED flash enabled: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[5] ? "Allowed" : "Disallowed");
+        _response.concat("\nTimezone offset: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[6] ? "Allowed" : "Disallowed");
+        _response.concat("\nDST mode: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[7] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 1: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[8] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 2: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[9] ? "Allowed" : "Disallowed");
+        _response.concat("\nFob Action 3: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[10] ? "Allowed" : "Disallowed");
+        _response.concat("\nOperating Mode: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[11] ? "Allowed" : "Disallowed");
+        _response.concat("\nAdvertising Mode: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[12] ? "Allowed" : "Disallowed");
+        _response.concat("\nTimezone ID: ");
+        _response.concat((int)basicOpenerConfigAclPrefs[13] ? "Allowed" : "Disallowed");
+        _response.concat("\nIntercom ID: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[0] ? "Allowed" : "Disallowed");
+        _response.concat("\nBUS mode Switch: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[1] ? "Allowed" : "Disallowed");
+        _response.concat("\nShort Circuit Duration: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[2] ? "Allowed" : "Disallowed");
+        _response.concat("\nEletric Strike Delay: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[3] ? "Allowed" : "Disallowed");
+        _response.concat("\nRandom Electric Strike Delay: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[4] ? "Allowed" : "Disallowed");
+        _response.concat("\nElectric Strike Duration: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[5] ? "Allowed" : "Disallowed");
+        _response.concat("\nDisable RTO after ring: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[6] ? "Allowed" : "Disallowed");
+        _response.concat("\nRTO timeout: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[7] ? "Allowed" : "Disallowed");
+        _response.concat("\nDoorbell suppression: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[8] ? "Allowed" : "Disallowed");
+        _response.concat("\nDoorbell suppression duration: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[9] ? "Allowed" : "Disallowed");
+        _response.concat("\nSound Ring: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[10] ? "Allowed" : "Disallowed");
+        _response.concat("\nSound Open: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[11] ? "Allowed" : "Disallowed");
+        _response.concat("\nSound RTO: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[12] ? "Allowed" : "Disallowed");
+        _response.concat("\nSound CM: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[13] ? "Allowed" : "Disallowed");
+        _response.concat("\nSound confirmation: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[14] ? "Allowed" : "Disallowed");
+        _response.concat("\nSound level: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[15] ? "Allowed" : "Disallowed");
+        _response.concat("\nSingle button press action: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[16] ? "Allowed" : "Disallowed");
+        _response.concat("\nDouble button press action: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[17] ? "Allowed" : "Disallowed");
+        _response.concat("\nBattery type: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[18] ? "Allowed" : "Disallowed");
+        _response.concat("\nAutomatic battery type detection: ");
+        _response.concat((int)advancedOpenerConfigAclPrefs[19] ? "Allowed" : "Disallowed");
+        if(_preferences->getBool(preference_show_secrets))
         {
             char tmp[16];
             unsigned char currentBleAddressOpn[6];
@@ -2931,70 +3170,41 @@ void WebCfgServer::buildInfoHtml(String &response)
             nukiBlePref.getBytes("secretKeyK", secretKeyKOpn, 32);
             nukiBlePref.getBytes("authorizationId", authorizationIdOpn, 4);
             nukiBlePref.end();
-            response.concat("Opener bleAddress: ");
-            for (int i = 0; i < 6; i++) {
-              sprintf(tmp, "%02x", currentBleAddressOpn[i]);
-              response.concat(tmp);
+            _response.concat("\n\n------------ NUKI OPENER PAIRING ------------");
+            _response.concat("\nBLE Address: ");
+            for (int i = 0; i < 6; i++)
+            {
+                sprintf(tmp, "%02x", currentBleAddressOpn[i]);
+                _response.concat(tmp);
             }
-            response.concat("\nOpener secretKeyK: ");
-            for (int i = 0; i < 32; i++) {
-              sprintf(tmp, "%02x", secretKeyKOpn[i]);
-              response.concat(tmp);
+            _response.concat("\nSecretKeyK: ");
+            for (int i = 0; i < 32; i++)
+            {
+                sprintf(tmp, "%02x", secretKeyKOpn[i]);
+                _response.concat(tmp);
             }
-            response.concat("\nOpener authorizationId: ");
-            for (int i = 0; i < 4; i++) {
-              sprintf(tmp, "%02x", authorizationIdOpn[i]);
-              response.concat(tmp);
+            _response.concat("\nAuthorizationId: ");
+            for (int i = 0; i < 4; i++)
+            {
+                sprintf(tmp, "%02x", authorizationIdOpn[i]);
+                _response.concat(tmp);
             }
-            response.concat("\n");
         }
     }
 
-    response.concat("Network device: ");
-    response.concat(_network->networkDeviceName());
-    response.concat("\n");
+    _response.concat("\n\n------------ GPIO ------------");
+    _gpio->getConfigurationText(_response, _gpio->pinConfiguration());
 
-    if(_network->networkDeviceName() == "Built-in Wi-Fi")
-    {
-        response.concat("BSSID of AP: ");
-        response.concat(_network->networkBSSID());
-        response.concat("\n");
-    }
-
-    response.concat("Uptime: ");
-    response.concat(esp_timer_get_time() / 1000 / 1000 / 60);
-    response.concat(" minutes\n");
-
-    response.concat("Heap: ");
-    response.concat(esp_get_free_heap_size());
-    response.concat("\n");
-
-    response.concat("Stack watermarks: nw: ");
-    response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
-    response.concat(", nuki: ");
-    response.concat(uxTaskGetStackHighWaterMark(nukiTaskHandle));
-    response.concat("\n");
-
-    _gpio->getConfigurationText(response, _gpio->pinConfiguration());
-
-    response.concat("Restart reason FW: ");
-    response.concat(getRestartReason());
-    response.concat( "\n");
-
-    response.concat("Restart reason ESP: ");
-    response.concat(getEspRestartReason());
-    response.concat("\n");
-
-    response.concat("</pre> </body></html>");
+    _response.concat("</pre> </body></html>");
 }
 
 void WebCfgServer::processUnpair(bool opener)
 {
-    String response = "";
+    _response = "";
     if(_server.args() == 0)
     {
-        buildConfirmHtml(response, "Confirm code is invalid.", 3);
-        _server.send(200, "text/html", response);
+        buildConfirmHtml("Confirm code is invalid.", 3);
+        _server.send(200, "text/html", _response);
         return;
     }
     else
@@ -3004,14 +3214,14 @@ void WebCfgServer::processUnpair(bool opener)
 
         if(key != "CONFIRMTOKEN" || value != _confirmCode)
         {
-            buildConfirmHtml(response, "Confirm code is invalid.", 3);
-            _server.send(200, "text/html", response);
+            buildConfirmHtml("Confirm code is invalid.", 3);
+            _server.send(200, "text/html", _response);
             return;
         }
     }
 
-    buildConfirmHtml(response, opener ? "Unpairing Nuki Opener and restarting." : "Unpairing Nuki Lock and restarting.", 3);
-    _server.send(200, "text/html", response);
+    buildConfirmHtml(opener ? "Unpairing Nuki Opener and restarting." : "Unpairing Nuki Lock and restarting.", 3);
+    _server.send(200, "text/html", _response);
     if(!opener && _nuki != nullptr)
     {
         _nuki->disableHASS();
@@ -3028,7 +3238,6 @@ void WebCfgServer::processUnpair(bool opener)
 
 void WebCfgServer::processUpdate()
 {
-    String response = "";
     String key = _server.argName(0);
     String key2 = _server.argName(1);
     String key3 = _server.argName(2);
@@ -3037,8 +3246,8 @@ void WebCfgServer::processUpdate()
 
     if(key3 != "token" || value3 != _confirmCode)
     {
-        buildConfirmHtml(response, "Confirm code is invalid.", 3, true);
-        _server.send(200, "text/html", response);
+        buildConfirmHtml("Confirm code is invalid.", 3, true);
+        _server.send(200, "text/html", _response);
         return;
     }
 
@@ -3046,13 +3255,13 @@ void WebCfgServer::processUpdate()
     {
         if(key2 == "debug")
         {
-            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG BETA version", 2, true);
+            buildConfirmHtml("Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG BETA version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL_DBG);
             _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL_DBG);
         }
         else
         {
-            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
+            buildConfirmHtml("Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
             _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
         }
@@ -3061,13 +3270,13 @@ void WebCfgServer::processUpdate()
     {
         if(key2 == "debug")
         {
-            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG DEVELOPMENT version", 2, true);
+            buildConfirmHtml("Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG DEVELOPMENT version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL_DBG);
             _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL_DBG);
         }
         else
         {
-            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
+            buildConfirmHtml("Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
             _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
         }
@@ -3076,18 +3285,18 @@ void WebCfgServer::processUpdate()
     {
         if(key2 == "debug")
         {
-            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG RELEASE version", 2, true);
+            buildConfirmHtml("Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG RELEASE version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
             _preferences->putString(preference_ota_main_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
         }
         else
         {
-            buildConfirmHtml(response, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
+            buildConfirmHtml("Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
             _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
         }
     }
-    _server.send(200, "text/html", response);
+    _server.send(200, "text/html", _response);
     waitAndProcess(true, 1000);
     restartEsp(RestartReason::OTAReboot);
 }
@@ -3095,11 +3304,11 @@ void WebCfgServer::processUpdate()
 void WebCfgServer::processFactoryReset()
 {
     bool resetWifi = false;
-    String response = "";
+    _response = "";
     if(_server.args() == 0)
     {
-        buildConfirmHtml(response, "Confirm code is invalid.", 3);
-        _server.send(200, "text/html", response);
+        buildConfirmHtml("Confirm code is invalid.", 3);
+        _server.send(200, "text/html", _response);
         return;
     }
     else
@@ -3109,8 +3318,8 @@ void WebCfgServer::processFactoryReset()
 
         if(key != "CONFIRMTOKEN" || value != _confirmCode)
         {
-            buildConfirmHtml(response, "Confirm code is invalid.", 3);
-            _server.send(200, "text/html", response);
+            buildConfirmHtml("Confirm code is invalid.", 3);
+            _server.send(200, "text/html", _response);
             return;
         }
 
@@ -3120,12 +3329,12 @@ void WebCfgServer::processFactoryReset()
         if(key2 == "WIFI" && value2 == "1")
         {
             resetWifi = true;
-            buildConfirmHtml(response, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener and resetting WiFi.", 3);
+            buildConfirmHtml("Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener and resetting WiFi.", 3);
         }
-        else buildConfirmHtml(response, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener.", 3);
+        else buildConfirmHtml("Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener.", 3);
     }
 
-    _server.send(200, "text/html", response);
+    _server.send(200, "text/html", _response);
     waitAndProcess(false, 2000);
 
     if(_nuki != nullptr)
@@ -3155,8 +3364,7 @@ void WebCfgServer::processFactoryReset()
     restartEsp(RestartReason::NukiHubReset);
 }
 
-void WebCfgServer::printInputField(String& response,
-                                   const char *token,
+void WebCfgServer::printInputField(const char *token,
                                    const char *description,
                                    const char *value,
                                    const size_t& maxLength,
@@ -3168,40 +3376,39 @@ void WebCfgServer::printInputField(String& response,
 
     itoa(maxLength, maxLengthStr, 10);
 
-    response.concat("<tr><td>");
-    response.concat(description);
+    _response.concat("<tr><td>");
+    _response.concat(description);
 
     if(showLengthRestriction)
     {
-        response.concat(" (Max. ");
-        response.concat(maxLength);
-        response.concat(" characters)");
+        _response.concat(" (Max. ");
+        _response.concat(maxLength);
+        _response.concat(" characters)");
     }
 
-    response.concat("</td><td>");
-    response.concat("<input type=");
-    response.concat(isPassword ? "\"password\"" : "\"text\"");
+    _response.concat("</td><td>");
+    _response.concat("<input type=");
+    _response.concat(isPassword ? "\"password\"" : "\"text\"");
     if(strcmp(id, "") != 0)
     {
-        response.concat(" id=\"");
-        response.concat(id);
-        response.concat("\"");
+        _response.concat(" id=\"");
+        _response.concat(id);
+        _response.concat("\"");
     }
     if(strcmp(value, "") != 0)
     {
-    response.concat(" value=\"");
-    response.concat(value);
+    _response.concat(" value=\"");
+    _response.concat(value);
     }
-    response.concat("\" name=\"");
-    response.concat(token);
-    response.concat("\" size=\"25\" maxlength=\"");
-    response.concat(maxLengthStr);
-    response.concat("\"/>");
-    response.concat("</td></tr>");
+    _response.concat("\" name=\"");
+    _response.concat(token);
+    _response.concat("\" size=\"25\" maxlength=\"");
+    _response.concat(maxLengthStr);
+    _response.concat("\"/>");
+    _response.concat("</td></tr>");
 }
 
-void WebCfgServer::printInputField(String& response,
-                                   const char *token,
+void WebCfgServer::printInputField(const char *token,
                                    const char *description,
                                    const int value,
                                    size_t maxLength,
@@ -3209,156 +3416,148 @@ void WebCfgServer::printInputField(String& response,
 {
     char valueStr[20];
     itoa(value, valueStr, 10);
-    printInputField(response, token, description, valueStr, maxLength, id);
+    printInputField(token, description, valueStr, maxLength, id);
 }
 
-void WebCfgServer::printCheckBox(String &response, const char *token, const char *description, const bool value, const char *htmlClass)
+void WebCfgServer::printCheckBox(const char *token, const char *description, const bool value, const char *htmlClass)
 {
-    response.concat("<tr><td>");
-    response.concat(description);
-    response.concat("</td><td>");
+    _response.concat("<tr><td>");
+    _response.concat(description);
+    _response.concat("</td><td>");
 
-    response.concat("<input type=hidden name=\"");
-    response.concat(token);
-    response.concat("\" value=\"0\"");
-    response.concat("/>");
+    _response.concat("<input type=hidden name=\"");
+    _response.concat(token);
+    _response.concat("\" value=\"0\"");
+    _response.concat("/>");
 
-    response.concat("<input type=checkbox name=\"");
-    response.concat(token);
+    _response.concat("<input type=checkbox name=\"");
+    _response.concat(token);
 
-    response.concat("\" class=\"");
-    response.concat(htmlClass);
+    _response.concat("\" class=\"");
+    _response.concat(htmlClass);
 
-    response.concat("\" value=\"1\"");
-    response.concat(value ? " checked=\"checked\"" : "");
-    response.concat("/></td></tr>");
+    _response.concat("\" value=\"1\"");
+    _response.concat(value ? " checked=\"checked\"" : "");
+    _response.concat("/></td></tr>");
 }
 
-void WebCfgServer::printTextarea(String& response,
-                                   const char *token,
-                                   const char *description,
-                                   const char *value,
-                                   const size_t& maxLength,
-                                   const bool& enabled,
-                                   const bool& showLengthRestriction)
+void WebCfgServer::printTextarea(const char *token,
+                                 const char *description,
+                                 const char *value,
+                                 const size_t& maxLength,
+                                 const bool& enabled,
+                                 const bool& showLengthRestriction)
 {
     char maxLengthStr[20];
 
     itoa(maxLength, maxLengthStr, 10);
 
-    response.concat("<tr><td>");
-    response.concat(description);
+    _response.concat("<tr><td>");
+    _response.concat(description);
     if(showLengthRestriction)
     {
-        response.concat(" (Max. ");
-        response.concat(maxLength);
-        response.concat(" characters)");
+        _response.concat(" (Max. ");
+        _response.concat(maxLength);
+        _response.concat(" characters)");
     }
-    response.concat("</td><td>");
-    response.concat(" <textarea ");
+    _response.concat("</td><td>");
+    _response.concat(" <textarea ");
     if(!enabled)
     {
-        response.concat("disabled");
+        _response.concat("disabled");
     }
-    response.concat(" name=\"");
-    response.concat(token);
-    response.concat("\" maxlength=\"");
-    response.concat(maxLengthStr);
-    response.concat("\">");
-    response.concat(value);
-    response.concat("</textarea>");
-    response.concat("</td></tr>");
+    _response.concat(" name=\"");
+    _response.concat(token);
+    _response.concat("\" maxlength=\"");
+    _response.concat(maxLengthStr);
+    _response.concat("\">");
+    _response.concat(value);
+    _response.concat("</textarea>");
+    _response.concat("</td></tr>");
 }
 
-void WebCfgServer::printDropDown(String &response, const char *token, const char *description, const String preselectedValue, const std::vector<std::pair<String, String>> options)
+void WebCfgServer::printDropDown(const char *token, const char *description, const String preselectedValue, const std::vector<std::pair<String, String>> options)
 {
-    response.concat("<tr><td>");
-    response.concat(description);
-    response.concat("</td><td>");
+    _response.concat("<tr><td>");
+    _response.concat(description);
+    _response.concat("</td><td>");
 
-    response.concat("<select name=\"");
-    response.concat(token);
-    response.concat("\">");
+    _response.concat("<select name=\"");
+    _response.concat(token);
+    _response.concat("\">");
 
     for(const auto& option : options)
     {
         if(option.first == preselectedValue)
         {
-            response.concat("<option selected=\"selected\" value=\"");
+            _response.concat("<option selected=\"selected\" value=\"");
         }
         else
         {
-            response.concat("<option value=\"");
+            _response.concat("<option value=\"");
         }
-        response.concat(option.first);
-        response.concat("\">");
-        response.concat(option.second);
-        response.concat("</option>");
+        _response.concat(option.first);
+        _response.concat("\">");
+        _response.concat(option.second);
+        _response.concat("</option>");
     }
 
-    response.concat("</select>");
-    response.concat("</td></tr>");
+    _response.concat("</select>");
+    _response.concat("</td></tr>");
 }
 
-void WebCfgServer::buildNavigationButton(String &response, const char *caption, const char *targetPath, const char* labelText)
+void WebCfgServer::buildNavigationButton(const char *caption, const char *targetPath, const char* labelText)
 {
-    response.concat("<form method=\"get\" action=\"");
-    response.concat(targetPath);
-    response.concat("\">");
-    response.concat("<button type=\"submit\">");
-    response.concat(caption);
-    response.concat("</button> ");
-    response.concat(labelText);
-    response.concat("</form>");
+    _response.concat("<form method=\"get\" action=\"");
+    _response.concat(targetPath);
+    _response.concat("\">");
+    _response.concat("<button type=\"submit\">");
+    _response.concat(caption);
+    _response.concat("</button> ");
+    _response.concat(labelText);
+    _response.concat("</form>");
 }
 
-void WebCfgServer::buildNavigationMenuEntry(String &response, const char *title, const char *targetPath, const char* warningMessage)
+void WebCfgServer::buildNavigationMenuEntry(const char *title, const char *targetPath, const char* warningMessage)
 {
-    response.concat("<a href=\"");
-    response.concat(targetPath);
-    response.concat("\">");
-    response.concat("<li>");
-    response.concat(title);
+    _response.concat("<a href=\"");
+    _response.concat(targetPath);
+    _response.concat("\">");
+    _response.concat("<li>");
+    _response.concat(title);
     if(strcmp(warningMessage, "") != 0){
-        response.concat("<span>");
-        response.concat(warningMessage);
-        response.concat("</span>");
+        _response.concat("<span>");
+        _response.concat(warningMessage);
+        _response.concat("</span>");
     }
-    response.concat("</li></a>");
+    _response.concat("</li></a>");
 }
 
-void WebCfgServer::printParameter(String& response, const char *description, const char *value, const char *link, const char *id)
+void WebCfgServer::printParameter(const char *description, const char *value, const char *link, const char *id)
 {
-    response.concat("<tr>");
-    response.concat("<td>");
-    response.concat(description);
-    response.concat("</td>");
-    if(strcmp(id, "") == 0) response.concat("<td>");
+    _response.concat("<tr>");
+    _response.concat("<td>");
+    _response.concat(description);
+    _response.concat("</td>");
+    if(strcmp(id, "") == 0) _response.concat("<td>");
     else
     {
-        response.concat("<td id=\"");
-        response.concat(id);
-        response.concat("\">");
+        _response.concat("<td id=\"");
+        _response.concat(id);
+        _response.concat("\">");
     }
-    if(strcmp(link, "") == 0) response.concat(value);
+    if(strcmp(link, "") == 0) _response.concat(value);
     else
     {
-        response.concat("<a href=\"");
-        response.concat(link);
-        response.concat("\"> ");
-        response.concat(value);
-        response.concat("</a>");
+        _response.concat("<a href=\"");
+        _response.concat(link);
+        _response.concat("\"> ");
+        _response.concat(value);
+        _response.concat("</a>");
     }
-    response.concat("</td>");
-    response.concat("</tr>");
+    _response.concat("</td>");
+    _response.concat("</tr>");
 
-}
-
-
-String WebCfgServer::generateConfirmCode()
-{
-    int code = random(1000,9999);
-    return String(code);
 }
 
 const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const

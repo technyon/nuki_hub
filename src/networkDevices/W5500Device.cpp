@@ -65,12 +65,12 @@ void W5500Device::initialize()
     }
 
     #ifndef NUKI_HUB_UPDATER
-    if(_preferences->getBool(preference_mqtt_log_enabled) || _preferences->getBool(preference_webserial_enabled))
+    if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
     {
         MqttLoggerMode mode;
       
-        if(_preferences->getBool(preference_mqtt_log_enabled) && _preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (_preferences->getBool(preference_webserial_enabled)) mode = MqttLoggerMode::SerialAndWeb;
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
         else mode = MqttLoggerMode::MqttAndSerial;
         
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
@@ -197,7 +197,7 @@ void W5500Device::initializeMacAddress(byte *mac)
     mac[1] = 0x08;  // wiznet prefix
     mac[2] = 0xDC;  // wiznet prefix
 
-    if(_preferences->getBool(preference_has_mac_saved))
+    if(_preferences->getBool(preference_has_mac_saved, false))
     {
         mac[3] = _preferences->getChar(preference_has_mac_byte_0);
         mac[4] = _preferences->getChar(preference_has_mac_byte_1);

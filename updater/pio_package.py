@@ -1,9 +1,7 @@
 """ PlatformIO POST script execution to copy updater """
 
 Import("env")
-import glob
-import os
-import shutil
+import glob, re, shutil, os
 from pathlib import Path
 
 def get_board_name(env):
@@ -40,3 +38,13 @@ def remove_files(source, target, env):
 
 env.AddPostAction("$BUILD_DIR/firmware.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/firmware.bin", remove_files)
+
+regex = r"\#define NUKI_HUB_DATE \"(.*)\""
+content_new = ""
+
+with open ('../src/Config.h', 'r' ) as readfile:
+    file_content = readfile.read()
+    content_new = re.sub(regex, "#define NUKI_HUB_DATE \"unknownbuilddate\"", file_content, flags = re.M)
+
+with open('../src/Config.h', 'w') as writefile:
+    writefile.write(content_new)

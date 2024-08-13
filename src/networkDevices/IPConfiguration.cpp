@@ -5,16 +5,16 @@
 IPConfiguration::IPConfiguration(Preferences *preferences)
 : _preferences(preferences)
 {
-    if(_preferences->getString(preference_ip_address).length() <= 0)
+    if(_preferences->getString(preference_ip_address, "").length() <= 0)
     {
         Log->println("IP address empty, falling back to DHCP.");
         _preferences->putBool(preference_ip_dhcp_enabled, true);
     }
 
-    _ipAddress.fromString(_preferences->getString(preference_ip_address));
-    _subnet.fromString(_preferences->getString(preference_ip_subnet));
-    _gateway.fromString(_preferences->getString(preference_ip_gateway));
-    _dnsServer.fromString(_preferences->getString(preference_ip_dns_server));
+    _ipAddress.fromString(_preferences->getString(preference_ip_address, ""));
+    _subnet.fromString(_preferences->getString(preference_ip_subnet, ""));
+    _gateway.fromString(_preferences->getString(preference_ip_gateway, ""));
+    _dnsServer.fromString(_preferences->getString(preference_ip_dns_server, ""));
 
     Log->print(F("IP configuration: "));
     if(dhcpEnabled())
@@ -32,7 +32,7 @@ IPConfiguration::IPConfiguration(Preferences *preferences)
 
 bool IPConfiguration::dhcpEnabled() const
 {
-    return _preferences->getBool(preference_ip_dhcp_enabled);
+    return _preferences->getBool(preference_ip_dhcp_enabled, true);
 }
 
 const IPAddress IPConfiguration::ipAddress() const

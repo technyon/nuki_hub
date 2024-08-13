@@ -108,19 +108,22 @@ int _log_vprintf(const char *fmt, va_list args) {
 
 void setReroute(){
     esp_log_set_vprintf(_log_vprintf);
-    #ifdef DEBUG_NUKIHUB
     if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
-    else esp_log_level_set("*", ESP_LOG_DEBUG);
-    esp_log_level_set("nvs", ESP_LOG_INFO);
-    esp_log_level_set("wifi", ESP_LOG_INFO);
-    #endif
+    else 
+    {
+        esp_log_level_set("*", ESP_LOG_DEBUG);
+        esp_log_level_set("nvs", ESP_LOG_INFO);
+        esp_log_level_set("wifi", ESP_LOG_INFO);
+    }
 }
 #endif
 
 void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
-    bool secrets = preferences->getBool(preference_show_secrets);
+    bool secrets = preferences->getBool(preference_show_secrets, false);
+    bool webEnabled = preferences->getBool(preference_webserver_enabled, true);
+    bool reroute = true;
 
     while(true)
     {
@@ -138,17 +141,15 @@ void networkTask(void *pvParameters)
         bool connected = network->update();
 
         #ifndef NUKI_HUB_UPDATER
-        if(connected) setReroute();
-
-        if(connected && openerEnabled)
+        #ifdef DEBUG_NUKIHUB
+        if(connected && reroute)
         {
-            networkOpener->update();
+            reroute = false;
+            setReroute();
         }
-
-        if(preferences->getBool(preference_webserver_enabled, true))
-        {
-            webCfgServer->update();
-        }
+        #endif
+        if(connected && openerEnabled) networkOpener->update();
+        if(preferences->getBool(preference_webserver_enabled, true)) webCfgServer->update();
         #else
         webCfgServer->update();
         #endif
@@ -443,7 +444,7 @@ void setup()
     gpio = new Gpio(preferences);
     String gpioDesc;
     gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
-    Serial.print(gpioDesc.c_str());
+    Log->print(gpioDesc.c_str());
 
     bleScanner = new BleScanner::Scanner();
     // Scan interval and window according to Nuki recommendations:
@@ -505,7 +506,7 @@ void setup()
     webserialserver.begin();
     #endif
 
-    if((partitionType==1 && preferences->getString(preference_ota_updater_url).length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url).length() > 0)) setupTasks(true);
+    if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0)) setupTasks(true);
     else setupTasks(false);
 }
 

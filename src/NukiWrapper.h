@@ -117,7 +117,8 @@ private:
     bool _nukiAdvancedConfigValid = false;
     bool _hassEnabled = false;
     bool _hassSetupCompleted = false;
-
+    bool _offEnabled = false;
+    bool _disableNonJSON = false;
     bool _paired = false;
     bool _statusUpdated = false;
     bool _hasKeypad = false;
@@ -145,6 +146,8 @@ private:
     int64_t _nextRssiTs = 0;
     int64_t _lastRssi = 0;
     int64_t _disableBleWatchdogTs = 0;
+    uint32_t _basicLockConfigaclPrefs[16];
+    uint32_t _advancedLockConfigaclPrefs[22];
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
