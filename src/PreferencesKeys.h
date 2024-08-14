@@ -103,12 +103,12 @@
 
 inline bool initPreferences(Preferences* preferences)
 {
-#ifdef NUKI_HUB_UPDATER
+    #ifdef NUKI_HUB_UPDATER
     bool firstStart = false;
     return firstStart;
-#else
+    #else
     bool firstStart = !preferences->getBool(preference_started_before);
-#endif
+    #endif
 
     preferences->remove(preference_bootloop_counter);
 
@@ -289,145 +289,6 @@ private:
     {
         preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2
     };
-    const bool isRedacted(const char* key) const
-    {
-        return std::find(_redact.begin(), _redact.end(), key) != _redact.end();
-    }
-    const String redact(const String s) const
-    {
-        return s == "" ? "" : "***";
-    }
-    const String redact(const int32_t i) const
-    {
-        return i == 0 ? "" : "***";
-    }
-    const String redact(const uint32_t i) const
-    {
-        return i == 0 ? "" : "***";
-    }
-    const String redact(const int64_t i) const
-    {
-        return i == 0 ? "" : "***";
-    }
-    const String redact(const uint64_t i) const
-    {
-        return i == 0 ? "" : "***";
-    }
-
-    const void appendPreferenceInt8(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getChar(key)) : String(preferences->getChar(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceUInt8(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUChar(key)) : String(preferences->getUChar(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceInt16(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getShort(key)) : String(preferences->getShort(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceUInt16(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUShort(key)) : String(preferences->getUShort(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceInt32(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const int32_t)preferences->getInt(key)) : String(preferences->getInt(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceUInt32(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const uint32_t)preferences->getUInt(key)) : String(preferences->getUInt(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceInt64(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const int64_t)preferences->getLong64(key)) : String(preferences->getLong64(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceUInt64(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const uint64_t)preferences->getULong64(key)) : String(preferences->getULong64(key)));
-        s.concat("\n");
-    }
-    const void appendPreferenceBool(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(preferences->getBool(key) ? "true" : "false");
-        s.concat("\n");
-    }
-    const void appendPreferenceString(Preferences *preferences, String& s, const char* description, const char* key)
-    {
-        s.concat(description);
-        s.concat(": ");
-        s.concat(isRedacted(key) ? redact((const String)preferences->getString(key)) : preferences->getString(key));
-        s.concat("\n");
-    }
-
-    const void appendPreference(Preferences *preferences, String& s, const char* key)
-    {
-        if(std::find(_boolPrefs.begin(), _boolPrefs.end(), key) != _boolPrefs.end())
-        {
-            appendPreferenceBool(preferences, s, key, key);
-            return;
-        }
-
-        switch(preferences->getType(key))
-        {
-            case PT_I8:
-                appendPreferenceInt8(preferences, s, key, key);
-                break;
-            case PT_I16:
-                appendPreferenceInt16(preferences, s, key, key);
-                break;
-            case PT_I32:
-                appendPreferenceInt32(preferences, s, key, key);
-                break;
-            case PT_I64:
-                appendPreferenceInt64(preferences, s, key, key);
-                break;
-            case PT_U8:
-                appendPreferenceUInt8(preferences, s, key, key);
-                break;
-            case PT_U16:
-                appendPreferenceUInt16(preferences, s, key, key);
-                break;
-            case PT_U32:
-                appendPreferenceUInt32(preferences, s, key, key);
-                break;
-            case PT_U64:
-                appendPreferenceUInt64(preferences, s, key, key);
-                break;
-            case PT_STR:
-                appendPreferenceString(preferences, s, key, key);
-                break;
-            default:
-                appendPreferenceString(preferences, s, key, key);
-                break;
-        }
-    }
-
 public:
     const std::vector<char*> getPreferencesKeys()
     {
@@ -453,16 +314,4 @@ public:
     {
         return _charPrefs;
     }
-    const String preferencesToString(Preferences *preferences)
-    {
-        String s = "";
-
-        for(const auto& key : _keys)
-        {
-            appendPreference(preferences, s, key);
-        }
-
-        return s;
-    }
-
 };

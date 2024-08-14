@@ -56,6 +56,7 @@ public:
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
     String localIP();
+    bool isConnected();
 
     void subscribe(const char* prefix, const char* path);
     void initTopic(const char* prefix, const char* path, const char* value);
@@ -154,6 +155,7 @@ private:
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
+    String _discoveryTopic;
 
     PresenceDetection* _presenceDetection;
     Gpio* _gpio;

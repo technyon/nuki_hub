@@ -17,7 +17,7 @@ Gpio::Gpio(Preferences* preferences)
     _inst = this;
     loadPinConfiguration();
 
-    if(_preferences->getBool(preference_gpio_locking_enabled))
+    if(_preferences->getBool(preference_gpio_locking_enabled, false))
     {
         migrateObsoleteSetting();
     }
