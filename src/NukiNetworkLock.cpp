@@ -8,6 +8,8 @@
 #include <ArduinoJson.h>
 #include <ctype.h>
 
+extern bool forceEnableWebServer;
+
 NukiNetworkLock::NukiNetworkLock(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize)
 : _network(network),
   _preferences(preferences),
@@ -78,7 +80,7 @@ void NukiNetworkLock::initialize()
 
     _network->subscribe(_mqttPath, mqtt_topic_webserver_action);
     _network->initTopic(_mqttPath, mqtt_topic_webserver_action, "--");
-    _network->initTopic(_mqttPath, mqtt_topic_webserver_state, (_preferences->getBool(preference_webserver_enabled, true) ? "1" : "0"));
+    _network->initTopic(_mqttPath, mqtt_topic_webserver_state, (_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer ? "1" : "0"));
 
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
@@ -229,14 +231,14 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
         if(strcmp(value, "1") == 0)
         {
-            if(_preferences->getBool(preference_webserver_enabled, true)) return;
+            if(_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer) return;
             Log->println(F("Webserver enabled, restarting."));
             _preferences->putBool(preference_webserver_enabled, true);
 
         }
         else if (strcmp(value, "0") == 0)
         {
-            if(!_preferences->getBool(preference_webserver_enabled, true)) return;
+            if(!_preferences->getBool(preference_webserver_enabled, true) && !forceEnableWebServer) return;
             Log->println(F("Webserver disabled, restarting."));
             _preferences->putBool(preference_webserver_enabled, false);
         }
@@ -244,7 +246,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         publishString(mqtt_topic_webserver_action, "--", true);
         _network->clearWifiFallback();
         delay(200);
-        restartEsp(RestartReason::RequestedViaMqtt);
+        restartEsp(RestartReason::ReconfigureWebServer);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
     {

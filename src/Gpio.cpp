@@ -6,6 +6,9 @@
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
 #include "Gpio2Go.h"
+#include "networkDevices/LAN8720Definitions.h"
+#include "networkDevices/DM9051Definitions.h"
+#include "networkDevices/W5500Definitions.h"
 
 Gpio* Gpio::_inst = nullptr;
 int64_t Gpio::_debounceTs = 0;
@@ -97,6 +100,8 @@ void Gpio::init()
             case PinRole::GeneralInputPullUp:
                 Gpio2Go::configurePin(entry.pin, PinMode::InputPullup, InterruptMode::Change, 300);
                 break;
+            case PinRole::Ethernet:
+                break;
             default:
                 break;
         }
@@ -112,6 +117,7 @@ const std::vector<uint8_t>& Gpio::availablePins() const
 
 void Gpio::loadPinConfiguration()
 {
+    Log->println("Load GPIO configuration");
     size_t storedLength = _preferences->getBytesLength(preference_gpio_configuration);
     if(storedLength == 0)
     {
@@ -133,32 +139,162 @@ void Gpio::loadPinConfiguration()
     _pinConfiguration.clear();
     _pinConfiguration.reserve(numEntries);
 
+    std::vector<int> disabledPins = getDisabledPins();
+
     for(int i=0; i < numEntries; i++)
     {
         PinEntry entry;
         entry.pin = serialized[i * 2];
-        entry.role = (PinRole) serialized[(i * 2 + 1)];
-        if(entry.role != PinRole::Disabled)
+        Log->print(F("Pin "));
+        Log->println(entry.pin);
+
+        if(std::find(disabledPins.begin(), disabledPins.end(), entry.pin) == disabledPins.end())
         {
-            _pinConfiguration.push_back(entry);
+            if(entry.role == PinRole::Ethernet) entry.role = PinRole::Disabled;
+            entry.role = (PinRole) serialized[(i * 2 + 1)];
+            Log->println("Not found in Ethernet disabled pins");
+            Log->print(F("Role: "));
+            Log->println(getRoleDescription(entry.role));
         }
+        else
+        {
+            entry.role = PinRole::Ethernet;
+            Log->println("Found in Ethernet disabled pins");
+            Log->print(F("Role: "));
+            Log->println(getRoleDescription(entry.role));
+        }
+        if(entry.role != PinRole::Disabled) _pinConfiguration.push_back(entry);
     }
+}
+
+const  std::vector<int> Gpio::getDisabledPins() const
+{
+    std::vector<int> disabledPins;
+
+    switch(_preferences->getInt(preference_network_hardware, 0))
+    {
+        case 2:
+            disabledPins.push_back(ETH_PHY_CS_GENERIC_W5500);
+            disabledPins.push_back(ETH_PHY_IRQ_GENERIC_W5500);
+            disabledPins.push_back(ETH_PHY_RST_GENERIC_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_SCK_GENERIC_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_MISO_GENERIC_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_MOSI_GENERIC_W5500);
+            break;
+        case 3:
+            disabledPins.push_back(ETH_PHY_CS_M5_W5500);
+            disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
+            disabledPins.push_back(ETH_PHY_RST_M5_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
+            break;
+        case 10:
+            disabledPins.push_back(ETH_PHY_CS_M5_W5500_S3);
+            disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
+            disabledPins.push_back(ETH_PHY_RST_M5_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500_S3);
+            disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500_S3);
+            disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500_S3);
+            break;
+        case 9:
+            disabledPins.push_back(ETH_PHY_CS_ETH01EVO);
+            disabledPins.push_back(ETH_PHY_IRQ_ETH01EVO);
+            disabledPins.push_back(ETH_PHY_RST_ETH01EVO);
+            disabledPins.push_back(ETH_PHY_SPI_SCK_ETH01EVO);
+            disabledPins.push_back(ETH_PHY_SPI_MISO_ETH01EVO);
+            disabledPins.push_back(ETH_PHY_SPI_MOSI_ETH01EVO);
+            break;
+        case 6:
+            disabledPins.push_back(ETH_PHY_CS_M5_W5500);
+            disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
+            disabledPins.push_back(ETH_PHY_RST_M5_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
+            disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
+            break;
+        case 11:
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_cs, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_irq, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_rst, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_sck, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_miso, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_mosi, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_pwr, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_mdc, -1));
+            disabledPins.push_back(_preferences->getInt(preference_network_custom_mdio, -1));
+            break;
+        #if defined(CONFIG_IDF_TARGET_ESP32)
+        case 4:
+            disabledPins.push_back(12);
+            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+            break;
+        case 5:
+            disabledPins.push_back(16);
+            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+            break;
+        case 8:
+            disabledPins.push_back(5);
+            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+            break;
+        case 7:
+            disabledPins.push_back(-1);
+            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+            break;
+        #endif
+        default:
+            break;
+    }
+
+    Log->print(F("GPIO Ethernet disabled pins:"));
+    for_each_n(disabledPins.begin(), disabledPins.size(),
+               [](int x) { Log->print(" "); Log->print(x); });
+    Log->println();
+    return disabledPins;
 }
 
 void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
 {
+    Log->println("Save GPIO configuration");
     int8_t serialized[std::max(pinConfiguration.size() * 2, _preferences->getBytesLength(preference_gpio_configuration))];
     memset(serialized, 0, sizeof(serialized));
+
+    std::vector<int> disabledPins = getDisabledPins();
 
     int len = pinConfiguration.size();
     for(int i=0; i < len; i++)
     {
         const auto& entry = pinConfiguration[i];
+        Log->print(F("Pin "));
+        Log->println(entry.pin);
 
-        if(entry.role != PinRole::Disabled)
+        if(std::find(disabledPins.begin(), disabledPins.end(), entry.pin) != disabledPins.end())
         {
             serialized[i * 2] = entry.pin;
-            serialized[i * 2 + 1] = (int8_t) entry.role;
+            serialized[i * 2 + 1] = (int8_t)PinRole::Ethernet;
+            Log->println("Found in Ethernet disabled pins");
+            Log->print(F("Role: "));
+            Log->println(getRoleDescription(PinRole::Ethernet));
+
+        }
+        else
+        {
+            if(entry.role != PinRole::Disabled && entry.role != PinRole::Ethernet)
+            {
+                serialized[i * 2] = entry.pin;
+                serialized[i * 2 + 1] = (int8_t) entry.role;
+                Log->println("Not found in Ethernet disabled pins");
+                Log->print(F("Role: "));
+                Log->println(getRoleDescription(entry.role));
+            }
         }
     }
 
@@ -228,6 +364,8 @@ String Gpio::getRoleDescription(PinRole role) const
             return "General input (Pull-down)";
         case PinRole::GeneralInputPullUp:
             return "General input (Pull-up)";
+         case PinRole::Ethernet:
+            return "Ethernet";
         default:
             return "Unknown";
     }

@@ -17,9 +17,10 @@ EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences,
   _type(ethtype),
   _clock_mode(clock_mode),
   _use_mac_from_efuse(use_mac_from_efuse),
-  _useSpi(false)
+  _useSpi(false),
+  _preferences(preferences)
 {
-    init(preferences);
+    init();
 }
 
 EthernetDevice::EthernetDevice(const String &hostname,
@@ -46,19 +47,20 @@ EthernetDevice::EthernetDevice(const String &hostname,
           _spi_mosi(spi_mosi),
           _spi_freq_mhz(spi_freq_mhz),
           _type(ethtype),
-          _useSpi(true)
+          _useSpi(true),
+          _preferences(preferences)
 {
-    init(preferences);
+    init();
 }
 
-void EthernetDevice::init(Preferences* preferences)
+void EthernetDevice::init()
 {
-    _restartOnDisconnect = preferences->getBool(preference_restart_on_disconnect);
+    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
 
 #ifndef NUKI_HUB_UPDATER
-    size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
-    size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
-    size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
+    size_t caLength = _preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
+    size_t crtLength = _preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
+    size_t keyLength = _preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
 
     _useEncryption = caLength > 1;  // length is 1 when empty
 
@@ -82,18 +84,18 @@ void EthernetDevice::init(Preferences* preferences)
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 
-    if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
+    if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
     {
         MqttLoggerMode mode;
 
-        if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
         else mode = MqttLoggerMode::MqttAndSerial;
 
         _path = new char[200];
         memset(_path, 0, sizeof(_path));
 
-        String pathStr = preferences->getString(preference_mqtt_lock_path);
+        String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         strcpy(_path, pathStr.c_str());
         Log = new MqttLogger(*getMqttClient(), _path, mode);
@@ -140,11 +142,13 @@ void EthernetDevice::initialize()
                     break;
                 case ARDUINO_EVENT_ETH_CONNECTED:
                     Log->println("ETH Connected");
+                    if(!localIP().equals("0.0.0.0")) _connected = true;
                     break;
                 case ARDUINO_EVENT_ETH_GOT_IP:
                     Log->printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif));
                     Log->println(ETH);
                     _connected = true;
+                    if(_preferences->getBool(preference_ntw_reconfigure, false)) _preferences->putBool(preference_ntw_reconfigure, false);
                     break;
                 case ARDUINO_EVENT_ETH_LOST_IP:
                     Log->println("ETH Lost IP");

@@ -67,6 +67,7 @@ RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
 RTC_NOINIT_ATTR bool rebuildGpioRequested;
 RTC_NOINIT_ATTR uint64_t bootloopValidDetect;
 RTC_NOINIT_ATTR int8_t bootloopCounter;
+RTC_NOINIT_ATTR bool forceEnableWebServer;
 
 bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
@@ -118,7 +119,6 @@ void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
     bool secrets = preferences->getBool(preference_show_secrets, false);
-    bool webEnabled = preferences->getBool(preference_webserver_enabled, true);
     bool reroute = true;
 
     while(true)
@@ -387,8 +387,14 @@ void setup()
     #endif
 
     #ifdef NUKI_HUB_UPDATER
-    Log->print(F("Nuki Hub OTA version ")); Log->println(NUKI_HUB_VERSION);
-    Log->print(F("Nuki Hub OTA build ")); Log->println(NUKI_HUB_BUILD);
+    Log->print(F("Nuki Hub OTA version "));
+    Log->println(NUKI_HUB_VERSION);
+    Log->print(F("Nuki Hub OTA build "));
+    Log->println();
+
+    if(preferences->getString(preference_updater_version, "") != NUKI_HUB_VERSION) preferences->putString(preference_updater_version, NUKI_HUB_VERSION);
+    if(preferences->getString(preference_updater_build, "") != NUKI_HUB_BUILD) preferences->putString(preference_updater_build, NUKI_HUB_BUILD);
+    if(preferences->getString(preference_updater_date, "") != NUKI_HUB_DATE) preferences->putString(preference_updater_date, NUKI_HUB_DATE);
 
     network = new NukiNetwork(preferences);
     network->initialize();
@@ -402,8 +408,10 @@ void setup()
         asyncServer->begin();
     }
     #else
-    Log->print(F("Nuki Hub version ")); Log->println(NUKI_HUB_VERSION);
-    Log->print(F("Nuki Hub build ")); Log->println(NUKI_HUB_BUILD);
+    Log->print(F("Nuki Hub version "));
+    Log->println(NUKI_HUB_VERSION);
+    Log->print(F("Nuki Hub build "));
+    Log->println(NUKI_HUB_BUILD);
 
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
 
@@ -469,13 +477,13 @@ void setup()
         nukiOpener->initialize();
     }
 
-    if(preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false))
+    if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false))
     {
         if(!doOta)
         {
             asyncServer = new AsyncWebServer(80);
 
-            if(preferences->getBool(preference_webserver_enabled, true))
+            if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
             {
                 webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
                 webCfgServer->initialize();

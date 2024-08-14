@@ -24,6 +24,7 @@ enum class RestartReason
     ImportCompleted,
     DeviceUnpaired,
     NukiHubReset,
+    ReconfigureWebServer,
     NotApplicable
 };
 
@@ -72,6 +73,8 @@ inline static String getRestartReason()
             return "RequestedViaMqtt";
         case RestartReason::RequestedViaWebServer:
             return "RequestedViaWebServer";
+        case RestartReason::ReconfigureWebServer:
+            return "ReconfigureWebServer";
         case RestartReason::BLEBeaconWatchdog:
             return "BLEBeaconWatchdog";
         case RestartReason::RestartOnDisconnectWatchdog:

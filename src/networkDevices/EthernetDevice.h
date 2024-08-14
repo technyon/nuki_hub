@@ -60,7 +60,9 @@ public:
     String BSSIDstr() override;
 
 private:
-    void init(Preferences* preferences);
+    Preferences* _preferences;
+    
+    void init();
     void onDisconnected();
     void waitForIpAddressWithTimeout();
 

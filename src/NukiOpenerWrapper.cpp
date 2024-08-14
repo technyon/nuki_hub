@@ -116,7 +116,7 @@ void NukiOpenerWrapper::initialize()
         _intervalKeypad = 60 * 30;
         _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
     }
-    if(_restartBeaconTimeout < 10)
+    if(_restartBeaconTimeout != -1 && _restartBeaconTimeout < 10)
     {
         Log->println("Invalid restartBeaconTimeout, revert to default (-1)");
         _restartBeaconTimeout = -1;
@@ -345,6 +345,11 @@ bool NukiOpenerWrapper::isPinValid()
 void NukiOpenerWrapper::setPin(const uint16_t pin)
 {
     _nukiOpener.saveSecurityPincode(pin);
+}
+
+uint16_t NukiOpenerWrapper::getPin()
+{
+    return _nukiOpener.getSecurityPincode();
 }
 
 void NukiOpenerWrapper::unpair()

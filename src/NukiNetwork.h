@@ -129,6 +129,7 @@ private:
 
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
     bool _firstBootAfterDeviceChange = false;
+    bool _webEnabled = true;
 
     #ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
@@ -166,6 +167,7 @@ private:
 
     int _mqttConnectionState = 0;
     int _mqttConnectCounter = 0;
+    int _mqttPort = 1883;
     long _mqttConnectedTs = -1;
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;

@@ -27,6 +27,7 @@ public:
     bool isPinSet();
     bool isPinValid();
     void setPin(const uint16_t pin);
+    uint16_t getPin();
 
     void unpair();
 

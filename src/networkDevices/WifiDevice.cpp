@@ -72,10 +72,11 @@ const String WifiDevice::deviceName() const
 
 void WifiDevice::initialize()
 {
+    _wifiFallbackDisabled = _preferences->getBool(preference_network_wifi_fallback_disabled, false);
     std::vector<const char *> wm_menu;
     wm_menu.push_back("wifi");
     wm_menu.push_back("exit");
-    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
+    _wm.setEnableConfigPortal(_startAp || !_wifiFallbackDisabled);
     // reduced timeout if ESP is set to restart on disconnect
     _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi));
     _wm.setConnectTimeout(20);
@@ -93,7 +94,7 @@ void WifiDevice::initialize()
 
     bool res = false;
     bool connectedFromPortal = false;
-
+    
     if(_startAp)
     {
         Log->println(F("Opening Wi-Fi configuration portal."));
@@ -176,14 +177,14 @@ ReconnectStatus WifiDevice::reconnect(bool force)
         _isReconnecting = false;
     }
 
-    if(!isConnected() && _disconnectTs > (esp_timer_get_time() / 1000) - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
+    if(!isConnected() && _disconnectTs > (esp_timer_get_time() / 1000) - 120000) _wm.setEnableConfigPortal(_startAp || !_wifiFallbackDisabled);
     return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
 }
 
 void WifiDevice::onConnected()
 {
     _isReconnecting = false;
-    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
+    _wm.setEnableConfigPortal(_startAp || !_wifiFallbackDisabled);
 }
 
 void WifiDevice::onDisconnected()

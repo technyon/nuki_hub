@@ -89,12 +89,6 @@ void WebCfgServer::initialize()
         String message = "";
         bool restart = processImport(request, message);
         buildConfirmHtml(request, message, 3);
-        if(restart)
-        {
-            Log->println(F("Restarting"));
-            waitAndProcess(false, 1000);
-            restartEsp(RestartReason::ImportCompleted);
-        }
     });
     _asyncServer->on("/export", HTTP_GET, [&](AsyncWebServerRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
@@ -194,21 +188,11 @@ void WebCfgServer::initialize()
         String message = "";
         bool restart = processArgs(request, message);
         buildConfirmHtml(request, message, 3);
-        if(restart)
-        {
-            Log->println(F("Restarting"));
-            waitAndProcess(false, 1000);
-            restartEsp(RestartReason::ConfigurationUpdated);
-        }
-        else
-        {
-            waitAndProcess(false, 1000);
-        }
     });
     _asyncServer->on("/savegpiocfg", HTTP_POST, [&](AsyncWebServerRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         processGpioArgs(request);
-        buildConfirmHtml(request, "Saving GPIO configuration", 3);
+        buildConfirmHtml(request, "Saving GPIO configuration. Restarting.", 3);
         Log->println(F("Restarting"));
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::GpioConfigurationUpdated);
@@ -809,15 +793,31 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         String key = p->name();
         String value = p->value();
 
+        if(index < params -1)
+        {
+            const AsyncWebParameter* next = request->getParam(index+1);
+            if(key == next->name()) continue;
+        }
+
         if(key == "MQTTSERVER")
         {
-            _preferences->putString(preference_mqtt_broker, value);
-            configChanged = true;
+            if(_preferences->getString(preference_mqtt_broker, "") != value)
+            {
+                _preferences->putString(preference_mqtt_broker, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "MQTTPORT")
         {
-            _preferences->putInt(preference_mqtt_broker_port, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_mqtt_broker_port, 0) !=  value.toInt())
+            {
+                _preferences->putInt(preference_mqtt_broker_port,  value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "MQTTUSER")
         {
@@ -827,365 +827,681 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
             }
             else
             {
-                _preferences->putString(preference_mqtt_user, value);
-                configChanged = true;
+                if(_preferences->getString(preference_mqtt_user, "") != value)
+                {
+                    _preferences->putString(preference_mqtt_user, value);
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "MQTTPASS")
         {
             if(value != "*")
             {
-                _preferences->putString(preference_mqtt_password, value);
-                configChanged = true;
+                if(_preferences->getString(preference_mqtt_password, "") != value)
+                {
+                    _preferences->putString(preference_mqtt_password, value);
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "MQTTPATH")
         {
-            _preferences->putString(preference_mqtt_lock_path, value);
-            configChanged = true;
+            if(_preferences->getString(preference_mqtt_lock_path, "") != value)
+            {
+                _preferences->putString(preference_mqtt_lock_path, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "MQTTOPPATH")
         {
-            _preferences->putString(preference_mqtt_opener_path, value);
-            configChanged = true;
+            if(_preferences->getString(preference_mqtt_opener_path, "") != value)
+            {
+                _preferences->putString(preference_mqtt_opener_path, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "MQTTCA")
         {
-            _preferences->putString(preference_mqtt_ca, value);
-            configChanged = true;
+            if(_preferences->getString(preference_mqtt_ca, "") != value)
+            {
+                _preferences->putString(preference_mqtt_ca, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "MQTTCRT")
         {
-            _preferences->putString(preference_mqtt_crt, value);
-            configChanged = true;
+            if(_preferences->getString(preference_mqtt_crt, "") != value)
+            {
+                _preferences->putString(preference_mqtt_crt, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "MQTTKEY")
         {
-            _preferences->putString(preference_mqtt_key, value);
-            configChanged = true;
+            if(_preferences->getString(preference_mqtt_key, "") != value)
+            {
+                _preferences->putString(preference_mqtt_key, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWHW")
         {
-            int curHw = _preferences->getInt(preference_network_hardware, 0);
-            if(curHw != value.toInt() && value.toInt() > 1)
+            if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
             {
-                _preferences->putBool(preference_ntw_reconfigure, true);
-                if(value.toInt() != 11) _preferences->putInt(preference_network_custom_phy, 0);
+                if(value.toInt() > 1)
+                {
+                    _preferences->putBool(preference_ntw_reconfigure, true);
+                    if(value.toInt() != 11) _preferences->putInt(preference_network_custom_phy, 0);
+                }
+                _preferences->putInt(preference_network_hardware, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
             }
-            _preferences->putInt(preference_network_hardware, value.toInt());
-            configChanged = true;
         }
         else if(key == "NWCUSTPHY")
         {
-            _preferences->putInt(preference_network_custom_phy, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_phy, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_phy, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTADDR")
         {
-            _preferences->putInt(preference_network_custom_addr, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_addr, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_addr, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTIRQ")
         {
-            _preferences->putInt(preference_network_custom_irq, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_irq, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_irq, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTRST")
         {
-            _preferences->putInt(preference_network_custom_rst, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_rst, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_rst, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTCS")
         {
-            _preferences->putInt(preference_network_custom_cs, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_cs, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_cs, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTSCK")
         {
-            _preferences->putInt(preference_network_custom_sck, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_sck, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_sck, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTMISO")
         {
-            _preferences->putInt(preference_network_custom_miso, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_miso, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_miso, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTMOSI")
         {
-            _preferences->putInt(preference_network_custom_mosi, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_mosi, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_mosi, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTPWR")
         {
-            _preferences->putInt(preference_network_custom_pwr, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_pwr, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_pwr, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTMDIO")
         {
-            _preferences->putInt(preference_network_custom_mdio, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_mdio, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_mdio, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTMDC")
         {
-            _preferences->putInt(preference_network_custom_mdc, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_mdc, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_mdc, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWCUSTCLK")
         {
-            _preferences->putInt(preference_network_custom_clk, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_custom_clk, 0) != value.toInt())
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                _preferences->putInt(preference_network_custom_clk, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NWHWWIFIFB")
         {
-            _preferences->putBool(preference_network_wifi_fallback_disabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_network_wifi_fallback_disabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_network_wifi_fallback_disabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "RSSI")
         {
-            _preferences->putInt(preference_rssi_publish_interval, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_rssi_publish_interval, 60) != value.toInt())
+            {
+                _preferences->putInt(preference_rssi_publish_interval, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "HASSDISCOVERY")
         {
-            if(_preferences->getString(preference_mqtt_hass_discovery) != value)
+            if(_preferences->getString(preference_mqtt_hass_discovery, "") != value)
             {
-                // Previous HASS config has to be disabled first (remove retained MQTT messages)
-                if (_nuki != nullptr)
-                {
-                    _nuki->disableHASS();
-                }
-                if (_nukiOpener != nullptr)
-                {
-                    _nukiOpener->disableHASS();
-                }
+                if (_nuki != nullptr) _nuki->disableHASS();
+                if (_nukiOpener != nullptr) _nukiOpener->disableHASS();
                 _preferences->putString(preference_mqtt_hass_discovery, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
                 configChanged = true;
             }
         }
         else if(key == "OPENERCONT")
         {
-            _preferences->putBool(preference_opener_continuous_mode, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_opener_continuous_mode, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_opener_continuous_mode, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "HASSCUURL")
         {
-            _preferences->putString(preference_mqtt_hass_cu_url, value);
-            configChanged = true;
+            if(_preferences->getString(preference_mqtt_hass_cu_url, "") != value)
+            {
+                _preferences->putString(preference_mqtt_hass_cu_url, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "BESTRSSI")
         {
-            _preferences->putBool(preference_find_best_rssi, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_find_best_rssi, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_find_best_rssi, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "HOSTNAME")
         {
-            _preferences->putString(preference_hostname, value);
-            configChanged = true;
+            if(_preferences->getString(preference_hostname, "") != value)
+            {
+                _preferences->putString(preference_hostname, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NETTIMEOUT")
         {
-            _preferences->putInt(preference_network_timeout, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_network_timeout, 60) != value.toInt())
+            {
+                _preferences->putInt(preference_network_timeout, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "RSTDISC")
         {
-            _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_restart_on_disconnect, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "RECNWTMQTTDIS")
         {
-            _preferences->putBool(preference_recon_netw_on_mqtt_discon, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_recon_netw_on_mqtt_discon, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_recon_netw_on_mqtt_discon, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "MQTTLOG")
         {
-            _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_mqtt_log_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "WEBLOG")
         {
-            _preferences->putBool(preference_webserial_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_webserial_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_webserial_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "CHECKUPDATE")
         {
-            _preferences->putBool(preference_check_updates, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_check_updates, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_check_updates, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "UPDATEMQTT")
         {
-            _preferences->putBool(preference_update_from_mqtt, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_update_from_mqtt, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_update_from_mqtt, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "OFFHYBRID")
         {
-            _preferences->putBool(preference_official_hybrid, (value == "1"));
-            if((value == "1")) _preferences->putBool(preference_register_as_app, true);
-            configChanged = true;
+            if(_preferences->getBool(preference_official_hybrid, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_official_hybrid, (value == "1"));
+                if((value == "1")) _preferences->putBool(preference_register_as_app, true);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "HYBRIDACT")
         {
-            _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
-            if(value == "1") _preferences->putBool(preference_register_as_app, true);
-            configChanged = true;
+            if(_preferences->getBool(preference_official_hybrid_actions, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
+                if(value == "1") _preferences->putBool(preference_register_as_app, true);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "HYBRIDTIMER")
         {
-            _preferences->putInt(preference_query_interval_hybrid_lockstate, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600) != value.toInt())
+            {
+                _preferences->putInt(preference_query_interval_hybrid_lockstate, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "HYBRIDRETRY")
         {
-            _preferences->putBool(preference_official_hybrid_retry, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_official_hybrid_retry, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_official_hybrid_retry, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "DISNONJSON")
         {
-            _preferences->putBool(preference_disable_non_json, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_disable_non_json, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_disable_non_json, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "DHCPENA")
         {
-            _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_ip_dhcp_enabled, true) != (value == "1"))
+            {
+                _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "IPADDR")
         {
-            _preferences->putString(preference_ip_address, value);
-            configChanged = true;
+            if(_preferences->getString(preference_ip_address, "") != value)
+            {
+                _preferences->putString(preference_ip_address, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "IPSUB")
         {
-            _preferences->putString(preference_ip_subnet, value);
-            configChanged = true;
+            if(_preferences->getString(preference_ip_subnet, "") != value)
+            {
+                _preferences->putString(preference_ip_subnet, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "IPGTW")
         {
-            _preferences->putString(preference_ip_gateway, value);
-            configChanged = true;
+            if(_preferences->getString(preference_ip_gateway, "") != value)
+            {
+                _preferences->putString(preference_ip_gateway, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "DNSSRV")
         {
-            _preferences->putString(preference_ip_dns_server, value);
-            configChanged = true;
+            if(_preferences->getString(preference_ip_dns_server, "") != value)
+            {
+                _preferences->putString(preference_ip_dns_server, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "LSTINT")
         {
-            _preferences->putInt(preference_query_interval_lockstate, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_query_interval_lockstate, 1800) != value.toInt())
+            {
+                _preferences->putInt(preference_query_interval_lockstate, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "CFGINT")
         {
-            _preferences->putInt(preference_query_interval_configuration, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_query_interval_configuration, 3600) != value.toInt())
+            {
+                _preferences->putInt(preference_query_interval_configuration, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "BATINT")
         {
-            _preferences->putInt(preference_query_interval_battery, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_query_interval_battery, 1800) != value.toInt())
+            {
+                _preferences->putInt(preference_query_interval_battery, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "KPINT")
         {
-            _preferences->putInt(preference_query_interval_keypad, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_query_interval_keypad, 1800) != value.toInt())
+            {
+                _preferences->putInt(preference_query_interval_keypad, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "NRTRY")
         {
-            _preferences->putInt(preference_command_nr_of_retries, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_command_nr_of_retries, 3) != value.toInt())
+            {
+                _preferences->putInt(preference_command_nr_of_retries, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "TRYDLY")
         {
-            _preferences->putInt(preference_command_retry_delay, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_command_retry_delay, 100) != value.toInt())
+            {
+                _preferences->putInt(preference_command_retry_delay, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "TXPWR")
         {
             if(value.toInt() >= -12 && value.toInt() <= 9)
             {
-                _preferences->putInt(preference_ble_tx_power, value.toInt());
-                configChanged = true;
+                if(_preferences->getInt(preference_ble_tx_power, 9) != value.toInt())
+                {
+                    _preferences->putInt(preference_ble_tx_power, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         #if PRESENCE_DETECTION_ENABLED
         else if(key == "PRDTMO")
         {
-            _preferences->putInt(preference_presence_detection_timeout, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_presence_detection_timeout, 60) != value.toInt())
+            {
+                _preferences->putInt(preference_presence_detection_timeout, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         #endif
         else if(key == "RSBC")
         {
-            _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
-            configChanged = true;
+            if(_preferences->getInt(preference_restart_ble_beacon_lost, 60) != value.toInt())
+            {
+                _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "TSKNTWK")
         {
             if(value.toInt() > 12287 && value.toInt() < 32769)
             {
-            _preferences->putInt(preference_task_size_network, value.toInt());
-            configChanged = true;
+                if(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE) != value.toInt())
+                {
+                    _preferences->putInt(preference_task_size_network, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "TSKNUKI")
         {
             if(value.toInt() > 8191 && value.toInt() < 32769)
             {
-                _preferences->putInt(preference_task_size_nuki, value.toInt());
-                configChanged = true;
+                if(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE) != value.toInt())
+                {
+                    _preferences->putInt(preference_task_size_nuki, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "ALMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 51)
             {
-                _preferences->putInt(preference_authlog_max_entries, value.toInt());
-                configChanged = true;
+                if(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG) != value.toInt())
+                {
+                    _preferences->putInt(preference_authlog_max_entries, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "KPMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 101)
             {
-                _preferences->putInt(preference_keypad_max_entries, value.toInt());
-                configChanged = true;
+                if(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD) != value.toInt())
+                {
+                    _preferences->putInt(preference_keypad_max_entries, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "TCMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 51)
             {
-                _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
-                configChanged = true;
+                if(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL) != value.toInt())
+                {
+                    _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "BUFFSIZE")
         {
             if(value.toInt() > 4095 && value.toInt() < 32769)
             {
-                _preferences->putInt(preference_buffer_size, value.toInt());
-                configChanged = true;
+                if(_preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) != value.toInt())
+                {
+                    _preferences->putInt(preference_buffer_size, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "BTLPRST")
         {
-            _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_enable_bootloop_reset, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "OTAUPD")
         {
-            _preferences->putString(preference_ota_updater_url, value);
-            configChanged = true;
+            if(_preferences->getString(preference_ota_updater_url, "") != value)
+            {
+                _preferences->putString(preference_ota_updater_url, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "OTAMAIN")
         {
-            _preferences->putString(preference_ota_main_url, value);
-            configChanged = true;
+            if(_preferences->getString(preference_ota_main_url, "") != value)
+            {
+                _preferences->putString(preference_ota_main_url, value);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "SHOWSECRETS")
         {
-            _preferences->putBool(preference_show_secrets, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_show_secrets, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_show_secrets, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "ACLLVLCHANGED")
         {
@@ -1193,48 +1509,93 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         }
         else if(key == "CONFPUB")
         {
-            _preferences->putBool(preference_conf_info_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_conf_info_enabled, true) != (value == "1"))
+            {
+                _preferences->putBool(preference_conf_info_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "KPPUB")
         {
-            _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_keypad_info_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "KPCODE")
         {
-            _preferences->putBool(preference_keypad_publish_code, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_keypad_publish_code, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_keypad_publish_code, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "KPENA")
         {
-            _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_keypad_control_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "TCPUB")
         {
-            _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_timecontrol_info_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "KPPER")
         {
-            _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_keypad_topic_per_entry, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "TCPER")
         {
-            _preferences->putBool(preference_timecontrol_topic_per_entry, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_timecontrol_topic_per_entry, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_timecontrol_topic_per_entry, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "TCENA")
         {
-            _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_timecontrol_control_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "PUBAUTH")
         {
-            _preferences->putBool(preference_publish_authdata, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_publish_authdata, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_publish_authdata, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "ACLLCKLCK")
         {
@@ -1594,23 +1955,43 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         }
         else if(key == "REGAPP")
         {
-            _preferences->putBool(preference_register_as_app, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_register_as_app, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_register_as_app, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "REGAPPOPN")
         {
-            _preferences->putBool(preference_register_opener_as_app, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_register_opener_as_app, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_register_opener_as_app, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "LOCKENA")
         {
-            _preferences->putBool(preference_lock_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_lock_enabled, true) != (value == "1"))
+            {
+                _preferences->putBool(preference_lock_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "OPENA")
         {
-            _preferences->putBool(preference_opener_enabled, (value == "1"));
-            configChanged = true;
+            if(_preferences->getBool(preference_opener_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_opener_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
         }
         else if(key == "CREDUSER")
         {
@@ -1620,8 +2001,13 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
             }
             else
             {
-                _preferences->putString(preference_cred_user, value);
-                configChanged = true;
+                if(_preferences->getString(preference_cred_user, "") != value)
+                {
+                    _preferences->putString(preference_cred_user, value);
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
         }
         else if(key == "CREDPASS")
@@ -1638,13 +2024,21 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
             {
                 message = "Nuki Lock PIN cleared";
                 _nuki->setPin(0xffff);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
             }
             else
             {
-                message = "Nuki Lock PIN saved";
-                _nuki->setPin(value.toInt());
+                if(_nuki->getPin() != value.toInt())
+                {
+                    message = "Nuki Lock PIN saved";
+                    _nuki->setPin(value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
-            configChanged = true;
         }
         else if(key == "NUKIOPPIN" && _nukiOpener != nullptr)
         {
@@ -1652,13 +2046,21 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
             {
                 message = "Nuki Opener PIN cleared";
                 _nukiOpener->setPin(0xffff);
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
             }
             else
             {
-                message = "Nuki Opener PIN saved";
-                _nukiOpener->setPin(value.toInt());
+                if(_nukiOpener->getPin() != value.toInt())
+                {
+                    message = "Nuki Opener PIN saved";
+                    _nukiOpener->setPin(value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
             }
-            configChanged = true;
         }
         else if(key == "LCKMANPAIR" && (value == "1"))
         {
@@ -1704,6 +2106,8 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         nukiBlePref.putBytes("authorizationId", authorizationId, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
         nukiBlePref.end();
+        Log->print(F("Setting changed: "));
+        Log->println("Lock pairing data");
         configChanged = true;
     }
 
@@ -1717,45 +2121,135 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         nukiBlePref.putBytes("authorizationId", authorizationIdOpn, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
         nukiBlePref.end();
+        Log->print(F("Setting changed: "));
+        Log->println("Opener pairing data");
         configChanged = true;
     }
 
     if(pass1 != "" && pass1 == pass2)
     {
-        _preferences->putString(preference_cred_password, pass1);
-        configChanged = true;
+        if(_preferences->getString(preference_cred_password, "") != pass1)
+        {
+            _preferences->putString(preference_cred_password, pass1);
+            Log->print(F("Setting changed: "));
+            Log->println("CREDPASS");
+            configChanged = true;
+        }
     }
 
     if(clearMqttCredentials)
     {
-        _preferences->putString(preference_mqtt_user, "");
-        _preferences->putString(preference_mqtt_password, "");
-        configChanged = true;
+        if(_preferences->getString(preference_mqtt_user, "") != "")
+        {
+            _preferences->putString(preference_mqtt_user, "");
+            Log->print(F("Setting changed: "));
+            Log->println("MQTTUSER");
+            configChanged = true;
+        }
+        if(_preferences->getString(preference_mqtt_password, "") != "")
+        {
+            _preferences->putString(preference_mqtt_password, "");
+            Log->print(F("Setting changed: "));
+            Log->println("MQTTPASS");
+            configChanged = true;
+        }
     }
 
     if(clearCredentials)
     {
-        _preferences->putString(preference_cred_user, "");
-        _preferences->putString(preference_cred_password, "");
-        configChanged = true;
+        if(_preferences->getString(preference_cred_user, "") != "")
+        {
+            _preferences->putString(preference_cred_user, "");
+            Log->print(F("Setting changed: "));
+            Log->println("CREDUSER");
+            configChanged = true;
+        }
+        if(_preferences->getString(preference_cred_password, "") != "")
+        {
+            _preferences->putString(preference_cred_password, "");
+            Log->print(F("Setting changed: "));
+            Log->println("CREDPASS");
+            configChanged = true;
+        }
     }
 
     if(aclLvlChanged)
     {
-        _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
-        _preferences->putBytes(preference_conf_lock_basic_acl, (byte*)(&basicLockConfigAclPrefs), sizeof(basicLockConfigAclPrefs));
-        _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
-        _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
-        _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
-        configChanged = true;
+        uint32_t curAclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t curBasicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t curAdvancedLockConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t curBasicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t curAdvancedOpenerConfigAclPrefs[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        _preferences->getBytes(preference_acl, &curAclPrefs, sizeof(curAclPrefs));
+        _preferences->getBytes(preference_conf_lock_basic_acl, &curBasicLockConfigAclPrefs, sizeof(curBasicLockConfigAclPrefs));
+        _preferences->getBytes(preference_conf_lock_advanced_acl, &curAdvancedLockConfigAclPrefs, sizeof(curAdvancedLockConfigAclPrefs));
+        _preferences->getBytes(preference_conf_opener_basic_acl, &curBasicOpenerConfigAclPrefs, sizeof(curBasicOpenerConfigAclPrefs));
+        _preferences->getBytes(preference_conf_opener_advanced_acl, &curAdvancedOpenerConfigAclPrefs, sizeof(curAdvancedOpenerConfigAclPrefs));
+
+        for(int i=0; i < 17; i++)
+        {
+            if(curAclPrefs[i] != aclPrefs[i])
+            {
+                _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
+                Log->print(F("Setting changed: "));
+                Log->println("ACLPREFS");
+                configChanged = true;
+                break;
+            }
+        }
+        for(int i=0; i < 16; i++)
+        {
+            if(curBasicLockConfigAclPrefs[i] != basicLockConfigAclPrefs[i])
+            {
+                _preferences->putBytes(preference_conf_lock_basic_acl, (byte*)(&basicLockConfigAclPrefs), sizeof(basicLockConfigAclPrefs));
+                Log->print(F("Setting changed: "));
+                Log->println("ACLCONFBASICLOCK");
+                configChanged = true;
+                break;
+            }
+        }
+        for(int i=0; i < 22; i++)
+        {
+            if(curAdvancedLockConfigAclPrefs[i] != advancedLockConfigAclPrefs[i])
+            {
+                _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
+                Log->print(F("Setting changed: "));
+                Log->println("ACLCONFADVANCEDLOCK");
+                configChanged = true;
+                break;
+
+            }
+        }
+        for(int i=0; i < 14; i++)
+        {
+            if(curBasicOpenerConfigAclPrefs[i] != basicOpenerConfigAclPrefs[i])
+            {
+                _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
+                Log->print(F("Setting changed: "));
+                Log->println("ACLCONFBASICOPENER");
+                configChanged = true;
+                break;
+            }
+        }
+        for(int i=0; i < 20; i++)
+        {
+            if(curAdvancedOpenerConfigAclPrefs[i] != advancedOpenerConfigAclPrefs[i])
+            {
+                _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
+                Log->print(F("Setting changed: "));
+                Log->println("ACLCONFBADVANCEDOPENER");
+                configChanged = true;
+                break;
+            }
+        }
     }
 
     if(configChanged)
     {
-        message = "Configuration saved ... restarting.";
-        _enabled = false;
-        _preferences->end();
+        message = "Configuration saved.";
+        _rebootRequired = true;
     }
+    else message = "Nothing changed.";
 
     return configChanged;
 }
@@ -1861,7 +2355,7 @@ bool WebCfgServer::processImport(AsyncWebServerRequest *request, String& message
                 }
             }
             nukiBlePref.end();
-            if(!doc["securityPinCodeLock"].isNull())
+            if(!doc["securityPinCodeLock"].isNull() && _nuki != nullptr)
             {
                 if(doc["securityPinCodeLock"].as<String>().length() > 0) _nuki->setPin(doc["securityPinCodeLock"].as<int>());
                 else _nuki->setPin(0xffff);
@@ -1895,7 +2389,7 @@ bool WebCfgServer::processImport(AsyncWebServerRequest *request, String& message
                 }
             }
             nukiBlePref.end();
-            if(!doc["securityPinCodeOpener"].isNull())
+            if(!doc["securityPinCodeOpener"].isNull() && _nukiOpener != nullptr)
             {
                 if(doc["securityPinCodeOpener"].as<String>().length() > 0) _nukiOpener->setPin(doc["securityPinCodeOpener"].as<int>());
                 else _nukiOpener->setPin(0xffff);
@@ -1907,9 +2401,8 @@ bool WebCfgServer::processImport(AsyncWebServerRequest *request, String& message
 
     if(configChanged)
     {
-        message = "Configuration saved ... restarting.";
-        _enabled = false;
-        _preferences->end();
+        message = "Configuration saved.";
+        _rebootRequired = true;
     }
 
     return configChanged;
@@ -1967,7 +2460,7 @@ void WebCfgServer::buildImportExportHtml(AsyncWebServerRequest *request)
 
 void WebCfgServer::buildCustomNetworkConfigHtml(AsyncWebServerRequest *request)
 {
-    String header = "<script>window.onload = function() { var intopts = document.getElementsByClassName('internalopt'); var extopts = document.getElementsByClassName('externalopt'); hide(intopts); hide(extopts); function hide(opts) { for (var i = 0; i < opts.length; i ++) { opts[i].style.display = 'none'; } } var physelect = document.getElementByName('NWCUSTPHY'); physelectphyselect.addEventListener('change', function(event) { var select = event.target; var selectedOption = select.options[select.selectedIndex]; hideopt(selectedOption.getAttribute('value')); }); }; function hideopt(value) { if (value >= 1 && value <= 3) { hide(intopts); } else if (value >= 4 && value <= 9) { hide(extopts); } else { hide(intopts); hide(extopts); } }</script>";
+    String header = "<script>window.onload = function() { hideopt(document.getElementsByName('NWCUSTPHY')[0].value); var physelect = document.getElementsByName('NWCUSTPHY')[0]; physelect.addEventListener('change', function(event) { var select = event.target; var selectedOption = select.options[select.selectedIndex]; hideopt(selectedOption.getAttribute('value')); }); }; function hideopt(value) { var intopts = document.getElementsByClassName('internalopt'); var extopts = document.getElementsByClassName('externalopt'); if (value >= 1 && value <= 3) { hide(intopts); } else if (value >= 4 && value <= 9) { hide(extopts); } else { hide(intopts); hide(extopts); } } function hide(opts) { for (var i = 0; i < opts.length; i ++) { opts[i].style.display = 'none'; } }</script>";
     AsyncResponseStream *response = request->beginResponseStream("text/html");
     buildHtmlHeader(response, header);
     response->print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -1981,12 +2474,12 @@ void WebCfgServer::buildCustomNetworkConfigHtml(AsyncWebServerRequest *request)
     printInputField(response, "NWCUSTMDIO", "MDIO", _preferences->getInt(preference_network_custom_mdio), 6, "internalopt");
     printInputField(response, "NWCUSTMDC", "MDC", _preferences->getInt(preference_network_custom_mdc), 6, "internalopt");
     #endif
-    printInputField(response, "NWCUSTIRQ", "IRQ", _preferences->getInt(preference_network_custom_pwr, 12), 6, "externalopt");
-    printInputField(response, "NWCUSTRST", "RST", _preferences->getInt(preference_network_custom_mdio, 12), 6, "externalopt");
-    printInputField(response, "NWCUSTCS", "CS", _preferences->getInt(preference_network_custom_mdc, 12), 6, "externalopt");
-    printInputField(response, "NWCUSTSCK", "SCK", _preferences->getInt(preference_network_custom_pwr, 12), 6, "externalopt");
-    printInputField(response, "NWCUSTMISO", "MISO", _preferences->getInt(preference_network_custom_mdio, 12), 6, "externalopt");
-    printInputField(response, "NWCUSTMOSI", "MOSI", _preferences->getInt(preference_network_custom_mdc, 12), 6, "externalopt");
+    printInputField(response, "NWCUSTIRQ", "IRQ", _preferences->getInt(preference_network_custom_irq, -1), 6, "externalopt");
+    printInputField(response, "NWCUSTRST", "RST", _preferences->getInt(preference_network_custom_rst, -1), 6, "externalopt");
+    printInputField(response, "NWCUSTCS", "CS", _preferences->getInt(preference_network_custom_cs, -1), 6, "externalopt");
+    printInputField(response, "NWCUSTSCK", "SCK", _preferences->getInt(preference_network_custom_sck, -1), 6, "externalopt");
+    printInputField(response, "NWCUSTMISO", "MISO", _preferences->getInt(preference_network_custom_miso, -1), 6, "externalopt");
+    printInputField(response, "NWCUSTMOSI", "MOSI", _preferences->getInt(preference_network_custom_mosi, -1), 6, "externalopt");
 
     response->print("</table>");
 
@@ -2002,7 +2495,9 @@ void WebCfgServer::buildHtml(AsyncWebServerRequest *request)
     AsyncResponseStream *response = request->beginResponseStream("text/html");
     buildHtmlHeader(response, header);
 
-    response->print("<br><h3>Info</h3>\n");
+    if(_rebootRequired) response->print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
+
+    response->print("<h3>Info</h3><br>");
     response->print("<table>");
 
     printParameter(response, "Hostname", _hostname.c_str(), "", "hostname");
@@ -2053,19 +2548,9 @@ void WebCfgServer::buildHtml(AsyncWebServerRequest *request)
     buildNavigationMenuEntry(response, "Firmware update", "/ota");
     buildNavigationMenuEntry(response, "Import/Export Configuration", "/impexpcfg");
     if(_preferences->getInt(preference_network_hardware, 0) == 11) buildNavigationMenuEntry(response, "Custom Ethernet Configuration", "/custntw");
-
-    if(_preferences->getBool(preference_publish_debug_info, false))
-    {
-        buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
-    }
-    if(_preferences->getBool(preference_webserial_enabled, false))
-    {
-        buildNavigationMenuEntry(response, "Open Webserial", "/webserial");
-    }
-    if(_allowRestartToPortal)
-    {
-        buildNavigationMenuEntry(response, "Configure Wi-Fi", "/wifi");
-    }
+    if(_preferences->getBool(preference_publish_debug_info, false)) buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
+    if(_preferences->getBool(preference_webserial_enabled, false)) buildNavigationMenuEntry(response, "Open Webserial", "/webserial");
+    if(_allowRestartToPortal) buildNavigationMenuEntry(response, "Configure Wi-Fi", "/wifi");
     buildNavigationMenuEntry(response, "Reboot Nuki Hub", "/reboot");
     response->print("</ul></body></html>");
     request->send(response);
@@ -2084,7 +2569,6 @@ void WebCfgServer::buildCredHtml(AsyncWebServerRequest *request)
     response->print("</table>");
     response->print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response->print("</form>");
-
     if(_nuki != nullptr)
     {
         response->print("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -2095,7 +2579,6 @@ void WebCfgServer::buildCredHtml(AsyncWebServerRequest *request)
         response->print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
         response->print("</form>");
     }
-
     if(_nukiOpener != nullptr)
     {
         response->print("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -2130,7 +2613,6 @@ void WebCfgServer::buildCredHtml(AsyncWebServerRequest *request)
         response->print("</table>");
         response->print("<br><button type=\"submit\">OK</button></form>");
     }
-
     response->print("<br><br><h3>Factory reset Nuki Hub</h3>");
     response->print("<h4 class=\"warning\">This will reset all settings to default and unpair Nuki Lock and/or Opener. Optionally will also reset WiFi settings and reopen WiFi manager portal.</h4>");
     response->print("<form class=\"adapt\" method=\"post\" action=\"/factoryreset\">");
@@ -2164,7 +2646,7 @@ void WebCfgServer::buildMqttConfigHtml(AsyncWebServerRequest *request)
     response->print("<table>");
     printInputField(response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
     printInputField(response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
-    if(_nukiOpener != nullptr) printCheckBox(response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
+    if(_preferences->getBool(preference_opener_enabled, false)) printCheckBox(response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
     printTextarea(response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, _network->encryptionSupported(), true);
     printTextarea(response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, _network->encryptionSupported(), true);
@@ -2223,15 +2705,14 @@ void WebCfgServer::buildAdvancedConfigHtml(AsyncWebServerRequest *request)
     printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
     printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");
     printCheckBox(response, "SHOWSECRETS", "Show Pairing secrets on Info page (for 120s after next boot)", _preferences->getBool(preference_show_secrets), "");
-
-    if(_nuki != nullptr)
+    if(_preferences->getBool(preference_lock_enabled, true))
     {
         printCheckBox(response, "LCKMANPAIR", "Manually set lock pairing data (enable to save values below)", false, "");
         printInputField(response, "LCKBLEADDR", "currentBleAddress", "", 12, "");
         printInputField(response, "LCKSECRETK", "secretKeyK", "", 64, "");
         printInputField(response, "LCKAUTHID", "authorizationId", "", 8, "");
     }
-    if(_nukiOpener != nullptr)
+    if(_preferences->getBool(preference_opener_enabled, false))
     {
         printCheckBox(response, "OPNMANPAIR", "Manually set opener pairing data (enable to save values below)", false, "");
         printInputField(response, "OPNBLEADDR", "currentBleAddress", "", 12, "");
@@ -2536,21 +3017,11 @@ void WebCfgServer::buildNukiConfigHtml(AsyncWebServerRequest *request)
     response->print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
     response->print("<h3>Basic Nuki Configuration</h3>");
     response->print("<table>");
-    printCheckBox(response, "LOCKENA", "Nuki Smartlock enabled", _preferences->getBool(preference_lock_enabled), "");
-
-    if(_preferences->getBool(preference_lock_enabled))
-    {
-        printInputField(response, "MQTTPATH", "MQTT Nuki Smartlock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
-    }
-
+    printCheckBox(response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled), "");
+    if(_preferences->getBool(preference_lock_enabled)) printInputField(response, "MQTTPATH", "MQTT Nuki Lock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
     printCheckBox(response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
-
-    if(_preferences->getBool(preference_opener_enabled))
-    {
-        printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180, "");
-    }
+    if(_preferences->getBool(preference_opener_enabled)) printInputField(response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180, "");
     response->print("</table><br>");
-
     response->print("<h3>Advanced Nuki Configuration</h3>");
     response->print("<table>");
 
@@ -2563,8 +3034,8 @@ void WebCfgServer::buildNukiConfigHtml(AsyncWebServerRequest *request)
     }
     printInputField(response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10, "");
     printInputField(response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
-    if(_nuki != nullptr) printCheckBox(response, "REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
-    if(_nukiOpener != nullptr) printCheckBox(response, "REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
+    if(_preferences->getBool(preference_lock_enabled, true)) printCheckBox(response, "REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
+    if(_preferences->getBool(preference_opener_enabled, false)) printCheckBox(response, "REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
 #if PRESENCE_DETECTION_ENABLED
     printInputField(response, "PRDTMO", "Presence detection timeout (seconds; -1 to disable)", _preferences->getInt(preference_presence_detection_timeout), 10, "");
 #endif
@@ -2589,12 +3060,15 @@ void WebCfgServer::buildGpioConfigHtml(AsyncWebServerRequest *request)
     String gpiopreselects = "var gpio = []; ";
 
     const auto& availablePins = _gpio->availablePins();
+    const auto& disabledPins = _gpio->getDisabledPins();
+    
     for(const auto& pin : availablePins)
     {
         String pinStr = String(pin);
         String pinDesc = "Gpio " + pinStr;
         printDropDown(response, pinStr.c_str(), pinDesc.c_str(), "", options, "gpioselect");
-        gpiopreselects.concat("gpio[" + pinStr + "] = '" + getPreselectionForGpio(pin) + "';");
+        if(std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end()) gpiopreselects.concat("gpio[" + pinStr + "] = '21';");
+        else gpiopreselects.concat("gpio[" + pinStr + "] = '" + getPreselectionForGpio(pin) + "';");
     }
 
     response->print("</table>");
@@ -2614,7 +3088,7 @@ void WebCfgServer::buildGpioConfigHtml(AsyncWebServerRequest *request)
         response->print("</option>");
     }
 
-    response->print("'; var gpioselects = document.getElementsByClassName('gpioselect'); for (let i = 0; i < gpioselects.length; i++) { gpioselects[i].options.length = 0; gpioselects[i].innerHTML = gpiooptions; gpioselects[i].value = gpio[gpioselects[i].name]; }</script>");
+    response->print("'; var gpioselects = document.getElementsByClassName('gpioselect'); for (let i = 0; i < gpioselects.length; i++) { gpioselects[i].options.length = 0; gpioselects[i].innerHTML = gpiooptions; gpioselects[i].value = gpio[gpioselects[i].name]; if(gpioselects[i].value == 21) { gpioselects[i].disabled = true; } }</script>");
     response->print("</body></html>");
     request->send(response);
 }
@@ -2649,6 +3123,12 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
     #endif
     response->print("\nBuild date: ");
     response->print(NUKI_HUB_DATE);
+    response->print("\nUpdater version: ");
+    response->print(_preferences->getString(preference_updater_version, ""));
+    response->print("\nUpdater build: ");
+    response->print(_preferences->getString(preference_updater_build, ""));
+    response->print("\nUpdater build date: ");
+    response->print(_preferences->getString(preference_updater_date, ""));    
     response->print("\nUptime (min): ");
     response->print(esp_timer_get_time() / 1000 / 1000 / 60);
     response->print("\nConfig version: ");
@@ -2757,12 +3237,12 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
     response->print(_preferences->getString(preference_mqtt_user, "").length() > 0 ? "***" : "Not set");
     response->print("\nMQTT password: ");
     response->print(_preferences->getString(preference_mqtt_password, "").length() > 0 ? "***" : "Not set");
-    if(_nuki != nullptr)
+    if(_preferences->getBool(preference_lock_enabled, true))
     {
         response->print("\nMQTT lock base topic: ");
         response->print(_preferences->getString(preference_mqtt_lock_path, ""));
     }
-    if(_nukiOpener != nullptr)
+    if(_preferences->getBool(preference_opener_enabled, false))
     {
         response->print("\nMQTT opener base topic: ");
         response->print(_preferences->getString(preference_mqtt_lock_path, ""));
@@ -3013,7 +3493,7 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
     }
 
     response->print("\n\n------------ NUKI OPENER ------------");
-    if(_nukiOpener == nullptr || !_preferences->getBool(preference_opener_enabled, true)) response->print("\nOpener enabled: No");
+    if(_nukiOpener == nullptr || !_preferences->getBool(preference_opener_enabled, false)) response->print("\nOpener enabled: No");
     else
     {
         response->print("\nOpener enabled: Yes");
@@ -3166,12 +3646,12 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
         }
     }
 
-    response->print("\n\n------------ GPIO ------------");
+    response->print("\n\n------------ GPIO ------------\n");
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response->print(gpioStr);
 
-    response->print("</pre> </body></html>");
+    response->print("</pre></body></html>");
     request->send(response);
 }
 
@@ -3572,12 +4052,14 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomPHYOp
     options.push_back(std::make_pair("1", "W5500"));
     options.push_back(std::make_pair("2", "DN9051"));
     options.push_back(std::make_pair("3", "KSZ8851SNL"));
+    #if defined(CONFIG_IDF_TARGET_ESP32)
     options.push_back(std::make_pair("4", "LAN8720"));
     options.push_back(std::make_pair("5", "RTL8201"));
     options.push_back(std::make_pair("6", "TLK110"));
     options.push_back(std::make_pair("7", "DP83848"));
     options.push_back(std::make_pair("8", "KSZ8041"));
     options.push_back(std::make_pair("9", "KSZ8081"));
+    #endif
 
     return options;
 }

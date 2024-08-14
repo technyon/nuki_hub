@@ -93,6 +93,7 @@ private:
     Gpio* _gpio = nullptr;
     bool _pinsConfigured = false;
     bool _brokerConfigured = false;
+    bool _rebootRequired = false;
     #endif
 
     String generateConfirmCode();

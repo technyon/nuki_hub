@@ -15,6 +15,7 @@
 NukiNetwork* NukiNetwork::_inst = nullptr;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
+extern bool forceEnableWebServer;
 
 #ifndef NUKI_HUB_UPDATER
 NukiNetwork::NukiNetwork(Preferences *preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
@@ -36,6 +37,7 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
 
     _inst = this;
     _hostname = _preferences->getString(preference_hostname);
+    _webEnabled = _preferences->getBool(preference_webserver_enabled, true);
 
     #ifndef NUKI_HUB_UPDATER
     memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
@@ -224,12 +226,19 @@ void NukiNetwork::setupDevice()
                         case 1:
                             custName = "Custom (W5500)";
                             custEthtype = ETH_PHY_W5500;
+                            break;
                         case 2:
                             custName = "Custom (DN9051)";
                             custEthtype = ETH_PHY_DM9051;
+                            break;
                         case 3:
                             custName = "Custom (KSZ8851SNL)";
                             custEthtype = ETH_PHY_KSZ8851;
+                            break;
+                        default:
+                            custName = "Custom (W5500)";
+                            custEthtype = ETH_PHY_W5500;
+                            break;
                     }
 
                     _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, custName,
@@ -408,6 +417,7 @@ void NukiNetwork::initialize()
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval, 0) * 1000;
     _hostname = _preferences->getString(preference_hostname, "");
     _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+    _mqttPort = _preferences->getInt(preference_mqtt_broker_port, 1883);
 
     if(_hostname == "")
     {
@@ -534,11 +544,9 @@ bool NukiNetwork::update()
             _firstDisconnected = false;
             _device->mqttDisconnect(true);
         }
-
-        if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000)
-        {
-            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-        }
+        
+        if(!_webEnabled) forceEnableWebServer = true;
+        if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
 
         Log->println(F("Network not connected. Trying reconnect."));
         ReconnectStatus reconnectStatus = _device->reconnect(true);
@@ -552,12 +560,7 @@ bool NukiNetwork::update()
                 restartEsp(RestartReason::NetworkDeviceCriticalFailure);
                 break;
             case ReconnectStatus::Success:
-                memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
-                if(_firstBootAfterDeviceChange)
-                {
-                    _firstBootAfterDeviceChange = false;
-                    _preferences->putBool(preference_ntw_reconfigure, false);
-                }
+                memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));                
                 Log->print(F("Reconnect successful: IP: "));
                 Log->println(_device->localIP());
                 break;
@@ -573,12 +576,6 @@ bool NukiNetwork::update()
         Log->print(F("IP: "));
         Log->println(_device->localIP());
         _firstDisconnected = true;
-        
-        if(_firstBootAfterDeviceChange)
-        {
-            _firstBootAfterDeviceChange = false;
-            _preferences->putBool(preference_ntw_reconfigure, false);
-        }
     }
 
     if(!_device->mqttConnected() && _device->isConnected())
@@ -591,6 +588,13 @@ bool NukiNetwork::update()
             return false;
         }
         _mqttConnectCounter = 0;
+        if(forceEnableWebServer && !_webEnabled) 
+        {
+            forceEnableWebServer = false; 
+            delay(200);
+            restartEsp(RestartReason::ReconfigureWebServer);
+        }
+        else if(!_webEnabled) forceEnableWebServer = false;
         delay(2000);
     }
 
@@ -598,17 +602,17 @@ bool NukiNetwork::update()
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
         {
+            if(!_webEnabled) forceEnableWebServer = true;
             Log->println("Network timeout has been reached, restarting ...");
             delay(200);
             restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
-
         delay(2000);
         return false;
     }
 
     _lastConnectedTs = ts;
-
+    
     #if PRESENCE_DETECTION_ENABLED
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
@@ -681,10 +685,10 @@ bool NukiNetwork::update()
                             {
                                 String currentVersion = NUKI_HUB_VERSION;
 
-                                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["version"];
-                                else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["version"];
-                                else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["version"];
-                                else _latestVersion = doc["release"]["version"];
+                                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["fullversion"];
+                                else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["fullversion"];
+                                else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["fullversion"];
+                                else _latestVersion = doc["release"]["fullversion"];
 
                                 publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
 
@@ -768,7 +772,6 @@ void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &r
 bool NukiNetwork::reconnect()
 {
     _mqttConnectionState = 0;
-    int port = _preferences->getInt(preference_mqtt_broker_port, 1883);
 
     while (!_device->mqttConnected() && (esp_timer_get_time() / 1000) > _nextReconnect)
     {
@@ -794,7 +797,7 @@ bool NukiNetwork::reconnect()
         }
 
         _device->setWill(_mqttConnectionStateTopic, 1, true, _lastWillPayload);
-        _device->mqttSetServer(_mqttBrokerAddr, port);
+        _device->mqttSetServer(_mqttBrokerAddr, _mqttPort);
         _device->mqttConnect();
 
         int64_t timeout = (esp_timer_get_time() / 1000) + 60000;

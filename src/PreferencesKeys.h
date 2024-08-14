@@ -109,6 +109,9 @@
 #define preference_network_custom_mdc (char*)"ntwMDC"
 #define preference_network_custom_clk (char*)"ntwCLK"
 #define preference_ntw_reconfigure (char*)"ntwRECONF"
+#define preference_updater_version (char*)"updVer"
+#define preference_updater_build (char*)"updBuild"
+#define preference_updater_date (char*)"updDate"
 
 inline bool initPreferences(Preferences* preferences)
 {
