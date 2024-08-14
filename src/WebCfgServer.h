@@ -62,6 +62,7 @@ private:
     void buildGpioConfigHtml(AsyncWebServerRequest *request);
     void buildConfigureWifiHtml(AsyncWebServerRequest *request);
     void buildInfoHtml(AsyncWebServerRequest *request);
+    void buildCustomNetworkConfigHtml(AsyncWebServerRequest *request);
     void processUnpair(AsyncWebServerRequest *request, bool opener);
     void processUpdate(AsyncWebServerRequest *request);
     void processFactoryReset(AsyncWebServerRequest *request);
@@ -77,6 +78,11 @@ private:
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
+    const std::vector<std::pair<String, String>> getNetworkCustomPHYOptions() const;
+    #if defined(CONFIG_IDF_TARGET_ESP32)
+    const std::vector<std::pair<String, String>> getNetworkCustomCLKOptions() const;
+    #endif
+
     String getPreselectionForGpio(const uint8_t& pin);
     String pinStateToString(uint8_t value);
 

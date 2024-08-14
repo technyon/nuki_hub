@@ -144,17 +144,21 @@ void EthernetDevice::initialize()
                 case ARDUINO_EVENT_ETH_GOT_IP:
                     Log->printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif));
                     Log->println(ETH);
+                    _connected = true;
                     break;
                 case ARDUINO_EVENT_ETH_LOST_IP:
                     Log->println("ETH Lost IP");
+                    _connected = false;
                     onDisconnected();
                     break;
                 case ARDUINO_EVENT_ETH_DISCONNECTED:
                     Log->println("ETH Disconnected");
+                    _connected = false;
                     onDisconnected();
                     break;
                 case ARDUINO_EVENT_ETH_STOP:
                     Log->println("ETH Stopped");
+                    _connected = false;
                     onDisconnected();
                     break;
                 default:
@@ -178,7 +182,7 @@ bool EthernetDevice::supportsEncryption()
 
 bool EthernetDevice::isConnected()
 {
-    return ETH.linkUp();
+    return _connected;
 }
 
 ReconnectStatus EthernetDevice::reconnect(bool force)

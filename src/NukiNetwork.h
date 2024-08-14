@@ -26,7 +26,8 @@ enum class NetworkDeviceType
     M5STACK_PoESP32_Unit,
     LilyGO_T_ETH_POE,
     GL_S10,
-    ETH01_Evo
+    ETH01_Evo,
+    CUSTOM
 };
 
 #define JSON_BUFFER_SIZE 1024
@@ -127,6 +128,7 @@ private:
     std::vector<std::function<void()>> _reconnectedCallbacks;
 
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
+    bool _firstBootAfterDeviceChange = false;
 
     #ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
@@ -167,7 +169,7 @@ private:
     long _mqttConnectedTs = -1;
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
-
+    
     int64_t _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};

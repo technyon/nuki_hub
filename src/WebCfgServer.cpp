@@ -120,7 +120,10 @@ void WebCfgServer::initialize()
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         buildAccLvlHtml(request, 2);
     });
-
+    _asyncServer->on("/custntw", HTTP_GET, [&](AsyncWebServerRequest *request){
+        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+        buildCustomNetworkConfigHtml(request);
+    });
     _asyncServer->on("/advanced", HTTP_GET, [&](AsyncWebServerRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
         buildAdvancedConfigHtml(request);
@@ -621,17 +624,14 @@ void WebCfgServer::sendSettings(AsyncWebServerRequest *request)
     const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
     const std::vector<char*> redactedPrefs = debugPreferences.getPreferencesRedactedKeys();
     const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
-    const std::vector<char*> charPrefs = debugPreferences.getPreferencesCharKeys();
 
     for(const auto& key : keysPrefs)
     {
         if(strcmp(key, preference_show_secrets) == 0) continue;
         if(strcmp(key, preference_latest_version) == 0) continue;
-        if(strcmp(key, preference_has_mac_saved) == 0) continue;
         if(strcmp(key, preference_device_id_lock) == 0) continue;
         if(strcmp(key, preference_device_id_opener) == 0) continue;
         if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end()) continue;
-        if(std::find(charPrefs.begin(), charPrefs.end(), key) != charPrefs.end()) continue;
         if(!_preferences->isKey(key)) json[key] = "";
         else if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end()) json[key] = _preferences->getBool(key) ? "1" : "0";
         else
@@ -866,7 +866,73 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         }
         else if(key == "NWHW")
         {
+            int curHw = _preferences->getInt(preference_network_hardware, 0);
+            if(curHw != value.toInt() && value.toInt() > 1)
+            {
+                _preferences->putBool(preference_ntw_reconfigure, true);
+                if(value.toInt() != 11) _preferences->putInt(preference_network_custom_phy, 0);
+            }
             _preferences->putInt(preference_network_hardware, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTPHY")
+        {
+            _preferences->putInt(preference_network_custom_phy, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTADDR")
+        {
+            _preferences->putInt(preference_network_custom_addr, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTIRQ")
+        {
+            _preferences->putInt(preference_network_custom_irq, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTRST")
+        {
+            _preferences->putInt(preference_network_custom_rst, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTCS")
+        {
+            _preferences->putInt(preference_network_custom_cs, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTSCK")
+        {
+            _preferences->putInt(preference_network_custom_sck, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTMISO")
+        {
+            _preferences->putInt(preference_network_custom_miso, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTMOSI")
+        {
+            _preferences->putInt(preference_network_custom_mosi, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTPWR")
+        {
+            _preferences->putInt(preference_network_custom_pwr, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTMDIO")
+        {
+            _preferences->putInt(preference_network_custom_mdio, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTMDC")
+        {
+            _preferences->putInt(preference_network_custom_mdc, value.toInt());
+            configChanged = true;
+        }
+        else if(key == "NWCUSTCLK")
+        {
+            _preferences->putInt(preference_network_custom_clk, value.toInt());
             configChanged = true;
         }
         else if(key == "NWHWWIFIFB")
@@ -1726,7 +1792,6 @@ bool WebCfgServer::processImport(AsyncWebServerRequest *request, String& message
             const std::vector<char*> keysPrefs = debugPreferences.getPreferencesKeys();
             const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
             const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
-            const std::vector<char*> charPrefs = debugPreferences.getPreferencesCharKeys();
             const std::vector<char*> intPrefs = debugPreferences.getPreferencesIntKeys();
 
             for(const auto& key : keysPrefs)
@@ -1734,10 +1799,8 @@ bool WebCfgServer::processImport(AsyncWebServerRequest *request, String& message
                 if(doc[key].isNull()) continue;
                 if(strcmp(key, preference_show_secrets) == 0) continue;
                 if(strcmp(key, preference_latest_version) == 0) continue;
-                if(strcmp(key, preference_has_mac_saved) == 0) continue;
                 if(strcmp(key, preference_device_id_lock) == 0) continue;
                 if(strcmp(key, preference_device_id_opener) == 0) continue;
-                if(std::find(charPrefs.begin(), charPrefs.end(), key) != charPrefs.end()) continue;
                 if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end())
                 {
                     if (doc[key].as<String>().length() > 0) _preferences->putBool(key, (doc[key].as<String>() == "1" ? true : false));
@@ -1902,6 +1965,37 @@ void WebCfgServer::buildImportExportHtml(AsyncWebServerRequest *request)
     request->send(response);
 }
 
+void WebCfgServer::buildCustomNetworkConfigHtml(AsyncWebServerRequest *request)
+{
+    String header = "<script>window.onload = function() { var intopts = document.getElementsByClassName('internalopt'); var extopts = document.getElementsByClassName('externalopt'); hide(intopts); hide(extopts); function hide(opts) { for (var i = 0; i < opts.length; i ++) { opts[i].style.display = 'none'; } } var physelect = document.getElementByName('NWCUSTPHY'); physelectphyselect.addEventListener('change', function(event) { var select = event.target; var selectedOption = select.options[select.selectedIndex]; hideopt(selectedOption.getAttribute('value')); }); }; function hideopt(value) { if (value >= 1 && value <= 3) { hide(intopts); } else if (value >= 4 && value <= 9) { hide(extopts); } else { hide(intopts); hide(extopts); } }</script>";
+    AsyncResponseStream *response = request->beginResponseStream("text/html");
+    buildHtmlHeader(response, header);
+    response->print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    response->print("<h3>Custom Ethernet Configuration</h3>");
+    response->print("<table>");
+    printDropDown(response, "NWCUSTPHY", "PHY", String(_preferences->getInt(preference_network_custom_phy)), getNetworkCustomPHYOptions(), "");
+    printInputField(response, "NWCUSTADDR", "ADDR", _preferences->getInt(preference_network_custom_addr, 1), 6, "");
+    #if defined(CONFIG_IDF_TARGET_ESP32)
+    printDropDown(response, "NWCUSTCLK", "CLK", String(_preferences->getInt(preference_network_custom_clk, 0)), getNetworkCustomCLKOptions(), "internalopt");
+    printInputField(response, "NWCUSTPWR", "PWR", _preferences->getInt(preference_network_custom_pwr, 12), 6, "internalopt");
+    printInputField(response, "NWCUSTMDIO", "MDIO", _preferences->getInt(preference_network_custom_mdio), 6, "internalopt");
+    printInputField(response, "NWCUSTMDC", "MDC", _preferences->getInt(preference_network_custom_mdc), 6, "internalopt");
+    #endif
+    printInputField(response, "NWCUSTIRQ", "IRQ", _preferences->getInt(preference_network_custom_pwr, 12), 6, "externalopt");
+    printInputField(response, "NWCUSTRST", "RST", _preferences->getInt(preference_network_custom_mdio, 12), 6, "externalopt");
+    printInputField(response, "NWCUSTCS", "CS", _preferences->getInt(preference_network_custom_mdc, 12), 6, "externalopt");
+    printInputField(response, "NWCUSTSCK", "SCK", _preferences->getInt(preference_network_custom_pwr, 12), 6, "externalopt");
+    printInputField(response, "NWCUSTMISO", "MISO", _preferences->getInt(preference_network_custom_mdio, 12), 6, "externalopt");
+    printInputField(response, "NWCUSTMOSI", "MOSI", _preferences->getInt(preference_network_custom_mdc, 12), 6, "externalopt");
+
+    response->print("</table>");
+
+    response->print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response->print("</form>");
+    response->print("</body></html>");
+    request->send(response);
+}
+
 void WebCfgServer::buildHtml(AsyncWebServerRequest *request)
 {
     String header = "<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
@@ -1958,6 +2052,8 @@ void WebCfgServer::buildHtml(AsyncWebServerRequest *request)
     buildNavigationMenuEntry(response, "GPIO Configuration", "/gpiocfg");
     buildNavigationMenuEntry(response, "Firmware update", "/ota");
     buildNavigationMenuEntry(response, "Import/Export Configuration", "/impexpcfg");
+    if(_preferences->getInt(preference_network_hardware, 0) == 11) buildNavigationMenuEntry(response, "Custom Ethernet Configuration", "/custntw");
+
     if(_preferences->getBool(preference_publish_debug_info, false))
     {
         buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
@@ -1974,7 +2070,6 @@ void WebCfgServer::buildHtml(AsyncWebServerRequest *request)
     response->print("</ul></body></html>");
     request->send(response);
 }
-
 
 void WebCfgServer::buildCredHtml(AsyncWebServerRequest *request)
 {
@@ -2090,7 +2185,7 @@ void WebCfgServer::buildMqttConfigHtml(AsyncWebServerRequest *request)
     printInputField(response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
     printCheckBox(response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
     response->print("</table>");
-    response->print("* If no encryption is configured for the MQTT broker, leave empty. Only supported for Wi-Fi connections.<br><br>");
+    response->print("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
 
     response->print("<h3>IP Address assignment</h3>");
     response->print("<table>");
@@ -2613,12 +2708,7 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
         }
         else
         {
-            /*
-            preference_has_mac_saved
-            preference_has_mac_byte_0
-            preference_has_mac_byte_1
-            preference_has_mac_byte_2
-            */
+            //Ethernet info
         }
     }
     response->print("\n\n------------ NETWORK SETTINGS ------------");
@@ -3470,9 +3560,37 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     options.push_back(std::make_pair("7", "LilyGO T-ETH-POE"));
     options.push_back(std::make_pair("8", "GL-S10"));
     options.push_back(std::make_pair("9", "ETH01-Evo"));
+    options.push_back(std::make_pair("11", "Custom LAN module"));
 
     return options;
 }
+
+const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomPHYOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+    options.push_back(std::make_pair("0", "Disabled"));
+    options.push_back(std::make_pair("1", "W5500"));
+    options.push_back(std::make_pair("2", "DN9051"));
+    options.push_back(std::make_pair("3", "KSZ8851SNL"));
+    options.push_back(std::make_pair("4", "LAN8720"));
+    options.push_back(std::make_pair("5", "RTL8201"));
+    options.push_back(std::make_pair("6", "TLK110"));
+    options.push_back(std::make_pair("7", "DP83848"));
+    options.push_back(std::make_pair("8", "KSZ8041"));
+    options.push_back(std::make_pair("9", "KSZ8081"));
+
+    return options;
+}
+#if defined(CONFIG_IDF_TARGET_ESP32)
+const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomCLKOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+    options.push_back(std::make_pair("0", "GPIO0 IN"));
+    options.push_back(std::make_pair("2", "GPIO16 OUT"));
+    options.push_back(std::make_pair("3", "GPIO17 OUT"));
+    return options;
+}
+#endif
 
 const std::vector<std::pair<String, String>> WebCfgServer::getGpioOptions() const
 {

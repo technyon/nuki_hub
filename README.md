@@ -36,7 +36,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Keypad 2.0
 
 <b>Supported Ethernet devices:</b><br>
-As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with wired ethernet are supported:
+As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with built-in wired ethernet are supported:
 - [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)
 - [Olimex ESP32-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware)
 - [WT32-ETH01](http://en.wireless-tag.com/product-item-2.html)
@@ -44,6 +44,9 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 - [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)
 - [LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)
 - [GL-S10 (Revisions 2.1, 2.3 / 1.0 is not supported)](https://www.gl-inet.com/products/gl-s10/)
+
+In principle all ESP32 (and variants) devices with built-in ethernet port are supported, but might require additional setup using the "Custom LAN setup" option.
+See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section for more information.
 
 ## Support Nuki Hub development
 
@@ -607,28 +610,27 @@ To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can
 
 ## Connecting via Ethernet (Optional)
 
-If you prefer to connect to the MQTT Broker via Ethernet instead of Wi-Fi, you either use one of the supported ESP32 modules (see about section above),
-or wire a seperate Wiznet W5x00 Module (W5100, W5200, W5500 are supported). To use a supported module, flash the firmware, connect via Wi-Fi and
-select the correct network hardware in the "MQTT and Network Configuration" section.
+If you prefer to connect to via Ethernet instead of Wi-Fi, you either use one of the supported ESP32 modules with built-in ethernet (see "[Supported devices](#supported-devices)" section)
+or wire a seperate SPI Ethernet module.<Br>
+Currently the Wiznet W5x00 Module (W5100, W5200, W5500), DN9051 and KSZ8851SNL chips are supported.<br>
+To use a supported module, flash the firmware, connect via Wi-Fi and select the correct network hardware in the "MQTT and Network Configuration" section.
 
 To wire an external W5x00 module to the ESP, use this wiring scheme:
 
-- Connect W5x00 to ESP32 SPI0:<br>
-  - W5x00 SCK to GPIO18<br>
-  - W5x00 MISO to GPIO19<br>
-  - W5x00 MOSI to GPIO23<br>
-  - W5x00 CS/SS to GPIO5<br>
-- Optionally connect:<br>
-  - W5x00 reset to GPIO33<br>
+- Connect W5x00 to ESP32 SPI:<br>
+  - W5x00 SCK to GPIO 8<br>
+  - W5x00 MISO to GPIO 9<br>
+  - W5x00 MOSI to GPIO 10<br>
+  - W5x00 CS/SS to GPIO 5<br>
+  Optional:
+  - W5x00 RST to GPIO 4<br>
+  - W5x00 INT/IRQ to GPIO 3<br>
 
 Now connect via Wi-Fi and change the network hardware to "Generic W5500".<br>
-If the W5500 hwardware isn't detected, Wi-Fi is used as a fallback.<br>
+
+If Ethernet hwardware isn't detected, Wi-Fi is used as a fallback, unless this is disabled in the settings.<br>
 <br>
-Note: Encrypted MQTT is only available for Wi-Fi and LAN8720 modules, W5x00 modules don't support encryption<br>
-(that leaves Olimex, WT32-ETH01 and M5Stack PoESP32 Unit if encryption is desired).<br>
-Note: LAN8720 modules are only supported on the ESP32, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
-<br>
-If encryption is needed, Olimex is the easiest option, since it has USB for flashing onboard.
+Note: LAN8720 modules are only supported on the ESP32 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
 
 ## Troubleshooting
 
@@ -716,7 +718,7 @@ source .venv/bin/activate
 git clone https://github.com/technyon/nuki_hub --recursive
 cd nuki_hub
 
-# install tools platformio and esptool 
+# install tools platformio and esptool
 make deps
 
 # build all binary boards

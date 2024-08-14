@@ -64,6 +64,7 @@ private:
     void onDisconnected();
     void waitForIpAddressWithTimeout();
 
+    bool _connected = false;
     bool _restartOnDisconnect = false;
     bool _startAp = false;
     char* _path;
