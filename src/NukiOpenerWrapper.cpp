@@ -728,7 +728,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
 
         while(_retryCount < _nrOfRetries + 1)
         {
-            Log->print(F("Querying opener time control: "));
+            Log->print(F("Querying opener timecontrol: "));
             result = _nukiOpener.retrieveTimeControlEntries();
 
             if(result != Nuki::CmdResult::Success) {
@@ -748,7 +748,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         std::list<NukiOpener::TimeControlEntry> timeControlEntries;
         _nukiOpener.getTimeControlEntries(&timeControlEntries);
 
-        Log->print(F("Opener time control entries: "));
+        Log->print(F("Opener timecontrol entries: "));
         Log->println(timeControlEntries.size());
 
         timeControlEntries.sort([](const NukiOpener::TimeControlEntry& a, const NukiOpener::TimeControlEntry& b) { return a.entryId < b.entryId; });
@@ -2231,7 +2231,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiOpener.removeTimeControlEntry(entryId);
-                    Log->print(F("Delete time control: "));
+                    Log->print(F("Delete timecontrol: "));
                     Log->println((int)result);
                 }
                 else
@@ -2289,7 +2289,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.addTimeControlEntry(entry);
-                    Log->print(F("Add time control: "));
+                    Log->print(F("Add timecontrol: "));
                     Log->println((int)result);
                 }
                 else if (strcmp(action, "update") == 0)
@@ -2351,7 +2351,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.updateTimeControlEntry(entry);
-                    Log->print(F("Update time control: "));
+                    Log->print(F("Update timecontrol: "));
                     Log->println((int)result);
                 }
             }
@@ -2388,10 +2388,10 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 {
     if(!_nukiConfigValid)
     {
-        _network->publishTimeControlCommandResult("configNotReady");
+        _network->publishAuthCommandResult("configNotReady");
         return;
     }
-    
+
     if(!isPinValid())
     {
         _network->publishAuthCommandResult("noValidPinSet");
@@ -2416,13 +2416,13 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
     char oldName[33];
     const char *action = json["action"].as<const char*>();
     uint16_t authId = json["authId"].as<unsigned int>();
-    uint8_t idType = json["idType"].as<unsigned int>();
-    unsigned char secretKeyK[32] = {0x00};
+    //uint8_t idType = json["idType"].as<unsigned int>();
+    //unsigned char secretKeyK[32] = {0x00};
     uint8_t remoteAllowed;
-    uint8_t enabled;    
+    uint8_t enabled;
     uint8_t timeLimited;
     String name;
-    String sharedKey;
+    //String sharedKey;
     String allowedFrom;
     String allowedUntil;
     String allowedWeekdays;
@@ -2439,7 +2439,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
     else timeLimited = 2;
 
     if(json.containsKey("name")) name = json["name"].as<String>();
-    if(json.containsKey("sharedKey")) sharedKey = json["sharedKey"].as<String>();
+    //if(json.containsKey("sharedKey")) sharedKey = json["sharedKey"].as<String>();
     if(json.containsKey("allowedFrom")) allowedFrom = json["allowedFrom"].as<String>();
     if(json.containsKey("allowedUntil")) allowedUntil = json["allowedUntil"].as<String>();
     if(json.containsKey("allowedWeekdays")) allowedWeekdays = json["allowedWeekdays"].as<String>();
@@ -2483,7 +2483,8 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                         return;
                     }
                 }
-                
+
+                /*
                 if(sharedKey.length() != 64)
                 {
                     if (strcmp(action, "update") != 0)
@@ -2496,6 +2497,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                 {
                     for(int i=0; i<sharedKey.length();i+=2) secretKeyK[(i/2)] = std::stoi(sharedKey.substring(i, i+2).c_str(), nullptr, 16);
                 }
+                */
 
                 unsigned int allowedFromAr[6];
                 unsigned int allowedUntilAr[6];
@@ -2604,10 +2606,14 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
                 if(strcmp(action, "add") == 0)
                 {
+                    _network->publishAuthCommandResult("addActionNotSupported");
+                    return;
+
                     NukiOpener::NewAuthorizationEntry entry;
                     memset(&entry, 0, sizeof(entry));
                     size_t nameLen = name.length();
                     memcpy(&entry.name, name.c_str(), nameLen > 32 ? 32 : nameLen);
+                    /*
                     memcpy(&entry.sharedKey, secretKeyK, 32);
                     
                     if(idType != 1)
@@ -2617,6 +2623,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                     }
                     
                     entry.idType = idType;
+                    */
                     entry.remoteAllowed = remoteAllowed == 1 ? 1 : 0;
                     entry.timeLimited = timeLimited == 1 ? 1 : 0;
 

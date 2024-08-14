@@ -326,9 +326,9 @@ void WebCfgServer::initialize()
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
             return _server.requestAuthentication();
         }
-        String response = "";
-        buildOtaHtml(response, _server.arg("errored") != "", true);
-        _server.send(200, "text/html", response);
+        _response = "";
+        buildOtaHtml(_server.arg("errored") != "", true);
+        _server.send(200, "text/html", _response);
     });
     _server.on("/reboottoota", [&]() {
         if (_hasCredentials && !_server.authenticate(_credUser, _credPassword)) {
@@ -2416,12 +2416,12 @@ void WebCfgServer::buildAccLvlHtml()
         printCheckBox("KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
         printCheckBox("KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
-    printCheckBox("TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
-    printCheckBox("TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
-    printCheckBox("TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
+    printCheckBox("TCPUB", "Publish timecontrol entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
+    printCheckBox("TCPER", "Publish a topic per timecontrol entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
+    printCheckBox("TCENA", "Add, modify and delete timecontrol entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
     printCheckBox("AUTHPUB", "Publish authorization entries information", _preferences->getBool(preference_auth_info_enabled), "");
     printCheckBox("AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
-    printCheckBox("AUTHENA", "Add, modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
+    printCheckBox("AUTHENA", "Modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
     printCheckBox("PUBAUTH", "Publish authorization log (may reduce battery life)", _preferences->getBool(preference_publish_authdata), "");
     _response.concat("</table><br>");
     if(_nuki != nullptr)
