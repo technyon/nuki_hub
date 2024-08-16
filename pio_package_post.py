@@ -6,6 +6,9 @@ from pathlib import Path
 
 def get_board_name(env):
     board = env.get('BOARD_MCU')
+    
+    if env.get('BOARD') == 'esp32-solo1':
+        board = env.get('BOARD').replace('-', '')
     return board
 
 def create_target_dir(env):

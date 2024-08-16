@@ -21,7 +21,6 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Support for the ESP32-C6 and ESP32-H2 is experimental. There could be more frequent crashes than on other ESP32 devices and connections with the Nuki device could be slower than on other ESP32 devices.
 
 <b>Not supported ESP32 devices:</b>
-- The ESP32-Solo1 is not supported by ESP-IDF 5.1 and as such can't be build using Arduino Core 3 and ESP-IDF 5.1. Release 9.0 was the last (untested) release for the Solo1 which for the Solo1 is built against Arduino Core 2.0.14 and ESP-IDF 4.4.
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
 
 <b>Supported Nuki devices:</b>

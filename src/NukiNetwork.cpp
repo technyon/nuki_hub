@@ -107,7 +107,7 @@ void NukiNetwork::setupDevice()
         _networkDeviceType = NetworkDeviceType::WiFi;
         #else
         int custEth = _preferences->getInt(preference_network_custom_phy, 0);
-        
+
         if(custEth<3) custEth++;
         else custEth = 0;
         _preferences->putInt(preference_network_custom_phy, custEth);
@@ -377,7 +377,7 @@ void NukiNetwork::setupDevice()
                                                _preferences->getInt(preference_network_custom_mosi, -1),
                                                ETH_PHY_SPI_FREQ_MHZ,
                                                ETH_PHY_W5500);
-            break;  
+            break;
         #endif
     }
 
@@ -629,9 +629,9 @@ bool NukiNetwork::update()
             return false;
         }
         _mqttConnectCounter = 0;
-        if(forceEnableWebServer && !_webEnabled) 
+        if(forceEnableWebServer && !_webEnabled)
         {
-            forceEnableWebServer = false; 
+            forceEnableWebServer = false;
             delay(200);
             restartEsp(RestartReason::ReconfigureWebServer);
         }
@@ -653,7 +653,7 @@ bool NukiNetwork::update()
     }
 
     _lastConnectedTs = ts;
-    
+
     #if PRESENCE_DETECTION_ENABLED
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
@@ -706,11 +706,12 @@ bool NukiNetwork::update()
         if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
         {
             _lastUpdateCheckTs = ts;
+            bool otaManifestSuccess = false;
+            JsonDocument doc;
 
             NetworkClientSecure *client = new NetworkClientSecure;
             if (client) {
-                //client->setDefaultCACertBundle();
-                client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);                
+                client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
                 {
                     HTTPClient https;
                     https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
@@ -721,27 +722,28 @@ bool NukiNetwork::update()
 
                         if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
                         {
-                            JsonDocument doc;
                             DeserializationError jsonError = deserializeJson(doc, https.getStream());
 
-                            if (!jsonError)
-                            {
-                                String currentVersion = NUKI_HUB_VERSION;
-
-                                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["fullversion"];
-                                else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["fullversion"];
-                                else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["fullversion"];
-                                else _latestVersion = doc["release"]["fullversion"];
-
-                                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
-
-                                if(strcmp(_latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0) _preferences->putString(preference_latest_version, _latestVersion);
-                            }
+                            if (!jsonError) { otaManifestSuccess = true; }
                         }
                     }
                     https.end();
                 }
                 delete client;
+            }
+
+            if (otaManifestSuccess)
+            {
+                String currentVersion = NUKI_HUB_VERSION;
+
+                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["fullversion"];
+                else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["fullversion"];
+                else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["fullversion"];
+                else _latestVersion = doc["release"]["fullversion"];
+
+                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
+
+                if(strcmp(_latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0) _preferences->putString(preference_latest_version, _latestVersion);
             }
         }
     }
