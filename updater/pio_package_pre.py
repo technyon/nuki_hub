@@ -10,23 +10,50 @@ def recursive_purge(dir, pattern):
             elif re.search(pattern, os.path.join(dir, f)):
                 os.remove(os.path.join(dir, f))
 
+if os.path.exists("src/Config.h"):
+    with open("../src/Config.h", "rb") as file_a, open("src/Config.h", "rb") as file_b:
+        if file_a.read() != file_b.read():
+            shutil.copy2("../src/Config.h", "src/Config.h")
+else:
+    shutil.copy2("../src/Config.h", "src/Config.h")
+
 regex = r"\#define NUKI_HUB_DATE \"(.*)\""
 content_new = ""
+file_content = ""
 
-with open ('../src/Config.h', 'r' ) as readfile:
+with open ('src/Config.h', 'r' ) as readfile:
     file_content = readfile.read()
     content_new = re.sub(regex, "#define NUKI_HUB_DATE \"" + datetime.now(timezone.utc).strftime("%Y-%m-%d") + "\"", file_content, flags = re.M)
 
-with open('../src/Config.h', 'w') as writefile:
-    writefile.write(content_new)
+if content_new != file_content:
+    with open('src/Config.h', 'w') as writefile:
+        writefile.write(content_new)
 
-shutil.copy("../src/main.cpp", "src/main.cpp")
+if os.path.exists("src/main.cpp"):
+    with open("../src/main.cpp", "rb") as file_a, open("src/main.cpp", "rb") as file_b:
+        if file_a.read() != file_b.read():
+            shutil.copy2("../src/main.cpp", "src/main.cpp")
+else:
+    shutil.copy2("../src/main.cpp", "src/main.cpp")
+
 recursive_purge("managed_components", ".component_hash")
 
-if env.get('BOARD_MCU') == "esp32":
-  board = "esp32dev"
-else:
-  board = env.get('BOARD_MCU')
+board = env.get('BOARD_MCU')
 
 if os.path.exists("sdkconfig.updater_" + board):
-  os.remove("sdkconfig." + board)
+  f1 = 0;
+  f2 = 0;
+  f3 = 0;
+  f4 = os.path.getmtime("sdkconfig.updater_" + board)
+
+  if os.path.exists("sdkconfig.defaults." + board):
+    f1 = os.path.getmtime("sdkconfig.defaults." + board)
+
+  if os.path.exists("sdkconfig.release.defaults"):
+    f2 = os.path.getmtime("sdkconfig.release.defaults")
+
+  if os.path.exists("sdkconfig.defaults"):
+    f3 = os.path.getmtime("sdkconfig.defaults")
+
+  if(f1 > f4 or f2 > f4 or f3 > f4):
+    os.remove("sdkconfig.updater_" + board)

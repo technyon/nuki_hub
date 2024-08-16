@@ -76,10 +76,6 @@
 #define preference_gpio_configuration (char*)"gpiocfg"
 #define preference_publish_debug_info (char*)"pubdbg"
 #define preference_presence_detection_timeout (char*)"prdtimeout"
-#define preference_has_mac_saved (char*)"hasmac"
-#define preference_has_mac_byte_0 (char*)"macb0"
-#define preference_has_mac_byte_1 (char*)"macb1"
-#define preference_has_mac_byte_2 (char*)"macb2"
 #define preference_latest_version (char*)"latest"
 #define preference_task_size_network (char*)"tsksznetw"
 #define preference_task_size_nuki (char*)"tsksznuki"
@@ -100,6 +96,22 @@
 #define preference_show_secrets (char*)"showSecr"
 #define preference_ble_tx_power (char*)"bleTxPwr"
 #define preference_recon_netw_on_mqtt_discon (char*)"recNtwMqttDis"
+#define preference_network_custom_phy (char*)"ntwPHY"
+#define preference_network_custom_addr (char*)"ntwADDR"
+#define preference_network_custom_irq (char*)"ntwIRQ"
+#define preference_network_custom_rst (char*)"ntwRST"
+#define preference_network_custom_cs (char*)"ntwCS"
+#define preference_network_custom_sck (char*)"ntwSCK"
+#define preference_network_custom_miso (char*)"ntwMISO"
+#define preference_network_custom_mosi (char*)"ntwMOSI"
+#define preference_network_custom_pwr (char*)"ntwPWR"
+#define preference_network_custom_mdio (char*)"ntwMDIO"
+#define preference_network_custom_mdc (char*)"ntwMDC"
+#define preference_network_custom_clk (char*)"ntwCLK"
+#define preference_ntw_reconfigure (char*)"ntwRECONF"
+#define preference_updater_version (char*)"updVer"
+#define preference_updater_build (char*)"updBuild"
+#define preference_updater_date (char*)"updDate"
 
 inline bool initPreferences(Preferences* preferences)
 {
@@ -223,6 +235,13 @@ inline bool initPreferences(Preferences* preferences)
                     }
                 }
             }
+            if (configVer < 901)
+            {
+                #if defined(CONFIG_IDF_TARGET_ESP32S3)
+                if (preferences->getInt(preference_network_hardware) == 3) preferences->putInt(preference_network_hardware, 10);
+                #endif
+                if (preferences->getInt(preference_network_hardware) == 2) preferences->putInt(preference_network_hardware, 3);
+            }
 
             preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);
         }
@@ -249,10 +268,12 @@ private:
             preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
             preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
             preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout,
-            preference_official_hybrid, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry, preference_has_mac_saved,
-            preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2, preference_latest_version, preference_task_size_network, preference_task_size_nuki,
-            preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries, preference_update_from_mqtt, preference_show_secrets,
-            preference_ble_tx_power, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled
+            preference_official_hybrid, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry, preference_latest_version,
+            preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
+            preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
+            preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
+            preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
+            preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure
     };
     std::vector<char*> _redact =
     {
@@ -265,9 +286,9 @@ private:
             preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_show_secrets,
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
-            preference_publish_authdata, preference_has_mac_saved, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
+            preference_publish_authdata, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
-            preference_recon_netw_on_mqtt_discon, preference_webserial_enabled
+            preference_recon_netw_on_mqtt_discon, preference_webserial_enabled, preference_ntw_reconfigure
     };
     std::vector<char*> _bytePrefs =
     {
@@ -283,11 +304,9 @@ private:
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_command_nr_of_retries,
             preference_command_retry_delay, preference_presence_detection_timeout, preference_query_interval_hybrid_lockstate, preference_latest_version,
             preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
-            preference_ble_tx_power
-    };
-    std::vector<char*> _charPrefs =
-    {
-        preference_has_mac_byte_0, preference_has_mac_byte_1, preference_has_mac_byte_2
+            preference_ble_tx_power, preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr,
+            preference_network_custom_irq, preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso,
+            preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio
     };
 public:
     const std::vector<char*> getPreferencesKeys()
@@ -309,9 +328,5 @@ public:
     const std::vector<char*> getPreferencesIntKeys()
     {
         return _intPrefs;
-    }
-    const std::vector<char*> getPreferencesCharKeys()
-    {
-        return _charPrefs;
     }
 };

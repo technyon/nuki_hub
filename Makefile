@@ -22,9 +22,6 @@ debug: $(DEBUG_BOARDS)
 all: release updater debug
 
 # Alias
-.PHONY: esp32
-esp32: esp32dev
-
 esp%:
 	@echo "Building $@"
 	pio run --environment $@
