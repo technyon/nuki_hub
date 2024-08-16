@@ -131,7 +131,8 @@ void EthernetDevice::initialize()
     if(_hardwareInitialized)
     {
         Log->println(F("Ethernet hardware Initialized"));
-        ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+
+        if(!_ipConfiguration->dhcpEnabled()) ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
 
         Network.onEvent([&](arduino_event_id_t event, arduino_event_info_t info)
         {
@@ -139,10 +140,6 @@ void EthernetDevice::initialize()
                 case ARDUINO_EVENT_ETH_START:
                     Log->println("ETH Started");
                     ETH.setHostname(_hostname.c_str());
-                    if(!_ipConfiguration->dhcpEnabled())
-                        {
-                            ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
-                        }
                     break;
                 case ARDUINO_EVENT_ETH_CONNECTED:
                     Log->println("ETH Connected");
@@ -151,6 +148,18 @@ void EthernetDevice::initialize()
                 case ARDUINO_EVENT_ETH_GOT_IP:
                     Log->printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif));
                     Log->println(ETH);
+
+                    if(!_ipConfiguration->dhcpEnabled() && _ipConfiguration->ipAddress() != ETH.localIP())
+                    {
+                        Log->printf("Static IP not used, retrying to set static IP");
+                        ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+
+                        if(_useSpi) ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
+                        #ifdef CONFIG_IDF_TARGET_ESP32
+                        else _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+                        #endif
+                    }
+
                     _connected = true;
                     if(_preferences->getBool(preference_ntw_reconfigure, false)) _preferences->putBool(preference_ntw_reconfigure, false);
                     break;
@@ -174,10 +183,7 @@ void EthernetDevice::initialize()
             }
         });
     }
-    else
-    {
-        Log->println(F("Failed to initialize ethernet hardware"));
-    }
+    else Log->println(F("Failed to initialize ethernet hardware"));
 }
 
 void EthernetDevice::reconfigure()
