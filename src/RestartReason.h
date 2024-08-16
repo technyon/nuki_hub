@@ -10,7 +10,7 @@ enum class RestartReason
     NetworkTimeoutWatchdog,
     WifiInitFailed,
     ReconfigureWifi,
-    ReconfigureLAN8720,
+    ReconfigureETH,
     NetworkDeviceCriticalFailure,
     NetworkDeviceCriticalFailureNoWifiFallback,
     ConfigurationUpdated,
@@ -24,6 +24,7 @@ enum class RestartReason
     ImportCompleted,
     DeviceUnpaired,
     NukiHubReset,
+    ReconfigureWebServer,
     NotApplicable
 };
 
@@ -72,6 +73,8 @@ inline static String getRestartReason()
             return "RequestedViaMqtt";
         case RestartReason::RequestedViaWebServer:
             return "RequestedViaWebServer";
+        case RestartReason::ReconfigureWebServer:
+            return "ReconfigureWebServer";
         case RestartReason::BLEBeaconWatchdog:
             return "BLEBeaconWatchdog";
         case RestartReason::RestartOnDisconnectWatchdog:
@@ -84,8 +87,8 @@ inline static String getRestartReason()
             return "WifiInitFailed";
         case RestartReason::ReconfigureWifi:
             return "ReconfigureWifi";
-        case RestartReason::ReconfigureLAN8720:
-            return "ReconfigureLAN8720";
+        case RestartReason::ReconfigureETH:
+            return "ReconfigureETH";
         case RestartReason::NetworkDeviceCriticalFailure:
             return "NetworkDeviceCriticalFailure";
         case RestartReason::NetworkDeviceCriticalFailureNoWifiFallback:

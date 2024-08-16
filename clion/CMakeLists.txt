@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16.0)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(nukihub)
 
+add_compile_definitions(CONFIG_IDF_TARGET_ESP32)
+
 set(SRCFILES
         ../src/Config.h
         ../src/NukiDeviceId.cpp
@@ -12,18 +14,17 @@ set(SRCFILES
         ../src/NukiNetworkOpener.cpp
         ../src/networkDevices/NetworkDevice.h
         ../src/networkDevices/NetworkDevice.cpp
+        ../src/networkDevices/LAN8720Definitions.h
+        ../src/networkDevices/DM9051Definitions.h
+        ../src/networkDevices/W5500Definitions.h
         ../src/networkDevices/WifiDevice.cpp
-        ../src/networkDevices/W5500Device.cpp
-        ../src/networkDevices/EthLan8720Device.cpp
-        ../src/networkDevices/ClientSyncW5500.cpp
-        ../src/networkDevices/espMqttClientW5500.cpp
+        ../src/networkDevices/EthernetDevice.cpp
         ../src/networkDevices/IPConfiguration.cpp
         ../src/LockActionResult.h
         ../src/QueryCommand.h
         ../src/NukiWrapper.cpp
         ../src/NukiOpenerWrapper.cpp
         ../src/MqttTopics.h
-        ../src/Ota.cpp
         ../src/WebCfgServerConstants.h
         ../src/WebCfgServer.cpp
         ../src/PresenceDetection.cpp
@@ -59,10 +60,8 @@ file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c
         lib/NimBLE-Arduino/src/*.cpp
         lib/NimBLE-Arduino/src/*.h
-        lib/WebServer/src/*.cpp
-        lib/WebServer/src/*.h
-        lib/Ethernet/src/*.cpp
-        lib/Ethernet/src/*.h
+        lib/ESP Async WebServer/src/*.cpp
+        lib/ESP Async WebServer/src/*.h
         lib/espMqttClient/src/*.cpp
         lib/espMqttClient/src/*.h
         lib/espMqttClient/src/Packets/*.cpp

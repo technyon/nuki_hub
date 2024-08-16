@@ -18,12 +18,11 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.1.4 and Arduino Core 3.0.4.
 - Tested stable builds are provided for the ESP32, ESP32-S3 and ESP32-C3.
 - Untested builds are provided for the ESP32-Solo1.
-- Support for the ESP32-C6 is experimental. There could be more frequent crashes than on other ESP32 devices and connections with the Nuki device could be slower than on other ESP32 devices.
+- Support for the ESP32-C6 and ESP32-H2 is experimental. There could be more frequent crashes than on other ESP32 devices and connections with the Nuki device could be slower than on other ESP32 devices.
 
 <b>Not supported ESP32 devices:</b>
 - The ESP32-Solo1 is not supported by ESP-IDF 5.1 and as such can't be build using Arduino Core 3 and ESP-IDF 5.1. Release 9.0 was the last (untested) release for the Solo1 which for the Solo1 is built against Arduino Core 2.0.14 and ESP-IDF 4.4.
 - The ESP32-S2 has no BLE and as such can't run Nuki Hub.
-- The ESP32-H2 has no Wi-FI and Nuki Hub is not compiled against this target because of this (at this time).
 
 <b>Supported Nuki devices:</b>
 - Nuki Smart Lock 1.0
@@ -37,7 +36,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Keypad 2.0
 
 <b>Supported Ethernet devices:</b><br>
-As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with wired ethernet are supported:
+As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with built-in wired ethernet are supported:
 - [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)
 - [Olimex ESP32-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware)
 - [WT32-ETH01](http://en.wireless-tag.com/product-item-2.html)
@@ -45,6 +44,9 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 - [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)
 - [LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)
 - [GL-S10 (Revisions 2.1, 2.3 / 1.0 is not supported)](https://www.gl-inet.com/products/gl-s10/)
+
+In principle all ESP32 (and variants) devices with built-in ethernet port are supported, but might require additional setup using the "Custom LAN setup" option.
+See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section for more information.
 
 ## Support Nuki Hub development
 
@@ -77,7 +79,7 @@ In a browser navigate to the IP address assigned to the ESP32 via DHCP (often fo
 Next click on "Edit" below "MQTT and Network Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required by your MQTT broker.<br>
 <br>
 The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this.<br>
-In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
+In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 
 ## Pairing with a Nuki Lock or Opener
 
@@ -115,9 +117,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
 - Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "[Home Assistant Discovery](#home-assistant-discovery-optional)" section of this README.
-- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
-- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
-- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional-wi-fi-and-lan8720-only)" section of this README.
+- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
+- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
+- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
 - Connect to AP with the best signal in an environment with multiple APs with the same SSID: Enable to perform a scan for the Access Point with the best signal strenght for the specified SSID in a multi AP/Mesh environment.
@@ -305,7 +307,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Maintanence
 
-- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using Wi-Fi will be set to "Built-in Wi-Fi". If using Ethernet will be set to "Wiznet W5500", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit", "LilyGO T-ETH-POE" or "GL-S10".
+- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using Wi-Fi will be set to "Built-in Wi-Fi". If using Ethernet will be set to "Wiznet W5500", "ETH01-Evo", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit", "LilyGO T-ETH-POE" or "GL-S10".
 - maintenance/reset: Set to 1 to trigger a reboot of the ESP. Auto-resets to 0.
 - maintenance/update: Set to 1 to auto update Nuki Hub to the latest version from GitHub. Requires the setting "Allow updating using MQTT" to be enabled. Auto-resets to 0.
 - maintenance/mqttConnectionState: Last Will and Testament (LWT) topic. "online" when Nuki Hub is connected to the MQTT broker, "offline" if Nuki Hub is not connected to the MQTT broker.
@@ -444,7 +446,7 @@ Updating to version 9.00 requires a change to the partition table of the ESP32.<
 Please follow the instructions for the [First time installation](#first-time-installation) once when updating to Nuki Hub 9.00 from an earlier version.<br>
 Your settings will not be affected when updating using the above instructions (do not select erase device when updating using Webflash).<br>
 
-## MQTT Encryption (optional; Wi-Fi and LAN8720 only)
+## MQTT Encryption (optional)
 
 The communication via MQTT can be SSL encrypted.<br>
 To enable SSL encryption, supply the necessary information in the MQTT Configuration page.<br>
@@ -640,28 +642,27 @@ To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can
 
 ## Connecting via Ethernet (Optional)
 
-If you prefer to connect to the MQTT Broker via Ethernet instead of Wi-Fi, you either use one of the supported ESP32 modules (see about section above),
-or wire a seperate Wiznet W5x00 Module (W5100, W5200, W5500 are supported). To use a supported module, flash the firmware, connect via Wi-Fi and
-select the correct network hardware in the "MQTT and Network Configuration" section.
+If you prefer to connect to via Ethernet instead of Wi-Fi, you either use one of the supported ESP32 modules with built-in ethernet (see "[Supported devices](#supported-devices)" section)
+or wire a seperate SPI Ethernet module.<Br>
+Currently the Wiznet W5x00 Module (W5100, W5200, W5500), DN9051 and KSZ8851SNL chips are supported.<br>
+To use a supported module, flash the firmware, connect via Wi-Fi and select the correct network hardware in the "MQTT and Network Configuration" section.
 
 To wire an external W5x00 module to the ESP, use this wiring scheme:
 
-- Connect W5x00 to ESP32 SPI0:<br>
-  - W5x00 SCK to GPIO18<br>
-  - W5x00 MISO to GPIO19<br>
-  - W5x00 MOSI to GPIO23<br>
-  - W5x00 CS/SS to GPIO5<br>
-- Optionally connect:<br>
-  - W5x00 reset to GPIO33<br>
+- Connect W5x00 to ESP32 SPI:<br>
+  - W5x00 SCK to GPIO 8<br>
+  - W5x00 MISO to GPIO 9<br>
+  - W5x00 MOSI to GPIO 10<br>
+  - W5x00 CS/SS to GPIO 5<br>
+  Optional:
+  - W5x00 RST to GPIO 4<br>
+  - W5x00 INT/IRQ to GPIO 3<br>
 
 Now connect via Wi-Fi and change the network hardware to "Generic W5500".<br>
-If the W5500 hwardware isn't detected, Wi-Fi is used as a fallback.<br>
+
+If Ethernet hwardware isn't detected, Wi-Fi is used as a fallback, unless this is disabled in the settings.<br>
 <br>
-Note: Encrypted MQTT is only available for Wi-Fi and LAN8720 modules, W5x00 modules don't support encryption<br>
-(that leaves Olimex, WT32-ETH01 and M5Stack PoESP32 Unit if encryption is desired).<br>
-Note: LAN8720 modules are only supported on the ESP32, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
-<br>
-If encryption is needed, Olimex is the easiest option, since it has USB for flashing onboard.
+Note: LAN8720 modules are only supported on the ESP32 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
 
 ## Troubleshooting
 

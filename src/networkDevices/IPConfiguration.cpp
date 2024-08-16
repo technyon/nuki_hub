@@ -5,7 +5,7 @@
 IPConfiguration::IPConfiguration(Preferences *preferences)
 : _preferences(preferences)
 {
-    if(_preferences->getString(preference_ip_address, "").length() <= 0)
+    if(!dhcpEnabled() && _preferences->getString(preference_ip_address, "").length() <= 0)
     {
         Log->println("IP address empty, falling back to DHCP.");
         _preferences->putBool(preference_ip_dhcp_enabled, true);

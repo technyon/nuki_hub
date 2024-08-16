@@ -96,7 +96,6 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putBool(preference_find_best_rssi, false);
         _preferences->putBool(preference_check_updates, true);
         _preferences->putBool(preference_opener_continuous_mode, false);
-        _preferences->putBool(preference_network_wifi_fallback_disabled, false);
         _preferences->putBool(preference_official_hybrid, false);
         _preferences->putBool(preference_official_hybrid_actions, false);
         _preferences->putBool(preference_official_hybrid_retry, false);
@@ -129,7 +128,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_rssi_publish_interval, 60);
         _preferences->putInt(preference_network_timeout, 60);
         _preferences->putInt(preference_command_nr_of_retries, 3);
-        _preferences->putInt(preference_command_retry_delay, 1000);
+        _preferences->putInt(preference_command_retry_delay, 100);
         _preferences->putInt(preference_restart_ble_beacon_lost, 60);
         _preferences->putInt(preference_query_interval_lockstate, 1800);
         _preferences->putInt(preference_query_interval_configuration, 3600);
@@ -146,14 +145,12 @@ void NukiWrapper::initialize(const bool& firstStart)
         _nrOfRetries = 3;
         _preferences->putInt(preference_command_nr_of_retries, _nrOfRetries);
     }
-
-    if(_retryDelay <= 100)
+    if(_retryDelay < 100)
     {
         Log->println("Invalid retryDelay, revert to default (100)");
         _retryDelay = 100;
         _preferences->putInt(preference_command_retry_delay, _retryDelay);
     }
-
     if(_intervalLockstate == 0)
     {
         Log->println("Invalid intervalLockstate, revert to default (1800)");
@@ -184,7 +181,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _intervalKeypad = 60 * 30;
         _preferences->putInt(preference_query_interval_keypad, _intervalKeypad);
     }
-    if(_restartBeaconTimeout < 10)
+    if(_restartBeaconTimeout != -1 && _restartBeaconTimeout < 10)
     {
         Log->println("Invalid restartBeaconTimeout, revert to default (-1)");
         _restartBeaconTimeout = -1;
@@ -423,6 +420,11 @@ bool NukiWrapper::isPinValid()
 void NukiWrapper::setPin(const uint16_t pin)
 {
     _nukiLock.saveSecurityPincode(pin);
+}
+
+uint16_t NukiWrapper::getPin()
+{
+    return _nukiLock.getSecurityPincode();
 }
 
 void NukiWrapper::unpair()

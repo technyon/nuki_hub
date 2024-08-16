@@ -1,15 +1,14 @@
 #include "NukiNetwork.h"
 #include "PreferencesKeys.h"
-#include "networkDevices/W5500Device.h"
-#include "networkDevices/WifiDevice.h"
 #include "Logger.h"
 #include "Config.h"
 #include "RestartReason.h"
 #include <HTTPClient.h>
 #include <NetworkClientSecure.h>
-#if defined(CONFIG_IDF_TARGET_ESP32)
-#include "networkDevices/EthLan8720Device.h"
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+#include "networkDevices/WifiDevice.h"
 #endif
+#include "networkDevices/EthernetDevice.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include <ArduinoJson.h>
@@ -18,6 +17,9 @@
 NukiNetwork* NukiNetwork::_inst = nullptr;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
+extern bool forceEnableWebServer;
+extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
+extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
 #ifndef NUKI_HUB_UPDATER
 NukiNetwork::NukiNetwork(Preferences *preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
@@ -39,6 +41,7 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
 
     _inst = this;
     _hostname = _preferences->getString(preference_hostname);
+    _webEnabled = _preferences->getBool(preference_webserver_enabled, true);
 
     #ifndef NUKI_HUB_UPDATER
     memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
@@ -65,20 +68,34 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
 void NukiNetwork::setupDevice()
 {
     _ipConfiguration = new IPConfiguration(_preferences);
+    int hardwareDetect = _preferences->getInt(preference_network_hardware, 0);
+    Log->print(F("Hardware detect     : "));
+    Log->println(hardwareDetect);
 
-    int hardwareDetect = _preferences->getInt(preference_network_hardware);
-
-    Log->print(F("Hardware detect     : ")); Log->println(hardwareDetect);
+    _firstBootAfterDeviceChange = _preferences->getBool(preference_ntw_reconfigure, false);
 
     if(hardwareDetect == 0)
     {
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
         hardwareDetect = 1;
+        #else
+        hardwareDetect = 11;
+       _preferences->putInt(preference_network_custom_addr, 1);
+       _preferences->putInt(preference_network_custom_cs, 8);
+       _preferences->putInt(preference_network_custom_irq, 9);
+       _preferences->putInt(preference_network_custom_rst, 10);
+       _preferences->putInt(preference_network_custom_sck, 11);
+       _preferences->putInt(preference_network_custom_miso, 12);
+       _preferences->putInt(preference_network_custom_mosi, 13);
+       _preferences->putBool(preference_ntw_reconfigure, true);
+        #endif
         _preferences->putInt(preference_network_hardware, hardwareDetect);
     }
 
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
     {
-        if(_preferences->getBool(preference_network_wifi_fallback_disabled))
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
+        if(_preferences->getBool(preference_network_wifi_fallback_disabled) && !_firstBootAfterDeviceChange)
         {
             Log->println(F("Failed to connect to network. Wi-Fi fallback is disabled, rebooting."));
             memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
@@ -88,6 +105,14 @@ void NukiNetwork::setupDevice()
 
         Log->println(F("Switching to Wi-Fi device as fallback."));
         _networkDeviceType = NetworkDeviceType::WiFi;
+        #else
+        int custEth = _preferences->getInt(preference_network_custom_phy, 0);
+        
+        if(custEth<3) custEth++;
+        else custEth = 0;
+        _preferences->putInt(preference_network_custom_phy, custEth);
+        _preferences->putBool(preference_ntw_reconfigure, true);
+        #endif
     }
     else
     {
@@ -99,14 +124,13 @@ void NukiNetwork::setupDevice()
                 _networkDeviceType = NetworkDeviceType::WiFi;
                 break;
             case 2:
-                Log->print(F("Generic W5500"));
+                Log->println(F("Generic W5500"));
                 _networkDeviceType = NetworkDeviceType::W5500;
                 break;
             case 3:
                 Log->println(F("W5500 on M5Stack Atom POE"));
-                _networkDeviceType = NetworkDeviceType::W5500;
+                _networkDeviceType = NetworkDeviceType::W5500M5;
                 break;
-            #if defined(CONFIG_IDF_TARGET_ESP32)
             case 4:
                 Log->println(F("Olimex ESP32-POE / ESP-POE-ISO"));
                 _networkDeviceType = NetworkDeviceType::Olimex_LAN8720;
@@ -127,7 +151,23 @@ void NukiNetwork::setupDevice()
                 Log->println(F("GL-S10"));
                 _networkDeviceType = NetworkDeviceType::GL_S10;
                 break;
-            #endif
+            case 9:
+                Log->println(F("ETH01-Evo"));
+                _networkDeviceType = NetworkDeviceType::ETH01_Evo;
+                break;
+            case 10:
+                Log->println(F("W5500 on M5Stack Atom POE S3"));
+                _networkDeviceType = NetworkDeviceType::W5500M5S3;
+                break;
+            case 11:
+                Log->println(F("Custom LAN Module"));
+                if(_preferences->getInt(preference_network_custom_phy, 0) > 0) _networkDeviceType = NetworkDeviceType::CUSTOM;
+                else
+                {
+                    Log->println(F("Custom LAN Module not setup correctly, falling back to Wi-Fi"));
+                    _networkDeviceType = NetworkDeviceType::WiFi;
+                }
+                break;
             default:
                 Log->println(F("Unknown hardware selected, falling back to Wi-Fi."));
                 _networkDeviceType = NetworkDeviceType::WiFi;
@@ -138,31 +178,207 @@ void NukiNetwork::setupDevice()
     switch (_networkDeviceType)
     {
         case NetworkDeviceType::W5500:
-            _device = new W5500Device(_hostname, _preferences, _ipConfiguration, hardwareDetect);
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "Generic W5500",
+                                           ETH_PHY_ADDR_W5500,
+                                           ETH_PHY_CS_GENERIC_W5500,
+                                           ETH_PHY_IRQ_GENERIC_W5500,
+                                           ETH_PHY_RST_GENERIC_W5500,
+                                           ETH_PHY_SPI_SCK_GENERIC_W5500,
+                                           ETH_PHY_SPI_MISO_GENERIC_W5500,
+                                           ETH_PHY_SPI_MOSI_GENERIC_W5500,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
+            break;
+        case NetworkDeviceType::W5500M5:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "M5Stack Atom POE",
+                                           ETH_PHY_ADDR_W5500,
+                                           ETH_PHY_CS_M5_W5500,
+                                           ETH_PHY_IRQ_M5_W5500,
+                                           ETH_PHY_RST_M5_W5500,
+                                           ETH_PHY_SPI_SCK_M5_W5500,
+                                           ETH_PHY_SPI_MISO_M5_W5500,
+                                           ETH_PHY_SPI_MOSI_M5_W5500,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
+            break;
+        case NetworkDeviceType::W5500M5S3:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "M5Stack Atom POE S3",
+                                           ETH_PHY_ADDR_W5500,
+                                           ETH_PHY_CS_M5_W5500_S3,
+                                           ETH_PHY_IRQ_M5_W5500,
+                                           ETH_PHY_RST_M5_W5500,
+                                           ETH_PHY_SPI_SCK_M5_W5500_S3,
+                                           ETH_PHY_SPI_MISO_M5_W5500_S3,
+                                           ETH_PHY_SPI_MOSI_M5_W5500_S3,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
+            break;
+        case NetworkDeviceType::ETH01_Evo:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "ETH01-Evo",
+            ETH_PHY_ADDR_ETH01EVO,
+            ETH_PHY_CS_ETH01EVO,
+            ETH_PHY_IRQ_ETH01EVO,
+            ETH_PHY_RST_ETH01EVO,
+            ETH_PHY_SPI_SCK_ETH01EVO,
+            ETH_PHY_SPI_MISO_ETH01EVO,
+            ETH_PHY_SPI_MOSI_ETH01EVO,
+            ETH_PHY_SPI_FREQ_MHZ,
+            ETH_PHY_TYPE_DM9051);
+            break;
+        case NetworkDeviceType::M5STACK_PoESP32_Unit:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit",
+                                           ETH_PHY_ADDR_W5500,
+                                           ETH_PHY_CS_M5_W5500,
+                                           ETH_PHY_IRQ_M5_W5500,
+                                           ETH_PHY_RST_M5_W5500,
+                                           ETH_PHY_SPI_SCK_M5_W5500,
+                                           ETH_PHY_SPI_MISO_M5_W5500,
+                                           ETH_PHY_SPI_MOSI_M5_W5500,
+                                           ETH_PHY_SPI_FREQ_MHZ,
+                                           ETH_PHY_W5500);
+            break;
+        case NetworkDeviceType::CUSTOM:
+            {
+                int custPHY = _preferences->getInt(preference_network_custom_phy, 0);
+
+                if(custPHY >= 1 && custPHY <= 3)
+                {
+                    std::string custName;
+                    eth_phy_type_t custEthtype;
+
+                    switch(custPHY)
+                    {
+                        case 1:
+                            custName = "Custom (W5500)";
+                            custEthtype = ETH_PHY_W5500;
+                            break;
+                        case 2:
+                            custName = "Custom (DN9051)";
+                            custEthtype = ETH_PHY_DM9051;
+                            break;
+                        case 3:
+                            custName = "Custom (KSZ8851SNL)";
+                            custEthtype = ETH_PHY_KSZ8851;
+                            break;
+                        default:
+                            custName = "Custom (W5500)";
+                            custEthtype = ETH_PHY_W5500;
+                            break;
+                    }
+
+                    _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, custName,
+                                               _preferences->getInt(preference_network_custom_addr, -1),
+                                               _preferences->getInt(preference_network_custom_cs, -1),
+                                               _preferences->getInt(preference_network_custom_irq, -1),
+                                               _preferences->getInt(preference_network_custom_rst, -1),
+                                               _preferences->getInt(preference_network_custom_sck, -1),
+                                               _preferences->getInt(preference_network_custom_miso, -1),
+                                               _preferences->getInt(preference_network_custom_mosi, -1),
+                                               ETH_PHY_SPI_FREQ_MHZ,
+                                               custEthtype);
+                }
+                #if defined(CONFIG_IDF_TARGET_ESP32)
+                else if(custPHY >= 4 && custPHY <= 9)
+                {
+                    std::string custName;
+                    eth_phy_type_t custEthtype;
+                    eth_clock_mode_t custCLK;
+
+                    switch(custPHY)
+                    {
+                        case 4:
+                            custName = "Custom (LAN8720)";
+                            custEthtype = ETH_PHY_TYPE_LAN8720;
+                            break;
+                        case 5:
+                            custName = "Custom (RTL8201)";
+                            custEthtype = ETH_PHY_RTL8201;
+                            break;
+                        case 6:
+                            custName = "Custom (TLK110)";
+                            custEthtype = ETH_PHY_TLK110;
+                            break;
+                        case 7:
+                            custName = "Custom (DP83848)";
+                            custEthtype = ETH_PHY_DP83848;
+                            break;
+                        case 8:
+                            custName = "Custom (KSZ8041)";
+                            custEthtype = ETH_PHY_KSZ8041;
+                            break;
+                        case 9:
+                            custName = "Custom (KSZ8081)";
+                            custEthtype = ETH_PHY_KSZ8081;
+                            break;
+                        default:
+                            custName = "Custom (LAN8720)";
+                            custEthtype = ETH_PHY_TYPE_LAN8720;
+                            break;
+                    }
+
+                    int custCLKpref = _preferences->getInt(preference_network_custom_clk, 0);
+
+                    switch(custCLKpref)
+                    {
+                        case 0:
+                            custCLK = ETH_CLOCK_GPIO0_IN;
+                            break;
+                        case 2:
+                            custCLK = ETH_CLOCK_GPIO16_OUT;
+                            break;
+                        case 3:
+                            custCLK = ETH_CLOCK_GPIO17_OUT;
+                            break;
+                        default:
+                            custCLK = ETH_CLOCK_GPIO17_OUT;
+                            break;
+                    }
+                    _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, custName, _preferences->getInt(preference_network_custom_addr, -1), _preferences->getInt(preference_network_custom_pwr, -1), _preferences->getInt(preference_network_custom_mdc, -1), _preferences->getInt(preference_network_custom_mdio, -1), custEthtype, custCLK);
+                }
+                #endif
+                #ifndef CONFIG_IDF_TARGET_ESP32H2
+                else
+                {
+                    _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
+                }
+                #endif
+            }
             break;
         #if defined(CONFIG_IDF_TARGET_ESP32)
         case NetworkDeviceType::Olimex_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "Olimex (LAN8720)", ETH_PHY_ADDR, 12, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "Olimex (LAN8720)", ETH_PHY_ADDR_LAN8720, 12, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
             break;
         case NetworkDeviceType::WT32_LAN8720:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "WT32-ETH01", 1, 16);
-            break;
-        case NetworkDeviceType::M5STACK_PoESP32_Unit:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "M5STACK PoESP32 Unit", 1, 5, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_IP101);
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "WT32-ETH01", 1, 16);
             break;
         case NetworkDeviceType::GL_S10:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "GL-S10", 1, 5, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "GL-S10", 1, 5, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);
             break;
         case NetworkDeviceType::LilyGO_T_ETH_POE:
-            _device = new EthLan8720Device(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLOCK_GPIO17_OUT);
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
             break;
         #endif
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
         case NetworkDeviceType::WiFi:
             _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
             break;
         default:
             _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
             break;
+        #else
+        default:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "Custom (W5500)",
+                                               _preferences->getInt(preference_network_custom_addr, -1),
+                                               _preferences->getInt(preference_network_custom_cs, -1),
+                                               _preferences->getInt(preference_network_custom_irq, -1),
+                                               _preferences->getInt(preference_network_custom_rst, -1),
+                                               _preferences->getInt(preference_network_custom_sck, -1),
+                                               _preferences->getInt(preference_network_custom_miso, -1),
+                                               _preferences->getInt(preference_network_custom_mosi, -1),
+                                               ETH_PHY_SPI_FREQ_MHZ,
+                                               ETH_PHY_W5500);
+            break;  
+        #endif
     }
 
     #ifndef NUKI_HUB_UPDATER
@@ -243,6 +459,7 @@ void NukiNetwork::initialize()
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval, 0) * 1000;
     _hostname = _preferences->getString(preference_hostname, "");
     _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+    _mqttPort = _preferences->getInt(preference_mqtt_broker_port, 1883);
 
     if(_hostname == "")
     {
@@ -369,10 +586,8 @@ bool NukiNetwork::update()
             _device->mqttDisconnect(true);
         }
 
-        if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000)
-        {
-            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-        }
+        if(!_webEnabled) forceEnableWebServer = true;
+        if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
 
         Log->println(F("Network not connected. Trying reconnect."));
         ReconnectStatus reconnectStatus = _device->reconnect(true);
@@ -414,6 +629,13 @@ bool NukiNetwork::update()
             return false;
         }
         _mqttConnectCounter = 0;
+        if(forceEnableWebServer && !_webEnabled) 
+        {
+            forceEnableWebServer = false; 
+            delay(200);
+            restartEsp(RestartReason::ReconfigureWebServer);
+        }
+        else if(!_webEnabled) forceEnableWebServer = false;
         delay(2000);
     }
 
@@ -421,17 +643,17 @@ bool NukiNetwork::update()
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
         {
+            if(!_webEnabled) forceEnableWebServer = true;
             Log->println("Network timeout has been reached, restarting ...");
             delay(200);
             restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
-
         delay(2000);
         return false;
     }
 
     _lastConnectedTs = ts;
-
+    
     #if PRESENCE_DETECTION_ENABLED
     if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
     {
@@ -487,7 +709,8 @@ bool NukiNetwork::update()
 
             NetworkClientSecure *client = new NetworkClientSecure;
             if (client) {
-                client->setDefaultCACertBundle();
+                //client->setDefaultCACertBundle();
+                client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);                
                 {
                     HTTPClient https;
                     https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
@@ -505,10 +728,10 @@ bool NukiNetwork::update()
                             {
                                 String currentVersion = NUKI_HUB_VERSION;
 
-                                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["version"];
-                                else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["version"];
-                                else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["version"];
-                                else _latestVersion = doc["release"]["version"];
+                                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) _latestVersion = doc["release"]["fullversion"];
+                                else if(currentVersion.indexOf("beta") > 0) _latestVersion = doc["beta"]["fullversion"];
+                                else if(currentVersion.indexOf("master") > 0) _latestVersion = doc["master"]["fullversion"];
+                                else _latestVersion = doc["release"]["fullversion"];
 
                                 publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
 
@@ -592,7 +815,6 @@ void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &r
 bool NukiNetwork::reconnect()
 {
     _mqttConnectionState = 0;
-    int port = _preferences->getInt(preference_mqtt_broker_port, 1883);
 
     while (!_device->mqttConnected() && (esp_timer_get_time() / 1000) > _nextReconnect)
     {
@@ -618,7 +840,7 @@ bool NukiNetwork::reconnect()
         }
 
         _device->setWill(_mqttConnectionStateTopic, 1, true, _lastWillPayload);
-        _device->mqttSetServer(_mqttBrokerAddr, port);
+        _device->mqttSetServer(_mqttBrokerAddr, _mqttPort);
         _device->mqttConnect();
 
         int64_t timeout = (esp_timer_get_time() / 1000) + 60000;

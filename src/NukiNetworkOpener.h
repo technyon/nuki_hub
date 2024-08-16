@@ -1,8 +1,6 @@
 #pragma once
 
 #include "networkDevices/NetworkDevice.h"
-#include "networkDevices/WifiDevice.h"
-#include "networkDevices/W5500Device.h"
 #include <Preferences.h>
 #include <vector>
 #include "NukiConstants.h"
