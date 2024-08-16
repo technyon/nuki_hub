@@ -1367,7 +1367,10 @@ void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic,
     {
         _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
     }
+    
+    #ifndef CONFIG_IDF_TARGET_ESP32H2
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
+    #endif
 
     if(publishAuthData)
     {

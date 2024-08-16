@@ -94,7 +94,6 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putBool(preference_find_best_rssi, false);
         _preferences->putBool(preference_check_updates, true);
         _preferences->putBool(preference_opener_continuous_mode, false);
-        _preferences->putBool(preference_network_wifi_fallback_disabled, false);
         _preferences->putBool(preference_official_hybrid, false);
         _preferences->putBool(preference_official_hybrid_actions, false);
         _preferences->putBool(preference_official_hybrid_retry, false);

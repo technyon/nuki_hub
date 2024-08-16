@@ -14,11 +14,17 @@ list(APPEND app_sources ../../src/WebCfgServer.cpp)
 list(APPEND app_sources ../../src/networkDevices/EthernetDevice.h)
 list(APPEND app_sources ../../src/networkDevices/IPConfiguration.h)
 list(APPEND app_sources ../../src/networkDevices/NetworkDevice.h)
-list(APPEND app_sources ../../src/networkDevices/WifiDevice.h)
+
+if(NOT DEFINED NUKI_TARGET_H2)
+  list(APPEND app_sources ../../src/networkDevices/WifiDevice.h)
+endif()
 
 list(APPEND app_sources ../../src/networkDevices/EthernetDevice.cpp)
 list(APPEND app_sources ../../src/networkDevices/IPConfiguration.cpp)
 list(APPEND app_sources ../../src/networkDevices/NetworkDevice.cpp)
-list(APPEND app_sources ../../src/networkDevices/WifiDevice.cpp)
+
+if(NOT DEFINED NUKI_TARGET_H2)
+  list(APPEND app_sources ../../src/networkDevices/WifiDevice.cpp)
+endif()
 
 idf_component_register(SRCS ${app_sources})

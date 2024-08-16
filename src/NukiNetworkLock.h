@@ -1,7 +1,9 @@
 #pragma once
 
 #include "networkDevices/NetworkDevice.h"
+#ifndef CONFIG_IDF_TARGET_ESP32H2
 #include "networkDevices/WifiDevice.h"
+#endif
 #include <Preferences.h>
 #include <vector>
 #include <list>

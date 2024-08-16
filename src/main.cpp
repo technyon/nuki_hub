@@ -321,20 +321,33 @@ void otaTask(void *pvParameter)
     };
     Log->print(F("Attempting to download update from "));
     Log->println(config.url);
-    esp_err_t ret = esp_https_ota(&ota_config);
-    if (ret == ESP_OK) {
-        Log->println("OTA Succeeded, Rebooting...");
-        esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
-        restartEsp(RestartReason::OTACompleted);
-    } else {
-        Log->println("Firmware upgrade failed");
-        restartEsp(RestartReason::OTAAborted);
-    }
-    while (1) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
 
-    esp_task_wdt_reset();
+    int retryMax = 3;
+    int retryCount = 0;
+
+    while (retryCount <= retryMax)
+    {
+        esp_err_t ret = esp_https_ota(&ota_config);
+        if (ret == ESP_OK) {
+            Log->println("OTA Succeeded, Rebooting...");
+            esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
+            restartEsp(RestartReason::OTACompleted);
+            break;
+        } else {
+            Log->println("Firmware upgrade failed, retrying in 5 seconds");
+            retryCount++;
+            esp_task_wdt_reset();
+            delay(5000);
+            continue;
+        }
+        while (1) {
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
+    }
+    
+    Log->println("Firmware upgrade failed, restarting");
+    esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
+    restartEsp(RestartReason::OTAAborted);    
 }
 
 void setupTasks(bool ota)

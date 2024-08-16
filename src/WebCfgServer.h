@@ -60,7 +60,9 @@ private:
     void buildAdvancedConfigHtml(AsyncWebServerRequest *request);
     void buildNukiConfigHtml(AsyncWebServerRequest *request);
     void buildGpioConfigHtml(AsyncWebServerRequest *request);
+    #ifndef CONFIG_IDF_TARGET_ESP32H2
     void buildConfigureWifiHtml(AsyncWebServerRequest *request);
+    #endif
     void buildInfoHtml(AsyncWebServerRequest *request);
     void buildCustomNetworkConfigHtml(AsyncWebServerRequest *request);
     void processUnpair(AsyncWebServerRequest *request, bool opener);

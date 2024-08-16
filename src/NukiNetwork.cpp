@@ -5,7 +5,9 @@
 #include "RestartReason.h"
 #include <HTTPClient.h>
 #include <NetworkClientSecure.h>
+#ifndef CONFIG_IDF_TARGET_ESP32H2
 #include "networkDevices/WifiDevice.h"
+#endif
 #include "networkDevices/EthernetDevice.h"
 
 #ifndef NUKI_HUB_UPDATER
@@ -16,6 +18,8 @@ NukiNetwork* NukiNetwork::_inst = nullptr;
 
 RTC_NOINIT_ATTR char WiFi_fallbackDetect[14];
 extern bool forceEnableWebServer;
+extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
+extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
 #ifndef NUKI_HUB_UPDATER
 NukiNetwork::NukiNetwork(Preferences *preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
@@ -67,17 +71,30 @@ void NukiNetwork::setupDevice()
     int hardwareDetect = _preferences->getInt(preference_network_hardware, 0);
     Log->print(F("Hardware detect     : "));
     Log->println(hardwareDetect);
-    
+
     _firstBootAfterDeviceChange = _preferences->getBool(preference_ntw_reconfigure, false);
 
     if(hardwareDetect == 0)
     {
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
         hardwareDetect = 1;
+        #else
+        hardwareDetect = 11;
+       _preferences->putInt(preference_network_custom_addr, 1);
+       _preferences->putInt(preference_network_custom_cs, 8);
+       _preferences->putInt(preference_network_custom_irq, 9);
+       _preferences->putInt(preference_network_custom_rst, 10);
+       _preferences->putInt(preference_network_custom_sck, 11);
+       _preferences->putInt(preference_network_custom_miso, 12);
+       _preferences->putInt(preference_network_custom_mosi, 13);
+       _preferences->putBool(preference_ntw_reconfigure, true);
+        #endif
         _preferences->putInt(preference_network_hardware, hardwareDetect);
     }
 
     if(strcmp(WiFi_fallbackDetect, "wifi_fallback") == 0)
     {
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
         if(_preferences->getBool(preference_network_wifi_fallback_disabled) && !_firstBootAfterDeviceChange)
         {
             Log->println(F("Failed to connect to network. Wi-Fi fallback is disabled, rebooting."));
@@ -88,6 +105,14 @@ void NukiNetwork::setupDevice()
 
         Log->println(F("Switching to Wi-Fi device as fallback."));
         _networkDeviceType = NetworkDeviceType::WiFi;
+        #else
+        int custEth = _preferences->getInt(preference_network_custom_phy, 0);
+        
+        if(custEth<3) custEth++;
+        else custEth = 0;
+        _preferences->putInt(preference_network_custom_phy, custEth);
+        _preferences->putBool(preference_ntw_reconfigure, true);
+        #endif
     }
     else
     {
@@ -311,10 +336,12 @@ void NukiNetwork::setupDevice()
                     _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, custName, _preferences->getInt(preference_network_custom_addr, -1), _preferences->getInt(preference_network_custom_pwr, -1), _preferences->getInt(preference_network_custom_mdc, -1), _preferences->getInt(preference_network_custom_mdio, -1), custEthtype, custCLK);
                 }
                 #endif
+                #ifndef CONFIG_IDF_TARGET_ESP32H2
                 else
                 {
                     _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
                 }
+                #endif
             }
             break;
         #if defined(CONFIG_IDF_TARGET_ESP32)
@@ -331,12 +358,27 @@ void NukiNetwork::setupDevice()
             _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "LilyGO T-ETH-POE", 0, -1, ETH_PHY_MDC_LAN8720, ETH_PHY_MDIO_LAN8720, ETH_PHY_TYPE_LAN8720, ETH_CLOCK_GPIO17_OUT);
             break;
         #endif
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
         case NetworkDeviceType::WiFi:
             _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
             break;
         default:
             _device = new WifiDevice(_hostname, _preferences, _ipConfiguration);
             break;
+        #else
+        default:
+            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "Custom (W5500)",
+                                               _preferences->getInt(preference_network_custom_addr, -1),
+                                               _preferences->getInt(preference_network_custom_cs, -1),
+                                               _preferences->getInt(preference_network_custom_irq, -1),
+                                               _preferences->getInt(preference_network_custom_rst, -1),
+                                               _preferences->getInt(preference_network_custom_sck, -1),
+                                               _preferences->getInt(preference_network_custom_miso, -1),
+                                               _preferences->getInt(preference_network_custom_mosi, -1),
+                                               ETH_PHY_SPI_FREQ_MHZ,
+                                               ETH_PHY_W5500);
+            break;  
+        #endif
     }
 
     #ifndef NUKI_HUB_UPDATER
@@ -544,7 +586,7 @@ bool NukiNetwork::update()
             _firstDisconnected = false;
             _device->mqttDisconnect(true);
         }
-        
+
         if(!_webEnabled) forceEnableWebServer = true;
         if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
 
@@ -560,7 +602,7 @@ bool NukiNetwork::update()
                 restartEsp(RestartReason::NetworkDeviceCriticalFailure);
                 break;
             case ReconnectStatus::Success:
-                memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));                
+                memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
                 Log->print(F("Reconnect successful: IP: "));
                 Log->println(_device->localIP());
                 break;
@@ -667,7 +709,8 @@ bool NukiNetwork::update()
 
             NetworkClientSecure *client = new NetworkClientSecure;
             if (client) {
-                client->setDefaultCACertBundle();
+                //client->setDefaultCACertBundle();
+                client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);                
                 {
                     HTTPClient https;
                     https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
