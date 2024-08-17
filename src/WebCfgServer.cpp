@@ -283,10 +283,9 @@ void WebCfgServer::buildOtaHtml(AsyncWebServerRequest *request, bool debug)
     #else
     String build_type = "debug";
     #endif
-
-    response->print("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('latestver') && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
-    response->print("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('betaver') && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
-    response->print("<form onsubmit=\"if(document.getElementById('currentver') == document.getElementById('devver') && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    response->print("<form onsubmit=\"if(document.getElementById('currentver').value == document.getElementById('latestver').value && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
+    response->print("<form onsubmit=\"if(document.getElementById('currentver').value == document.getElementById('betaver').value && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
+    response->print("<form onsubmit=\"if(document.getElementById('currentver').value == document.getElementById('devver').value && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
     response->print("<div style=\"clear: both\"></div><br>");
 
     response->print("<b>Current version: </b><span id=\"currentver\">");
@@ -299,10 +298,10 @@ void WebCfgServer::buildOtaHtml(AsyncWebServerRequest *request, bool debug)
 
     #ifndef NUKI_HUB_UPDATER
     bool manifestSuccess = false;
+    JsonDocument doc;
 
     NetworkClientSecure *client = new NetworkClientSecure;
     if (client) {
-        //client->setDefaultCACertBundle();
         client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
         {
             HTTPClient https;
@@ -315,42 +314,8 @@ void WebCfgServer::buildOtaHtml(AsyncWebServerRequest *request, bool debug)
 
                 if (http_responseCode == HTTP_CODE_OK || http_responseCode == HTTP_CODE_MOVED_PERMANENTLY)
                 {
-                    JsonDocument doc;
                     DeserializationError jsonError = deserializeJson(doc, https.getStream());
-
-                    if (!jsonError)
-                    {
-                        manifestSuccess = true;
-                        response->print("<b>Latest release version: </b><span id=\"latestver\">");
-                        response->print(doc["release"]["fullversion"].as<const char*>());
-                        response->print(" (");
-                        response->print(doc["release"]["build"].as<const char*>());
-                        response->print(")</span>, ");
-                        response->print(doc["release"]["time"].as<const char*>());
-                        response->print("<br>");
-                        response->print("<b>Latest beta version: </b><span id=\"betaver\">");
-                        if(doc["beta"]["fullversion"] != "No beta available")
-                        {
-                            response->print(doc["beta"]["fullversion"].as<const char*>());
-                            response->print(" (");
-                            response->print(doc["beta"]["build"].as<const char*>());
-                            response->print(")</span>, ");
-                            response->print(doc["beta"]["time"].as<const char*>());
-                        }
-                        else
-                        {
-                            response->print(doc["beta"]["fullversion"].as<const char*>());
-                            response->print("</span>");
-                        }
-                        response->print("<br>");
-                        response->print("<b>Latest development version: </b><span id=\"devver\">");
-                        response->print(doc["master"]["fullversion"].as<const char*>());
-                        response->print(" (");
-                        response->print(doc["master"]["build"].as<const char*>());
-                        response->print(")</span>, ");
-                        response->print(doc["master"]["time"].as<const char*>());
-                        response->print("<br>");
-                    }
+                    if (!jsonError) { manifestSuccess = true; }
                 }
                 https.end();
             }
@@ -361,6 +326,38 @@ void WebCfgServer::buildOtaHtml(AsyncWebServerRequest *request, bool debug)
     if(!manifestSuccess)
     {
         response->print("<span id=\"currentver\" style=\"display: none;\">currentver</span><span id=\"latestver\" style=\"display: none;\">latestver</span><span id=\"devver\" style=\"display: none;\">devver</span><span id=\"betaver\" style=\"display: none;\">betaver</span>");
+    }
+    else
+    {
+        response->print("<b>Latest release version: </b><span id=\"latestver\">");
+        response->print(doc["release"]["fullversion"].as<const char*>());
+        response->print(" (");
+        response->print(doc["release"]["build"].as<const char*>());
+        response->print(")</span>, ");
+        response->print(doc["release"]["time"].as<const char*>());
+        response->print("<br>");
+        response->print("<b>Latest beta version: </b><span id=\"betaver\">");
+        if(doc["beta"]["fullversion"] != "No beta available")
+        {
+            response->print(doc["beta"]["fullversion"].as<const char*>());
+            response->print(" (");
+            response->print(doc["beta"]["build"].as<const char*>());
+            response->print(")</span>, ");
+            response->print(doc["beta"]["time"].as<const char*>());
+        }
+        else
+        {
+            response->print(doc["beta"]["fullversion"].as<const char*>());
+            response->print("</span>");
+        }
+        response->print("<br>");
+        response->print("<b>Latest development version: </b><span id=\"devver\">");
+        response->print(doc["master"]["fullversion"].as<const char*>());
+        response->print(" (");
+        response->print(doc["master"]["build"].as<const char*>());
+        response->print(")</span>, ");
+        response->print(doc["master"]["time"].as<const char*>());
+        response->print("<br>");
     }
     #endif
     response->print("<br></div>");
@@ -1458,6 +1455,19 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
                 }
             }
         }
+        else if(key == "AUTHMAX")
+        {
+            if(value.toInt() > 0 && value.toInt() < 51)
+            {
+                if(_preferences->getInt(preference_auth_max_entries, MAX_AUTH) != value.toInt())
+                {
+                    _preferences->putInt(preference_auth_max_entries, value.toInt());
+                    Log->print(F("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                }
+            }
+        }
         else if(key == "BUFFSIZE")
         {
             if(value.toInt() > 4095 && value.toInt() < 32769)
@@ -1565,6 +1575,16 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
                 configChanged = true;
             }
         }
+        else if(key == "AUTHPUB")
+        {
+            if(_preferences->getBool(preference_auth_info_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_auth_info_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "KPPER")
         {
             if(_preferences->getBool(preference_keypad_topic_per_entry, false) != (value == "1"))
@@ -1590,6 +1610,26 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
             if(_preferences->getBool(preference_timecontrol_control_enabled, false) != (value == "1"))
             {
                 _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "AUTHPER")
+        {
+            if(_preferences->getBool(preference_auth_topic_per_entry, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_auth_topic_per_entry, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "AUTHENA")
+        {
+            if(_preferences->getBool(preference_auth_control_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_auth_control_enabled, (value == "1"));
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -2220,7 +2260,7 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         {
             if(curAdvancedLockConfigAclPrefs[i] != advancedLockConfigAclPrefs[i])
             {
-                _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
+                _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
                 Log->print(F("Setting changed: "));
                 Log->println("ACLCONFADVANCEDLOCK");
                 configChanged = true;
@@ -2232,7 +2272,7 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         {
             if(curBasicOpenerConfigAclPrefs[i] != basicOpenerConfigAclPrefs[i])
             {
-                _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
+                _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
                 Log->print(F("Setting changed: "));
                 Log->println("ACLCONFBASICOPENER");
                 configChanged = true;
@@ -2450,25 +2490,13 @@ void WebCfgServer::buildImportExportHtml(AsyncWebServerRequest *request)
     response->print("<button title=\"Basic export\" onclick=\" window.open('/export', '_self'); return false;\">Basic export</button>");
     response->print("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/export?redacted=1'); return false;\">Export with redacted settings</button>");
     response->print("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/export?redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
-    response->print("</div><div id=\"msgdiv\" style=\"visibility:hidden\">Initiating config update. Please be patient.<br>You will be forwarded automatically when the import is complete.</div>");
-    response->print("<script type=\"text/javascript\">");
-    response->print("window.addEventListener('load', function () {");
-    response->print("	var button = document.getElementById(\"submitbtn\");");
-    response->print("	button.addEventListener('click',hideshow,false);");
-    response->print("	function hideshow() {");
-    response->print("		document.getElementById('upform').style.visibility = 'hidden';");
-    response->print("		document.getElementById('gitdiv').style.visibility = 'hidden';");
-    response->print("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response->print("	}");
-    response->print("});");
-    response->print("</script>");
-    response->print("</body></html>");
+    response->print("</div></body></html>");
     request->send(response);
 }
 
 void WebCfgServer::buildCustomNetworkConfigHtml(AsyncWebServerRequest *request)
 {
-    String header = "<script>window.onload = function() { hideopt(document.getElementsByName('NWCUSTPHY')[0].value); var physelect = document.getElementsByName('NWCUSTPHY')[0]; physelect.addEventListener('change', function(event) { var select = event.target; var selectedOption = select.options[select.selectedIndex]; hideopt(selectedOption.getAttribute('value')); }); }; function hideopt(value) { var intopts = document.getElementsByClassName('internalopt'); var extopts = document.getElementsByClassName('externalopt'); if (value >= 1 && value <= 3) { hide(intopts); } else if (value >= 4 && value <= 9) { hide(extopts); } else { hide(intopts); hide(extopts); } } function hide(opts) { for (var i = 0; i < opts.length; i ++) { opts[i].style.display = 'none'; } }</script>";
+    String header = "<script>window.onload=function(){var physelect=document.getElementsByName('NWCUSTPHY')[0];hideshowopt(physelect.value);physelect.addEventListener('change', function(event){var select=event.target;var selectedOption=select.options[select.selectedIndex];hideshowopt(selectedOption.getAttribute('value'));});};function hideshowopt(value){if(value>=1&&value<=3){hideopt('internalopt',true);hideopt('externalopt',false);}else if(value>=4&&value<=9){hideopt('internalopt', false);hideopt('externalopt', true);}else {hideopt('internalopt', true);hideopt('externalopt', true);}}function hideopt(opts,hide){var hideopts = document.getElementsByClassName(opts);for(var i=0;i<hideopts.length;i++){if(hide==true){hideopts[i].style.display='none';}else{hideopts[i].style.display='block';}}}</script>";
     AsyncResponseStream *response = request->beginResponseStream("text/html");
     buildHtmlHeader(response, header);
     response->print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -2478,16 +2506,16 @@ void WebCfgServer::buildCustomNetworkConfigHtml(AsyncWebServerRequest *request)
     printInputField(response, "NWCUSTADDR", "ADDR", _preferences->getInt(preference_network_custom_addr, 1), 6, "");
     #if defined(CONFIG_IDF_TARGET_ESP32)
     printDropDown(response, "NWCUSTCLK", "CLK", String(_preferences->getInt(preference_network_custom_clk, 0)), getNetworkCustomCLKOptions(), "internalopt");
-    printInputField(response, "NWCUSTPWR", "PWR", _preferences->getInt(preference_network_custom_pwr, 12), 6, "internalopt");
-    printInputField(response, "NWCUSTMDIO", "MDIO", _preferences->getInt(preference_network_custom_mdio), 6, "internalopt");
-    printInputField(response, "NWCUSTMDC", "MDC", _preferences->getInt(preference_network_custom_mdc), 6, "internalopt");
+    printInputField(response, "NWCUSTPWR", "PWR", _preferences->getInt(preference_network_custom_pwr, 12), 6, "class=\"internalopt\"");
+    printInputField(response, "NWCUSTMDIO", "MDIO", _preferences->getInt(preference_network_custom_mdio), 6, "class=\"internalopt\"");
+    printInputField(response, "NWCUSTMDC", "MDC", _preferences->getInt(preference_network_custom_mdc), 6, "class=\"internalopt\"");
     #endif
-    printInputField(response, "NWCUSTIRQ", "IRQ", _preferences->getInt(preference_network_custom_irq, -1), 6, "externalopt");
-    printInputField(response, "NWCUSTRST", "RST", _preferences->getInt(preference_network_custom_rst, -1), 6, "externalopt");
-    printInputField(response, "NWCUSTCS", "CS", _preferences->getInt(preference_network_custom_cs, -1), 6, "externalopt");
-    printInputField(response, "NWCUSTSCK", "SCK", _preferences->getInt(preference_network_custom_sck, -1), 6, "externalopt");
-    printInputField(response, "NWCUSTMISO", "MISO", _preferences->getInt(preference_network_custom_miso, -1), 6, "externalopt");
-    printInputField(response, "NWCUSTMOSI", "MOSI", _preferences->getInt(preference_network_custom_mosi, -1), 6, "externalopt");
+    printInputField(response, "NWCUSTIRQ", "IRQ", _preferences->getInt(preference_network_custom_irq, -1), 6, "class=\"externalopt\"");
+    printInputField(response, "NWCUSTRST", "RST", _preferences->getInt(preference_network_custom_rst, -1), 6, "class=\"externalopt\"");
+    printInputField(response, "NWCUSTCS", "CS", _preferences->getInt(preference_network_custom_cs, -1), 6, "class=\"externalopt\"");
+    printInputField(response, "NWCUSTSCK", "SCK", _preferences->getInt(preference_network_custom_sck, -1), 6, "class=\"externalopt\"");
+    printInputField(response, "NWCUSTMISO", "MISO", _preferences->getInt(preference_network_custom_miso, -1), 6, "class=\"externalopt\"");
+    printInputField(response, "NWCUSTMOSI", "MOSI", _preferences->getInt(preference_network_custom_mosi, -1), 6, "class=\"externalopt\"");
 
     response->print("</table>");
 
@@ -2695,7 +2723,6 @@ void WebCfgServer::buildMqttConfigHtml(AsyncWebServerRequest *request)
     printInputField(response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
     printInputField(response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
     response->print("</table>");
-
     response->print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response->print("</form>");
     response->print("</body></html>");
@@ -2872,6 +2899,9 @@ void WebCfgServer::partAccLvlHtml(String &partString, int aclPart)
             printCheckBox(partString, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
             printCheckBox(partString, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
             printCheckBox(partString, "TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
+            printCheckBox(partString, "AUTHPUB", "Publish authorization entries information", _preferences->getBool(preference_auth_info_enabled), "");
+            printCheckBox(partString, "AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
+            printCheckBox(partString, "AUTHENA", "Modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
             printCheckBox(partString, "PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
             partString.concat("</table><br>");
             partString.concat("<div id=\"acllock\"></div>");
@@ -3514,6 +3544,9 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
                 sprintf(tmp, "%02x", authorizationId[i]);
                 response->print(tmp);
             }
+            uint32_t authorizationIdInt = authorizationId[0] + 256U*authorizationId[1] + 65536U*authorizationId[2] + 16777216U*authorizationId[3];
+            response->print("\nAuthorizationId (UINT32_T): ");
+            response->print(authorizationIdInt);
         }
     }
 
@@ -3865,9 +3898,17 @@ void WebCfgServer::printInputField(AsyncResponseStream *response,
     response->print(isPassword ? "\"password\"" : "\"text\"");
     if(strcmp(id, "") != 0)
     {
-        response->print(" id=\"");
-        response->print(id);
-        response->print("\"");
+        if(strncmp(id, "class=", 6) != 0)
+        {
+            response->print(" ");
+            response->print(id);
+        }
+        else
+        {
+            response->print(" id=\"");
+            response->print(id);
+            response->print("\"");
+        }
     }
     if(strcmp(value, "") != 0)
     {

@@ -53,9 +53,9 @@ public:
     explicit NukiNetwork(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void registerMqttReceiver(MqttReceiver* receiver);
-#if PRESENCE_DETECTION_ENABLED
+    #if PRESENCE_DETECTION_ENABLED
     void setMqttPresencePath(char* path);
-#endif
+    #endif
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
     String localIP();
@@ -105,7 +105,6 @@ public:
     bool encryptionSupported();
     bool mqttRecentlyConnected();
     bool pathEquals(const char* prefix, const char* path, const char* referencePath);
-
     uint16_t subscribe(const char* topic, uint8_t qos);
 
     void addReconnectedCallback(std::function<void()> reconnectedCallback);

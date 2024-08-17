@@ -96,6 +96,12 @@
 #define preference_show_secrets (char*)"showSecr"
 #define preference_ble_tx_power (char*)"bleTxPwr"
 #define preference_recon_netw_on_mqtt_discon (char*)"recNtwMqttDis"
+#define preference_lock_max_auth_entry_count (char*)"maxauth"
+#define preference_opener_max_auth_entry_count (char*)"opmaxauth"
+#define preference_auth_control_enabled (char*)"authCtrlEna"
+#define preference_auth_topic_per_entry (char*)"authPerEntry"
+#define preference_auth_info_enabled (char*)"authInfoEna"
+#define preference_auth_max_entries (char*)"authmaxentry"
 #define preference_network_custom_phy (char*)"ntwPHY"
 #define preference_network_custom_addr (char*)"ntwADDR"
 #define preference_network_custom_irq (char*)"ntwIRQ"
@@ -273,7 +279,8 @@ private:
             preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
             preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
             preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
-            preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure
+            preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries,
     };
     std::vector<char*> _redact =
     {
@@ -288,7 +295,8 @@ private:
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
-            preference_recon_netw_on_mqtt_discon, preference_webserial_enabled, preference_ntw_reconfigure
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
+            preference_ntw_reconfigure
     };
     std::vector<char*> _bytePrefs =
     {

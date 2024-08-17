@@ -68,7 +68,6 @@ void NukiNetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_config_action);
-
     _network->subscribe(_mqttPath, mqtt_topic_reset);
     _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
 
@@ -154,6 +153,12 @@ void NukiNetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     }
 
+    if(_preferences->getBool(preference_auth_control_enabled))
+    {
+        _network->subscribe(_mqttPath, mqtt_topic_auth_action);
+        _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
+    }
+
     if(_offEnabled)
     {
         char uidString[20];
@@ -200,7 +205,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     {
         Log->println(F("Update requested via MQTT."));
         String currentVersion = NUKI_HUB_VERSION;
-        
+
         if(atof(_preferences->getString(preference_latest_version).c_str()) >= atof(currentVersion.c_str()))
         {
             _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
@@ -402,6 +407,18 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         }
 
         publishString(mqtt_topic_timecontrol_action, "--", true);
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_auth_action))
+    {
+        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+
+        if(_authCommandReceivedReceivedCallback != NULL)
+        {
+            _authCommandReceivedReceivedCallback(value);
+        }
+
+        publishString(mqtt_topic_auth_action, "--", true);
     }
 }
 
@@ -1262,6 +1279,152 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
     }
 }
 
+void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>& authEntries, uint maxAuthEntryCount)
+{
+    uint index = 0;
+    char str[50];
+    char uidString[20];
+    itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
+    String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+    JsonDocument json;
+
+    for(const auto& entry : authEntries)
+    {
+        auto jsonEntry = json.add<JsonVariant>();
+
+        jsonEntry["authId"] = entry.authId;
+        jsonEntry["idType"] = entry.idType; //CONSIDER INT TO STRING
+        jsonEntry["enabled"] = entry.enabled;
+        jsonEntry["name"] = entry.name;
+        jsonEntry["remoteAllowed"] = entry.remoteAllowed;
+        char createdDT[20];
+        sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.createdYear, entry.createdMonth, entry.createdDay, entry.createdHour, entry.createdMinute, entry.createdSecond);
+        jsonEntry["dateCreated"] = createdDT;
+        jsonEntry["lockCount"] = entry.lockCount;
+        char lastActiveDT[20];
+        sprintf(lastActiveDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.lastActYear, entry.lastActMonth, entry.lastActDay, entry.lastActHour, entry.lastActMinute, entry.lastActSecond);
+        jsonEntry["dateLastActive"] = lastActiveDT;
+        jsonEntry["timeLimited"] = entry.timeLimited;
+        char allowedFromDT[20];
+        sprintf(allowedFromDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedFromYear, entry.allowedFromMonth, entry.allowedFromDay, entry.allowedFromHour, entry.allowedFromMinute, entry.allowedFromSecond);
+        jsonEntry["allowedFrom"] = allowedFromDT;
+        char allowedUntilDT[20];
+        sprintf(allowedUntilDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedUntilYear, entry.allowedUntilMonth, entry.allowedUntilDay, entry.allowedUntilHour, entry.allowedUntilMinute, entry.allowedUntilSecond);
+        jsonEntry["allowedUntil"] = allowedUntilDT;
+
+        uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
+        JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
+
+        while(allowedWeekdaysInt > 0) {
+            if(allowedWeekdaysInt >= 64)
+            {
+                weekdays.add("mon");
+                allowedWeekdaysInt -= 64;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 32)
+            {
+                weekdays.add("tue");
+                allowedWeekdaysInt -= 32;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 16)
+            {
+                weekdays.add("wed");
+                allowedWeekdaysInt -= 16;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 8)
+            {
+                weekdays.add("thu");
+                allowedWeekdaysInt -= 8;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 4)
+            {
+                weekdays.add("fri");
+                allowedWeekdaysInt -= 4;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 2)
+            {
+                weekdays.add("sat");
+                allowedWeekdaysInt -= 2;
+                continue;
+            }
+            if(allowedWeekdaysInt >= 1)
+            {
+                weekdays.add("sun");
+                allowedWeekdaysInt -= 1;
+                continue;
+            }
+        }
+
+        char allowedFromTimeT[5];
+        sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
+        jsonEntry["allowedFromTime"] = allowedFromTimeT;
+        char allowedUntilTimeT[5];
+        sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
+        jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
+
+        if(_preferences->getBool(preference_auth_topic_per_entry, false))
+        {
+            String basePath = mqtt_topic_auth;
+            basePath.concat("/entries/");
+            basePath.concat(std::to_string(index).c_str());
+            jsonEntry["index"] = index;
+            serializeJson(jsonEntry, _buffer, _bufferSize);
+            publishString(basePath.c_str(), _buffer, true);
+
+            String basePathPrefix = "~";
+            basePathPrefix.concat(basePath);
+            const char *basePathPrefixChr = basePathPrefix.c_str();
+
+            std::string baseCommand = std::string("{ \"action\": \"update\", \"authId\": \"") + std::to_string(entry.authId);
+            std::string enaCommand = baseCommand + (char*)"\", \"enabled\": \"1\" }";
+            std::string disCommand = baseCommand + (char*)"\", \"enabled\": \"0\" }";
+            std::string mqttDeviceName = std::string("auth_") + std::to_string(index);
+            std::string uidStringPostfix = std::string("_") + mqttDeviceName;
+            std::string displayName = std::string("Authorization - ") + std::to_string(entry.authId);
+
+            _network->publishHassTopic("switch",
+                             mqttDeviceName.c_str(),
+                             uidString,
+                             uidStringPostfix.c_str(),
+                             displayName.c_str(),
+                             _nukiName,
+                             baseTopic.c_str(),
+                             String("~") + basePath.c_str(),
+                             (char*)"SmartLock",
+                             "",
+                             "",
+                             "diagnostic",
+                             String("~") + mqtt_topic_auth_action,
+                             { { (char*)"json_attr_t", (char*)basePathPrefixChr },
+                               { (char*)"pl_on", (char*)enaCommand.c_str() },
+                               { (char*)"pl_off", (char*)disCommand.c_str() },
+                               { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
+                               { (char*)"stat_on", (char*)"1" },
+                               { (char*)"stat_off", (char*)"0" }});
+        }
+
+        ++index;
+    }
+
+    serializeJson(json, _buffer, _bufferSize);
+    publishString(mqtt_topic_auth_json, _buffer, true);
+
+    for(int j=authEntries.size(); j<maxAuthEntryCount; j++)
+    {
+        String entriesTopic = _mqttPath;
+        entriesTopic.concat(mqtt_topic_auth_entries);
+        entriesTopic.concat("/");
+        _network->removeTopic(entriesTopic, (char*)std::to_string(j).c_str());
+        std::string mqttDeviceName = std::string("auth_") + std::to_string(j);
+        _network->removeHassTopic((char*)"switch", (char*)mqttDeviceName.c_str(), uidString);
+    }
+}
+
 void NukiNetworkLock::publishConfigCommandResult(const char* result)
 {
     publishString(mqtt_topic_config_action_command_result, result, true);
@@ -1281,6 +1444,11 @@ void NukiNetworkLock::publishKeypadJsonCommandResult(const char* result)
 void NukiNetworkLock::publishTimeControlCommandResult(const char* result)
 {
     publishString(mqtt_topic_timecontrol_command_result, result, true);
+}
+
+void NukiNetworkLock::publishAuthCommandResult(const char* result)
+{
+    publishString(mqtt_topic_auth_command_result, result, true);
 }
 
 void NukiNetworkLock::publishStatusUpdated(const bool statusUpdated)
@@ -1317,6 +1485,11 @@ void NukiNetworkLock::setKeypadJsonCommandReceivedCallback(void (*keypadJsonComm
 void NukiNetworkLock::setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char *))
 {
     _timeControlCommandReceivedReceivedCallback = timeControlCommandReceivedReceivedCallback;
+}
+
+void NukiNetworkLock::setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char *))
+{
+    _authCommandReceivedReceivedCallback = authCommandReceivedReceivedCallback;
 }
 
 void NukiNetworkLock::buildMqttPath(const char* path, char* outPath, bool offPath)

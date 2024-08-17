@@ -171,8 +171,10 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Publish keypad entries information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Also publish keypad codes (Only available when a Keypad is detected): Enable to publish the actual keypad codes through MQTT, note that is could be considered a security risk
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
-- Publish time control information: Enable to publish information about time control entries through MQTT, see the "[Time Control](#time-control)" section of this README
-- Add, modify and delete time control entries: Enable to allow configuration of time control entries through MQTT, see the "[Time Control](#time-control)" section of this README
+- Publish timecontrol information: Enable to publish information about timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol)" section of this README
+- Add, modify and delete timecontrol entries: Enable to allow configuration of timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol)" section of this README
+- Publish authorization information: Enable to publish information about authorization entries through MQTT, see the "[Authorization](#authorization)" section of this README
+- Modify and delete authorization entries: Enable to allow configuration of authorization entries through MQTT, see the "[Authorization](#authorization)" section of this README
 - Publish auth data: Enable to publish authorization data to the MQTT topic lock/log. Requires the Nuki security code / PIN to be set, see "[Nuki Lock PIN / Nuki Opener PIN](#nuki-lock-pin--nuki-opener-pin)" below.
 
 #### Nuki Lock/Opener Access Control
@@ -556,15 +558,15 @@ For example, to add a code:
 - write 1 to enabled
 - write "add" to action
 
-## Time control using JSON (optional)
+## Timecontrol using JSON (optional)
 
-Time control entries can be added, updated and removed. This has to enabled first in the configuration portal. Check "Add, modify and delete time control entries" under "Access Level Configuration" and save the configuration.
+Timecontrol entries can be added, updated and removed. This has to enabled first in the configuration portal. Check "Add, modify and delete timecontrol entries" under "Access Level Configuration" and save the configuration.
 
-Information about current time control entries is published as JSON data to the "timecontrol/json" MQTT topic.<br>
-This needs to be enabled separately by checking "Publish time control entries information" under "Access Level Configuration" and saving the configuration.
+Information about current timecontrol entries is published as JSON data to the "timecontrol/json" MQTT topic.<br>
+This needs to be enabled separately by checking "Publish timecontrol entries information" under "Access Level Configuration" and saving the configuration.
 By default a maximum of 10 entries are published.
 
-To change Nuki Lock/Opener time control settings set the `timecontrol/actionJson` topic to a JSON formatted value containing the following nodes.
+To change Nuki Lock/Opener timecontrol settings set the `timecontrol/actionJson` topic to a JSON formatted value containing the following nodes.
 
 | Node             | Delete   | Add      | Update   | Usage                                                                                    | Possible values                                                |
 |------------------|----------|----------|----------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
@@ -579,6 +581,36 @@ Examples:
 - Delete: `{ "action": "delete", "entryId": "1234" }`
 - Add: `{ "action": "add", "weekdays": [ "wed", "thu", "fri" ], "time": "08:00", "lockAction": "Unlock" }`
 - Update: `{ "action": "update", "entryId": "1234", "enabled": "1", "weekdays": [ "mon", "tue", "sat", "sun" ], "time": "08:00", "lockAction": "Lock" }`
+
+## Authorization entries control using JSON (optional)
+
+Authorization entries can be updated and removed. This has to enabled first in the configuration portal. Check "Modify and delete authorization entries" under "Access Level Configuration" and save the configuration.
+It is currently not (yet) possible to add authorization entries this way.
+
+Information about current authorization entries is published as JSON data to the "authorization/json" MQTT topic.<br>
+This needs to be enabled separately by checking "Publish authorization entries information" under "Access Level Configuration" and saving the configuration.
+By default a maximum of 10 entries are published.
+
+To change Nuki Lock/Opener authorization settings set the `authorization/actionJson` topic to a JSON formatted value containing the following nodes.
+
+
+| Node             | Delete   | Add      | Update   | Usage                                                                                                            | Possible values                        |
+|------------------|----------|----------|----------|------------------------------------------------------------------------------------------------------------------|----------------------------------------|
+| action           | Required | Required | Required | The action to execute                                                                                            | "delete", "add", "update"              |
+| authId           | Required | Not used | Required | The auth ID of the existing entry to delete or update                                                            | Integer                                |
+| enabled          | Not used | Not used | Optional | Enable or disable the authorization, always enabled on add                                                       | 1 = enabled, 0 = disabled              |
+| name             | Not used | Required | Optional | The name of the authorization to create or update                                                                | String, max 20 chars                   |
+| remoteAllowed    | Not used | Optional | Optional | If this authorization is allowed remote access, requires enabled = 1                                             | 1 = enabled, 0 = disabled              |
+| timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, requires enabled = 1                        | 1 = enabled, 0 = disabled              |
+| allowedFrom      | Not used | Optional | Optional | The start timestamp from which access should be allowed (requires enabled = 1 and timeLimited = 1)               | "YYYY-MM-DD HH:MM:SS"                  |
+| allowedUntil     | Not used | Optional | Optional | The end timestamp until access should be allowed (requires enabled = 1 and timeLimited = 1)                      | "YYYY-MM-DD HH:MM:SS"                  |
+| allowedWeekdays  | Not used | Optional | Optional | Weekdays on which access should be allowed (requires enabled = 1 and timeLimited = 1)     | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun"|
+| allowedFromTime  | Not used | Optional | Optional | The start time per day from which access should be allowed (requires enabled = 1 and timeLimited = 1)            | "HH:MM"                                |
+| allowedUntilTime | Not used | Optional | Optional | The end time per day until access should be allowed (requires enabled = 1 and timeLimited = 1)                   | "HH:MM"                                |
+
+Examples:
+- Delete: `{ "action": "delete", "authId": "1234" }`
+- Update: `{ "action": "update", "authId": "1234", "enabled": "1", "name": "Test", "timeLimited": "1", "allowedFrom": "2024-04-12 10:00:00", "allowedUntil": "2034-04-12 10:00:00", "allowedWeekdays": [ "mon", "tue", "sat", "sun" ], "allowedFromTime": "08:00", "allowedUntilTime": "16:00" }`
 
 ## GPIO lock control (optional)
 

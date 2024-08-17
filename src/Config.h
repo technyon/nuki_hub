@@ -102,6 +102,7 @@
 #define MAX_AUTHLOG 5
 #define MAX_KEYPAD 10
 #define MAX_TIMECONTROL 10
+#define MAX_AUTH 10
 #endif
 
 #define NETWORK_TASK_SIZE 12288

@@ -154,7 +154,6 @@ void networkTask(void *pvParameters)
         }
 
         esp_task_wdt_reset();
-
         delay(100);
     }
 }
@@ -243,6 +242,7 @@ void bootloopDetection()
             preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
             preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
             preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
+            preferences->putInt(preference_auth_max_entries, MAX_AUTH);
             bootloopCounter = 0;
         }
     }
@@ -344,10 +344,10 @@ void otaTask(void *pvParameter)
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
     }
-    
+
     Log->println("Firmware upgrade failed, restarting");
     esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
-    restartEsp(RestartReason::OTAAborted);    
+    restartEsp(RestartReason::OTAAborted);
 }
 
 void setupTasks(bool ota)
@@ -381,6 +381,14 @@ void setup()
     esp_log_level_set("*", ESP_LOG_ERROR);
     Serial.begin(115200);
     Log = &Serial;
+
+    #ifndef NUKI_HUB_UPDATER
+    stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
+    static char linebuf[1024];
+    setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
+    esp_rom_install_channel_putc(1, &ets_putc_handler);
+    //ets_install_putc1(&ets_putc_handler);
+    #endif
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
