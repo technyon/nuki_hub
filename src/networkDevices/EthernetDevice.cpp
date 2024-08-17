@@ -132,10 +132,11 @@ void EthernetDevice::initialize()
     {
         Log->println(F("Ethernet hardware Initialized"));
 
-        if(!_ipConfiguration->dhcpEnabled())
+        if(_useSpi && !_ipConfiguration->dhcpEnabled())
         {
             ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
         }
+
 
         Network.onEvent([&](arduino_event_id_t event, arduino_event_info_t info)
         {
@@ -188,11 +189,16 @@ void EthernetDevice::initialize()
                     onDisconnected();
                     break;
                 default:
+                    Log->print("ETH Event: ");
+                    Log->println(event);
                     break;
             }
         });
     }
-    else Log->println(F("Failed to initialize ethernet hardware"));
+    else
+    {
+        Log->println(F("Failed to initialize ethernet hardware"));
+    }
 }
 
 void EthernetDevice::reconfigure()
