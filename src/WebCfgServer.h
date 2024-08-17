@@ -68,8 +68,8 @@ private:
     void processUnpair(AsyncWebServerRequest *request, bool opener);
     void processUpdate(AsyncWebServerRequest *request);
     void processFactoryReset(AsyncWebServerRequest *request);
-    void printInputField(AsyncResponseStream *response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* id, const bool& isPassword = false, const bool& showLengthRestriction = false);
-    void printInputField(AsyncResponseStream *response, const char* token, const char* description, const int value, size_t maxLength, const char* id);
+    void printInputField(AsyncResponseStream *response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* args, const bool& isPassword = false, const bool& showLengthRestriction = false);
+    void printInputField(AsyncResponseStream *response, const char* token, const char* description, const int value, size_t maxLength, const char* args);
     void printCheckBox(AsyncResponseStream *response, const char* token, const char* description, const bool value, const char* htmlClass);
     void printCheckBox(String &partString, const char* token, const char* description, const bool value, const char* htmlClass);
     void printTextarea(AsyncResponseStream *response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);

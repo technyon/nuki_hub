@@ -7,8 +7,12 @@
 #include "RestartReason.h"
 #include <ArduinoJson.h>
 #include <ctype.h>
+#include <HTTPClient.h>
+#include <NetworkClientSecure.h>
 
 extern bool forceEnableWebServer;
+extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
+extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
 NukiNetworkLock::NukiNetworkLock(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize)
 : _network(network),
@@ -204,30 +208,102 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(value, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
     {
         Log->println(F("Update requested via MQTT."));
-        String currentVersion = NUKI_HUB_VERSION;
+        
+        bool otaManifestSuccess = false;
+        JsonDocument doc;
 
-        if(atof(_preferences->getString(preference_latest_version).c_str()) >= atof(currentVersion.c_str()))
-        {
-            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        NetworkClientSecure *client = new NetworkClientSecure;
+        if (client) {
+            client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+            {
+                HTTPClient https;
+                https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+                https.useHTTP10(true);
+
+                if (https.begin(*client, GITHUB_OTA_MANIFEST_URL)) {
+                    int httpResponseCode = https.GET();
+
+                    if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                    {
+                        DeserializationError jsonError = deserializeJson(doc, https.getStream());
+
+                        if (!jsonError) { otaManifestSuccess = true; }
+                    }
+                }
+                https.end();
+            }
+            delete client;
         }
-        else if(currentVersion.indexOf("beta") > 0)
+
+        if (otaManifestSuccess)
         {
-            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_RELEASE_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_BETA_UPDATER_BINARY_URL);
-        }
-        else if(currentVersion.indexOf("master") > 0)
-        {
-            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+            String currentVersion = NUKI_HUB_VERSION;
+
+            if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) 
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+                    Log->println(F("Updating to latest release version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+            else if(currentVersion.indexOf("beta") > 0)
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["beta"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["beta"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["beta"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest beta version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_BETA_RELEASE_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_BETA_UPDATER_BINARY_URL);
+                    Log->println(F("Updating to latest beta version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+            else if(currentVersion.indexOf("master") > 0)
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["master"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["master"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["master"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest development version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_RELEASE_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+                    Log->println(F("Updating to latest developmemt version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+            else
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+                    Log->println(F("Updating to latest release version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            } 
         }
         else
         {
-            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+            Log->println(F("Failed to retrieve OTA manifest, OTA update aborted."));
         }
-        delay(200);
-        restartEsp(RestartReason::OTAReboot);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
     {

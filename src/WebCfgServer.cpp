@@ -283,9 +283,9 @@ void WebCfgServer::buildOtaHtml(AsyncWebServerRequest *request, bool debug)
     #else
     String build_type = "debug";
     #endif
-    response->print("<form onsubmit=\"if(document.getElementById('currentver').value == document.getElementById('latestver').value && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
-    response->print("<form onsubmit=\"if(document.getElementById('currentver').value == document.getElementById('betaver').value && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
-    response->print("<form onsubmit=\"if(document.getElementById('currentver').value == document.getElementById('devver').value && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    response->print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('latestver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
+    response->print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('betaver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
+    response->print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('devver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/autoupdate\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
     response->print("<div style=\"clear: both\"></div><br>");
 
     response->print("<b>Current version: </b><span id=\"currentver\">");
@@ -358,6 +358,16 @@ void WebCfgServer::buildOtaHtml(AsyncWebServerRequest *request, bool debug)
         response->print(")</span>, ");
         response->print(doc["master"]["time"].as<const char*>());
         response->print("<br>");
+        
+        String currentVersion = NUKI_HUB_VERSION;
+        const char* latestVersion;
+
+        if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) latestVersion = doc["release"]["fullversion"];
+        else if(currentVersion.indexOf("beta") > 0) latestVersion = doc["beta"]["fullversion"];
+        else if(currentVersion.indexOf("master") > 0) latestVersion = doc["master"]["fullversion"];
+        else latestVersion = doc["release"]["fullversion"];
+
+        if(strcmp(latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0) _preferences->putString(preference_latest_version, latestVersion);
     }
     #endif
     response->print("<br></div>");
@@ -2746,9 +2756,9 @@ void WebCfgServer::buildAdvancedConfigHtml(AsyncWebServerRequest *request)
     printInputField(response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
     response->print("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
     printInputField(response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
-    printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "inputmaxauthlog");
-    printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "inputmaxkeypad");
-    printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "inputmaxtimecontrol");
+    printInputField(response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
+    printInputField(response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
+    printInputField(response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "id=\"inputmaxtimecontrol\"");
     printCheckBox(response, "SHOWSECRETS", "Show Pairing secrets on Info page (for 120s after next boot)", _preferences->getBool(preference_show_secrets), "");
     if(_preferences->getBool(preference_lock_enabled, true))
     {
@@ -3875,7 +3885,7 @@ void WebCfgServer::printInputField(AsyncResponseStream *response,
                                    const char *description,
                                    const char *value,
                                    const size_t& maxLength,
-                                   const char *id,
+                                   const char *args,
                                    const bool& isPassword,
                                    const bool& showLengthRestriction)
 {
@@ -3896,19 +3906,10 @@ void WebCfgServer::printInputField(AsyncResponseStream *response,
     response->print("</td><td>");
     response->print("<input type=");
     response->print(isPassword ? "\"password\"" : "\"text\"");
-    if(strcmp(id, "") != 0)
+    if(strcmp(args, "") != 0)
     {
-        if(strncmp(id, "class=", 6) != 0)
-        {
-            response->print(" ");
-            response->print(id);
-        }
-        else
-        {
-            response->print(" id=\"");
-            response->print(id);
-            response->print("\"");
-        }
+        response->print(" ");
+        response->print(args);
     }
     if(strcmp(value, "") != 0)
     {
@@ -3928,11 +3929,11 @@ void WebCfgServer::printInputField(AsyncResponseStream *response,
                                    const char *description,
                                    const int value,
                                    size_t maxLength,
-                                   const char *id)
+                                   const char *args)
 {
     char valueStr[20];
     itoa(value, valueStr, 10);
-    printInputField(response, token, description, valueStr, maxLength, id);
+    printInputField(response, token, description, valueStr, maxLength, args);
 }
 
 void WebCfgServer::printCheckBox(AsyncResponseStream *response, const char *token, const char *description, const bool value, const char *htmlClass)
