@@ -171,7 +171,10 @@ void EthernetDevice::initialize()
                     }
 
                     _connected = true;
-                    if(_preferences->getBool(preference_ntw_reconfigure, false)) _preferences->putBool(preference_ntw_reconfigure, false);
+                    if(_preferences->getBool(preference_ntw_reconfigure, false))
+                    {
+                        _preferences->putBool(preference_ntw_reconfigure, false);
+                    }
                     break;
                 case ARDUINO_EVENT_ETH_LOST_IP:
                     Log->println("ETH Lost IP");
