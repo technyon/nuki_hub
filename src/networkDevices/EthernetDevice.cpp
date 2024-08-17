@@ -125,6 +125,10 @@ void EthernetDevice::initialize()
     {
         Log->println(F("Use RMII"));
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+        if(!_ipConfiguration->dhcpEnabled())
+        {
+            _checkIpTs = (esp_timer_get_time() / 1000) + 2000;
+        }
     }
     #endif
 
@@ -137,7 +141,6 @@ void EthernetDevice::initialize()
             ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
         }
 
-
         Network.onEvent([&](arduino_event_id_t event, arduino_event_info_t info)
         {
             switch (event) {
@@ -147,27 +150,21 @@ void EthernetDevice::initialize()
                     break;
                 case ARDUINO_EVENT_ETH_CONNECTED:
                     Log->println("ETH Connected");
-                    if(!localIP().equals("0.0.0.0")) _connected = true;
+                    if(!localIP().equals("0.0.0.0"))
+                    {
+                        _connected = true;
+                    }
                     break;
                 case ARDUINO_EVENT_ETH_GOT_IP:
                     Log->printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif));
                     Log->println(ETH);
 
-                    if(!_ipConfiguration->dhcpEnabled() && _ipConfiguration->ipAddress() != ETH.localIP())
+                    // For RMII devices, this check is handled in the update() method.
+                    if(_useSpi && !_ipConfiguration->dhcpEnabled() && _ipConfiguration->ipAddress() != ETH.localIP())
                     {
                         Log->printf("Static IP not used, retrying to set static IP");
                         ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
-
-                        if(_useSpi)
-                        {
-                            ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
-                        }
-                        #ifdef CONFIG_IDF_TARGET_ESP32
-                        else
-                        {
-                            _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
-                        }
-                        #endif
+                        ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
                     }
 
                     _connected = true;
@@ -203,6 +200,26 @@ void EthernetDevice::initialize()
         Log->println(F("Failed to initialize ethernet hardware"));
     }
 }
+
+void EthernetDevice::update()
+{
+    NetworkDevice::update();
+
+    if(_checkIpTs != -1)
+    {
+        if(_ipConfiguration->ipAddress() != ETH.localIP())
+        {
+            Log->println(F("ETH Set static IP"));
+            ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+            _checkIpTs = (esp_timer_get_time() / 1000) + 2000;
+        }
+        else
+        {
+            _checkIpTs = -1;
+        }
+    }
+}
+
 
 void EthernetDevice::reconfigure()
 {

@@ -49,6 +49,8 @@ public:
 
     virtual void initialize();
     virtual void reconfigure();
+    virtual void update();
+
     virtual ReconnectStatus reconnect(bool force = false);
     bool supportsEncryption() override;
 
@@ -88,6 +90,8 @@ private:
     int _spi_miso;
     int _spi_mosi;
     uint8_t _spi_freq_mhz;
+
+    int64_t _checkIpTs = -1;
 
     eth_phy_type_t _type;
     eth_clock_mode_t _clock_mode;
