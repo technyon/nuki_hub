@@ -2906,7 +2906,10 @@ void NukiOpenerWrapper::readConfig()
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
     Log->print(F("Opener config result: "));
-    Log->println(resultStr);
+    Log->print(resultStr);
+    Log->print("(");
+    Log->print(result);
+    Log->println(")");
     postponeBleWatchdog();
 }
 
