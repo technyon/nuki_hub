@@ -23,9 +23,8 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
 #ifndef NUKI_HUB_UPDATER
-NukiNetwork::NukiNetwork(Preferences *preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
+NukiNetwork::NukiNetwork(Preferences *preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize)
 : _preferences(preferences),
-  _presenceDetection(presenceDetection),
   _gpio(gpio),
   _buffer(buffer),
   _bufferSize(bufferSize)
@@ -399,22 +398,6 @@ bool NukiNetwork::update()
 
     _lastConnectedTs = ts;
 
-    #if PRESENCE_DETECTION_ENABLED
-    if(_presenceDetection != nullptr && (_lastPresenceTs == 0 || (ts - _lastPresenceTs) > 3000))
-    {
-        char* presenceCsv = _presenceDetection->generateCsv();
-        bool success = publishString(_mqttPresencePrefix, mqtt_topic_presence, presenceCsv, true);
-
-        if(!success)
-        {
-            Log->println(F("Failed to publish presence CSV data."));
-            Log->println(presenceCsv);
-        }
-
-        _lastPresenceTs = ts;
-    }
-    #endif
-
     if(_device->signalStrength() != 127 && _rssiPublishInterval > 0 && ts - _lastRssiTs > _rssiPublishInterval)
     {
         _lastRssiTs = ts;
@@ -752,14 +735,6 @@ void NukiNetwork::gpioActionCallback(const GpioAction &action, const int &pin)
 {
     _gpioTs[pin] = (esp_timer_get_time() / 1000);
 }
-
-#if PRESENCE_DETECTION_ENABLED
-void NukiNetwork::setMqttPresencePath(char *path)
-{
-    memset(_mqttPresencePrefix, 0, sizeof(_mqttPresencePrefix));
-    strcpy(_mqttPresencePrefix, path);
-}
-#endif
 
 void NukiNetwork::disableAutoRestarts()
 {

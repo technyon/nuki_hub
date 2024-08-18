@@ -27,7 +27,6 @@ set(SRCFILES
         ../src/MqttTopics.h
         ../src/WebCfgServerConstants.h
         ../src/WebCfgServer.cpp
-        ../src/PresenceDetection.cpp
         ../src/PreferencesKeys.h
         ../src/Gpio.cpp
         ../src/Logger.cpp

@@ -14,7 +14,6 @@
 #include "Gpio.h"
 #include <ArduinoJson.h>
 #include "NukiConstants.h"
-#include "PresenceDetection.h"
 #endif
 
 #define JSON_BUFFER_SIZE 1024
@@ -37,12 +36,9 @@ public:
     #ifdef NUKI_HUB_UPDATER
     explicit NukiNetwork(Preferences* preferences);
     #else
-    explicit NukiNetwork(Preferences* preferences, PresenceDetection* presenceDetection, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+    explicit NukiNetwork(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
 
     void registerMqttReceiver(MqttReceiver* receiver);
-    #if PRESENCE_DETECTION_ENABLED
-    void setMqttPresencePath(char* path);
-    #endif
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
     String localIP();
@@ -148,7 +144,6 @@ private:
     String _lockPath;
     String _discoveryTopic;
 
-    PresenceDetection* _presenceDetection;
     Gpio* _gpio;
 
     int _mqttConnectionState = 0;
@@ -177,9 +172,6 @@ private:
     int64_t _lastConnectedTs = 0;
     int64_t _lastMaintenanceTs = 0;
     int64_t _lastUpdateCheckTs = 0;
-    #if PRESENCE_DETECTION_ENABLED
-    int64_t _lastPresenceTs = 0;
-    #endif
     int64_t _lastRssiTs = 0;
     bool _mqttEnabled = true;
     int _rssiPublishInterval = 0;

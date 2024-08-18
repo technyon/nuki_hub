@@ -11,7 +11,6 @@
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
 #include "NukiNetworkLock.h"
-#include "PresenceDetection.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
 #include "CharBuffer.h"
@@ -33,7 +32,6 @@ NukiNetworkOpener* networkOpener = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
 NukiWrapper* nuki = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
-PresenceDetection* presenceDetection = nullptr;
 NukiDeviceId* deviceIdLock = nullptr;
 NukiDeviceId* deviceIdOpener = nullptr;
 Gpio* gpio = nullptr;
@@ -42,7 +40,6 @@ bool lockEnabled = false;
 bool openerEnabled = false;
 
 TaskHandle_t nukiTaskHandle = nullptr;
-TaskHandle_t presenceDetectionTaskHandle = nullptr;
 
 int64_t restartTs = ((2^64) - (5 * 1000 * 60000)) / 1000;
 
@@ -175,7 +172,6 @@ void nukiTask(void *pvParameters)
         {
             delay(5000);
         }
-        #ifndef PRESENCE_DETECTION_ENABLED
         else if (!whiteListed)
         {
             whiteListed = true;
@@ -188,7 +184,6 @@ void nukiTask(void *pvParameters)
                 bleScanner->whitelist(nukiOpener->getBleAddress());
             }
         }
-        #endif
 
         if(lockEnabled)
         {
@@ -459,20 +454,12 @@ void setup()
     bleScanner->initialize("NukiHub", true, 40, 40);
     bleScanner->setScanDuration(0);
 
-    #if PRESENCE_DETECTION_ENABLED
-    if(preferences->getInt(preference_presence_detection_timeout) >= 0)
-    {
-        presenceDetection = new PresenceDetection(preferences, bleScanner, CharBuffer::get(), buffer_size);
-        presenceDetection->initialize();
-    }
-    #endif
-
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
 
-    network = new NukiNetwork(preferences, presenceDetection, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
+    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
     network->initialize();
 
     networkLock = new NukiNetworkLock(network, preferences, CharBuffer::get(), buffer_size);

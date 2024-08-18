@@ -60,10 +60,6 @@ void NukiNetworkLock::initialize()
         _preferences->putString(preference_mqtt_lock_path, _mqttPath);
     }
 
-    #if PRESENCE_DETECTION_ENABLED
-    _network->setMqttPresencePath(_mqttPath);
-    #endif
-
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
     _offEnabled = _preferences->getBool(preference_official_hybrid, false);
