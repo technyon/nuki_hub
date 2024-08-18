@@ -218,59 +218,12 @@ void NukiNetwork::setupDevice()
                 #if defined(CONFIG_IDF_TARGET_ESP32)
                 else if(custPHY >= 4 && custPHY <= 9)
                 {
-                    std::string custName;
-                    eth_phy_type_t custEthtype;
-                    eth_clock_mode_t custCLK;
-
-                    switch(custPHY)
-                    {
-                        case 4:
-                            custName = "Custom (LAN8720)";
-                            custEthtype = ETH_PHY_TYPE_LAN8720;
-                            break;
-                        case 5:
-                            custName = "Custom (RTL8201)";
-                            custEthtype = ETH_PHY_RTL8201;
-                            break;
-                        case 6:
-                            custName = "Custom (TLK110)";
-                            custEthtype = ETH_PHY_TLK110;
-                            break;
-                        case 7:
-                            custName = "Custom (DP83848)";
-                            custEthtype = ETH_PHY_DP83848;
-                            break;
-                        case 8:
-                            custName = "Custom (KSZ8041)";
-                            custEthtype = ETH_PHY_KSZ8041;
-                            break;
-                        case 9:
-                            custName = "Custom (KSZ8081)";
-                            custEthtype = ETH_PHY_KSZ8081;
-                            break;
-                        default:
-                            custName = "Custom (LAN8720)";
-                            custEthtype = ETH_PHY_TYPE_LAN8720;
-                            break;
-                    }
-
                     int custCLKpref = _preferences->getInt(preference_network_custom_clk, 0);
 
-                    switch(custCLKpref)
-                    {
-                        case 0:
-                            custCLK = ETH_CLOCK_GPIO0_IN;
-                            break;
-                        case 2:
-                            custCLK = ETH_CLOCK_GPIO16_OUT;
-                            break;
-                        case 3:
-                            custCLK = ETH_CLOCK_GPIO17_OUT;
-                            break;
-                        default:
-                            custCLK = ETH_CLOCK_GPIO17_OUT;
-                            break;
-                    }
+                    std::string custName = NetworkUtil::GetCustomEthernetDeviceName(custPHY);
+                    eth_phy_type_t custEthtype = NetworkUtil::GetCustomEthernetType(custPHY);
+                    eth_clock_mode_t custCLK = NetworkUtil::GetCustomClock(custCLKpref);
+
                     _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, custName, _preferences->getInt(preference_network_custom_addr, -1), _preferences->getInt(preference_network_custom_pwr, -1), _preferences->getInt(preference_network_custom_mdc, -1), _preferences->getInt(preference_network_custom_mdio, -1), custEthtype, custCLK);
                 }
                 #endif
