@@ -1130,7 +1130,7 @@ bool WiFiManager::wifiConnectNew(String ssid, String pass,bool connect){
     DEBUG_WM(F("find best RSSI: TRUE"));
     #endif
     if (!_numNetworks)
-      WiFi_scanNetworks();  // scan in case this gets called before any scans
+      WiFi_scanNetworks(false, false);  // scan in case this gets called before any scans
 
     int n = _numNetworks;
     if (n == 0) {
@@ -1219,7 +1219,7 @@ bool WiFiManager::wifiConnectDefault(){
     DEBUG_WM(F("find best RSSI: TRUE"));
     #endif
     if (!_numNetworks)
-      WiFi_scanNetworks();  // scan in case this gets called before any scans
+      WiFi_scanNetworks(false, false);  // scan in case this gets called before any scans
 
     int n = _numNetworks;
     if (n == 0) {
@@ -1484,7 +1484,7 @@ void WiFiManager::handleWifi(AsyncWebServerRequest *request,bool scan = true) {
     #ifdef WM_DEBUG_LEVEL
     // DEBUG_WM(WM_DEBUG_DEV,"refresh flag:",request->hasArg(F("refresh")));
     #endif
-    WiFi_scanNetworks(request->hasArg(F("refresh")),false); //wifiscan, force if arg refresh
+    WiFi_scanNetworks(request->hasArg(F("refresh")),true); //wifiscan, force if arg refresh
     page += getScanItemOut();
   }
   String pitem = "";
@@ -1589,14 +1589,14 @@ void WiFiManager::WiFi_scanComplete(int networksFound){
 }
 
 bool WiFiManager::WiFi_scanNetworks(){
-  return WiFi_scanNetworks(false,false);
+  return WiFi_scanNetworks(false,true);
 }
 
 bool WiFiManager::WiFi_scanNetworks(unsigned int cachetime,bool async){
     return WiFi_scanNetworks(millis()-_lastscan > cachetime,async);
 }
 bool WiFiManager::WiFi_scanNetworks(unsigned int cachetime){
-    return WiFi_scanNetworks(millis()-_lastscan > cachetime,false);
+    return WiFi_scanNetworks(millis()-_lastscan > cachetime,true);
 }
 bool WiFiManager::WiFi_scanNetworks(bool force,bool async){
     #ifdef WM_DEBUG_LEVEL
@@ -1605,9 +1605,16 @@ bool WiFiManager::WiFi_scanNetworks(bool force,bool async){
     // DEBUG_WM(WM_DEBUG_DEV,"scanNetworks force:",force == true);
     #endif
 
-    force = false;
-    async = true;
-    force = _lastscan == 0;
+    if(_numNetworks == 0 && _autoforcerescan){
+      DEBUG_WM(WM_DEBUG_DEV,"NO APs found forcing new scan");
+      force = true;
+    }
+
+    // if scan is empty or stale (last scantime > _scancachetime), this avoids fast reloading wifi page and constant scan delayed page loads appearing to freeze.
+    if(!_lastscan || _lastscan == 0 || (_lastscan>0 && (millis()-_lastscan > _scancachetime))){
+      force = true;
+    }
+    //force = _lastscan == 0;
 
     if(force){
       int8_t res;
