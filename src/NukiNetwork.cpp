@@ -313,7 +313,6 @@ void NukiNetwork::setupDevice()
                                                _preferences->getInt(preference_network_custom_sck, -1),
                                                _preferences->getInt(preference_network_custom_miso, -1),
                                                _preferences->getInt(preference_network_custom_mosi, -1),
-                                               ETH_PHY_SPI_FREQ_MHZ,
                                                ETH_PHY_W5500);
             break;
         #endif
