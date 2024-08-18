@@ -1,6 +1,6 @@
 #pragma once
 
-#include <enums/NetworkDeviceType.h>
+#include <src/enums/NetworkDeviceType.h>
 
 class NetworkUtil
 {
