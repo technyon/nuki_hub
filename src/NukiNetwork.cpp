@@ -161,7 +161,10 @@ void NukiNetwork::setupDevice()
                 break;
             case 11:
                 Log->println(F("Custom LAN Module"));
-                if(_preferences->getInt(preference_network_custom_phy, 0) > 0) _networkDeviceType = NetworkDeviceType::CUSTOM;
+                if(_preferences->getInt(preference_network_custom_phy, 0) > 0)
+                {
+                    _networkDeviceType = NetworkDeviceType::CUSTOM;
+                }
                 else
                 {
                     Log->println(F("Custom LAN Module not setup correctly, falling back to Wi-Fi"));

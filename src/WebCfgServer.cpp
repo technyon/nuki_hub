@@ -2593,9 +2593,18 @@ void WebCfgServer::buildHtml(AsyncWebServerRequest *request)
     buildNavigationMenuEntry(response, "GPIO Configuration", "/gpiocfg");
     buildNavigationMenuEntry(response, "Firmware update", "/ota");
     buildNavigationMenuEntry(response, "Import/Export Configuration", "/impexpcfg");
-    if(_preferences->getInt(preference_network_hardware, 0) == 11) buildNavigationMenuEntry(response, "Custom Ethernet Configuration", "/custntw");
-    if(_preferences->getBool(preference_publish_debug_info, false)) buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
-    if(_preferences->getBool(preference_webserial_enabled, false)) buildNavigationMenuEntry(response, "Open Webserial", "/webserial");
+    if(_preferences->getInt(preference_network_hardware, 0) == 11)
+    {
+        buildNavigationMenuEntry(response, "Custom Ethernet Configuration", "/custntw");
+    }
+    if (_preferences->getBool(preference_publish_debug_info, false))
+    {
+        buildNavigationMenuEntry(response, "Advanced Configuration", "/advanced");
+    }
+    if(_preferences->getBool(preference_webserial_enabled, false))
+    {
+        buildNavigationMenuEntry(response, "Open Webserial", "/webserial");
+    }
     #ifndef CONFIG_IDF_TARGET_ESP32H2
     if(_allowRestartToPortal) buildNavigationMenuEntry(response, "Configure Wi-Fi", "/wifi");
     #endif

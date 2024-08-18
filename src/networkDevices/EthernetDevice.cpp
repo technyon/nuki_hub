@@ -143,56 +143,7 @@ void EthernetDevice::initialize()
 
         Network.onEvent([&](arduino_event_id_t event, arduino_event_info_t info)
         {
-            switch (event) {
-                case ARDUINO_EVENT_ETH_START:
-                    Log->println("ETH Started");
-                    ETH.setHostname(_hostname.c_str());
-                    break;
-                case ARDUINO_EVENT_ETH_CONNECTED:
-                    Log->println("ETH Connected");
-                    if(!localIP().equals("0.0.0.0"))
-                    {
-                        _connected = true;
-                    }
-                    break;
-                case ARDUINO_EVENT_ETH_GOT_IP:
-                    Log->printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif));
-                    Log->println(ETH);
-
-                    // For RMII devices, this check is handled in the update() method.
-                    if(_useSpi && !_ipConfiguration->dhcpEnabled() && _ipConfiguration->ipAddress() != ETH.localIP())
-                    {
-                        Log->printf("Static IP not used, retrying to set static IP");
-                        ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
-                        ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
-                    }
-
-                    _connected = true;
-                    if(_preferences->getBool(preference_ntw_reconfigure, false))
-                    {
-                        _preferences->putBool(preference_ntw_reconfigure, false);
-                    }
-                    break;
-                case ARDUINO_EVENT_ETH_LOST_IP:
-                    Log->println("ETH Lost IP");
-                    _connected = false;
-                    onDisconnected();
-                    break;
-                case ARDUINO_EVENT_ETH_DISCONNECTED:
-                    Log->println("ETH Disconnected");
-                    _connected = false;
-                    onDisconnected();
-                    break;
-                case ARDUINO_EVENT_ETH_STOP:
-                    Log->println("ETH Stopped");
-                    _connected = false;
-                    onDisconnected();
-                    break;
-                default:
-                    Log->print("ETH Event: ");
-                    Log->println(event);
-                    break;
-            }
+            onNetworkEvent(event, info);
         });
     }
     else
@@ -219,6 +170,62 @@ void EthernetDevice::update()
         }
     }
 }
+
+
+void EthernetDevice::onNetworkEvent(arduino_event_id_t event, arduino_event_info_t info)
+{
+    switch (event) {
+        case ARDUINO_EVENT_ETH_START:
+            Log->println("ETH Started");
+            ETH.setHostname(_hostname.c_str());
+            break;
+        case ARDUINO_EVENT_ETH_CONNECTED:
+            Log->println("ETH Connected");
+            if(!localIP().equals("0.0.0.0"))
+            {
+                _connected = true;
+            }
+            break;
+        case ARDUINO_EVENT_ETH_GOT_IP:
+            Log->printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif));
+            Log->println(ETH);
+
+            // For RMII devices, this check is handled in the update() method.
+            if(_useSpi && !_ipConfiguration->dhcpEnabled() && _ipConfiguration->ipAddress() != ETH.localIP())
+            {
+                Log->printf("Static IP not used, retrying to set static IP");
+                ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
+                ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
+            }
+
+            _connected = true;
+            if(_preferences->getBool(preference_ntw_reconfigure, false))
+            {
+                _preferences->putBool(preference_ntw_reconfigure, false);
+            }
+            break;
+        case ARDUINO_EVENT_ETH_LOST_IP:
+            Log->println("ETH Lost IP");
+            _connected = false;
+            onDisconnected();
+            break;
+        case ARDUINO_EVENT_ETH_DISCONNECTED:
+            Log->println("ETH Disconnected");
+            _connected = false;
+            onDisconnected();
+            break;
+        case ARDUINO_EVENT_ETH_STOP:
+            Log->println("ETH Stopped");
+            _connected = false;
+            onDisconnected();
+            break;
+        default:
+            Log->print("ETH Event: ");
+            Log->println(event);
+            break;
+    }
+}
+
 
 
 void EthernetDevice::reconfigure()
