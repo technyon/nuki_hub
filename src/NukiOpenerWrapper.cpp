@@ -2894,7 +2894,7 @@ void NukiOpenerWrapper::readConfig()
 
     while(_retryCount < _nrOfRetries + 1)
     {
-        Nuki::CmdResult result = _nukiOpener.requestConfig(&_nukiConfig);
+        result = _nukiOpener.requestConfig(&_nukiConfig);
         _nukiConfigValid = result == Nuki::CmdResult::Success;
 
         if(!_nukiConfigValid) {
