@@ -5,6 +5,7 @@
 #include <map>
 #include "networkDevices/NetworkDevice.h"
 #include "networkDevices/IPConfiguration.h"
+#include "enums/NetworkDeviceType.h"
 #include "util/NetworkUtil.h"
 
 #ifndef NUKI_HUB_UPDATER
@@ -14,7 +15,6 @@
 #include <ArduinoJson.h>
 #include "NukiConstants.h"
 #include "PresenceDetection.h"
-#include "enums/NetworkDeviceType.h"
 #endif
 
 #define JSON_BUFFER_SIZE 1024
