@@ -1,5 +1,5 @@
 #include "NetworkUtil.h"
-#include <src/Logger.h>
+#include "../Logger.h"
 
 NetworkDeviceType NetworkUtil::GetDeviceTypeFromPreference(int hardwareDetect, int customPhy)
 {
