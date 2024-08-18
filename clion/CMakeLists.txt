@@ -54,6 +54,8 @@ set(SRCFILES
         ../lib/BleScanner/src/BleScanner.cpp
         ../lib/MqttLogger/src/MqttLogger.cpp
         ../lib/AsyncTCP/src/AsyncTCP.cpp
+        ../src/util/NetworkUtil.cpp
+        ../src/enums/NetworkDeviceType.h
 )
 
 file(GLOB_RECURSE SRCFILESREC

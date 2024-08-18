@@ -116,66 +116,7 @@ void NukiNetwork::setupDevice()
     }
     else
     {
-        Log->print(F("Network device: "));
-        switch (hardwareDetect)
-        {
-            case 1:
-                Log->println(F("Wi-Fi only"));
-                _networkDeviceType = NetworkDeviceType::WiFi;
-                break;
-            case 2:
-                Log->println(F("Generic W5500"));
-                _networkDeviceType = NetworkDeviceType::W5500;
-                break;
-            case 3:
-                Log->println(F("W5500 on M5Stack Atom POE"));
-                _networkDeviceType = NetworkDeviceType::W5500M5;
-                break;
-            case 4:
-                Log->println(F("Olimex ESP32-POE / ESP-POE-ISO"));
-                _networkDeviceType = NetworkDeviceType::Olimex_LAN8720;
-                break;
-            case 5:
-                Log->println(F("WT32-ETH01"));
-                _networkDeviceType = NetworkDeviceType::WT32_LAN8720;
-                break;
-            case 6:
-                Log->println(F("M5STACK PoESP32 Unit"));
-                _networkDeviceType = NetworkDeviceType::M5STACK_PoESP32_Unit;
-                break;
-            case 7:
-                Log->println(F("LilyGO T-ETH-POE"));
-                _networkDeviceType = NetworkDeviceType::LilyGO_T_ETH_POE;
-                break;
-            case 8:
-                Log->println(F("GL-S10"));
-                _networkDeviceType = NetworkDeviceType::GL_S10;
-                break;
-            case 9:
-                Log->println(F("ETH01-Evo"));
-                _networkDeviceType = NetworkDeviceType::ETH01_Evo;
-                break;
-            case 10:
-                Log->println(F("W5500 on M5Stack Atom POE S3"));
-                _networkDeviceType = NetworkDeviceType::W5500M5S3;
-                break;
-            case 11:
-                Log->println(F("Custom LAN Module"));
-                if(_preferences->getInt(preference_network_custom_phy, 0) > 0)
-                {
-                    _networkDeviceType = NetworkDeviceType::CUSTOM;
-                }
-                else
-                {
-                    Log->println(F("Custom LAN Module not setup correctly, falling back to Wi-Fi"));
-                    _networkDeviceType = NetworkDeviceType::WiFi;
-                }
-                break;
-            default:
-                Log->println(F("Unknown hardware selected, falling back to Wi-Fi."));
-                _networkDeviceType = NetworkDeviceType::WiFi;
-                break;
-        }
+        _networkDeviceType = NetworkUtil::GetDeviceTypeFromPreference(hardwareDetect, _preferences->getInt(preference_network_custom_phy, 0));
     }
 
     switch (_networkDeviceType)
@@ -378,7 +319,11 @@ void NukiNetwork::setupDevice()
         #endif
     }
 
-    #ifndef NUKI_HUB_UPDATER
+    Log->print(F("Network device: "));
+    Log->print(_device->deviceName());
+
+
+#ifndef NUKI_HUB_UPDATER
     _device->mqttOnConnect([&](bool sessionPresent)
         {
             onMqttConnect(sessionPresent);

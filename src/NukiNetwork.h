@@ -5,6 +5,7 @@
 #include <map>
 #include "networkDevices/NetworkDevice.h"
 #include "networkDevices/IPConfiguration.h"
+#include "util/NetworkUtil.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "MqttReceiver.h"
@@ -13,22 +14,8 @@
 #include <ArduinoJson.h>
 #include "NukiConstants.h"
 #include "PresenceDetection.h"
+#include "enums/NetworkDeviceType.h"
 #endif
-
-enum class NetworkDeviceType
-{
-    WiFi,
-    W5500,
-    W5500M5,
-    W5500M5S3,
-    Olimex_LAN8720,
-    WT32_LAN8720,
-    M5STACK_PoESP32_Unit,
-    LilyGO_T_ETH_POE,
-    GL_S10,
-    ETH01_Evo,
-    CUSTOM
-};
 
 #define JSON_BUFFER_SIZE 1024
 
