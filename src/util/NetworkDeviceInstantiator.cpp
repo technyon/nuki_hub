@@ -1,6 +1,8 @@
 #include "NetworkDeviceInstantiator.h"
 #include "../networkDevices/EthernetDevice.h"
+#ifndef CONFIG_IDF_TARGET_ESP32H2
 #include "../networkDevices/WifiDevice.h"
+#endif
 #include "../PreferencesKeys.h"
 #include "NetworkUtil.h"
 #include "../networkDevices/LAN8720Definitions.h"
@@ -148,14 +150,14 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
             break;
 #else
             default:
-            _device = new EthernetDevice(_hostname, _preferences, _ipConfiguration, "Custom (W5500)",
-                                               _preferences->getInt(preference_network_custom_addr, -1),
-                                               _preferences->getInt(preference_network_custom_cs, -1),
-                                               _preferences->getInt(preference_network_custom_irq, -1),
-                                               _preferences->getInt(preference_network_custom_rst, -1),
-                                               _preferences->getInt(preference_network_custom_sck, -1),
-                                               _preferences->getInt(preference_network_custom_miso, -1),
-                                               _preferences->getInt(preference_network_custom_mosi, -1),
+            device = new EthernetDevice(hostname, preferences, ipConfiguration, "Custom (W5500)",
+                                               preferences->getInt(preference_network_custom_addr, -1),
+                                               preferences->getInt(preference_network_custom_cs, -1),
+                                               preferences->getInt(preference_network_custom_irq, -1),
+                                               preferences->getInt(preference_network_custom_rst, -1),
+                                               preferences->getInt(preference_network_custom_sck, -1),
+                                               preferences->getInt(preference_network_custom_miso, -1),
+                                               preferences->getInt(preference_network_custom_mosi, -1),
                                                ETH_PHY_W5500);
             break;
 #endif
