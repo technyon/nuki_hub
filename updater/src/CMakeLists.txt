@@ -11,11 +11,12 @@ list(APPEND app_sources ../../src/Logger.cpp)
 list(APPEND app_sources ../../src/NukiNetwork.cpp)
 list(APPEND app_sources ../../src/WebCfgServer.cpp)
 
+list(APPEND app_sources ../../src/enums/NetworkDeviceType.h)
 list(APPEND app_sources ../../src/networkDevices/EthernetDevice.h)
 list(APPEND app_sources ../../src/networkDevices/IPConfiguration.h)
 list(APPEND app_sources ../../src/networkDevices/NetworkDevice.h)
 list(APPEND app_sources ../../src/util/NetworkUtil.cpp)
-list(APPEND app_sources ../../src/enums/NetworkDeviceType.h)
+list(APPEND app_sources ../../src/util/NetworkDeviceInstantiator.cpp)
 
 if(NOT DEFINED NUKI_TARGET_H2)
   list(APPEND app_sources ../../src/networkDevices/WifiDevice.h)

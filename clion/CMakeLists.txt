@@ -56,6 +56,7 @@ set(SRCFILES
         ../lib/AsyncTCP/src/AsyncTCP.cpp
         ../src/util/NetworkUtil.cpp
         ../src/enums/NetworkDeviceType.h
+        ../src/util/NetworkDeviceInstantiator.cpp
 )
 
 file(GLOB_RECURSE SRCFILESREC

@@ -74,6 +74,7 @@ std::string NetworkUtil::GetCustomEthernetDeviceName(int custPHY)
     }
 }
 
+#if defined(CONFIG_IDF_TARGET_ESP32)
 eth_phy_type_t NetworkUtil::GetCustomEthernetType(int custPHY)
 {
     switch(custPHY)
@@ -120,3 +121,4 @@ eth_clock_mode_t NetworkUtil::GetCustomClock(int custCLKpref)
             break;
     }
 }
+#endif
