@@ -189,7 +189,6 @@ void NukiNetwork::setupDevice()
                                            ETH_PHY_SPI_SCK_GENERIC_W5500,
                                            ETH_PHY_SPI_MISO_GENERIC_W5500,
                                            ETH_PHY_SPI_MOSI_GENERIC_W5500,
-                                           ETH_PHY_SPI_FREQ_MHZ,
                                            ETH_PHY_W5500);
             break;
         case NetworkDeviceType::W5500M5:
@@ -201,7 +200,6 @@ void NukiNetwork::setupDevice()
                                            ETH_PHY_SPI_SCK_M5_W5500,
                                            ETH_PHY_SPI_MISO_M5_W5500,
                                            ETH_PHY_SPI_MOSI_M5_W5500,
-                                           ETH_PHY_SPI_FREQ_MHZ,
                                            ETH_PHY_W5500);
             break;
         case NetworkDeviceType::W5500M5S3:
@@ -213,7 +211,6 @@ void NukiNetwork::setupDevice()
                                            ETH_PHY_SPI_SCK_M5_W5500_S3,
                                            ETH_PHY_SPI_MISO_M5_W5500_S3,
                                            ETH_PHY_SPI_MOSI_M5_W5500_S3,
-                                           ETH_PHY_SPI_FREQ_MHZ,
                                            ETH_PHY_W5500);
             break;
         case NetworkDeviceType::ETH01_Evo:
@@ -225,7 +222,6 @@ void NukiNetwork::setupDevice()
             ETH_PHY_SPI_SCK_ETH01EVO,
             ETH_PHY_SPI_MISO_ETH01EVO,
             ETH_PHY_SPI_MOSI_ETH01EVO,
-            ETH_PHY_SPI_FREQ_MHZ,
             ETH_PHY_TYPE_DM9051);
             break;
         case NetworkDeviceType::M5STACK_PoESP32_Unit:
@@ -237,7 +233,6 @@ void NukiNetwork::setupDevice()
                                            ETH_PHY_SPI_SCK_M5_W5500,
                                            ETH_PHY_SPI_MISO_M5_W5500,
                                            ETH_PHY_SPI_MOSI_M5_W5500,
-                                           ETH_PHY_SPI_FREQ_MHZ,
                                            ETH_PHY_W5500);
             break;
         case NetworkDeviceType::CUSTOM:
@@ -277,7 +272,6 @@ void NukiNetwork::setupDevice()
                                                _preferences->getInt(preference_network_custom_sck, -1),
                                                _preferences->getInt(preference_network_custom_miso, -1),
                                                _preferences->getInt(preference_network_custom_mosi, -1),
-                                               ETH_PHY_SPI_FREQ_MHZ,
                                                custEthtype);
                 }
                 #if defined(CONFIG_IDF_TARGET_ESP32)

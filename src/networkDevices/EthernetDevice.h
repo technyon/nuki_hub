@@ -28,8 +28,7 @@ public:
                      int mdc = ETH_PHY_MDC_LAN8720,
                      int mdio = ETH_PHY_MDIO_LAN8720,
                      eth_phy_type_t ethtype = ETH_PHY_TYPE_LAN8720,
-                     eth_clock_mode_t clock_mode = ETH_CLK_MODE_LAN8720,
-                     bool use_mac_from_efuse = false);
+                     eth_clock_mode_t clock_mode = ETH_CLK_MODE_LAN8720);
 
     EthernetDevice(const String& hostname,
                      Preferences* preferences,
@@ -42,7 +41,6 @@ public:
                      int spi_sck,
                      int spi_miso,
                      int spi_mosi,
-                     uint8_t spi_freq_mhz,
                      eth_phy_type_t ethtype);
 
     const String deviceName() const override;
@@ -66,12 +64,10 @@ private:
     
     void init();
     void onDisconnected();
-    void waitForIpAddressWithTimeout();
     void onNetworkEvent(arduino_event_id_t event, arduino_event_info_t info);
 
     bool _connected = false;
     bool _restartOnDisconnect = false;
-    bool _startAp = false;
     char* _path;
     bool _hardwareInitialized = false;
 
@@ -90,13 +86,11 @@ private:
     int _spi_sck;
     int _spi_miso;
     int _spi_mosi;
-    uint8_t _spi_freq_mhz;
 
     int64_t _checkIpTs = -1;
 
     eth_phy_type_t _type;
     eth_clock_mode_t _clock_mode;
-    bool _use_mac_from_efuse;
     bool _useSpi = false;
 
     #ifndef NUKI_HUB_UPDATER

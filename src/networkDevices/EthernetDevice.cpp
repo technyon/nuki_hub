@@ -7,7 +7,7 @@
 #endif
 #include "../RestartReason.h"
 
-EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode, bool use_mac_from_efuse)
+EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode)
 : NetworkDevice(hostname, ipConfiguration),
   _deviceName(deviceName),
   _phy_addr(phy_addr),
@@ -16,7 +16,6 @@ EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences,
   _mdio(mdio),
   _type(ethtype),
   _clock_mode(clock_mode),
-  _use_mac_from_efuse(use_mac_from_efuse),
   _useSpi(false),
   _preferences(preferences)
 {
@@ -34,7 +33,6 @@ EthernetDevice::EthernetDevice(const String &hostname,
                                    int spi_sck,
                                    int spi_miso,
                                    int spi_mosi,
-                                   uint8_t spi_freq_mhz,
                                    eth_phy_type_t ethtype)
         : NetworkDevice(hostname, ipConfiguration),
           _deviceName(deviceName),
@@ -45,7 +43,6 @@ EthernetDevice::EthernetDevice(const String &hostname,
           _spi_sck(spi_sck),
           _spi_miso(spi_miso),
           _spi_mosi(spi_mosi),
-          _spi_freq_mhz(spi_freq_mhz),
           _type(ethtype),
           _useSpi(true),
           _preferences(preferences)
