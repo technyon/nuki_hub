@@ -22,6 +22,7 @@ class NukiNetwork
 {
 public:
     void initialize();
+    void readSettings();
     bool update();
     void reconfigureDevice();
     void clearWifiFallback();
@@ -112,6 +113,8 @@ private:
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
     bool _firstBootAfterDeviceChange = false;
     bool _webEnabled = true;
+    bool _updateFromMQTT = false;
+    bool _offEnabled = false;
 
     #ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);

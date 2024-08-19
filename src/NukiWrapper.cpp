@@ -34,7 +34,7 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, 
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
     network->setOfficialUpdateReceivedCallback(nukiInst->onOfficialUpdateReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
-    if(_disableNonJSON) network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
+    network->setKeypadCommandReceivedCallback(nukiInst->onKeypadCommandReceivedCallback);
     network->setKeypadJsonCommandReceivedCallback(nukiInst->onKeypadJsonCommandReceivedCallback);
     network->setTimeControlCommandReceivedCallback(nukiInst->onTimeControlCommandReceivedCallback);
     network->setAuthCommandReceivedCallback(nukiInst->onAuthCommandReceivedCallback);
@@ -51,45 +51,11 @@ NukiWrapper::~NukiWrapper()
 
 void NukiWrapper::initialize(const bool& firstStart)
 {
-    _preferences->remove(preference_presence_detection_timeout);
-
     _nukiLock.initialize();
-
-    esp_power_level_t powerLevel;
-    int pwrLvl = _preferences->getInt(preference_ble_tx_power, 9);
-
-    if(pwrLvl >= 9) powerLevel = ESP_PWR_LVL_P9;
-    else if(pwrLvl >= 6) powerLevel = ESP_PWR_LVL_P6;
-    else if(pwrLvl >= 3) powerLevel = ESP_PWR_LVL_P6;
-    else if(pwrLvl >= 0) powerLevel = ESP_PWR_LVL_P3;
-    else if(pwrLvl >= -3) powerLevel = ESP_PWR_LVL_N3;
-    else if(pwrLvl >= -6) powerLevel = ESP_PWR_LVL_N6;
-    else if(pwrLvl >= -9) powerLevel = ESP_PWR_LVL_N9;
-    else if(pwrLvl >= -12) powerLevel = ESP_PWR_LVL_N12;
-
-    _nukiLock.setPower(powerLevel);
     _nukiLock.registerBleScanner(_bleScanner);
-
-    _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
-    _intervalHybridLockstate = _preferences->getInt(preference_query_interval_hybrid_lockstate);
-    _intervalConfig = _preferences->getInt(preference_query_interval_configuration);
-    _intervalBattery = _preferences->getInt(preference_query_interval_battery);
-    _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
-    _keypadEnabled = _preferences->getBool(preference_keypad_info_enabled);
-    _publishAuthData = _preferences->getBool(preference_publish_authdata);
-    _maxKeypadCodeCount = _preferences->getUInt(preference_lock_max_keypad_code_count);
-    _maxTimeControlEntryCount = _preferences->getUInt(preference_lock_max_timecontrol_entry_count);
-    _maxAuthEntryCount = _preferences->getUInt(preference_lock_max_auth_entry_count);
-    _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
-    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
-    _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries, 200);
-    _retryDelay = _preferences->getInt(preference_command_retry_delay);
-    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
-    _offEnabled = _preferences->getBool(preference_official_hybrid, false);
-    _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
-
-    _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
-    _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
+    _nukiLock.setEventHandler(this);
+    _nukiLock.setConnectTimeout(3);
+    _nukiLock.setDisconnectTimeout(5000);
 
     if(firstStart)
     {
@@ -137,6 +103,46 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putInt(preference_query_interval_battery, 1800);
         _preferences->putInt(preference_query_interval_keypad, 1800);
     }
+
+    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _offEnabled = _preferences->getBool(preference_official_hybrid, false);
+    readSettings();
+}
+
+void NukiWrapper::readSettings()
+{
+    esp_power_level_t powerLevel;
+    int pwrLvl = _preferences->getInt(preference_ble_tx_power, 9);
+
+    if(pwrLvl >= 9) powerLevel = ESP_PWR_LVL_P9;
+    else if(pwrLvl >= 6) powerLevel = ESP_PWR_LVL_P6;
+    else if(pwrLvl >= 3) powerLevel = ESP_PWR_LVL_P6;
+    else if(pwrLvl >= 0) powerLevel = ESP_PWR_LVL_P3;
+    else if(pwrLvl >= -3) powerLevel = ESP_PWR_LVL_N3;
+    else if(pwrLvl >= -6) powerLevel = ESP_PWR_LVL_N6;
+    else if(pwrLvl >= -9) powerLevel = ESP_PWR_LVL_N9;
+    else if(pwrLvl >= -12) powerLevel = ESP_PWR_LVL_N12;
+
+    _nukiLock.setPower(powerLevel);
+
+    _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
+    _intervalHybridLockstate = _preferences->getInt(preference_query_interval_hybrid_lockstate);
+    _intervalConfig = _preferences->getInt(preference_query_interval_configuration);
+    _intervalBattery = _preferences->getInt(preference_query_interval_battery);
+    _intervalKeypad = _preferences->getInt(preference_query_interval_keypad);
+    _keypadEnabled = _preferences->getBool(preference_keypad_info_enabled);
+    _publishAuthData = _preferences->getBool(preference_publish_authdata);
+    _maxKeypadCodeCount = _preferences->getUInt(preference_lock_max_keypad_code_count);
+    _maxTimeControlEntryCount = _preferences->getUInt(preference_lock_max_timecontrol_entry_count);
+    _maxAuthEntryCount = _preferences->getUInt(preference_lock_max_auth_entry_count);
+    _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
+    _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries, 200);
+    _retryDelay = _preferences->getInt(preference_command_retry_delay);
+    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
+    _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
+
+    _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
+    _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
 
     if(_nrOfRetries < 0 || _nrOfRetries == 200)
     {
@@ -186,10 +192,6 @@ void NukiWrapper::initialize(const bool& firstStart)
         _restartBeaconTimeout = -1;
         _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
     }
-
-    _nukiLock.setEventHandler(this);
-    _nukiLock.setConnectTimeout(3);
-    _nukiLock.setDisconnectTimeout(5000);
 
     Log->print(F("Lock state interval: "));
     Log->print(_intervalLockstate);
@@ -2758,7 +2760,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                         return;
                     }
                 }
-                
+
                 /*
                 if(sharedKey.length() != 64)
                 {
@@ -2883,20 +2885,20 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                 {
                     _network->publishAuthCommandResult("addActionNotSupported");
                     return;
-                  
+
                     NukiLock::NewAuthorizationEntry entry;
                     memset(&entry, 0, sizeof(entry));
                     size_t nameLen = name.length();
                     memcpy(&entry.name, name.c_str(), nameLen > 32 ? 32 : nameLen);
                     /*
                     memcpy(&entry.sharedKey, secretKeyK, 32);
-                    
+
                     if(idType != 1)
                     {
                         _network->publishAuthCommandResult("invalidIdType");
                         return;
                     }
-                    
+
                     entry.idType = idType;
                     */
                     entry.remoteAllowed = remoteAllowed == 1 ? 1 : 0;

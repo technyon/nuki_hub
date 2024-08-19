@@ -115,15 +115,16 @@ void setReroute(){
 void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
-    bool secrets = preferences->getBool(preference_show_secrets, false);
     bool reroute = true;
-
+    if(preferences->getBool(preference_show_secrets, false))
+    {
+        preferences->putBool(preference_show_secrets, false);
+    }
     while(true)
     {
         int64_t ts = (esp_timer_get_time() / 1000);
         if(ts > 120000 && ts < 125000)
         {
-            if(secrets) preferences->putBool(preference_show_secrets, false);
             if(bootloopCounter > 0)
             {
                 bootloopCounter = (int8_t)0;

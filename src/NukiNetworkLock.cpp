@@ -204,7 +204,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(value, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
     {
         Log->println(F("Update requested via MQTT."));
-        
+
         bool otaManifestSuccess = false;
         JsonDocument doc;
 
@@ -235,7 +235,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         {
             String currentVersion = NUKI_HUB_VERSION;
 
-            if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str())) 
+            if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str()))
             {
                 if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
                 {
@@ -294,7 +294,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
                     delay(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
-            } 
+            }
         }
         else
         {
@@ -702,6 +702,12 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
                 memcpy(_authName, authName, sizeof(authName));
+
+                if(authName[sizeName - 1] != '\0' && _authEntries.count(_authId) > 0)
+                {
+                    memset(_authName, 0, sizeof(_authName));
+                    memcpy(_authName, _authEntries[_authId].c_str(), sizeof(_authEntries[_authId].c_str()));
+                }
             }
         }
 
@@ -710,6 +716,12 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
         entry["authorizationName"] = authName;
+
+        if(entry["authorizationName"].as<String>().length() == 0 && _authEntries.count(log.authId) > 0)
+        {
+           entry["authorizationName"] = _authEntries[log.authId];
+        }
+
         entry["timeYear"] = log.timeStampYear;
         entry["timeMonth"] = log.timeStampMonth;
         entry["timeDay"] = log.timeStampDay;
@@ -1368,6 +1380,7 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
         jsonEntry["idType"] = entry.idType; //CONSIDER INT TO STRING
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
+        _authEntries[jsonEntry["authId"]] = jsonEntry["name"].as<String>();
         jsonEntry["remoteAllowed"] = entry.remoteAllowed;
         char createdDT[20];
         sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.createdYear, entry.createdMonth, entry.createdDay, entry.createdHour, entry.createdMinute, entry.createdSecond);
@@ -1612,7 +1625,7 @@ void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic,
     {
         _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
     }
-    
+
     #ifndef CONFIG_IDF_TARGET_ESP32H2
     _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
     #endif

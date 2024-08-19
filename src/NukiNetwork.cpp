@@ -40,8 +40,8 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
     }
 
     _inst = this;
-    _hostname = _preferences->getString(preference_hostname);
     _webEnabled = _preferences->getBool(preference_webserver_enabled, true);
+    _updateFromMQTT = _preferences->getBool(preference_update_from_mqtt, false);
 
     #ifndef NUKI_HUB_UPDATER
     memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
@@ -197,24 +197,22 @@ bool NukiNetwork::update()
 #else
 void NukiNetwork::initialize()
 {
-    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
-    _checkUpdates = _preferences->getBool(preference_check_updates, false);
-    _reconnectNetworkOnMqttDisconnect = _preferences->getBool(preference_recon_netw_on_mqtt_discon, false);
-    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval, 0) * 1000;
     _hostname = _preferences->getString(preference_hostname, "");
-    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
-    _mqttPort = _preferences->getInt(preference_mqtt_broker_port, 1883);
 
     if(_hostname == "")
     {
         _hostname = "nukihub";
         _preferences->putString(preference_hostname, _hostname);
     }
-    if(_rssiPublishInterval == 0)
+
+    _mqttPort = _preferences->getInt(preference_mqtt_broker_port, 0);
+
+    if(_mqttPort == 0)
     {
-        _rssiPublishInterval = 60000;
-        _preferences->putInt(preference_rssi_publish_interval, 60);
+        _mqttPort = 1883;
+        _preferences->putInt(preference_mqtt_broker_port, _mqttPort);
     }
+
     strcpy(_hostnameArr, _hostname.c_str());
     _device->initialize();
 
@@ -223,13 +221,6 @@ void NukiNetwork::initialize()
 
     String brokerAddr = _preferences->getString(preference_mqtt_broker);
     strcpy(_mqttBrokerAddr, brokerAddr.c_str());
-
-    int port = _preferences->getInt(preference_mqtt_broker_port, 0);
-    if(port == 0)
-    {
-        port = 1883;
-        _preferences->putInt(preference_mqtt_broker_port, port);
-    }
 
     String mqttUser = _preferences->getString(preference_mqtt_user);
     if(mqttUser.length() > 0)
@@ -254,20 +245,11 @@ void NukiNetwork::initialize()
     Log->print(F("MQTT Broker: "));
     Log->print(_mqttBrokerAddr);
     Log->print(F(":"));
-    Log->println(port);
+    Log->println(_mqttPort);
 
     _device->mqttSetClientId(_hostnameArr);
     _device->mqttSetCleanSession(MQTT_CLEAN_SESSIONS);
     _device->mqttSetKeepAlive(MQTT_KEEP_ALIVE);
-
-    _networkTimeout = _preferences->getInt(preference_network_timeout, 0);
-    if(_networkTimeout == 0)
-    {
-        _networkTimeout = -1;
-        _preferences->putInt(preference_network_timeout, _networkTimeout);
-    }
-
-    _publishDebugInfo = _preferences->getBool(preference_publish_debug_info, false);
 
     char gpioPath[250];
     bool rebGpio = rebuildGpio();
@@ -309,6 +291,33 @@ void NukiNetwork::initialize()
     {
         gpioActionCallback(action, pin);
     });
+
+    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+    _offEnabled = _preferences->getBool(preference_official_hybrid, false);
+    readSettings();
+}
+
+void NukiNetwork::readSettings()
+{
+    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
+    _checkUpdates = _preferences->getBool(preference_check_updates, false);
+    _reconnectNetworkOnMqttDisconnect = _preferences->getBool(preference_recon_netw_on_mqtt_discon, false);
+    _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval, 0) * 1000;
+
+    if(_rssiPublishInterval == 0)
+    {
+        _rssiPublishInterval = 60000;
+        _preferences->putInt(preference_rssi_publish_interval, 60);
+    }
+
+    _networkTimeout = _preferences->getInt(preference_network_timeout, 0);
+    if(_networkTimeout == 0)
+    {
+        _networkTimeout = -1;
+        _preferences->putInt(preference_network_timeout, _networkTimeout);
+    }
+
+    _publishDebugInfo = _preferences->getBool(preference_publish_debug_info, false);
 }
 
 bool NukiNetwork::update()
@@ -1055,7 +1064,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
         removeHassTopic((char*)"sensor", (char*)"mqtt_log", uidString);
     }
 
-    if(_preferences->getBool(preference_official_hybrid, false))
+    if(_offEnabled)
     {
         // Hybrid connected
         publishHassTopic("binary_sensor",
@@ -1180,7 +1189,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
                      "",
                      { { (char*)"en", (char*)"true" }});
 
-    if(_preferences->getBool(preference_check_updates))
+    if(_checkUpdates)
     {
         // NUKI Hub latest
         publishHassTopic("sensor",
@@ -1204,7 +1213,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
         _lockPath.toCharArray(latest_version_topic,_lockPath.length() + 1);
         strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
 
-        if(!_preferences->getBool(preference_update_from_mqtt, false))
+        if(!_updateFromMQTT)
         {
             publishHassTopic("update",
                              "nuki_hub_update",

@@ -3,105 +3,27 @@
 #include <vector>
 #include "Config.h"
 
-#define preference_started_before (char*)"run"
-#define preference_config_version (char*)"confVersion"
-#define preference_device_id_lock (char*)"deviceId"
-#define preference_device_id_opener (char*)"deviceIdOp"
-#define preference_nuki_id_lock (char*)"nukiId"
-#define preference_nuki_id_opener (char*)"nukidOp"
+//CHANGE REQUIRES REBOOT TO TAKE EFFECT
+#define preference_ip_dhcp_enabled (char*)"dhcpena"
+#define preference_ip_address (char*)"ipaddr"
+#define preference_ip_subnet (char*)"ipsub"
+#define preference_ip_gateway (char*)"ipgtw"
+#define preference_ip_dns_server (char*)"dnssrv"
 #define preference_mqtt_broker (char*)"mqttbroker"
 #define preference_mqtt_broker_port (char*)"mqttport"
 #define preference_mqtt_user (char*)"mqttuser"
 #define preference_mqtt_password (char*)"mqttpass"
 #define preference_mqtt_log_enabled (char*)"mqttlog"
 #define preference_webserial_enabled (char*)"weblog"
-#define preference_webserver_enabled (char*)"websrvena"
 #define preference_lock_enabled (char*)"lockena"
-#define preference_lock_pin_status (char*)"lockpin"
 #define preference_mqtt_lock_path (char*)"mqttpath"
 #define preference_opener_enabled (char*)"openerena"
-#define preference_opener_pin_status (char*)"openerpin"
-#define preference_opener_continuous_mode (char*)"openercont"
 #define preference_mqtt_opener_path (char*)"mqttoppath"
-#define preference_check_updates (char*)"checkupdates"
-#define preference_lock_max_keypad_code_count (char*)"maxkpad"
-#define preference_opener_max_keypad_code_count (char*)"opmaxkpad"
-#define preference_lock_max_timecontrol_entry_count (char*)"maxtc"
-#define preference_opener_max_timecontrol_entry_count (char*)"opmaxtc"
 #define preference_mqtt_ca (char*)"mqttca"
 #define preference_mqtt_crt (char*)"mqttcrt"
 #define preference_mqtt_key (char*)"mqttkey"
-#define preference_mqtt_hass_discovery (char*)"hassdiscovery"
-#define preference_mqtt_hass_cu_url (char*)"hassConfigUrl"
-#define preference_ip_dhcp_enabled (char*)"dhcpena"
-#define preference_ip_address (char*)"ipaddr"
-#define preference_ip_subnet (char*)"ipsub"
-#define preference_ip_gateway (char*)"ipgtw"
-#define preference_ip_dns_server (char*)"dnssrv"
 #define preference_network_hardware (char*)"nwhw"
-#define preference_network_hardware_gpio (char*)"nwhwdt" // obsolete
-#define preference_network_wifi_fallback_disabled (char*)"nwwififb"
-#define preference_find_best_rssi (char*)"nwbestrssi"
-#define preference_rssi_publish_interval (char*)"rssipb"
 #define preference_hostname (char*)"hostname"
-#define preference_network_timeout (char*)"nettmout"
-#define preference_restart_on_disconnect (char*)"restdisc"
-#define preference_restart_ble_beacon_lost (char*)"rstbcn"
-#define preference_query_interval_lockstate (char*)"lockStInterval"
-#define preference_query_interval_configuration (char*)"configInterval"
-#define preference_query_interval_battery (char*)"batInterval"
-#define preference_query_interval_keypad (char*)"kpInterval"
-#define preference_access_level (char*)"accLvl"
-#define preference_keypad_info_enabled (char*)"kpInfoEnabled"
-#define preference_keypad_topic_per_entry (char*)"kpPerEntry"
-#define preference_keypad_control_enabled (char*)"kpCntrlEnabled"
-#define preference_keypad_publish_code (char*)"kpPubCode"
-#define preference_timecontrol_control_enabled (char*)"tcCntrlEnabled"
-#define preference_timecontrol_topic_per_entry (char*)"tcPerEntry"
-#define preference_timecontrol_info_enabled (char*)"tcInfoEnabled"
-#define preference_publish_authdata (char*)"pubAuth"
-#define preference_acl (char*)"aclLckOpn"
-#define preference_conf_info_enabled (char*)"cnfInfoEnabled"
-#define preference_conf_lock_basic_acl (char*)"confLckBasAcl"
-#define preference_conf_lock_advanced_acl (char*)"confLckAdvAcl"
-#define preference_conf_opener_basic_acl (char*)"confOpnBasAcl"
-#define preference_conf_opener_advanced_acl (char*)"confOpnAdvAcl"
-#define preference_register_as_app (char*)"regAsApp" // true = register as hub; false = register as app
-#define preference_register_opener_as_app (char*)"regOpnAsApp"
-#define preference_command_nr_of_retries (char*)"nrRetry"
-#define preference_command_retry_delay (char*)"rtryDelay"
-#define preference_cred_user (char*)"crdusr"
-#define preference_cred_password (char*)"crdpass"
-#define preference_gpio_locking_enabled (char*)"gpiolck" // obsolete
-#define preference_gpio_configuration (char*)"gpiocfg"
-#define preference_publish_debug_info (char*)"pubdbg"
-#define preference_presence_detection_timeout (char*)"prdtimeout"
-#define preference_latest_version (char*)"latest"
-#define preference_task_size_network (char*)"tsksznetw"
-#define preference_task_size_nuki (char*)"tsksznuki"
-#define preference_authlog_max_entries (char*)"authmaxentry"
-#define preference_keypad_max_entries (char*)"kpmaxentry"
-#define preference_timecontrol_max_entries (char*)"tcmaxentry"
-#define preference_bootloop_counter (char*)"btlpcounter"
-#define preference_enable_bootloop_reset (char*)"enabtlprst"
-#define preference_buffer_size (char*)"buffsize"
-#define preference_disable_non_json (char*)"disnonjson"
-#define preference_official_hybrid (char*)"offHybrid"
-#define preference_official_hybrid_actions (char*)"hybridAct"
-#define preference_official_hybrid_retry (char*)"hybridRtry"
-#define preference_query_interval_hybrid_lockstate (char*)"hybridTimer"
-#define preference_ota_main_url (char*)"otaMainUrl"
-#define preference_ota_updater_url (char*)"otaUpdUrl"
-#define preference_update_from_mqtt (char*)"updMqtt"
-#define preference_show_secrets (char*)"showSecr"
-#define preference_ble_tx_power (char*)"bleTxPwr"
-#define preference_recon_netw_on_mqtt_discon (char*)"recNtwMqttDis"
-#define preference_lock_max_auth_entry_count (char*)"maxauth"
-#define preference_opener_max_auth_entry_count (char*)"opmaxauth"
-#define preference_auth_control_enabled (char*)"authCtrlEna"
-#define preference_auth_topic_per_entry (char*)"authPerEntry"
-#define preference_auth_info_enabled (char*)"authInfoEna"
-#define preference_auth_max_entries (char*)"authmaxentry"
 #define preference_network_custom_phy (char*)"ntwPHY"
 #define preference_network_custom_addr (char*)"ntwADDR"
 #define preference_network_custom_irq (char*)"ntwIRQ"
@@ -114,10 +36,94 @@
 #define preference_network_custom_mdio (char*)"ntwMDIO"
 #define preference_network_custom_mdc (char*)"ntwMDC"
 #define preference_network_custom_clk (char*)"ntwCLK"
+#define preference_auth_control_enabled (char*)"authCtrlEna"
+#define preference_keypad_control_enabled (char*)"kpCntrlEnabled"
+#define preference_timecontrol_control_enabled (char*)"tcCntrlEnabled"
+#define preference_ota_main_url (char*)"otaMainUrl"
+#define preference_ota_updater_url (char*)"otaUpdUrl"
+#define preference_task_size_network (char*)"tsksznetw"
+#define preference_task_size_nuki (char*)"tsksznuki"
+#define preference_buffer_size (char*)"buffsize"
+#define preference_cred_user (char*)"crdusr"
+#define preference_cred_password (char*)"crdpass"
+#define preference_gpio_configuration (char*)"gpiocfg"
+#define preference_mqtt_hass_discovery (char*)"hassdiscovery"
+#define preference_webserver_enabled (char*)"websrvena"
+#define preference_update_from_mqtt (char*)"updMqtt"
+#define preference_disable_non_json (char*)"disnonjson"
+#define preference_official_hybrid (char*)"offHybrid"
+
+// CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
+#define preference_find_best_rssi (char*)"nwbestrssi"
 #define preference_ntw_reconfigure (char*)"ntwRECONF"
+#define preference_auth_max_entries (char*)"authmaxentry"
+#define preference_auth_info_enabled (char*)"authInfoEna"
+#define preference_auth_topic_per_entry (char*)"authPerEntry"
+#define preference_authlog_max_entries (char*)"authmaxentry"
+#define preference_keypad_max_entries (char*)"kpmaxentry"
+#define preference_timecontrol_max_entries (char*)"tcmaxentry"
+#define preference_register_as_app (char*)"regAsApp" // true = register as hub; false = register as app
+#define preference_register_opener_as_app (char*)"regOpnAsApp"
+#define preference_acl (char*)"aclLckOpn"
+#define preference_conf_lock_basic_acl (char*)"confLckBasAcl"
+#define preference_conf_lock_advanced_acl (char*)"confLckAdvAcl"
+#define preference_conf_opener_basic_acl (char*)"confOpnBasAcl"
+#define preference_conf_opener_advanced_acl (char*)"confOpnAdvAcl"
+#define preference_ble_tx_power (char*)"bleTxPwr"
+#define preference_show_secrets (char*)"showSecr"
+#define preference_enable_bootloop_reset (char*)"enabtlprst"
+#define preference_keypad_info_enabled (char*)"kpInfoEnabled"
+#define preference_keypad_topic_per_entry (char*)"kpPerEntry"
+#define preference_keypad_publish_code (char*)"kpPubCode"
+#define preference_timecontrol_topic_per_entry (char*)"tcPerEntry"
+#define preference_timecontrol_info_enabled (char*)"tcInfoEnabled"
+#define preference_publish_authdata (char*)"pubAuth"
+#define preference_conf_info_enabled (char*)"cnfInfoEnabled"
+#define preference_restart_ble_beacon_lost (char*)"rstbcn"
+#define preference_query_interval_lockstate (char*)"lockStInterval"
+#define preference_query_interval_configuration (char*)"configInterval"
+#define preference_query_interval_battery (char*)"batInterval"
+#define preference_query_interval_keypad (char*)"kpInterval"
+#define preference_command_nr_of_retries (char*)"nrRetry"
+#define preference_command_retry_delay (char*)"rtryDelay"
+#define preference_query_interval_hybrid_lockstate (char*)"hybridTimer"
+#define preference_mqtt_hass_cu_url (char*)"hassConfigUrl"
+#define preference_network_wifi_fallback_disabled (char*)"nwwififb"
+#define preference_check_updates (char*)"checkupdates"
+#define preference_opener_continuous_mode (char*)"openercont"
+#define preference_rssi_publish_interval (char*)"rssipb"
+#define preference_network_timeout (char*)"nettmout"
+#define preference_restart_on_disconnect (char*)"restdisc"
+#define preference_publish_debug_info (char*)"pubdbg"
+#define preference_recon_netw_on_mqtt_discon (char*)"recNtwMqttDis"
+#define preference_official_hybrid_actions (char*)"hybridAct"
+#define preference_official_hybrid_retry (char*)"hybridRtry"
+
+//NOT USER CHANGABLE
 #define preference_updater_version (char*)"updVer"
 #define preference_updater_build (char*)"updBuild"
 #define preference_updater_date (char*)"updDate"
+#define preference_lock_max_auth_entry_count (char*)"maxauth"
+#define preference_opener_max_auth_entry_count (char*)"opmaxauth"
+#define preference_started_before (char*)"run"
+#define preference_config_version (char*)"confVersion"
+#define preference_device_id_lock (char*)"deviceId"
+#define preference_device_id_opener (char*)"deviceIdOp"
+#define preference_nuki_id_lock (char*)"nukiId"
+#define preference_nuki_id_opener (char*)"nukidOp"
+#define preference_lock_pin_status (char*)"lockpin"
+#define preference_opener_pin_status (char*)"openerpin"
+#define preference_lock_max_keypad_code_count (char*)"maxkpad"
+#define preference_opener_max_keypad_code_count (char*)"opmaxkpad"
+#define preference_lock_max_timecontrol_entry_count (char*)"maxtc"
+#define preference_opener_max_timecontrol_entry_count (char*)"opmaxtc"
+#define preference_latest_version (char*)"latest"
+
+//OBSOLETE
+#define preference_access_level (char*)"accLvl"
+#define preference_gpio_locking_enabled (char*)"gpiolck"
+#define preference_network_hardware_gpio (char*)"nwhwdt"
+#define preference_presence_detection_timeout (char*)"prdtimeout"
 
 inline bool initPreferences(Preferences* preferences)
 {
@@ -127,8 +133,6 @@ inline bool initPreferences(Preferences* preferences)
     #else
     bool firstStart = !preferences->getBool(preference_started_before);
     #endif
-
-    preferences->remove(preference_bootloop_counter);
 
     if(firstStart)
     {
@@ -273,8 +277,8 @@ private:
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
             preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
             preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
-            preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_presence_detection_timeout,
-            preference_official_hybrid, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry, preference_latest_version,
+            preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info,
+            preference_official_hybrid, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry,
             preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
             preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
             preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
@@ -310,7 +314,7 @@ private:
             preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_buffer_size, preference_network_hardware,
             preference_rssi_publish_interval, preference_network_timeout, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_command_nr_of_retries,
-            preference_command_retry_delay, preference_presence_detection_timeout, preference_query_interval_hybrid_lockstate, preference_latest_version,
+            preference_command_retry_delay, preference_query_interval_hybrid_lockstate,
             preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
             preference_ble_tx_power, preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr,
             preference_network_custom_irq, preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso,

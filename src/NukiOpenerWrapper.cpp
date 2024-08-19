@@ -31,7 +31,7 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId
 
     network->setLockActionReceivedCallback(nukiOpenerInst->onLockActionReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiOpenerInst->onConfigUpdateReceivedCallback);
-    if(_preferences->getBool(preference_disable_non_json, false)) network->setKeypadCommandReceivedCallback(nukiOpenerInst->onKeypadCommandReceivedCallback);
+    network->setKeypadCommandReceivedCallback(nukiOpenerInst->onKeypadCommandReceivedCallback);
     network->setKeypadJsonCommandReceivedCallback(nukiOpenerInst->onKeypadJsonCommandReceivedCallback);
     network->setTimeControlCommandReceivedCallback(nukiOpenerInst->onTimeControlCommandReceivedCallback);
     network->setAuthCommandReceivedCallback(nukiOpenerInst->onAuthCommandReceivedCallback);
@@ -49,7 +49,17 @@ NukiOpenerWrapper::~NukiOpenerWrapper()
 void NukiOpenerWrapper::initialize()
 {
     _nukiOpener.initialize();
+    _nukiOpener.registerBleScanner(_bleScanner);
+    _nukiOpener.setEventHandler(this);
+    _nukiOpener.setConnectTimeout(3);
+    _nukiOpener.setDisconnectTimeout(5000);
 
+    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    readSettings();
+}
+
+void NukiOpenerWrapper::readSettings()
+{
     esp_power_level_t powerLevel;
 
     int pwrLvl = _preferences->getInt(preference_ble_tx_power, 9);
@@ -64,7 +74,6 @@ void NukiOpenerWrapper::initialize()
     else if(pwrLvl >= -12) powerLevel = ESP_PWR_LVL_N12;
 
     _nukiOpener.setPower(powerLevel);
-    _nukiOpener.registerBleScanner(_bleScanner);
 
     _intervalLockstate = _preferences->getInt(preference_query_interval_lockstate);
     _intervalConfig = _preferences->getInt(preference_query_interval_configuration);
@@ -76,10 +85,10 @@ void NukiOpenerWrapper::initialize()
     _maxTimeControlEntryCount = _preferences->getUInt(preference_opener_max_timecontrol_entry_count);
     _maxAuthEntryCount = _preferences->getUInt(preference_opener_max_auth_entry_count);
     _restartBeaconTimeout = _preferences->getInt(preference_restart_ble_beacon_lost);
-    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
     _nrOfRetries = _preferences->getInt(preference_command_nr_of_retries, 200);
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
+    _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
     _preferences->getBytes(preference_conf_opener_basic_acl, &_basicOpenerConfigAclPrefs, sizeof(_basicOpenerConfigAclPrefs));
     _preferences->getBytes(preference_conf_opener_advanced_acl, &_advancedOpenerConfigAclPrefs, sizeof(_advancedOpenerConfigAclPrefs));
 
@@ -125,10 +134,6 @@ void NukiOpenerWrapper::initialize()
         _restartBeaconTimeout = -1;
         _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
     }
-
-    _nukiOpener.setEventHandler(this);
-    _nukiOpener.setConnectTimeout(3);
-    _nukiOpener.setDisconnectTimeout(5000);
 
     Log->print(F("Opener state interval: "));
     Log->print(_intervalLockstate);
@@ -1584,7 +1589,7 @@ void NukiOpenerWrapper::gpioActionCallback(const GpioAction &action, const int& 
 
 void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
-    if(_preferences->getBool(preference_disable_non_json, false)) return;
+    if(_disableNonJSON) return;
 
     if(!_preferences->getBool(preference_keypad_control_enabled, false))
     {
@@ -2625,13 +2630,13 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                     memcpy(&entry.name, name.c_str(), nameLen > 32 ? 32 : nameLen);
                     /*
                     memcpy(&entry.sharedKey, secretKeyK, 32);
-                    
+
                     if(idType != 1)
                     {
                         _network->publishAuthCommandResult("invalidIdType");
                         return;
                     }
-                    
+
                     entry.idType = idType;
                     */
                     entry.remoteAllowed = remoteAllowed == 1 ? 1 : 0;

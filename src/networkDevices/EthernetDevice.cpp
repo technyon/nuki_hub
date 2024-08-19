@@ -52,8 +52,6 @@ EthernetDevice::EthernetDevice(const String &hostname,
 
 void EthernetDevice::init()
 {
-    _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect);
-
 #ifndef NUKI_HUB_UPDATER
     size_t caLength = _preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
     size_t crtLength = _preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
@@ -253,7 +251,7 @@ ReconnectStatus EthernetDevice::reconnect(bool force)
 
 void EthernetDevice::onDisconnected()
 {
-    if(_restartOnDisconnect && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+    if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
     reconnect();
 }
 

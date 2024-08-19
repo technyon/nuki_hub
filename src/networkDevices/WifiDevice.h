@@ -38,10 +38,8 @@ private:
     WiFiManager _wm;
     Preferences* _preferences = nullptr;
 
-    bool _restartOnDisconnect = false;
     bool _startAp = false;
     bool _isReconnecting = false;
-    bool _wifiFallbackDisabled = false;
     char* _path;
     int64_t _disconnectTs = 0;
 

@@ -52,7 +52,7 @@ private:
     bool processImport(AsyncWebServerRequest *request, String& message);
     void processGpioArgs(AsyncWebServerRequest *request);
     void buildHtml(AsyncWebServerRequest *request);
-    void buildAccLvlHtml(AsyncWebServerRequest *request, int aclPart = 0);
+    void buildAccLvlHtml(AsyncWebServerRequest *request);
     void buildCredHtml(AsyncWebServerRequest *request);
     void buildImportExportHtml(AsyncWebServerRequest *request);
     void buildMqttConfigHtml(AsyncWebServerRequest *request);
@@ -68,15 +68,13 @@ private:
     void processUnpair(AsyncWebServerRequest *request, bool opener);
     void processUpdate(AsyncWebServerRequest *request);
     void processFactoryReset(AsyncWebServerRequest *request);
-    void printInputField(AsyncResponseStream *response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* args, const bool& isPassword = false, const bool& showLengthRestriction = false);
-    void printInputField(AsyncResponseStream *response, const char* token, const char* description, const int value, size_t maxLength, const char* args);
-    void printCheckBox(AsyncResponseStream *response, const char* token, const char* description, const bool value, const char* htmlClass);
-    void printCheckBox(String &partString, const char* token, const char* description, const bool value, const char* htmlClass);
-    void printTextarea(AsyncResponseStream *response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
-    void printDropDown(AsyncResponseStream *response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options, const String className);
-    void buildNavigationButton(AsyncResponseStream *response, const char* caption, const char* targetPath, const char* labelText = "");
-    void buildNavigationMenuEntry(AsyncResponseStream *response, const char *title, const char *targetPath, const char* warningMessage = "");
-    void partAccLvlHtml(String &partString, int aclPart);
+    void printInputField(const char* token, const char* description, const char* value, const size_t& maxLength, const char* args, const bool& isPassword = false, const bool& showLengthRestriction = false);
+    void printInputField(const char* token, const char* description, const int value, size_t maxLength, const char* args);
+    void printCheckBox(const char* token, const char* description, const bool value, const char* htmlClass);
+    void printTextarea(const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
+    void printDropDown(const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options, const String className);
+    void buildNavigationButton(const char* caption, const char* targetPath, const char* labelText = "");
+    void buildNavigationMenuEntry(const char *title, const char *targetPath, const char* warningMessage = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
@@ -88,7 +86,7 @@ private:
     String getPreselectionForGpio(const uint8_t& pin);
     String pinStateToString(uint8_t value);
 
-    void printParameter(AsyncResponseStream *response, const char* description, const char* value, const char *link = "", const char *id = "");
+    void printParameter(const char* description, const char* value, const char *link = "", const char *id = "");
     
     NukiWrapper* _nuki = nullptr;
     NukiOpenerWrapper* _nukiOpener = nullptr;
@@ -98,6 +96,7 @@ private:
     bool _rebootRequired = false;
     #endif
 
+    String _response;
     String generateConfirmCode();
     String _confirmCode = "----";
     void buildConfirmHtml(AsyncWebServerRequest *request, const String &message, uint32_t redirectDelay = 5, bool redirect = false);    
@@ -105,10 +104,11 @@ private:
     void buildOtaCompletedHtml(AsyncWebServerRequest *request);
     void sendCss(AsyncWebServerRequest *request);
     void sendFavicon(AsyncWebServerRequest *request);
-    void buildHtmlHeader(AsyncResponseStream *response, String additionalHeader = "");
+    void buildHtmlHeader(String additionalHeader = "");
     void waitAndProcess(const bool blocking, const uint32_t duration);
     void handleOtaUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
     void printProgress(size_t prg, size_t sz);
+    void sendResponse(AsyncWebServerRequest *request);
     
     AsyncWebServer* _asyncServer = nullptr;
     NukiNetwork* _network = nullptr;
