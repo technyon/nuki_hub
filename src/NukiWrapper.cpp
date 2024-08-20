@@ -1621,7 +1621,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     {
                         const uint8_t keyvalue = atoi(jsonchar);
 
-                        if(keyvalue >= 30 && keyvalue <= 180)
+                        if(keyvalue >= 30 && keyvalue <= 1800)
                         {
                             if(_nukiAdvancedConfig.autoLockTimeOut == keyvalue) jsonResult[advancedKeys[j]] = "unchanged";
                             else cmdResult = _nukiLock.setAutoLockTimeOut(keyvalue);

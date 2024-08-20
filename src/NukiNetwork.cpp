@@ -2154,7 +2154,7 @@ void NukiNetwork::publishHASSConfigAdditionalLockEntities(char *deviceType, cons
                            { (char*)"cmd_tpl", (char*)"{ \"autoLockTimeOut\": \"{{ value }}\" }" },
                            { (char*)"val_tpl", (char*)"{{value_json.autoLockTimeOut}}" },
                            { (char*)"min", (char*)"30" },
-                           { (char*)"max", (char*)"180" }});
+                           { (char*)"max", (char*)"1800" }});
     }
     else
     {
