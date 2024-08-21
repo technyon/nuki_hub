@@ -80,6 +80,7 @@ private:
 
     NukiNetwork* _network = nullptr;
 
+    std::map<uint32_t, String> _authEntries;
     char _mqttPath[181] = {0};
     bool _isConnected = false;
     bool _firstTunerStatePublish = true;

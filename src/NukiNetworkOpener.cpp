@@ -481,6 +481,12 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
                 memcpy(_authName, authName, sizeof(authName));
+                
+                if(authName[sizeName - 1] != '\0' && _authEntries.count(_authId) > 0)
+                {
+                    memset(_authName, 0, sizeof(_authName));
+                    memcpy(_authName, _authEntries[_authId].c_str(), sizeof(_authEntries[_authId].c_str()));
+                }
             }
         }
 
@@ -489,6 +495,12 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
         entry["authorizationName"] = _authName;
+        
+        if(entry["authorizationName"].as<String>().length() == 0 && _authEntries.count(log.authId) > 0)
+        {
+           entry["authorizationName"] = _authEntries[log.authId];
+        }
+        
         entry["timeYear"] = log.timeStampYear;
         entry["timeMonth"] = log.timeStampMonth;
         entry["timeDay"] = log.timeStampDay;
@@ -1176,6 +1188,7 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
         jsonEntry["idType"] = entry.idType; //CONSIDER INT TO STRING
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
+        _authEntries[jsonEntry["authId"]] = jsonEntry["name"].as<String>();
         jsonEntry["remoteAllowed"] = entry.remoteAllowed;
         char createdDT[20];
         sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.createdYear, entry.createdMonth, entry.createdDay, entry.createdHour, entry.createdMinute, entry.createdSecond);

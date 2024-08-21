@@ -105,6 +105,7 @@ private:
     NukiNetwork* _network;
     Preferences* _preferences;
 
+    std::map<uint32_t, String> _authEntries;
     std::vector<char*> _offTopics;
     char _mqttPath[181] = {0};
     char _offMqttPath[181] = {0};

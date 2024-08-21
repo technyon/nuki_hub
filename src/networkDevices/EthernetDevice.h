@@ -67,7 +67,6 @@ private:
     void onNetworkEvent(arduino_event_id_t event, arduino_event_info_t info);
 
     bool _connected = false;
-    bool _restartOnDisconnect = false;
     char* _path;
     bool _hardwareInitialized = false;
 

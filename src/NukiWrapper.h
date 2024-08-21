@@ -16,6 +16,7 @@ public:
     virtual ~NukiWrapper();
 
     void initialize(const bool& firstStart);
+    void readSettings();
     void update();
 
     void lock();
