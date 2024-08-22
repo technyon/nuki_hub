@@ -960,9 +960,16 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
         if(!networkInst->_offConnected) nukiInst->_nextLockAction = action;
         else
         {
-            networkInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-            networkInst->_offCommand = action;
-            networkInst->publishOffAction((int)action);
+            if(nukiLockPreferences->getBool(preference_official_hybrid_actions, false)) 
+            {
+                networkInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                networkInst->_offCommand = action;
+                networkInst->publishOffAction((int)action);
+            }
+            else
+            {
+                nukiInst->_nextLockAction = action;
+            }
         }
         nukiLockPreferences->end();
         return LockActionResult::Success;

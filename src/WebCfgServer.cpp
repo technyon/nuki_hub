@@ -2748,7 +2748,7 @@ void WebCfgServer::buildMqttConfigHtml(AsyncWebServerRequest *request)
     printCheckBox("OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
     printCheckBox("HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
     printInputField("HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
-    printCheckBox("HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
+    // printCheckBox("HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), ""); // NOT IMPLEMENTED (YET?)
     _response.concat("</table>");
     _response.concat("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
 
@@ -3419,11 +3419,13 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
             _response.concat(_nuki->offConnected() ? "Yes": "No");
             _response.concat("\nSending actions through official MQTT enabled: ");
             _response.concat(_preferences->getBool(preference_official_hybrid_actions, false) ? "Yes" : "No");
+            /* NOT IMPLEMENTED (YET?)
             if(_preferences->getBool(preference_official_hybrid_actions, false))
             {
                 _response.concat("\nRetry actions through BLE enabled: ");
                 _response.concat(_preferences->getBool(preference_official_hybrid_retry, false) ? "Yes" : "No");
             }
+            */
             _response.concat("\nTime between status updates when official MQTT is offline (s): ");
             _response.concat(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600));
         }
