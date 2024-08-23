@@ -43,7 +43,7 @@ The Hybrid Official MQTT over Thread + Nuki Hub solution allows for the best com
 - Enable `Enable hybrid official MQTT and Nuki Hub setup`. The `Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)` setting will be automatically be enabled.
 - Optionally enable `Enable sending actions through official MQTT`, if not enabled lock actions will be sent over BLE as usual (slower)
 - Set `Time between status updates when official MQTT is offline (seconds)` to a positive integer. If the Nuki lock MQTT connection goes offline for whatever reason Nuki Hub will update the lock state with the set interval in seconds.
-- Optionally enable `Retry command sent using official MQTT over BLE if failed`. If sending a lock action over the official MQTT implementation fails the command will be resent over BLE if this is enabled. Requires `Enable sending actions through official MQTT` to be enabled.
+<!--- Optionally enable `Retry command sent using official MQTT over BLE if failed`. If sending a lock action over the official MQTT implementation fails the command will be resent over BLE if this is enabled. Requires `Enable sending actions through official MQTT` to be enabled.!-->
 - Save your configuration
 - Consider setting the `Query intervals` on the `Advanced Nuki configuration` to high numbers (e.g. 86400) to further reduce battery drain.
 - Pair your Nuki Lock with Nuki Hub
