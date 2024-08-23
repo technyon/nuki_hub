@@ -2926,10 +2926,7 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
     printCheckBox("AUTHENA", "Modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
     printCheckBox("PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
     _response.concat("</table><br>");
-    _response.concat("<div id=\"acllock\"></div>");
-    _response.concat("<div id=\"aclopener\"></div>");
     _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    _response.concat("</form>");
 
     if(_nuki != nullptr)
     {
@@ -3003,6 +3000,7 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
         printCheckBox("CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1), "chk_config_lock");
         printCheckBox("CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1), "chk_config_lock");
         _response.concat("</table><br>");
+        _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
     if(_nukiOpener != nullptr)
     {
@@ -3071,7 +3069,10 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
         printCheckBox("CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1), "chk_config_opener");
         printCheckBox("CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1), "chk_config_opener");
         _response.concat("</table><br>");
+        _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
+
+    _response.concat("</form>");
     _response.concat("</body></html>");
     sendResponse(request);
 }
