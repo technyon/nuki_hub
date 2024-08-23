@@ -3072,7 +3072,6 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
         _response.concat("</table><br>");
         _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
-    
     _response.concat("</form>");
     _response.concat("</body></html>");
     sendResponse(request);
