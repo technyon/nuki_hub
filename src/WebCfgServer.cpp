@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
+#include <esp_psram.h>
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
 #endif
@@ -2926,10 +2927,7 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
     printCheckBox("AUTHENA", "Modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
     printCheckBox("PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
     _response.concat("</table><br>");
-    _response.concat("<div id=\"acllock\"></div>");
-    _response.concat("<div id=\"aclopener\"></div>");
     _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    _response.concat("</form>");
 
     if(_nuki != nullptr)
     {
@@ -3003,6 +3001,7 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
         printCheckBox("CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1), "chk_config_lock");
         printCheckBox("CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1), "chk_config_lock");
         _response.concat("</table><br>");
+        _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
     if(_nukiOpener != nullptr)
     {
@@ -3071,7 +3070,10 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
         printCheckBox("CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1), "chk_config_opener");
         printCheckBox("CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1), "chk_config_opener");
         _response.concat("</table><br>");
+        _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
+    
+    _response.concat("</form>");
     _response.concat("</body></html>");
     sendResponse(request);
 }
@@ -3202,8 +3204,24 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
     _response.concat(getRestartReason());
     _response.concat("\nLast restart reason ESP: ");
     _response.concat(getEspRestartReason());
-    _response.concat("\nFree heap: ");
-    _response.concat(esp_get_free_heap_size());
+    _response.concat("\nFree internal heap: ");
+    _response.concat(ESP.getFreeHeap());
+    _response.concat("\nTotal internal heap: ");
+    _response.concat(ESP.getHeapSize());
+    if(esp_psram_get_size() > 0)
+    {
+        _response.concat("\nPSRAM Available: Yes");
+        _response.concat("\nTotal PSRAM: ");
+        _response.concat(esp_psram_get_size());
+        _response.concat("\nFree PSRAM: ");
+        _response.concat((esp_get_free_heap_size() - ESP.getFreeHeap()));
+        _response.concat("\nTotal free heap: ");
+        _response.concat(esp_get_free_heap_size());
+    }
+    else
+    {
+        _response.concat("\nPSRAM Available: No");
+    }
     _response.concat("\nNetwork task stack high watermark: ");
     _response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
     _response.concat("\nNuki task stack high watermark: ");

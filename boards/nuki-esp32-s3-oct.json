@@ -37,7 +37,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "ESP32-S3 (>=4 MB QD, QUAD OR NO PSRAM)",
+  "name": "ESP32-S3 (>=4 MB QD, OCTAL PSRAM)",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,

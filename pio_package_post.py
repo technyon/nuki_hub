@@ -9,6 +9,8 @@ def get_board_name(env):
     
     if env.get('BOARD') == 'esp32-solo1':
         board = env.get('BOARD').replace('-', '')
+    elif env.get('BOARD') == 'nuki-esp32-s3-oct':
+        board = 'esp32s3oct'
     return board
 
 def create_target_dir(env):

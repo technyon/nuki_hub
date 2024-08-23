@@ -514,6 +514,13 @@ void setup()
 
     if(doOta) setupTasks(true);
     else setupTasks(false);
+    
+    #ifdef DEBUG_NUKIHUB
+    Log->print("Task Name\tStatus\tPrio\tHWM\tTask\tAffinity\n");
+    char stats_buffer[1024];
+    vTaskList(stats_buffer);
+    Log->println(stats_buffer);
+    #endif
 }
 
 void loop()
