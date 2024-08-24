@@ -4,7 +4,9 @@
 #include "Logger.h"
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include <esp_psram.h>
+#endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
 #endif
@@ -3207,6 +3209,7 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
     _response.concat(ESP.getFreeHeap());
     _response.concat("\nTotal internal heap: ");
     _response.concat(ESP.getHeapSize());
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
     if(esp_psram_get_size() > 0)
     {
         _response.concat("\nPSRAM Available: Yes");
@@ -3221,6 +3224,9 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
     {
         _response.concat("\nPSRAM Available: No");
     }
+    #else
+    _response.concat("\nPSRAM Available: No");
+    #endif
     _response.concat("\nNetwork task stack high watermark: ");
     _response.concat(uxTaskGetStackHighWaterMark(networkTaskHandle));
     _response.concat("\nNuki task stack high watermark: ");
