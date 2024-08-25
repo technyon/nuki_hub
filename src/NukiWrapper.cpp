@@ -1468,7 +1468,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                         else jsonResult[basicKeys[i]] = "invalidValue";
                     }
 
-                    if(!cmdResult == Nuki::CmdResult::Success) {
+                    if(cmdResult != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
@@ -1752,7 +1752,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                         else jsonResult[advancedKeys[j]] = "invalidValue";
                     }
 
-                    if(!cmdResult == Nuki::CmdResult::Success) {
+                    if(cmdResult != Nuki::CmdResult::Success) {
                         ++_retryCount;
                     }
                     else break;
@@ -2093,7 +2093,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                     }
                 }
 
-                if(!code == 12)
+                if(code != 12)
                 {
                     String codeStr = json["code"].as<String>();
                     bool codeValid = code > 100000 && code < 1000000 && (codeStr.indexOf('0') == -1);
