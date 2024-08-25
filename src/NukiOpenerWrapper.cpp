@@ -1827,7 +1827,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     }
                 }
 
-                if(!code == 12)
+                if(code != 12)
                 {
                     String codeStr = json["code"].as<String>();
                     bool codeValid = code > 100000 && code < 1000000 && (codeStr.indexOf('0') == -1);
@@ -2086,7 +2086,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     entry.codeId = codeId;
                     entry.code = code;
 
-                    if(!name.length() > 0)
+                    if(name.length() < 1)
                     {
                         size_t nameLen = strlen(oldName);
                         memcpy(&entry.name, oldName, nameLen > 20 ? 20 : nameLen);
