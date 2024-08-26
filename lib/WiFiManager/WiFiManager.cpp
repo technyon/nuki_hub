@@ -627,30 +627,28 @@ boolean WiFiManager::configPortalHasTimeout(){
 }
 
 void WiFiManager::setupHTTPServer(){
-
-  server.reset(new WM_WebServer(_httpPort));
+  server->listen(_httpPort);
 
   /* Setup httpd callbacks, web pages: root, wifi config pages, SO captive portal detectors and not found. */
-  server->on(String(FPSTR(R_wifi)).c_str(),       HTTP_ANY, std::bind(&WiFiManager::handleWifi, this,std::placeholders::_1,true));
-  server->on(String(FPSTR(R_wifinoscan)).c_str(), HTTP_ANY, std::bind(&WiFiManager::handleWifi, this,std::placeholders::_1,false));
-  server->on(String(FPSTR(R_erase)).c_str(),      HTTP_ANY, std::bind(&WiFiManager::handleErase, this,std::placeholders::_1,false));
+  server->on(String(FPSTR(R_wifi)).c_str(),       (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleWifi, this,std::placeholders::_1,true));
+  server->on(String(FPSTR(R_wifinoscan)).c_str(), (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleWifi, this,std::placeholders::_1,false));
+  server->on(String(FPSTR(R_erase)).c_str(),      (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleErase, this,std::placeholders::_1,false));
   {
   using namespace std::placeholders;
-  server->on(String(FPSTR(R_root)).c_str(),       HTTP_ANY, std::bind(&WiFiManager::handleRoot, this,_1));
-  server->on(String(FPSTR(R_wifisave)).c_str(),   HTTP_ANY, std::bind(&WiFiManager::handleWifiSave, this,_1));
-  server->on(String(FPSTR(R_info)).c_str(),       HTTP_ANY, std::bind(&WiFiManager::handleInfo, this,_1));
-  server->on(String(FPSTR(R_param)).c_str(),      HTTP_ANY, std::bind(&WiFiManager::handleParam, this,_1));
-  server->on(String(FPSTR(R_paramsave)).c_str(),  HTTP_ANY, std::bind(&WiFiManager::handleParamSave, this,_1));
-  server->on(String(FPSTR(R_restart)).c_str(),    HTTP_ANY, std::bind(&WiFiManager::handleReset, this,_1));
-  server->on(String(FPSTR(R_exit)).c_str(),       HTTP_ANY, std::bind(&WiFiManager::handleExit, this,_1));
-  server->on(String(FPSTR(R_close)).c_str(),      HTTP_ANY, std::bind(&WiFiManager::handleClose, this,_1));
-  server->on(String(FPSTR(R_status)).c_str(),     HTTP_ANY, std::bind(&WiFiManager::handleWiFiStatus, this,_1));
-  server->onNotFound (std::bind(&WiFiManager::handleNotFound, this, _1));
+  server->on(String(FPSTR(R_root)).c_str(),       (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleRoot, this,_1));
+  server->on(String(FPSTR(R_wifisave)).c_str(),   (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleWifiSave, this,_1));
+  server->on(String(FPSTR(R_info)).c_str(),       (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleInfo, this,_1));
+  server->on(String(FPSTR(R_param)).c_str(),      (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleParam, this,_1));
+  server->on(String(FPSTR(R_paramsave)).c_str(),  (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleParamSave, this,_1));
+  server->on(String(FPSTR(R_restart)).c_str(),    (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleReset, this,_1));
+  server->on(String(FPSTR(R_exit)).c_str(),       (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleExit, this,_1));
+  server->on(String(FPSTR(R_close)).c_str(),      (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleClose, this,_1));
+  server->on(String(FPSTR(R_status)).c_str(),     (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleWiFiStatus, this,_1));
+  server->onNotFound ((PsychicHttpRequestCallback)std::bind(&WiFiManager::handleNotFound, this, _1));
 
-  server->on(String(FPSTR(R_update)).c_str(),     HTTP_ANY, std::bind(&WiFiManager::handleUpdate, this, _1));
-  server->on(String(FPSTR(R_updatedone)).c_str(), HTTP_POST,std::bind(&WiFiManager::handleUpdateDone, this, _1), std::bind(&WiFiManager::handleUpdating, this, _1,_2,_3,_4,_5,_6));
+  server->on(String(FPSTR(R_update)).c_str(),     (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleUpdate, this, _1));
+  //server->on(String(FPSTR(R_updatedone)).c_str(), HTTP_POST, std::bind(&WiFiManager::handleUpdateDone, this, _1), std::bind(&WiFiManager::handleUpdating, this, _1,_2,_3,_4,_5,_6));
   }
-  server->begin(); // Web server start
 }
 
 void WiFiManager::teardownHTTPServer(){
@@ -979,7 +977,7 @@ bool WiFiManager::shutdownConfigPortal(){
   // @todo what is the proper way to shutdown and free the server up
   // debug - many open issues aobut port not clearing for use with other servers
   #ifdef WM_ASYNCWEBSERVER
-  server->end();
+  server->stop();
   #else
   server->stop();
   #endif
@@ -1423,10 +1421,13 @@ String WiFiManager::getHTTPHead(String title){
   return page;
 }
 
-void WiFiManager::HTTPSend(AsyncWebServerRequest *request, String page){
-  AsyncWebServerResponse *response = request->beginResponse(200,FPSTR(HTTP_HEAD_CT), page);
-  response->addHeader(FPSTR(HTTP_HEAD_CL), String(page.length()));
-  request->send(response);
+esp_err_t WiFiManager::HTTPSend(PsychicRequest *request, String page){  
+  PsychicResponse response(request);
+  response.addHeader(HTTP_HEAD_CL, ((String)page.length()).c_str());
+  response.setCode(200);
+  response.setContentType(HTTP_HEAD_CT);
+  response.setContent(page.c_str());
+  return response.send();
 }
 
 /**
@@ -1446,12 +1447,12 @@ void WiFiManager::handleRequest() {
 /**
  * HTTPD CALLBACK root or redirect to captive portal
  */
-void WiFiManager::handleRoot(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleRoot(PsychicRequest *request) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP Root"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
-  if (captivePortal(request)) return; // If captive portal redirect instead of displaying the page
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+  if (captivePortal(request)) return 0; // If captive portal redirect instead of displaying the page
   handleRequest();
   String page = getHTTPHead(_title); // @token options @todo replace options with title
   String str  = FPSTR(HTTP_ROOT_MAIN); // @todo custom title
@@ -1463,28 +1464,29 @@ void WiFiManager::handleRoot(AsyncWebServerRequest *request) {
   reportStatus(page);
   page += FPSTR(HTTP_END);
 
-  HTTPSend(request,page);
   if(_preloadwifiscan) WiFi_scanNetworks(_scancachetime,true); // preload wifiscan throttled, async
   // @todo buggy, captive portals make a query on every page load, causing this to run every time in addition to the real page load
   // I dont understand why, when you are already in the captive portal, I guess they want to know that its still up and not done or gone
   // if we can detect these and ignore them that would be great, since they come from the captive portal redirect maybe there is a refferer
+
+  return HTTPSend(request,page);
 }
 
 /**
  * HTTPD CALLBACK Wifi config page handler
  */
-void WiFiManager::handleWifi(AsyncWebServerRequest *request,bool scan = true) {
+esp_err_t WiFiManager::handleWifi(PsychicRequest *request,bool scan = true) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP Wifi"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titlewifi)); // @token titlewifi
   if (scan) {
     #ifdef WM_DEBUG_LEVEL
     // DEBUG_WM(WM_DEBUG_DEV,"refresh flag:",request->hasArg(F("refresh")));
     #endif
-    WiFi_scanNetworks(request->hasArg(F("refresh")),true); //wifiscan, force if arg refresh
+    WiFi_scanNetworks(request->hasParam("refresh")); //wifiscan, force if arg refresh
     page += getScanItemOut();
   }
   String pitem = "";
@@ -1520,21 +1522,21 @@ void WiFiManager::handleWifi(AsyncWebServerRequest *request,bool scan = true) {
   reportStatus(page);
   page += FPSTR(HTTP_END);
 
-  HTTPSend(request,page);
-
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_DEV,F("Sent config page"));
   #endif
+
+  return HTTPSend(request,page);
 }
 
 /**
  * HTTPD CALLBACK Wifi param page handler
  */
-void WiFiManager::handleParam(AsyncWebServerRequest *request){
+esp_err_t WiFiManager::handleParam(PsychicRequest *request){
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP Param"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleparam)); // @token titlewifi
 
@@ -1550,11 +1552,11 @@ void WiFiManager::handleParam(AsyncWebServerRequest *request){
   reportStatus(page);
   page += FPSTR(HTTP_END);
 
-  HTTPSend(request,page);
-
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_DEV,F("Sent param page"));
   #endif
+
+  return HTTPSend(request,page);
 }
 
 
@@ -1914,34 +1916,35 @@ String WiFiManager::getParamOut(){
   return page;
 }
 
-void WiFiManager::handleWiFiStatus(AsyncWebServerRequest *request){
+esp_err_t WiFiManager::handleWiFiStatus(PsychicRequest *request){
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP WiFi status "));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
   String page;
   // String page = "{\"result\":true,\"count\":1}";
   #ifdef WM_JSTEST
     page = FPSTR(HTTP_JS);
   #endif
-  HTTPSend(request,page);
+  
+  return HTTPSend(request,page);
 }
 
 /**
  * HTTPD CALLBACK save form and redirect to WLAN config page again
  */
-void WiFiManager::handleWifiSave(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleWifiSave(PsychicRequest *request) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP WiFi save "));
   DEBUG_WM(WM_DEBUG_DEV,F("Method:"),request->method() == HTTP_GET ? (String)FPSTR(S_GET) : (String)FPSTR(S_POST));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
 
   //SAVE/connect here
-  _ssid = request->arg(F("s")).c_str();
-  _pass = request->arg(F("p")).c_str();
+  _ssid = request->getParam("s")->value();
+  _pass = request->getParam("p")->value();
 
   if(_ssid == "" && _pass != ""){
     _ssid = WiFi_SSID(true); // password change, placeholder ssid, @todo compare pass to old?, confirm ssid is clean
@@ -1957,40 +1960,40 @@ void WiFiManager::handleWifiSave(AsyncWebServerRequest *request) {
   requestinfo += "\nMethod: ";
   requestinfo += (request->method() == HTTP_GET) ? "GET" : "POST";
   requestinfo += "\nArguments: ";
-  requestinfo += request->args();
+  requestinfo += request->params();
   requestinfo += "\n";
-  for (uint8_t i = 0; i < request->args(); i++) {
-    requestinfo += " " + request->argName(i) + ": " + request->arg(i) + "\n";
+  for (uint8_t i = 0; i < request->params(); i++) {
+    requestinfo += " " + request->getParam(i)->name() + ": " + request->getParam(i)->value() + "\n";
   }
 
   DEBUG_WM(WM_DEBUG_MAX,requestinfo);
   #endif
 
   // set static ips from server args
-  if (request->arg(FPSTR(S_ip)) != "") {
+  if (request->getParam(S_ip)->value() != "") {
     //_sta_static_ip.fromString(request->arg(FPSTR(S_ip));
-    String ip = request->arg(FPSTR(S_ip));
+    String ip = request->getParam(S_ip)->value();
     optionalIPFromString(&_sta_static_ip, ip.c_str());
     #ifdef WM_DEBUG_LEVEL
     DEBUG_WM(WM_DEBUG_DEV,F("static ip:"),ip);
     #endif
   }
-  if (request->arg(FPSTR(S_gw)) != "") {
-    String gw = request->arg(FPSTR(S_gw));
+  if (request->getParam(S_gw)->value() != "") {
+    String gw = request->getParam(S_gw)->value();
     optionalIPFromString(&_sta_static_gw, gw.c_str());
     #ifdef WM_DEBUG_LEVEL
     DEBUG_WM(WM_DEBUG_DEV,F("static gateway:"),gw);
     #endif
   }
-  if (request->arg(FPSTR(S_sn)) != "") {
-    String sn = request->arg(FPSTR(S_sn));
+  if (request->getParam(S_sn)->value() != "") {
+    String sn = request->getParam(S_sn)->value();
     optionalIPFromString(&_sta_static_sn, sn.c_str());
     #ifdef WM_DEBUG_LEVEL
     DEBUG_WM(WM_DEBUG_DEV,F("static netmask:"),sn);
     #endif
   }
-  if (request->arg(FPSTR(S_dns)) != "") {
-    String dns = request->arg(FPSTR(S_dns));
+  if (request->getParam(S_dns)->value() != "") {
+    String dns = request->getParam(S_dns)->value();
     optionalIPFromString(&_sta_static_dns, dns.c_str());
     #ifdef WM_DEBUG_LEVEL
     DEBUG_WM(WM_DEBUG_DEV,F("static DNS:"),dns);
@@ -2018,16 +2021,17 @@ void WiFiManager::handleWifiSave(AsyncWebServerRequest *request) {
   page += FPSTR(HTTP_END);
 
   //server->sendHeader(FPSTR(HTTP_HEAD_CORS), FPSTR(HTTP_HEAD_CORS_ALLOW_ALL)); // @HTTPHEAD send cors
-  HTTPSend(request,page);
 
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_DEV,F("Sent wifi save page"));
   #endif
 
   connect = true; //signal ready to connect/reset process in processConfigPortal
+
+  return HTTPSend(request,page);
 }
 
-void WiFiManager::handleParamSave(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleParamSave(PsychicRequest *request) {
 
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP Param save "));
@@ -2035,7 +2039,7 @@ void WiFiManager::handleParamSave(AsyncWebServerRequest *request) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_DEV,F("Method:"),request->method() == HTTP_GET ? (String)FPSTR(S_GET) : (String)FPSTR(S_POST));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
 
   doParamSave(request);
@@ -2045,14 +2049,14 @@ void WiFiManager::handleParamSave(AsyncWebServerRequest *request) {
   if(_showBack) page += FPSTR(HTTP_BACKBTN);
   page += FPSTR(HTTP_END);
 
-  HTTPSend(request,page);
-
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_DEV,F("Sent param save page"));
   #endif
+  
+  return HTTPSend(request,page);
 }
 
-void WiFiManager::doParamSave(AsyncWebServerRequest *request){
+void WiFiManager::doParamSave(PsychicRequest *request){
    // @todo use new callback for before paramsaves, is this really needed?
   if ( _presaveparamscallback != NULL) {
     _presaveparamscallback();  // @CALLBACK
@@ -2075,10 +2079,10 @@ void WiFiManager::doParamSave(AsyncWebServerRequest *request){
       //read parameter from server
       String name = (String)FPSTR(S_parampre)+(String)i;
       String value;
-      if(request->hasArg(name.c_str())) {
-        value = request->arg(name);
+      if(request->hasParam(name.c_str())) {
+        value = request->getParam(name.c_str())->value();
       } else {
-        value = request->arg(_params[i]->getID());
+        value = request->getParam(_params[i]->getID())->value();
       }
 
       //store it in params array
@@ -2101,11 +2105,11 @@ void WiFiManager::doParamSave(AsyncWebServerRequest *request){
 /**
  * HTTPD CALLBACK info page
  */
-void WiFiManager::handleInfo(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleInfo(PsychicRequest *request) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP Info"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   //handleRequest();
   String page = getHTTPHead(FPSTR(S_titleinfo)); // @token titleinfo
   reportStatus(page);
@@ -2203,11 +2207,11 @@ void WiFiManager::handleInfo(AsyncWebServerRequest *request) {
   page += FPSTR(HTTP_HELP);
   page += FPSTR(HTTP_END);
 
-  HTTPSend(request,page);
-
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_DEV,F("Sent info page"));
   #endif
+
+  return HTTPSend(request,page);
 }
 
 String WiFiManager::getInfoData(String id){
@@ -2447,41 +2451,45 @@ String WiFiManager::getInfoData(String id){
 /**
  * HTTPD CALLBACK exit, closes configportal if blocking, if non blocking undefined
  */
-void WiFiManager::handleExit(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleExit(PsychicRequest *request) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP Exit"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleexit)); // @token titleexit
   page += FPSTR(S_exiting); // @token exiting
   // ('Logout', 401, {'WWW-Authenticate': 'Basic realm="Login required"'})
-  AsyncWebServerResponse *response = request->beginResponse(200,FPSTR(HTTP_HEAD_CT), page);
-  response->addHeader(F("Cache-Control"), F("no-cache, no-store, must-revalidate"));
-  request->send(response);
   delay(2000);
   abort = true;
+  
+  PsychicResponse response(request);
+  response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  response.setCode(200);
+  response.setContentType(HTTP_HEAD_CT);
+  response.setContent(page.c_str());
+  return response.send();
 }
 
 /**
  * HTTPD CALLBACK reset page
  */
-void WiFiManager::handleReset(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleReset(PsychicRequest *request) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP Reset"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titlereset)); //@token titlereset
   page += FPSTR(S_resetting); //@token resetting
   page += FPSTR(HTTP_END);
 
-  HTTPSend(request,page);
-
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(F("RESETTING ESP"));
   #endif
   _rebootNeeded = true;
+  
+  return HTTPSend(request,page);
 }
 
 /**
@@ -2491,11 +2499,11 @@ void WiFiManager::handleReset(AsyncWebServerRequest *request) {
 // void WiFiManager::handleErase() {
 //   handleErase(false);
 // }
-void WiFiManager::handleErase(AsyncWebServerRequest *request,bool opt = false) {
+esp_err_t WiFiManager::handleErase(PsychicRequest *request,bool opt = false) {
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_NOTIFY,F("<- HTTP Erase"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleerase)); // @token titleerase
 
@@ -2510,18 +2518,19 @@ void WiFiManager::handleErase(AsyncWebServerRequest *request,bool opt = false) {
   }
 
   page += FPSTR(HTTP_END);
-  HTTPSend(request,page);
 
   if(ret){
     _rebootNeeded = true;
   }
+
+  return HTTPSend(request,page);
 }
 
 /**
  * HTTPD CALLBACK 404
  */
-void WiFiManager::handleNotFound(AsyncWebServerRequest *request) {
-  if (captivePortal(request)) return; // If captive portal redirect instead of displaying the page
+esp_err_t WiFiManager::handleNotFound(PsychicRequest *request) {
+  if (captivePortal(request)) return 0; // If captive portal redirect instead of displaying the page
   handleRequest();
   String message = FPSTR(S_notfound); // @token notfound
 
@@ -2532,18 +2541,22 @@ void WiFiManager::handleNotFound(AsyncWebServerRequest *request) {
     message += FPSTR(S_method); // @token method
     message += ( request->method() == HTTP_GET ) ? FPSTR(S_GET) : FPSTR(S_POST);
     message += FPSTR(S_args); // @token args
-    message += request->args();
+    message += request->params();
     message += F("\n");
 
-    for ( uint8_t i = 0; i < request->args(); i++ ) {
-      message += " " + request->argName ( i ) + ": " + request->arg ( i ) + "\n";
+    for ( uint8_t i = 0; i < request->params(); i++ ) {
+      message += " " + request->getParam(i)->name() + ": " + request->getParam(i)->value() + "\n";
     }
   }
-  AsyncWebServerResponse *response = request->beginResponse(404,FPSTR(HTTP_HEAD_CT2), message);
-  response->addHeader(F("Cache-Control"), F("no-cache, no-store, must-revalidate"));
-  response->addHeader(F("Pragma"), F("no-cache"));
-  response->addHeader(F("Expires"), F("-1"));
-  request->send(response);
+  
+  PsychicResponse response(request);
+  response.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  response.addHeader("Pragma", "no-cache");
+  response.addHeader("Expires", "-1");
+  response.setCode(404);
+  response.setContentType(HTTP_HEAD_CT2);
+  response.setContent(message.c_str());
+  return response.send();
 }
 
 /**
@@ -2551,7 +2564,7 @@ void WiFiManager::handleNotFound(AsyncWebServerRequest *request) {
  * Redirect to captive portal if we got a request for another domain.
  * Return true in that case so the page handler do not try to handle the request again.
  */
-boolean WiFiManager::captivePortal(AsyncWebServerRequest *request) {
+boolean WiFiManager::captivePortal(PsychicRequest *request) {
 
   if(!_enableCaptivePortal || !configPortalActive) return false; // skip redirections if cp not enabled or not in ap mode
 
@@ -2578,9 +2591,11 @@ boolean WiFiManager::captivePortal(AsyncWebServerRequest *request) {
     DEBUG_WM(WM_DEBUG_VERBOSE,F("<- Request redirected to captive portal"));
     DEBUG_WM(WM_DEBUG_DEV,"serverLoc " + serverLoc);
     #endif
-    AsyncWebServerResponse *response = request->beginResponse(302,FPSTR(HTTP_HEAD_CT2), "");
-    response->addHeader(F("Location"), (String)F("http://") + serverLoc);
-    request->send(response);
+    PsychicResponse response(request);
+    response.addHeader("Location", ((String)("http://") + serverLoc).c_str());
+    response.setCode(302);
+    response.setContentType(HTTP_HEAD_CT2);
+    response.send();
     return true;
   }
   return false;
@@ -2592,9 +2607,9 @@ void WiFiManager::stopCaptivePortal(){
 }
 
 // HTTPD CALLBACK, handle close,  stop captive portal, if not enabled undefined
-void WiFiManager::handleClose(AsyncWebServerRequest *request){
+esp_err_t WiFiManager::handleClose(PsychicRequest *request){
   DEBUG_WM(WM_DEBUG_VERBOSE,F("Disabling Captive Portal"));
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
   stopCaptivePortal();
   #ifdef WM_DEBUG_LEVEL
   DEBUG_WM(WM_DEBUG_VERBOSE,F("<- HTTP close"));
@@ -2602,7 +2617,7 @@ void WiFiManager::handleClose(AsyncWebServerRequest *request){
   handleRequest();
   String page = getHTTPHead(FPSTR(S_titleclose)); // @token titleclose
   page += FPSTR(S_closing); // @token closing
-  HTTPSend(request,page);
+  return HTTPSend(request,page);
 }
 
 void WiFiManager::reportStatus(String &page){
@@ -4011,12 +4026,12 @@ void WiFiManager::WiFi_autoReconnect(){
 }
 
 // Called when /update is requested
-void WiFiManager::handleUpdate(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleUpdate(PsychicRequest *request) {
   #ifdef WM_DEBUG_LEVEL
 	DEBUG_WM(WM_DEBUG_VERBOSE,F("<- Handle update"));
   #endif
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
-	if (captivePortal(request)) return; // If captive portal redirect instead of displaying the page
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+	if (captivePortal(request)) return 0; // If captive portal redirect instead of displaying the page
 	String page = getHTTPHead(_title); // @token options
 	String str = FPSTR(HTTP_ROOT_MAIN);
   str.replace(FPSTR(T_t), _title);
@@ -4026,12 +4041,12 @@ void WiFiManager::handleUpdate(AsyncWebServerRequest *request) {
 	page += FPSTR(HTTP_UPDATE);
 	page += FPSTR(HTTP_END);
 
-	HTTPSend(request,page);
+	return HTTPSend(request,page);
 
 }
 
 // upload via /u POST
-void WiFiManager::handleUpdating(AsyncWebServerRequest *request,String filename, size_t index, uint8_t *data, size_t len, bool final){
+void WiFiManager::handleUpdating(String filename, size_t index, uint8_t *data, size_t len, bool final){
   // @todo
   // cannot upload files in captive portal, file select is not allowed, show message with link or hide
   // cannot upload if softreset after upload, maybe check for hard reset at least for dev, ERROR[11]: Invalid bootstrapping state, reset ESP8266 before updating
@@ -4123,10 +4138,10 @@ void WiFiManager::handleUpdating(AsyncWebServerRequest *request,String filename,
 }
 
 // upload and ota done, show status
-void WiFiManager::handleUpdateDone(AsyncWebServerRequest *request) {
+esp_err_t WiFiManager::handleUpdateDone(PsychicRequest *request) {
 	DEBUG_WM(WM_DEBUG_VERBOSE, F("<- Handle update done"));
 	// if (captivePortal(request)) return; // If captive portal redirect instead of displaying the page
-  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication();
+  if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
 	String page = getHTTPHead(FPSTR(S_options)); // @token options
 	String str  = FPSTR(HTTP_ROOT_MAIN);
   str.replace(FPSTR(T_t),_title);
@@ -4148,13 +4163,13 @@ void WiFiManager::handleUpdateDone(AsyncWebServerRequest *request) {
 	}
 	page += FPSTR(HTTP_END);
 
-	HTTPSend(request,page);
-
 	// delay(1000); // send page
 	if (!Update.hasError()) {
 		//ESP.restart();
     _rebootNeeded = true;
 	}
+
+	return HTTPSend(request,page);
 }
 
 #endif

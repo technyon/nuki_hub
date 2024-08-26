@@ -13,8 +13,6 @@
 #include "QueryCommand.h"
 #include "LockActionResult.h"
 
-#define LOCK_LOG_JSON_BUFFER_SIZE 2048
-
 class NukiNetworkLock : public MqttReceiver
 {
 public:

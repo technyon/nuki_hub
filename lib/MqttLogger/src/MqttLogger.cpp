@@ -90,8 +90,8 @@ void MqttLogger::sendBuffer()
         }
         if (doWebSerial)
         {
-            WebSerial.write(this->buffer, this->bufferCnt);
-            WebSerial.println();
+            //WebSerial.write(this->buffer, this->bufferCnt);
+            //WebSerial.println();
         }
         this->bufferCnt=0;
     }

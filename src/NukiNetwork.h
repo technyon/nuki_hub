@@ -16,8 +16,6 @@
 #include "NukiConstants.h"
 #endif
 
-#define JSON_BUFFER_SIZE 1024
-
 class NukiNetwork
 {
 public:

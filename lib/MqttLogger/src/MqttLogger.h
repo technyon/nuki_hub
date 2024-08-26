@@ -12,7 +12,7 @@
 #include <Arduino.h>
 #include <Print.h>
 #include <espMqttClient.h>
-#include "MycilaWebSerial.h"
+//#include "MycilaWebSerial.h"
 
 #define MQTT_MAX_PACKET_SIZE 1024
 
