@@ -1,0 +1,246 @@
+
+
+CLIENTS: *** 1 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  1
+Agent:               none
+
+Completed requests:  3750
+Total errors:        0
+Total time:          60.001 s
+Mean latency:        15.5 ms
+Effective rps:       62
+
+Percentage of requests served within a certain time
+  50%      12 ms
+  90%      18 ms
+  95%      36 ms
+  99%      80 ms
+ 100%      223 ms (longest request)
+
+
+CLIENTS: *** 2 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  2
+Agent:               none
+
+Completed requests:  5795
+Total errors:        0
+Total time:          60.004 s
+Mean latency:        20.2 ms
+Effective rps:       97
+
+Percentage of requests served within a certain time
+  50%      16 ms
+  90%      27 ms
+  95%      64 ms
+  99%      86 ms
+ 100%      108 ms (longest request)
+
+
+CLIENTS: *** 3 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  3
+Agent:               none
+
+Completed requests:  7445
+Total errors:        0
+Total time:          60.003 s
+Mean latency:        23.6 ms
+Effective rps:       124
+
+Percentage of requests served within a certain time
+  50%      19 ms
+  90%      32 ms
+  95%      70 ms
+  99%      92 ms
+ 100%      121 ms (longest request)
+
+
+CLIENTS: *** 4 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  4
+Agent:               none
+
+Completed requests:  8751
+Total errors:        0
+Total time:          60.005 s
+Mean latency:        26.9 ms
+Effective rps:       146
+
+Percentage of requests served within a certain time
+  50%      22 ms
+  90%      38 ms
+  95%      73 ms
+  99%      95 ms
+ 100%      115 ms (longest request)
+
+
+CLIENTS: *** 5 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  5
+Agent:               none
+
+Completed requests:  9953
+Total errors:        0
+Total time:          60.004 s
+Mean latency:        29.6 ms
+Effective rps:       166
+
+Percentage of requests served within a certain time
+  50%      25 ms
+  90%      42 ms
+  95%      74 ms
+  99%      93 ms
+ 100%      116 ms (longest request)
+
+
+CLIENTS: *** 6 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  6
+Agent:               none
+
+Completed requests:  10871
+Total errors:        0
+Total time:          60.005 s
+Mean latency:        32.6 ms
+Effective rps:       181
+
+Percentage of requests served within a certain time
+  50%      27 ms
+  90%      50 ms
+  95%      82 ms
+  99%      100 ms
+ 100%      116 ms (longest request)
+
+
+CLIENTS: *** 7 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  7
+Agent:               none
+
+Completed requests:  11777
+Total errors:        0
+Total time:          60.003 s
+Mean latency:        35.1 ms
+Effective rps:       196
+
+Percentage of requests served within a certain time
+  50%      30 ms
+  90%      66 ms
+  95%      83 ms
+  99%      101 ms
+ 100%      137 ms (longest request)
+
+
+CLIENTS: *** 8 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  8
+Running on cores:    2
+Agent:               none
+
+Completed requests:  11639
+Total errors:        0
+Total time:          60.004 s
+Mean latency:        35.4 ms
+Effective rps:       194
+
+Percentage of requests served within a certain time
+  50%      30 ms
+  90%      67 ms
+  95%      86 ms
+  99%      106 ms
+ 100%      135 ms (longest request)
+
+
+CLIENTS: *** 10 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  10
+Running on cores:    2
+Agent:               none
+
+Completed requests:  11619
+Total errors:        0
+Total time:          60.004 s
+Mean latency:        35.6 ms
+Effective rps:       194
+
+Percentage of requests served within a certain time
+  50%      30 ms
+  90%      71 ms
+  95%      87 ms
+  99%      105 ms
+ 100%      125 ms (longest request)
+
+
+CLIENTS: *** 16 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  16
+Running on cores:    2
+Agent:               none
+
+Completed requests:  15314
+Total errors:        0
+Total time:          60.005 s
+Mean latency:        54.2 ms
+Effective rps:       255
+
+Percentage of requests served within a certain time
+  50%      46 ms
+  90%      91 ms
+  95%      105 ms
+  99%      127 ms
+ 100%      826 ms (longest request)
+
+
+CLIENTS: *** 20 ***
+
+
+Target URL:          ws://192.168.2.131/ws
+Max time (s):        60
+Concurrent clients:  20
+Running on cores:    2
+Agent:               none
+
+Completed requests:  15370
+Total errors:        0
+Total time:          60.005 s
+Mean latency:        57.7 ms
+Effective rps:       256
+
+Percentage of requests served within a certain time
+  50%      48 ms
+  90%      96 ms
+  95%      110 ms
+  99%      132 ms
+ 100%      851 ms (longest request)

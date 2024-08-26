@@ -1,0 +1,39 @@
+.pioenvs
+.clang_complete
+.gcc-flags.json
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+# Precompiled Headers
+*.gch
+*.pch
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+# Fortran module files
+*.mod
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+# Executables
+*.exe
+*.out
+*.app
+# Visual Studio/VisualMicro stuff
+Visual\ Micro
+*.sdf
+*.opensdf
+*.suo
+.pioenvs
+.piolibdeps
+.pio
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/settings.json
+.vscode/.browse.c_cpp.db*
+.vscode/ipch
