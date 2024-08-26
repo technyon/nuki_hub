@@ -318,6 +318,11 @@ PsychicWebParameter * PsychicRequest::addParam(PsychicWebParameter *param) {
   return param;
 }
 
+int PsychicRequest::params()
+{
+  return _params.size();
+}
+
 bool PsychicRequest::hasParam(const char *key)
 {
   return getParam(key) != NULL;
@@ -329,6 +334,18 @@ PsychicWebParameter * PsychicRequest::getParam(const char *key)
     if (param->name().equals(key))
       return param;
 
+  return NULL;
+}
+
+PsychicWebParameter * PsychicRequest::getParam(int index)
+{
+  if (_params.size() > index){
+    std::list<PsychicWebParameter*>::iterator it = _params.begin();
+    for(int i=0; i<index; i++){
+        ++it;
+    }
+    return *it;
+  }
   return NULL;
 }
 

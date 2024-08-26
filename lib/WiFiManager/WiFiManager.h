@@ -97,8 +97,8 @@
     #define WM_WIFIOPEN   WIFI_AUTH_OPEN
 
     #ifdef WM_ASYNCWEBSERVER
-        #include <AsyncTCP.h>
-        #include <ESPAsyncWebServer.h>
+        #include <PsychicHttp.h>
+        #include <PsychicHttpsServer.h>
     #else
         #ifndef WEBSERVER_H
             #ifdef WM_WEBSERVERSHIM
@@ -521,7 +521,7 @@ class WiFiManager
 
     #if defined(ESP32) && defined(WM_WEBSERVERSHIM)
         #ifdef WM_ASYNCWEBSERVER
-        using WM_WebServer = AsyncWebServer;
+        using WM_WebServer = PsychicHttpServer;
         #else
         using WM_WebServer = WebServer;
         #endif
@@ -694,32 +694,32 @@ public:
     bool          WiFi_scanNetworks(bool force,bool async);
 protected:
     // webserver handlers
-    void          handleRoot(AsyncWebServerRequest *request);
-    void          handleWifi(AsyncWebServerRequest *request,bool scan);
-    void          handleWifiSave(AsyncWebServerRequest *request);
-    void          handleInfo(AsyncWebServerRequest *request);
-    void          handleReset(AsyncWebServerRequest *request);
-    void          handleNotFound(AsyncWebServerRequest *request);
-    void          handleExit(AsyncWebServerRequest *request);
-    void          handleClose(AsyncWebServerRequest *request);
-    // void          handleErase(AsyncWebServerRequest *request);
-    void          handleErase(AsyncWebServerRequest *request, bool opt);
-    void          handleParam(AsyncWebServerRequest *request);
-    void          handleWiFiStatus(AsyncWebServerRequest *request);
-    void          handleParamSave(AsyncWebServerRequest *request);
-    void          doParamSave(AsyncWebServerRequest *request);
+    esp_err_t     handleRoot(PsychicRequest *request);
+    esp_err_t     handleWifi(PsychicRequest *request,bool scan);
+    esp_err_t     handleWifiSave(PsychicRequest *request);
+    esp_err_t     handleInfo(PsychicRequest *request);
+    esp_err_t     handleReset(PsychicRequest *request);
+    esp_err_t     handleNotFound(PsychicRequest *request);
+    esp_err_t     handleExit(PsychicRequest *request);
+    esp_err_t     handleClose(PsychicRequest *request);
+    // esp_err_t  handleErase(PsychicRequest *request);
+    esp_err_t     handleErase(PsychicRequest *request, bool opt);
+    esp_err_t     handleParam(PsychicRequest *request);
+    esp_err_t     handleWiFiStatus(PsychicRequest *request);
+    esp_err_t     handleParamSave(PsychicRequest *request);
+    void          doParamSave(PsychicRequest *request);
 
     void          handleRequest();
-    void          HTTPSend(AsyncWebServerRequest *request, String page);
+    esp_err_t     HTTPSend(PsychicRequest *request, String page);
 
-    boolean       captivePortal(AsyncWebServerRequest *request);
+    boolean       captivePortal(PsychicRequest *request);
     boolean       configPortalHasTimeout();
     uint8_t       processConfigPortal();
     void          stopCaptivePortal();
     // OTA Update handler
-    void          handleUpdate(AsyncWebServerRequest *request);
-    void          handleUpdating(AsyncWebServerRequest *request,String filename, size_t index, uint8_t *data, size_t len, bool final);
-    void          handleUpdateDone(AsyncWebServerRequest *request);
+    esp_err_t     handleUpdate(PsychicRequest *request);
+    void          handleUpdating(String filename, size_t index, uint8_t *data, size_t len, bool final);
+    esp_err_t     handleUpdateDone(PsychicRequest *request);
 
     // wifi platform abstractions
     bool          WiFi_Mode(WiFiMode_t m);

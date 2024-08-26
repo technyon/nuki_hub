@@ -325,11 +325,19 @@ const std::list<PsychicClient*>& PsychicHttpServer::getClientList() {
 }
 
 bool ON_STA_FILTER(PsychicRequest *request) {
+  #ifndef CONFIG_IDF_TARGET_ESP32H2
   return WiFi.localIP() == request->client()->localIP();
+  #else
+  return false;
+  #endif
 }
 
 bool ON_AP_FILTER(PsychicRequest *request) {
+  #ifndef CONFIG_IDF_TARGET_ESP32H2
   return WiFi.softAPIP() == request->client()->localIP();
+  #else
+  return false;
+  #endif
 }
 
 String urlDecode(const char* encoded)
