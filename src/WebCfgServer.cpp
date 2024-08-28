@@ -164,7 +164,7 @@ void WebCfgServer::initialize()
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
         return processFactoryReset(request);
     });
-    _psychicServer->on("/info", HTTP_GET, [&](PsychicRequest *request){
+    _psychicServer->on("/infopg", HTTP_GET, [&](PsychicRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
         return buildInfoHtml(request);
     });
@@ -2650,7 +2650,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
             printParameter(&response, "Nuki Opener PIN status", openerState.c_str(), "", "openerPin");
         }
     }
-    printParameter(&response, "Firmware", NUKI_HUB_VERSION, "/info", "firmware");
+    printParameter(&response, "Firmware", NUKI_HUB_VERSION, "/infopg", "firmware");
     if(_preferences->getBool(preference_check_updates))
     {
         printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
@@ -3232,6 +3232,7 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
 {
+    Log->println("INFO HTML");
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
     PsychicStreamResponse response(request, "text/plain");

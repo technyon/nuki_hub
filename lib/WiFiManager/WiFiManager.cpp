@@ -627,6 +627,7 @@ boolean WiFiManager::configPortalHasTimeout(){
 }
 
 void WiFiManager::setupHTTPServer(){
+  server = new PsychicHttpServer;
   server->listen(_httpPort);
 
   /* Setup httpd callbacks, web pages: root, wifi config pages, SO captive portal detectors and not found. */
@@ -636,7 +637,7 @@ void WiFiManager::setupHTTPServer(){
   {
   using namespace std::placeholders;
   server->on(String(FPSTR(R_root)).c_str(),       (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleRoot, this,_1));
-  server->on(String(FPSTR(R_wifisave)).c_str(),   (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleWifiSave, this,_1));
+  server->on(String(FPSTR(R_wifisave)).c_str(), HTTP_POST, (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleWifiSave, this,_1));
   server->on(String(FPSTR(R_info)).c_str(),       (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleInfo, this,_1));
   server->on(String(FPSTR(R_param)).c_str(),      (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleParam, this,_1));
   server->on(String(FPSTR(R_paramsave)).c_str(),  (PsychicHttpRequestCallback)std::bind(&WiFiManager::handleParamSave, this,_1));
@@ -899,6 +900,7 @@ uint8_t WiFiManager::processConfigPortal(){
             DEBUG_WM(F("Connect to new AP [SUCCESS]"));
             DEBUG_WM(F("Got IP Address:"));
             DEBUG_WM(WiFi.localIP());
+            reboot();
           }
           #endif
 
@@ -981,7 +983,6 @@ bool WiFiManager::shutdownConfigPortal(){
   #else
   server->stop();
   #endif
-  server.reset();
 
   dnsServer->stop(); //  free heap ?
   dnsServer.reset();
@@ -1128,7 +1129,7 @@ bool WiFiManager::wifiConnectNew(String ssid, String pass,bool connect){
     DEBUG_WM(F("find best RSSI: TRUE"));
     #endif
     if (!_numNetworks)
-      WiFi_scanNetworks(false, false);  // scan in case this gets called before any scans
+      WiFi_scanNetworks(false, _enableCaptivePortal);  // scan in case this gets called before any scans
 
     int n = _numNetworks;
     if (n == 0) {
@@ -1217,7 +1218,7 @@ bool WiFiManager::wifiConnectDefault(){
     DEBUG_WM(F("find best RSSI: TRUE"));
     #endif
     if (!_numNetworks)
-      WiFi_scanNetworks(false, false);  // scan in case this gets called before any scans
+      WiFi_scanNetworks(false, _enableCaptivePortal);  // scan in case this gets called before any scans
 
     int n = _numNetworks;
     if (n == 0) {
@@ -1464,7 +1465,7 @@ esp_err_t WiFiManager::handleRoot(PsychicRequest *request) {
   reportStatus(page);
   page += FPSTR(HTTP_END);
 
-  if(_preloadwifiscan) WiFi_scanNetworks(_scancachetime,true); // preload wifiscan throttled, async
+  //if(_preloadwifiscan) WiFi_scanNetworks(_scancachetime,true); // preload wifiscan throttled, async
   // @todo buggy, captive portals make a query on every page load, causing this to run every time in addition to the real page load
   // I dont understand why, when you are already in the captive portal, I guess they want to know that its still up and not done or gone
   // if we can detect these and ignore them that would be great, since they come from the captive portal redirect maybe there is a refferer
@@ -1486,7 +1487,7 @@ esp_err_t WiFiManager::handleWifi(PsychicRequest *request,bool scan = true) {
     #ifdef WM_DEBUG_LEVEL
     // DEBUG_WM(WM_DEBUG_DEV,"refresh flag:",request->hasArg(F("refresh")));
     #endif
-    WiFi_scanNetworks(request->hasParam("refresh")); //wifiscan, force if arg refresh
+    WiFi_scanNetworks(request->hasParam("refresh"), true); //wifiscan, force if arg refresh
     page += getScanItemOut();
   }
   String pitem = "";
@@ -1684,7 +1685,7 @@ void WiFiManager::resetScan(){
 String WiFiManager::WiFiManager::getScanItemOut(){
     String page;
 
-    if(!_numNetworks) WiFi_scanNetworks(); // scan in case this gets called before any scans
+    if(!_numNetworks) WiFi_scanNetworks(true, true); // scan in case this gets called before any scans
 
     int n = _numNetworks;
     if (n == 0) {
@@ -1943,8 +1944,12 @@ esp_err_t WiFiManager::handleWifiSave(PsychicRequest *request) {
   handleRequest();
 
   //SAVE/connect here
-  _ssid = request->getParam("s")->value();
-  _pass = request->getParam("p")->value();
+  if(request->hasParam("s")){
+    _ssid = request->getParam("s")->value();
+  }
+  if(request->hasParam("p")){
+    _pass = request->getParam("p")->value();
+  }
 
   if(_ssid == "" && _pass != ""){
     _ssid = WiFi_SSID(true); // password change, placeholder ssid, @todo compare pass to old?, confirm ssid is clean
@@ -1970,36 +1975,43 @@ esp_err_t WiFiManager::handleWifiSave(PsychicRequest *request) {
   #endif
 
   // set static ips from server args
-  if (request->getParam(S_ip)->value() != "") {
-    //_sta_static_ip.fromString(request->arg(FPSTR(S_ip));
-    String ip = request->getParam(S_ip)->value();
-    optionalIPFromString(&_sta_static_ip, ip.c_str());
-    #ifdef WM_DEBUG_LEVEL
-    DEBUG_WM(WM_DEBUG_DEV,F("static ip:"),ip);
-    #endif
+  if(request->hasParam(S_ip)){
+    if (request->getParam(S_ip)->value() != "") {
+      //_sta_static_ip.fromString(request->arg(FPSTR(S_ip));
+      String ip = request->getParam(S_ip)->value();
+      optionalIPFromString(&_sta_static_ip, ip.c_str());
+      #ifdef WM_DEBUG_LEVEL
+      DEBUG_WM(WM_DEBUG_DEV,F("static ip:"),ip);
+      #endif
+    }
   }
-  if (request->getParam(S_gw)->value() != "") {
-    String gw = request->getParam(S_gw)->value();
-    optionalIPFromString(&_sta_static_gw, gw.c_str());
-    #ifdef WM_DEBUG_LEVEL
-    DEBUG_WM(WM_DEBUG_DEV,F("static gateway:"),gw);
-    #endif
+  if(request->hasParam(S_gw)){
+    if (request->getParam(S_gw)->value() != "") {
+      String gw = request->getParam(S_gw)->value();
+      optionalIPFromString(&_sta_static_gw, gw.c_str());
+      #ifdef WM_DEBUG_LEVEL
+      DEBUG_WM(WM_DEBUG_DEV,F("static gateway:"),gw);
+      #endif
+    }
   }
-  if (request->getParam(S_sn)->value() != "") {
-    String sn = request->getParam(S_sn)->value();
-    optionalIPFromString(&_sta_static_sn, sn.c_str());
-    #ifdef WM_DEBUG_LEVEL
-    DEBUG_WM(WM_DEBUG_DEV,F("static netmask:"),sn);
-    #endif
+  if(request->hasParam(S_sn)){
+    if (request->getParam(S_sn)->value() != "") {
+      String sn = request->getParam(S_sn)->value();
+      optionalIPFromString(&_sta_static_sn, sn.c_str());
+      #ifdef WM_DEBUG_LEVEL
+      DEBUG_WM(WM_DEBUG_DEV,F("static netmask:"),sn);
+      #endif
+    }
   }
-  if (request->getParam(S_dns)->value() != "") {
-    String dns = request->getParam(S_dns)->value();
-    optionalIPFromString(&_sta_static_dns, dns.c_str());
-    #ifdef WM_DEBUG_LEVEL
-    DEBUG_WM(WM_DEBUG_DEV,F("static DNS:"),dns);
-    #endif
+  if(request->hasParam(S_dns)){
+    if (request->getParam(S_dns)->value() != "") {
+      String dns = request->getParam(S_dns)->value();
+      optionalIPFromString(&_sta_static_dns, dns.c_str());
+      #ifdef WM_DEBUG_LEVEL
+      DEBUG_WM(WM_DEBUG_DEV,F("static DNS:"),dns);
+      #endif
+    }
   }
-
   if (_presavewificallback != NULL) {
     _presavewificallback();  // @CALLBACK
   }

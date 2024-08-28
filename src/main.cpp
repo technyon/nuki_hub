@@ -422,8 +422,8 @@ void setup()
         psychicServer = new PsychicHttpServer;
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
         webCfgServer->initialize();
-        psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });
         psychicServer->listen(80);
+        psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });        
     }
     #else
     Log->print(F("Nuki Hub version "));

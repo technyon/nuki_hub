@@ -31,9 +31,8 @@ class PsychicHttpsServer : public PsychicHttpServer
     virtual esp_err_t _startServer() override final;
     virtual void stop() override final;
 };
-
-#endif // PsychicHttpsServer_h
-
 #else
   #warning ESP-IDF https server support not enabled.
 #endif // CONFIG_ESP_HTTPS_SERVER_ENABLE
+
+#endif // PsychicHttpsServer_h

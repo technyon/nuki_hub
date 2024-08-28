@@ -518,22 +518,7 @@ class WiFiManager
 
 
     std::unique_ptr<DNSServer>        dnsServer;
-
-    #if defined(ESP32) && defined(WM_WEBSERVERSHIM)
-        #ifdef WM_ASYNCWEBSERVER
-        using WM_WebServer = PsychicHttpServer;
-        #else
-        using WM_WebServer = WebServer;
-        #endif
-    #else
-        #ifdef WM_ASYNCWEBSERVER
-        using WM_WebServer = AsyncWebServer;
-        #else
-        using WM_WebServer = ESP8266WebServer;
-        #endif
-    #endif
-
-    std::unique_ptr<WM_WebServer> server;
+    PsychicHttpServer*                server;
 
   protected:
     // vars
@@ -651,9 +636,9 @@ class WiFiManager
     // preload scanning causes AP to delay showing for users, but also caches and lets the cp load faster once its open
     //  my scan takes 7-10 seconds
 public:
-    boolean       _preloadwifiscan        = false; // preload wifiscan if true
+    boolean       _preloadwifiscan        = true; // preload wifiscan if true
     unsigned int  _scancachetime          = 30000; // ms cache time for preload scans
-    boolean       _asyncScan              = false; // perform wifi network scan async
+    boolean       _asyncScan              = true; // perform wifi network scan async
     bool          wifiConnectDefault();
 protected:
 
