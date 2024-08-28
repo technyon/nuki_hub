@@ -19,10 +19,12 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
+/*
 #ifdef DEBUG_NUKIHUB
 #include <WString.h>
 #include <MycilaWebSerial.h>
 #endif
+*/
 
 char log_print_buffer[1024];
 
@@ -490,6 +492,9 @@ void setup()
         if(!doOta)
         {
             psychicServer = new PsychicHttpServer;
+            psychicServer->config.max_uri_handlers = 40;
+            psychicServer->config.stack_size = 8192;
+            psychicServer->listen(80);
 
             if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
             {
@@ -497,18 +502,18 @@ void setup()
                 webCfgServer->initialize();
                 psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });
             }
+            /*
             #ifdef DEBUG_NUKIHUB
             else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
 
             if(preferences->getBool(preference_webserial_enabled, false))
             {
-              //WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
-              //WebSerial.begin(asyncServer);
-              //WebSerial.setBuffer(1024);
+              WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
+              WebSerial.begin(asyncServer);
+              WebSerial.setBuffer(1024);
             }
             #endif
-
-            psychicServer->listen(80);
+            */
         }
     }
     #endif

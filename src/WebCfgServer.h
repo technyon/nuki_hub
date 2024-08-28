@@ -104,7 +104,7 @@ private:
     esp_err_t sendFavicon(PsychicRequest *request);
     void buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader = "");
     void waitAndProcess(const bool blocking, const uint32_t duration);
-    void handleOtaUpload(PsychicRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+    esp_err_t handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final);
     void printProgress(size_t prg, size_t sz);
 
     PsychicHttpServer* _psychicServer = nullptr;

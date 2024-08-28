@@ -149,6 +149,7 @@ void WebCfgServer::initialize()
             _network->reconfigureDevice();
             return res;
         }
+        return(ESP_OK);
     });
     #endif
     _psychicServer->on("/unpairlock", HTTP_POST, [&](PsychicRequest *request){
@@ -225,16 +226,38 @@ void WebCfgServer::initialize()
         #endif
     });
 
-    /*
-    _psychicServer->on("/uploadota", HTTP_POST,
-      [&](PsychicRequest *request) {},
-      [&](PsychicRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final)
-      {
-          if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-          return handleOtaUpload(request, filename, index, data, len, final);
-      }
+    PsychicUploadHandler *updateHandler = new PsychicUploadHandler();
+    updateHandler->onUpload([&](PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final)
+        {
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return handleOtaUpload(request, filename, index, data, len, final);
+        }
     );
-    */
+
+    updateHandler->onRequest([&](PsychicRequest *request) {
+        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+
+        String result;
+        if (!Update.hasError())
+        {
+            Log->print("Update code or data OK Update.errorString() ");
+            Log->println(Update.errorString());
+            result = "<b style='color:green'>Update OK.</b>";
+            esp_err_t res = request->reply(200,"text/html",result.c_str());
+            restartEsp(RestartReason::OTACompleted);
+            return res;
+        }
+        else {
+            result = " Update.errorString() " + String(Update.errorString());
+            Log->print("ERROR : error ");
+            Log->println(result.c_str());
+            esp_err_t res = request->reply(500, "text/html", result.c_str());
+            restartEsp(RestartReason::OTAAborted);
+            return res;
+        }
+    });
+
+    _psychicServer->on("/uploadota", HTTP_POST, updateHandler);
     //Update.onProgress(printProgress);
 }
 
@@ -295,27 +318,27 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
     bool manifestSuccess = false;
     JsonDocument doc;
 
-    NetworkClientSecure *client = new NetworkClientSecure;
-    if (client) {
-        client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+    NetworkClientSecure *clientOTAUpdate = new NetworkClientSecure;
+    if (clientOTAUpdate) {
+        clientOTAUpdate->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
         {
-            HTTPClient https;
-            https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-            https.setTimeout(2500);
-            https.useHTTP10(true);
+            HTTPClient httpsOTAClient;
+            httpsOTAClient.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+            httpsOTAClient.setTimeout(2500);
+            httpsOTAClient.useHTTP10(true);
 
-            if (https.begin(*client, GITHUB_OTA_MANIFEST_URL)) {
-                int http_responseCode = https.GET();
+            if (httpsOTAClient.begin(*clientOTAUpdate, GITHUB_OTA_MANIFEST_URL)) {
+                int httpResponseCodeOTA = httpsOTAClient.GET();
 
-                if (http_responseCode == HTTP_CODE_OK || http_responseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                if (httpResponseCodeOTA == HTTP_CODE_OK || httpResponseCodeOTA == HTTP_CODE_MOVED_PERMANENTLY)
                 {
-                    DeserializationError jsonError = deserializeJson(doc, https.getStream());
+                    DeserializationError jsonError = deserializeJson(doc, httpsOTAClient.getStream());
                     if (!jsonError) { manifestSuccess = true; }
                 }
-                https.end();
+                httpsOTAClient.end();
             }
         }
-        delete client;
+        delete clientOTAUpdate;
     }
 
     if(!manifestSuccess)
@@ -469,88 +492,108 @@ void WebCfgServer::printProgress(size_t prg, size_t sz) {
   Log->printf("Progress: %d%%\n", (prg*100)/_otaContentLen);
 }
 
-void WebCfgServer::handleOtaUpload(PsychicRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final)
 {
-    if(!request->url().endsWith("/uploadota")) return;
+    if(!request->url().endsWith("/uploadota")) return(ESP_FAIL);
 
     if(filename == "")
     {
         Log->println("Invalid file for OTA upload");
-        return;
+        return(ESP_FAIL);
     }
 
-    if (!index)
+    if (!Update.hasError()) {
+        if (!index){
+            Update.clearError();
+
+            Log->println("Starting manual OTA update");
+            _otaContentLen = request->contentLength();
+
+            if(_partitionType == 1 && _otaContentLen > 1600000)
+            {
+                Log->println("Uploaded OTA file too large, are you trying to upload a Nuki Hub binary instead of a Nuki Hub updater binary?");
+                return(ESP_FAIL);
+            }
+            else if(_partitionType == 2 && _otaContentLen < 1600000)
+            {
+                Log->println("Uploaded OTA file is too small, are you trying to upload a Nuki Hub updater binary instead of a Nuki Hub binary?");
+                return(ESP_FAIL);
+            }
+
+            _otaStartTs = esp_timer_get_time() / 1000;
+            esp_task_wdt_config_t twdt_config = {
+                .timeout_ms = 30000,
+                .idle_core_mask = 0,
+                .trigger_panic = false,
+            };
+            esp_task_wdt_reconfigure(&twdt_config);
+
+            #ifndef NUKI_HUB_UPDATER
+            _network->disableAutoRestarts();
+            _network->disableMqtt();
+            if(_nuki != nullptr)
+            {
+                _nuki->disableWatchdog();
+            }
+            if(_nukiOpener != nullptr)
+            {
+                _nukiOpener->disableWatchdog();
+            }
+            #endif
+            Log->print("handleFileUpload Name: ");
+            Log->println(filename);
+
+            if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH)) {
+                if (!Update.hasError())
+                {
+                    Update.abort();
+                }
+                Log->print("ERROR : update.begin error Update.errorString() ");
+                Log->println(Update.errorString());
+                return(ESP_FAIL);
+            }
+        }
+
+        if ((len) && (!Update.hasError())) {
+            if (Update.write(data, len) != len) {
+                if (!Update.hasError())
+                {
+                    Update.abort();
+                }
+                Log->print("ERROR : update.write error Update.errorString() ");
+                Log->println(Update.errorString());
+                return(ESP_FAIL);
+            }
+        }
+
+        if ((final) && (!Update.hasError())) {
+            if (Update.end(true)) {
+                Log->print("Update Success: ");
+                Log->print(index+len);
+                Log->println(" written");
+            }
+            else {
+                if (!Update.hasError())
+                {
+                    Update.abort();
+                }
+                Log->print("ERROR : update end error Update.errorString() ");
+                Log->println(Update.errorString());
+                return(ESP_FAIL);
+            }
+        }
+        Log->print(F("Progress: 100%"));
+        Log->println();
+        Log->print("handleFileUpload Total Size: ");
+        Log->println(index+len);
+        Log->println("Update complete");
+        Log->flush();
+        return(ESP_OK);
+    }
+    else
     {
-        Log->println("Starting manual OTA update");
-        _otaContentLen = request->contentLength();
-
-        if(_partitionType == 1 && _otaContentLen > 1600000)
-        {
-            Log->println("Uploaded OTA file too large, are you trying to upload a Nuki Hub binary instead of a Nuki Hub updater binary?");
-            return;
-        }
-        else if(_partitionType == 2 && _otaContentLen < 1600000)
-        {
-            Log->println("Uploaded OTA file is too small, are you trying to upload a Nuki Hub updater binary instead of a Nuki Hub binary?");
-            return;
-        }
-
-        int cmd = U_FLASH;
-        if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
-            Update.printError(Serial);
-        }
-
-        _otaStartTs = esp_timer_get_time() / 1000;
-        esp_task_wdt_config_t twdt_config = {
-            .timeout_ms = 30000,
-            .idle_core_mask = 0,
-            .trigger_panic = false,
-        };
-        esp_task_wdt_reconfigure(&twdt_config);
-
-        #ifndef NUKI_HUB_UPDATER
-        _network->disableAutoRestarts();
-        _network->disableMqtt();
-        if(_nuki != nullptr)
-        {
-            _nuki->disableWatchdog();
-        }
-        if(_nukiOpener != nullptr)
-        {
-            _nukiOpener->disableWatchdog();
-        }
-        #endif
-        Log->print("handleFileUpload Name: ");
-        Log->println(filename);
+        return(ESP_FAIL);
     }
-
-    if (_otaContentLen == 0) return;
-
-    if (Update.write(data, len) != len) {
-        Update.printError(Serial);
-        restartEsp(RestartReason::OTAAborted);
-    }
-
-    /*
-    if (final) {
-        AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
-        response->addHeader("Refresh", "20");
-        response->addHeader("Location", "/");
-        request->send(response);
-        if (!Update.end(true)){
-            Update.printError(Serial);
-            restartEsp(RestartReason::OTAAborted);
-        } else {
-            Log->print(F("Progress: 100%"));
-            Log->println();
-            Log->print("handleFileUpload Total Size: ");
-            Log->println(index+len);
-            Log->println("Update complete");
-            Log->flush();
-            restartEsp(RestartReason::OTACompleted);
-        }
-    }
-    */
 }
 
 esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay, bool redirect)
@@ -2557,7 +2600,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
     {
         response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
     }
-    if(_preferences->getBool(preference_webserial_enabled, false)) 
+    if(_preferences->getBool(preference_webserial_enabled, false))
     {
         response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">WEBSERIAL IS ENABLED, ONLY ENABLE WHEN DEBUGGING AND DISABLE ASAP</td></tr></tbody></table>");
     }
@@ -2593,7 +2636,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
         NukiOpener::lockstateToString(_nukiOpener->keyTurnerState().lockState, openerStateArr);
         printParameter(&response, "Nuki Opener paired", _nukiOpener->isPaired() ? ("Yes (BLE Address " + _nukiOpener->getBleAddress().toString() + ")").c_str() : "No", "", "openerPaired");
 
-        if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode) 
+        if(_nukiOpener->keyTurnerState().nukiState == NukiOpener::State::ContinuousMode)
         {
             printParameter(&response, "Nuki Opener state", "Open (Continuous Mode)", "", "openerState");
         }
@@ -2608,7 +2651,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
         }
     }
     printParameter(&response, "Firmware", NUKI_HUB_VERSION, "/info", "firmware");
-    if(_preferences->getBool(preference_check_updates)) 
+    if(_preferences->getBool(preference_check_updates))
     {
         printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
     }
@@ -3911,7 +3954,7 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
     return res;
 }
 
-void WebCfgServer::printInputField(PsychicStreamResponse *response, 
+void WebCfgServer::printInputField(PsychicStreamResponse *response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
@@ -3955,7 +3998,7 @@ void WebCfgServer::printInputField(PsychicStreamResponse *response,
     response->print("</td></tr>");
 }
 
-void WebCfgServer::printInputField(PsychicStreamResponse *response, 
+void WebCfgServer::printInputField(PsychicStreamResponse *response,
                                    const char *token,
                                    const char *description,
                                    const int value,
@@ -3989,7 +4032,7 @@ void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *to
     response->print("/></td></tr>");
 }
 
-void WebCfgServer::printTextarea(PsychicStreamResponse *response, 
+void WebCfgServer::printTextarea(PsychicStreamResponse *response,
                                  const char *token,
                                  const char *description,
                                  const char *value,
