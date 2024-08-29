@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include <Print.h>
-#include <espMqttClient.h>
+#include <mqtt_client.h>
 //#include "MycilaWebSerial.h"
 
 #define MQTT_MAX_PACKET_SIZE 1024
@@ -32,16 +32,16 @@ private:
     uint8_t* buffer;
     uint8_t* bufferEnd;
     uint16_t bufferCnt = 0, bufferSize = 0;
-    MqttClient* client;
+    esp_mqtt_client_handle_t client;
     MqttLoggerMode mode;
     void sendBuffer();
 
 public:
     MqttLogger(MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
-    MqttLogger(MqttClient& client, const char* topic, MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
+    MqttLogger(esp_mqtt_client_handle_t client, const char* topic, MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
     ~MqttLogger();
 
-    void setClient(MqttClient& client);
+    void setClient(esp_mqtt_client_handle_t client);
     void setTopic(const char* topic);
     void setMode(MqttLoggerMode mode);
     void setRetained(boolean retained);

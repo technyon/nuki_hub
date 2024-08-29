@@ -2,10 +2,6 @@
 #include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
-#ifndef NUKI_HUB_UPDATER
-#include "../MqttTopics.h"
-#include "espMqttClient.h"
-#endif
 #include "../RestartReason.h"
 
 RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
@@ -16,51 +12,6 @@ WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const I
   _wm(preferences->getString(preference_cred_user, "").c_str(), preferences->getString(preference_cred_password, "").c_str())
 {
     _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
-
-    #ifndef NUKI_HUB_UPDATER
-    size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
-    size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
-    size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
-
-    _useEncryption = caLength > 1;  // length is 1 when empty
-
-    if(_useEncryption)
-    {
-        Log->println(F("MQTT over TLS."));
-        Log->println(_ca);
-        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
-        _mqttClientSecure->setCACert(_ca);
-        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
-        {
-            Log->println(F("MQTT with client certificate."));
-            Log->println(_cert);
-            Log->println(_key);
-            _mqttClientSecure->setCertificate(_cert);
-            _mqttClientSecure->setPrivateKey(_key);
-        }
-    } else
-    {
-        Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
-    }
-
-    if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
-    {
-        MqttLoggerMode mode;
-
-        if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
-        else mode = MqttLoggerMode::MqttAndSerial;
-
-        _path = new char[200];
-        memset(_path, 0, sizeof(_path));
-
-        String pathStr = preferences->getString(preference_mqtt_lock_path);
-        pathStr.concat(mqtt_topic_log);
-        strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, mode);
-    }
-    #endif
 }
 
 const String WifiDevice::deviceName() const
@@ -143,11 +94,6 @@ void WifiDevice::reconfigure()
     strcpy(WiFiDevice_reconfdetect, "reconfigure_wifi");
     delay(200);
     restartEsp(RestartReason::ReconfigureWifi);
-}
-
-bool WifiDevice::supportsEncryption()
-{
-    return true;
 }
 
 bool WifiDevice::isConnected()
