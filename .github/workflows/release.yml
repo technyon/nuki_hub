@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32, esp32-s3, esp32-c3, esp32-c6, esp32-h2, esp32-solo1]
+        board: [esp32, esp32-s3, esp32-s3-oct, esp32-c3, esp32-c6, esp32-h2, esp32-solo1]
         build: [release, debug]
     env:
       BOARD: ${{ matrix.board }}
@@ -60,11 +60,6 @@ jobs:
           FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
         run: |
           BOARD=`echo $BOARD | tr '[:lower:]' '[:upper:]'`
-
-          # fix for docs
-          if [ "$BOARD" = "ESP32DEV" ]; then
-            BOARD="ESP32"
-          fi
 
           # look for documentation on flash and copy the command
           command=`sed -n '/^Howto flash (esptool)$/,$p' ${DOC} | sed -n '/^## '"${BOARD}"'$/,\${ n; n; p; }' | head -n1`

@@ -47,6 +47,23 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 In principle all ESP32 (and variants) devices with built-in ethernet port are supported, but might require additional setup using the "Custom LAN setup" option.
 See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section for more information.
 
+## Recommended ESP32 devices
+
+- If WIFI6 is required: ESP32-C6
+- If PoE is required: Any of the above mentioned devices with PoE or any other ESP device in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html)
+- If you want maximum performance and intend to run any or multiple of the following:
+  - a Nuki Lock and Nuki Opener and/or 
+  - MQTT SSL and/or 
+  - HTTP SSL and/or 
+  - large amounts of keypad codes, timecontrol or authorization entries
+  - Developing/debugging Nuki devices and/or Nuki Hub
+
+  An ESP32-S3 with 2MB of PSRAM or more (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8)
+  
+- In general when buying a new device when size and a couple of dollars more or less are not an issue: An ESP32-S3 with 2MB of PSRAM or more.<br>
+
+The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter. The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 and the ability to connect over WIFI6 (C6)
+
 ## Support Nuki Hub development
 
 If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
@@ -96,6 +113,34 @@ Enable "Register as app" before pairing to allow this. Otherwise the Bridge will
 
 Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0 or Nuki Lock 4.0 Pro in conjunction with Nuki Hub.<br>
 See [hybrid mode](/HYBRID.md) for more information.
+
+## Memory constraints
+
+ESP32 devices have a limited amount of free RAM available.<br>
+<br>
+On version 9.01 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
+- ESP32: 60 kilobytes / 60.000 bytes
+- Other variants (C3/S3/C6/H2): 90-120 kilobytes / 90.000-120.000 bytes
+
+This free amount of RAM can be reduced (temporarily) by certain actions (such as changing Nuki device config) or continuously when enabling the following:
+- Connecting both a Nuki opener and a Nuki lock to Nuki Hub
+- Enlarging stack sizes of the Nuki and Network task to accommodate large amounts of keypad codes, authorization entries or timecontrol entries
+- MQTT SSL (Costs about 30k RAM)
+- HTTP SSL (Costs about 30k RAM)
+- Developing/debugging Nuki devices and/or Nuki Hub, using WebSerial (Costs about 30k RAM)
+
+The currently available RAM/Heap can be found on the info page of the Web configurator of Nuki Hub.<br>
+<br>
+When the ESP32 runs out of available RAM this device can crash or otherwise unexpected behaviour can occur.<br>
+<br>
+Nuki Hub does allow for the use of embedded PSRAM on the regular binaries whenever it is available.<br>
+PSRAM is usually 2, 4 or 8MB in size and thus greatly enlarges the 320kb of internal RAM that is available.<br>
+It is basically impossible to run out of RAM when PSRAM is available.
+You can check on the info page of the Web configurator if PSRAM is available.
+
+Note that there are two build of Nuki Hub for the ESP32-S3 available.<br>
+One for devices with no or Quad SPI PSRAM and one for devices with Octal SPI PSRAM.<br>
+If your ESP32-S3 device has PSRAM but it is not detected please flash the other S3 binary.
 
 ## Configuration
 
