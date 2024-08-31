@@ -31,6 +31,7 @@ NukiNetworkLock* networkLock = nullptr;
 NukiNetworkOpener* networkOpener = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
 NukiWrapper* nuki = nullptr;
+NukiOfficial* nukiOfficial = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
 NukiDeviceId* deviceIdLock = nullptr;
 NukiDeviceId* deviceIdOpener = nullptr;
@@ -460,10 +461,12 @@ void setup()
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
 
+    nukiOfficial = new NukiOfficial();
+
     network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
     network->initialize();
 
-    networkLock = new NukiNetworkLock(network, preferences, CharBuffer::get(), buffer_size);
+    networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
     networkLock->initialize();
 
     if(openerEnabled)
@@ -475,7 +478,7 @@ void setup()
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, gpio, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences);
         nuki->initialize(firstStart);
     }
 

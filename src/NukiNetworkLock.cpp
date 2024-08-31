@@ -14,8 +14,9 @@ extern bool forceEnableWebServer;
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
-NukiNetworkLock::NukiNetworkLock(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize)
+NukiNetworkLock::NukiNetworkLock(NukiNetwork* network, NukiOfficial* nukiOfficial, Preferences* preferences, char* buffer, size_t bufferSize)
 : _network(network),
+  _nukiOfficial(nukiOfficial),
   _preferences(preferences),
   _buffer(buffer),
   _bufferSize(bufferSize)
@@ -23,18 +24,18 @@ NukiNetworkLock::NukiNetworkLock(NukiNetwork* network, Preferences* preferences,
     memset(_authName, 0, sizeof(_authName));
     _authName[0] = '\0';
 
-    _offTopics.reserve(10);
-    //_offTopics.push_back(mqtt_topic_official_mode);
-    _offTopics.push_back((char*)mqtt_topic_official_state);
-    _offTopics.push_back((char*)mqtt_topic_official_batteryCritical);
-    _offTopics.push_back((char*)mqtt_topic_official_batteryChargeState);
-    _offTopics.push_back((char*)mqtt_topic_official_batteryCharging);
-    _offTopics.push_back((char*)mqtt_topic_official_keypadBatteryCritical);
-    _offTopics.push_back((char*)mqtt_topic_official_doorsensorState);
-    _offTopics.push_back((char*)mqtt_topic_official_doorsensorBatteryCritical);
-    _offTopics.push_back((char*)mqtt_topic_official_connected);
-    _offTopics.push_back((char*)mqtt_topic_official_commandResponse);
-    _offTopics.push_back((char*)mqtt_topic_official_lockActionEvent);
+    _nukiOfficial->_offTopics.reserve(10);
+    //_nukiOfficial->_offTopics.push_back(mqtt_topic_nukiOfficial->_official_mode);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_state);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_batteryCritical);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_batteryChargeState);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_batteryCharging);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_keypadBatteryCritical);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_doorsensorState);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_doorsensorBatteryCritical);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_connected);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_commandResponse);
+    _nukiOfficial->_offTopics.push_back((char*)mqtt_topic_official_lockActionEvent);
 
     _network->registerMqttReceiver(this);
 }
@@ -62,7 +63,7 @@ void NukiNetworkLock::initialize()
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
-    _offEnabled = _preferences->getBool(preference_official_hybrid, false);
+    _nukiOfficial->_offEnabled = _preferences->getBool(preference_official_hybrid, false);
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
@@ -159,17 +160,17 @@ void NukiNetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
     }
 
-    if(_offEnabled)
+    if(_nukiOfficial->_offEnabled)
     {
         char uidString[20];
         itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
         for(char* c=uidString; *c=toupper(*c); ++c);
-        strcpy(_offMqttPath, "nuki/");
-        strcat(_offMqttPath,uidString);
+        strcpy(_nukiOfficial->_offMqttPath, "nuki/");
+        strcat(_nukiOfficial->_offMqttPath,uidString);
 
-        for(const auto& offTopic : _offTopics)
+        for(const auto& offTopic : _nukiOfficial->_offTopics)
         {
-            _network->subscribe(_offMqttPath, offTopic);
+            _network->subscribe(_nukiOfficial->_offMqttPath, offTopic);
         }
     }
 
@@ -333,15 +334,15 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         if(atoi(value) > 0 && atoi(value) > _lastRollingLog) _lastRollingLog = atoi(value);
     }
 
-    if(_offEnabled)
+    if(_nukiOfficial->_offEnabled)
     {
-        for(auto offTopic : _offTopics)
+        for(auto offTopic : _nukiOfficial->_offTopics)
         {
             if(comparePrefixedPath(topic, offTopic, true))
             {
-                if(_officialUpdateReceivedCallback != nullptr)
+                if(_nukiOfficial->_officialUpdateReceivedCallback != nullptr)
                 {
-                    _officialUpdateReceivedCallback(offTopic, value);
+                    _nukiOfficial->_officialUpdateReceivedCallback(offTopic, value);
                 }
             }
         }
@@ -502,7 +503,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     JsonDocument json;
     JsonDocument jsonBattery;
 
-    if(!_offConnected)
+    if(!_nukiOfficial->_offConnected)
     {
         lockstateToString(keyTurnerState.lockState, str);
 
@@ -521,7 +522,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        lockstateToString((NukiLock::LockState)_offState, str);
+        lockstateToString((NukiLock::LockState)_nukiOfficial->_offState, str);
         json["lock_state"] = str;
     }
 
@@ -529,7 +530,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
 
     memset(&str, 0, sizeof(str));
 
-    if(!_offConnected)
+    if(!_nukiOfficial->_offConnected)
     {
         triggerToString(keyTurnerState.trigger, str);
 
@@ -542,7 +543,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        triggerToString((NukiLock::Trigger)_offTrigger, str);
+        triggerToString((NukiLock::Trigger)_nukiOfficial->_offTrigger, str);
         json["trigger"] = str;
     }
 
@@ -554,7 +555,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
 
     memset(&str, 0, sizeof(str));
 
-    if(!_offConnected)
+    if(!_nukiOfficial->_offConnected)
     {
         lockactionToString(keyTurnerState.lastLockAction, str);
 
@@ -567,7 +568,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        lockactionToString((NukiLock::LockAction)_offLockAction, str);
+        lockactionToString((NukiLock::LockAction)_nukiOfficial->_offLockAction, str);
         json["last_lock_action"] = str;
     }
 
@@ -586,7 +587,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     json["lock_completion_status"] = str;
     memset(&str, 0, sizeof(str));
 
-    if(!_offConnected)
+    if(!_nukiOfficial->_offConnected)
     {
         NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
 
@@ -624,7 +625,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_offDoorsensorState, str);
+        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_nukiOfficial->_offDoorsensorState, str);
         json["door_sensor_state"] = str;
     }
 
@@ -1132,10 +1133,10 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
                              String("~") + mqtt_topic_keypad_json_action,
                              { { (char*)"json_attr_t", (char*)basePathPrefixChr },
                                { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_off", (char*)disCommand.c_str() },
+                               { (char*)"pl_nukiOfficial->_off", (char*)disCommand.c_str() },
                                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
                                { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_off", (char*)"0" }});
+                               { (char*)"stat_nukiOfficial->_off", (char*)"0" }});
         }
 
         ++index;
@@ -1340,10 +1341,10 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
                              String("~") + mqtt_topic_timecontrol_action,
                              { { (char*)"json_attr_t", (char*)basePathPrefixChr },
                                { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_off", (char*)disCommand.c_str() },
+                               { (char*)"pl_nukiOfficial->_off", (char*)disCommand.c_str() },
                                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
                                { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_off", (char*)"0" }});
+                               { (char*)"stat_nukiOfficial->_off", (char*)"0" }});
         }
 
         ++index;
@@ -1487,10 +1488,10 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
                              String("~") + mqtt_topic_auth_action,
                              { { (char*)"json_attr_t", (char*)basePathPrefixChr },
                                { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_off", (char*)disCommand.c_str() },
+                               { (char*)"pl_nukiOfficial->_off", (char*)disCommand.c_str() },
                                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
                                { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_off", (char*)"0" }});
+                               { (char*)"stat_nukiOfficial->_off", (char*)"0" }});
         }
 
         ++index;
@@ -1548,7 +1549,7 @@ void NukiNetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActio
 
 void NukiNetworkLock::setOfficialUpdateReceivedCallback(void (*officialUpdateReceivedCallback)(const char *, const char *))
 {
-    _officialUpdateReceivedCallback = officialUpdateReceivedCallback;
+    _nukiOfficial->_officialUpdateReceivedCallback = officialUpdateReceivedCallback;
 }
 
 void NukiNetworkLock::setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char *))
@@ -1582,7 +1583,7 @@ void NukiNetworkLock::buildMqttPath(const char* path, char* outPath, bool offPat
     int offset = 0;
     char inPath[181] = {0};
 
-    if(offPath) memcpy(inPath, _offMqttPath, sizeof(_offMqttPath));
+    if(offPath) memcpy(inPath, _nukiOfficial->_offMqttPath, sizeof(_nukiOfficial->_offMqttPath));
     else memcpy(inPath, _mqttPath, sizeof(_mqttPath));
 
     for(const char& c : inPath)
@@ -1658,7 +1659,7 @@ void NukiNetworkLock::removeHASSConfig(char *uidString)
 
 void NukiNetworkLock::publishOffAction(const int value)
 {
-    _network->publishInt(_offMqttPath, mqtt_topic_official_lock_action, value, false);
+    _network->publishInt(_nukiOfficial->_offMqttPath, mqtt_topic_official_lock_action, value, false);
 }
 
 void NukiNetworkLock::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)

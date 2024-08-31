@@ -8,11 +8,12 @@
 #include "Gpio.h"
 #include "LockActionResult.h"
 #include "NukiDeviceId.h"
+#include "NukiOfficial.h"
 
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, Gpio* gpio, Preferences* preferences);
+    NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences);
     virtual ~NukiWrapper();
 
     void initialize(const bool& firstStart);
@@ -93,6 +94,7 @@ private:
     NukiLock::NukiLock _nukiLock;
     BleScanner::Scanner* _bleScanner = nullptr;
     NukiNetworkLock* _network = nullptr;
+    NukiOfficial* _nukiOfficial = nullptr;
     Gpio* _gpio = nullptr;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
