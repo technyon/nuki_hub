@@ -162,15 +162,11 @@ void NukiNetworkLock::initialize()
 
     if(_nukiOfficial->offEnabled)
     {
-        char uidString[20];
-        itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
-        for(char* c=uidString; *c=toupper(*c); ++c);
-        strcpy(_nukiOfficial->offMqttPath, "nuki/");
-        strcat(_nukiOfficial->offMqttPath, uidString);
+        _nukiOfficial->setUid(_preferences->getUInt(preference_nuki_id_lock, 0));
 
         for(const auto& offTopic : _nukiOfficial->offTopics)
         {
-            _network->subscribe(_nukiOfficial->offMqttPath, offTopic);
+            _network->subscribe(_nukiOfficial->GetMqttPath(), offTopic);
         }
     }
 
@@ -1658,7 +1654,7 @@ void NukiNetworkLock::removeHASSConfig(char *uidString)
 
 void NukiNetworkLock::publishOffAction(const int value)
 {
-    _network->publishInt(_nukiOfficial->offMqttPath, mqtt_topic_official_lock_action, value, false);
+    _network->publishInt(_nukiOfficial->GetMqttPath(), mqtt_topic_official_lock_action, value, false);
 }
 
 void NukiNetworkLock::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)

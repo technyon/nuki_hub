@@ -7,13 +7,16 @@
 class NukiOfficial
 {
 public:
+    void setUid(const uint32_t& uid);
+
+    const char* GetMqttPath();
+
     void buildMqttPath(const char* path, char* outPath);
     bool comparePrefixedPath(const char *fullPath, const char *subPath);
 
     NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
 
     std::vector<char*> offTopics;
-    char offMqttPath[181] = {0};
     int64_t offCommandExecutedTs = 0;
 
     //uint8_t _offMode = 0;
@@ -33,5 +36,8 @@ public:
     uint32_t offCodeId = 0;
     uint8_t offContext = 0;
     bool offEnabled = false;
+
+private:
+    char mqttPath[181] = {0};
 };
 
