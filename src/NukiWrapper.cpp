@@ -445,19 +445,15 @@ void NukiWrapper::updateKeyTurnerState()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     int retryCount = 0;
 
-    Log->println("Querying lock state");
+    Log->println(F("Querying lock state"));
 
-    while(retryCount < _nrOfRetries + 1)
+    while(result != Nuki::CmdResult::Success && retryCount < _nrOfRetries + 1)
     {
         Log->print(F("Result (attempt "));
         Log->print(retryCount + 1);
-        Log->print("): ");
+        Log->print(F("): "));
         result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
-        if(result != Nuki::CmdResult::Success)
-        {
-            ++retryCount;
-        }
-        else break;
+        ++retryCount;
     }
 
     char resultStr[15];
