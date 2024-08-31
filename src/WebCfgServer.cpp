@@ -4,6 +4,9 @@
 #include "Logger.h"
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#include <esp_psram.h>
+#endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
 #endif
@@ -3128,7 +3131,6 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
         response.print("</table><br>");
         response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
-
     response.print("</form>");
     response.print("</body></html>");
     return response.endSend();
@@ -3265,8 +3267,28 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     response.print(getRestartReason());
     response.print("\nLast restart reason ESP: ");
     response.print(getEspRestartReason());
-    response.print("\nFree heap: ");
-    response.print(esp_get_free_heap_size());
+    response.print("\nFree internal heap: ");
+    response.print(ESP.getFreeHeap());
+    response.print("\nTotal internal heap: ");
+    response.print(ESP.getHeapSize());
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    if(esp_psram_get_size() > 0)
+    {
+        response.print("\nPSRAM Available: Yes");
+        response.print("\nTotal PSRAM: ");
+        response.print(esp_psram_get_size());
+        response.print("\nFree PSRAM: ");
+        response.print((esp_get_free_heap_size() - ESP.getFreeHeap()));
+        response.print("\nTotal free heap: ");
+        response.print(esp_get_free_heap_size());
+    }
+    else
+    {
+        response.print("\nPSRAM Available: No");
+    }
+    #else
+    response.print("\nPSRAM Available: No");
+    #endif
     response.print("\nNetwork task stack high watermark: ");
     response.print(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.print("\nNuki task stack high watermark: ");

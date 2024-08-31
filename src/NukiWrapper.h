@@ -130,7 +130,6 @@ private:
     uint _maxAuthEntryCount = 0;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
-    int _retryCount = 0;
     int _retryConfigCount = 0;
     int _retryLockstateCount = 0;
     int _rssiPublishInterval = 0;
