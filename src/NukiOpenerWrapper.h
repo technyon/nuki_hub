@@ -108,7 +108,6 @@ private:
     bool _disableNonJSON = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
-    int _retryCount = 0;
     int _retryConfigCount = 0;
     int _retryLockstateCount = 0;
     int64_t _nextRetryTs = 0;
