@@ -7,30 +7,31 @@
 class NukiOfficial
 {
 public:
-public:
-    void (*_officialUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+    void buildMqttPath(const char* path, char* outPath);
+    bool comparePrefixedPath(const char *fullPath, const char *subPath);
+
     NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
 
-    std::vector<char*> _offTopics;
-    char _offMqttPath[181] = {0};
-    int64_t _offCommandExecutedTs = 0;
+    std::vector<char*> offTopics;
+    char offMqttPath[181] = {0};
+    int64_t offCommandExecutedTs = 0;
 
     //uint8_t _offMode = 0;
-    uint8_t _offState = 0;
-    bool _offCritical = false;
-    uint8_t _offChargeState = 100;
-    bool _offCharging = false;
-    bool _offKeypadCritical = false;
-    uint8_t _offDoorsensorState = 0;
-    bool _offDoorsensorCritical = false;
-    bool _offConnected = false;
-    uint8_t _offCommandResponse = 0;
-    char* _offLockActionEvent;
-    uint8_t _offLockAction = 0;
-    uint8_t _offTrigger = 0;
-    uint32_t _offAuthId = 0;
-    uint32_t _offCodeId = 0;
-    uint8_t _offContext = 0;
-    bool _offEnabled = false;
+    uint8_t offState = 0;
+    bool offCritical = false;
+    uint8_t offChargeState = 100;
+    bool offCharging = false;
+    bool offKeypadCritical = false;
+    uint8_t offDoorsensorState = 0;
+    bool offDoorsensorCritical = false;
+    bool offConnected = false;
+    uint8_t offCommandResponse = 0;
+    char* offLockActionEvent;
+    uint8_t offLockAction = 0;
+    uint8_t offTrigger = 0;
+    uint32_t offAuthId = 0;
+    uint32_t offCodeId = 0;
+    uint8_t offContext = 0;
+    bool offEnabled = false;
 };
 

@@ -75,16 +75,18 @@ public:
 
 
 private:
-    bool comparePrefixedPath(const char* fullPath, const char* subPath, bool offPath = false);
+    bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
     void homeKitStatusToString(const int hkstatus, char* str);
     void fobActionToString(const int fobact, char* str);
 
+    void (*_officialUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+
     String concat(String a, String b);
 
-    void buildMqttPath(const char* path, char* outPath, bool offPath = false);
+    void buildMqttPath(const char* path, char* outPath);
 
     NukiNetwork* _network;
     NukiOfficial* _nukiOfficial = nullptr;

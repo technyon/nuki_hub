@@ -248,10 +248,10 @@ void NukiWrapper::update()
 
     _nukiLock.updateConnectionState();
 
-    if(_nukiOfficial->_offCommandExecutedTs>0 && ts >= _nukiOfficial->_offCommandExecutedTs)
+    if(_nukiOfficial->offCommandExecutedTs > 0 && ts >= _nukiOfficial->offCommandExecutedTs)
     {
         nukiInst->_nextLockAction = _nukiOfficial->_offCommand;
-        _nukiOfficial->_offCommandExecutedTs = 0;
+        _nukiOfficial->offCommandExecutedTs = 0;
     }
     if(_nextLockAction != (NukiLock::LockAction)0xff)
     {
@@ -291,7 +291,7 @@ void NukiWrapper::update()
             _nextLockAction = (NukiLock::LockAction) 0xff;
             _network->publishRetry("--");
             retryCount = 0;
-            if(!_nukiOfficial->_offConnected) _statusUpdated = true; Log->println(F("Lock: updating status after action"));
+            if(!_nukiOfficial->offConnected) _statusUpdated = true; Log->println(F("Lock: updating status after action"));
             _statusUpdatedTs = ts;
             if(_intervalLockstate > 10) _nextLockStateUpdateTs = ts + 10 * 1000;
         }
@@ -495,7 +495,7 @@ void NukiWrapper::updateKeyTurnerState()
 
         updateGpioOutputs();
     }
-    else if(!_nukiOfficial->_offConnected && (esp_timer_get_time() / 1000) < _statusUpdatedTs + 10000)
+    else if(!_nukiOfficial->offConnected && (esp_timer_get_time() / 1000) < _statusUpdatedTs + 10000)
     {
         _statusUpdated = true;
         Log->println(F("Lock: Keep updating status on intermediate lock state"));
@@ -955,12 +955,12 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
 
     if((action == NukiLock::LockAction::Lock && (int)aclPrefs[0] == 1) || (action == NukiLock::LockAction::Unlock && (int)aclPrefs[1] == 1) || (action == NukiLock::LockAction::Unlatch && (int)aclPrefs[2] == 1) || (action == NukiLock::LockAction::LockNgo && (int)aclPrefs[3] == 1) || (action == NukiLock::LockAction::LockNgoUnlatch && (int)aclPrefs[4] == 1) || (action == NukiLock::LockAction::FullLock && (int)aclPrefs[5] == 1) || (action == NukiLock::LockAction::FobAction1 && (int)aclPrefs[6] == 1) || (action == NukiLock::LockAction::FobAction2 && (int)aclPrefs[7] == 1) || (action == NukiLock::LockAction::FobAction3 && (int)aclPrefs[8] == 1))
     {
-        if(!_nukiOfficial->_offConnected) nukiInst->_nextLockAction = action;
+        if(!_nukiOfficial->offConnected) nukiInst->_nextLockAction = action;
         else
         {
             if(_preferences->getBool(preference_official_hybrid_actions, false))
             {
-                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
                 _nukiOfficial->_offCommand = action;
                 _network->publishOffAction((int)action);
             }
@@ -987,7 +987,7 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
 
 bool NukiWrapper::offConnected()
 {
-    return _nukiOfficial->_offConnected;
+    return _nukiOfficial->offConnected;
 }
 
 Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str)
@@ -1097,33 +1097,33 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
     {
         Log->print(F("Connected: "));
         Log->println((strcmp(value, "true") == 0 ? 1 : 0));
-        _nukiOfficial->_offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
-        _network->publishBool(mqtt_hybrid_state, _nukiOfficial->_offConnected, true);
+        _nukiOfficial->offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
+        _network->publishBool(mqtt_hybrid_state, _nukiOfficial->offConnected, true);
 
-        if(!_nukiOfficial->_offConnected) _nextHybridLockStateUpdateTs = (esp_timer_get_time() / 1000) + _intervalHybridLockstate * 1000;
+        if(!_nukiOfficial->offConnected) _nextHybridLockStateUpdateTs = (esp_timer_get_time() / 1000) + _intervalHybridLockstate * 1000;
         else _nextHybridLockStateUpdateTs = 0;
     }
     else if(strcmp(topic, mqtt_topic_official_state) == 0)
     {
-        _nukiOfficial->_offState = atoi(value);
+        _nukiOfficial->offState = atoi(value);
         _statusUpdated = true;
         Log->println(F("Lock: Updating status on Hybrid state change"));
         _network->publishStatusUpdated(_statusUpdated);
-        NukiLock::lockstateToString((NukiLock::LockState)_nukiOfficial->_offState, str);
+        NukiLock::lockstateToString((NukiLock::LockState)_nukiOfficial->offState, str);
         _network->publishString(mqtt_topic_lock_state, str, true);
 
         Log->print(F("Lockstate: "));
         Log->println(str);
 
-        _network->publishState((NukiLock::LockState)_nukiOfficial->_offState);
+        _network->publishState((NukiLock::LockState)_nukiOfficial->offState);
     }
     else if(strcmp(topic, mqtt_topic_official_doorsensorState) == 0)
     {
-        _nukiOfficial->_offDoorsensorState = atoi(value);
+        _nukiOfficial->offDoorsensorState = atoi(value);
         _statusUpdated = true;
         Log->println(F("Lock: Updating status on Hybrid door sensor state change"));
         _network->publishStatusUpdated(_statusUpdated);
-        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_nukiOfficial->_offDoorsensorState, str);
+        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_nukiOfficial->offDoorsensorState, str);
 
         Log->print(F("Doorsensor state: "));
         Log->println(str);
@@ -1132,86 +1132,86 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
     }
     else if(strcmp(topic, mqtt_topic_official_batteryCritical) == 0)
     {
-        _nukiOfficial->_offCritical = (strcmp(value, "true") == 0 ? 1 : 0);
+        _nukiOfficial->offCritical = (strcmp(value, "true") == 0 ? 1 : 0);
 
         Log->print(F("Battery critical: "));
-        Log->println(_nukiOfficial->_offCritical);
+        Log->println(_nukiOfficial->offCritical);
 
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_critical, _nukiOfficial->_offCritical, true);
+        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_critical, _nukiOfficial->offCritical, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_batteryCharging) == 0)
     {
-        _nukiOfficial->_offCharging = (strcmp(value, "true") == 0 ? 1 : 0);
+        _nukiOfficial->offCharging = (strcmp(value, "true") == 0 ? 1 : 0);
 
         Log->print(F("Battery charging: "));
-        Log->println(_nukiOfficial->_offCharging);
+        Log->println(_nukiOfficial->offCharging);
 
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_charging, _nukiOfficial->_offCharging, true);
+        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_charging, _nukiOfficial->offCharging, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_batteryChargeState) == 0)
     {
-        _nukiOfficial->_offChargeState = atoi(value);
+        _nukiOfficial->offChargeState = atoi(value);
 
         Log->print(F("Battery level: "));
-        Log->println(_nukiOfficial->_offChargeState);
+        Log->println(_nukiOfficial->offChargeState);
 
-        if(!_disableNonJSON) _network->publishInt(mqtt_topic_battery_level, _nukiOfficial->_offChargeState, true);
+        if(!_disableNonJSON) _network->publishInt(mqtt_topic_battery_level, _nukiOfficial->offChargeState, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_keypadBatteryCritical) == 0)
     {
-        _nukiOfficial->_offKeypadCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_keypad_critical, _nukiOfficial->_offKeypadCritical, true);
+        _nukiOfficial->offKeypadCritical = (strcmp(value, "true") == 0 ? 1 : 0);
+        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_keypad_critical, _nukiOfficial->offKeypadCritical, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_doorsensorBatteryCritical) == 0)
     {
-        _nukiOfficial->_offDoorsensorCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_doorsensor_critical, _nukiOfficial->_offDoorsensorCritical, true);
+        _nukiOfficial->offDoorsensorCritical = (strcmp(value, "true") == 0 ? 1 : 0);
+        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_doorsensor_critical, _nukiOfficial->offDoorsensorCritical, true);
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_commandResponse) == 0)
     {
-        _nukiOfficial->_offCommandResponse = atoi(value);
-        if(_nukiOfficial->_offCommandResponse == 0)
+        _nukiOfficial->offCommandResponse = atoi(value);
+        if(_nukiOfficial->offCommandResponse == 0)
         {
-            _nukiOfficial->_offCommandExecutedTs = 0;
+            _nukiOfficial->offCommandExecutedTs = 0;
         }
         char resultStr[15] = {0};
-        NukiLock::cmdResultToString((Nuki::CmdResult)_nukiOfficial->_offCommandResponse, resultStr);
+        NukiLock::cmdResultToString((Nuki::CmdResult)_nukiOfficial->offCommandResponse, resultStr);
         _network->publishCommandResult(resultStr);
     }
     else if(strcmp(topic, mqtt_topic_official_lockActionEvent) == 0)
     {
-        _nukiOfficial->_offCommandExecutedTs = 0;
-        _nukiOfficial->_offLockActionEvent = (char*)value;
-        String LockActionEvent = _nukiOfficial->_offLockActionEvent;
+        _nukiOfficial->offCommandExecutedTs = 0;
+        _nukiOfficial->offLockActionEvent = (char*)value;
+        String LockActionEvent = _nukiOfficial->offLockActionEvent;
         const int ind1 = LockActionEvent.indexOf(',');
         const int ind2 = LockActionEvent.indexOf(',', ind1+1);
         const int ind3 = LockActionEvent.indexOf(',', ind2+1);
         const int ind4 = LockActionEvent.indexOf(',', ind3+1);
         const int ind5 = LockActionEvent.indexOf(',', ind4+1);
 
-        _nukiOfficial->_offLockAction = atoi(LockActionEvent.substring(0, ind1).c_str());
-        _nukiOfficial->_offTrigger = atoi(LockActionEvent.substring(ind1+1, ind2+1).c_str());
-        _nukiOfficial->_offAuthId = atoi(LockActionEvent.substring(ind2+1, ind3+1).c_str());
-        _nukiOfficial->_offCodeId = atoi(LockActionEvent.substring(ind3+1, ind4+1).c_str());
-        _nukiOfficial->_offContext = atoi(LockActionEvent.substring(ind4+1, ind5+1).c_str());
+        _nukiOfficial->offLockAction = atoi(LockActionEvent.substring(0, ind1).c_str());
+        _nukiOfficial->offTrigger = atoi(LockActionEvent.substring(ind1 + 1, ind2 + 1).c_str());
+        _nukiOfficial->offAuthId = atoi(LockActionEvent.substring(ind2 + 1, ind3 + 1).c_str());
+        _nukiOfficial->offCodeId = atoi(LockActionEvent.substring(ind3 + 1, ind4 + 1).c_str());
+        _nukiOfficial->offContext = atoi(LockActionEvent.substring(ind4 + 1, ind5 + 1).c_str());
 
         memset(&str, 0, sizeof(str));
-        lockactionToString((NukiLock::LockAction)_nukiOfficial->_offLockAction, str);
+        lockactionToString((NukiLock::LockAction)_nukiOfficial->offLockAction, str);
         _network->publishString(mqtt_topic_lock_last_lock_action, str, true);
 
         memset(&str, 0, sizeof(str));
-        triggerToString((NukiLock::Trigger)_nukiOfficial->_offTrigger, str);
+        triggerToString((NukiLock::Trigger)_nukiOfficial->offTrigger, str);
         _network->publishString(mqtt_topic_lock_trigger, str, true);
 
-        if(_nukiOfficial->_offAuthId > 0 || _nukiOfficial->_offCodeId > 0)
+        if(_nukiOfficial->offAuthId > 0 || _nukiOfficial->offCodeId > 0)
         {
-            if(_nukiOfficial->_offCodeId > 0) _network->_authId = _nukiOfficial->_offCodeId;
-            else _network->_authId = _nukiOfficial->_offAuthId;
+            if(_nukiOfficial->offCodeId > 0) _network->_authId = _nukiOfficial->offCodeId;
+            else _network->_authId = _nukiOfficial->offAuthId;
 
             /*
             _network->_authName = RETRIEVE FROM VECTOR AFTER AUTHORIZATION ENTRIES ARE IMPLEMENTED;
@@ -1224,11 +1224,11 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
     {
         JsonDocument jsonBattery;
         char _resbuf[2048];
-        jsonBattery["critical"] = _nukiOfficial->_offCritical ? "1" : "0";
-        jsonBattery["charging"] = _nukiOfficial->_offCharging ? "1" : "0";
-        jsonBattery["level"] = _nukiOfficial->_offChargeState;
-        jsonBattery["keypadCritical"] = _nukiOfficial->_offKeypadCritical ? "1" : "0";
-        jsonBattery["doorSensorCritical"] = _nukiOfficial->_offDoorsensorCritical ? "1" : "0";
+        jsonBattery["critical"] = _nukiOfficial->offCritical ? "1" : "0";
+        jsonBattery["charging"] = _nukiOfficial->offCharging ? "1" : "0";
+        jsonBattery["level"] = _nukiOfficial->offChargeState;
+        jsonBattery["keypadCritical"] = _nukiOfficial->offKeypadCritical ? "1" : "0";
+        jsonBattery["doorSensorCritical"] = _nukiOfficial->offDoorsensorCritical ? "1" : "0";
         serializeJson(jsonBattery, _resbuf, sizeof(_resbuf));
         _network->publishString(mqtt_topic_battery_basic_json, _resbuf, true);
     }
@@ -1810,46 +1810,46 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
     switch(action)
     {
         case GpioAction::Lock:
-            if(!_nukiOfficial->_offConnected) nukiInst->lock();
+            if(!_nukiOfficial->offConnected) nukiInst->lock();
             else
             {
-                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
                 _nukiOfficial->_offCommand = NukiLock::LockAction::Lock;
                 _network->publishOffAction(2);
             }
             break;
         case GpioAction::Unlock:
-            if(!_nukiOfficial->_offConnected) nukiInst->unlock();
+            if(!_nukiOfficial->offConnected) nukiInst->unlock();
             else
             {
-                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
                 _nukiOfficial->_offCommand = NukiLock::LockAction::Unlock;
                 _network->publishOffAction(1);
             }
             break;
         case GpioAction::Unlatch:
-            if(!_nukiOfficial->_offConnected) nukiInst->unlatch();
+            if(!_nukiOfficial->offConnected) nukiInst->unlatch();
             else
             {
-                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
                 _nukiOfficial->_offCommand = NukiLock::LockAction::Unlatch;
                 _network->publishOffAction(3);
             }
             break;
         case GpioAction::LockNgo:
-            if(!_nukiOfficial->_offConnected) nukiInst->lockngo();
+            if(!_nukiOfficial->offConnected) nukiInst->lockngo();
             else
             {
-                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
                 _nukiOfficial->_offCommand = NukiLock::LockAction::LockNgo;
                 _network->publishOffAction(4);
             }
             break;
         case GpioAction::LockNgoUnlatch:
-            if(!_nukiOfficial->_offConnected) nukiInst->lockngounlatch();
+            if(!_nukiOfficial->offConnected) nukiInst->lockngounlatch();
             else
             {
-                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
                 _nukiOfficial->_offCommand = NukiLock::LockAction::LockNgoUnlatch;
                 _network->publishOffAction(5);
             }
@@ -3149,7 +3149,7 @@ const bool NukiWrapper::hasKeypad() const
 
 void NukiWrapper::notify(Nuki::EventType eventType)
 {
-    if(!_nukiOfficial->_offConnected)
+    if(!_nukiOfficial->offConnected)
     {
         if(_offEnabled && _intervalHybridLockstate > 0 && (esp_timer_get_time() / 1000) > (_intervalHybridLockstate * 1000))
         {
