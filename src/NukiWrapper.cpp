@@ -7,9 +7,6 @@
 #include "Config.h"
 
 NukiWrapper* nukiInst = nullptr;
-NukiNetworkLock* networkInst = nullptr;
-NukiOfficial* nukiOfficialInst = nullptr;
-Preferences* nukiLockPreferences = nullptr;
 
 NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences)
 : _deviceName(deviceName),
@@ -25,8 +22,6 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, 
     Log->println(_deviceId->get());
 
     nukiInst = this;
-    nukiOfficialInst = _nukiOfficial;
-    networkInst = _network;
 
     memset(&_lastKeyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
     memset(&_lastBatteryReport, sizeof(NukiLock::BatteryReport), 0);
@@ -253,10 +248,10 @@ void NukiWrapper::update()
 
     _nukiLock.updateConnectionState();
 
-    if(nukiOfficialInst->_offCommandExecutedTs>0 && ts >= nukiOfficialInst->_offCommandExecutedTs)
+    if(_nukiOfficial->_offCommandExecutedTs>0 && ts >= _nukiOfficial->_offCommandExecutedTs)
     {
-        nukiInst->_nextLockAction = nukiOfficialInst->_offCommand;
-        nukiOfficialInst->_offCommandExecutedTs = 0;
+        nukiInst->_nextLockAction = _nukiOfficial->_offCommand;
+        _nukiOfficial->_offCommandExecutedTs = 0;
     }
     if(_nextLockAction != (NukiLock::LockAction)0xff)
     {
@@ -937,6 +932,11 @@ NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
 
 LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
+    return nukiInst->onLockActionReceived(value);
+}
+
+LockActionResult NukiWrapper::onLockActionReceived(const char *value)
+{
     NukiLock::LockAction action;
 
     if(value)
@@ -950,32 +950,27 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
     }
     else return LockActionResult::UnknownAction;
 
-    nukiLockPreferences = new Preferences();
-    nukiLockPreferences->begin("nukihub", true);
     uint32_t aclPrefs[17];
-    nukiLockPreferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
     if((action == NukiLock::LockAction::Lock && (int)aclPrefs[0] == 1) || (action == NukiLock::LockAction::Unlock && (int)aclPrefs[1] == 1) || (action == NukiLock::LockAction::Unlatch && (int)aclPrefs[2] == 1) || (action == NukiLock::LockAction::LockNgo && (int)aclPrefs[3] == 1) || (action == NukiLock::LockAction::LockNgoUnlatch && (int)aclPrefs[4] == 1) || (action == NukiLock::LockAction::FullLock && (int)aclPrefs[5] == 1) || (action == NukiLock::LockAction::FobAction1 && (int)aclPrefs[6] == 1) || (action == NukiLock::LockAction::FobAction2 && (int)aclPrefs[7] == 1) || (action == NukiLock::LockAction::FobAction3 && (int)aclPrefs[8] == 1))
     {
-        if(!nukiOfficialInst->_offConnected) nukiInst->_nextLockAction = action;
+        if(!_nukiOfficial->_offConnected) nukiInst->_nextLockAction = action;
         else
         {
-            if(nukiLockPreferences->getBool(preference_official_hybrid_actions, false)) 
+            if(_preferences->getBool(preference_official_hybrid_actions, false))
             {
-                nukiOfficialInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                nukiOfficialInst->_offCommand = action;
-                networkInst->publishOffAction((int)action);
+                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->_offCommand = action;
+                _network->publishOffAction((int)action);
             }
             else
             {
                 nukiInst->_nextLockAction = action;
             }
         }
-        nukiLockPreferences->end();
         return LockActionResult::Success;
     }
-
-    nukiLockPreferences->end();
 
     return LockActionResult::AccessDenied;
 }
@@ -1180,14 +1175,17 @@ void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
     else if(strcmp(topic, mqtt_topic_official_commandResponse) == 0)
     {
         _nukiOfficial->_offCommandResponse = atoi(value);
-        if(_nukiOfficial->_offCommandResponse == 0) nukiOfficialInst->_offCommandExecutedTs = 0;
+        if(_nukiOfficial->_offCommandResponse == 0)
+        {
+            _nukiOfficial->_offCommandExecutedTs = 0;
+        }
         char resultStr[15] = {0};
         NukiLock::cmdResultToString((Nuki::CmdResult)_nukiOfficial->_offCommandResponse, resultStr);
         _network->publishCommandResult(resultStr);
     }
     else if(strcmp(topic, mqtt_topic_official_lockActionEvent) == 0)
     {
-        nukiOfficialInst->_offCommandExecutedTs = 0;
+        _nukiOfficial->_offCommandExecutedTs = 0;
         _nukiOfficial->_offLockActionEvent = (char*)value;
         String LockActionEvent = _nukiOfficial->_offLockActionEvent;
         const int ind1 = LockActionEvent.indexOf(',');
@@ -1801,53 +1799,59 @@ void NukiWrapper::onAuthCommandReceivedCallback(const char *value)
     nukiInst->onAuthCommandReceived(value);
 }
 
+
 void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
+{
+    nukiInst->onGpioActionReceived(action, pin);
+}
+
+void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
 {
     switch(action)
     {
         case GpioAction::Lock:
-            if(!nukiOfficialInst->_offConnected) nukiInst->lock();
+            if(!_nukiOfficial->_offConnected) nukiInst->lock();
             else
             {
-                nukiOfficialInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                nukiOfficialInst->_offCommand = NukiLock::LockAction::Lock;
-                networkInst->publishOffAction(2);
+                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->_offCommand = NukiLock::LockAction::Lock;
+                _network->publishOffAction(2);
             }
             break;
         case GpioAction::Unlock:
-            if(!nukiOfficialInst->_offConnected) nukiInst->unlock();
+            if(!_nukiOfficial->_offConnected) nukiInst->unlock();
             else
             {
-                nukiOfficialInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                nukiOfficialInst->_offCommand = NukiLock::LockAction::Unlock;
-                networkInst->publishOffAction(1);
+                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->_offCommand = NukiLock::LockAction::Unlock;
+                _network->publishOffAction(1);
             }
             break;
         case GpioAction::Unlatch:
-            if(!nukiOfficialInst->_offConnected) nukiInst->unlatch();
+            if(!_nukiOfficial->_offConnected) nukiInst->unlatch();
             else
             {
-                nukiOfficialInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                nukiOfficialInst->_offCommand = NukiLock::LockAction::Unlatch;
-                networkInst->publishOffAction(3);
+                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->_offCommand = NukiLock::LockAction::Unlatch;
+                _network->publishOffAction(3);
             }
             break;
         case GpioAction::LockNgo:
-            if(!nukiOfficialInst->_offConnected) nukiInst->lockngo();
+            if(!_nukiOfficial->_offConnected) nukiInst->lockngo();
             else
             {
-                nukiOfficialInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                nukiOfficialInst->_offCommand = NukiLock::LockAction::LockNgo;
-                networkInst->publishOffAction(4);
+                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->_offCommand = NukiLock::LockAction::LockNgo;
+                _network->publishOffAction(4);
             }
             break;
         case GpioAction::LockNgoUnlatch:
-            if(!nukiOfficialInst->_offConnected) nukiInst->lockngounlatch();
+            if(!_nukiOfficial->_offConnected) nukiInst->lockngounlatch();
             else
             {
-                nukiOfficialInst->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                nukiOfficialInst->_offCommand = NukiLock::LockAction::LockNgoUnlatch;
-                networkInst->publishOffAction(5);
+                _nukiOfficial->_offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
+                _nukiOfficial->_offCommand = NukiLock::LockAction::LockNgoUnlatch;
+                _network->publishOffAction(5);
             }
             break;
     }

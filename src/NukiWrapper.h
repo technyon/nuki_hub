@@ -57,12 +57,14 @@ private:
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void onAuthCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
+    LockActionResult onLockActionReceived(const char* value);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
+    void onGpioActionReceived(const GpioAction& action, const int& pin);
 
     void updateKeyTurnerState();
     void updateBatteryState();
