@@ -241,11 +241,9 @@ void NukiNetwork::initialize()
         Log->print(F(":"));
         Log->println(_mqttPort);
 
-        esp_mqtt_client_config_t mqtt_cfg = { 0 };
-
-        mqtt_cfg.credentials.client_id = _hostnameArr;
-        mqtt_cfg.session.disable_clean_session = !MQTT_CLEAN_SESSIONS;
-        mqtt_cfg.session.keepalive = MQTT_KEEP_ALIVE;
+        _mqtt_cfg.credentials.client_id = _hostnameArr;
+        _mqtt_cfg.session.disable_clean_session = !MQTT_CLEAN_SESSIONS;
+        _mqtt_cfg.session.keepalive = MQTT_KEEP_ALIVE;
 
         size_t caLength = _preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
         size_t crtLength = _preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
@@ -255,20 +253,38 @@ void NukiNetwork::initialize()
         {
             Log->println(F("MQTT over TLS."));
 
-            mqtt_cfg.broker.address.uri = ((String)"mqtts://" + _preferences->getString(preference_mqtt_broker, "") + ":" + _preferences->getString(preference_mqtt_broker_port, "8883")).c_str();
-            mqtt_cfg.broker.verification.certificate = _ca;
+            String uri = "mqtts://";
+            uri.concat(_preferences->getString(preference_mqtt_broker, ""));
+            uri.concat(":");
+            uri.concat(_preferences->getInt(preference_mqtt_broker_port, 8883));
+            Log->print("URI: ");
+            Log->println(uri.c_str());
+            //_mqtt_cfg.broker.address.uri = uri.c_str();
+            _mqtt_cfg.broker.address.hostname = _mqttBrokerAddr;
+            _mqtt_cfg.broker.address.transport = MQTT_TRANSPORT_OVER_SSL;
+            _mqtt_cfg.broker.address.port = _preferences->getInt(preference_mqtt_broker_port, 8883);
+            _mqtt_cfg.broker.verification.certificate = _ca;
 
             if(crtLength > 1 && keyLength > 1) // length is 1 when empty
             {
                 Log->println(F("MQTT with client certificate."));
-                mqtt_cfg.credentials.authentication.certificate = _cert;
-                mqtt_cfg.credentials.authentication.key = _key;
+                _mqtt_cfg.credentials.authentication.certificate = _cert;
+                _mqtt_cfg.credentials.authentication.key = _key;
             }
         }
         else
         {
             Log->println(F("MQTT without TLS."));
-            mqtt_cfg.broker.address.uri = ((String)"mqtt://" + _preferences->getString(preference_mqtt_broker, "") + ":" + _preferences->getString(preference_mqtt_broker_port, "1883")).c_str();
+            String uri = "mqtt://";
+            uri.concat(_preferences->getString(preference_mqtt_broker, ""));
+            uri.concat(":");
+            uri.concat(_preferences->getInt(preference_mqtt_broker_port, 1883));
+            Log->print("URI: ");
+            Log->println(uri.c_str());
+            //_mqtt_cfg.broker.address.uri = uri.c_str();
+            _mqtt_cfg.broker.address.hostname = _mqttBrokerAddr;
+            _mqtt_cfg.broker.address.transport = MQTT_TRANSPORT_OVER_TCP;
+            _mqtt_cfg.broker.address.port = _preferences->getInt(preference_mqtt_broker_port, 1883);
         }
 
         if(strlen(_mqttUser) == 0)
@@ -278,79 +294,18 @@ void NukiNetwork::initialize()
         else
         {
             Log->print(F("MQTT: Connecting with user: ")); Log->println(_mqttUser);
-            mqtt_cfg.credentials.username = _mqttUser;
-            mqtt_cfg.credentials.authentication.password = _mqttPass;
+            _mqtt_cfg.credentials.username = _mqttUser;
+            _mqtt_cfg.credentials.authentication.password = _mqttPass;
         }
 
-        mqtt_cfg.session.last_will.topic = _mqttConnectionStateTopic;
-        mqtt_cfg.session.last_will.msg = _lastWillPayload;
-        mqtt_cfg.session.last_will.msg_len = sizeof(_lastWillPayload);
-        mqtt_cfg.session.last_will.qos = 1;
-        mqtt_cfg.session.last_will.retain = true;
+        _mqtt_cfg.session.last_will.topic = _mqttConnectionStateTopic;
+        _mqtt_cfg.session.last_will.msg = _lastWillPayload;
+        _mqtt_cfg.session.last_will.msg_len = sizeof(_lastWillPayload);
+        _mqtt_cfg.session.last_will.qos = 1;
+        _mqtt_cfg.session.last_will.retain = true;
 
-        esp_mqtt_client_handle_t _mqttClient = esp_mqtt_client_init(&mqtt_cfg);
+        _mqttClient = esp_mqtt_client_init(&_mqtt_cfg);
         esp_mqtt_client_register_event(_mqttClient, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqtt_event_handler_cb, NULL);
-
-        Log->println(F("Attempting MQTT connection"));
-        esp_mqtt_client_start(_mqttClient);
-
-        if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
-        {
-            MqttLoggerMode mode;
-
-            if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-            else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
-            else mode = MqttLoggerMode::MqttAndSerial;
-
-            char* _path = new char[200];
-            memset(_path, 0, sizeof(_path));
-
-            String pathStr = _preferences->getString(preference_mqtt_lock_path);
-            pathStr.concat(mqtt_topic_log);
-            strcpy(_path, pathStr.c_str());
-            Log = new MqttLogger(_mqttClient, _path, mode);
-        }
-
-        char gpioPath[250];
-        bool rebGpio = rebuildGpio();
-
-        if(rebGpio)
-        {
-            Log->println(F("Rebuild MQTT GPIO structure"));
-        }
-        for (const auto &pinEntry: _gpio->pinConfiguration())
-        {
-            switch (pinEntry.role)
-            {
-                case PinRole::GeneralInputPullDown:
-                case PinRole::GeneralInputPullUp:
-                    if(rebGpio)
-                    {
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
-                        publishString(_lockPath.c_str(), gpioPath, "input", false);
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                        publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str(), false);
-                    }
-                    break;
-                case PinRole::GeneralOutput:
-                    if(rebGpio)
-                    {
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
-                        publishString(_lockPath.c_str(), gpioPath, "output", false);
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                        publishString(_lockPath.c_str(), gpioPath, "0", false);
-                    }
-                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                    subscribe(_lockPath.c_str(), gpioPath);
-                    break;
-                default:
-                    break;
-            }
-        }
-        _gpio->addCallback([this](const GpioAction& action, const int& pin)
-        {
-            gpioActionCallback(action, pin);
-        });
     }
 
     _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
@@ -418,6 +373,70 @@ bool NukiNetwork::update()
                 Log->println(F("Reconnect failed"));
                 break;
         }
+    }
+
+    if(_device->isConnected() && !_mqttClientInitiated && strcmp(_mqttBrokerAddr, "") != 0)
+    {
+        Log->println(F("Attempting MQTT connection"));
+        esp_mqtt_client_start(_mqttClient);
+
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
+        {
+            MqttLoggerMode mode;
+
+            if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
+            else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
+            else mode = MqttLoggerMode::MqttAndSerial;
+
+            char* _path = new char[200];
+            memset(_path, 0, sizeof(_path));
+
+            String pathStr = _preferences->getString(preference_mqtt_lock_path);
+            pathStr.concat(mqtt_topic_log);
+            strcpy(_path, pathStr.c_str());
+            Log = new MqttLogger(_mqttClient, _path, mode);
+        }
+
+        char gpioPath[250];
+        bool rebGpio = rebuildGpio();
+
+        if(rebGpio)
+        {
+            Log->println(F("Rebuild MQTT GPIO structure"));
+        }
+        for (const auto &pinEntry: _gpio->pinConfiguration())
+        {
+            switch (pinEntry.role)
+            {
+                case PinRole::GeneralInputPullDown:
+                case PinRole::GeneralInputPullUp:
+                    if(rebGpio)
+                    {
+                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                        publishString(_lockPath.c_str(), gpioPath, "input", false);
+                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                        publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str(), false);
+                    }
+                    break;
+                case PinRole::GeneralOutput:
+                    if(rebGpio)
+                    {
+                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                        publishString(_lockPath.c_str(), gpioPath, "output", false);
+                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                        publishString(_lockPath.c_str(), gpioPath, "0", false);
+                    }
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                    subscribe(_lockPath.c_str(), gpioPath);
+                    break;
+                default:
+                    break;
+            }
+        }
+        _gpio->addCallback([this](const GpioAction& action, const int& pin)
+        {
+            gpioActionCallback(action, pin);
+        });
     }
 
     if(_logIp && device()->isConnected() && !_device->localIP().equals("0.0.0.0"))
@@ -579,6 +598,7 @@ void NukiNetwork::mqtt_event_handler(void *handler_args, esp_event_base_t base, 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
+        _mqttClientInitiated = true;
         _mqttConnected = true;
         reconnect();
         break;
@@ -597,9 +617,9 @@ void NukiNetwork::mqtt_event_handler(void *handler_args, esp_event_base_t base, 
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DATA");
-        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        printf("DATA=%.*s\r\n", event->data_len, event->data);
-        onMqttDataReceived((const char*)event->topic, (const uint8_t*)event->data, (size_t&)event->data_len);
+        //printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        //printf("DATA=%.*s\r\n", event->data_len, event->data);
+        onMqttDataReceived(event->topic, event->topic_len, event->data, event->data_len);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(MQTT_TAG, "MQTT_EVENT_ERROR");
@@ -698,20 +718,26 @@ void NukiNetwork::registerMqttReceiver(MqttReceiver* receiver)
     _mqttReceivers.push_back(receiver);
 }
 
-void NukiNetwork::onMqttDataReceived(const char* topic, const uint8_t* payload, size_t& len)
+void NukiNetwork::onMqttDataReceived(char* topic, int topic_len, char* data, int data_len)
 {
-    if((_mqttConnectedTs == -1 || (millis() - _mqttConnectedTs < 2000)) && topic) return;
+    char value[800] = {0};
+    for(int i=0; i<data_len; i++)
+    {
+        value[i] = data[i];
+    }
+    topic[topic_len] = '\0';
+    value[data_len] = '\0';
 
-    parseGpioTopics(topic, payload, len);
+    parseGpioTopics(topic, topic_len, (char*)value, data_len);
 
     for(auto receiver : _mqttReceivers)
     {
-        receiver->onMqttDataReceived(topic, (byte*)payload, len);
+        receiver->onMqttDataReceived(topic, topic_len, (char*)value, data_len);
     }
 }
 
 
-void NukiNetwork::parseGpioTopics(const char *topic, const uint8_t *payload, size_t& len)
+void NukiNetwork::parseGpioTopics(char* topic, int topic_len, char* data, int data_len)
 {
     char gpioPath[250];
     buildMqttPath(gpioPath, {_lockPath.c_str(), mqtt_topic_gpio_prefix, mqtt_topic_gpio_pin});
@@ -730,7 +756,7 @@ void NukiNetwork::parseGpioTopics(const char *topic, const uint8_t *payload, siz
 
         if(_gpio->getPinRole(pin) == PinRole::GeneralOutput)
         {
-            const uint8_t pinState = strcmp((const char*)payload, "1") == 0 ? HIGH : LOW;
+            const uint8_t pinState = strcmp(data, "1") == 0 ? HIGH : LOW;
             Log->print(F("GPIO "));
             Log->print(pin);
             Log->print(F(" (Output) --> "));
@@ -771,6 +797,10 @@ bool NukiNetwork::pathEquals(const char* prefix, const char* path, const char* r
 
 void NukiNetwork::publishFloat(const char* prefix, const char* topic, const float value, bool retain, const uint8_t precision)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     char str[30];
     dtostrf(value, 0, precision, str);
     char path[200] = {0};
@@ -780,6 +810,10 @@ void NukiNetwork::publishFloat(const char* prefix, const char* topic, const floa
 
 void NukiNetwork::publishInt(const char* prefix, const char *topic, const int value, bool retain)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     char str[30];
     itoa(value, str, 10);
     char path[200] = {0};
@@ -789,6 +823,10 @@ void NukiNetwork::publishInt(const char* prefix, const char *topic, const int va
 
 void NukiNetwork::publishUInt(const char* prefix, const char *topic, const unsigned int value, bool retain)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
@@ -798,6 +836,10 @@ void NukiNetwork::publishUInt(const char* prefix, const char *topic, const unsig
 
 void NukiNetwork::publishULong(const char* prefix, const char *topic, const unsigned long value, bool retain)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     char str[30];
     utoa(value, str, 10);
     char path[200] = {0};
@@ -807,6 +849,10 @@ void NukiNetwork::publishULong(const char* prefix, const char *topic, const unsi
 
 void NukiNetwork::publishLongLong(const char* prefix, const char *topic, int64_t value, bool retain)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     static char result[21] = "";
     memset(&result[0], 0, sizeof(result));
     char temp[21] = "";
@@ -828,6 +874,10 @@ void NukiNetwork::publishLongLong(const char* prefix, const char *topic, int64_t
 
 void NukiNetwork::publishBool(const char* prefix, const char *topic, const bool value, bool retain)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     char str[2] = {0};
     str[0] = value ? '1' : '0';
     char path[200] = {0};
@@ -837,6 +887,10 @@ void NukiNetwork::publishBool(const char* prefix, const char *topic, const bool 
 
 bool NukiNetwork::publishString(const char* prefix, const char *topic, const char *value, bool retain)
 {
+    if(!_mqttClientInitiated)
+    {
+        return false;
+    }
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
     return esp_mqtt_client_publish(_mqttClient, path, value, 0, MQTT_QOS_LEVEL, retain) > 0;
@@ -844,6 +898,10 @@ bool NukiNetwork::publishString(const char* prefix, const char *topic, const cha
 
 void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     JsonDocument json;
     json.clear();
     JsonObject dev = json["dev"].to<JsonObject>();
@@ -1343,6 +1401,10 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
 
 void NukiNetwork::publishHASSConfigAdditionalLockEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
@@ -2393,6 +2455,10 @@ void NukiNetwork::publishHASSConfigAdditionalLockEntities(char *deviceType, cons
 
 void NukiNetwork::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     publishHassTopic("binary_sensor",
                      "door_sensor",
                      uidString,
@@ -2413,6 +2479,10 @@ void NukiNetwork::publishHASSConfigDoorSensor(char *deviceType, const char *base
 
 void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
     uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -3401,6 +3471,10 @@ void NukiNetwork::publishHassTopic(const String& mqttDeviceType,
                                std::vector<std::pair<char*, char*>> additionalEntries
 )
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     if (_discoveryTopic != "")
     {
         JsonDocument json;
@@ -3427,6 +3501,10 @@ String NukiNetwork::createHassTopicPath(const String& mqttDeviceType, const Stri
 
 void NukiNetwork::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     if (_discoveryTopic != "")
     {
         String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
@@ -3436,6 +3514,10 @@ void NukiNetwork::removeHassTopic(const String& mqttDeviceType, const String& mq
 
 void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)
 {
+    if(!_mqttClientInitiated)
+    {
+        return;
+    }
     String path = mqttPath;
     path.concat(mqttTopic);
     esp_mqtt_client_publish(_mqttClient, path.c_str(), "", 0, MQTT_QOS_LEVEL, 1);
@@ -3808,6 +3890,10 @@ void NukiNetwork::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* st
 
 uint16_t NukiNetwork::subscribe(const char *topic, uint8_t qos)
 {
+    if(!_mqttClientInitiated)
+    {
+        return -1;
+    }
     return esp_mqtt_client_subscribe(_mqttClient, topic, qos);
 }
 

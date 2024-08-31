@@ -76,9 +76,9 @@ void MqttLogger::sendBuffer()
         bool doSerial = this->mode==MqttLoggerMode::SerialOnly || this->mode==MqttLoggerMode::MqttAndSerial || this->mode==MqttLoggerMode::MqttAndSerialAndWeb || this->mode==MqttLoggerMode::SerialAndWeb;
         bool doWebSerial = this->mode==MqttLoggerMode::MqttAndSerialAndWeb || this->mode==MqttLoggerMode::SerialAndWeb;
 
-        if (this->mode!=MqttLoggerMode::SerialOnly && this->mode!=MqttLoggerMode::SerialAndWeb && this->client != NULL)
+        if (this->mode!=MqttLoggerMode::SerialOnly && this->mode!=MqttLoggerMode::SerialAndWeb)
         {
-            esp_mqtt_client_publish(this->client, topic, (const char*)this->buffer, this->bufferCnt, 0, 1);
+            esp_mqtt_client_publish(this->client, topic, (const char*)this->buffer, this->bufferCnt, 1, 1);
         }
         else if (this->mode == MqttLoggerMode::MqttAndSerialFallback)
         {

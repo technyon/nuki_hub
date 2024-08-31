@@ -31,7 +31,8 @@ private:
     const char* topic;
     uint8_t* buffer;
     uint8_t* bufferEnd;
-    uint16_t bufferCnt = 0, bufferSize = 0;
+    uint16_t bufferCnt = 0;
+    uint16_t bufferSize = 0;
     esp_mqtt_client_handle_t client;
     MqttLoggerMode mode;
     void sendBuffer();

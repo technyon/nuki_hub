@@ -103,7 +103,11 @@ int _log_vprintf(const char *fmt, va_list args) {
 
 void setReroute(){
     esp_log_set_vprintf(_log_vprintf);
-    if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
+    if(preferences->getBool(preference_mqtt_log_enabled)) 
+    {
+        esp_log_level_set("*", ESP_LOG_INFO);
+        esp_log_level_set("mqtt", ESP_LOG_NONE);
+    }
     else
     {
         esp_log_level_set("*", ESP_LOG_DEBUG);
@@ -376,6 +380,7 @@ void setupTasks(bool ota)
 void setup()
 {
     esp_log_level_set("*", ESP_LOG_ERROR);
+    esp_log_level_set("mqtt", ESP_LOG_NONE);
     Serial.begin(115200);
     Log = &Serial;
 

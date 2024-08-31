@@ -52,7 +52,6 @@ set(SRCFILES
         ../lib/BleScanner/src/BleInterfaces.h
         ../lib/BleScanner/src/BleScanner.cpp
         ../lib/MqttLogger/src/MqttLogger.cpp
-        ../lib/AsyncTCP/src/AsyncTCP.cpp
         ../src/util/NetworkUtil.cpp
         ../src/enums/NetworkDeviceType.h
         ../src/util/NetworkDeviceInstantiator.cpp
@@ -62,14 +61,6 @@ file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c
         lib/NimBLE-Arduino/src/*.cpp
         lib/NimBLE-Arduino/src/*.h
-        lib/ESP Async WebServer/src/*.cpp
-        lib/ESP Async WebServer/src/*.h
-        lib/espMqttClient/src/*.cpp
-        lib/espMqttClient/src/*.h
-        lib/espMqttClient/src/Packets/*.cpp
-        lib/espMqttClient/src/Packets/*.h
-        lib/espMqttClient/src/Transport/*.cpp
-        lib/espMqttClient/src/Transport/*.h
         lib/ArduinoJson/src/*.h
         lib/ArduinoJson/src/*.hpp
 )

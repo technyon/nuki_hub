@@ -289,6 +289,33 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
         return response.endSend();
     }
 
+    #ifndef NUKI_HUB_UPDATER
+    bool manifestSuccess = false;
+    JsonDocument doc;
+
+    NetworkClientSecure *clientOTAUpdate = new NetworkClientSecure;
+    if (clientOTAUpdate) {
+        clientOTAUpdate->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+        {
+            HTTPClient httpsOTAClient;
+            httpsOTAClient.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+            httpsOTAClient.setTimeout(2500);
+            httpsOTAClient.useHTTP10(true);
+
+            if (httpsOTAClient.begin(*clientOTAUpdate, GITHUB_OTA_MANIFEST_URL)) {
+                int httpResponseCodeOTA = httpsOTAClient.GET();
+
+                if (httpResponseCodeOTA == HTTP_CODE_OK || httpResponseCodeOTA == HTTP_CODE_MOVED_PERMANENTLY)
+                {
+                    DeserializationError jsonError = deserializeJson(doc, httpsOTAClient.getStream());
+                    if (!jsonError) { manifestSuccess = true; }
+                }
+                httpsOTAClient.end();
+            }
+        }
+        delete clientOTAUpdate;
+    }
+
     response.print("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
     response.print("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
     response.print("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
@@ -316,33 +343,6 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
     response.print(")</span>, ");
     response.print(NUKI_HUB_DATE);
     response.print("<br>");
-
-    #ifndef NUKI_HUB_UPDATER
-    bool manifestSuccess = false;
-    JsonDocument doc;
-
-    NetworkClientSecure *clientOTAUpdate = new NetworkClientSecure;
-    if (clientOTAUpdate) {
-        clientOTAUpdate->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
-        {
-            HTTPClient httpsOTAClient;
-            httpsOTAClient.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-            httpsOTAClient.setTimeout(2500);
-            httpsOTAClient.useHTTP10(true);
-
-            if (httpsOTAClient.begin(*clientOTAUpdate, GITHUB_OTA_MANIFEST_URL)) {
-                int httpResponseCodeOTA = httpsOTAClient.GET();
-
-                if (httpResponseCodeOTA == HTTP_CODE_OK || httpResponseCodeOTA == HTTP_CODE_MOVED_PERMANENTLY)
-                {
-                    DeserializationError jsonError = deserializeJson(doc, httpsOTAClient.getStream());
-                    if (!jsonError) { manifestSuccess = true; }
-                }
-                httpsOTAClient.end();
-            }
-        }
-        delete clientOTAUpdate;
-    }
 
     if(!manifestSuccess)
     {

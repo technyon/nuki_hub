@@ -117,8 +117,8 @@ private:
     #ifndef NUKI_HUB_UPDATER
     static void mqtt_event_handler_cb(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
     void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
-    void onMqttDataReceived(const char* topic, const uint8_t* payload, size_t& len);
-    void parseGpioTopics(const char* topic, const uint8_t* payload, size_t& len);
+    void onMqttDataReceived(char* topic, int topic_len, char* data, int data_len);
+    void parseGpioTopics(char* topic, int topic_len, char* data, int data_len);
     void gpioActionCallback(const GpioAction& action, const int& pin);
 
     String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
@@ -144,6 +144,8 @@ private:
 
     Gpio* _gpio;
   
+    esp_mqtt_client_config_t _mqtt_cfg = { 0 };
+    bool _mqttClientInitiated = false;
     int _mqttConnectionState = 0;
     bool _mqttConnected = false;
     int _mqttConnectCounter = 0;
