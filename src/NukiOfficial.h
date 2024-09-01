@@ -51,8 +51,6 @@ public:
     uint8_t offContext = 0;
     bool offEnabled = false;
 
-    bool _disableNonJSON = false;
-
 private:
     char mqttPath[181] = {0};
     NukiPublisher* _publisher = nullptr;
@@ -61,5 +59,7 @@ private:
     NukiLock::LockState _offStateToPublish = (NukiLock::LockState)0;
     uint32_t _authId = 0;
     bool _hasAuthId = false;
+    bool _disableNonJSON = false;
+
 };
 
