@@ -135,6 +135,11 @@ void networkTask(void *pvParameters)
 
         bool connected = network->update();
 
+        if(connected && networkLock != nullptr)
+        {
+            networkLock->update();
+        }
+
         #ifndef NUKI_HUB_UPDATER
         #ifdef DEBUG_NUKIHUB
         if(connected && reroute)

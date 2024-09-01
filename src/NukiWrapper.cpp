@@ -371,10 +371,6 @@ void NukiWrapper::update()
             updateKeypad(false);
         }
     }
-    if(_nukiOfficial->hasOffStateToPublish())
-    {
-        _network->publishState(_nukiOfficial->getOffStateToPublish());
-    }
     if(_clearAuthData)
     {
         Log->println("Clearing Lock auth data");

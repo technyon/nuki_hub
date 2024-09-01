@@ -183,6 +183,14 @@ void NukiNetworkLock::initialize()
     });
 }
 
+void NukiNetworkLock::update()
+{
+    if(_nukiOfficial->hasOffStateToPublish())
+    {
+        publishState(_nukiOfficial->getOffStateToPublish());
+    }
+}
+
 void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* value = (char*)payload;
@@ -1652,42 +1660,42 @@ void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic,
 
 void NukiNetworkLock::removeHASSConfig(char *uidString)
 {
-    _network->removeHASSConfig(uidString);
+    return  _network->removeHASSConfig(uidString);
 }
 
 void NukiNetworkLock::publishOffAction(const int value)
 {
-    _network->publishInt(_nukiOfficial->getMqttPath(), mqtt_topic_official_lock_action, value, false);
+    return _network->publishInt(_nukiOfficial->getMqttPath(), mqtt_topic_official_lock_action, value, false);
 }
 
 void NukiNetworkLock::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)
 {
-    _nukiPublisher->publishFloat(topic, value, retain, precision);
+    return _nukiPublisher->publishFloat(topic, value, retain, precision);
 }
 
 void NukiNetworkLock::publishInt(const char *topic, const int value, bool retain)
 {
-    _nukiPublisher->publishInt(topic, value, retain);
+    return _nukiPublisher->publishInt(topic, value, retain);
 }
 
 void NukiNetworkLock::publishUInt(const char *topic, const unsigned int value, bool retain)
 {
-    _nukiPublisher->publishUInt(topic, value, retain);
+    return _nukiPublisher->publishUInt(topic, value, retain);
 }
 
 void NukiNetworkLock::publishBool(const char *topic, const bool value, bool retain)
 {
-    _nukiPublisher->publishBool(topic, value, retain);
+    return _nukiPublisher->publishBool(topic, value, retain);
 }
 
 bool NukiNetworkLock::publishString(const char *topic, const String &value, bool retain)
 {
-    _nukiPublisher->publishString(topic, value, retain);
+    return _nukiPublisher->publishString(topic, value, retain);
 }
 
 bool NukiNetworkLock::publishString(const char *topic, const std::string &value, bool retain)
 {
-    _nukiPublisher->publishString(topic, value, retain);
+    return _nukiPublisher->publishString(topic, value, retain);
 }
 
 bool NukiNetworkLock::publishString(const char *topic, const char *value, bool retain)
