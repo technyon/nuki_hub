@@ -90,9 +90,9 @@ private:
     void buildMqttPath(const char* path, char* outPath);
 
     NukiNetwork* _network = nullptr;
-    NukiPublisher* _nukiPublisher;
+    NukiPublisher* _nukiPublisher = nullptr;
     NukiOfficial* _nukiOfficial = nullptr;
-    Preferences* _preferences;
+    Preferences* _preferences = nullptr;
 
     std::map<uint32_t, String> _authEntries;
     char _mqttPath[181] = {0};
