@@ -22,10 +22,10 @@ NukiNetworkLock::NukiNetworkLock(NukiNetwork* network, NukiOfficial* nukiOfficia
   _bufferSize(bufferSize)
 {
     _nukiPublisher = new NukiPublisher(network, _mqttPath);
+    _nukiOfficial->setPublisher(_nukiPublisher);
 
     memset(_authName, 0, sizeof(_authName));
     _authName[0] = '\0';
-
 
     _network->registerMqttReceiver(this);
 }

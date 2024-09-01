@@ -38,6 +38,12 @@ void NukiOfficial::setUid(const uint32_t& uid)
     offTopics.push_back((char*)mqtt_topic_official_lockActionEvent);
 }
 
+void NukiOfficial::setPublisher(NukiPublisher *publisher)
+{
+    _publisher = publisher;
+}
+
+
 const char *NukiOfficial::getMqttPath() const
 {
     return mqttPath;

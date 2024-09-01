@@ -9,6 +9,7 @@ class NukiOfficial
 {
 public:
     explicit NukiOfficial(Preferences* preferences);
+    void setPublisher(NukiPublisher* publisher);
 
     void setUid(const uint32_t& uid);
 
