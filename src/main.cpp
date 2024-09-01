@@ -135,21 +135,21 @@ void networkTask(void *pvParameters)
 
         bool connected = network->update();
 
+#ifndef NUKI_HUB_UPDATER
         if(connected && networkLock != nullptr)
         {
             networkLock->update();
         }
 
-        #ifndef NUKI_HUB_UPDATER
-        #ifdef DEBUG_NUKIHUB
+#ifdef DEBUG_NUKIHUB
         if(connected && reroute)
         {
             reroute = false;
             setReroute();
         }
-        #endif
+#endif
         if(connected && openerEnabled) networkOpener->update();
-        #endif
+#endif
 
         if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
         {
