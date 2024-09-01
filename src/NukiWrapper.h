@@ -117,6 +117,8 @@ private:
     NukiLock::BatteryReport _batteryReport;
     NukiLock::BatteryReport _lastBatteryReport;
 
+    NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
+
     NukiLock::Config _nukiConfig = {0};
     NukiLock::AdvancedConfig _nukiAdvancedConfig = {0};
     bool _nukiConfigValid = false;

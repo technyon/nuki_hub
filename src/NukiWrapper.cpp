@@ -249,7 +249,7 @@ void NukiWrapper::update()
 
     if(_nukiOfficial->offCommandExecutedTs > 0 && ts >= _nukiOfficial->offCommandExecutedTs)
     {
-        nukiInst->_nextLockAction = _nukiOfficial->_offCommand;
+        nukiInst->_nextLockAction = _offCommand;
         _nukiOfficial->offCommandExecutedTs = 0;
     }
     if(_nextLockAction != (NukiLock::LockAction)0xff)
@@ -960,7 +960,7 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
             if(_preferences->getBool(preference_official_hybrid_actions, false))
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                _nukiOfficial->_offCommand = action;
+                _offCommand = action;
                 _network->publishOffAction((int)action);
             }
             else
@@ -1665,7 +1665,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                _nukiOfficial->_offCommand = NukiLock::LockAction::Lock;
+                _offCommand = NukiLock::LockAction::Lock;
                 _network->publishOffAction(2);
             }
             break;
@@ -1674,7 +1674,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                _nukiOfficial->_offCommand = NukiLock::LockAction::Unlock;
+                _offCommand = NukiLock::LockAction::Unlock;
                 _network->publishOffAction(1);
             }
             break;
@@ -1683,7 +1683,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                _nukiOfficial->_offCommand = NukiLock::LockAction::Unlatch;
+                _offCommand = NukiLock::LockAction::Unlatch;
                 _network->publishOffAction(3);
             }
             break;
@@ -1692,7 +1692,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                _nukiOfficial->_offCommand = NukiLock::LockAction::LockNgo;
+                _offCommand = NukiLock::LockAction::LockNgo;
                 _network->publishOffAction(4);
             }
             break;
@@ -1701,7 +1701,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
-                _nukiOfficial->_offCommand = NukiLock::LockAction::LockNgoUnlatch;
+                _offCommand = NukiLock::LockAction::LockNgoUnlatch;
                 _network->publishOffAction(5);
             }
             break;

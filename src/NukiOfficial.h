@@ -34,11 +34,8 @@ public:
     const uint8_t getOffLockAction() const;
     const uint8_t getOffTrigger() const;
 
-    NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
-
     std::vector<char*> offTopics;
     int64_t offCommandExecutedTs = 0;
-
 
 private:
     char mqttPath[181] = {0};
