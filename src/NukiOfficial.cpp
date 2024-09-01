@@ -23,6 +23,19 @@ void NukiOfficial::setUid(const uint32_t& uid)
 
     strcpy(mqttPath, "nuki/");
     strcat(mqttPath, uidString);
+
+    offTopics.reserve(10);
+    //_offTopics.push_back(mqtt_topic_official_mode);
+    offTopics.push_back((char*)mqtt_topic_official_state);
+    offTopics.push_back((char*)mqtt_topic_official_batteryCritical);
+    offTopics.push_back((char*)mqtt_topic_official_batteryChargeState);
+    offTopics.push_back((char*)mqtt_topic_official_batteryCharging);
+    offTopics.push_back((char*)mqtt_topic_official_keypadBatteryCritical);
+    offTopics.push_back((char*)mqtt_topic_official_doorsensorState);
+    offTopics.push_back((char*)mqtt_topic_official_doorsensorBatteryCritical);
+    offTopics.push_back((char*)mqtt_topic_official_connected);
+    offTopics.push_back((char*)mqtt_topic_official_commandResponse);
+    offTopics.push_back((char*)mqtt_topic_official_lockActionEvent);
 }
 
 const char *NukiOfficial::getMqttPath() const
@@ -298,4 +311,9 @@ void NukiOfficial::setOffCommandExecutedTs(const int64_t &value)
 void NukiOfficial::clearOffCommandExecutedTs()
 {
     offCommandExecutedTs = 0;
+}
+
+const std::vector<char *> NukiOfficial::getOffTopics() const
+{
+    return offTopics;
 }

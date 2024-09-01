@@ -33,15 +33,16 @@ public:
     const uint8_t getOffState() const;
     const uint8_t getOffLockAction() const;
     const uint8_t getOffTrigger() const;
+    const std::vector<char*> getOffTopics() const;
 
     const int64_t getOffCommandExecutedTs() const;
     void setOffCommandExecutedTs(const int64_t& value);
     void clearOffCommandExecutedTs();
 
-    std::vector<char*> offTopics;
-
 private:
     char mqttPath[181] = {0};
+    std::vector<char*> offTopics;
+
     NukiPublisher* _publisher = nullptr;
     bool _statusUpdated = false;
     bool _hasOffStateToPublish = false;

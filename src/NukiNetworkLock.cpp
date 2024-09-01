@@ -26,18 +26,6 @@ NukiNetworkLock::NukiNetworkLock(NukiNetwork* network, NukiOfficial* nukiOfficia
     memset(_authName, 0, sizeof(_authName));
     _authName[0] = '\0';
 
-    _nukiOfficial->offTopics.reserve(10);
-    //_nukiOfficial->_offTopics.push_back(mqtt_topic_nukiOfficial->_official_mode);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_state);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_batteryCritical);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_batteryChargeState);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_batteryCharging);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_keypadBatteryCritical);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_doorsensorState);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_doorsensorBatteryCritical);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_connected);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_commandResponse);
-    _nukiOfficial->offTopics.push_back((char*)mqtt_topic_official_lockActionEvent);
 
     _network->registerMqttReceiver(this);
 }
@@ -165,7 +153,7 @@ void NukiNetworkLock::initialize()
     {
         _nukiOfficial->setUid(_preferences->getUInt(preference_nuki_id_lock, 0));
 
-        for(const auto& offTopic : _nukiOfficial->offTopics)
+        for(const auto& offTopic : _nukiOfficial->getOffTopics())
         {
             _network->subscribe(_nukiOfficial->getMqttPath(), offTopic);
         }
@@ -341,7 +329,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
     if(_nukiOfficial->getOffEnabled())
     {
-        for(auto offTopic : _nukiOfficial->offTopics)
+        for(auto offTopic : _nukiOfficial->getOffTopics())
         {
             if(_nukiOfficial->comparePrefixedPath(topic, offTopic))
             {
