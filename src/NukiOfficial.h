@@ -34,8 +34,11 @@ public:
     const uint8_t getOffLockAction() const;
     const uint8_t getOffTrigger() const;
 
+    const int64_t getOffCommandExecutedTs() const;
+    void setOffCommandExecutedTs(const int64_t& value);
+    void clearOffCommandExecutedTs();
+
     std::vector<char*> offTopics;
-    int64_t offCommandExecutedTs = 0;
 
 private:
     char mqttPath[181] = {0};
@@ -46,6 +49,8 @@ private:
     uint32_t _authId = 0;
     bool _hasAuthId = false;
     bool _disableNonJSON = false;
+
+    int64_t offCommandExecutedTs = 0;
 
     //uint8_t _offMode = 0;
     uint8_t offState = 0;

@@ -157,7 +157,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
         offCommandResponse = atoi(value);
         if(offCommandResponse == 0)
         {
-            offCommandExecutedTs = 0;
+            clearOffCommandExecutedTs();
         }
         char resultStr[15] = {0};
         NukiLock::cmdResultToString((Nuki::CmdResult)offCommandResponse, resultStr);
@@ -165,7 +165,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     }
     else if(strcmp(topic, mqtt_topic_official_lockActionEvent) == 0)
     {
-        offCommandExecutedTs = 0;
+        clearOffCommandExecutedTs();
         offLockActionEvent = (char*)value;
         String LockActionEvent = offLockActionEvent;
         const int ind1 = LockActionEvent.indexOf(',');
@@ -283,4 +283,19 @@ const uint8_t NukiOfficial::getOffLockAction() const
 const uint8_t NukiOfficial::getOffTrigger() const
 {
     return offTrigger;
+}
+
+const int64_t NukiOfficial::getOffCommandExecutedTs() const
+{
+    return offCommandExecutedTs;
+}
+
+void NukiOfficial::setOffCommandExecutedTs(const int64_t &value)
+{
+    offCommandExecutedTs = value;
+}
+
+void NukiOfficial::clearOffCommandExecutedTs()
+{
+    offCommandExecutedTs = 0;
 }
