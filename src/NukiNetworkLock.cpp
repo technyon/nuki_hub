@@ -65,7 +65,6 @@ void NukiNetworkLock::initialize()
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
-    _nukiOfficial->offEnabled = _preferences->getBool(preference_official_hybrid, false);
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
@@ -162,7 +161,7 @@ void NukiNetworkLock::initialize()
         _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
     }
 
-    if(_nukiOfficial->offEnabled)
+    if(_nukiOfficial->getOffEnabled())
     {
         _nukiOfficial->setUid(_preferences->getUInt(preference_nuki_id_lock, 0));
 
@@ -340,7 +339,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         if(atoi(value) > 0 && atoi(value) > _lastRollingLog) _lastRollingLog = atoi(value);
     }
 
-    if(_nukiOfficial->offEnabled)
+    if(_nukiOfficial->getOffEnabled())
     {
         for(auto offTopic : _nukiOfficial->offTopics)
         {
@@ -509,7 +508,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     JsonDocument json;
     JsonDocument jsonBattery;
 
-    if(!_nukiOfficial->offConnected)
+    if(!_nukiOfficial->getOffConnected())
     {
         lockstateToString(keyTurnerState.lockState, str);
 
@@ -528,7 +527,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        lockstateToString((NukiLock::LockState)_nukiOfficial->offState, str);
+        lockstateToString((NukiLock::LockState)_nukiOfficial->getOffState(), str);
         json["lock_state"] = str;
     }
 
@@ -536,7 +535,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
 
     memset(&str, 0, sizeof(str));
 
-    if(!_nukiOfficial->offConnected)
+    if(!_nukiOfficial->getOffConnected())
     {
         triggerToString(keyTurnerState.trigger, str);
 
@@ -549,7 +548,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        triggerToString((NukiLock::Trigger)_nukiOfficial->offTrigger, str);
+        triggerToString((NukiLock::Trigger)_nukiOfficial->getOffTrigger(), str);
         json["trigger"] = str;
     }
 
@@ -561,7 +560,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
 
     memset(&str, 0, sizeof(str));
 
-    if(!_nukiOfficial->offConnected)
+    if(!_nukiOfficial->getOffConnected())
     {
         lockactionToString(keyTurnerState.lastLockAction, str);
 
@@ -574,7 +573,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        lockactionToString((NukiLock::LockAction)_nukiOfficial->offLockAction, str);
+        lockactionToString((NukiLock::LockAction)_nukiOfficial->getOffLockAction(), str);
         json["last_lock_action"] = str;
     }
 
@@ -593,7 +592,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     json["lock_completion_status"] = str;
     memset(&str, 0, sizeof(str));
 
-    if(!_nukiOfficial->offConnected)
+    if(!_nukiOfficial->getOffConnected())
     {
         NukiLock::doorSensorStateToString(keyTurnerState.doorSensorState, str);
 
@@ -631,7 +630,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
     else
     {
-        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_nukiOfficial->offDoorsensorState, str);
+        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_nukiOfficial->getOffDoorsensorState(), str);
         json["door_sensor_state"] = str;
     }
 

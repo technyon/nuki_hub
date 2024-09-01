@@ -1213,9 +1213,9 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
         }
         else if(key == "OFFHYBRID")
         {
-            if(_preferences->getBool(preference_official_hybrid, false) != (value == "1"))
+            if(_preferences->getBool(preference_official_hybrid_enabled, false) != (value == "1"))
             {
-                _preferences->putBool(preference_official_hybrid, (value == "1"));
+                _preferences->putBool(preference_official_hybrid_enabled, (value == "1"));
                 if((value == "1")) _preferences->putBool(preference_register_as_app, true);
                 Log->print(F("Setting changed: "));
                 Log->println(key);
@@ -2582,7 +2582,7 @@ void WebCfgServer::buildHtml(AsyncWebServerRequest *request)
             String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
             printParameter("Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
 
-            if(_preferences->getBool(preference_official_hybrid, false))
+            if(_preferences->getBool(preference_official_hybrid_enabled, false))
             {
                 String offConnected = _nuki->offConnected() ? "Yes": "No";
                 printParameter("Nuki Lock hybrid mode connected", offConnected.c_str(), "", "lockHybrid");
@@ -2748,7 +2748,7 @@ void WebCfgServer::buildMqttConfigHtml(AsyncWebServerRequest *request)
     printCheckBox("CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox("UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
     printCheckBox("DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
-    printCheckBox("OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
+    printCheckBox("OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid_enabled), "");
     printCheckBox("HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
     printInputField("HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
     // printCheckBox("HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), ""); // NOT IMPLEMENTED (YET?)
@@ -3434,7 +3434,7 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
         _response.concat("\nRegister as: ");
         _response.concat(_preferences->getBool(preference_register_as_app, false) ? "App" : "Bridge");
         _response.concat("\n\n------------ HYBRID MODE ------------");
-        if(!_preferences->getBool(preference_official_hybrid, false)) _response.concat("\nHybrid mode enabled: No");
+        if(!_preferences->getBool(preference_official_hybrid_enabled, false)) _response.concat("\nHybrid mode enabled: No");
         else
         {
             _response.concat("\nHybrid mode enabled: Yes");

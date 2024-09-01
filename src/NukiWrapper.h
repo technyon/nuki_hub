@@ -123,7 +123,6 @@ private:
     bool _nukiAdvancedConfigValid = false;
     bool _hassEnabled = false;
     bool _hassSetupCompleted = false;
-    bool _offEnabled = false;
     bool _disableNonJSON = false;
     bool _paired = false;
     bool _statusUpdated = false;

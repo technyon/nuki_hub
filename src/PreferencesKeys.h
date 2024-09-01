@@ -51,7 +51,7 @@
 #define preference_webserver_enabled (char*)"websrvena"
 #define preference_update_from_mqtt (char*)"updMqtt"
 #define preference_disable_non_json (char*)"disnonjson"
-#define preference_official_hybrid (char*)"offHybrid"
+#define preference_official_hybrid_enabled (char*)"offHybrid"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
@@ -278,7 +278,7 @@ private:
             preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
             preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
             preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info,
-            preference_official_hybrid, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry,
+            preference_official_hybrid_enabled, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry,
             preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
             preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
             preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
@@ -297,7 +297,7 @@ private:
             preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_show_secrets,
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
-            preference_publish_authdata, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid,
+            preference_publish_authdata, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid_enabled,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
             preference_ntw_reconfigure

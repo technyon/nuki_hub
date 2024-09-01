@@ -9,6 +9,7 @@
 
 NukiOfficial::NukiOfficial(Preferences *preferences)
 {
+    offEnabled = preferences->getBool(preference_official_hybrid_enabled, false);
     _disableNonJSON = preferences->getBool(preference_disable_non_json, false);
 }
 
@@ -177,7 +178,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
         offTrigger = atoi(LockActionEvent.substring(ind1 + 1, ind2 + 1).c_str());
         offAuthId = atoi(LockActionEvent.substring(ind2 + 1, ind3 + 1).c_str());
         offCodeId = atoi(LockActionEvent.substring(ind3 + 1, ind4 + 1).c_str());
-        offContext = atoi(LockActionEvent.substring(ind4 + 1, ind5 + 1).c_str());
+//        offContext = atoi(LockActionEvent.substring(ind4 + 1, ind5 + 1).c_str());
 
         memset(&str, 0, sizeof(str));
         lockactionToString((NukiLock::LockAction)offLockAction, str);
@@ -252,4 +253,34 @@ const bool NukiOfficial::hasAuthId() const
 void NukiOfficial::clearAuthId()
 {
     _hasAuthId = false;
+}
+
+const bool NukiOfficial::getOffConnected() const
+{
+    return offConnected;
+}
+
+const bool NukiOfficial::getOffEnabled() const
+{
+    return offEnabled;
+}
+
+const uint8_t NukiOfficial::getOffDoorsensorState() const
+{
+    return offDoorsensorState;
+}
+
+const uint8_t NukiOfficial::getOffState() const
+{
+    return offState;
+}
+
+const uint8_t NukiOfficial::getOffLockAction() const
+{
+    return offLockAction;
+}
+
+const uint8_t NukiOfficial::getOffTrigger() const
+{
+    return offTrigger;
 }

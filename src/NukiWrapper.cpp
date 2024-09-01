@@ -62,7 +62,7 @@ void NukiWrapper::initialize(const bool& firstStart)
         _preferences->putBool(preference_find_best_rssi, false);
         _preferences->putBool(preference_check_updates, true);
         _preferences->putBool(preference_opener_continuous_mode, false);
-        _preferences->putBool(preference_official_hybrid, false);
+        _preferences->putBool(preference_official_hybrid_enabled, false);
         _preferences->putBool(preference_official_hybrid_actions, false);
         _preferences->putBool(preference_official_hybrid_retry, false);
         _preferences->putBool(preference_disable_non_json, false);
@@ -103,7 +103,6 @@ void NukiWrapper::initialize(const bool& firstStart)
     }
 
     _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
-    _offEnabled = _preferences->getBool(preference_official_hybrid, false);
     readSettings();
 }
 
@@ -291,7 +290,7 @@ void NukiWrapper::update()
             _nextLockAction = (NukiLock::LockAction) 0xff;
             _network->publishRetry("--");
             retryCount = 0;
-            if(!_nukiOfficial->offConnected) _statusUpdated = true; Log->println(F("Lock: updating status after action"));
+            if(!_nukiOfficial->getOffConnected()) _statusUpdated = true; Log->println(F("Lock: updating status after action"));
             _statusUpdatedTs = ts;
             if(_intervalLockstate > 10) _nextLockStateUpdateTs = ts + 10 * 1000;
         }
@@ -495,7 +494,7 @@ void NukiWrapper::updateKeyTurnerState()
 
         updateGpioOutputs();
     }
-    else if(!_nukiOfficial->offConnected && (esp_timer_get_time() / 1000) < _statusUpdatedTs + 10000)
+    else if(!_nukiOfficial->getOffConnected() && (esp_timer_get_time() / 1000) < _statusUpdatedTs + 10000)
     {
         _statusUpdated = true;
         Log->println(F("Lock: Keep updating status on intermediate lock state"));
@@ -955,7 +954,7 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
 
     if((action == NukiLock::LockAction::Lock && (int)aclPrefs[0] == 1) || (action == NukiLock::LockAction::Unlock && (int)aclPrefs[1] == 1) || (action == NukiLock::LockAction::Unlatch && (int)aclPrefs[2] == 1) || (action == NukiLock::LockAction::LockNgo && (int)aclPrefs[3] == 1) || (action == NukiLock::LockAction::LockNgoUnlatch && (int)aclPrefs[4] == 1) || (action == NukiLock::LockAction::FullLock && (int)aclPrefs[5] == 1) || (action == NukiLock::LockAction::FobAction1 && (int)aclPrefs[6] == 1) || (action == NukiLock::LockAction::FobAction2 && (int)aclPrefs[7] == 1) || (action == NukiLock::LockAction::FobAction3 && (int)aclPrefs[8] == 1))
     {
-        if(!_nukiOfficial->offConnected) nukiInst->_nextLockAction = action;
+        if(!_nukiOfficial->getOffConnected()) nukiInst->_nextLockAction = action;
         else
         {
             if(_preferences->getBool(preference_official_hybrid_actions, false))
@@ -987,7 +986,7 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
 
 bool NukiWrapper::offConnected()
 {
-    return _nukiOfficial->offConnected;
+    return _nukiOfficial->getOffConnected();
 }
 
 Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str)
@@ -1662,7 +1661,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
     switch(action)
     {
         case GpioAction::Lock:
-            if(!_nukiOfficial->offConnected) nukiInst->lock();
+            if(!_nukiOfficial->getOffConnected()) nukiInst->lock();
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
@@ -1671,7 +1670,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             }
             break;
         case GpioAction::Unlock:
-            if(!_nukiOfficial->offConnected) nukiInst->unlock();
+            if(!_nukiOfficial->getOffConnected()) nukiInst->unlock();
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
@@ -1680,7 +1679,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             }
             break;
         case GpioAction::Unlatch:
-            if(!_nukiOfficial->offConnected) nukiInst->unlatch();
+            if(!_nukiOfficial->getOffConnected()) nukiInst->unlatch();
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
@@ -1689,7 +1688,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             }
             break;
         case GpioAction::LockNgo:
-            if(!_nukiOfficial->offConnected) nukiInst->lockngo();
+            if(!_nukiOfficial->getOffConnected()) nukiInst->lockngo();
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
@@ -1698,7 +1697,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             }
             break;
         case GpioAction::LockNgoUnlatch:
-            if(!_nukiOfficial->offConnected) nukiInst->lockngounlatch();
+            if(!_nukiOfficial->getOffConnected()) nukiInst->lockngounlatch();
             else
             {
                 _nukiOfficial->offCommandExecutedTs = (esp_timer_get_time() / 1000) + 2000;
@@ -3001,9 +3000,9 @@ const bool NukiWrapper::hasKeypad() const
 
 void NukiWrapper::notify(Nuki::EventType eventType)
 {
-    if(!_nukiOfficial->offConnected)
+    if(!_nukiOfficial->getOffConnected())
     {
-        if(_offEnabled && _intervalHybridLockstate > 0 && (esp_timer_get_time() / 1000) > (_intervalHybridLockstate * 1000))
+        if(_nukiOfficial->getOffEnabled() && _intervalHybridLockstate > 0 && (esp_timer_get_time() / 1000) > (_intervalHybridLockstate * 1000))
         {
             Log->println("OffKeyTurnerStatusUpdated");
             _statusUpdated = true;
