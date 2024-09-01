@@ -461,7 +461,7 @@ void setup()
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
 
-    nukiOfficial = new NukiOfficial();
+    nukiOfficial = new NukiOfficial(preferences);
 
     network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
     network->initialize();

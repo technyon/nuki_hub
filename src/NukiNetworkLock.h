@@ -13,6 +13,7 @@
 #include "QueryCommand.h"
 #include "LockActionResult.h"
 #include "NukiOfficial.h"
+#include "NukiPublisher.h"
 
 #define LOCK_LOG_JSON_BUFFER_SIZE 2048
 
@@ -68,11 +69,10 @@ public:
     bool publishString(const char* topic, const std::string& value, bool retain);
     bool publishString(const char* topic, const char* value, bool retain);
 
+    const uint32_t getAuthId() const;
+
     bool reconnected();
     uint8_t queryCommands();
-
-    uint32_t _authId = 0;
-
 
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
@@ -88,7 +88,8 @@ private:
 
     void buildMqttPath(const char* path, char* outPath);
 
-    NukiNetwork* _network;
+    NukiNetwork* _network = nullptr;
+    NukiPublisher* _nukiPublisher;
     NukiOfficial* _nukiOfficial = nullptr;
     Preferences* _preferences;
 
@@ -107,6 +108,7 @@ private:
     int _keypadCommandEnabled = 1;
     uint8_t _queryCommands = 0;
     uint32_t _lastRollingLog = 0;
+    uint32_t _authId = 0;
 
     char _nukiName[33];
     char _authName[33];

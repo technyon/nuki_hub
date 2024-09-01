@@ -303,7 +303,7 @@ void NukiWrapper::update()
             _nextLockAction = (NukiLock::LockAction) 0xff;
         }
     }
-    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
+    if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         Log->println("Updating Lock state based on status, timer or query");
         _statusUpdated = false;
@@ -370,6 +370,10 @@ void NukiWrapper::update()
             _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
             updateKeypad(false);
         }
+    }
+    if(_nukiOfficial->hasOffStateToPublish())
+    {
+        _network->publishState(_nukiOfficial->getOffStateToPublish());
     }
     if(_clearAuthData)
     {
@@ -1083,155 +1087,7 @@ Nuki::BatteryType NukiWrapper::batteryTypeToEnum(const char* str)
 
 void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
 {
-    char str[50];
-    bool publishBatteryJson = false;
-    memset(&str, 0, sizeof(str));
-
-    Log->println("Official Nuki change recieved");
-    Log->print(F("Topic: "));
-    Log->println(topic);
-    Log->print(F("Value: "));
-    Log->println(value);
-
-    if(strcmp(topic, mqtt_topic_official_connected) == 0)
-    {
-        Log->print(F("Connected: "));
-        Log->println((strcmp(value, "true") == 0 ? 1 : 0));
-        _nukiOfficial->offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
-        _network->publishBool(mqtt_hybrid_state, _nukiOfficial->offConnected, true);
-
-        if(!_nukiOfficial->offConnected) _nextHybridLockStateUpdateTs = (esp_timer_get_time() / 1000) + _intervalHybridLockstate * 1000;
-        else _nextHybridLockStateUpdateTs = 0;
-    }
-    else if(strcmp(topic, mqtt_topic_official_state) == 0)
-    {
-        _nukiOfficial->offState = atoi(value);
-        _statusUpdated = true;
-        Log->println(F("Lock: Updating status on Hybrid state change"));
-        _network->publishStatusUpdated(_statusUpdated);
-        NukiLock::lockstateToString((NukiLock::LockState)_nukiOfficial->offState, str);
-        _network->publishString(mqtt_topic_lock_state, str, true);
-
-        Log->print(F("Lockstate: "));
-        Log->println(str);
-
-        _network->publishState((NukiLock::LockState)_nukiOfficial->offState);
-    }
-    else if(strcmp(topic, mqtt_topic_official_doorsensorState) == 0)
-    {
-        _nukiOfficial->offDoorsensorState = atoi(value);
-        _statusUpdated = true;
-        Log->println(F("Lock: Updating status on Hybrid door sensor state change"));
-        _network->publishStatusUpdated(_statusUpdated);
-        NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)_nukiOfficial->offDoorsensorState, str);
-
-        Log->print(F("Doorsensor state: "));
-        Log->println(str);
-
-        _network->publishString(mqtt_topic_lock_door_sensor_state, str, true);
-    }
-    else if(strcmp(topic, mqtt_topic_official_batteryCritical) == 0)
-    {
-        _nukiOfficial->offCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-
-        Log->print(F("Battery critical: "));
-        Log->println(_nukiOfficial->offCritical);
-
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_critical, _nukiOfficial->offCritical, true);
-        publishBatteryJson = true;
-    }
-    else if(strcmp(topic, mqtt_topic_official_batteryCharging) == 0)
-    {
-        _nukiOfficial->offCharging = (strcmp(value, "true") == 0 ? 1 : 0);
-
-        Log->print(F("Battery charging: "));
-        Log->println(_nukiOfficial->offCharging);
-
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_charging, _nukiOfficial->offCharging, true);
-        publishBatteryJson = true;
-    }
-    else if(strcmp(topic, mqtt_topic_official_batteryChargeState) == 0)
-    {
-        _nukiOfficial->offChargeState = atoi(value);
-
-        Log->print(F("Battery level: "));
-        Log->println(_nukiOfficial->offChargeState);
-
-        if(!_disableNonJSON) _network->publishInt(mqtt_topic_battery_level, _nukiOfficial->offChargeState, true);
-        publishBatteryJson = true;
-    }
-    else if(strcmp(topic, mqtt_topic_official_keypadBatteryCritical) == 0)
-    {
-        _nukiOfficial->offKeypadCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_keypad_critical, _nukiOfficial->offKeypadCritical, true);
-        publishBatteryJson = true;
-    }
-    else if(strcmp(topic, mqtt_topic_official_doorsensorBatteryCritical) == 0)
-    {
-        _nukiOfficial->offDoorsensorCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_disableNonJSON) _network->publishBool(mqtt_topic_battery_doorsensor_critical, _nukiOfficial->offDoorsensorCritical, true);
-        publishBatteryJson = true;
-    }
-    else if(strcmp(topic, mqtt_topic_official_commandResponse) == 0)
-    {
-        _nukiOfficial->offCommandResponse = atoi(value);
-        if(_nukiOfficial->offCommandResponse == 0)
-        {
-            _nukiOfficial->offCommandExecutedTs = 0;
-        }
-        char resultStr[15] = {0};
-        NukiLock::cmdResultToString((Nuki::CmdResult)_nukiOfficial->offCommandResponse, resultStr);
-        _network->publishCommandResult(resultStr);
-    }
-    else if(strcmp(topic, mqtt_topic_official_lockActionEvent) == 0)
-    {
-        _nukiOfficial->offCommandExecutedTs = 0;
-        _nukiOfficial->offLockActionEvent = (char*)value;
-        String LockActionEvent = _nukiOfficial->offLockActionEvent;
-        const int ind1 = LockActionEvent.indexOf(',');
-        const int ind2 = LockActionEvent.indexOf(',', ind1+1);
-        const int ind3 = LockActionEvent.indexOf(',', ind2+1);
-        const int ind4 = LockActionEvent.indexOf(',', ind3+1);
-        const int ind5 = LockActionEvent.indexOf(',', ind4+1);
-
-        _nukiOfficial->offLockAction = atoi(LockActionEvent.substring(0, ind1).c_str());
-        _nukiOfficial->offTrigger = atoi(LockActionEvent.substring(ind1 + 1, ind2 + 1).c_str());
-        _nukiOfficial->offAuthId = atoi(LockActionEvent.substring(ind2 + 1, ind3 + 1).c_str());
-        _nukiOfficial->offCodeId = atoi(LockActionEvent.substring(ind3 + 1, ind4 + 1).c_str());
-        _nukiOfficial->offContext = atoi(LockActionEvent.substring(ind4 + 1, ind5 + 1).c_str());
-
-        memset(&str, 0, sizeof(str));
-        lockactionToString((NukiLock::LockAction)_nukiOfficial->offLockAction, str);
-        _network->publishString(mqtt_topic_lock_last_lock_action, str, true);
-
-        memset(&str, 0, sizeof(str));
-        triggerToString((NukiLock::Trigger)_nukiOfficial->offTrigger, str);
-        _network->publishString(mqtt_topic_lock_trigger, str, true);
-
-        if(_nukiOfficial->offAuthId > 0 || _nukiOfficial->offCodeId > 0)
-        {
-            if(_nukiOfficial->offCodeId > 0) _network->_authId = _nukiOfficial->offCodeId;
-            else _network->_authId = _nukiOfficial->offAuthId;
-
-            /*
-            _network->_authName = RETRIEVE FROM VECTOR AFTER AUTHORIZATION ENTRIES ARE IMPLEMENTED;
-            _nukiOfficial->_offContext = BASE ON CONTEXT OF TRIGGER AND PUBLISH TO MQTT;
-            */
-        }
-    }
-
-    if(publishBatteryJson)
-    {
-        JsonDocument jsonBattery;
-        char _resbuf[2048];
-        jsonBattery["critical"] = _nukiOfficial->offCritical ? "1" : "0";
-        jsonBattery["charging"] = _nukiOfficial->offCharging ? "1" : "0";
-        jsonBattery["level"] = _nukiOfficial->offChargeState;
-        jsonBattery["keypadCritical"] = _nukiOfficial->offKeypadCritical ? "1" : "0";
-        jsonBattery["doorSensorCritical"] = _nukiOfficial->offDoorsensorCritical ? "1" : "0";
-        serializeJson(jsonBattery, _resbuf, sizeof(_resbuf));
-        _network->publishString(mqtt_topic_battery_basic_json, _resbuf, true);
-    }
+    _nukiOfficial->onOfficialUpdateReceived(topic, value);
 }
 
 void NukiWrapper::onConfigUpdateReceived(const char *value)
@@ -3155,7 +3011,6 @@ void NukiWrapper::notify(Nuki::EventType eventType)
         {
             Log->println("OffKeyTurnerStatusUpdated");
             _statusUpdated = true;
-            _nextHybridLockStateUpdateTs = (esp_timer_get_time() / 1000) + _intervalHybridLockstate * 1000;
         }
         else
         {
