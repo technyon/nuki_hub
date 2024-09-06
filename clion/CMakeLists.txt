@@ -3,6 +3,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(nukihub)
 
 add_compile_definitions(CONFIG_IDF_TARGET_ESP32)
+add_compile_definitions(NUKI_64BIT_TIME)
 
 set(SRCFILES
         ../src/Config.h
