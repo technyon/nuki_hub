@@ -1127,10 +1127,10 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
                              String("~") + mqtt_topic_keypad_json_action,
                              { { (char*)"json_attr_t", (char*)basePathPrefixChr },
                                { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_nukiOfficial->_off", (char*)disCommand.c_str() },
+                               { (char*)"pl_off", (char*)disCommand.c_str() },
                                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
                                { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_nukiOfficial->_off", (char*)"0" }});
+                               { (char*)"stat_off", (char*)"0" }});
         }
 
         ++index;
@@ -1335,10 +1335,10 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
                              String("~") + mqtt_topic_timecontrol_action,
                              { { (char*)"json_attr_t", (char*)basePathPrefixChr },
                                { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_nukiOfficial->_off", (char*)disCommand.c_str() },
+                               { (char*)"pl_off", (char*)disCommand.c_str() },
                                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
                                { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_nukiOfficial->_off", (char*)"0" }});
+                               { (char*)"stat_off", (char*)"0" }});
         }
 
         ++index;
@@ -1482,10 +1482,10 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
                              String("~") + mqtt_topic_auth_action,
                              { { (char*)"json_attr_t", (char*)basePathPrefixChr },
                                { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_nukiOfficial->_off", (char*)disCommand.c_str() },
+                               { (char*)"pl_off", (char*)disCommand.c_str() },
                                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
                                { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_nukiOfficial->_off", (char*)"0" }});
+                               { (char*)"stat_off", (char*)"0" }});
         }
 
         ++index;
