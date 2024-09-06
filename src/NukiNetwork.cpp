@@ -598,13 +598,16 @@ void NukiNetwork::mqtt_event_handler(void *handler_args, esp_event_base_t base, 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
+        Log->println("MQTT Connected");
         _mqttClientInitiated = true;
         _mqttConnected = true;
         reconnect();
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED");
+        Log->println("MQTT Disconnected");
         _mqttConnected = false;
+        reconnect();
         break;
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(MQTT_TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
@@ -637,7 +640,6 @@ bool NukiNetwork::reconnect()
 {
     if (_mqttConnected)
     {
-        Log->println(F("MQTT connected"));
         _mqttConnectedTs = millis();
         _mqttConnectionState = 1;
         delay(100);

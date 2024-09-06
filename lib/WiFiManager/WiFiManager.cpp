@@ -1129,7 +1129,7 @@ bool WiFiManager::wifiConnectNew(String ssid, String pass,bool connect){
     DEBUG_WM(F("find best RSSI: TRUE"));
     #endif
     if (!_numNetworks)
-      WiFi_scanNetworks(false, _enableCaptivePortal);  // scan in case this gets called before any scans
+      WiFi_scanNetworks(false, false);  // scan in case this gets called before any scans
 
     int n = _numNetworks;
     if (n == 0) {
@@ -1218,7 +1218,7 @@ bool WiFiManager::wifiConnectDefault(){
     DEBUG_WM(F("find best RSSI: TRUE"));
     #endif
     if (!_numNetworks)
-      WiFi_scanNetworks(false, _enableCaptivePortal);  // scan in case this gets called before any scans
+      WiFi_scanNetworks(false, false);  // scan in case this gets called before any scans
 
     int n = _numNetworks;
     if (n == 0) {

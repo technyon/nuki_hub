@@ -3234,7 +3234,6 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
 {
-    Log->println("INFO HTML");
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
     PsychicStreamResponse response(request, "text/plain");
