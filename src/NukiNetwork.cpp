@@ -2990,7 +2990,7 @@ void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, co
                            { (char*)"cmd_tpl", (char*)"{ \"electricStrikeDelay\": \"{{ value }}\" }" },
                            { (char*)"val_tpl", (char*)"{{value_json.electricStrikeDelay}}" },
                            { (char*)"min", (char*)"0" },
-                           { (char*)"min", (char*)"30000" },
+                           { (char*)"max", (char*)"30000" },
                            { (char*)"step", (char*)"3000" }});
     }
     else
@@ -3045,7 +3045,7 @@ void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, co
                            { (char*)"cmd_tpl", (char*)"{ \"electricStrikeDuration\": \"{{ value }}\" }" },
                            { (char*)"val_tpl", (char*)"{{value_json.electricStrikeDuration}}" },
                            { (char*)"min", (char*)"1000" },
-                           { (char*)"min", (char*)"30000" },
+                           { (char*)"max", (char*)"30000" },
                            { (char*)"step", (char*)"3000" }});
     }
     else
@@ -3100,7 +3100,7 @@ void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, co
                            { (char*)"cmd_tpl", (char*)"{ \"rtoTimeout\": \"{{ value }}\" }" },
                            { (char*)"val_tpl", (char*)"{{value_json.rtoTimeout}}" },
                            { (char*)"min", (char*)"5" },
-                           { (char*)"min", (char*)"60" }});
+                           { (char*)"max", (char*)"60" }});
     }
     else
     {
@@ -3147,7 +3147,7 @@ void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, co
                            { (char*)"cmd_tpl", (char*)"{ \"doorbellSuppressionDuration\": \"{{ value }}\" }" },
                            { (char*)"val_tpl", (char*)"{{value_json.doorbellSuppressionDuration}}" },
                            { (char*)"min", (char*)"500" },
-                           { (char*)"min", (char*)"10000" },
+                           { (char*)"max", (char*)"10000" },
                            { (char*)"step", (char*)"1000" }});
     }
     else
