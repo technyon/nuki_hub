@@ -293,7 +293,7 @@ void NukiNetwork::initialize()
     });
 
     _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
-    _offEnabled = _preferences->getBool(preference_official_hybrid, false);
+    _offEnabled = _preferences->getBool(preference_official_hybrid_enabled, false);
     readSettings();
 }
 

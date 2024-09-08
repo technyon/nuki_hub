@@ -12,16 +12,19 @@
 #include "NukiNetwork.h"
 #include "QueryCommand.h"
 #include "LockActionResult.h"
+#include "NukiOfficial.h"
+#include "NukiPublisher.h"
 
 #define LOCK_LOG_JSON_BUFFER_SIZE 2048
 
 class NukiNetworkLock : public MqttReceiver
 {
 public:
-    explicit NukiNetworkLock(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize);
+    explicit NukiNetworkLock(NukiNetwork* network, NukiOfficial* nukiOfficial, Preferences* preferences, char* buffer, size_t bufferSize);
     virtual ~NukiNetworkLock();
 
     void initialize();
+    void update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
     void publishState(NukiLock::LockState lockState);
@@ -67,55 +70,38 @@ public:
     bool publishString(const char* topic, const std::string& value, bool retain);
     bool publishString(const char* topic, const char* value, bool retain);
 
+    const uint32_t getAuthId() const;
+
     bool reconnected();
     uint8_t queryCommands();
-    //uint8_t _offMode = 0;
-    uint8_t _offState = 0;
-    bool _offCritical = false;
-    uint8_t _offChargeState = 100;
-    bool _offCharging = false;
-    bool _offKeypadCritical = false;
-    uint8_t _offDoorsensorState = 0;
-    bool _offDoorsensorCritical = false;
-    bool _offConnected = false;
-    uint8_t _offCommandResponse = 0;
-    char* _offLockActionEvent;
-    uint8_t _offLockAction = 0;
-    uint8_t _offTrigger = 0;
-    uint32_t _offAuthId = 0;
-    uint32_t _offCodeId = 0;
-    uint8_t _offContext = 0;
-    uint32_t _authId = 0;
-    int64_t _offCommandExecutedTs = 0;
-    NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
-
 
 private:
-    bool comparePrefixedPath(const char* fullPath, const char* subPath, bool offPath = false);
+    bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
     void homeKitStatusToString(const int hkstatus, char* str);
     void fobActionToString(const int fobact, char* str);
 
+    void (*_officialUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
+
     String concat(String a, String b);
 
-    void buildMqttPath(const char* path, char* outPath, bool offPath = false);
+    void buildMqttPath(const char* path, char* outPath);
 
-    NukiNetwork* _network;
-    Preferences* _preferences;
+    NukiNetwork* _network = nullptr;
+    NukiPublisher* _nukiPublisher = nullptr;
+    NukiOfficial* _nukiOfficial = nullptr;
+    Preferences* _preferences = nullptr;
 
     std::map<uint32_t, String> _authEntries;
-    std::vector<char*> _offTopics;
     char _mqttPath[181] = {0};
-    char _offMqttPath[181] = {0};
 
     bool _firstTunerStatePublish = true;
     int64_t _lastMaintenanceTs = 0;
     bool _haEnabled = false;
     bool _reconnected = false;
     bool _disableNonJSON = false;
-    bool _offEnabled = false;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";
@@ -123,6 +109,7 @@ private:
     int _keypadCommandEnabled = 1;
     uint8_t _queryCommands = 0;
     uint32_t _lastRollingLog = 0;
+    uint32_t _authId = 0;
 
     char _nukiName[33];
     char _authName[33];
@@ -131,7 +118,6 @@ private:
     size_t _bufferSize;
 
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
-    void (*_officialUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* value) = nullptr;
     void (*_keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled) = nullptr;
     void (*_keypadJsonCommandReceivedReceivedCallback)(const char* value) = nullptr;

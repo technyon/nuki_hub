@@ -8,11 +8,12 @@
 #include "Gpio.h"
 #include "LockActionResult.h"
 #include "NukiDeviceId.h"
+#include "NukiOfficial.h"
 
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, Gpio* gpio, Preferences* preferences);
+    NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences);
     virtual ~NukiWrapper();
 
     void initialize(const bool& firstStart);
@@ -56,12 +57,14 @@ private:
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void onAuthCommandReceivedCallback(const char* value);
     static void gpioActionCallback(const GpioAction& action, const int& pin);
+    LockActionResult onLockActionReceived(const char* value);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
+    void onGpioActionReceived(const GpioAction& action, const int& pin);
 
     void updateKeyTurnerState();
     void updateBatteryState();
@@ -93,6 +96,7 @@ private:
     NukiLock::NukiLock _nukiLock;
     BleScanner::Scanner* _bleScanner = nullptr;
     NukiNetworkLock* _network = nullptr;
+    NukiOfficial* _nukiOfficial = nullptr;
     Gpio* _gpio = nullptr;
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
@@ -113,13 +117,14 @@ private:
     NukiLock::BatteryReport _batteryReport;
     NukiLock::BatteryReport _lastBatteryReport;
 
+    NukiLock::LockAction _offCommand = (NukiLock::LockAction)0xff;
+
     NukiLock::Config _nukiConfig = {0};
     NukiLock::AdvancedConfig _nukiAdvancedConfig = {0};
     bool _nukiConfigValid = false;
     bool _nukiAdvancedConfigValid = false;
     bool _hassEnabled = false;
     bool _hassSetupCompleted = false;
-    bool _offEnabled = false;
     bool _disableNonJSON = false;
     bool _paired = false;
     bool _statusUpdated = false;
@@ -136,7 +141,6 @@ private:
     int64_t _statusUpdatedTs = 0;
     int64_t _nextRetryTs = 0;
     int64_t _nextLockStateUpdateTs = 0;
-    int64_t _nextHybridLockStateUpdateTs = 0;
     int64_t _nextBatteryReportTs = 0;
     int64_t _nextConfigUpdateTs = 0;
     int64_t _waitAuthLogUpdateTs = 0;
