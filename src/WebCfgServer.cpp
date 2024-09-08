@@ -2805,7 +2805,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(&response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
     printCheckBox(&response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
-    printCheckBox(&response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid), "");
+    printCheckBox(&response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid_enabled), "");
     printCheckBox(&response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
     printInputField(&response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
     // printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), ""); // NOT IMPLEMENTED (YET?)
@@ -3494,7 +3494,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
         response.print("\nRegister as: ");
         response.print(_preferences->getBool(preference_register_as_app, false) ? "App" : "Bridge");
         response.print("\n\n------------ HYBRID MODE ------------");
-        if(!_preferences->getBool(preference_official_hybrid, false)) response.print("\nHybrid mode enabled: No");
+        if(!_preferences->getBool(preference_official_hybrid_enabled, false)) response.print("\nHybrid mode enabled: No");
         else
         {
             response.print("\nHybrid mode enabled: Yes");
