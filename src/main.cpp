@@ -32,6 +32,7 @@ NukiNetworkLock* networkLock = nullptr;
 NukiNetworkOpener* networkOpener = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
 NukiWrapper* nuki = nullptr;
+NukiOfficial* nukiOfficial = nullptr;
 NukiOpenerWrapper* nukiOpener = nullptr;
 NukiDeviceId* deviceIdLock = nullptr;
 NukiDeviceId* deviceIdOpener = nullptr;
@@ -139,16 +140,21 @@ void networkTask(void *pvParameters)
 
         bool connected = network->update();
 
-        #ifndef NUKI_HUB_UPDATER
-        #ifdef DEBUG_NUKIHUB
+#ifndef NUKI_HUB_UPDATER
+        if(connected && networkLock != nullptr)
+        {
+            networkLock->update();
+        }
+
+#ifdef DEBUG_NUKIHUB
         if(connected && reroute)
         {
             reroute = false;
             setReroute();
         }
-        #endif
+#endif
         if(connected && openerEnabled) networkOpener->update();
-        #endif
+#endif
 
         if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
         {
@@ -466,10 +472,12 @@ void setup()
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
 
+    nukiOfficial = new NukiOfficial(preferences);
+
     network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
     network->initialize();
 
-    networkLock = new NukiNetworkLock(network, preferences, CharBuffer::get(), buffer_size);
+    networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
     networkLock->initialize();
 
     if(openerEnabled)
@@ -481,7 +489,7 @@ void setup()
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
     {
-        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, gpio, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences);
         nuki->initialize(firstStart);
     }
 

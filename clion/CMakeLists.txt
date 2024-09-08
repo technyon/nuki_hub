@@ -3,6 +3,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(nukihub)
 
 add_compile_definitions(CONFIG_IDF_TARGET_ESP32)
+add_compile_definitions(NUKI_64BIT_TIME)
 
 set(SRCFILES
         ../src/Config.h
@@ -55,6 +56,8 @@ set(SRCFILES
         ../src/util/NetworkUtil.cpp
         ../src/enums/NetworkDeviceType.h
         ../src/util/NetworkDeviceInstantiator.cpp
+        ../src/NukiOfficial.cpp
+        ../src/NukiPublisher.cpp
 )
 
 file(GLOB_RECURSE SRCFILESREC

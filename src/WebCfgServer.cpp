@@ -1254,9 +1254,9 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
         }
         else if(key == "OFFHYBRID")
         {
-            if(_preferences->getBool(preference_official_hybrid, false) != (value == "1"))
+            if(_preferences->getBool(preference_official_hybrid_enabled, false) != (value == "1"))
             {
-                _preferences->putBool(preference_official_hybrid, (value == "1"));
+                _preferences->putBool(preference_official_hybrid_enabled, (value == "1"));
                 if((value == "1")) _preferences->putBool(preference_register_as_app, true);
                 Log->print(F("Setting changed: "));
                 Log->println(key);
@@ -2626,7 +2626,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
             String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
             printParameter(&response, "Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
 
-            if(_preferences->getBool(preference_official_hybrid, false))
+            if(_preferences->getBool(preference_official_hybrid_enabled, false))
             {
                 String offConnected = _nuki->offConnected() ? "Yes": "No";
                 printParameter(&response, "Nuki Lock hybrid mode connected", offConnected.c_str(), "", "lockHybrid");
@@ -2811,7 +2811,6 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     // printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), ""); // NOT IMPLEMENTED (YET?)
     response.print("</table>");
     response.print("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
-
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
     printCheckBox(&response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");

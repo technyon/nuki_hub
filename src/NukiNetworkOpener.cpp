@@ -12,6 +12,8 @@ NukiNetworkOpener::NukiNetworkOpener(NukiNetwork* network, Preferences* preferen
           _buffer(buffer),
           _bufferSize(bufferSize)
 {
+    _nukiPublisher = new NukiPublisher(network, _mqttPath);
+
     memset(_authName, 0, sizeof(_authName));
     _authName[0] = '\0';
 
@@ -1380,22 +1382,22 @@ void NukiNetworkOpener::setAuthCommandReceivedCallback(void (*authCommandReceive
 
 void NukiNetworkOpener::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)
 {
-    _network->publishFloat(_mqttPath, topic, value, retain, precision);
+    _nukiPublisher->publishFloat(topic, value, retain, precision);
 }
 
 void NukiNetworkOpener::publishInt(const char *topic, const int value, bool retain)
 {
-    _network->publishInt(_mqttPath, topic, value, retain);
+    _nukiPublisher->publishInt(topic, value, retain);
 }
 
 void NukiNetworkOpener::publishUInt(const char *topic, const unsigned int value, bool retain)
 {
-    _network->publishUInt(_mqttPath, topic, value, retain);
+    _nukiPublisher->publishUInt(topic, value, retain);
 }
 
 void NukiNetworkOpener::publishBool(const char *topic, const bool value, bool retain)
 {
-    _network->publishBool(_mqttPath, topic, value, retain);
+    _nukiPublisher->publishBool(topic, value, retain);
 }
 
 void NukiNetworkOpener::publishString(const char *topic, const String &value, bool retain)
@@ -1416,7 +1418,7 @@ void NukiNetworkOpener::publishString(const char *topic, const std::string &valu
 
 void NukiNetworkOpener::publishString(const char* topic, const char* value, bool retain)
 {
-    _network->publishString(_mqttPath, topic, value, retain);
+    _nukiPublisher->publishString(topic, value, retain);
 }
 
 void NukiNetworkOpener::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)

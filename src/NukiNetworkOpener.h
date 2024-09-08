@@ -76,9 +76,10 @@ private:
 
     String concat(String a, String b);
 
-    Preferences* _preferences;
+    Preferences* _preferences = nullptr;
 
     NukiNetwork* _network = nullptr;
+    NukiPublisher* _nukiPublisher = nullptr;
 
     std::map<uint32_t, String> _authEntries;
     char _mqttPath[181] = {0};
