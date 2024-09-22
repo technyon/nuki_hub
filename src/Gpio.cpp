@@ -9,9 +9,12 @@
 #include "networkDevices/LAN8720Definitions.h"
 #include "networkDevices/DM9051Definitions.h"
 #include "networkDevices/W5500Definitions.h"
+#include <limits.h>
 
 Gpio* Gpio::_inst = nullptr;
 int64_t Gpio::_debounceTs = 0;
+uint64_t Gpio::_pinStates = std::numeric_limits<uint64_t>::max();
+int64_t Gpio::_triggerTimestamps[(int)GpioAction::END];
 const uint Gpio::_debounceTime = GPIO_DEBOUNCE_TIME;
 
 Gpio::Gpio(Preferences* preferences)
@@ -30,6 +33,9 @@ Gpio::Gpio(Preferences* preferences)
 
 void Gpio::init()
 {
+    _pinStates = 0;
+    memset(_triggerTimestamps, 0, sizeof(_triggerTimestamps));
+
     for(const auto& entry : _inst->_pinConfiguration)
     {
         const auto it = std::find(_inst->availablePins().begin(), _inst->availablePins().end(), entry.pin);
@@ -43,47 +49,47 @@ void Gpio::init()
         {
             case PinRole::InputLock:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrLock, FALLING);
+                attachInterrupt(entry.pin, isrLock, CHANGE);
                 break;
             case PinRole::InputUnlock:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrUnlock, FALLING);
+                attachInterrupt(entry.pin, isrUnlock, CHANGE);
                 break;
             case PinRole::InputUnlatch:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrUnlatch, FALLING);
+                attachInterrupt(entry.pin, isrUnlatch, CHANGE);
                 break;
             case PinRole::InputLockNgo:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrLockNgo, FALLING);
+                attachInterrupt(entry.pin, isrLockNgo, CHANGE);
                 break;
             case PinRole::InputLockNgoUnlatch:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrLockNgoUnlatch, FALLING);
+                attachInterrupt(entry.pin, isrLockNgoUnlatch, CHANGE);
                 break;
             case PinRole::InputElectricStrikeActuation:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrElectricStrikeActuation, FALLING);
+                attachInterrupt(entry.pin, isrElectricStrikeActuation, CHANGE);
                 break;
             case PinRole::InputActivateRTO:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrActivateRTO, FALLING);
+                attachInterrupt(entry.pin, isrActivateRTO, CHANGE);
                 break;
             case PinRole::InputActivateCM:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrActivateCM, FALLING);
+                attachInterrupt(entry.pin, isrActivateCM, CHANGE);
                 break;
             case PinRole::InputDeactivateRtoCm:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrDeactivateRtoCm, FALLING);
+                attachInterrupt(entry.pin, isrDeactivateRtoCm, CHANGE);
                 break;
             case PinRole::InputDeactivateRTO:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrDeactivateRTO, FALLING);
+                attachInterrupt(entry.pin, isrDeactivateRTO, CHANGE);
                 break;
             case PinRole::InputDeactivateCM:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrDeactivateCM, FALLING);
+                attachInterrupt(entry.pin, isrDeactivateCM, CHANGE);
                 break;
             case PinRole::OutputHighLocked:
             case PinRole::OutputHighUnlocked:
@@ -521,5 +527,22 @@ void Gpio::migrateObsoleteSetting()
     Log->println("Migrated gpio control setting");
     delay(200);
     restartEsp(RestartReason::GpioConfigurationUpdated);
+}
+
+bool Gpio::getLastPinState(const PinEntry &pinEntry)
+{
+    return (_pinStates & (1 << pinEntry.pin)) > 0 ? HIGH : LOW;
+}
+
+void Gpio::setLastPinState(const PinEntry &pinEntry, int state)
+{
+    if(state == HIGH)
+    {
+        _pinStates = _pinStates | (1 << pinEntry.pin);
+    }
+    else
+    {
+        _pinStates = _pinStates & ~(1 << pinEntry.pin);
+    }
 }
 
