@@ -3133,8 +3133,14 @@ void WebCfgServer::buildGpioConfigHtml(AsyncWebServerRequest *request)
         String pinStr = String(pin);
         String pinDesc = "Gpio " + pinStr;
         printDropDown(pinStr.c_str(), pinDesc.c_str(), "", options, "gpioselect");
-        if(std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end()) gpiopreselects.concat("gpio[" + pinStr + "] = '21';");
-        else gpiopreselects.concat("gpio[" + pinStr + "] = '" + getPreselectionForGpio(pin) + "';");
+        if(std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end())
+        {
+            gpiopreselects.concat("gpio[" + pinStr + "] = '21';");
+        }
+        else
+        {
+            gpiopreselects.concat("gpio[" + pinStr + "] = '" + getPreselectionForGpio(pin) + "';");
+        }
     }
 
     _response.concat("</table>");
@@ -4030,8 +4036,14 @@ void WebCfgServer::printDropDown(const char *token, const char *description, con
     _response.concat(description);
     _response.concat("</td><td>");
 
-    if(className.length() > 0) _response.concat("<select class=\"" + className + "\" name=\"");
-    else _response.concat("<select name=\"");
+    if(className.length() > 0)
+    {
+        _response.concat("<select class=\"" + className + "\" name=\"");
+    }
+    else
+    {
+        _response.concat("<select name=\"");
+    }
     _response.concat(token);
     _response.concat("\">");
 
