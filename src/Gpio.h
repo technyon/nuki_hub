@@ -82,6 +82,7 @@ private:
     static void inputCallback(const int & pin);
     static void setLastPinState(const PinEntry& pinEntry, int state);
     static bool getLastPinState(const PinEntry& pinEntry);
+    static bool isTriggered(const PinEntry& pinEntry, int state);
 
     #if defined(CONFIG_IDF_TARGET_ESP32C3)
     //Based on https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
@@ -97,7 +98,7 @@ private:
     const std::vector<uint8_t> _availablePins = { 0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 22, 23, 24, 25, 26, 27 };
     #else
     //Based on https://randomnerdtutorials.com/esp32-pinout-reference-gpios/
-    const std::vector<uint8_t> _availablePins[] = { 2, 4, 5, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 32, 33 };
+    const std::vector<uint8_t> _availablePins = { 2, 4, 5, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 32, 33 };
     #endif
     const std::vector<PinRole> _allRoles =
         {
@@ -126,6 +127,7 @@ private:
 
     std::vector<PinEntry> _pinConfiguration;
     static const uint _debounceTime;
+    static const uint _minTriggerTime;
 
     static void IRAM_ATTR isrLock();
     static void IRAM_ATTR isrUnlock();
@@ -145,7 +147,7 @@ private:
     static int64_t _debounceTs;
 
     static uint64_t _pinStates;
-    static int64_t _triggerTimestamps[_availablePins.size()];
+    static std::vector<int64_t> _triggerTimestamps;
 
     Preferences* _preferences = nullptr;
 };
