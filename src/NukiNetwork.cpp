@@ -930,7 +930,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
     json["name"] = nullptr;
     json["unique_id"] = String(uidString) + "_lock";
     json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
-    json["avty"]["t"] = availabilityTopic;
+    json["avty"][0]["t"] = availabilityTopic;
     json["pl_lock"] = lockAction;
     json["pl_unlk"] = unlockAction;
 
@@ -939,7 +939,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
     if((int)aclPrefs[2]) json["pl_open"] = openAction;
 
     json["stat_t"] = String("~") + mqtt_topic_lock_ha_state;
-    json["stat_jammed"] = "jammed";
+    json["stat_jam"] = "jammed";
     json["stat_locked"] = "locked";
     json["stat_locking"] = "locking";
     json["stat_unlocked"] = "unlocked";

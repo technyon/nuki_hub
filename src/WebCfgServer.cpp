@@ -3190,9 +3190,15 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request)
     {
         String pinStr = String(pin);
         String pinDesc = "Gpio " + pinStr;
-        printDropDown(&response, pinStr.c_str(), pinDesc.c_str(), "", options, "gpioselect");
-        if(std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end()) gpiopreselects.concat("gpio[" + pinStr + "] = '21';");
-        else gpiopreselects.concat("gpio[" + pinStr + "] = '" + getPreselectionForGpio(pin) + "';");
+        printDropDown(pinStr.c_str(), pinDesc.c_str(), "", options, "gpioselect");
+        if(std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end())
+        {
+            gpiopreselects.concat("gpio[" + pinStr + "] = '21';");
+        }
+        else
+        {
+            gpiopreselects.concat("gpio[" + pinStr + "] = '" + getPreselectionForGpio(pin) + "';");
+        }
     }
 
     response.print("</table>");
@@ -4094,11 +4100,16 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
     response->print("<tr><td>");
     response->print(description);
     response->print("</td><td>");
-
-    if(className.length() > 0) response->print("<select class=\"" + className + "\" name=\"");
-    else response->print("<select name=\"");
-    response->print(token);
-    response->print("\">");
+    if(className.length() > 0)
+    {
+        _response.concat("<select class=\"" + className + "\" name=\"");
+    }
+    else
+    {
+        _response.concat("<select name=\"");
+    }
+    _response.concat(token);
+    _response.concat("\">");
 
     for(const auto& option : options)
     {
