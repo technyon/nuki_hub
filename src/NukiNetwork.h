@@ -22,6 +22,7 @@ class NukiNetwork
 {
 public:
     void initialize();
+    void initializeGpio();
     void readSettings();
     bool update();
     void reconfigureDevice();

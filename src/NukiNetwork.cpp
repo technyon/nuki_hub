@@ -251,6 +251,15 @@ void NukiNetwork::initialize()
     _device->mqttSetCleanSession(MQTT_CLEAN_SESSIONS);
     _device->mqttSetKeepAlive(MQTT_KEEP_ALIVE);
 
+    readSettings();
+
+    initializeGpio();
+}
+
+
+void NukiNetwork::initializeGpio()
+{
+
     char gpioPath[250];
     bool rebGpio = rebuildGpio();
 
@@ -288,17 +297,15 @@ void NukiNetwork::initialize()
         }
     }
     _gpio->addCallback([this](const GpioAction& action, const int& pin)
-    {
-        gpioActionCallback(action, pin);
-    });
-
-    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
-    _offEnabled = _preferences->getBool(preference_official_hybrid_enabled, false);
-    readSettings();
+                       {
+                           gpioActionCallback(action, pin);
+                       });
 }
 
 void NukiNetwork::readSettings()
 {
+    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+    _offEnabled = _preferences->getBool(preference_official_hybrid_enabled, false);
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
     _checkUpdates = _preferences->getBool(preference_check_updates, false);
     _reconnectNetworkOnMqttDisconnect = _preferences->getBool(preference_recon_netw_on_mqtt_discon, false);
@@ -3835,4 +3842,5 @@ bool NukiNetwork::isConnected()
 {
     return _device->isConnected();
 }
+
 #endif
