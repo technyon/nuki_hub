@@ -6,6 +6,7 @@
 
 #include <ArduinoJson/Array/ArrayData.hpp>
 #include <ArduinoJson/Variant/VariantCompare.hpp>
+#include <ArduinoJson/Variant/VariantData.hpp>
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
@@ -17,6 +18,14 @@ inline ArrayData::iterator ArrayData::at(
     --index;
   }
   return it;
+}
+
+inline VariantData* ArrayData::addElement(ResourceManager* resources) {
+  auto slot = resources->allocVariant();
+  if (!slot)
+    return nullptr;
+  CollectionData::appendOne(slot, resources);
+  return slot.ptr();
 }
 
 inline VariantData* ArrayData::getOrAddElement(size_t index,
@@ -50,16 +59,21 @@ inline void ArrayData::removeElement(size_t index, ResourceManager* resources) {
 template <typename T>
 inline bool ArrayData::addValue(T&& value, ResourceManager* resources) {
   ARDUINOJSON_ASSERT(resources != nullptr);
-  auto slot = resources->allocSlot();
+  auto slot = resources->allocVariant();
   if (!slot)
     return false;
-  JsonVariant variant(slot->data(), resources);
+  JsonVariant variant(slot.ptr(), resources);
   if (!variant.set(detail::forward<T>(value))) {
-    resources->freeSlot(slot);
+    resources->freeVariant(slot);
     return false;
   }
-  addSlot(slot, resources);
+  CollectionData::appendOne(slot, resources);
   return true;
+}
+
+// Returns the size (in bytes) of an array with n elements.
+constexpr size_t sizeofArray(size_t n) {
+  return n * ResourceManager::slotSize;
 }
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE
