@@ -3190,7 +3190,7 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request)
     {
         String pinStr = String(pin);
         String pinDesc = "Gpio " + pinStr;
-        printDropDown(pinStr.c_str(), pinDesc.c_str(), "", options, "gpioselect");
+        printDropDown(&response, pinStr.c_str(), pinDesc.c_str(), "", options, "gpioselect");
         if(std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end())
         {
             gpiopreselects.concat("gpio[" + pinStr + "] = '21';");
@@ -4102,14 +4102,14 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
     response->print("</td><td>");
     if(className.length() > 0)
     {
-        _response.concat("<select class=\"" + className + "\" name=\"");
+        response->print("<select class=\"" + className + "\" name=\"");
     }
     else
     {
-        _response.concat("<select name=\"");
+        response->print("<select name=\"");
     }
-    _response.concat(token);
-    _response.concat("\">");
+    response->print(token);
+    response->print("\">");
 
     for(const auto& option : options)
     {
