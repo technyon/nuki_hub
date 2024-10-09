@@ -4,7 +4,6 @@
 #include <NetworkClientSecure.h>
 #include <Preferences.h>
 #include "NetworkDevice.h"
-#include "WiFiManager.h"
 #include "IPConfiguration.h"
 
 class WifiDevice : public NetworkDevice
@@ -16,25 +15,28 @@ public:
 
     virtual void initialize();
     virtual void reconfigure();
-    virtual ReconnectStatus reconnect(bool force = false);
 
     virtual bool isConnected();
+    virtual bool isApOpen();
 
     int8_t signalStrength() override;
     
     String localIP() override;
     String BSSIDstr() override;
-
 private:
-    static void clearRtcInitVar(WiFiManager*);
-
+    void scan();
+    void openAP();
     void onDisconnected();
     void onConnected();
+    bool connect();
+  
+    String savedSSID() const;
+    String savedPass() const;
 
-    WiFiManager _wm;
     Preferences* _preferences = nullptr;
 
-    bool _startAp = false;
-    bool _isReconnecting = false;
+    int _foundNetworks = 0;
+    bool _connectOnScanDone = false;
+    bool _openAP = false;
     int64_t _disconnectTs = 0;
 };

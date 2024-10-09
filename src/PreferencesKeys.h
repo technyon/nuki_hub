@@ -54,7 +54,6 @@
 #define preference_official_hybrid_enabled (char*)"offHybrid"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
-#define preference_find_best_rssi (char*)"nwbestrssi"
 #define preference_ntw_reconfigure (char*)"ntwRECONF"
 #define preference_auth_max_entries (char*)"authmaxentry"
 #define preference_auth_info_enabled (char*)"authInfoEna"
@@ -272,7 +271,7 @@ private:
             preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt,
             preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
             preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_network_wifi_fallback_disabled,
-            preference_rssi_publish_interval, preference_hostname, preference_find_best_rssi, preference_network_timeout, preference_restart_on_disconnect,
+            preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
             preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
             preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
@@ -294,7 +293,7 @@ private:
     std::vector<char*> _boolPrefs =
     {
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
-            preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi,
+            preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_show_secrets,
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid_enabled,

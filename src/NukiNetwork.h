@@ -24,6 +24,7 @@ public:
     void readSettings();
     bool update();
     void reconfigureDevice();
+    bool isApOpen();
     void clearWifiFallback();
 
     const String networkDeviceName() const;

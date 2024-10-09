@@ -178,20 +178,14 @@ bool EthernetDevice::isConnected()
     return _connected;
 }
 
-ReconnectStatus EthernetDevice::reconnect(bool force)
+bool EthernetDevice::isApOpen()
 {
-    if(!_hardwareInitialized)
-    {
-        return ReconnectStatus::CriticalFailure;
-    }
-    delay(200);
-    return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
+    return false;
 }
 
 void EthernetDevice::onDisconnected()
 {
     if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    reconnect();
 }
 
 int8_t EthernetDevice::signalStrength()

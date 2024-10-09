@@ -45,6 +45,9 @@ public:
     void initialize();
 
 private:
+    #ifndef CONFIG_IDF_TARGET_ESP32H2
+    esp_err_t buildWifiConnectHtml(PsychicRequest *request);
+    #endif
     #ifndef NUKI_HUB_UPDATER
     esp_err_t sendSettings(PsychicRequest *request);
     bool processArgs(PsychicRequest *request, String& message);

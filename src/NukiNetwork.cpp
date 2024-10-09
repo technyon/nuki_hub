@@ -69,7 +69,7 @@ void NukiNetwork::setupDevice()
 {
     _ipConfiguration = new IPConfiguration(_preferences);
     int hardwareDetect = _preferences->getInt(preference_network_hardware, 0);
-    Log->print(F("Hardware detect     : "));
+    Log->print(F("Hardware detect: "));
     Log->println(hardwareDetect);
 
     _firstBootAfterDeviceChange = _preferences->getBool(preference_ntw_reconfigure, false);
@@ -122,12 +122,17 @@ void NukiNetwork::setupDevice()
     _device = NetworkDeviceInstantiator::Create(_networkDeviceType, _hostname, _preferences, _ipConfiguration);
 
     Log->print(F("Network device: "));
-    Log->print(_device->deviceName());
+    Log->println(_device->deviceName());
 }
 
 void NukiNetwork::reconfigureDevice()
 {
     _device->reconfigure();
+}
+
+bool NukiNetwork::isApOpen()
+{
+    return _device->isApOpen();
 }
 
 const String NukiNetwork::networkDeviceName() const
@@ -341,7 +346,7 @@ bool NukiNetwork::update()
     int64_t ts = (esp_timer_get_time() / 1000);
     _device->update();
 
-    if(!_mqttEnabled)
+    if(!_mqttEnabled || _device->isApOpen())
     {
         return true;
     }
@@ -352,27 +357,6 @@ bool NukiNetwork::update()
 
         if(!_webEnabled) forceEnableWebServer = true;
         if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-
-        Log->println(F("Network not connected. Trying reconnect."));
-        ReconnectStatus reconnectStatus = _device->reconnect(true);
-
-        switch(reconnectStatus)
-        {
-            case ReconnectStatus::CriticalFailure:
-                strcpy(WiFi_fallbackDetect, "wifi_fallback");
-                Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
-                delay(200);
-                restartEsp(RestartReason::NetworkDeviceCriticalFailure);
-                break;
-            case ReconnectStatus::Success:
-                memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
-                Log->print(F("Reconnect successful: IP: "));
-                Log->println(_device->localIP());
-                break;
-            case ReconnectStatus::Failure:
-                Log->println(F("Reconnect failed"));
-                break;
-        }
     }
 
     if(_device->isConnected() && !_mqttClientInitiated && strcmp(_mqttBrokerAddr, "") != 0)
