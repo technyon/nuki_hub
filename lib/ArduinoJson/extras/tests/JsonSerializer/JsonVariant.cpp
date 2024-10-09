@@ -46,6 +46,10 @@ TEST_CASE("serializeJson(JsonVariant)") {
       check("fifty/fifty"_s, "\"fifty/fifty\"");
     }
 
+    SECTION("Don't escape single quote") {
+      check("hello'world"_s, "\"hello'world\"");
+    }
+
     SECTION("Escape backspace") {
       check("hello\bworld"_s, "\"hello\\bworld\"");
     }
@@ -81,6 +85,11 @@ TEST_CASE("serializeJson(JsonVariant)") {
 
   SECTION("Double") {
     check(3.1415927, "3.1415927");
+  }
+
+  SECTION("Float") {
+    REQUIRE(sizeof(float) == 4);
+    check(3.1415927f, "3.141593");
   }
 
   SECTION("Zero") {

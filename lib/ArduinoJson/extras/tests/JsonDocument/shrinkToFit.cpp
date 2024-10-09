@@ -122,8 +122,8 @@ TEST_CASE("JsonDocument::shrinkToFit()") {
     REQUIRE(doc.as<std::string>() == "{\"abcdefg\":42}");
     REQUIRE(spyingAllocator.log() ==
             AllocatorLog{
-                Allocate(sizeofString("abcdefg")),
                 Allocate(sizeofPool()),
+                Allocate(sizeofString("abcdefg")),
                 Reallocate(sizeofPool(), sizeofObject(1)),
             });
   }
@@ -178,7 +178,7 @@ TEST_CASE("JsonDocument::shrinkToFit()") {
             AllocatorLog{
                 Allocate(sizeofPool()),
                 Allocate(sizeofString("abcdefg")),
-                Reallocate(sizeofPool(), sizeofPool(1)),
+                Reallocate(sizeofPool(), sizeofPool(2)),
             });
   }
 }

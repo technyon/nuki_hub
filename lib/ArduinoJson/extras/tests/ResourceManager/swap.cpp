@@ -4,7 +4,7 @@
 
 #include <ArduinoJson/Memory/Alignment.hpp>
 #include <ArduinoJson/Memory/ResourceManager.hpp>
-#include <ArduinoJson/Memory/VariantPoolImpl.hpp>
+#include <ArduinoJson/Memory/ResourceManagerImpl.hpp>
 #include <catch.hpp>
 
 #include "Allocators.hpp"
@@ -14,7 +14,7 @@ using namespace ArduinoJson::detail;
 static void fullPreallocatedPools(ResourceManager& resources) {
   for (int i = 0;
        i < ARDUINOJSON_INITIAL_POOL_COUNT * ARDUINOJSON_POOL_CAPACITY; i++)
-    resources.allocSlot();
+    resources.allocVariant();
 }
 
 TEST_CASE("ResourceManager::swap()") {
@@ -23,13 +23,13 @@ TEST_CASE("ResourceManager::swap()") {
     ResourceManager a(&spy);
     ResourceManager b(&spy);
 
-    auto a1 = a.allocSlot();
-    auto b1 = b.allocSlot();
+    auto a1 = a.allocVariant();
+    auto b1 = b.allocVariant();
 
     swap(a, b);
 
-    REQUIRE(a1->data() == b.getSlot(a1.id())->data());
-    REQUIRE(b1->data() == a.getSlot(b1.id())->data());
+    REQUIRE(a1.ptr() == b.getVariant(a1.id()));
+    REQUIRE(b1.ptr() == a.getVariant(b1.id()));
 
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()) * 2,
@@ -42,12 +42,12 @@ TEST_CASE("ResourceManager::swap()") {
     ResourceManager b(&spy);
     fullPreallocatedPools(b);
 
-    auto a1 = a.allocSlot();
-    auto b1 = b.allocSlot();
+    auto a1 = a.allocVariant();
+    auto b1 = b.allocVariant();
     swap(a, b);
 
-    REQUIRE(a1->data() == b.getSlot(a1.id())->data());
-    REQUIRE(b1->data() == a.getSlot(b1.id())->data());
+    REQUIRE(a1.ptr() == b.getVariant(a1.id()));
+    REQUIRE(b1.ptr() == a.getVariant(b1.id()));
 
     REQUIRE(spy.log() ==
             AllocatorLog{
@@ -63,12 +63,12 @@ TEST_CASE("ResourceManager::swap()") {
     fullPreallocatedPools(a);
     ResourceManager b(&spy);
 
-    auto a1 = a.allocSlot();
-    auto b1 = b.allocSlot();
+    auto a1 = a.allocVariant();
+    auto b1 = b.allocVariant();
     swap(a, b);
 
-    REQUIRE(a1->data() == b.getSlot(a1.id())->data());
-    REQUIRE(b1->data() == a.getSlot(b1.id())->data());
+    REQUIRE(a1.ptr() == b.getVariant(a1.id()));
+    REQUIRE(b1.ptr() == a.getVariant(b1.id()));
 
     REQUIRE(spy.log() ==
             AllocatorLog{
@@ -85,12 +85,12 @@ TEST_CASE("ResourceManager::swap()") {
     ResourceManager b(&spy);
     fullPreallocatedPools(b);
 
-    auto a1 = a.allocSlot();
-    auto b1 = b.allocSlot();
+    auto a1 = a.allocVariant();
+    auto b1 = b.allocVariant();
 
     swap(a, b);
 
-    REQUIRE(a1->data() == b.getSlot(a1.id())->data());
-    REQUIRE(b1->data() == a.getSlot(b1.id())->data());
+    REQUIRE(a1.ptr() == b.getVariant(a1.id()));
+    REQUIRE(b1.ptr() == a.getVariant(b1.id()));
   }
 }

@@ -63,19 +63,22 @@ struct Converter<T, detail::enable_if_t<detail::is_integral<T>::value &&
     auto data = getData(dst);
     if (!data)
       return false;
-    data->setInteger(src, getResourceManager(dst));
-    return true;
+    auto resources = getResourceManager(dst);
+    data->clear(resources);
+    return data->setInteger(src, resources);
   }
 
   static T fromJson(JsonVariantConst src) {
     ARDUINOJSON_ASSERT_INTEGER_TYPE_IS_SUPPORTED(T);
     auto data = getData(src);
-    return data ? data->template asIntegral<T>() : T();
+    auto resources = getResourceManager(src);
+    return data ? data->template asIntegral<T>(resources) : T();
   }
 
   static bool checkJson(JsonVariantConst src) {
     auto data = getData(src);
-    return data && data->template isInteger<T>();
+    auto resources = getResourceManager(src);
+    return data && data->template isInteger<T>(resources);
   }
 };
 
@@ -88,12 +91,15 @@ struct Converter<T, detail::enable_if_t<detail::is_enum<T>::value>>
 
   static T fromJson(JsonVariantConst src) {
     auto data = getData(src);
-    return data ? static_cast<T>(data->template asIntegral<int>()) : T();
+    auto resources = getResourceManager(src);
+    return data ? static_cast<T>(data->template asIntegral<int>(resources))
+                : T();
   }
 
   static bool checkJson(JsonVariantConst src) {
     auto data = getData(src);
-    return data && data->template isInteger<int>();
+    auto resources = getResourceManager(src);
+    return data && data->template isInteger<int>(resources);
   }
 };
 
@@ -103,13 +109,16 @@ struct Converter<bool> : private detail::VariantAttorney {
     auto data = getData(dst);
     if (!data)
       return false;
-    data->setBoolean(src, getResourceManager(dst));
+    auto resources = getResourceManager(dst);
+    data->clear(resources);
+    data->setBoolean(src);
     return true;
   }
 
   static bool fromJson(JsonVariantConst src) {
     auto data = getData(src);
-    return data ? data->asBoolean() : false;
+    auto resources = getResourceManager(src);
+    return data ? data->asBoolean(resources) : false;
   }
 
   static bool checkJson(JsonVariantConst src) {
@@ -125,13 +134,15 @@ struct Converter<T, detail::enable_if_t<detail::is_floating_point<T>::value>>
     auto data = getData(dst);
     if (!data)
       return false;
-    data->setFloat(static_cast<JsonFloat>(src), getResourceManager(dst));
-    return true;
+    auto resources = getResourceManager(dst);
+    data->clear(resources);
+    return data->setFloat(src, resources);
   }
 
   static T fromJson(JsonVariantConst src) {
     auto data = getData(src);
-    return data ? data->template asFloat<T>() : 0;
+    auto resources = getResourceManager(src);
+    return data ? data->template asFloat<T>(resources) : 0;
   }
 
   static bool checkJson(JsonVariantConst src) {
@@ -199,7 +210,7 @@ struct Converter<SerializedValue<T>> : private detail::VariantAttorney {
 template <>
 struct Converter<detail::nullptr_t> : private detail::VariantAttorney {
   static void toJson(detail::nullptr_t, JsonVariant dst) {
-    detail::VariantData::setNull(getData(dst), getResourceManager(dst));
+    detail::VariantData::clear(getData(dst), getResourceManager(dst));
   }
   static detail::nullptr_t fromJson(JsonVariantConst) {
     return nullptr;
@@ -252,12 +263,11 @@ inline void convertToJson(const ::Printable& src, JsonVariant dst) {
   auto data = detail::VariantAttorney::getData(dst);
   if (!resources || !data)
     return;
+  data->clear(resources);
   detail::StringBuilderPrint print(resources);
   src.printTo(print);
-  if (print.overflowed()) {
-    data->setNull();
+  if (print.overflowed())
     return;
-  }
   data->setOwnedString(print.save());
 }
 
