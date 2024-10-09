@@ -3,6 +3,9 @@
 #include "../Logger.h"
 #include "../RestartReason.h"
 
+RTC_NOINIT_ATTR bool criticalEthFailure;
+extern char WiFi_fallbackDetect[14];
+
 EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode)
 : NetworkDevice(hostname, ipConfiguration),
   _deviceName(deviceName),
@@ -54,20 +57,34 @@ const String EthernetDevice::deviceName() const
 void EthernetDevice::initialize()
 {
     delay(250);
+    if(criticalEthFailure)
+    {
+        criticalEthFailure = false;
+        Log->println(F("Failed to initialize ethernet hardware"));
+        Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
+        strcpy(WiFi_fallbackDetect, "wifi_fallback");
+        delay(200);
+        restartEsp(RestartReason::NetworkDeviceCriticalFailure);
+        return;
+    }
 
     Log->println(F("Init Ethernet"));
 
     if(_useSpi)
     {
         Log->println(F("Use SPI"));
+        criticalEthFailure = true;
         SPI.begin(_spi_sck, _spi_miso, _spi_mosi);
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
+        criticalEthFailure = false;
     }
     #ifdef CONFIG_IDF_TARGET_ESP32
     else
     {
         Log->println(F("Use RMII"));
+        criticalEthFailure = true;
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+        criticalEthFailure = false;
         if(!_ipConfiguration->dhcpEnabled())
         {
             _checkIpTs = (esp_timer_get_time() / 1000) + 2000;
@@ -78,6 +95,7 @@ void EthernetDevice::initialize()
     if(_hardwareInitialized)
     {
         Log->println(F("Ethernet hardware Initialized"));
+        memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
 
         if(_useSpi && !_ipConfiguration->dhcpEnabled())
         {
@@ -92,6 +110,11 @@ void EthernetDevice::initialize()
     else
     {
         Log->println(F("Failed to initialize ethernet hardware"));
+        Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
+        strcpy(WiFi_fallbackDetect, "wifi_fallback");
+        delay(200);
+        restartEsp(RestartReason::NetworkDeviceCriticalFailure);
+        return;
     }
 }
 
@@ -173,25 +196,23 @@ void EthernetDevice::reconfigure()
     restartEsp(RestartReason::ReconfigureETH);
 }
 
+void EthernetDevice::scan(bool passive, bool async)
+{
+}
+
 bool EthernetDevice::isConnected()
 {
     return _connected;
 }
 
-ReconnectStatus EthernetDevice::reconnect(bool force)
+bool EthernetDevice::isApOpen()
 {
-    if(!_hardwareInitialized)
-    {
-        return ReconnectStatus::CriticalFailure;
-    }
-    delay(200);
-    return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
+    return false;
 }
 
 void EthernetDevice::onDisconnected()
 {
     if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    reconnect();
 }
 
 int8_t EthernetDevice::signalStrength()

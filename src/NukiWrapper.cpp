@@ -1,3 +1,6 @@
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+#include "esp_wifi.h"
+#endif
 #include "NukiWrapper.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
@@ -58,8 +61,24 @@ void NukiWrapper::initialize(const bool& firstStart)
     if(firstStart)
     {
         Log->println("First start, setting preference defaults");
-        _preferences->putBool(preference_network_wifi_fallback_disabled, false);
-        _preferences->putBool(preference_find_best_rssi, false);
+        
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
+        wifi_config_t wifi_cfg;
+        if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
+            Log->println("Failed to get Wi-Fi configuration in RAM");
+        }
+
+        if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK) {
+            Log->println("Failed to set storage Wi-Fi");
+        }
+
+        memset(wifi_cfg.sta.ssid, 0, sizeof(wifi_cfg.sta.ssid));
+        memset(wifi_cfg.sta.password, 0, sizeof(wifi_cfg.sta.password));
+
+        if (esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
+            Log->println("Failed to clear NVS Wi-Fi configuration");
+        }
+        #endif
         _preferences->putBool(preference_check_updates, true);
         _preferences->putBool(preference_opener_continuous_mode, false);
         _preferences->putBool(preference_official_hybrid_enabled, false);
@@ -1894,21 +1913,21 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
     String allowedFromTime;
     String allowedUntilTime;
 
-    if(json.containsKey("code")) code = json["code"].as<unsigned int>();
+    if(json["code"].is<unsigned int>()) code = json["code"].as<unsigned int>();
     else code = 12;
 
-    if(json.containsKey("enabled")) enabled = json["enabled"].as<unsigned int>();
+    if(json["enabled"].is<unsigned int>()) enabled = json["enabled"].as<unsigned int>();
     else enabled = 2;
 
-    if(json.containsKey("timeLimited")) timeLimited = json["timeLimited"].as<unsigned int>();
+    if(json["timeLimited"].is<unsigned int>()) timeLimited = json["timeLimited"].as<unsigned int>();
     else timeLimited = 2;
 
-    if(json.containsKey("name")) name = json["name"].as<String>();
-    if(json.containsKey("allowedFrom")) allowedFrom = json["allowedFrom"].as<String>();
-    if(json.containsKey("allowedUntil")) allowedUntil = json["allowedUntil"].as<String>();
-    if(json.containsKey("allowedWeekdays")) allowedWeekdays = json["allowedWeekdays"].as<String>();
-    if(json.containsKey("allowedFromTime")) allowedFromTime = json["allowedFromTime"].as<String>();
-    if(json.containsKey("allowedUntilTime")) allowedUntilTime = json["allowedUntilTime"].as<String>();
+    if(json["name"].is<String>()) name = json["name"].as<String>();
+    if(json["allowedFrom"].is<String>()) allowedFrom = json["allowedFrom"].as<String>();
+    if(json["allowedUntil"].is<String>()) allowedUntil = json["allowedUntil"].as<String>();
+    if(json["allowedWeekdays"].is<String>()) allowedWeekdays = json["allowedWeekdays"].as<String>();
+    if(json["allowedFromTime"].is<String>()) allowedFromTime = json["allowedFromTime"].as<String>();
+    if(json["allowedUntilTime"].is<String>()) allowedUntilTime = json["allowedUntilTime"].as<String>();
 
     if(action)
     {
@@ -2331,12 +2350,12 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
     String lockAction;
     NukiLock::LockAction timeControlLockAction;
 
-    if(json.containsKey("enabled")) enabled = json["enabled"].as<unsigned int>();
+    if(json["enabled"].is<unsigned int>()) enabled = json["enabled"].as<unsigned int>();
     else enabled = 2;
 
-    if(json.containsKey("weekdays")) weekdays = json["weekdays"].as<String>();
-    if(json.containsKey("time")) time = json["time"].as<String>();
-    if(json.containsKey("lockAction")) lockAction = json["lockAction"].as<String>();
+    if(json["weekdays"].is<String>()) weekdays = json["weekdays"].as<String>();
+    if(json["time"].is<String>()) time = json["time"].as<String>();
+    if(json["lockAction"].is<String>()) lockAction = json["lockAction"].as<String>();
 
     if(lockAction.length() > 0)
     {
@@ -2567,22 +2586,22 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
     String allowedFromTime;
     String allowedUntilTime;
 
-    if(json.containsKey("remoteAllowed")) remoteAllowed = json["remoteAllowed"].as<unsigned int>();
+    if(json["remoteAllowed"].is<unsigned int>()) remoteAllowed = json["remoteAllowed"].as<unsigned int>();
     else remoteAllowed = 2;
 
-    if(json.containsKey("enabled")) enabled = json["enabled"].as<unsigned int>();
+    if(json["enabled"].is<unsigned int>()) enabled = json["enabled"].as<unsigned int>();
     else enabled = 2;
 
-    if(json.containsKey("timeLimited")) timeLimited = json["timeLimited"].as<unsigned int>();
+    if(json["timeLimited"].is<unsigned int>()) timeLimited = json["timeLimited"].as<unsigned int>();
     else timeLimited = 2;
 
-    if(json.containsKey("name")) name = json["name"].as<String>();
-    //if(json.containsKey("sharedKey")) sharedKey = json["sharedKey"].as<String>();
-    if(json.containsKey("allowedFrom")) allowedFrom = json["allowedFrom"].as<String>();
-    if(json.containsKey("allowedUntil")) allowedUntil = json["allowedUntil"].as<String>();
-    if(json.containsKey("allowedWeekdays")) allowedWeekdays = json["allowedWeekdays"].as<String>();
-    if(json.containsKey("allowedFromTime")) allowedFromTime = json["allowedFromTime"].as<String>();
-    if(json.containsKey("allowedUntilTime")) allowedUntilTime = json["allowedUntilTime"].as<String>();
+    if(json["name"].is<String>()) name = json["name"].as<String>();
+    //if(json["sharedKey"].is<String>()) sharedKey = json["sharedKey"].as<String>();
+    if(json["allowedFrom"].is<String>()) allowedFrom = json["allowedFrom"].as<String>();
+    if(json["allowedUntil"].is<String>()) allowedUntil = json["allowedUntil"].as<String>();
+    if(json["allowedWeekdays"].is<String>()) allowedWeekdays = json["allowedWeekdays"].as<String>();
+    if(json["allowedFromTime"].is<String>()) allowedFromTime = json["allowedFromTime"].as<String>();
+    if(json["allowedUntilTime"].is<String>()) allowedUntilTime = json["allowedUntilTime"].as<String>();
 
     if(action)
     {

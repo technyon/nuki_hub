@@ -9,6 +9,7 @@
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
+#include <WiFi.h>
 #endif
 #include <Update.h>
 
@@ -77,12 +78,22 @@ void WebCfgServer::initialize()
 {
     _psychicServer->on("/", HTTP_GET, [&](PsychicRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        #ifndef NUKI_HUB_UPDATER
-        return buildHtml(request);
-        #else
-        return buildOtaHtml(request);
+        if(!_network->isApOpen())
+        {
+            #ifndef NUKI_HUB_UPDATER
+            return buildHtml(request);
+            #else
+            return buildOtaHtml(request);
+            #endif
+        }
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
+        else
+        {
+            return buildWifiConnectHtml(request);
+        }
         #endif
     });
+
     _psychicServer->on("/style.css", HTTP_GET, [&](PsychicRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
         return sendCss(request);
@@ -91,128 +102,6 @@ void WebCfgServer::initialize()
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
         return sendFavicon(request);
     });
-    #ifndef NUKI_HUB_UPDATER
-    _psychicServer->on("/import", HTTP_POST, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        String message = "";
-        bool restart = processImport(request, message);
-        return buildConfirmHtml(request, message, 3, true);
-    });
-    _psychicServer->on("/export", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return sendSettings(request);
-    });
-    _psychicServer->on("/impexpcfg", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildImportExportHtml(request);
-    });
-    _psychicServer->on("/status", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildStatusHtml(request);
-    });
-    _psychicServer->on("/acclvl", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildAccLvlHtml(request);
-    });
-    _psychicServer->on("/custntw", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildCustomNetworkConfigHtml(request);
-    });
-    _psychicServer->on("/advanced", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildAdvancedConfigHtml(request);
-    });
-    _psychicServer->on("/cred", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildCredHtml(request);
-    });
-    _psychicServer->on("/mqttconfig", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildMqttConfigHtml(request);
-    });
-    _psychicServer->on("/nukicfg", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildNukiConfigHtml(request);
-    });
-    _psychicServer->on("/gpiocfg", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildGpioConfigHtml(request);
-    });
-    #ifndef CONFIG_IDF_TARGET_ESP32H2
-    _psychicServer->on("/wifi", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildConfigureWifiHtml(request);
-    });
-    _psychicServer->on("/wifimanager", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        if(_allowRestartToPortal)
-        {
-            esp_err_t res = buildConfirmHtml(request, "Restarting. Connect to ESP access point to reconfigure Wi-Fi.", 0);
-            waitAndProcess(false, 1000);
-            _network->reconfigureDevice();
-            return res;
-        }
-        return(ESP_OK);
-    });
-    #endif
-    _psychicServer->on("/unpairlock", HTTP_POST, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return processUnpair(request, false);
-    });
-    _psychicServer->on("/unpairopener", HTTP_POST, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return processUnpair(request, true);
-    });
-    _psychicServer->on("/factoryreset", HTTP_POST, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return processFactoryReset(request);
-    });
-    _psychicServer->on("/infopg", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildInfoHtml(request);
-    });
-    _psychicServer->on("/debugon", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        _preferences->putBool(preference_publish_debug_info, true);
-        return buildConfirmHtml(request, "Debug On", 3, true);
-    });
-    _psychicServer->on("/debugoff", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        _preferences->putBool(preference_publish_debug_info, false);
-        return buildConfirmHtml(request, "Debug Off", 3, true);
-    });
-    _psychicServer->on("/savecfg", HTTP_POST, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        String message = "";
-        bool restart = processArgs(request, message);
-        return buildConfirmHtml(request, message, 3, true);
-    });
-    _psychicServer->on("/savegpiocfg", HTTP_POST, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        processGpioArgs(request);
-        esp_err_t res = buildConfirmHtml(request, "Saving GPIO configuration. Restarting.", 3, true);
-        Log->println(F("Restarting"));
-        waitAndProcess(true, 1000);
-        restartEsp(RestartReason::GpioConfigurationUpdated);
-        return res;
-    });
-    #endif
-    _psychicServer->on("/ota", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildOtaHtml(request);
-    });
-    _psychicServer->on("/otadebug", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        return buildOtaHtml(request, true);
-    });
-    _psychicServer->on("/reboottoota", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        esp_err_t res = buildConfirmHtml(request, "Rebooting to other partition", 2, true);
-        waitAndProcess(true, 1000);
-        esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
-        restartEsp(RestartReason::OTAReboot);
-        return res;
-    });
     _psychicServer->on("/reboot", HTTP_GET, [&](PsychicRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
         esp_err_t res = buildConfirmHtml(request, "Rebooting", 2, true);
@@ -220,49 +109,370 @@ void WebCfgServer::initialize()
         restartEsp(RestartReason::RequestedViaWebServer);
         return res;
     });
-    _psychicServer->on("/autoupdate", HTTP_GET, [&](PsychicRequest *request){
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        #ifndef NUKI_HUB_UPDATER
-        return processUpdate(request);
-        #else
-        return request->redirect("/");
-        #endif
-    });
 
-    PsychicUploadHandler *updateHandler = new PsychicUploadHandler();
-    updateHandler->onUpload([&](PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final)
-        {
+    if(_network->isApOpen())
+    {
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
+        _psychicServer->on("/ssidlist", HTTP_GET, [&](PsychicRequest *request){
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-            return handleOtaUpload(request, filename, index, data, len, final);
-        }
-    );
+            return buildSSIDListHtml(request);
+        });
+        _psychicServer->on("/savewifi", HTTP_POST, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            String message = "";
+            bool connected = processWiFi(request, message);
+            esp_err_t res = buildConfirmHtml(request, message, 10, true);
 
-    updateHandler->onRequest([&](PsychicRequest *request) {
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-
-        String result;
-        if (!Update.hasError())
-        {
-            Log->print("Update code or data OK Update.errorString() ");
-            Log->println(Update.errorString());
-            result = "<b style='color:green'>Update OK.</b>";
-            esp_err_t res = request->reply(200,"text/html",result.c_str());
-            restartEsp(RestartReason::OTACompleted);
+            if(connected)
+            {
+                waitAndProcess(true, 3000);
+                restartEsp(RestartReason::ReconfigureWifi);
+                //abort();
+            }
             return res;
-        }
-        else {
-            result = " Update.errorString() " + String(Update.errorString());
-            Log->print("ERROR : error ");
-            Log->println(result.c_str());
-            esp_err_t res = request->reply(500, "text/html", result.c_str());
-            restartEsp(RestartReason::OTAAborted);
+        });
+        #endif
+    }
+    else
+    {
+        #ifndef NUKI_HUB_UPDATER
+        _psychicServer->on("/import", HTTP_POST, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            String message = "";
+            bool restart = processImport(request, message);
+            return buildConfirmHtml(request, message, 3, true);
+        });
+        _psychicServer->on("/export", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return sendSettings(request);
+        });
+        _psychicServer->on("/impexpcfg", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildImportExportHtml(request);
+        });
+        _psychicServer->on("/status", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildStatusHtml(request);
+        });
+        _psychicServer->on("/acclvl", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildAccLvlHtml(request);
+        });
+        _psychicServer->on("/custntw", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildCustomNetworkConfigHtml(request);
+        });
+        _psychicServer->on("/advanced", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildAdvancedConfigHtml(request);
+        });
+        _psychicServer->on("/cred", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildCredHtml(request);
+        });
+        _psychicServer->on("/mqttconfig", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildMqttConfigHtml(request);
+        });
+        _psychicServer->on("/nukicfg", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildNukiConfigHtml(request);
+        });
+        _psychicServer->on("/gpiocfg", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildGpioConfigHtml(request);
+        });
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
+        _psychicServer->on("/wifi", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildConfigureWifiHtml(request);
+        });
+        _psychicServer->on("/wifimanager", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            if(_allowRestartToPortal)
+            {
+                esp_err_t res = buildConfirmHtml(request, "Restarting. Connect to ESP access point (\"NukiHub\" with password \"NukiHubESP32\") to reconfigure Wi-Fi.", 0);
+                waitAndProcess(false, 1000);
+                _network->reconfigureDevice();
+                return res;
+            }
+            return(ESP_OK);
+        });
+        #endif
+        _psychicServer->on("/unpairlock", HTTP_POST, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return processUnpair(request, false);
+        });
+        _psychicServer->on("/unpairopener", HTTP_POST, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return processUnpair(request, true);
+        });
+        _psychicServer->on("/factoryreset", HTTP_POST, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return processFactoryReset(request);
+        });
+        _psychicServer->on("/infopg", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildInfoHtml(request);
+        });
+        _psychicServer->on("/debugon", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            _preferences->putBool(preference_publish_debug_info, true);
+            return buildConfirmHtml(request, "Debug On", 3, true);
+        });
+        _psychicServer->on("/debugoff", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            _preferences->putBool(preference_publish_debug_info, false);
+            return buildConfirmHtml(request, "Debug Off", 3, true);
+        });
+        _psychicServer->on("/savecfg", HTTP_POST, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            String message = "";
+            bool restart = processArgs(request, message);
+            return buildConfirmHtml(request, message, 3, true);
+        });
+        _psychicServer->on("/savegpiocfg", HTTP_POST, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            processGpioArgs(request);
+            esp_err_t res = buildConfirmHtml(request, "Saving GPIO configuration. Restarting.", 3, true);
+            Log->println(F("Restarting"));
+            waitAndProcess(true, 1000);
+            restartEsp(RestartReason::GpioConfigurationUpdated);
             return res;
-        }
-    });
+        });
+        #endif
+        _psychicServer->on("/ota", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildOtaHtml(request);
+        });
+        _psychicServer->on("/otadebug", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return buildOtaHtml(request, true);
+        });
+        _psychicServer->on("/reboottoota", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            esp_err_t res = buildConfirmHtml(request, "Rebooting to other partition", 2, true);
+            waitAndProcess(true, 1000);
+            esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
+            restartEsp(RestartReason::OTAReboot);
+            return res;
+        });
+        _psychicServer->on("/autoupdate", HTTP_GET, [&](PsychicRequest *request){
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            #ifndef NUKI_HUB_UPDATER
+            return processUpdate(request);
+            #else
+            return request->redirect("/");
+            #endif
+        });
 
-    _psychicServer->on("/uploadota", HTTP_POST, updateHandler);
-    //Update.onProgress(printProgress);
+        PsychicUploadHandler *updateHandler = new PsychicUploadHandler();
+        updateHandler->onUpload([&](PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final)
+            {
+                if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return handleOtaUpload(request, filename, index, data, len, final);
+            }
+        );
+
+        updateHandler->onRequest([&](PsychicRequest *request) {
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+
+            String result;
+            if (!Update.hasError())
+            {
+                Log->print("Update code or data OK Update.errorString() ");
+                Log->println(Update.errorString());
+                result = "<b style='color:green'>Update OK.</b>";
+                esp_err_t res = request->reply(200,"text/html",result.c_str());
+                restartEsp(RestartReason::OTACompleted);
+                return res;
+            }
+            else {
+                result = " Update.errorString() " + String(Update.errorString());
+                Log->print("ERROR : error ");
+                Log->println(result.c_str());
+                esp_err_t res = request->reply(500, "text/html", result.c_str());
+                restartEsp(RestartReason::OTAAborted);
+                return res;
+            }
+        });
+
+        _psychicServer->on("/uploadota", HTTP_POST, updateHandler);
+        //Update.onProgress(printProgress);
+    }
 }
+
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+esp_err_t WebCfgServer::buildSSIDListHtml(PsychicRequest *request)
+{
+    _network->scan(true, false);
+    createSsidList();
+
+    PsychicStreamResponse response(request, "text/plain");
+    response.beginSend();
+
+    for (int i = 0; i < _ssidList.size(); i++)
+    {
+        response.print("<tr class=\"trssid\" onclick=\"document.getElementById('inputssid').value = '" + _ssidList[i] + "';\"><td colspan=\"2\">" + _ssidList[i] + String(F(" (")) + String(_rssiList[i]) + String(F(" %)")) + "</td></tr>");
+    }
+    return response.endSend();
+}
+
+void WebCfgServer::createSsidList()
+{
+    int _foundNetworks = WiFi.scanComplete();
+    std::vector<String> _tmpSsidList;
+    std::vector<int> _tmpRssiList;
+
+    for (int i = 0; i < _foundNetworks; i++)
+    {
+        int rssi = constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100);
+        auto it1 = std::find(_ssidList.begin(), _ssidList.end(), WiFi.SSID(i));
+        auto it2 = std::find(_tmpSsidList.begin(), _tmpSsidList.end(), WiFi.SSID(i));
+
+        if(it1 == _ssidList.end())
+        {
+            _ssidList.push_back(WiFi.SSID(i));
+            _rssiList.push_back(rssi);
+            _tmpSsidList.push_back(WiFi.SSID(i));
+            _tmpRssiList.push_back(rssi);
+        }
+        else if (it2 == _tmpSsidList.end())
+        {
+            _tmpSsidList.push_back(WiFi.SSID(i));
+            _tmpRssiList.push_back(rssi);
+            int index = it1 - _ssidList.begin();
+            _rssiList[index] = rssi;
+        }
+        else
+        {
+            int index = it1 - _ssidList.begin();
+            int index2 = it2 - _tmpSsidList.begin();
+            if (_tmpRssiList[index2] < rssi)
+            {
+                _tmpRssiList[index2] = rssi;
+                _rssiList[index] = rssi;
+            }
+        }
+    }
+}
+
+esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request)
+{
+    String header = "<style>.trssid:hover { cursor: pointer; color: blue; }</style><script>let intervalId; window.onload = function() { intervalId = setInterval(updateSSID, 3000); }; function updateSSID() { var request = new XMLHttpRequest(); request.open('GET', '/ssidlist', true); request.onload = () => { if (document.getElementById(\"aplist\") !== null) { document.getElementById(\"aplist\").innerHTML = request.responseText; } }; request.send(); }</script>";
+    PsychicStreamResponse response(request, "text/plain");
+    response.beginSend();
+    buildHtmlHeader(&response, header);
+    response.print("<h3>Available WiFi networks</h3>");
+    response.print("<table id=\"aplist\">");
+    createSsidList();
+    for (int i = 0; i < _ssidList.size(); i++)
+    {
+        response.print("<tr class=\"trssid\" onclick=\"document.getElementById('inputssid').value = '" + _ssidList[i] + "';\"><td colspan=\"2\">" + _ssidList[i] + String(F(" (")) + String(_rssiList[i]) + String(F(" %)")) + "</td></tr>");
+    }
+    response.print("</table>");
+    response.print("<form class=\"adapt\" method=\"post\" action=\"savewifi\">");
+    response.print("<h3>WiFi credentials</h3>");
+    response.print("<table>");
+    printInputField(&response, "WIFISSID", "SSID", "", 32, "id=\"inputssid\"", false, true);
+    printInputField(&response, "WIFIPASS", "Secret key", "", 63, "id=\"inputpass\"", false, true);
+    response.print("</table>");
+    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("</form>");
+    response.print("<form action=\"/reboot\" method=\"get\"><br><input type=\"submit\" value=\"Reboot\" /></form>");
+    response.print("</body></html>");
+    return response.endSend();
+}
+
+bool WebCfgServer::processWiFi(PsychicRequest *request, String& message)
+{
+    bool res = false;
+    int params = request->params();
+    String ssid;
+    String pass;
+
+    for(int index = 0; index < params; index++)
+    {
+        const PsychicWebParameter* p = request->getParam(index);
+        String key = p->name();
+        String value = p->value();
+
+
+        if(index < params -1)
+        {
+            const PsychicWebParameter* next = request->getParam(index+1);
+            if(key == next->name()) continue;
+        }
+
+        if(key == "WIFISSID")
+        {
+            ssid = value;
+        }
+        else if(key == "WIFIPASS")
+        {
+            pass = value;
+        }
+    }
+
+    ssid.trim();
+    pass.trim();
+
+    if (ssid.length() > 0 && pass.length() > 0)
+    {
+        WiFi.begin(ssid, pass);
+
+        int loop = 0;
+        while(WiFi.status() != WL_CONNECTED && loop < 150)
+        {
+          delay(100);
+          loop++;
+        }
+
+        if (WiFi.status() != WL_CONNECTED)
+        {
+            message = "Failed to connect to the given SSID with the given secret key, credentials not saved<br/>";
+        }
+        else
+        {
+            message = "Connection successful. Rebooting Nuki Hub.<br/>";
+            if(WiFi.isConnected())
+            {
+                esp_wifi_disconnect();
+            }
+
+            wifi_config_t wifi_cfg;
+            if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
+                Log->println("Failed to get Wi-Fi configuration in RAM");
+                return res;
+            }
+
+            if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK) {
+                Log->println("Failed to set storage Wi-Fi");
+                return res;
+            }
+
+            memset(wifi_cfg.sta.ssid, 0, sizeof(wifi_cfg.sta.ssid));
+            memset(wifi_cfg.sta.password, 0, sizeof(wifi_cfg.sta.password));
+
+            if (esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
+                Log->println("Failed to set Wi-Fi configuration");
+                return res;
+            }
+
+            _preferences->putString(preference_wifi_ssid, ssid);
+            _preferences->putString(preference_wifi_pass, pass);
+
+            res = true;
+        }
+    }
+    else
+    {
+        message = "No SSID or secret key entered, credentials not saved<br/>";
+    }
+
+    return res;
+}
+#endif
 
 esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
 {
@@ -646,6 +856,62 @@ String WebCfgServer::generateConfirmCode()
 {
     int code = random(1000,9999);
     return String(code);
+}
+
+void WebCfgServer::printInputField(PsychicStreamResponse *response,
+                                   const char *token,
+                                   const char *description,
+                                   const char *value,
+                                   const size_t& maxLength,
+                                   const char *args,
+                                   const bool& isPassword,
+                                   const bool& showLengthRestriction)
+{
+    char maxLengthStr[20];
+
+    itoa(maxLength, maxLengthStr, 10);
+
+    response->print("<tr><td>");
+    response->print(description);
+
+    if(showLengthRestriction)
+    {
+        response->print(" (Max. ");
+        response->print(maxLength);
+        response->print(" characters)");
+    }
+
+    response->print("</td><td>");
+    response->print("<input type=");
+    response->print(isPassword ? "\"password\"" : "\"text\"");
+    if(strcmp(args, "") != 0)
+    {
+        response->print(" ");
+        response->print(args);
+    }
+    if(strcmp(value, "") != 0)
+    {
+    response->print(" value=\"");
+    response->print(value);
+    }
+    response->print("\" name=\"");
+    response->print(token);
+    response->print("\" size=\"25\" maxlength=\"");
+    response->print(maxLengthStr);
+    response->print("\"/>");
+    response->print("</td></tr>");
+}
+
+void WebCfgServer::printInputField(PsychicStreamResponse *response,
+                                   const char *token,
+                                   const char *description,
+                                   const int value,
+                                   size_t maxLength,
+                                   const char *args)
+{
+    char valueStr[20];
+    itoa(value, valueStr, 10);
+    printInputField(response, token, description, valueStr, maxLength, args);
 }
 
 #ifndef NUKI_HUB_UPDATER
@@ -1162,16 +1428,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 //configChanged = true;
             }
         }
-        else if(key == "BESTRSSI")
-        {
-            if(_preferences->getBool(preference_find_best_rssi, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_find_best_rssi, (value == "1"));
-                Log->print(F("Setting changed: "));
-                Log->println(key);
-                //configChanged = true;
-            }
-        }
         else if(key == "HOSTNAME")
         {
             if(_preferences->getString(preference_hostname, "") != value)
@@ -1197,16 +1453,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
             if(_preferences->getBool(preference_restart_on_disconnect, false) != (value == "1"))
             {
                 _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
-                Log->print(F("Setting changed: "));
-                Log->println(key);
-                //configChanged = true;
-            }
-        }
-        else if(key == "RECNWTMQTTDIS")
-        {
-            if(_preferences->getBool(preference_recon_netw_on_mqtt_discon, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_recon_netw_on_mqtt_discon, (value == "1"));
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 //configChanged = true;
@@ -2794,13 +3040,10 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, true, true);
     printDropDown(&response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions(), "");
     #ifndef CONFIG_IDF_TARGET_ESP32H2
-    printCheckBox(&response, "NWHWWIFIFB", "Disable fallback to Wi-Fi / Wi-Fi config portal", _preferences->getBool(preference_network_wifi_fallback_disabled), "");
-    printCheckBox(&response, "BESTRSSI", "Connect to AP with the best signal in an environment with multiple APs with the same SSID", _preferences->getBool(preference_find_best_rssi), "");
     printInputField(&response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6, "");
     #endif
     printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
-    printCheckBox(&response, "RECNWTMQTTDIS", "Reconnect network on MQTT connection failure", _preferences->getBool(preference_recon_netw_on_mqtt_discon), "");
     printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(&response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
@@ -2945,13 +3188,13 @@ String WebCfgServer::pinStateToString(uint8_t value) {
     switch(value)
     {
         case 0:
-            return (String)"PIN not set";
+            return String("PIN not set");
         case 1:
-            return (String)"PIN valid";
+            return String("PIN valid");
         case 2:
-            return (String)"PIN set but invalid";;
+            return String("PIN set but invalid");
         default:
-            return (String)"Unknown";
+            return String("Unknown");
     }
 }
 
@@ -3230,7 +3473,7 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<h3>Wi-Fi</h3>");
-    response.print("Click confirm to restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
+    response.print("Click confirm to remove saved WiFi settings and restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
     buildNavigationButton(&response, "Confirm", "/wifimanager");
     response.print("</body></html>");
     return response.endSend();
@@ -3366,12 +3609,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     }
 
     #ifndef CONFIG_IDF_TARGET_ESP32H2
-    response.print("\nFallback to Wi-Fi / Wi-Fi config portal disabled: ");
-    response.print(_preferences->getBool(preference_network_wifi_fallback_disabled, false) ? "Yes" : "No");
     if(_network->networkDeviceName() == "Built-in Wi-Fi")
     {
-        response.print("\nConnect to AP with the best signal enabled: ");
-        response.print(_preferences->getBool(preference_find_best_rssi, false) ? "Yes" : "No");
         response.print("\nRSSI Publish interval (s): ");
 
         if(_preferences->getInt(preference_rssi_publish_interval, 60) < 0) response.print("Disabled");
@@ -3380,8 +3619,6 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     #endif
     response.print("\nRestart ESP32 on network disconnect enabled: ");
     response.print(_preferences->getBool(preference_restart_on_disconnect, false) ? "Yes" : "No");
-    response.print("\nReconnect network on MQTT connection failure enabled: ");
-    response.print(_preferences->getBool(preference_recon_netw_on_mqtt_discon, false) ? "Yes" : "No");
     response.print("\nMQTT Timeout until restart (s): ");
     if(_preferences->getInt(preference_network_timeout, 60) < 0) response.print("Disabled");
     else response.print(_preferences->getInt(preference_network_timeout, 60));
@@ -3967,11 +4204,6 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
     #ifndef CONFIG_IDF_TARGET_ESP32H2
     if(resetWifi)
     {
-        wifi_config_t current_conf;
-        esp_wifi_get_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
-        memset(current_conf.sta.ssid, 0, sizeof(current_conf.sta.ssid));
-        memset(current_conf.sta.password, 0, sizeof(current_conf.sta.password));
-        esp_wifi_set_config((wifi_interface_t)ESP_IF_WIFI_STA, &current_conf);
         _network->reconfigureDevice();
     }
     #endif
@@ -3979,62 +4211,6 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
     waitAndProcess(false, 3000);
     restartEsp(RestartReason::NukiHubReset);
     return res;
-}
-
-void WebCfgServer::printInputField(PsychicStreamResponse *response,
-                                   const char *token,
-                                   const char *description,
-                                   const char *value,
-                                   const size_t& maxLength,
-                                   const char *args,
-                                   const bool& isPassword,
-                                   const bool& showLengthRestriction)
-{
-    char maxLengthStr[20];
-
-    itoa(maxLength, maxLengthStr, 10);
-
-    response->print("<tr><td>");
-    response->print(description);
-
-    if(showLengthRestriction)
-    {
-        response->print(" (Max. ");
-        response->print(maxLength);
-        response->print(" characters)");
-    }
-
-    response->print("</td><td>");
-    response->print("<input type=");
-    response->print(isPassword ? "\"password\"" : "\"text\"");
-    if(strcmp(args, "") != 0)
-    {
-        response->print(" ");
-        response->print(args);
-    }
-    if(strcmp(value, "") != 0)
-    {
-    response->print(" value=\"");
-    response->print(value);
-    }
-    response->print("\" name=\"");
-    response->print(token);
-    response->print("\" size=\"25\" maxlength=\"");
-    response->print(maxLengthStr);
-    response->print("\"/>");
-    response->print("</td></tr>");
-}
-
-void WebCfgServer::printInputField(PsychicStreamResponse *response,
-                                   const char *token,
-                                   const char *description,
-                                   const int value,
-                                   size_t maxLength,
-                                   const char *args)
-{
-    char valueStr[20];
-    itoa(value, valueStr, 10);
-    printInputField(response, token, description, valueStr, maxLength, args);
 }
 
 void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *token, const char *description, const bool value, const char *htmlClass)
@@ -4183,7 +4359,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
 {
     std::vector<std::pair<String, String>> options;
 
-    options.push_back(std::make_pair("1", "Wi-Fi only"));
+    options.push_back(std::make_pair("1", "Wi-Fi"));
     options.push_back(std::make_pair("2", "Generic W5500"));
     options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
     options.push_back(std::make_pair("10", "M5Stack Atom POE S3 (W5500)"));

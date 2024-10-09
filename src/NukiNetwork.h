@@ -24,6 +24,8 @@ public:
     void readSettings();
     bool update();
     void reconfigureDevice();
+    void scan(bool passive = false, bool async = true);
+    bool isApOpen();
     void clearWifiFallback();
 
     const String networkDeviceName() const;
@@ -168,7 +170,6 @@ private:
     std::vector<MqttReceiver*> _mqttReceivers;
     bool _restartOnDisconnect = false;
     bool _checkUpdates = false;
-    bool _reconnectNetworkOnMqttDisconnect = false;
     bool _firstConnect = true;
     bool _publishDebugInfo = false;
     bool _logIp = true;

@@ -45,19 +45,19 @@ public:
     virtual void initialize();
     virtual void reconfigure();
     virtual void update();
-
-    virtual ReconnectStatus reconnect(bool force = false);
+    virtual void scan(bool passive = false, bool async = true);
 
     virtual bool isConnected();
+    virtual bool isApOpen();
 
     int8_t signalStrength() override;
-    
+
     String localIP() override;
     String BSSIDstr() override;
 
 private:
     Preferences* _preferences;
-    
+
     void onDisconnected();
     void onNetworkEvent(arduino_event_id_t event, arduino_event_info_t info);
 

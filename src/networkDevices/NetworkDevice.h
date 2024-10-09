@@ -1,13 +1,6 @@
 #pragma once
 #include "IPConfiguration.h"
 
-enum class ReconnectStatus
-{
-    Failure = 0,
-    Success = 1,
-    CriticalFailure = 2
-};
-
 class NetworkDevice
 {
 public:
@@ -19,11 +12,12 @@ public:
     virtual const String deviceName() const = 0;
 
     virtual void initialize() = 0;
-    virtual ReconnectStatus reconnect(bool force = false) = 0;
     virtual void reconfigure() = 0;
     virtual void update();
+    virtual void scan(bool passive = false, bool async = true) = 0;
 
     virtual bool isConnected() = 0;
+    virtual bool isApOpen() = 0;
     virtual int8_t signalStrength() = 0;
 
     virtual String localIP() = 0;
