@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <ArduinoJson/Memory/MemoryPool.hpp>
 #include <ArduinoJson/Namespace.hpp>
 #include <ArduinoJson/Polyfills/assert.hpp>
 
@@ -12,7 +13,7 @@
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 class VariantData;
-class VariantSlot;
+class ResourceManager;
 
 class CollectionIterator {
   friend class CollectionData;
@@ -49,12 +50,6 @@ class CollectionIterator {
     return *data();
   }
 
-  const char* key() const;
-  bool ownsKey() const;
-
-  void setKey(StringNode*);
-  void setKey(const char*);
-
   VariantData* data() {
     return reinterpret_cast<VariantData*>(slot_);
   }
@@ -64,9 +59,9 @@ class CollectionIterator {
   }
 
  private:
-  CollectionIterator(VariantSlot* slot, SlotId slotId);
+  CollectionIterator(VariantData* slot, SlotId slotId);
 
-  VariantSlot* slot_;
+  VariantData* slot_;
   SlotId currentId_, nextId_;
 };
 
@@ -84,9 +79,7 @@ class CollectionData {
 
   using iterator = CollectionIterator;
 
-  iterator createIterator(const ResourceManager* resources) const {
-    return iterator(resources->getSlot(head_), head_);
-  }
+  iterator createIterator(const ResourceManager* resources) const;
 
   size_t size(const ResourceManager*) const;
   size_t nesting(const ResourceManager*) const;
@@ -99,25 +92,20 @@ class CollectionData {
     collection->clear(resources);
   }
 
-  void remove(iterator it, ResourceManager* resources);
-
-  static void remove(CollectionData* collection, iterator it,
-                     ResourceManager* resources) {
-    if (collection)
-      return collection->remove(it, resources);
-  }
-
   SlotId head() const {
     return head_;
   }
 
-  void addSlot(SlotWithId slot, ResourceManager* resources);
-
  protected:
-  iterator addSlot(ResourceManager*);
+  void appendOne(Slot<VariantData> slot, const ResourceManager* resources);
+  void appendPair(Slot<VariantData> key, Slot<VariantData> value,
+                  const ResourceManager* resources);
+
+  void removeOne(iterator it, ResourceManager* resources);
+  void removePair(iterator it, ResourceManager* resources);
 
  private:
-  SlotWithId getPreviousSlot(VariantSlot*, const ResourceManager*) const;
+  Slot<VariantData> getPreviousSlot(VariantData*, const ResourceManager*) const;
 };
 
 inline const VariantData* collectionToVariant(

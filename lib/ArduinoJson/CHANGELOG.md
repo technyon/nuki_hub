@@ -1,6 +1,42 @@
 ArduinoJson: change log
 =======================
 
+v7.2.0 (2024-09-18)
+------
+
+* Store object members with two slots: one for the key and one for the value
+* Store 64-bit numbers (`double` and `long long`) in an additional slot
+* Reduce the slot size (see table below)
+* Improve message when user forgets third arg of `serializeJson()` et al.
+* Set `ARDUINOJSON_USE_DOUBLE` to `0` by default on 8-bit architectures
+* Deprecate `containsKey()` in favor of `doc["key"].is<T>()`
+* Add support for escape sequence `\'` (issue #2124)
+
+| Architecture | before   | after    |
+|--------------|----------|----------|
+| 8-bit        | 8 bytes  | 6 bytes  |
+| 32-bit       | 16 bytes | 8 bytes  |
+| 64-bit       | 24 bytes | 16 bytes |
+
+> ### BREAKING CHANGES
+>
+> After being on the death row for years, the `containsKey()` method has finally been deprecated.
+> You should replace `doc.containsKey("key")` with `doc["key"].is<T>()`, which not only checks that the key exists but also that the value is of the expected type.
+>
+> ```cpp
+> // Before
+> if (doc.containsKey("value")) {
+>   int value = doc["value"];
+>   // ...
+> }
+>
+> // After
+> if (doc["value"].is<int>()) {
+>   int value = doc["value"];
+>   // ...
+> }
+> ```
+
 v7.1.0 (2024-06-27)
 ------
 

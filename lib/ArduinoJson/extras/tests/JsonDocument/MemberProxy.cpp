@@ -93,25 +93,6 @@ TEST_CASE("MemberProxy::operator==()") {
   }
 }
 
-TEST_CASE("MemberProxy::containsKey()") {
-  JsonDocument doc;
-  MemberProxy mp = doc["hello"];
-
-  SECTION("containsKey(const char*)") {
-    mp["key"] = "value";
-
-    REQUIRE(mp.containsKey("key") == true);
-    REQUIRE(mp.containsKey("key") == true);
-  }
-
-  SECTION("containsKey(std::string)") {
-    mp["key"] = "value";
-
-    REQUIRE(mp.containsKey("key"_s) == true);
-    REQUIRE(mp.containsKey("key"_s) == true);
-  }
-}
-
 TEST_CASE("MemberProxy::operator|()") {
   JsonDocument doc;
 
@@ -345,12 +326,12 @@ TEST_CASE("Deduplicate keys") {
 }
 
 TEST_CASE("MemberProxy under memory constraints") {
-  KillswitchAllocator killswitch;
-  SpyingAllocator spy(&killswitch);
+  TimebombAllocator timebomb(1);
+  SpyingAllocator spy(&timebomb);
   JsonDocument doc(&spy);
 
-  SECTION("key allocation fails") {
-    killswitch.on();
+  SECTION("key slot allocation fails") {
+    timebomb.setCountdown(0);
 
     doc["hello"_s] = "world";
 
@@ -358,6 +339,38 @@ TEST_CASE("MemberProxy under memory constraints") {
     REQUIRE(doc.size() == 0);
     REQUIRE(doc.overflowed() == true);
     REQUIRE(spy.log() == AllocatorLog{
+                             AllocateFail(sizeofPool()),
+                         });
+  }
+
+  SECTION("value slot allocation fails") {
+    timebomb.setCountdown(1);
+
+    // fill the pool entirely, but leave one slot for the key
+    doc["foo"][ARDUINOJSON_POOL_CAPACITY - 4] = 1;
+    REQUIRE(doc.overflowed() == false);
+
+    doc["hello"_s] = "world";
+
+    REQUIRE(doc.is<JsonObject>());
+    REQUIRE(doc.size() == 1);
+    REQUIRE(doc.overflowed() == true);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             AllocateFail(sizeofPool()),
+                         });
+  }
+
+  SECTION("key string allocation fails") {
+    timebomb.setCountdown(1);
+
+    doc["hello"_s] = "world";
+
+    REQUIRE(doc.is<JsonObject>());
+    REQUIRE(doc.size() == 0);
+    REQUIRE(doc.overflowed() == true);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
                              AllocateFail(sizeofString("hello")),
                          });
   }
