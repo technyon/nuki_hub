@@ -1,66 +1,14 @@
+#include "esp_wifi.h"
 #include <WiFi.h>
 #include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
-#ifndef NUKI_HUB_UPDATER
-#include "../MqttTopics.h"
-#include "espMqttClient.h"
-#endif
 #include "../RestartReason.h"
-
-RTC_NOINIT_ATTR char WiFiDevice_reconfdetect[17];
 
 WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
 : NetworkDevice(hostname, ipConfiguration),
-  _preferences(preferences),
-  _wm(preferences->getString(preference_cred_user, "").c_str(), preferences->getString(preference_cred_password, "").c_str())
+  _preferences(preferences)
 {
-    _startAp = strcmp(WiFiDevice_reconfdetect, "reconfigure_wifi") == 0;
-
-    #ifndef NUKI_HUB_UPDATER
-    size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
-    size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
-    size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
-
-    _useEncryption = caLength > 1;  // length is 1 when empty
-
-    if(_useEncryption)
-    {
-        Log->println(F("MQTT over TLS."));
-        Log->println(_ca);
-        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
-        _mqttClientSecure->setCACert(_ca);
-        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
-        {
-            Log->println(F("MQTT with client certificate."));
-            Log->println(_cert);
-            Log->println(_key);
-            _mqttClientSecure->setCertificate(_cert);
-            _mqttClientSecure->setPrivateKey(_key);
-        }
-    } else
-    {
-        Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
-    }
-
-    if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
-    {
-        MqttLoggerMode mode;
-
-        if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
-        else mode = MqttLoggerMode::MqttAndSerial;
-
-        _path = new char[200];
-        memset(_path, 0, sizeof(_path));
-
-        String pathStr = preferences->getString(preference_mqtt_lock_path);
-        pathStr.concat(mqtt_topic_log);
-        strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, mode);
-    }
-    #endif
 }
 
 const String WifiDevice::deviceName() const
@@ -70,59 +18,13 @@ const String WifiDevice::deviceName() const
 
 void WifiDevice::initialize()
 {
-    std::vector<const char *> wm_menu;
-    wm_menu.push_back("wifi");
-    wm_menu.push_back("exit");
-    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
-    // reduced timeout if ESP is set to restart on disconnect
-    _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi));
-    _wm.setConnectTimeout(20);
-    _wm.setConfigPortalTimeout(_preferences->getBool(preference_restart_on_disconnect, false) ? 60 * 3 : 60 * 30);
-    _wm.setShowInfoUpdate(false);
-    _wm.setMenu(wm_menu);
-    _wm.setHostname(_hostname);
+    String ssid = savedSSID();
+    String pass = savedPass();
+    WiFi.setHostname(_hostname.c_str());
 
     if(!_ipConfiguration->dhcpEnabled())
     {
-        _wm.setSTAStaticIPConfig(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
-    }
-
-    _wm.setAPCallback(clearRtcInitVar);
-
-    bool res = false;
-    bool connectedFromPortal = false;
-
-    if(_startAp)
-    {
-        Log->println(F("Opening Wi-Fi configuration portal."));
-        res = _wm.startConfigPortal();
-        connectedFromPortal = true;
-    }
-    else
-    {
-        res = _wm.autoConnect(); // password protected ap
-    }
-
-    if(!res)
-    {
-        esp_wifi_disconnect();
-        esp_wifi_stop();
-        esp_wifi_deinit();
-
-        Log->println(F("Failed to connect. Wait for ESP restart."));
-        delay(1000);
-        restartEsp(RestartReason::WifiInitFailed);
-    }
-    else {
-        Log->print(F("Wi-Fi connected: "));
-        Log->println(WiFi.localIP().toString());
-
-        if(connectedFromPortal)
-        {
-            Log->println(F("Connected using WifiManager portal. Wait for ESP restart."));
-            delay(1000);
-            restartEsp(RestartReason::ConfigurationUpdated);
-        }
+        WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
     }
 
     WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
@@ -133,21 +35,135 @@ void WifiDevice::initialize()
         }
         else if(event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
         {
+            Log->println(WiFi.localIP().toString());
             onConnected();
         }
+        else if(event == ARDUINO_EVENT_WIFI_SCAN_DONE)
+        {
+            Log->println(F("Wi-Fi async scan done"));
+            _foundNetworks = WiFi.scanComplete();
+
+            for (int i = 0; i < _foundNetworks; i++)
+            {
+                Log->println(String(F("SSID ")) + WiFi.SSID(i) + String(F(" found with RSSI: ")) +
+                         String(WiFi.RSSI(i)) + String(F("(")) +
+                         String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
+                         String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
+                         String(F(" and channel: ")) + String(WiFi.channel(i)));
+            }
+
+            if (_connectOnScanDone)
+            {
+                connect();
+            }
+            else if (_openAP)
+            {
+                openAP();
+            }
+        }
     });
+
+    if(ssid.length() > 0 && pass.length() > 0)
+    {
+        Log->println(String(F("SSID ")) + ssid + " length " + String(ssid.length()) + " " +
+                     String("Password length ") + String(pass.length()));
+        _connectOnScanDone = true;
+        _openAP = false;
+        scan();
+    }
+    else
+    {
+        Log->println("No SSID or Wifi password saved, opening AP");
+        _connectOnScanDone = false;
+        _openAP = true;
+        scan();
+    }
+}
+
+void WifiDevice::scan()
+{
+    WiFi.scanDelete();
+    Log->println(F("Wi-Fi async scan started"));
+    WiFi.scanNetworks(true);
+}
+
+void WifiDevice::openAP()
+{
+    WiFi.softAPsetHostname(_hostname.c_str());
+    WiFi.softAP("NukiHub", "NukiHubESP32");
+}
+
+bool WifiDevice::connect()
+{
+    bool ret = false;
+    String ssid = savedSSID();
+    String pass = savedPass();
+    WiFi.persistent(true);
+    WiFi.enableSTA(true);
+    WiFi.persistent(false);
+    delay(500);
+
+    int bestConnection = -1;
+    for (int i = 0; i < _foundNetworks; i++)
+    {
+        if (ssid == WiFi.SSID(i))
+        {
+            Log->println(String(F("SSID ")) + ssid + String(F(" found with RSSI: ")) +
+                     String(WiFi.RSSI(i)) + String(F("(")) +
+                     String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
+                     String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
+                     String(F(" and channel: ")) + String(WiFi.channel(i)));
+            if (bestConnection == -1)
+            {
+                bestConnection = i;
+            }
+            else
+            {
+                if (WiFi.RSSI(i) > WiFi.RSSI(bestConnection))
+                {
+                    bestConnection = i;
+                }
+            }
+        }
+    }
+
+    if (bestConnection == -1)
+    {
+        Log->print("No network found with SSID: ");
+        Log->println(ssid);
+    }
+    else
+    {
+        Log->println(String(F("Trying to connect to SSID ")) + ssid + String(F(" found with RSSI: ")) +
+               String(WiFi.RSSI(bestConnection)) + String(F("(")) +
+               String(constrain((100.0 + WiFi.RSSI(bestConnection)) * 2, 0, 100)) +
+               String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(bestConnection) +
+               String(F(" and channel: ")) + String(WiFi.channel(bestConnection)));
+        ret = WiFi.begin(ssid.c_str(), pass.c_str(), 0, WiFi.BSSID(bestConnection), true);
+    }
+
+    if(!ret)
+    {
+        esp_wifi_disconnect();
+        esp_wifi_stop();
+        esp_wifi_deinit();
+
+        Log->println(F("Failed to connect. Wait for ESP restart."));
+        delay(1000);
+        restartEsp(RestartReason::WifiInitFailed);
+    }
+    else
+    {
+        Log->println(F("Wi-Fi connected"));
+    }
+
+    return ret;
 }
 
 void WifiDevice::reconfigure()
 {
-    strcpy(WiFiDevice_reconfdetect, "reconfigure_wifi");
     delay(200);
     restartEsp(RestartReason::ReconfigureWifi);
-}
-
-bool WifiDevice::supportsEncryption()
-{
-    return true;
 }
 
 bool WifiDevice::isConnected()
@@ -155,43 +171,18 @@ bool WifiDevice::isConnected()
     return WiFi.isConnected();
 }
 
-ReconnectStatus WifiDevice::reconnect(bool force)
-{
-    _wm.setFindBestRSSI(_preferences->getBool(preference_find_best_rssi));
-
-    if((!isConnected() || force) && !_isReconnecting)
-    {
-        _isReconnecting = true;
-        WiFi.disconnect();
-        int loop = 0;
-
-        while(isConnected() && loop <20)
-        {
-          delay(100);
-          loop++;
-        }
-
-        _wm.resetScan();
-        _wm.autoConnect();
-        _isReconnecting = false;
-    }
-
-    if(!isConnected() && _disconnectTs > (esp_timer_get_time() / 1000) - 120000) _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
-    return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
-}
-
 void WifiDevice::onConnected()
 {
-    _isReconnecting = false;
-    _wm.setEnableConfigPortal(_startAp || !_preferences->getBool(preference_network_wifi_fallback_disabled, false));
+
 }
 
 void WifiDevice::onDisconnected()
 {
     _disconnectTs = (esp_timer_get_time() / 1000);
     if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    _wm.setEnableConfigPortal(false);
-    reconnect();
+    _connectOnScanDone = true;
+    _openAP = false;
+    scan();
 }
 
 int8_t WifiDevice::signalStrength()
@@ -209,7 +200,20 @@ String WifiDevice::BSSIDstr()
     return WiFi.BSSIDstr();
 }
 
-void WifiDevice::clearRtcInitVar(WiFiManager *)
+bool WifiDevice::isApOpen()
 {
-    memset(WiFiDevice_reconfdetect, 0, sizeof WiFiDevice_reconfdetect);
+    return _openAP;
+}
+
+String WifiDevice::savedSSID() const
+{
+    wifi_config_t conf;
+    esp_wifi_get_config(WIFI_IF_STA, &conf);
+    return String(reinterpret_cast<const char*>(conf.sta.ssid));
+}
+
+String WifiDevice::savedPass() const {
+    wifi_config_t conf;
+    esp_wifi_get_config(WIFI_IF_STA, &conf);
+    return String(reinterpret_cast<char*>(conf.sta.password));
 }

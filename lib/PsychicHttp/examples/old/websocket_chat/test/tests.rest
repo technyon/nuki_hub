@@ -1,0 +1,35 @@
+# Name: REST Client
+# Id: humao.rest-client
+# Description: REST Client for Visual Studio Code
+# Version: 0.21.3
+# Publisher: Huachao Mao
+# VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+@baseUrl = http://172.16.0.87
+
+###
+
+GET {{baseUrl}}/ HTTP/1.1
+
+###
+
+GET {{baseUrl}}/get?message=Hello+World HTTP/1.1
+
+###
+
+POST {{baseUrl}}/post HTTP/1.1
+Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+
+message=Hello+World
+
+###
+
+GET {{baseUrl}}/someRandomFile HTTP/1.1
+
+###
+
+GET {{baseUrl}}/basic HTTP/1.1
+
+###
+
+GET {{baseUrl}}/stream HTTP/1.1

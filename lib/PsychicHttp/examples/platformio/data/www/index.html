@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PsychicHTTP Demo</title>
+        <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    </head>
+    <body>
+        <main>
+            <h1>Basic Request Examples</h1>
+            <ul>
+                <li><a href="/api?foo=bar">API Call</a></li>
+                <li><a href="/redirect">Redirection</a></li>
+                <li><a href="/auth-digest">Authentication (Digest)</a></li>
+                <li><a href="/auth-basic">Authentication (Basic)</a></li>
+                <li><a href="/cookies">Cookies Demo</a></li>
+                <li><a href="/404">404</a></li>
+            </ul>
+
+            <h1>Static Serving</h1>
+            <p>
+                <a href="/alien.png"><img width="60" src="/alien.png"></a>
+                <a href="/img/request_flow.png"><img width="60" src="/img/request_flow.png"></a>
+            </p>
+            <p><a href="/myfile.txt">Text File</a></p>
+
+            <h1>Simple POST Form</h1>
+            <form action="/post" method="post">
+                <label for="param1">Parameter 1:</label>
+                <input type="text" id="param1" name="param1" value="Parameter 1">            
+                <br>
+                <label for="param2">Parameter 2:</label>
+                <input type="text" id="param2" name="param2" value="Parameter 2">            
+                <br>
+                <input type="submit" value="Submit">
+            </form>            
+
+            <h1>Basic File Upload</h1>
+            <table border="0">
+                <tr>
+                    <td>
+                        <label for="newfile">Upload a file</label>
+                    </td>
+                    <td colspan="2">
+                        <input id="newfile" type="file" onchange="setpath()" style="width:100%;">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="filepath">Set path on server</label>
+                    </td>
+                    <td>
+                        <input id="filepath" type="text" style="width:100%;">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button id="upload" type="button" onclick="upload()">Upload</button>
+                    </td>
+                </tr>
+            </table>
+            <script>
+            function setpath() {
+                var default_path = document.getElementById("newfile").files[0].name;
+                document.getElementById("filepath").value = default_path;
+            }
+            function upload() {
+                var filePath = document.getElementById("filepath").value;
+                var upload_path = "/upload/" + filePath;
+                var fileInput = document.getElementById("newfile").files;
+
+                /* Max size of an individual file. Make sure this
+                * value is same as that set in file_server.c */
+                var MAX_FILE_SIZE = 2048*1024;
+                var MAX_FILE_SIZE_STR = "2MB";
+
+                if (fileInput.length == 0) {
+                    alert("No file selected!");
+                } else if (filePath.length == 0) {
+                    alert("File path on server is not set!");
+                } else if (filePath.indexOf(' ') >= 0) {
+                    alert("File path on server cannot have spaces!");
+                } else if (filePath[filePath.length-1] == '/') {
+                    alert("File name not specified after path!");
+                } else if (fileInput[0].size > 200*1024) {
+                    alert("File size must be less than 200KB!");
+                } else {
+                    document.getElementById("newfile").disabled = true;
+                    document.getElementById("filepath").disabled = true;
+                    document.getElementById("upload").disabled = true;
+
+                    var file = fileInput[0];
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.onreadystatechange = function() {
+                        if (xhttp.readyState == 4) {
+                            if (xhttp.status == 200) {
+                                document.open();
+                                document.write(xhttp.responseText);
+                                document.close();
+                            } else if (xhttp.status == 0) {
+                                alert("Server closed the connection abruptly!");
+                                location.reload()
+                            } else {
+                                alert(xhttp.status + " Error!\n" + xhttp.responseText);
+                                location.reload()
+                            }
+                        }
+                    };
+                    xhttp.open("POST", upload_path, true);
+                    xhttp.send(file);
+                }
+            }
+            </script>
+
+            <h1>Multipart POST Form</h1>
+            <form action="/multipart" method="post" enctype="multipart/form-data">
+                <label for="param1">Parameter 1:</label>
+                <input type="text" id="param1" name="param1" value="Parameter 1">            
+                <br>
+
+                <label for="param2">Parameter 2:</label>
+                <input type="text" id="param2" name="param2" value="Parameter 2">            
+                <br>
+
+                <label for="file-upload">File Upload:</label>
+                <input type="file" id="file-upload" name="file_upload" accept=".txt, .html, .pdf, .png, .jpg, .gif" required>
+                <br>
+            
+                <input type="submit" value="Upload File">
+            </form>
+
+            <h1>Websocket Demo</h1>
+            <input type="text" id="message_input" placeholder="Type your message">
+            <button onclick="sendMessage()">Send Message</button>
+            <button onclick="websocketConnect()">Connect</button>
+            <div>
+                <textarea id="websocket_output" style="width: 50%; height: 250px;"></textarea>
+            </div>
+
+            <script>
+                let socket;
+                const outputText = document.getElementById('websocket_output');
+                const messageInput = document.getElementById('message_input');
+
+                function websocketConnect()
+                {
+                    // Create a WebSocket connection
+                    socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws");
+            
+                    // Event handler for when the WebSocket connection is open
+                    socket.addEventListener('open', (event) => {
+                        outputText.value += `[socket] connection opened!\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    });
+            
+                    // Event handler for when a message is received from the WebSocket server
+                    socket.addEventListener('message', (event) => {
+                        // Echo the received message into the output div
+                        let data = event.data.trim();
+                        outputText.value += `[received] ${data}\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    });
+            
+                    // Event handler for when an error occurs with the WebSocket connection
+                    socket.addEventListener('error', (event) => {
+                        let data = event.data.trim();
+                        outputText.value += `[error] ${event.data}\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    });
+            
+                    // Event handler for when the WebSocket connection is closed
+                    socket.addEventListener('close', (event) => {
+                        outputText.value += `[socket] connection closed!\n`;
+                    });
+                }
+        
+                // Function to send a message to the WebSocket server
+                function sendMessage() {
+                    if (socket.readyState == WebSocket.OPEN) {
+                        const message = messageInput.value.trim();
+                        if (message) {
+                            socket.send(message);
+                            messageInput.value = ''; // Clear the input field after sending the message
+                            outputText.value += `[sent] ${message}\n`;
+                            outputText.scrollTop = outputText.scrollHeight;
+                        }
+                    }
+                    else
+                    {
+                        outputText.value += `[error] Not Connected\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    }
+                }
+            </script>
+
+            <h1>EventSource Demo</h1>
+            <button onclick="eventSourceConnect()">Connect</button>
+            <div>
+                <textarea id="eventsource_output" style="width: 50%; height: 250px;"></textarea>
+            </div>
+
+            <script>
+                const dataElement = document.getElementById('eventsource_output');
+
+                function eventSourceConnect()
+                {
+                    const eventSource = new EventSource('/events');
+            
+                    eventSource.onopen = () => {
+                        dataElement.value += `[connected]\n`;
+                        dataElement.scrollTop = dataElement.scrollHeight;
+                    };
+
+                    eventSource.addEventListener('millis', (event) => {
+                        let data = event.data.trim()
+                        dataElement.value += `[millis] ${data}\n`;
+                        dataElement.scrollTop = dataElement.scrollHeight;
+                    });
+
+                    eventSource.onmessage = (event) => {
+                        let data = event.data.trim()
+                        dataElement.value += `[message] ${data}\n`;
+                        dataElement.scrollTop = dataElement.scrollHeight;
+                    };
+                
+                    eventSource.onerror = (error) => {
+                        dataElement.value += `[error] ${error}\n`;
+                        dataElement.scrollTop = dataElement.scrollHeight;
+                        eventSource.close();
+                    };
+                }
+              </script>
+        </main>
+    </body>
+</html>

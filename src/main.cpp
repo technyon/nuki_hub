@@ -19,11 +19,12 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
-#include <AsyncTCP.h>
-#include <DNSServer.h>
-#include <ESPAsyncWebServer.h>
+/*
+#ifdef DEBUG_NUKIHUB
 #include <WString.h>
 #include <MycilaWebSerial.h>
+#endif
+*/
 
 char log_print_buffer[1024];
 
@@ -55,7 +56,7 @@ int64_t restartTs = 10 * 1000 * 60000;
 
 #endif
 
-AsyncWebServer* asyncServer = nullptr;
+PsychicHttpServer* psychicServer = nullptr;
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 Preferences* preferences = nullptr;
@@ -103,7 +104,11 @@ int _log_vprintf(const char *fmt, va_list args) {
 
 void setReroute(){
     esp_log_set_vprintf(_log_vprintf);
-    if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
+    if(preferences->getBool(preference_mqtt_log_enabled)) 
+    {
+        esp_log_level_set("*", ESP_LOG_INFO);
+        esp_log_level_set("mqtt", ESP_LOG_NONE);
+    }
     else
     {
         esp_log_level_set("*", ESP_LOG_DEBUG);
@@ -381,6 +386,7 @@ void setupTasks(bool ota)
 void setup()
 {
     esp_log_level_set("*", ESP_LOG_ERROR);
+    esp_log_level_set("mqtt", ESP_LOG_NONE);
     Serial.begin(115200);
     Log = &Serial;
 
@@ -424,11 +430,11 @@ void setup()
 
     if(!doOta)
     {
-        asyncServer = new AsyncWebServer(80);
-        webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
+        psychicServer = new PsychicHttpServer;
+        webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
         webCfgServer->initialize();
-        asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
-        asyncServer->begin();
+        psychicServer->listen(80);
+        psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });        
     }
     #else
     Log->print(F("Nuki Hub version "));
@@ -498,15 +504,20 @@ void setup()
     {
         if(!doOta)
         {
-            asyncServer = new AsyncWebServer(80);
+            psychicServer = new PsychicHttpServer;
+            psychicServer->config.max_uri_handlers = 40;
+            psychicServer->config.stack_size = 8192;
+            psychicServer->listen(80);
 
             if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
             {
-                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
+                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
                 webCfgServer->initialize();
-                asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
+                psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });
             }
-            else asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/webserial"); });
+            /*
+            #ifdef DEBUG_NUKIHUB
+            else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
 
             if(preferences->getBool(preference_webserial_enabled, false))
             {
@@ -514,8 +525,8 @@ void setup()
               WebSerial.begin(asyncServer);
               WebSerial.setBuffer(1024);
             }
-
-            asyncServer->begin();
+            #endif
+            */
         }
     }
     #endif
