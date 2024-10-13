@@ -30,16 +30,12 @@ Gpio::Gpio(Preferences* preferences)
 
 void Gpio::onTimer()
 {
-
+    _inst->asd = 1 - _inst->asd;
+    digitalWrite(27, _inst->asd > 0 ? HIGH : LOW);
 }
 
 void Gpio::init()
 {
-    hw_timer_t* timer= timerBegin(5);
-    timerStart(timer);
-    timerAlarm(timer, 1, true, 0);
-    timerAttachInterrupt(timer, onTimer);
-
     for(const auto& entry : _inst->_pinConfiguration)
     {
         const auto it = std::find(_inst->availablePins().begin(), _inst->availablePins().end(), entry.pin);
@@ -118,6 +114,11 @@ void Gpio::init()
 
         Gpio2Go::subscribe(Gpio::inputCallback);
     }
+
+    pinMode (27, OUTPUT);
+    hw_timer_t* timer= timerBegin(1000000);
+    timerAttachInterrupt(timer, onTimer);
+    timerAlarm(timer, 100000, true, 0);
 }
 
 const std::vector<uint8_t>& Gpio::availablePins() const

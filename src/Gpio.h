@@ -143,5 +143,7 @@ private:
     static Gpio* _inst;
     static int64_t _debounceTs;
 
+    int asd = 0;
+
     Preferences* _preferences = nullptr;
 };
