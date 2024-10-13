@@ -11,7 +11,6 @@
 #include "networkDevices/W5500Definitions.h"
 
 Gpio* Gpio::_inst = nullptr;
-int64_t Gpio::_debounceTs = 0;
 const uint Gpio::_debounceTime = GPIO_DEBOUNCE_TIME;
 
 Gpio::Gpio(Preferences* preferences)
@@ -96,8 +95,9 @@ void Gpio::onTimer()
             case PinRole::GeneralInputPullUp:
                 if(isTriggered(entry))
                 {
-                    asd = 1 - asd;
-                    digitalWrite(27, asd > 0 ? HIGH : LOW);
+                    _inst->notify(getGpioAction(entry.role), entry.pin);
+//                    asd = 1 - asd;
+//                    digitalWrite(27, asd > 0 ? HIGH : LOW);
                 }
                 break;
 //            case PinRole::GeneralOutput:
@@ -162,8 +162,6 @@ void Gpio::init()
             default:
                 break;
         }
-
-        Gpio2Go::subscribe(Gpio::inputCallback);
     }
 
     pinMode (27, OUTPUT);
@@ -380,7 +378,7 @@ const PinRole Gpio::getPinRole(const int &pin) const
     return PinRole::Disabled;
 }
 
-String Gpio::getRoleDescription(PinRole role) const
+String Gpio::getRoleDescription(const PinRole& role) const
 {
     switch(role)
     {
@@ -433,6 +431,53 @@ String Gpio::getRoleDescription(PinRole role) const
     }
 }
 
+
+GpioAction Gpio::getGpioAction(const PinRole &role) const
+{
+    switch(role)
+    {
+        case PinRole::Disabled:
+            return GpioAction::None;
+        case PinRole::InputLock:
+            return GpioAction::Lock;
+        case PinRole::InputUnlock:
+            return GpioAction::Unlock;
+        case PinRole::InputUnlatch:
+            return GpioAction::Unlatch;
+        case PinRole::InputLockNgo:
+            return GpioAction::LockNgo;
+        case PinRole::InputLockNgoUnlatch:
+            return GpioAction::LockNgoUnlatch;
+        case PinRole::InputElectricStrikeActuation:
+            return GpioAction::ElectricStrikeActuation;
+        case PinRole::InputActivateRTO:
+            return GpioAction::ActivateRTO;
+        case PinRole::InputActivateCM:
+            return GpioAction::ActivateCM;
+        case PinRole::InputDeactivateRtoCm:
+            return GpioAction::DeactivateRtoCm;
+        case PinRole::InputDeactivateRTO:
+            return GpioAction::DeactivateRTO;
+        case PinRole::InputDeactivateCM:
+            return GpioAction::DeactivateCM;
+
+        case PinRole::GeneralInputPullDown:
+        case PinRole::GeneralInputPullUp:
+            return GpioAction::GeneralInput;
+
+        case PinRole::GeneralOutput:
+        case PinRole::Ethernet:
+        case PinRole::OutputHighLocked:
+        case PinRole::OutputHighUnlocked:
+        case PinRole::OutputHighMotorBlocked:
+        case PinRole::OutputHighRtoActive:
+        case PinRole::OutputHighCmActive:
+        case PinRole::OutputHighRtoOrCmActive:
+        default:
+            return GpioAction::None;
+    }}
+
+
 void Gpio::getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration, const String& linebreak) const
 {
     for(const auto& entry : pinConfiguration)
@@ -465,91 +510,9 @@ void Gpio::notify(const GpioAction &action, const int& pin)
     }
 }
 
-void Gpio::inputCallback(const int &pin)
-{
-    _inst->notify(GpioAction::GeneralInput, pin);
-}
-
 void Gpio::addCallback(std::function<void(const GpioAction&, const int&)> callback)
 {
     _callbacks.push_back(callback);
-}
-
-void Gpio::isrLock()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::Lock, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrUnlock()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::Unlock, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrUnlatch()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::Unlatch, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrLockNgo()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::LockNgo, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrLockNgoUnlatch()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::LockNgoUnlatch, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrElectricStrikeActuation()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::ElectricStrikeActuation, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrActivateRTO()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::ActivateRTO, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrActivateCM()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::ActivateCM, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrDeactivateRtoCm()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::DeactivateRtoCm, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrDeactivateRTO()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::DeactivateRTO, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
-}
-
-void Gpio::isrDeactivateCM()
-{
-    if((esp_timer_get_time() / 1000) < _debounceTs) return;
-    _inst->notify(GpioAction::DeactivateCM, -1);
-    _debounceTs = (esp_timer_get_time() / 1000) + _debounceTime;
 }
 
 void Gpio::setPinOutput(const uint8_t& pin, const uint8_t& state)

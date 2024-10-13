@@ -43,7 +43,8 @@ enum class GpioAction
     DeactivateRtoCm,
     DeactivateRTO,
     DeactivateCM,
-    GeneralInput
+    GeneralInput,
+    None
 };
 
 struct PinEntry
@@ -70,7 +71,8 @@ public:
     const std::vector<int> getDisabledPins() const;
     const PinRole getPinRole(const int& pin) const;
 
-    String getRoleDescription(PinRole role) const;
+    String getRoleDescription(const PinRole& role) const;
+
     void getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration, const String& linebreak = "\n") const;
 
     const std::vector<PinRole>& getAllRoles() const;
@@ -81,7 +83,7 @@ private:
     void IRAM_ATTR notify(const GpioAction& action, const int& pin);
     void IRAM_ATTR onTimer();
     bool IRAM_ATTR isTriggered(const PinEntry& pinEntry);
-    static void inputCallback(const int & pin);
+    GpioAction IRAM_ATTR getGpioAction(const PinRole& role) const;
 
     #if defined(CONFIG_IDF_TARGET_ESP32C3)
     //Based on https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
@@ -128,22 +130,10 @@ private:
     static const uint _debounceTime;
 
     static void IRAM_ATTR isrOnTimer();
-    static void IRAM_ATTR isrLock();
-    static void IRAM_ATTR isrUnlock();
-    static void IRAM_ATTR isrUnlatch();
-    static void IRAM_ATTR isrLockNgo();
-    static void IRAM_ATTR isrLockNgoUnlatch();
-    static void IRAM_ATTR isrElectricStrikeActuation();
-    static void IRAM_ATTR isrActivateRTO();
-    static void IRAM_ATTR isrActivateCM();
-    static void IRAM_ATTR isrDeactivateRtoCm();
-    static void IRAM_ATTR isrDeactivateRTO();
-    static void IRAM_ATTR isrDeactivateCM();
 
     std::vector<std::function<void(const GpioAction&, const int&)>> _callbacks;
 
     static Gpio* _inst;
-    static int64_t _debounceTs;
 
     int asd = 0;
     std::vector<int8_t> _triggerCount;
