@@ -30,12 +30,74 @@ Gpio::Gpio(Preferences* preferences)
 
 void Gpio::onTimer()
 {
-    _inst->asd = 1 - _inst->asd;
-    digitalWrite(27, _inst->asd > 0 ? HIGH : LOW);
+    for(const auto& entry : _inst->_pinConfiguration)
+    {
+        switch(entry.role)
+        {
+            case PinRole::InputLock:
+            case PinRole::InputUnlock:
+            case PinRole::InputUnlatch:
+            case PinRole::InputLockNgo:
+            case PinRole::InputLockNgoUnlatch:
+            case PinRole::InputElectricStrikeActuation:
+            case PinRole::InputActivateRTO:
+            case PinRole::InputActivateCM:
+            case PinRole::InputDeactivateRtoCm:
+            case PinRole::InputDeactivateRTO:
+            case PinRole::InputDeactivateCM:
+            case PinRole::OutputHighLocked:
+            case PinRole::OutputHighUnlocked:
+            case PinRole::OutputHighMotorBlocked:
+            case PinRole::OutputHighRtoActive:
+            case PinRole::OutputHighCmActive:
+            case PinRole::OutputHighRtoOrCmActive:
+            case PinRole::GeneralInputPullDown:
+            case PinRole::GeneralInputPullUp:
+                int state = digitalRead(entry.pin);
+
+                if(state == LOW)
+                {
+                    if (_triggerCount[entry.pin] != -1)
+                    {
+                        _triggerCount[entry.pin]++;
+                    }
+
+                    if (_triggerCount[entry.pin] >= 3)
+                    {
+                        asd = 1 - asd;
+                        digitalWrite(27, asd > 0 ? HIGH : LOW);
+                        _triggerCount[entry.pin] = -1;
+                    }
+                }
+                else
+                {
+                    _triggerCount[entry.pin] = 0;
+                }
+                break;
+//            case PinRole::GeneralOutput:
+//            case PinRole::Ethernet:
+//            default:
+//                break;
+        }
+    }
+
+
+
+}
+
+void Gpio::isrOnTimer()
+{
+    _inst->onTimer();
 }
 
 void Gpio::init()
 {
+    _inst->_triggerCount.reserve(_inst->availablePins().size());
+    for(int i=0; i<_inst->availablePins().size(); i++)
+    {
+        _inst->_triggerCount.push_back(0);
+    }
+
     for(const auto& entry : _inst->_pinConfiguration)
     {
         const auto it = std::find(_inst->availablePins().begin(), _inst->availablePins().end(), entry.pin);
@@ -49,47 +111,36 @@ void Gpio::init()
         {
             case PinRole::InputLock:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrLock, FALLING);
                 break;
             case PinRole::InputUnlock:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrUnlock, FALLING);
                 break;
             case PinRole::InputUnlatch:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrUnlatch, FALLING);
                 break;
             case PinRole::InputLockNgo:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrLockNgo, FALLING);
                 break;
             case PinRole::InputLockNgoUnlatch:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrLockNgoUnlatch, FALLING);
                 break;
             case PinRole::InputElectricStrikeActuation:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrElectricStrikeActuation, FALLING);
                 break;
             case PinRole::InputActivateRTO:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrActivateRTO, FALLING);
                 break;
             case PinRole::InputActivateCM:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrActivateCM, FALLING);
                 break;
             case PinRole::InputDeactivateRtoCm:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrDeactivateRtoCm, FALLING);
                 break;
             case PinRole::InputDeactivateRTO:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrDeactivateRTO, FALLING);
                 break;
             case PinRole::InputDeactivateCM:
                 pinMode(entry.pin, INPUT_PULLUP);
-                attachInterrupt(entry.pin, isrDeactivateCM, FALLING);
                 break;
             case PinRole::OutputHighLocked:
             case PinRole::OutputHighUnlocked:
@@ -117,7 +168,7 @@ void Gpio::init()
 
     pinMode (27, OUTPUT);
     hw_timer_t* timer= timerBegin(1000000);
-    timerAttachInterrupt(timer, onTimer);
+    timerAttachInterrupt(timer, isrOnTimer);
     timerAlarm(timer, 100000, true, 0);
 }
 

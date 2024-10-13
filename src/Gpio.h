@@ -79,6 +79,7 @@ public:
 
 private:
     void IRAM_ATTR notify(const GpioAction& action, const int& pin);
+    void IRAM_ATTR onTimer();
     static void inputCallback(const int & pin);
 
     #if defined(CONFIG_IDF_TARGET_ESP32C3)
@@ -125,7 +126,7 @@ private:
     std::vector<PinEntry> _pinConfiguration;
     static const uint _debounceTime;
 
-    static void IRAM_ATTR onTimer();
+    static void IRAM_ATTR isrOnTimer();
     static void IRAM_ATTR isrLock();
     static void IRAM_ATTR isrUnlock();
     static void IRAM_ATTR isrUnlatch();
@@ -144,6 +145,7 @@ private:
     static int64_t _debounceTs;
 
     int asd = 0;
+    std::vector<int8_t> _triggerCount;
 
     Preferences* _preferences = nullptr;
 };
