@@ -31,6 +31,8 @@ Gpio::Gpio(Preferences* preferences)
 
 bool Gpio::isTriggered(const PinEntry& entry)
 {
+    const int threshold = 3;
+
     int state = digitalRead(entry.pin);
 
     if(entry.role == PinRole::GeneralInputPullDown)
@@ -40,12 +42,12 @@ bool Gpio::isTriggered(const PinEntry& entry)
 
     if(state == LOW)
     {
-        if (_triggerCount[entry.pin] != -1)
+        if (_triggerCount[entry.pin] >= 0)
         {
             _triggerCount[entry.pin]++;
         }
 
-        if (_triggerCount[entry.pin] >= 3)
+        if (_triggerCount[entry.pin] >= threshold)
         {
             _triggerCount[entry.pin] = -1;
             return true;
@@ -53,7 +55,15 @@ bool Gpio::isTriggered(const PinEntry& entry)
     }
     else
     {
-        _triggerCount[entry.pin] = 0;
+        if (_triggerCount[entry.pin] < 0)
+        {
+            _triggerCount[entry.pin]--;
+
+            if(_triggerCount[entry.pin] <= -threshold)
+            {
+                _triggerCount[entry.pin] = 0;
+            }
+        }
     }
 
     return false;
@@ -96,9 +106,6 @@ void Gpio::onTimer()
 //                break;
         }
     }
-
-
-
 }
 
 void Gpio::isrOnTimer()
