@@ -135,7 +135,6 @@ private:
 
     static Gpio* _inst;
 
-    int asd = 0;
     std::vector<int8_t> _triggerCount;
     hw_timer_t* timer = nullptr;
 
