@@ -125,6 +125,7 @@ private:
     std::vector<PinEntry> _pinConfiguration;
     static const uint _debounceTime;
 
+    static void IRAM_ATTR onTimer();
     static void IRAM_ATTR isrLock();
     static void IRAM_ATTR isrUnlock();
     static void IRAM_ATTR isrUnlatch();

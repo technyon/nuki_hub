@@ -28,8 +28,18 @@ Gpio::Gpio(Preferences* preferences)
     _inst->init();
 }
 
+void Gpio::onTimer()
+{
+
+}
+
 void Gpio::init()
 {
+    hw_timer_t* timer= timerBegin(5);
+    timerStart(timer);
+    timerAlarm(timer, 1, true, 0);
+    timerAttachInterrupt(timer, onTimer);
+
     for(const auto& entry : _inst->_pinConfiguration)
     {
         const auto it = std::find(_inst->availablePins().begin(), _inst->availablePins().end(), entry.pin);
