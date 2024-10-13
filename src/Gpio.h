@@ -80,6 +80,7 @@ public:
 private:
     void IRAM_ATTR notify(const GpioAction& action, const int& pin);
     void IRAM_ATTR onTimer();
+    bool IRAM_ATTR isTriggered(const PinEntry& pinEntry);
     static void inputCallback(const int & pin);
 
     #if defined(CONFIG_IDF_TARGET_ESP32C3)
@@ -146,6 +147,7 @@ private:
 
     int asd = 0;
     std::vector<int8_t> _triggerCount;
+    hw_timer_t* timer = nullptr;
 
     Preferences* _preferences = nullptr;
 };
