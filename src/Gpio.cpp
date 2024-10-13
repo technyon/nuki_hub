@@ -5,7 +5,6 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
-#include "Gpio2Go.h"
 #include "networkDevices/LAN8720Definitions.h"
 #include "networkDevices/DM9051Definitions.h"
 #include "networkDevices/W5500Definitions.h"
