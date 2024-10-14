@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16.0)
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+#include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(nukihub)
 
 add_compile_definitions(CONFIG_IDF_TARGET_ESP32)
@@ -59,19 +59,30 @@ set(SRCFILES
 )
 
 file(GLOB_RECURSE SRCFILESREC
-        lib/NimBLE-Arduino/src/*.c
-        lib/NimBLE-Arduino/src/*.cpp
-        lib/NimBLE-Arduino/src/*.h
-        lib/ESP Async WebServer/src/*.cpp
-        lib/ESP Async WebServer/src/*.h
-        lib/espMqttClient/src/*.cpp
-        lib/espMqttClient/src/*.h
-        lib/espMqttClient/src/Packets/*.cpp
-        lib/espMqttClient/src/Packets/*.h
-        lib/espMqttClient/src/Transport/*.cpp
-        lib/espMqttClient/src/Transport/*.h
-        lib/ArduinoJson/src/*.h
-        lib/ArduinoJson/src/*.hpp
+        ../lib/NimBLE-Arduino/src/*.c
+        ../lib/NimBLE-Arduino/src/*.cpp
+        ../lib/NimBLE-Arduino/src/*.h
+        ../lib/ESP Async WebServer/src/*.cpp
+        ../lib/ESP Async WebServer/src/*.h
+        ../lib/espMqttClient/src/*.cpp
+        ../lib/espMqttClient/src/*.h
+        ../lib/espMqttClient/src/Packets/*.cpp
+        ../lib/espMqttClient/src/Packets/*.h
+        ../lib/espMqttClient/src/Transport/*.cpp
+        ../lib/espMqttClient/src/Transport/*.h
+        ../lib/ArduinoJson/src/*.h
+        ../lib/ArduinoJson/src/*.hpp
+)
+
+include_directories(nukihub
+        ../lib/nuki_ble/src/
+        ../lib/WiFiManager/
+        ../lib/NimBLE-Arduino/src/
+        ../lib/ESP Async WebServer/src/
+        ../lib/ArduinoJson/src/
+        ../lib/BleScanner/src/
+        ../lib/AsyncTCP/src/A
+        ../src/
 )
 
 add_executable(dummy
