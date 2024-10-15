@@ -881,7 +881,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
-`   if((strcmp(deviceType, "SmartLock") != 0 && (int)aclPrefs[2]) || (strcmp(deviceType, "SmartLock") == 0 && (int)aclPrefs[11]))
+    if((strcmp(deviceType, "SmartLock") != 0 && (int)aclPrefs[2]) || (strcmp(deviceType, "SmartLock") == 0 && (int)aclPrefs[11]))
     {
         json["pl_open"] = openAction;
     }
