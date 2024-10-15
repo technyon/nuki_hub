@@ -106,12 +106,16 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
     bool _disableNonJSON = false;
+    bool _checkKeypadCodes = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryConfigCount = 0;
     int _retryLockstateCount = 0;
     int64_t _nextRetryTs = 0;
+    int64_t _invalidCount = 0;
+    int64_t _lastCodeCheck = 0;
     std::vector<uint16_t> _keypadCodeIds;
+    std::vector<uint32_t> _keypadCodes;
     std::vector<uint8_t> _timeControlIds;
     std::vector<uint32_t> _authIds;
 
