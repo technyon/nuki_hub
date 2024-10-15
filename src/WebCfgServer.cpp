@@ -1561,6 +1561,16 @@ bool WebCfgServer::processArgs(AsyncWebServerRequest *request, String& message)
                 //configChanged = true;
             }
         }
+        else if(key == "KPCHECK")
+        {
+            if(_preferences->getBool(preference_keypad_check_code_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_keypad_check_code_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                //configChanged = true;
+            }
+        }
         else if(key == "KPENA")
         {
             if(_preferences->getBool(preference_keypad_control_enabled, false) != (value == "1"))
@@ -2639,15 +2649,15 @@ void WebCfgServer::buildCredHtml(AsyncWebServerRequest *request)
 {
     _response = "";
     buildHtmlHeader();
-    _response.concat("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    _response.concat("<form id=\"credfrm\" class=\"adapt\" onsubmit=\"return testcreds();\" method=\"post\" action=\"savecfg\">");
     _response.concat("<h3>Credentials</h3>");
     _response.concat("<table>");
-    printInputField("CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "", false, true);
-    printInputField("CREDPASS", "Password", "*", 30, "", true, true);
+    printInputField("CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "id=\"inputuser\"", false, true);
+    printInputField("CREDPASS", "Password", "*", 30, "id=\"inputpass\"", true, true);
     printInputField("CREDPASSRE", "Retype password", "*", 30, "", true);
     _response.concat("</table>");
     _response.concat("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    _response.concat("</form>");
+    _response.concat("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var pattern = /^[ -~]*$/; if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
     if(_nuki != nullptr)
     {
         _response.concat("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -2919,6 +2929,7 @@ void WebCfgServer::buildAccLvlHtml(AsyncWebServerRequest *request)
         printCheckBox("KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
         printCheckBox("KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
         printCheckBox("KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
+        printCheckBox("KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");
         printCheckBox("KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
     }
     printCheckBox("TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
@@ -3386,6 +3397,8 @@ void WebCfgServer::buildInfoHtml(AsyncWebServerRequest *request)
     _response.concat(_preferences->getBool(preference_keypad_topic_per_entry, false) ? "Yes" : "No");
     _response.concat("\nPublish Keypad codes: ");
     _response.concat(_preferences->getBool(preference_keypad_publish_code, false) ? "Yes" : "No");
+    _response.concat("\nAllow checking Keypad codes: ");
+    _response.concat(_preferences->getBool(preference_keypad_check_code_enabled, false) ? "Yes" : "No");
     _response.concat("\nMax keypad entries to retrieve: ");
     _response.concat(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
     _response.concat("\nPublish timecontrol info: ");

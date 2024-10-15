@@ -565,7 +565,7 @@ Examples:
 
 ### Result of attempted keypad code changes
 
-The result of the last configuration change action will be published to the `configuration/commandResultJson` MQTT topic.<br>
+The result of the last keypad change action will be published to the `keypad/commandResultJson` MQTT topic.<br>
 Possible values are "noValidPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
 
 ## Keypad control (alternative, optional)

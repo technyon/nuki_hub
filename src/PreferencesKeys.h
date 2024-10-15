@@ -98,6 +98,7 @@
 #define preference_recon_netw_on_mqtt_discon (char*)"recNtwMqttDis"
 #define preference_official_hybrid_actions (char*)"hybridAct"
 #define preference_official_hybrid_retry (char*)"hybridRtry"
+#define preference_keypad_check_code_enabled (char*)"kpChkEna"
 
 //NOT USER CHANGABLE
 #define preference_updater_version (char*)"updVer"
@@ -284,7 +285,7 @@ private:
             preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
             preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
             preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
-            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries,
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_keypad_check_code_enabled
     };
     std::vector<char*> _redact =
     {
@@ -300,7 +301,7 @@ private:
             preference_publish_authdata, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid_enabled,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
-            preference_ntw_reconfigure
+            preference_ntw_reconfigure, preference_keypad_check_code_enabled
     };
     std::vector<char*> _bytePrefs =
     {
