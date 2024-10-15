@@ -880,7 +880,11 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
 
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
-    if((int)aclPrefs[2]) json["pl_open"] = openAction;
+
+`   if((strcmp(deviceType, "SmartLock") != 0 && (int)aclPrefs[2]) || (strcmp(deviceType, "SmartLock") == 0 && (int)aclPrefs[11]))
+    {
+        json["pl_open"] = openAction;
+    }
 
     json["stat_t"] = String("~") + mqtt_topic_lock_ha_state;
     json["stat_jam"] = "jammed";
