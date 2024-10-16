@@ -69,6 +69,7 @@ void WifiDevice::initialize()
             }
             else if(_convertOldWiFi)
             {
+                Log->println("Trying to convert old WiFi settings");
                 _convertOldWiFi = false;
                 _preferences->putBool(preference_wifi_converted, true);
 
@@ -91,10 +92,9 @@ void WifiDevice::initialize()
                 {
                     if(tempSSID.length() > 0 && tempSSID == WiFi.SSID(i) && tempPass.length() > 0)
                     {
-                        ssid = tempSSID;
-                        pass = tempPass;
-                        _preferences->putString(preference_wifi_ssid, ssid);
-                        _preferences->putString(preference_wifi_pass, pass);
+                        _preferences->putString(preference_wifi_ssid, tempSSID);
+                        _preferences->putString(preference_wifi_pass, tempPass);
+                        Log->println("Succesfully converted old WiFi settings");
                         found = true;
                         break;
                     }
@@ -113,6 +113,7 @@ void WifiDevice::initialize()
                     _connectOnScanDone = true;
                     _openAP = false;
                     scan(false, true);
+                    return;
                 }
                 else
                 {
@@ -120,6 +121,7 @@ void WifiDevice::initialize()
                     _connectOnScanDone = false;
                     _openAP = true;
                     scan(false, true);
+                    return;
                 }
             }
         }
@@ -128,40 +130,29 @@ void WifiDevice::initialize()
     ssid.trim();
     pass.trim();
 
-    if(ssid.length() > 0 && ssid != "~" && pass.length() > 0)
+    if(ssid.length() > 0 && pass.length() > 0)
     {
         Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
         _connectOnScanDone = true;
         _openAP = false;
         scan(false, true);
+        return;
+    }
+    else if(!_preferences->getBool(preference_wifi_converted, false))
+    {
+        _connectOnScanDone = false;
+        _openAP = false;
+        _convertOldWiFi = true;
+        scan(false, true);
+        return;
     }
     else
     {
-        if(!_preferences->getBool(preference_wifi_converted, false))
-        {
-            _connectOnScanDone = false;
-            _openAP = false;
-            _convertOldWiFi = true;
-            scan(false, true);
-        }
-
-        ssid.trim();
-        pass.trim();
-
-        if(ssid.length() > 0 && ssid != "~" && pass.length() > 0)
-        {
-            Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
-            _connectOnScanDone = true;
-            _openAP = false;
-            scan(false, true);
-        }
-        else
-        {
-            Log->println("No SSID or Wifi password saved, opening AP");
-            _connectOnScanDone = false;
-            _openAP = true;
-            scan(false, true);
-        }
+        Log->println("No SSID or Wifi password saved, opening AP");
+        _connectOnScanDone = false;
+        _openAP = true;
+        scan(false, true);
+        return;
     }
 }
 
@@ -374,9 +365,9 @@ void WifiDevice::onDisconnected()
         String pass = _preferences->getString(preference_wifi_pass, "");
         WiFi.begin(ssid.c_str(), pass.c_str(), _connectedChannel, _connectedBSSID, true);
         WiFi.persistent(false);
-        
+
         int loop = 0;
-        
+
         while(!isConnected() && loop < 50)
         {
             loop++;
@@ -395,7 +386,7 @@ void WifiDevice::onDisconnected()
           WiFi.mode(WIFI_STA);
           WiFi.disconnect();
           delay(500);
-          
+
           wifi_mode_t wifiMode;
           esp_wifi_get_mode(&wifiMode);
 
