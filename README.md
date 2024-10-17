@@ -84,7 +84,8 @@ Unpack the zip archive and read the included how-to-flash.txt for installation i
 
 ## Initial setup (Network and MQTT)
 
-Power up the ESP32 and a new Wi-Fi access point named "ESP32_(8 CHARACTER ALPHANUMERIC)" should appear.<br>
+Power up the ESP32 and a new Wi-Fi access point named "NukiHub" should appear.<br>
+The password of the access point is "NukiHubESP32".<br>
 Connect a client device to this access point and in a browser navigate to "http://192.168.4.1".<br>
 Use the web interface to connect the ESP to your preferred Wi-Fi network.<br>
 <br>
@@ -138,7 +139,7 @@ PSRAM is usually 2, 4 or 8MB in size and thus greatly enlarges the 320kb of inte
 It is basically impossible to run out of RAM when PSRAM is available.
 You can check on the info page of the Web configurator if PSRAM is available.
 
-Note that there are two build of Nuki Hub for the ESP32-S3 available.<br>
+Note that there are two builds of Nuki Hub for the ESP32-S3 available.<br>
 One for devices with no or Quad SPI PSRAM and one for devices with Octal SPI PSRAM.<br>
 If your ESP32-S3 device has PSRAM but it is not detected please flash the other S3 binary.
 
@@ -165,7 +166,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
-- Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
 - Connect to AP with the best signal in an environment with multiple APs with the same SSID: Enable to perform a scan for the Access Point with the best signal strenght for the specified SSID in a multi AP/Mesh environment.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
 - MQTT Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.

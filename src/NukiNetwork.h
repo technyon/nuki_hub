@@ -10,13 +10,12 @@
 
 #ifndef NUKI_HUB_UPDATER
 #include "MqttReceiver.h"
+#include "mqtt_client.h"
 #include "MqttTopics.h"
 #include "Gpio.h"
 #include <ArduinoJson.h>
 #include "NukiConstants.h"
 #endif
-
-#define JSON_BUFFER_SIZE 1024
 
 class NukiNetwork
 {
@@ -25,6 +24,8 @@ public:
     void readSettings();
     bool update();
     void reconfigureDevice();
+    void scan(bool passive = false, bool async = true);
+    bool isApOpen();
     void clearWifiFallback();
 
     const String networkDeviceName() const;
@@ -86,7 +87,6 @@ public:
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
-    bool encryptionSupported();
     bool mqttRecentlyConnected();
     bool pathEquals(const char* prefix, const char* path, const char* referencePath);
     uint16_t subscribe(const char* topic, uint8_t qos);
@@ -117,9 +117,10 @@ private:
     bool _offEnabled = false;
 
     #ifndef NUKI_HUB_UPDATER
-    static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
-    void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
-    void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
+    static void mqtt_event_handler_cb(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
+    void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
+    void onMqttDataReceived(char* topic, int topic_len, char* data, int data_len);
+    void parseGpioTopics(char* topic, int topic_len, char* data, int data_len);
     void gpioActionCallback(const GpioAction& action, const int& pin);
 
     String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
@@ -136,10 +137,6 @@ private:
                         const String& commandTopic = "",
                         std::vector<std::pair<char*, char*>> additionalEntries = {}
                         );
-
-    void onMqttConnect(const bool& sessionPresent);
-    void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
-
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
 
     const char* _lastWillPayload = "offline";
@@ -148,13 +145,20 @@ private:
     String _discoveryTopic;
 
     Gpio* _gpio;
-
+  
+    esp_mqtt_client_config_t _mqtt_cfg = { 0 };
+    bool _mqttClientInitiated = false;
     int _mqttConnectionState = 0;
+    bool _mqttConnected = false;
     int _mqttConnectCounter = 0;
     int _mqttPort = 1883;
     long _mqttConnectedTs = -1;
-    bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
+
+    esp_mqtt_client_handle_t _mqttClient;
+    char _ca[TLS_CA_MAX_SIZE] = {0};
+    char _cert[TLS_CERT_MAX_SIZE] = {0};
+    char _key[TLS_KEY_MAX_SIZE] = {0};
     
     int64_t _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
@@ -166,7 +170,6 @@ private:
     std::vector<MqttReceiver*> _mqttReceivers;
     bool _restartOnDisconnect = false;
     bool _checkUpdates = false;
-    bool _reconnectNetworkOnMqttDisconnect = false;
     bool _firstConnect = true;
     bool _publishDebugInfo = false;
     bool _logIp = true;

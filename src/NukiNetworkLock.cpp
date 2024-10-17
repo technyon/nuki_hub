@@ -178,24 +178,22 @@ void NukiNetworkLock::update()
     }
 }
 
-void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
+void NukiNetworkLock::onMqttDataReceived(char* topic, int topic_len, char* data, int data_len)
 {
-    char* value = (char*)payload;
-
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
         Log->println("MQTT recently connected, ignoring lock action.");
         return;
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(value, "1") == 0)
+    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(data, "1") == 0)
     {
         Log->println(F("Restart requested via MQTT."));
         _network->clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(value, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
+    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
     {
         Log->println(F("Update requested via MQTT."));
 
@@ -297,17 +295,17 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     }
     else if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
     {
-        if(strcmp(value, "") == 0 ||
-           strcmp(value, "--") == 0) return;
+        if(strcmp(data, "") == 0 ||
+           strcmp(data, "--") == 0) return;
 
-        if(strcmp(value, "1") == 0)
+        if(strcmp(data, "1") == 0)
         {
             if(_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer) return;
             Log->println(F("Webserver enabled, restarting."));
             _preferences->putBool(preference_webserver_enabled, true);
 
         }
-        else if (strcmp(value, "0") == 0)
+        else if (strcmp(data, "0") == 0)
         {
             if(!_preferences->getBool(preference_webserver_enabled, true) && !forceEnableWebServer) return;
             Log->println(F("Webserver disabled, restarting."));
@@ -321,10 +319,10 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     }
     else if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
     {
-        if(strcmp(value, "") == 0 ||
-           strcmp(value, "--") == 0) return;
+        if(strcmp(data, "") == 0 ||
+           strcmp(data, "--") == 0) return;
 
-        if(atoi(value) > 0 && atoi(value) > _lastRollingLog) _lastRollingLog = atoi(value);
+        if(atoi(data) > 0 && atoi(data) > _lastRollingLog) _lastRollingLog = atoi(data);
     }
 
     if(_nukiOfficial->getOffEnabled())
@@ -335,7 +333,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
             {
                 if(_officialUpdateReceivedCallback != nullptr)
                 {
-                    _officialUpdateReceivedCallback(offTopic, value);
+                    _officialUpdateReceivedCallback(offTopic, data);
                 }
             }
         }
@@ -343,19 +341,19 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
-        if(strcmp(value, "") == 0 ||
-           strcmp(value, "--") == 0 ||
-           strcmp(value, "ack") == 0 ||
-           strcmp(value, "unknown_action") == 0 ||
-           strcmp(value, "denied") == 0 ||
-           strcmp(value, "error") == 0) return;
+        if(strcmp(data, "") == 0 ||
+           strcmp(data, "--") == 0 ||
+           strcmp(data, "ack") == 0 ||
+           strcmp(data, "unknown_action") == 0 ||
+           strcmp(data, "denied") == 0 ||
+           strcmp(data, "error") == 0) return;
 
         Log->print(F("Lock action received: "));
-        Log->println(value);
+        Log->println(data);
         LockActionResult lockActionResult = LockActionResult::Failed;
         if(_lockActionReceivedCallback != NULL)
         {
-            lockActionResult = _lockActionReceivedCallback(value);
+            lockActionResult = _lockActionReceivedCallback(data);
         }
 
         switch(lockActionResult)
@@ -381,16 +379,16 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         {
             if(_keypadCommandReceivedReceivedCallback != nullptr)
             {
-                if(strcmp(value, "--") == 0) return;
+                if(strcmp(data, "--") == 0) return;
 
-                _keypadCommandReceivedReceivedCallback(value, _keypadCommandId, _keypadCommandName, _keypadCommandCode, _keypadCommandEnabled);
+                _keypadCommandReceivedReceivedCallback(data, _keypadCommandId, _keypadCommandName, _keypadCommandCode, _keypadCommandEnabled);
 
                 _keypadCommandId = 0;
                 _keypadCommandName = "--";
                 _keypadCommandCode = "000000";
                 _keypadCommandEnabled = 1;
 
-                if(strcmp(value, "--") != 0)
+                if(strcmp(data, "--") != 0)
                 {
                     publishString(mqtt_topic_keypad_command_action, "--", true);
                 }
@@ -402,38 +400,38 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         }
         else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_id))
         {
-            _keypadCommandId = atoi(value);
+            _keypadCommandId = atoi(data);
         }
         else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_name))
         {
-            _keypadCommandName = value;
+            _keypadCommandName = data;
         }
         else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_code))
         {
-            _keypadCommandCode = value;
+            _keypadCommandCode = data;
         }
         else if(comparePrefixedPath(topic, mqtt_topic_keypad_command_enabled))
         {
-            _keypadCommandEnabled = atoi(value);
+            _keypadCommandEnabled = atoi(data);
         }
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_query_config) && strcmp(value, "1") == 0)
+    if(comparePrefixedPath(topic, mqtt_topic_query_config) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_CONFIG;
         publishString(mqtt_topic_query_config, "0", true);
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_query_lockstate) && strcmp(value, "1") == 0)
+    else if(comparePrefixedPath(topic, mqtt_topic_query_lockstate) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_LOCKSTATE;
         publishString(mqtt_topic_query_lockstate, "0", true);
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_query_keypad) && strcmp(value, "1") == 0)
+    else if(comparePrefixedPath(topic, mqtt_topic_query_keypad) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_KEYPAD;
         publishString(mqtt_topic_query_keypad, "0", true);
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_query_battery) && strcmp(value, "1") == 0)
+    else if(comparePrefixedPath(topic, mqtt_topic_query_battery) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_BATTERY;
         publishString(mqtt_topic_query_battery, "0", true);
@@ -441,11 +439,11 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
     if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
-        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
 
         if(_configUpdateReceivedCallback != NULL)
         {
-            _configUpdateReceivedCallback(value);
+            _configUpdateReceivedCallback(data);
         }
 
         publishString(mqtt_topic_config_action, "--", true);
@@ -453,11 +451,11 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
     if(comparePrefixedPath(topic, mqtt_topic_keypad_json_action))
     {
-        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
 
         if(_keypadJsonCommandReceivedReceivedCallback != NULL)
         {
-            _keypadJsonCommandReceivedReceivedCallback(value);
+            _keypadJsonCommandReceivedReceivedCallback(data);
         }
 
         publishString(mqtt_topic_keypad_json_action, "--", true);
@@ -465,11 +463,11 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
     if(comparePrefixedPath(topic, mqtt_topic_timecontrol_action))
     {
-        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
 
         if(_timeControlCommandReceivedReceivedCallback != NULL)
         {
-            _timeControlCommandReceivedReceivedCallback(value);
+            _timeControlCommandReceivedReceivedCallback(data);
         }
 
         publishString(mqtt_topic_timecontrol_action, "--", true);
@@ -477,11 +475,11 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
     if(comparePrefixedPath(topic, mqtt_topic_auth_action))
     {
-        if(strcmp(value, "") == 0 || strcmp(value, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
 
         if(_authCommandReceivedReceivedCallback != NULL)
         {
-            _authCommandReceivedReceivedCallback(value);
+            _authCommandReceivedReceivedCallback(data);
         }
 
         publishString(mqtt_topic_auth_action, "--", true);

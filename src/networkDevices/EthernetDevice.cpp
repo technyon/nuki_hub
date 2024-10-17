@@ -1,11 +1,10 @@
 #include "EthernetDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
-#ifndef NUKI_HUB_UPDATER
-#include "../MqttTopics.h"
-#include "espMqttClient.h"
-#endif
 #include "../RestartReason.h"
+
+RTC_NOINIT_ATTR bool criticalEthFailure;
+extern char WiFi_fallbackDetect[14];
 
 EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode)
 : NetworkDevice(hostname, ipConfiguration),
@@ -50,54 +49,6 @@ EthernetDevice::EthernetDevice(const String &hostname,
     init();
 }
 
-void EthernetDevice::init()
-{
-#ifndef NUKI_HUB_UPDATER
-    size_t caLength = _preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
-    size_t crtLength = _preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
-    size_t keyLength = _preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
-
-    _useEncryption = caLength > 1;  // length is 1 when empty
-
-    if(_useEncryption)
-    {
-        Log->println(F("MQTT over TLS."));
-        Log->println(_ca);
-        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
-        _mqttClientSecure->setCACert(_ca);
-        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
-        {
-            Log->println(F("MQTT with client certificate."));
-            Log->println(_cert);
-            Log->println(_key);
-            _mqttClientSecure->setCertificate(_cert);
-            _mqttClientSecure->setPrivateKey(_key);
-        }
-    } else
-    {
-        Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
-    }
-
-    if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
-    {
-        MqttLoggerMode mode;
-
-        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
-        else mode = MqttLoggerMode::MqttAndSerial;
-
-        _path = new char[200];
-        memset(_path, 0, sizeof(_path));
-
-        String pathStr = _preferences->getString(preference_mqtt_lock_path);
-        pathStr.concat(mqtt_topic_log);
-        strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, mode);
-    }
-#endif
-}
-
 const String EthernetDevice::deviceName() const
 {
     return _deviceName.c_str();
@@ -106,20 +57,34 @@ const String EthernetDevice::deviceName() const
 void EthernetDevice::initialize()
 {
     delay(250);
+    if(criticalEthFailure)
+    {
+        criticalEthFailure = false;
+        Log->println(F("Failed to initialize ethernet hardware"));
+        Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
+        strcpy(WiFi_fallbackDetect, "wifi_fallback");
+        delay(200);
+        restartEsp(RestartReason::NetworkDeviceCriticalFailure);
+        return;
+    }
 
     Log->println(F("Init Ethernet"));
 
     if(_useSpi)
     {
         Log->println(F("Use SPI"));
+        criticalEthFailure = true;
         SPI.begin(_spi_sck, _spi_miso, _spi_mosi);
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
+        criticalEthFailure = false;
     }
     #ifdef CONFIG_IDF_TARGET_ESP32
     else
     {
         Log->println(F("Use RMII"));
+        criticalEthFailure = true;
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
+        criticalEthFailure = false;
         if(!_ipConfiguration->dhcpEnabled())
         {
             _checkIpTs = (esp_timer_get_time() / 1000) + 2000;
@@ -130,6 +95,7 @@ void EthernetDevice::initialize()
     if(_hardwareInitialized)
     {
         Log->println(F("Ethernet hardware Initialized"));
+        memset(WiFi_fallbackDetect, 0, sizeof(WiFi_fallbackDetect));
 
         if(_useSpi && !_ipConfiguration->dhcpEnabled())
         {
@@ -144,13 +110,16 @@ void EthernetDevice::initialize()
     else
     {
         Log->println(F("Failed to initialize ethernet hardware"));
+        Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
+        strcpy(WiFi_fallbackDetect, "wifi_fallback");
+        delay(200);
+        restartEsp(RestartReason::NetworkDeviceCriticalFailure);
+        return;
     }
 }
 
 void EthernetDevice::update()
 {
-    NetworkDevice::update();
-
     if(_checkIpTs != -1)
     {
         if(_ipConfiguration->ipAddress() != ETH.localIP())
@@ -221,17 +190,14 @@ void EthernetDevice::onNetworkEvent(arduino_event_id_t event, arduino_event_info
     }
 }
 
-
-
 void EthernetDevice::reconfigure()
 {
     delay(200);
     restartEsp(RestartReason::ReconfigureETH);
 }
 
-bool EthernetDevice::supportsEncryption()
+void EthernetDevice::scan(bool passive, bool async)
 {
-    return true;
 }
 
 bool EthernetDevice::isConnected()
@@ -239,20 +205,14 @@ bool EthernetDevice::isConnected()
     return _connected;
 }
 
-ReconnectStatus EthernetDevice::reconnect(bool force)
+bool EthernetDevice::isApOpen()
 {
-    if(!_hardwareInitialized)
-    {
-        return ReconnectStatus::CriticalFailure;
-    }
-    delay(200);
-    return isConnected() ? ReconnectStatus::Success : ReconnectStatus::Failure;
+    return false;
 }
 
 void EthernetDevice::onDisconnected()
 {
     if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000)) restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-    reconnect();
 }
 
 int8_t EthernetDevice::signalStrength()

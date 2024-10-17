@@ -5,7 +5,7 @@
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
-#include <esp_task_wdt.h>
+#include "esp_task_wdt.h"
 #include "Config.h"
 
 #ifndef NUKI_HUB_UPDATER
@@ -19,11 +19,12 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
-#include <AsyncTCP.h>
-#include <DNSServer.h>
-#include <ESPAsyncWebServer.h>
+/*
+#ifdef DEBUG_NUKIHUB
 #include <WString.h>
 #include <MycilaWebSerial.h>
+#endif
+*/
 
 char log_print_buffer[1024];
 
@@ -55,7 +56,7 @@ int64_t restartTs = 10 * 1000 * 60000;
 
 #endif
 
-AsyncWebServer* asyncServer = nullptr;
+PsychicHttpServer* psychicServer = nullptr;
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 Preferences* preferences = nullptr;
@@ -77,7 +78,6 @@ TaskHandle_t networkTaskHandle = nullptr;
 ssize_t write_fn(void* cookie, const char* buf, ssize_t size)
 {
   Log->write((uint8_t *)buf, (size_t)size);
-
   return size;
 }
 
@@ -103,7 +103,11 @@ int _log_vprintf(const char *fmt, va_list args) {
 
 void setReroute(){
     esp_log_set_vprintf(_log_vprintf);
-    if(preferences->getBool(preference_mqtt_log_enabled)) esp_log_level_set("*", ESP_LOG_INFO);
+    if(preferences->getBool(preference_mqtt_log_enabled))
+    {
+        esp_log_level_set("*", ESP_LOG_INFO);
+        esp_log_level_set("mqtt", ESP_LOG_NONE);
+    }
     else
     {
         esp_log_level_set("*", ESP_LOG_DEBUG);
@@ -372,8 +376,11 @@ void setupTasks(bool ota)
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
         esp_task_wdt_add(networkTaskHandle);
         #ifndef NUKI_HUB_UPDATER
-        xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
-        esp_task_wdt_add(nukiTaskHandle);
+        if(!network->isApOpen())
+        {
+            xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
+            esp_task_wdt_add(nukiTaskHandle);
+        }
         #endif
     }
 }
@@ -381,6 +388,7 @@ void setupTasks(bool ota)
 void setup()
 {
     esp_log_level_set("*", ESP_LOG_ERROR);
+    esp_log_level_set("mqtt", ESP_LOG_NONE);
     Serial.begin(115200);
     Log = &Serial;
 
@@ -424,11 +432,11 @@ void setup()
 
     if(!doOta)
     {
-        asyncServer = new AsyncWebServer(80);
-        webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
+        psychicServer = new PsychicHttpServer;
+        webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
         webCfgServer->initialize();
-        asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
-        asyncServer->begin();
+        psychicServer->listen(80);
+        psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });
     }
     #else
     Log->print(F("Nuki Hub version "));
@@ -447,7 +455,6 @@ void setup()
     }
 
     char16_t buffer_size = preferences->getInt(preference_buffer_size, 4096);
-
     CharBuffer::initialize(buffer_size);
 
     gpio = new Gpio(preferences);
@@ -455,21 +462,29 @@ void setup()
     gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
     Log->print(gpioDesc.c_str());
 
+    const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
+
+    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
+    network->initialize();
+    
+    lockEnabled = preferences->getBool(preference_lock_enabled);
+    openerEnabled = preferences->getBool(preference_opener_enabled);
+
+    if(network->isApOpen())
+    {
+        forceEnableWebServer = true;
+        doOta = false;
+        lockEnabled = false;
+        openerEnabled = false;
+    }
+    
     bleScanner = new BleScanner::Scanner();
     // Scan interval and window according to Nuki recommendations:
     // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
     bleScanner->initialize("NukiHub", true, 40, 40);
     bleScanner->setScanDuration(0);
 
-    lockEnabled = preferences->getBool(preference_lock_enabled);
-    openerEnabled = preferences->getBool(preference_opener_enabled);
-
-    const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-
     nukiOfficial = new NukiOfficial(preferences);
-
-    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
-    network->initialize();
 
     networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
     networkLock->initialize();
@@ -498,15 +513,20 @@ void setup()
     {
         if(!doOta)
         {
-            asyncServer = new AsyncWebServer(80);
+            psychicServer = new PsychicHttpServer;
+            psychicServer->config.max_uri_handlers = 40;
+            psychicServer->config.stack_size = 8192;
+            psychicServer->listen(80);
 
             if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
             {
-                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, asyncServer);
+                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
                 webCfgServer->initialize();
-                asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/"); });
+                psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });
             }
-            else asyncServer->onNotFound([](AsyncWebServerRequest* request) { request->redirect("/webserial"); });
+            /*
+            #ifdef DEBUG_NUKIHUB
+            else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
 
             if(preferences->getBool(preference_webserial_enabled, false))
             {
@@ -514,15 +534,15 @@ void setup()
               WebSerial.begin(asyncServer);
               WebSerial.setBuffer(1024);
             }
-
-            asyncServer->begin();
+            #endif
+            */
         }
     }
     #endif
 
     if(doOta) setupTasks(true);
     else setupTasks(false);
-    
+
     #ifdef DEBUG_NUKIHUB
     Log->print("Task Name\tStatus\tPrio\tHWM\tTask\tAffinity\n");
     char stats_buffer[1024];

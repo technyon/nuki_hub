@@ -52,9 +52,10 @@
 #define preference_update_from_mqtt (char*)"updMqtt"
 #define preference_disable_non_json (char*)"disnonjson"
 #define preference_official_hybrid_enabled (char*)"offHybrid"
+#define preference_wifi_ssid (char*)"wifiSSID"
+#define preference_wifi_pass (char*)"wifiPass"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
-#define preference_find_best_rssi (char*)"nwbestrssi"
 #define preference_ntw_reconfigure (char*)"ntwRECONF"
 #define preference_auth_max_entries (char*)"authmaxentry"
 #define preference_auth_info_enabled (char*)"authInfoEna"
@@ -88,14 +89,12 @@
 #define preference_command_retry_delay (char*)"rtryDelay"
 #define preference_query_interval_hybrid_lockstate (char*)"hybridTimer"
 #define preference_mqtt_hass_cu_url (char*)"hassConfigUrl"
-#define preference_network_wifi_fallback_disabled (char*)"nwwififb"
 #define preference_check_updates (char*)"checkupdates"
 #define preference_opener_continuous_mode (char*)"openercont"
 #define preference_rssi_publish_interval (char*)"rssipb"
 #define preference_network_timeout (char*)"nettmout"
 #define preference_restart_on_disconnect (char*)"restdisc"
 #define preference_publish_debug_info (char*)"pubdbg"
-#define preference_recon_netw_on_mqtt_discon (char*)"recNtwMqttDis"
 #define preference_official_hybrid_actions (char*)"hybridAct"
 #define preference_official_hybrid_retry (char*)"hybridRtry"
 
@@ -118,12 +117,14 @@
 #define preference_lock_max_timecontrol_entry_count (char*)"maxtc"
 #define preference_opener_max_timecontrol_entry_count (char*)"opmaxtc"
 #define preference_latest_version (char*)"latest"
+#define preference_wifi_converted (char*)"wifiConv"
 
 //OBSOLETE
 #define preference_access_level (char*)"accLvl"
 #define preference_gpio_locking_enabled (char*)"gpiolck"
 #define preference_network_hardware_gpio (char*)"nwhwdt"
 #define preference_presence_detection_timeout (char*)"prdtimeout"
+#define preference_network_wifi_fallback_disabled (char*)"nwwififb"
 
 inline bool initPreferences(Preferences* preferences)
 {
@@ -248,9 +249,15 @@ inline bool initPreferences(Preferences* preferences)
             if (configVer < 901)
             {
                 #if defined(CONFIG_IDF_TARGET_ESP32S3)
-                if (preferences->getInt(preference_network_hardware) == 3) preferences->putInt(preference_network_hardware, 10);
+                if (preferences->getInt(preference_network_hardware) == 3)
+                {
+                    preferences->putInt(preference_network_hardware, 10);
+                }
                 #endif
-                if (preferences->getInt(preference_network_hardware) == 2) preferences->putInt(preference_network_hardware, 3);
+                if (preferences->getInt(preference_network_hardware) == 2)
+                {
+                    preferences->putInt(preference_network_hardware, 3);
+                }
             }
 
             preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);
@@ -271,8 +278,8 @@ private:
             preference_opener_continuous_mode, preference_mqtt_opener_path, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
             preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt,
             preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
-            preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_network_wifi_fallback_disabled,
-            preference_rssi_publish_interval, preference_hostname, preference_find_best_rssi, preference_network_timeout, preference_restart_on_disconnect,
+            preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware,
+            preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
             preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry,
             preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
             preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
@@ -280,26 +287,26 @@ private:
             preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info,
             preference_official_hybrid_enabled, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry,
             preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
-            preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
+            preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_webserial_enabled,
             preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
             preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
             preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
-            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries,
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass
     };
     std::vector<char*> _redact =
     {
         preference_mqtt_user, preference_mqtt_password, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_cred_user, preference_cred_password,
-        preference_nuki_id_lock, preference_nuki_id_opener,
+        preference_nuki_id_lock, preference_nuki_id_opener, preference_wifi_pass
     };
     std::vector<char*> _boolPrefs =
     {
             preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
-            preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled, preference_find_best_rssi,
+            preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled,
             preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_show_secrets,
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
-            preference_publish_authdata, preference_publish_debug_info, preference_network_wifi_fallback_disabled, preference_official_hybrid_enabled,
+            preference_publish_authdata, preference_publish_debug_info, preference_official_hybrid_enabled,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
-            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_recon_netw_on_mqtt_discon, preference_webserial_enabled,
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled,
             preference_ntw_reconfigure
     };
     std::vector<char*> _bytePrefs =
