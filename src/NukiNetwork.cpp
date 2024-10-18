@@ -427,7 +427,7 @@ bool NukiNetwork::update()
         });
     }
 
-    if(_logIp && device()->isConnected() && !_device->localIP().equals("0.0.0.0"))
+    if(_logIp && _device->isConnected() && !_device->localIP().equals("0.0.0.0"))
     {
         _logIp = false;
         Log->print(F("IP: "));
