@@ -302,6 +302,28 @@ void WebCfgServer::initialize()
     }
 }
 
+void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *token, const char *description, const bool value, const char *htmlClass)
+{
+    response->print("<tr><td>");
+    response->print(description);
+    response->print("</td><td>");
+
+    response->print("<input type=hidden name=\"");
+    response->print(token);
+    response->print("\" value=\"0\"");
+    response->print("/>");
+
+    response->print("<input type=checkbox name=\"");
+    response->print(token);
+
+    response->print("\" class=\"");
+    response->print(htmlClass);
+
+    response->print("\" value=\"1\"");
+    response->print(value ? " checked=\"checked\"" : "");
+    response->print("/></td></tr>");
+}
+
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 esp_err_t WebCfgServer::buildSSIDListHtml(PsychicRequest *request)
 {
@@ -377,6 +399,14 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request)
     printInputField(&response, "WIFISSID", "SSID", "", 32, "id=\"inputssid\"", false, true);
     printInputField(&response, "WIFIPASS", "Secret key", "", 63, "id=\"inputpass\"", false, true);
     response.print("</table>");
+    response.print("<h3>IP Address assignment</h3>");
+    response.print("<table>");
+    printCheckBox(&response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
+    printInputField(&response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15, "");
+    printInputField(&response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15, "");
+    printInputField(&response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
+    printInputField(&response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
+    response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
     response.print("<form action=\"/reboot\" method=\"get\"><br><input type=\"submit\" value=\"Reboot\" /></form>");
@@ -412,6 +442,41 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, String& message)
         {
             pass = value;
         }
+        else if(key == "DHCPENA")
+        {
+            if(_preferences->getBool(preference_ip_dhcp_enabled, true) != (value == "1"))
+            {
+                _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
+            }
+        }
+        else if(key == "IPADDR")
+        {
+            if(_preferences->getString(preference_ip_address, "") != value)
+            {
+                _preferences->putString(preference_ip_address, value);
+            }
+        }
+        else if(key == "IPSUB")
+        {
+            if(_preferences->getString(preference_ip_subnet, "") != value)
+            {
+                _preferences->putString(preference_ip_subnet, value);
+            }
+        }
+        else if(key == "IPGTW")
+        {
+            if(_preferences->getString(preference_ip_gateway, "") != value)
+            {
+                _preferences->putString(preference_ip_gateway, value);
+            }
+        }
+        else if(key == "DNSSRV")
+        {
+            if(_preferences->getString(preference_ip_dns_server, "") != value)
+            {
+                _preferences->putString(preference_ip_dns_server, value);
+            }
+        }
     }
 
     ssid.trim();
@@ -419,55 +484,50 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, String& message)
 
     if (ssid.length() > 0 && pass.length() > 0)
     {
+        if (_preferences->getBool(preference_ip_dhcp_enabled, true) && _preferences->getString(preference_ip_address, "").length() <= 0)
+        {
+            const IPConfiguration* _ipConfiguration = new IPConfiguration(_preferences);
+
+            if(!_ipConfiguration->dhcpEnabled())
+            {
+                WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
+            }
+        }
+
         WiFi.begin(ssid, pass);
 
         int loop = 0;
-        while(WiFi.status() != WL_CONNECTED && loop < 150)
+        while(!_network->isConnected() && loop < 150)
         {
           delay(100);
           loop++;
         }
 
-        if (WiFi.status() != WL_CONNECTED)
+        if (!_network->isConnected())
         {
             message = "Failed to connect to the given SSID with the given secret key, credentials not saved<br/>";
+            return res;
         }
         else
         {
-            message = "Connection successful. Rebooting Nuki Hub.<br/>";
-            if(WiFi.isConnected())
+            if(_network->isConnected())
             {
-                esp_wifi_disconnect();
+                message = "Connection successful. Rebooting Nuki Hub.<br/>";
+                _preferences->putString(preference_wifi_ssid, ssid);
+                _preferences->putString(preference_wifi_pass, pass);
+                res = true;
             }
-
-            wifi_config_t wifi_cfg;
-            if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
-                Log->println("Failed to get Wi-Fi configuration in RAM");
+            else
+            {
+                message = "Failed to connect to the given SSID, no IP received, credentials not saved<br/>";
                 return res;
             }
-
-            if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK) {
-                Log->println("Failed to set storage Wi-Fi");
-                return res;
-            }
-
-            memset(wifi_cfg.sta.ssid, 0, sizeof(wifi_cfg.sta.ssid));
-            memset(wifi_cfg.sta.password, 0, sizeof(wifi_cfg.sta.password));
-
-            if (esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK) {
-                Log->println("Failed to set Wi-Fi configuration");
-                return res;
-            }
-
-            _preferences->putString(preference_wifi_ssid, ssid);
-            _preferences->putString(preference_wifi_pass, pass);
-
-            res = true;
         }
     }
     else
     {
         message = "No SSID or secret key entered, credentials not saved<br/>";
+        return res;
     }
 
     return res;
@@ -4211,28 +4271,6 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
     waitAndProcess(false, 3000);
     restartEsp(RestartReason::NukiHubReset);
     return res;
-}
-
-void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *token, const char *description, const bool value, const char *htmlClass)
-{
-    response->print("<tr><td>");
-    response->print(description);
-    response->print("</td><td>");
-
-    response->print("<input type=hidden name=\"");
-    response->print(token);
-    response->print("\" value=\"0\"");
-    response->print("/>");
-
-    response->print("<input type=checkbox name=\"");
-    response->print(token);
-
-    response->print("\" class=\"");
-    response->print(htmlClass);
-
-    response->print("\" value=\"1\"");
-    response->print(value ? " checked=\"checked\"" : "");
-    response->print("/></td></tr>");
 }
 
 void WebCfgServer::printTextarea(PsychicStreamResponse *response,
