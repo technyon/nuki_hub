@@ -1,0 +1,23 @@
+{
+    "release": {
+        "time": "2024-10-15",
+        "version": "9.01",
+        "fullversion": "9.01",
+        "build": "11345224811.2.1",
+        "number": 1
+    },
+    "beta": {
+        "time": "2024-10-17",
+        "version": "9.02",
+        "fullversion": "9.02-beta1",
+        "build": "11378922481.14.1",
+        "number": 1
+    },
+    "master": {
+        "time": "2024-10-18",
+        "version": "9.02",
+        "fullversion": "9.02-master2",
+        "build": "11396120239.110.1",
+        "number": 2
+    }
+}
