@@ -253,6 +253,21 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 - Gpio [2-33]: See the "[GPIO lock control](#gpio-lock-control-optional)" section of this README.
 
+### Import/Export Configuration
+
+The "Import/Export Configuration" menu option allows the importing and exporting of the NukiHub settings in JSON format.<br>
+<br>
+Create a (partial) backup of the current NukiHub settings by selecting any of the following:<br>
+- Basic export: Will backup all settings that are not considered confidential (as such passwords and pincodes are not included in this export).
+- Export with redacted settings: Will backup basic settings and redacted settings such as passwords and pincodes.
+
+Both of the above options will not backup pairing data, so you will have to manually pair Nuki devices when importing this export on a factory reset or new device.
+
+- Export with redacted settings and pairing data: Will backup all settings and pairing data. Can be used to completely restore a factory reset or new device based on the settings of this device. (Re)pairing Nuki devices will not be needed when importing this export.
+<br>
+To import settings copy and paste the contents of the JSON file that is created by any of the above export options and select "Import".
+After importing the device will reboot.
+
 ## Exposed MQTT Topics
 
 ### Lock
