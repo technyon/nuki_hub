@@ -67,7 +67,6 @@ private:
     esp_err_t processUnpair(PsychicRequest *request, bool opener);
     esp_err_t processUpdate(PsychicRequest *request);
     esp_err_t processFactoryReset(PsychicRequest *request);
-    void printCheckBox(PsychicStreamResponse *response, const char* token, const char* description, const bool value, const char* htmlClass);
     void printTextarea(PsychicStreamResponse *response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(PsychicStreamResponse *response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options, const String className);
     void buildNavigationButton(PsychicStreamResponse *response, const char* caption, const char* targetPath, const char* labelText = "");
@@ -107,6 +106,7 @@ private:
     void buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader = "");
     void waitAndProcess(const bool blocking, const uint32_t duration);
     esp_err_t handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final);
+    void printCheckBox(PsychicStreamResponse *response, const char* token, const char* description, const bool value, const char* htmlClass);
     void printProgress(size_t prg, size_t sz);
     #ifndef CONFIG_IDF_TARGET_ESP32H2
     esp_err_t buildWifiConnectHtml(PsychicRequest *request);

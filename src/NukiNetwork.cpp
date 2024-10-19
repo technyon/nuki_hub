@@ -170,6 +170,11 @@ NetworkDevice *NukiNetwork::device()
     return _device;
 }
 
+bool NukiNetwork::isConnected()
+{
+    return _device->isConnected();
+}
+
 #ifdef NUKI_HUB_UPDATER
 void NukiNetwork::initialize()
 {
@@ -427,7 +432,7 @@ bool NukiNetwork::update()
         });
     }
 
-    if(_logIp && device()->isConnected() && !_device->localIP().equals("0.0.0.0"))
+    if(_logIp && _device->isConnected() && !_device->localIP().equals("0.0.0.0"))
     {
         _logIp = false;
         Log->print(F("IP: "));
@@ -1083,11 +1088,12 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
                      baseTopic,
                      _lockPath + mqtt_topic_uptime,
                      deviceType,
-                     "",
+                     "duration",
                      "",
                      "diagnostic",
                      "",
-                     { { (char*)"en", (char*)"true" }});
+                     { { (char*)"en", (char*)"true" },
+                       { (char*)"unit_of_meas", (char*)"min"}});
 
     if(_preferences->getBool(preference_mqtt_log_enabled, false))
     {
@@ -3905,10 +3911,5 @@ void NukiNetwork::disableMqtt()
 String NukiNetwork::localIP()
 {
     return _device->localIP();
-}
-
-bool NukiNetwork::isConnected()
-{
-    return _device->isConnected();
 }
 #endif

@@ -40,6 +40,7 @@ private:
     bool _startAP = true;
     bool _convertOldWiFi = false;
     bool _connected = false;
+    bool _hasIP = false;
     uint8_t _connectedChannel = 0;
     uint8_t* _connectedBSSID;
     int64_t _disconnectTs = 0;
