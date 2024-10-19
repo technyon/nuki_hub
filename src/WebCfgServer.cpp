@@ -104,7 +104,23 @@ void WebCfgServer::initialize()
     });
     _psychicServer->on("/reboot", HTTP_GET, [&](PsychicRequest *request){
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-        esp_err_t res = buildConfirmHtml(request, "Rebooting", 2, true);
+        
+        String value = "";
+        if(request->hasParam("CONFIRMTOKEN"))
+        {
+            const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
+            if(p->value() != "") value = p->value();
+        }
+        else
+        {
+            return buildConfirmHtml(request, "No confirm code set.", 3, true);
+        }
+
+        if(value != _confirmCode)
+        {
+            return request->redirect("/");
+        }
+        esp_err_t res = buildConfirmHtml(request, "Rebooting...", 2, true);
         waitAndProcess(true, 1000);
         restartEsp(RestartReason::RequestedViaWebServer);
         return res;
@@ -251,7 +267,22 @@ void WebCfgServer::initialize()
         });
         _psychicServer->on("/reboottoota", HTTP_GET, [&](PsychicRequest *request){
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword)) return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-            esp_err_t res = buildConfirmHtml(request, "Rebooting to other partition", 2, true);
+            String value = "";
+            if(request->hasParam("CONFIRMTOKEN"))
+            {
+                const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
+                if(p->value() != "") value = p->value();
+            }
+            else
+            {
+                return buildConfirmHtml(request, "No confirm code set.", 3, true);
+            }
+
+            if(value != _confirmCode)
+            {
+                return request->redirect("/");
+            }
+            esp_err_t res = buildConfirmHtml(request, "Rebooting to other partition...", 2, true);
             waitAndProcess(true, 1000);
             esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
             restartEsp(RestartReason::OTAReboot);
@@ -409,7 +440,9 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request)
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
-    response.print("<form action=\"/reboot\" method=\"get\"><br><input type=\"submit\" value=\"Reboot\" /></form>");
+    response.print("<form action=\"/reboot?CONFIRMTOKEN=");
+    response.print(_confirmCode);
+    response.print("\" method=\"get\"><br><input type=\"submit\" value=\"Reboot\" /></form>");
     response.print("</body></html>");
     return response.endSend();
 }
@@ -668,7 +701,9 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
         response.print("<h4><a onclick=\"hideshowmanual();\">Manually update Nuki Hub</a></h4><div id=\"manualupdate\" style=\"display: none\">");
         response.print("<div id=\"rebootform\"><h4>Reboot to Nuki Hub Updater</h4>");
         response.print("Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update");
-        response.print("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br></div>");
+        response.print("<form action=\"/reboottoota?CONFIRMTOKEN=");
+        response.print(_confirmCode);
+        response.print("\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br></div>");
         response.print("<div id=\"upform\"><h4>Update Nuki Hub Updater</h4>");
         response.print("Select the latest Nuki Hub updater binary to update the Nuki Hub updater");
         response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub_updater.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
@@ -678,7 +713,9 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
         response.print("<div id=\"manualupdate\">");
         response.print("<div id=\"rebootform\"><h4>Reboot to Nuki Hub</h4>");
         response.print("Click on the button to reboot to Nuki Hub");
-        response.print("<form action=\"/reboottoota\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br></div>");
+        response.print("<form action=\"/reboottoota?CONFIRMTOKEN=");
+        response.print(_confirmCode);
+        response.print("\" method=\"get\"><br><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br></div>");
         response.print("<div id=\"upform\"><h4>Update Nuki Hub</h4>");
         response.print("Select the latest Nuki Hub binary to update Nuki Hub");
         response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
@@ -2991,7 +3028,8 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
         buildNavigationMenuEntry(&response, "Configure Wi-Fi", "/wifi");
     }
     #endif
-    buildNavigationMenuEntry(&response, "Reboot Nuki Hub", "/reboot");
+    String rebooturl = "/reboot?CONFIRMTOKEN=" + _confirmCode;
+    buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebooturl.c_str());
     response.print("</ul></body></html>");
     return response.endSend();
 }
