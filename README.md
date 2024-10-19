@@ -100,7 +100,7 @@ In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the 
 
 ## Pairing with a Nuki Lock or Opener
 
-Enable pairing mode on the Nuki Lock or Opener (press the button on the Nuki device for a few seconds) and power on the ESP32.<br>
+Enable pairing mode on the Nuki Lock or Opener (press the button on the Nuki device for a few seconds - make sure Bluetooth pairing is allowed for the Nuki Lock button before) and power on the ESP32.<br>
 Pairing should be automatic.<br>
 <br>
 When pairing is successful, the web interface should show "Paired: Yes".<br>
