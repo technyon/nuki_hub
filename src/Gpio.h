@@ -84,6 +84,7 @@ private:
     void IRAM_ATTR onTimer();
     bool IRAM_ATTR isTriggered(const PinEntry& pinEntry);
     GpioAction IRAM_ATTR getGpioAction(const PinRole& role) const;
+    static void IRAM_ATTR isrOnTimer();
 
     #if defined(CONFIG_IDF_TARGET_ESP32C3)
     //Based on https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
@@ -127,15 +128,12 @@ private:
         };
 
     std::vector<PinEntry> _pinConfiguration;
-    static const uint _debounceTime;
-
-    static void IRAM_ATTR isrOnTimer();
 
     std::vector<std::function<void(const GpioAction&, const int&)>> _callbacks;
 
     static Gpio* _inst;
 
-    std::vector<int8_t> _triggerCount;
+    std::vector<uint8_t> _triggerState;
     hw_timer_t* timer = nullptr;
 
     Preferences* _preferences = nullptr;

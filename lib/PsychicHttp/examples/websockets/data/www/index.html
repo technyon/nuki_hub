@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PsychicHTTP Websocket Demo</title>
+        <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    </head>
+    <body>
+        <main>
+            <h1>Websocket Demo</h1>
+            <input type="text" id="message_input" placeholder="Type your message">
+            <button onclick="sendMessage()">Send Message</button>
+            <button onclick="websocketConnect()">Connect</button>
+            <div>
+                <textarea id="websocket_output" style="width: 50%; height: 250px;"></textarea>
+            </div>
+
+            <script>
+                let socket;
+                const outputText = document.getElementById('websocket_output');
+                const messageInput = document.getElementById('message_input');
+
+                function websocketConnect()
+                {
+                    // Create a WebSocket connection
+                    socket = new WebSocket('ws://' + window.location.host + '/ws');
+            
+                    // Event handler for when the WebSocket connection is open
+                    socket.addEventListener('open', (event) => {
+                        outputText.value += `[socket] connection opened!\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    });
+            
+                    // Event handler for when a message is received from the WebSocket server
+                    socket.addEventListener('message', (event) => {
+                        // Echo the received message into the output div
+                        let data = event.data.trim();
+                        outputText.value += `[received] ${data}\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    });
+            
+                    // Event handler for when an error occurs with the WebSocket connection
+                    socket.addEventListener('error', (event) => {
+                        let data = event.data.trim();
+                        outputText.value += `[error] ${event.data}\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    });
+            
+                    // Event handler for when the WebSocket connection is closed
+                    socket.addEventListener('close', (event) => {
+                        outputText.value += `[socket] connection closed!\n`;
+                    });
+                }
+        
+                // Function to send a message to the WebSocket server
+                function sendMessage() {
+                    if (socket.readyState == WebSocket.OPEN) {
+                        const message = messageInput.value.trim();
+                        if (message) {
+                            socket.send(message);
+                            messageInput.value = ''; // Clear the input field after sending the message
+                            outputText.value += `[sent] ${message}\n`;
+                            outputText.scrollTop = outputText.scrollHeight;
+                        }
+                    }
+                    else
+                    {
+                        outputText.value += `[error] Not Connected\n`;
+                        outputText.scrollTop = outputText.scrollHeight;
+                    }
+                }
+            </script>
+        </main>
+    </body>
+</html>

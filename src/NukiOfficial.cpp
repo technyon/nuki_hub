@@ -136,7 +136,10 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
         Log->print(F("Battery critical: "));
         Log->println(offCritical);
 
-        if(!_disableNonJSON) _publisher->publishBool(mqtt_topic_battery_critical, offCritical, true);
+        if(!_disableNonJSON)
+        {
+            _publisher->publishBool(mqtt_topic_battery_critical, offCritical, true);
+        }
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_batteryCharging) == 0)
@@ -146,7 +149,10 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
         Log->print(F("Battery charging: "));
         Log->println(offCharging);
 
-        if(!_disableNonJSON) _publisher->publishBool(mqtt_topic_battery_charging, offCharging, true);
+        if(!_disableNonJSON)
+        {
+            _publisher->publishBool(mqtt_topic_battery_charging, offCharging, true);
+        }
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_batteryChargeState) == 0)
@@ -156,19 +162,28 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
         Log->print(F("Battery level: "));
         Log->println(offChargeState);
 
-        if(!_disableNonJSON) _publisher->publishInt(mqtt_topic_battery_level, offChargeState, true);
+        if(!_disableNonJSON)
+        {
+            _publisher->publishInt(mqtt_topic_battery_level, offChargeState, true);
+        }
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_keypadBatteryCritical) == 0)
     {
         offKeypadCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_disableNonJSON) _publisher->publishBool(mqtt_topic_battery_keypad_critical, offKeypadCritical, true);
+        if(!_disableNonJSON)
+        {
+            _publisher->publishBool(mqtt_topic_battery_keypad_critical, offKeypadCritical, true);
+        }
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_doorsensorBatteryCritical) == 0)
     {
         offDoorsensorCritical = (strcmp(value, "true") == 0 ? 1 : 0);
-        if(!_disableNonJSON) _publisher->publishBool(mqtt_topic_battery_doorsensor_critical, offDoorsensorCritical, true);
+        if(!_disableNonJSON)
+        {
+            _publisher->publishBool(mqtt_topic_battery_doorsensor_critical, offDoorsensorCritical, true);
+        }
         publishBatteryJson = true;
     }
     else if(strcmp(topic, mqtt_topic_official_commandResponse) == 0)

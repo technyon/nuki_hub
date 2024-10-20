@@ -26,7 +26,7 @@ with open('ota/manifest.json', 'r+') as json_file:
         data[args.ota_type]['version'] = "No beta available"
         data[args.ota_type]['fullversion'] = "No beta available"
         data[args.ota_type]['build'] = ""
-        del(data[args.ota_type]['number'])
+        data[args.ota_type]['number'] = "0"
     else:
         if ("number" not in data[args.ota_type]):
             data[args.ota_type]['number'] = 1

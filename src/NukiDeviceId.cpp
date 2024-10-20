@@ -5,8 +5,8 @@
 #include "PreferencesKeys.h"
 
 NukiDeviceId::NukiDeviceId(Preferences* preferences, const std::string& preferencesId)
-: _preferences(preferences),
-  _preferencesId(preferencesId)
+    : _preferences(preferences),
+      _preferencesId(preferencesId)
 {
     _deviceId = _preferences->getUInt(_preferencesId.c_str(), 0);
 

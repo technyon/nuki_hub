@@ -2,8 +2,8 @@
 
 
 NukiPublisher::NukiPublisher(NukiNetwork *network, const char* mqttPath)
-: _network(network),
-  _mqttPath(mqttPath)
+    : _network(network),
+      _mqttPath(mqttPath)
 {
 }
 

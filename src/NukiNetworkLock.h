@@ -14,8 +14,7 @@
 #include "LockActionResult.h"
 #include "NukiOfficial.h"
 #include "NukiPublisher.h"
-
-#define LOCK_LOG_JSON_BUFFER_SIZE 2048
+#include "EspMillis.h"
 
 class NukiNetworkLock : public MqttReceiver
 {
@@ -58,7 +57,7 @@ public:
     void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
     void setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char* value));
-    void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
+    void onMqttDataReceived(char* topic, int topic_len, char* data, int data_len) override;
 
     void publishFloat(const char* topic, const float value, bool retain, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value, bool retain);

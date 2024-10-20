@@ -9,6 +9,7 @@
 #include "LockActionResult.h"
 #include "NukiDeviceId.h"
 #include "NukiOfficial.h"
+#include "EspMillis.h"
 
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {

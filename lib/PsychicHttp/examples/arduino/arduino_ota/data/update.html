@@ -1,0 +1,166 @@
+<html>
+	<head>
+		<title>PSYCHICHTTP</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		
+		<style>
+			input[type=file]::file-selector-button {
+			margin-right: 20px;
+			border: none;
+			background: #3498db; /* blue */
+			padding: 10px 20px;
+			border-radius: 30px;
+			color: #fff;
+			cursor: pointer;
+			transition: background .2s ease-in-out;
+			}
+			
+			input[type=file]::file-selector-button:hover {
+			background: green ;		  
+			}
+			
+			.drop-container {
+			position: relative;
+			display: flex;
+			gap: 10px;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			height: 150px;
+			padding: 20px;
+			border-radius: 10px;
+			border: 2px dashed #555;
+			color: #444;
+			cursor: pointer;
+			transition: background .2s ease-in-out, border .2s ease-in-out;
+			}
+			
+			.drop-container:hover {
+			background: #eee;
+			border-color: #111;
+			}
+			
+			.drop-container:hover .drop-title {
+			color: #222;
+			}
+			
+			.drop-title {
+			color: #444;
+			font-size: 20px;
+			font-weight: bold;
+			text-align: center;
+			transition: color .2s ease-in-out;
+			}
+			
+			.drop-container.drag-active {
+			background: #eee;
+			border-color: #111;
+			}
+			
+			.drop-container.drag-active .drop-title {
+			color: #222;
+			}
+			
+			.restart-button {
+			margin-right: 20px;
+			border: none;
+			background: #3498db; /* blue */
+			padding: 10px 20px;
+			border-radius: 30px;
+			color: #fff;
+			cursor: pointer;
+			transition: background .2s ease-in-out;
+			}
+			
+			.restart-button:hover {
+			background: green ;		  
+			}
+			
+		</style>
+		
+	</head>
+	
+	<body>	
+		
+		<div class="row">
+			<h1>PsychicHttp OTA Update</h1>
+		</div>
+		
+		<div><p style="text-align: left">This page allows to test OTA update with PsychicHttp, and file naming convention below :
+			<ul>
+				<li><b>"*code.bin"</b> for code (firmware) update, eg "v1_code.bin"</li>
+				<li><b>"*littlefs.bin"</b> for data (littlefs) update, eg "v1_littlefs.bin" </li>
+			</ul>
+		</div>	
+		
+		<div>
+			<form id="upload_form" enctype="multipart/form-data" method="post">
+				<label for="images" class="drop-container" id="dropcontainer">
+					<input type="file" class="inputfile" name="updatefile" id="updatefile" value="updatefile" accept=".bin" onchange="uploadFile()" required>					
+					<span class="drop-title">Or drop file here</span>
+					<progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+					<font color='black' id="status"></font>
+					<p id="loaded_n_total"></p>					
+				</label>			
+			</form>
+		</div>
+		
+		<div>
+			<p style="text-align: left">Update must be done for each of the files provided (code, littlefs). Once updates are made, the ESP32 can be restarted.		
+				<button class="restart-button" onclick="esprestartButton()">Restart</button>						
+			</p>
+		</div>		
+		
+		</body>
+		<script>
+			
+			function uploadFile() {
+			var urltocall = "/update";	
+			var xhr = new XMLHttpRequest();
+			xhr.upload.addEventListener("progress", progressHandler, false);
+			xhr.addEventListener("error", errorHandler, false);			
+			var fileupdate = document.getElementById('updatefile'); // get file structure in DOM
+			var file = fileupdate.files[0]; // get file element
+			//alert(file.name+" | "+file.size+" | "+file.type);
+			xhr.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					document.getElementById("status").innerHTML = xhr.responseText; // success, show response on page 
+				}
+				else {
+					document.getElementById("status").innerHTML = xhr.responseText; // error, show response on page
+				}
+			};
+			var formdata = new FormData();
+			formdata.append("file", file);
+			xhr.open("POST", urltocall); // trigger upload request with file parameter
+			xhr.send(formdata);
+		}
+		
+		function progressHandler(event) {	
+			// document.getElementById("loaded_n_total").innerHTML = "Chargé " + event.loaded + " octets"; // do not display bytes loaded
+			var percent = (event.loaded / event.total) * 100;
+			document.getElementById("progressBar").value = Math.round(percent);		
+			document.getElementById("status").innerHTML = Math.round(percent) + "% uploaded...";
+			if (percent >= 100) {
+				document.getElementById("status").innerHTML = "Writing file ...";
+			}
+		}
+		
+		function errorHandler(event) {
+			document.getElementById("status").innerHTML = "<b style='color:red'>Error event catched by errorHandler !</b>";			
+		}
+		
+		function esprestartButton() {
+			/* restart ESP */
+			var urltocall = "/restart";
+			xhr=new XMLHttpRequest();
+			xhr.onreadystatechange = function() {
+				if (this.readyState == 4) document.getElementById("status").innerHTML = xhr.responseText;
+			};
+			xhr.open("POST", urltocall, false); // trigger restart request with file parameter
+			xhr.send();	
+		}
+		
+	</script>
+</html>			

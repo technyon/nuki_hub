@@ -10,10 +10,9 @@
 #include "networkDevices/W5500Definitions.h"
 
 Gpio* Gpio::_inst = nullptr;
-const uint Gpio::_debounceTime = GPIO_DEBOUNCE_TIME;
 
 Gpio::Gpio(Preferences* preferences)
-: _preferences(preferences)
+    : _preferences(preferences)
 {
     _inst = this;
     loadPinConfiguration();
@@ -29,42 +28,50 @@ Gpio::Gpio(Preferences* preferences)
 
 bool Gpio::isTriggered(const PinEntry& entry)
 {
+//    Log->println(" ------------ ");
+
     const int threshold = 3;
 
-    int state = digitalRead(entry.pin);
+    uint8_t state = digitalRead(entry.pin);
+    uint8_t lastState = (_triggerState[entry.pin] & 0x80) >> 7;
 
-    if(entry.role == PinRole::GeneralInputPullDown)
+    uint8_t pinState = _triggerState[entry.pin] & 0x7f;
+    pinState = pinState << 1 | state;
+    _triggerState[entry.pin] = (pinState & 0x7f) | lastState << 7;
+//    Log->print("Trigger state: ");
+//    Log->println(_triggerState[entry.pin], 2);
+
+    pinState = pinState & 0x07;
+//    Log->print("Val: ");
+//    Log->println(pinState);
+
+
+    if(pinState != 0x00 && pinState != 0x07)
     {
-        state = 1 - state;
+        return false;
     }
+//    Log->print("Last State: ");
+//    Log->println(lastState);
+//    Log->print("State: ");
+//    Log->println(state);
 
-    if(state == LOW)
+    if(state != lastState)
     {
-        if (_triggerCount[entry.pin] >= 0)
-        {
-            _triggerCount[entry.pin]++;
-        }
-
-        if (_triggerCount[entry.pin] >= threshold)
-        {
-            _triggerCount[entry.pin] = -1;
-            return true;
-        }
+//        Log->print("State changed: ");
+//        Log->println(state);
+        _triggerState[entry.pin] = (pinState & 0x7f) | state << 7;
     }
     else
     {
-        if (_triggerCount[entry.pin] < 0)
-        {
-            _triggerCount[entry.pin]--;
-
-            if(_triggerCount[entry.pin] <= -threshold)
-            {
-                _triggerCount[entry.pin] = 0;
-            }
-        }
+        return false;
     }
 
-    return false;
+    if(entry.role == PinRole::GeneralInputPullDown || entry.role == PinRole::GeneralInputPullUp)
+    {
+        return true;
+    }
+
+    return state == LOW;
 }
 
 void Gpio::onTimer()
@@ -73,35 +80,35 @@ void Gpio::onTimer()
     {
         switch(entry.role)
         {
-            case PinRole::InputLock:
-            case PinRole::InputUnlock:
-            case PinRole::InputUnlatch:
-            case PinRole::InputLockNgo:
-            case PinRole::InputLockNgoUnlatch:
-            case PinRole::InputElectricStrikeActuation:
-            case PinRole::InputActivateRTO:
-            case PinRole::InputActivateCM:
-            case PinRole::InputDeactivateRtoCm:
-            case PinRole::InputDeactivateRTO:
-            case PinRole::InputDeactivateCM:
-            case PinRole::GeneralInputPullDown:
-            case PinRole::GeneralInputPullUp:
-                if(isTriggered(entry))
-                {
-                    _inst->notify(getGpioAction(entry.role), entry.pin);
-                }
-                break;
-            case PinRole::OutputHighLocked:
-            case PinRole::OutputHighUnlocked:
-            case PinRole::OutputHighMotorBlocked:
-            case PinRole::OutputHighRtoActive:
-            case PinRole::OutputHighCmActive:
-            case PinRole::OutputHighRtoOrCmActive:
-            case PinRole::GeneralOutput:
-            case PinRole::Ethernet:
-                // ignore. This case should not occur since pins are configured as output
-            default:
-                break;
+        case PinRole::InputLock:
+        case PinRole::InputUnlock:
+        case PinRole::InputUnlatch:
+        case PinRole::InputLockNgo:
+        case PinRole::InputLockNgoUnlatch:
+        case PinRole::InputElectricStrikeActuation:
+        case PinRole::InputActivateRTO:
+        case PinRole::InputActivateCM:
+        case PinRole::InputDeactivateRtoCm:
+        case PinRole::InputDeactivateRTO:
+        case PinRole::InputDeactivateCM:
+        case PinRole::GeneralInputPullDown:
+        case PinRole::GeneralInputPullUp:
+            if(isTriggered(entry))
+            {
+                _inst->notify(getGpioAction(entry.role), entry.pin);
+            }
+            break;
+        case PinRole::OutputHighLocked:
+        case PinRole::OutputHighUnlocked:
+        case PinRole::OutputHighMotorBlocked:
+        case PinRole::OutputHighRtoActive:
+        case PinRole::OutputHighCmActive:
+        case PinRole::OutputHighRtoOrCmActive:
+        case PinRole::GeneralOutput:
+        case PinRole::Ethernet:
+        // ignore. This case should not occur since pins are configured as output
+        default:
+            break;
         }
     }
 }
@@ -113,10 +120,10 @@ void Gpio::isrOnTimer()
 
 void Gpio::init()
 {
-    _inst->_triggerCount.reserve(_inst->availablePins().size());
+    _inst->_triggerState.reserve(_inst->availablePins().size());
     for(int i=0; i<_inst->availablePins().size(); i++)
     {
-        _inst->_triggerCount.push_back(0);
+        _inst->_triggerState.push_back(0);
     }
 
     bool hasInputPin = false;
@@ -132,37 +139,37 @@ void Gpio::init()
 
         switch(entry.role)
         {
-            case PinRole::InputLock:
-            case PinRole::InputUnlock:
-            case PinRole::InputUnlatch:
-            case PinRole::InputLockNgo:
-            case PinRole::InputLockNgoUnlatch:
-            case PinRole::InputElectricStrikeActuation:
-            case PinRole::InputActivateRTO:
-            case PinRole::InputActivateCM:
-            case PinRole::InputDeactivateRtoCm:
-            case PinRole::InputDeactivateRTO:
-            case PinRole::InputDeactivateCM:
-            case PinRole::GeneralInputPullUp:
-                pinMode(entry.pin, INPUT_PULLUP);
-                hasInputPin = true;
-                break;
-            case PinRole::GeneralInputPullDown:
-                pinMode(entry.pin, INPUT_PULLDOWN);
-                hasInputPin = true;
-                break;
-            case PinRole::OutputHighLocked:
-            case PinRole::OutputHighUnlocked:
-            case PinRole::OutputHighMotorBlocked:
-            case PinRole::OutputHighRtoActive:
-            case PinRole::OutputHighCmActive:
-            case PinRole::OutputHighRtoOrCmActive:
-            case PinRole::GeneralOutput:
-                pinMode(entry.pin, OUTPUT);
-                break;
-            case PinRole::Ethernet:
-            default:
-                break;
+        case PinRole::InputLock:
+        case PinRole::InputUnlock:
+        case PinRole::InputUnlatch:
+        case PinRole::InputLockNgo:
+        case PinRole::InputLockNgoUnlatch:
+        case PinRole::InputElectricStrikeActuation:
+        case PinRole::InputActivateRTO:
+        case PinRole::InputActivateCM:
+        case PinRole::InputDeactivateRtoCm:
+        case PinRole::InputDeactivateRTO:
+        case PinRole::InputDeactivateCM:
+        case PinRole::GeneralInputPullUp:
+            pinMode(entry.pin, INPUT_PULLUP);
+            hasInputPin = true;
+            break;
+        case PinRole::GeneralInputPullDown:
+            pinMode(entry.pin, INPUT_PULLDOWN);
+            hasInputPin = true;
+            break;
+        case PinRole::OutputHighLocked:
+        case PinRole::OutputHighUnlocked:
+        case PinRole::OutputHighMotorBlocked:
+        case PinRole::OutputHighRtoActive:
+        case PinRole::OutputHighCmActive:
+        case PinRole::OutputHighRtoOrCmActive:
+        case PinRole::GeneralOutput:
+            pinMode(entry.pin, OUTPUT);
+            break;
+        case PinRole::Ethernet:
+        default:
+            break;
         }
     }
 
@@ -214,7 +221,10 @@ void Gpio::loadPinConfiguration()
 
         if(std::find(disabledPins.begin(), disabledPins.end(), entry.pin) == disabledPins.end())
         {
-            if(entry.role == PinRole::Ethernet) entry.role = PinRole::Disabled;
+            if(entry.role == PinRole::Ethernet)
+            {
+                entry.role = PinRole::Disabled;
+            }
             entry.role = (PinRole) serialized[(i * 2 + 1)];
             Log->println("Not found in Ethernet disabled pins");
             Log->print(F("Role: "));
@@ -227,7 +237,10 @@ void Gpio::loadPinConfiguration()
             Log->print(F("Role: "));
             Log->println(getRoleDescription(entry.role));
         }
-        if(entry.role != PinRole::Disabled) _pinConfiguration.push_back(entry);
+        if(entry.role != PinRole::Disabled)
+        {
+            _pinConfiguration.push_back(entry);
+        }
     }
 }
 
@@ -237,90 +250,94 @@ const  std::vector<int> Gpio::getDisabledPins() const
 
     switch(_preferences->getInt(preference_network_hardware, 0))
     {
-        case 2:
-            disabledPins.push_back(ETH_PHY_CS_GENERIC_W5500);
-            disabledPins.push_back(ETH_PHY_IRQ_GENERIC_W5500);
-            disabledPins.push_back(ETH_PHY_RST_GENERIC_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_SCK_GENERIC_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_MISO_GENERIC_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_MOSI_GENERIC_W5500);
-            break;
-        case 3:
-            disabledPins.push_back(ETH_PHY_CS_M5_W5500);
-            disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
-            disabledPins.push_back(ETH_PHY_RST_M5_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
-            break;
-        case 10:
-            disabledPins.push_back(ETH_PHY_CS_M5_W5500_S3);
-            disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
-            disabledPins.push_back(ETH_PHY_RST_M5_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500_S3);
-            disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500_S3);
-            disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500_S3);
-            break;
-        case 9:
-            disabledPins.push_back(ETH_PHY_CS_ETH01EVO);
-            disabledPins.push_back(ETH_PHY_IRQ_ETH01EVO);
-            disabledPins.push_back(ETH_PHY_RST_ETH01EVO);
-            disabledPins.push_back(ETH_PHY_SPI_SCK_ETH01EVO);
-            disabledPins.push_back(ETH_PHY_SPI_MISO_ETH01EVO);
-            disabledPins.push_back(ETH_PHY_SPI_MOSI_ETH01EVO);
-            break;
-        case 6:
-            disabledPins.push_back(ETH_PHY_CS_M5_W5500);
-            disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
-            disabledPins.push_back(ETH_PHY_RST_M5_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
-            disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
-            break;
-        case 11:
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_cs, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_irq, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_rst, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_sck, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_miso, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_mosi, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_pwr, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_mdc, -1));
-            disabledPins.push_back(_preferences->getInt(preference_network_custom_mdio, -1));
-            break;
-        #if defined(CONFIG_IDF_TARGET_ESP32)
-        case 4:
-            disabledPins.push_back(12);
-            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
-            break;
-        case 5:
-            disabledPins.push_back(16);
-            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
-            break;
-        case 8:
-            disabledPins.push_back(5);
-            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
-            break;
-        case 7:
-            disabledPins.push_back(-1);
-            disabledPins.push_back(ETH_RESET_PIN_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDC_LAN8720);
-            disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
-            break;
-        #endif
-        default:
-            break;
+    case 2:
+        disabledPins.push_back(ETH_PHY_CS_GENERIC_W5500);
+        disabledPins.push_back(ETH_PHY_IRQ_GENERIC_W5500);
+        disabledPins.push_back(ETH_PHY_RST_GENERIC_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_GENERIC_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_GENERIC_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_GENERIC_W5500);
+        break;
+    case 3:
+        disabledPins.push_back(ETH_PHY_CS_M5_W5500);
+        disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
+        disabledPins.push_back(ETH_PHY_RST_M5_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
+        break;
+    case 10:
+        disabledPins.push_back(ETH_PHY_CS_M5_W5500_S3);
+        disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
+        disabledPins.push_back(ETH_PHY_RST_M5_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500_S3);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500_S3);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500_S3);
+        break;
+    case 9:
+        disabledPins.push_back(ETH_PHY_CS_ETH01EVO);
+        disabledPins.push_back(ETH_PHY_IRQ_ETH01EVO);
+        disabledPins.push_back(ETH_PHY_RST_ETH01EVO);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_ETH01EVO);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_ETH01EVO);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_ETH01EVO);
+        break;
+    case 6:
+        disabledPins.push_back(ETH_PHY_CS_M5_W5500);
+        disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
+        disabledPins.push_back(ETH_PHY_RST_M5_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
+        break;
+    case 11:
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_cs, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_irq, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_rst, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_sck, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_miso, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_mosi, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_pwr, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_mdc, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_mdio, -1));
+        break;
+#if defined(CONFIG_IDF_TARGET_ESP32)
+    case 4:
+        disabledPins.push_back(12);
+        disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        break;
+    case 5:
+        disabledPins.push_back(16);
+        disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        break;
+    case 8:
+        disabledPins.push_back(5);
+        disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        break;
+    case 7:
+        disabledPins.push_back(-1);
+        disabledPins.push_back(ETH_RESET_PIN_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDC_LAN8720);
+        disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        break;
+#endif
+    default:
+        break;
     }
 
     Log->print(F("GPIO Ethernet disabled pins:"));
     for_each_n(disabledPins.begin(), disabledPins.size(),
-               [](int x) { Log->print(" "); Log->print(x); });
+               [](int x)
+    {
+        Log->print(" ");
+        Log->print(x);
+    });
     Log->println();
     return disabledPins;
 }
@@ -386,52 +403,52 @@ String Gpio::getRoleDescription(const PinRole& role) const
 {
     switch(role)
     {
-        case PinRole::Disabled:
-            return "Disabled";
-        case PinRole::InputLock:
-            return "Input: Lock";
-        case PinRole::InputUnlock:
-            return "Input: Unlock";
-        case PinRole::InputUnlatch:
-            return "Input: Unlatch";
-        case PinRole::InputLockNgo:
-            return "Input: Lock n Go";
-        case PinRole::InputLockNgoUnlatch:
-            return "Input: Lock n Go and unlatch";
-        case PinRole::InputElectricStrikeActuation:
-            return "Input: Electric strike actuation";
-        case PinRole::InputActivateRTO:
-            return "Input: Activate RTO";
-        case PinRole::InputActivateCM:
-            return "Input: Activate CM";
-        case PinRole::InputDeactivateRtoCm:
-            return "Input: Deactivate RTO/CM";
-        case PinRole::InputDeactivateRTO:
-            return "Input: Deactivate RTO";
-        case PinRole::InputDeactivateCM:
-            return "Input: Deactivate CM";
-        case PinRole::OutputHighLocked:
-            return "Output: High when locked";
-        case PinRole::OutputHighUnlocked:
-            return "Output: High when unlocked";
-        case PinRole::OutputHighMotorBlocked:
-            return "Output: High when motor blocked";
-        case PinRole::OutputHighRtoActive:
-            return "Output: High when RTO active";
-        case PinRole::OutputHighCmActive:
-            return "Output: High when CM active";
-        case PinRole::OutputHighRtoOrCmActive:
-            return "Output: High when RTO or CM active";
-        case PinRole::GeneralOutput:
-            return "General output";
-        case PinRole::GeneralInputPullDown:
-            return "General input (Pull-down)";
-        case PinRole::GeneralInputPullUp:
-            return "General input (Pull-up)";
-         case PinRole::Ethernet:
-            return "Ethernet";
-        default:
-            return "Unknown";
+    case PinRole::Disabled:
+        return "Disabled";
+    case PinRole::InputLock:
+        return "Input: Lock";
+    case PinRole::InputUnlock:
+        return "Input: Unlock";
+    case PinRole::InputUnlatch:
+        return "Input: Unlatch";
+    case PinRole::InputLockNgo:
+        return "Input: Lock n Go";
+    case PinRole::InputLockNgoUnlatch:
+        return "Input: Lock n Go and unlatch";
+    case PinRole::InputElectricStrikeActuation:
+        return "Input: Electric strike actuation";
+    case PinRole::InputActivateRTO:
+        return "Input: Activate RTO";
+    case PinRole::InputActivateCM:
+        return "Input: Activate CM";
+    case PinRole::InputDeactivateRtoCm:
+        return "Input: Deactivate RTO/CM";
+    case PinRole::InputDeactivateRTO:
+        return "Input: Deactivate RTO";
+    case PinRole::InputDeactivateCM:
+        return "Input: Deactivate CM";
+    case PinRole::OutputHighLocked:
+        return "Output: High when locked";
+    case PinRole::OutputHighUnlocked:
+        return "Output: High when unlocked";
+    case PinRole::OutputHighMotorBlocked:
+        return "Output: High when motor blocked";
+    case PinRole::OutputHighRtoActive:
+        return "Output: High when RTO active";
+    case PinRole::OutputHighCmActive:
+        return "Output: High when CM active";
+    case PinRole::OutputHighRtoOrCmActive:
+        return "Output: High when RTO or CM active";
+    case PinRole::GeneralOutput:
+        return "General output";
+    case PinRole::GeneralInputPullDown:
+        return "General input (Pull-down)";
+    case PinRole::GeneralInputPullUp:
+        return "General input (Pull-up)";
+    case PinRole::Ethernet:
+        return "Ethernet";
+    default:
+        return "Unknown";
     }
 }
 
@@ -440,46 +457,47 @@ GpioAction Gpio::getGpioAction(const PinRole &role) const
 {
     switch(role)
     {
-        case PinRole::Disabled:
-            return GpioAction::None;
-        case PinRole::InputLock:
-            return GpioAction::Lock;
-        case PinRole::InputUnlock:
-            return GpioAction::Unlock;
-        case PinRole::InputUnlatch:
-            return GpioAction::Unlatch;
-        case PinRole::InputLockNgo:
-            return GpioAction::LockNgo;
-        case PinRole::InputLockNgoUnlatch:
-            return GpioAction::LockNgoUnlatch;
-        case PinRole::InputElectricStrikeActuation:
-            return GpioAction::ElectricStrikeActuation;
-        case PinRole::InputActivateRTO:
-            return GpioAction::ActivateRTO;
-        case PinRole::InputActivateCM:
-            return GpioAction::ActivateCM;
-        case PinRole::InputDeactivateRtoCm:
-            return GpioAction::DeactivateRtoCm;
-        case PinRole::InputDeactivateRTO:
-            return GpioAction::DeactivateRTO;
-        case PinRole::InputDeactivateCM:
-            return GpioAction::DeactivateCM;
+    case PinRole::Disabled:
+        return GpioAction::None;
+    case PinRole::InputLock:
+        return GpioAction::Lock;
+    case PinRole::InputUnlock:
+        return GpioAction::Unlock;
+    case PinRole::InputUnlatch:
+        return GpioAction::Unlatch;
+    case PinRole::InputLockNgo:
+        return GpioAction::LockNgo;
+    case PinRole::InputLockNgoUnlatch:
+        return GpioAction::LockNgoUnlatch;
+    case PinRole::InputElectricStrikeActuation:
+        return GpioAction::ElectricStrikeActuation;
+    case PinRole::InputActivateRTO:
+        return GpioAction::ActivateRTO;
+    case PinRole::InputActivateCM:
+        return GpioAction::ActivateCM;
+    case PinRole::InputDeactivateRtoCm:
+        return GpioAction::DeactivateRtoCm;
+    case PinRole::InputDeactivateRTO:
+        return GpioAction::DeactivateRTO;
+    case PinRole::InputDeactivateCM:
+        return GpioAction::DeactivateCM;
 
-        case PinRole::GeneralInputPullDown:
-        case PinRole::GeneralInputPullUp:
-            return GpioAction::GeneralInput;
+    case PinRole::GeneralInputPullDown:
+    case PinRole::GeneralInputPullUp:
+        return GpioAction::GeneralInput;
 
-        case PinRole::GeneralOutput:
-        case PinRole::Ethernet:
-        case PinRole::OutputHighLocked:
-        case PinRole::OutputHighUnlocked:
-        case PinRole::OutputHighMotorBlocked:
-        case PinRole::OutputHighRtoActive:
-        case PinRole::OutputHighCmActive:
-        case PinRole::OutputHighRtoOrCmActive:
-        default:
-            return GpioAction::None;
-    }}
+    case PinRole::GeneralOutput:
+    case PinRole::Ethernet:
+    case PinRole::OutputHighLocked:
+    case PinRole::OutputHighUnlocked:
+    case PinRole::OutputHighMotorBlocked:
+    case PinRole::OutputHighRtoActive:
+    case PinRole::OutputHighCmActive:
+    case PinRole::OutputHighRtoOrCmActive:
+    default:
+        return GpioAction::None;
+    }
+}
 
 
 void Gpio::getConfigurationText(String& text, const std::vector<PinEntry>& pinConfiguration, const String& linebreak) const

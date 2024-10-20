@@ -84,7 +84,8 @@ Unpack the zip archive and read the included how-to-flash.txt for installation i
 
 ## Initial setup (Network and MQTT)
 
-Power up the ESP32 and a new Wi-Fi access point named "ESP32_(8 CHARACTER ALPHANUMERIC)" should appear.<br>
+Power up the ESP32 and a new Wi-Fi access point named "NukiHub" should appear.<br>
+The password of the access point is "NukiHubESP32".<br>
 Connect a client device to this access point and in a browser navigate to "http://192.168.4.1".<br>
 Use the web interface to connect the ESP to your preferred Wi-Fi network.<br>
 <br>
@@ -99,8 +100,9 @@ In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the 
 
 ## Pairing with a Nuki Lock or Opener
 
-Enable pairing mode on the Nuki Lock or Opener (press the button on the Nuki device for a few seconds) and power on the ESP32.<br>
-Pairing should be automatic.<br>
+Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
+After enabling the setting press the button on the Nuki device for a few seconds.<br>
+Pairing should be automatic when the ESP32 is powered on.<br>
 <br>
 When pairing is successful, the web interface should show "Paired: Yes".<br>
 MQTT nodes like lock state and battery level should now reflect the reported values from the lock.<br>
@@ -138,7 +140,7 @@ PSRAM is usually 2, 4 or 8MB in size and thus greatly enlarges the 320kb of inte
 It is basically impossible to run out of RAM when PSRAM is available.
 You can check on the info page of the Web configurator if PSRAM is available.
 
-Note that there are two build of Nuki Hub for the ESP32-S3 available.<br>
+Note that there are two builds of Nuki Hub for the ESP32-S3 available.<br>
 One for devices with no or Quad SPI PSRAM and one for devices with Octal SPI PSRAM.<br>
 If your ESP32-S3 device has PSRAM but it is not detected please flash the other S3 binary.
 
@@ -165,7 +167,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 - MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
-- Disable fallback to Wi-Fi / Wi-Fi config portal: By default the Nuki Hub will fallback to Wi-Fi and open the Wi-Fi configuration portal when the network connection fails. Enable this setting to disable this fallback.
 - Connect to AP with the best signal in an environment with multiple APs with the same SSID: Enable to perform a scan for the Access Point with the best signal strenght for the specified SSID in a multi AP/Mesh environment.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
 - MQTT Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
@@ -251,6 +252,21 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### GPIO Configuration
 
 - Gpio [2-33]: See the "[GPIO lock control](#gpio-lock-control-optional)" section of this README.
+
+### Import/Export Configuration
+
+The "Import/Export Configuration" menu option allows the importing and exporting of the NukiHub settings in JSON format.<br>
+<br>
+Create a (partial) backup of the current NukiHub settings by selecting any of the following:<br>
+- Basic export: Will backup all settings that are not considered confidential (as such passwords and pincodes are not included in this export).
+- Export with redacted settings: Will backup basic settings and redacted settings such as passwords and pincodes.
+
+Both of the above options will not backup pairing data, so you will have to manually pair Nuki devices when importing this export on a factory reset or new device.
+
+- Export with redacted settings and pairing data: Will backup all settings and pairing data. Can be used to completely restore a factory reset or new device based on the settings of this device. (Re)pairing Nuki devices will not be needed when importing this export.
+<br>
+To import settings copy and paste the contents of the JSON file that is created by any of the above export options and select "Import".
+After importing the device will reboot.
 
 ## Exposed MQTT Topics
 
@@ -659,9 +675,9 @@ Examples:
 
 ## GPIO lock control (optional)
 
-The lock can be controlled via GPIO.<br>
+The lock can be controlled via GPIO. To trigger actions, a connection to ground has to be present for at lease 300ms (or to +3.3V for "General input (pull-down)"). <br>
 <br>
-To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can be configured for a specific role:
+To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can e configured for a specific role:
 - Disabled: The GPIO is disabled
 - Input: Lock: When connect to Ground, a lock command is sent to the lock
 - Input: Unlock: When connect to Ground, an unlock command is sent to the lock
