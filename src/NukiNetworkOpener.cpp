@@ -7,10 +7,10 @@
 #include <ArduinoJson.h>
 
 NukiNetworkOpener::NukiNetworkOpener(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize)
-        : _preferences(preferences),
-          _network(network),
-          _buffer(buffer),
-          _bufferSize(bufferSize)
+    : _preferences(preferences),
+      _network(network),
+      _buffer(buffer),
+      _bufferSize(bufferSize)
 {
     _nukiPublisher = new NukiPublisher(network, _mqttPath);
 
@@ -124,9 +124,9 @@ void NukiNetworkOpener::initialize()
     }
 
     _network->addReconnectedCallback([&]()
-     {
-         _reconnected = true;
-     });
+    {
+        _reconnected = true;
+    });
 }
 
 void NukiNetworkOpener::update()
@@ -149,19 +149,28 @@ void NukiNetworkOpener::onMqttDataReceived(char* topic, int topic_len, char* dat
     if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
     {
         if(strcmp(data, "") == 0 ||
-           strcmp(data, "--") == 0) return;
+                strcmp(data, "--") == 0)
+        {
+            return;
+        }
 
-        if(atoi(data) > 0 && atoi(data) > _lastRollingLog) _lastRollingLog = atoi(data);
+        if(atoi(data) > 0 && atoi(data) > _lastRollingLog)
+        {
+            _lastRollingLog = atoi(data);
+        }
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
         if(strcmp(data, "") == 0 ||
-           strcmp(data, "--") == 0 ||
-           strcmp(data, "ack") == 0 ||
-           strcmp(data, "unknown_action") == 0 ||
-           strcmp(data, "denied") == 0 ||
-           strcmp(data, "error") == 0) return;
+                strcmp(data, "--") == 0 ||
+                strcmp(data, "ack") == 0 ||
+                strcmp(data, "unknown_action") == 0 ||
+                strcmp(data, "denied") == 0 ||
+                strcmp(data, "error") == 0)
+        {
+            return;
+        }
 
         Log->print(F("Opener action received: "));
         Log->println(data);
@@ -173,18 +182,18 @@ void NukiNetworkOpener::onMqttDataReceived(char* topic, int topic_len, char* dat
 
         switch(lockActionResult)
         {
-            case LockActionResult::Success:
-                publishString(mqtt_topic_lock_action, "ack", false);
-                break;
-            case LockActionResult::UnknownAction:
-                publishString(mqtt_topic_lock_action, "unknown_action", false);
-                break;
-            case LockActionResult::AccessDenied:
-                publishString(mqtt_topic_lock_action, "denied", false);
-                break;
-            case LockActionResult::Failed:
-                publishString(mqtt_topic_lock_action, "error", false);
-                break;
+        case LockActionResult::Success:
+            publishString(mqtt_topic_lock_action, "ack", false);
+            break;
+        case LockActionResult::UnknownAction:
+            publishString(mqtt_topic_lock_action, "unknown_action", false);
+            break;
+        case LockActionResult::AccessDenied:
+            publishString(mqtt_topic_lock_action, "denied", false);
+            break;
+        case LockActionResult::Failed:
+            publishString(mqtt_topic_lock_action, "error", false);
+            break;
         }
     }
 
@@ -194,7 +203,10 @@ void NukiNetworkOpener::onMqttDataReceived(char* topic, int topic_len, char* dat
         {
             if(_keypadCommandReceivedReceivedCallback != nullptr)
             {
-                if(strcmp(data, "--") == 0) return;
+                if(strcmp(data, "--") == 0)
+                {
+                    return;
+                }
 
                 _keypadCommandReceivedReceivedCallback(data, _keypadCommandId, _keypadCommandName, _keypadCommandCode, _keypadCommandEnabled);
 
@@ -254,7 +266,10 @@ void NukiNetworkOpener::onMqttDataReceived(char* topic, int topic_len, char* dat
 
     if(comparePrefixedPath(topic, mqtt_topic_config_action))
     {
-        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0)
+        {
+            return;
+        }
 
         if(_configUpdateReceivedCallback != NULL)
         {
@@ -266,7 +281,10 @@ void NukiNetworkOpener::onMqttDataReceived(char* topic, int topic_len, char* dat
 
     if(comparePrefixedPath(topic, mqtt_topic_keypad_json_action))
     {
-        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0)
+        {
+            return;
+        }
 
         if(_keypadJsonCommandReceivedReceivedCallback != NULL)
         {
@@ -278,7 +296,10 @@ void NukiNetworkOpener::onMqttDataReceived(char* topic, int topic_len, char* dat
 
     if(comparePrefixedPath(topic, mqtt_topic_timecontrol_action))
     {
-        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0)
+        {
+            return;
+        }
 
         if(_timeControlCommandReceivedReceivedCallback != NULL)
         {
@@ -290,7 +311,10 @@ void NukiNetworkOpener::onMqttDataReceived(char* topic, int topic_len, char* dat
 
     if(comparePrefixedPath(topic, mqtt_topic_auth_action))
     {
-        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0)
+        {
+            return;
+        }
 
         if(_authCommandReceivedReceivedCallback != NULL)
         {
@@ -329,7 +353,9 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
     {
         publishString(mqtt_topic_lock_continuous_mode, "on", true);
         json["continuous_mode"] = 1;
-    } else {
+    }
+    else
+    {
         publishString(mqtt_topic_lock_continuous_mode, "off", true);
         json["continuous_mode"] = 0;
     }
@@ -429,28 +455,28 @@ void NukiNetworkOpener::publishState(NukiOpener::OpenerState lockState)
     {
         switch (lockState.lockState)
         {
-            case NukiOpener::LockState::Locked:
-                publishString(mqtt_topic_lock_ha_state, "locked", true);
-                publishString(mqtt_topic_lock_binary_state, "locked", true);
-                break;
-            case NukiOpener::LockState::RTOactive:
-                publishString(mqtt_topic_lock_ha_state, "unlocked", true);
-                publishString(mqtt_topic_lock_binary_state, "unlocked", true);
-                break;
-            case NukiOpener::LockState::Open:
-                publishString(mqtt_topic_lock_ha_state, "open", true);
-                publishString(mqtt_topic_lock_binary_state, "unlocked", true);
-                break;
-            case NukiOpener::LockState::Opening:
-                publishString(mqtt_topic_lock_ha_state, "opening", true);
-                publishString(mqtt_topic_lock_binary_state, "unlocked", true);
-                break;
-            case NukiOpener::LockState::Undefined:
-            case NukiOpener::LockState::Uncalibrated:
-                publishString(mqtt_topic_lock_ha_state, "jammed", true);
-                break;
-            default:
-                break;
+        case NukiOpener::LockState::Locked:
+            publishString(mqtt_topic_lock_ha_state, "locked", true);
+            publishString(mqtt_topic_lock_binary_state, "locked", true);
+            break;
+        case NukiOpener::LockState::RTOactive:
+            publishString(mqtt_topic_lock_ha_state, "unlocked", true);
+            publishString(mqtt_topic_lock_binary_state, "unlocked", true);
+            break;
+        case NukiOpener::LockState::Open:
+            publishString(mqtt_topic_lock_ha_state, "open", true);
+            publishString(mqtt_topic_lock_binary_state, "unlocked", true);
+            break;
+        case NukiOpener::LockState::Opening:
+            publishString(mqtt_topic_lock_ha_state, "opening", true);
+            publishString(mqtt_topic_lock_binary_state, "unlocked", true);
+            break;
+        case NukiOpener::LockState::Undefined:
+        case NukiOpener::LockState::Uncalibrated:
+            publishString(mqtt_topic_lock_ha_state, "jammed", true);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -472,7 +498,10 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
         {
             int sizeName = sizeof(log.name);
             memcpy(authName, log.name, sizeName);
-            if(authName[sizeName - 1] != '\0') authName[sizeName] = '\0';
+            if(authName[sizeName - 1] != '\0')
+            {
+                authName[sizeName] = '\0';
+            }
 
             if(log.index > authIndex)
             {
@@ -481,7 +510,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                 _authId = log.authId;
                 memset(_authName, 0, sizeof(_authName));
                 memcpy(_authName, authName, sizeof(authName));
-                
+
                 if(authName[sizeName - 1] != '\0' && _authEntries.count(_authId) > 0)
                 {
                     memset(_authName, 0, sizeof(_authName));
@@ -495,12 +524,12 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
         entry["index"] = log.index;
         entry["authorizationId"] = log.authId;
         entry["authorizationName"] = _authName;
-        
+
         if(entry["authorizationName"].as<String>().length() == 0 && _authEntries.count(log.authId) > 0)
         {
-           entry["authorizationName"] = _authEntries[log.authId];
+            entry["authorizationName"] = _authEntries[log.authId];
         }
-        
+
         entry["timeYear"] = log.timeStampYear;
         entry["timeMonth"] = log.timeStampMonth;
         entry["timeDay"] = log.timeStampDay;
@@ -514,104 +543,111 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
         switch(log.loggingType)
         {
-            case NukiOpener::LoggingType::LockAction:
-                memset(str, 0, sizeof(str));
-                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
-                entry["action"] = str;
+        case NukiOpener::LoggingType::LockAction:
+            memset(str, 0, sizeof(str));
+            NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
+            entry["action"] = str;
 
-                memset(str, 0, sizeof(str));
-                NukiOpener::triggerToString((NukiOpener::Trigger)log.data[1], str);
-                entry["trigger"] = str;
+            memset(str, 0, sizeof(str));
+            NukiOpener::triggerToString((NukiOpener::Trigger)log.data[1], str);
+            entry["trigger"] = str;
 
-                memset(str, 0, sizeof(str));
-                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[3], str);
+            memset(str, 0, sizeof(str));
+            NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[3], str);
+            entry["completionStatus"] = str;
+            break;
+        case NukiOpener::LoggingType::KeypadAction:
+            memset(str, 0, sizeof(str));
+            NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
+            entry["action"] = str;
+
+            switch(log.data[1])
+            {
+            case 0:
+                entry["trigger"] = "arrowkey";
+                break;
+            case 1:
+                entry["trigger"] = "code";
+                break;
+            case 2:
+                entry["trigger"] = "fingerprint";
+                break;
+            default:
+                entry["trigger"] = "Unknown";
+                break;
+            }
+
+            memset(str, 0, sizeof(str));
+
+            if(log.data[2] == 9)
+            {
+                entry["completionStatus"] = "notAuthorized";
+            }
+            else if (log.data[2] == 224)
+            {
+                entry["completionStatus"] = "invalidCode";
+            }
+            else
+            {
+                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
                 entry["completionStatus"] = str;
+            }
+
+            entry["codeId"] = 256U*log.data[4]+log.data[3];
+            break;
+        case NukiOpener::LoggingType::DoorbellRecognition:
+            switch(log.data[0] & 3)
+            {
+            case 0:
+                entry["mode"] = "None";
                 break;
-            case NukiOpener::LoggingType::KeypadAction:
-                memset(str, 0, sizeof(str));
-                NukiOpener::lockactionToString((NukiOpener::LockAction)log.data[0], str);
-                entry["action"] = str;
-
-                switch(log.data[1])
-                {
-                    case 0:
-                        entry["trigger"] = "arrowkey";
-                        break;
-                    case 1:
-                        entry["trigger"] = "code";
-                        break;
-                    case 2:
-                        entry["trigger"] = "fingerprint";
-                        break;
-                    default:
-                        entry["trigger"] = "Unknown";
-                        break;
-                }
-
-                memset(str, 0, sizeof(str));
-
-                if(log.data[2] == 9) entry["completionStatus"] = "notAuthorized";
-                else if (log.data[2] == 224) entry["completionStatus"] = "invalidCode";
-                else
-                {
-                    NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[2], str);
-                    entry["completionStatus"] = str;
-                }
-
-                entry["codeId"] = 256U*log.data[4]+log.data[3];
+            case 1:
+                entry["mode"] = "RTO";
                 break;
-            case NukiOpener::LoggingType::DoorbellRecognition:
-                switch(log.data[0] & 3)
-                {
-                    case 0:
-                        entry["mode"] = "None";
-                        break;
-                    case 1:
-                        entry["mode"] = "RTO";
-                        break;
-                    case 2:
-                        entry["mode"] = "CM";
-                        break;
-                    default:
-                        entry["mode"] = "Unknown";
-                        break;
-                }
-
-                switch(log.data[1])
-                {
-                    case 0:
-                        entry["source"] = "Doorbell";
-                        break;
-                    case 1:
-                        entry["source"] = "Timecontrol";
-                        break;
-                    case 2:
-                        entry["source"] = "App";
-                        break;
-                    case 3:
-                        entry["source"] = "Button";
-                        break;
-                    case 4:
-                        entry["source"] = "Fob";
-                        break;
-                    case 5:
-                        entry["source"] = "Bridge";
-                        break;
-                    case 6:
-                        entry["source"] = "Keypad";
-                        break;
-                    default:
-                        entry["source"] = "Unknown";
-                        break;                }
-
-                entry["geofence"] = log.data[2] == 1 ? "active" : "inactive";
-                entry["doorbellSuppression"] = log.data[3] == 1 ? "active" : "inactive";
-                entry["soundId"] = log.data[4];
-                memset(str, 0, sizeof(str));
-                NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[5], str);
-                entry["completionStatus"] = str;
-                entry["codeId"] = 256U*log.data[7]+log.data[6];
+            case 2:
+                entry["mode"] = "CM";
                 break;
+            default:
+                entry["mode"] = "Unknown";
+                break;
+            }
+
+            switch(log.data[1])
+            {
+            case 0:
+                entry["source"] = "Doorbell";
+                break;
+            case 1:
+                entry["source"] = "Timecontrol";
+                break;
+            case 2:
+                entry["source"] = "App";
+                break;
+            case 3:
+                entry["source"] = "Button";
+                break;
+            case 4:
+                entry["source"] = "Fob";
+                break;
+            case 5:
+                entry["source"] = "Bridge";
+                break;
+            case 6:
+                entry["source"] = "Keypad";
+                break;
+            default:
+                entry["source"] = "Unknown";
+                break;
+            }
+
+            entry["geofence"] = log.data[2] == 1 ? "active" : "inactive";
+            entry["doorbellSuppression"] = log.data[3] == 1 ? "active" : "inactive";
+            entry["soundId"] = log.data[4];
+            memset(str, 0, sizeof(str));
+            NukiOpener::completionStatusToString((NukiOpener::CompletionStatus)log.data[5], str);
+            entry["completionStatus"] = str;
+            entry["codeId"] = 256U*log.data[7]+log.data[6];
+            break;
         }
 
         if(log.index > _lastRollingLog)
@@ -625,8 +661,14 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
     serializeJson(json, _buffer, _bufferSize);
 
-    if(latest) publishString(mqtt_topic_lock_log_latest, _buffer, true);
-    else publishString(mqtt_topic_lock_log, _buffer, true);
+    if(latest)
+    {
+        publishString(mqtt_topic_lock_log_latest, _buffer, true);
+    }
+    else
+    {
+        publishString(mqtt_topic_lock_log, _buffer, true);
+    }
 
     if(authIndex > 0)
     {
@@ -858,7 +900,10 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
 
         jsonEntry["codeId"] = entry.codeId;
 
-        if(publishCode) jsonEntry["code"] = entry.code;
+        if(publishCode)
+        {
+            jsonEntry["code"] = entry.code;
+        }
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
         char createdDT[20];
@@ -879,7 +924,8 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
         uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
         JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
 
-        while(allowedWeekdaysInt > 0) {
+        while(allowedWeekdaysInt > 0)
+        {
             if(allowedWeekdaysInt >= 64)
             {
                 weekdays.add("mon");
@@ -956,24 +1002,26 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
             std::string displayName = std::string("Keypad - ") + std::string((char*)codeName) + " - " + std::to_string(entry.codeId);
 
             _network->publishHassTopic("switch",
-                             mqttDeviceName.c_str(),
-                             uidString,
-                             uidStringPostfix.c_str(),
-                             displayName.c_str(),
-                             _nukiName,
-                             baseTopic.c_str(),
-                             String("~") + basePath.c_str(),
-                             (char*)"SmartLock",
-                             "",
-                             "",
-                             "diagnostic",
-                             String("~") + mqtt_topic_keypad_json_action,
-                             { { (char*)"json_attr_t", (char*)basePathPrefixChr },
-                               { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_off", (char*)disCommand.c_str() },
-                               { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
-                               { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_off", (char*)"0" }});
+                                       mqttDeviceName.c_str(),
+                                       uidString,
+                                       uidStringPostfix.c_str(),
+                                       displayName.c_str(),
+                                       _nukiName,
+                                       baseTopic.c_str(),
+                                       String("~") + basePath.c_str(),
+                                       (char*)"SmartLock",
+                                       "",
+                                       "",
+                                       "diagnostic",
+                                       String("~") + mqtt_topic_keypad_json_action,
+            {
+                { (char*)"json_attr_t", (char*)basePathPrefixChr },
+                { (char*)"pl_on", (char*)enaCommand.c_str() },
+                { (char*)"pl_off", (char*)disCommand.c_str() },
+                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
+                { (char*)"stat_on", (char*)"1" },
+                { (char*)"stat_off", (char*)"0" }
+            });
         }
 
         ++index;
@@ -1062,7 +1110,8 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
         uint8_t weekdaysInt = entry.weekdays;
         JsonArray weekdays = jsonEntry["weekdays"].to<JsonArray>();
 
-        while(weekdaysInt > 0) {
+        while(weekdaysInt > 0)
+        {
             if(weekdaysInt >= 64)
             {
                 weekdays.add("mon");
@@ -1134,24 +1183,26 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
             std::string displayName = std::string("Timecontrol - ") + std::to_string(entry.entryId);
 
             _network->publishHassTopic("switch",
-                             mqttDeviceName.c_str(),
-                             uidString,
-                             uidStringPostfix.c_str(),
-                             displayName.c_str(),
-                             _nukiName,
-                             baseTopic.c_str(),
-                             String("~") + basePath.c_str(),
-                             (char*)"Opener",
-                             "",
-                             "",
-                             "diagnostic",
-                             String("~") + mqtt_topic_timecontrol_action,
-                             { { (char*)"json_attr_t", (char*)basePathPrefixChr },
-                               { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_off", (char*)disCommand.c_str() },
-                               { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
-                               { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_off", (char*)"0" }});
+                                       mqttDeviceName.c_str(),
+                                       uidString,
+                                       uidStringPostfix.c_str(),
+                                       displayName.c_str(),
+                                       _nukiName,
+                                       baseTopic.c_str(),
+                                       String("~") + basePath.c_str(),
+                                       (char*)"Opener",
+                                       "",
+                                       "",
+                                       "diagnostic",
+                                       String("~") + mqtt_topic_timecontrol_action,
+            {
+                { (char*)"json_attr_t", (char*)basePathPrefixChr },
+                { (char*)"pl_on", (char*)enaCommand.c_str() },
+                { (char*)"pl_off", (char*)disCommand.c_str() },
+                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
+                { (char*)"stat_on", (char*)"1" },
+                { (char*)"stat_off", (char*)"0" }
+            });
         }
 
         ++index;
@@ -1208,7 +1259,8 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
         uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
         JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
 
-        while(allowedWeekdaysInt > 0) {
+        while(allowedWeekdaysInt > 0)
+        {
             if(allowedWeekdaysInt >= 64)
             {
                 weekdays.add("mon");
@@ -1281,24 +1333,26 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
             std::string displayName = std::string("Authorization - ") + std::to_string(entry.authId);
 
             _network->publishHassTopic("switch",
-                             mqttDeviceName.c_str(),
-                             uidString,
-                             uidStringPostfix.c_str(),
-                             displayName.c_str(),
-                             _nukiName,
-                             baseTopic.c_str(),
-                             String("~") + basePath.c_str(),
-                             (char*)"Opener",
-                             "",
-                             "",
-                             "diagnostic",
-                             String("~") + mqtt_topic_auth_action,
-                             { { (char*)"json_attr_t", (char*)basePathPrefixChr },
-                               { (char*)"pl_on", (char*)enaCommand.c_str() },
-                               { (char*)"pl_off", (char*)disCommand.c_str() },
-                               { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
-                               { (char*)"stat_on", (char*)"1" },
-                               { (char*)"stat_off", (char*)"0" }});
+                                       mqttDeviceName.c_str(),
+                                       uidString,
+                                       uidStringPostfix.c_str(),
+                                       displayName.c_str(),
+                                       _nukiName,
+                                       baseTopic.c_str(),
+                                       String("~") + basePath.c_str(),
+                                       (char*)"Opener",
+                                       "",
+                                       "",
+                                       "diagnostic",
+                                       String("~") + mqtt_topic_auth_action,
+            {
+                { (char*)"json_attr_t", (char*)basePathPrefixChr },
+                { (char*)"pl_on", (char*)enaCommand.c_str() },
+                { (char*)"pl_off", (char*)disCommand.c_str() },
+                { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },
+                { (char*)"stat_on", (char*)"1" },
+                { (char*)"stat_off", (char*)"0" }
+            });
         }
 
         ++index;
@@ -1325,7 +1379,10 @@ void NukiNetworkOpener::publishConfigCommandResult(const char* result)
 
 void NukiNetworkOpener::publishKeypadCommandResult(const char* result)
 {
-    if(_disableNonJSON) return;
+    if(_disableNonJSON)
+    {
+        return;
+    }
     publishString(mqtt_topic_keypad_command_result, result, true);
 }
 
@@ -1361,7 +1418,10 @@ void NukiNetworkOpener::setConfigUpdateReceivedCallback(void (*configUpdateRecei
 
 void NukiNetworkOpener::setKeypadCommandReceivedCallback(void (*keypadCommandReceivedReceivedCallback)(const char* command, const uint& id, const String& name, const String& code, const int& enabled))
 {
-    if(_disableNonJSON) return;
+    if(_disableNonJSON)
+    {
+        return;
+    }
     _keypadCommandReceivedReceivedCallback = keypadCommandReceivedReceivedCallback;
 }
 
@@ -1423,7 +1483,10 @@ void NukiNetworkOpener::publishString(const char* topic, const char* value, bool
 
 void NukiNetworkOpener::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)
 {
-    if(_disableNonJSON) return;
+    if(_disableNonJSON)
+    {
+        return;
+    }
 
     char codeName[sizeof(entry.name) + 1];
     memset(codeName, 0, sizeof(codeName));
@@ -1505,185 +1568,197 @@ uint8_t NukiNetworkOpener::queryCommands()
     return qc;
 }
 
-void NukiNetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str) {
-  switch (btnPressAction) {
+void NukiNetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str)
+{
+    switch (btnPressAction)
+    {
     case NukiOpener::ButtonPressAction::NoAction:
-      strcpy(str, "No Action");
-      break;
+        strcpy(str, "No Action");
+        break;
     case NukiOpener::ButtonPressAction::ToggleRTO:
-      strcpy(str, "Toggle RTO");
-      break;
+        strcpy(str, "Toggle RTO");
+        break;
     case NukiOpener::ButtonPressAction::ActivateRTO:
-      strcpy(str, "Activate RTO");
-      break;
+        strcpy(str, "Activate RTO");
+        break;
     case NukiOpener::ButtonPressAction::DeactivateRTO:
-      strcpy(str, "Deactivate RTO");
-      break;
+        strcpy(str, "Deactivate RTO");
+        break;
     case NukiOpener::ButtonPressAction::ToggleCM:
-      strcpy(str, "Toggle CM");
-      break;
+        strcpy(str, "Toggle CM");
+        break;
     case NukiOpener::ButtonPressAction::ActivateCM:
-      strcpy(str, "Activate CM");
-      break;
+        strcpy(str, "Activate CM");
+        break;
     case NukiOpener::ButtonPressAction::DectivateCM:
-      strcpy(str, "Deactivate CM");
-      break;
+        strcpy(str, "Deactivate CM");
+        break;
     case NukiOpener::ButtonPressAction::Open:
-      strcpy(str, "Open");
-      break;
+        strcpy(str, "Open");
+        break;
     default:
-      strcpy(str, "undefined");
-      break;
-  }
+        strcpy(str, "undefined");
+        break;
+    }
 }
 
-void NukiNetworkOpener::fobActionToString(const int fobact, char* str) {
-  switch (fobact) {
+void NukiNetworkOpener::fobActionToString(const int fobact, char* str)
+{
+    switch (fobact)
+    {
     case 0:
-      strcpy(str, "No Action");
-      break;
+        strcpy(str, "No Action");
+        break;
     case 1:
-      strcpy(str, "Toggle RTO");
-      break;
+        strcpy(str, "Toggle RTO");
+        break;
     case 2:
-      strcpy(str, "Activate RTO");
-      break;
+        strcpy(str, "Activate RTO");
+        break;
     case 3:
-      strcpy(str, "Deactivate RTO");
-      break;
+        strcpy(str, "Deactivate RTO");
+        break;
     case 7:
-      strcpy(str, "Open");
-      break;
+        strcpy(str, "Open");
+        break;
     case 8:
-      strcpy(str, "Ring");
-      break;
+        strcpy(str, "Ring");
+        break;
     default:
-      strcpy(str, "undefined");
-      break;
-  }
+        strcpy(str, "undefined");
+        break;
+    }
 }
 
-void NukiNetworkOpener::capabilitiesToString(const int capabilities, char* str) {
-  switch (capabilities) {
+void NukiNetworkOpener::capabilitiesToString(const int capabilities, char* str)
+{
+    switch (capabilities)
+    {
     case 0:
-      strcpy(str, "Door opener");
-      break;
+        strcpy(str, "Door opener");
+        break;
     case 1:
-      strcpy(str, "Both");
-      break;
+        strcpy(str, "Both");
+        break;
     case 2:
-      strcpy(str, "RTO");
-      break;
+        strcpy(str, "RTO");
+        break;
     default:
-      strcpy(str, "undefined");
-      break;
-  }
+        strcpy(str, "undefined");
+        break;
+    }
 }
 
-void NukiNetworkOpener::operatingModeToString(const int opmode, char* str) {
-  switch (opmode) {
+void NukiNetworkOpener::operatingModeToString(const int opmode, char* str)
+{
+    switch (opmode)
+    {
     case 0:
-      strcpy(str, "Generic door opener");
-      break;
+        strcpy(str, "Generic door opener");
+        break;
     case 1:
-      strcpy(str, "Analogue intercom");
-      break;
+        strcpy(str, "Analogue intercom");
+        break;
     case 2:
-      strcpy(str, "Digital intercom");
-      break;
+        strcpy(str, "Digital intercom");
+        break;
     case 3:
-      strcpy(str, "Siedle");
-      break;
+        strcpy(str, "Siedle");
+        break;
     case 4:
-      strcpy(str, "TCS");
-      break;
+        strcpy(str, "TCS");
+        break;
     case 5:
-      strcpy(str, "Bticino");
-      break;
+        strcpy(str, "Bticino");
+        break;
     case 6:
-      strcpy(str, "Siedle HTS");
-      break;
+        strcpy(str, "Siedle HTS");
+        break;
     case 7:
-      strcpy(str, "STR");
-      break;
+        strcpy(str, "STR");
+        break;
     case 8:
-      strcpy(str, "Ritto");
-      break;
+        strcpy(str, "Ritto");
+        break;
     case 9:
-      strcpy(str, "Fermax");
-      break;
+        strcpy(str, "Fermax");
+        break;
     case 10:
-      strcpy(str, "Comelit");
-      break;
+        strcpy(str, "Comelit");
+        break;
     case 11:
-      strcpy(str, "Urmet BiBus");
-      break;
+        strcpy(str, "Urmet BiBus");
+        break;
     case 12:
-      strcpy(str, "Urmet 2Voice");
-      break;
+        strcpy(str, "Urmet 2Voice");
+        break;
     case 13:
-      strcpy(str, "Golmar");
-      break;
+        strcpy(str, "Golmar");
+        break;
     case 14:
-      strcpy(str, "SKS");
-      break;
+        strcpy(str, "SKS");
+        break;
     case 15:
-      strcpy(str, "Spare");
-      break;
+        strcpy(str, "Spare");
+        break;
     default:
-      strcpy(str, "undefined");
-      break;
-  }
+        strcpy(str, "undefined");
+        break;
+    }
 }
 
-void NukiNetworkOpener::doorbellSuppressionToString(const int dbsupr, char* str) {
-  switch (dbsupr) {
+void NukiNetworkOpener::doorbellSuppressionToString(const int dbsupr, char* str)
+{
+    switch (dbsupr)
+    {
     case 0:
-      strcpy(str, "Off");
-      break;
+        strcpy(str, "Off");
+        break;
     case 1:
-      strcpy(str, "CM");
-      break;
+        strcpy(str, "CM");
+        break;
     case 2:
-      strcpy(str, "RTO");
-      break;
+        strcpy(str, "RTO");
+        break;
     case 3:
-      strcpy(str, "CM & RTO");
-      break;
+        strcpy(str, "CM & RTO");
+        break;
     case 4:
-      strcpy(str, "Ring");
-      break;
+        strcpy(str, "Ring");
+        break;
     case 5:
-      strcpy(str, "CM & Ring");
-      break;
+        strcpy(str, "CM & Ring");
+        break;
     case 6:
-      strcpy(str, "RTO & Ring");
-      break;
+        strcpy(str, "RTO & Ring");
+        break;
     case 7:
-      strcpy(str, "CM & RTO & Ring");
-      break;
+        strcpy(str, "CM & RTO & Ring");
+        break;
     default:
-      strcpy(str, "undefined");
-      break;
-  }
+        strcpy(str, "undefined");
+        break;
+    }
 }
 
-void NukiNetworkOpener::soundToString(const int sound, char* str) {
-  switch (sound) {
+void NukiNetworkOpener::soundToString(const int sound, char* str)
+{
+    switch (sound)
+    {
     case 0:
-      strcpy(str, "No Sound");
-      break;
+        strcpy(str, "No Sound");
+        break;
     case 1:
-      strcpy(str, "Sound 1");
-      break;
+        strcpy(str, "Sound 1");
+        break;
     case 2:
-      strcpy(str, "Sound 2");
-      break;
+        strcpy(str, "Sound 2");
+        break;
     case 3:
-      strcpy(str, "Sound 3");
-      break;
+        strcpy(str, "Sound 3");
+        break;
     default:
-      strcpy(str, "undefined");
-      break;
-  }
+        strcpy(str, "undefined");
+        break;
+    }
 }

@@ -77,8 +77,8 @@ TaskHandle_t networkTaskHandle = nullptr;
 #ifndef NUKI_HUB_UPDATER
 ssize_t write_fn(void* cookie, const char* buf, ssize_t size)
 {
-  Log->write((uint8_t *)buf, (size_t)size);
-  return size;
+    Log->write((uint8_t *)buf, (size_t)size);
+    return size;
 }
 
 void ets_putc_handler(char c)
@@ -87,21 +87,25 @@ void ets_putc_handler(char c)
     static size_t buf_pos = 0;
     buf[buf_pos] = c;
     buf_pos++;
-    if (c == '\n' || buf_pos == sizeof(buf)) {
+    if (c == '\n' || buf_pos == sizeof(buf))
+    {
         write_fn(NULL, buf, buf_pos);
         buf_pos = 0;
     }
 }
 
-int _log_vprintf(const char *fmt, va_list args) {
+int _log_vprintf(const char *fmt, va_list args)
+{
     int ret = vsnprintf(log_print_buffer, sizeof(log_print_buffer), fmt, args);
-    if (ret >= 0){
+    if (ret >= 0)
+    {
         Log->write((uint8_t *)log_print_buffer, (size_t)ret);
     }
     return 0; //return vprintf(fmt, args);
 }
 
-void setReroute(){
+void setReroute()
+{
     esp_log_set_vprintf(_log_vprintf);
     if(preferences->getBool(preference_mqtt_log_enabled))
     {
@@ -152,7 +156,10 @@ void networkTask(void *pvParameters)
             setReroute();
         }
 #endif
-        if(connected && openerEnabled) networkOpener->update();
+        if(connected && openerEnabled)
+        {
+            networkOpener->update();
+        }
 #endif
 
         if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
@@ -229,10 +236,10 @@ void bootloopDetection()
     }
 
     if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
-        esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
-        esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
-        true ||
-        esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
+            true ||
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         bootloopCounter++;
         Log->print(F("Bootloop counter incremented: "));
@@ -263,38 +270,48 @@ uint8_t checkPartition()
     Log->print(F("Partition subtype: "));
     Log->println(running_partition->subtype);
 
-    if(running_partition->size == 1966080) return 0; //OLD PARTITION TABLE
-    else if(running_partition->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_0) return 1; //NEW PARTITION TABLE, RUNNING MAIN APP
-    else return 2; //NEW PARTITION TABLE, RUNNING UPDATER APP
+    if(running_partition->size == 1966080)
+    {
+        return 0;    //OLD PARTITION TABLE
+    }
+    else if(running_partition->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_0)
+    {
+        return 1;    //NEW PARTITION TABLE, RUNNING MAIN APP
+    }
+    else
+    {
+        return 2;    //NEW PARTITION TABLE, RUNNING UPDATER APP
+    }
 }
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
-    switch (evt->event_id) {
-        case HTTP_EVENT_ERROR:
-            Log->println("HTTP_EVENT_ERROR");
-            break;
-        case HTTP_EVENT_ON_CONNECTED:
-            Log->println("HTTP_EVENT_ON_CONNECTED");
-            break;
-        case HTTP_EVENT_HEADER_SENT:
-            Log->println("HTTP_EVENT_HEADER_SENT");
-            break;
-        case HTTP_EVENT_ON_HEADER:
-            Log->println("HTTP_EVENT_ON_HEADER");
-            break;
-        case HTTP_EVENT_ON_DATA:
-            Log->println("HTTP_EVENT_ON_DATA");
-            break;
-        case HTTP_EVENT_ON_FINISH:
-            Log->println("HTTP_EVENT_ON_FINISH");
-            break;
-        case HTTP_EVENT_DISCONNECTED:
-            Log->println("HTTP_EVENT_DISCONNECTED");
-            break;
-        case HTTP_EVENT_REDIRECT:
-            Log->println("HTTP_EVENT_REDIRECT");
-            break;
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ERROR:
+        Log->println("HTTP_EVENT_ERROR");
+        break;
+    case HTTP_EVENT_ON_CONNECTED:
+        Log->println("HTTP_EVENT_ON_CONNECTED");
+        break;
+    case HTTP_EVENT_HEADER_SENT:
+        Log->println("HTTP_EVENT_HEADER_SENT");
+        break;
+    case HTTP_EVENT_ON_HEADER:
+        Log->println("HTTP_EVENT_ON_HEADER");
+        break;
+    case HTTP_EVENT_ON_DATA:
+        Log->println("HTTP_EVENT_ON_DATA");
+        break;
+    case HTTP_EVENT_ON_FINISH:
+        Log->println("HTTP_EVENT_ON_FINISH");
+        break;
+    case HTTP_EVENT_DISCONNECTED:
+        Log->println("HTTP_EVENT_DISCONNECTED");
+        break;
+    case HTTP_EVENT_REDIRECT:
+        Log->println("HTTP_EVENT_REDIRECT");
+        break;
     }
     return ESP_OK;
 }
@@ -315,14 +332,16 @@ void otaTask(void *pvParameter)
         preferences->putString(preference_ota_main_url, "");
     }
     Log->println("Starting OTA task");
-    esp_http_client_config_t config = {
+    esp_http_client_config_t config =
+    {
         .url = updateUrl.c_str(),
         .event_handler = _http_event_handler,
         .crt_bundle_attach = esp_crt_bundle_attach,
         .keep_alive_enable = true,
     };
 
-    esp_https_ota_config_t ota_config = {
+    esp_https_ota_config_t ota_config =
+    {
         .http_config = &config,
     };
     Log->print(F("Attempting to download update from "));
@@ -334,19 +353,23 @@ void otaTask(void *pvParameter)
     while (retryCount <= retryMax)
     {
         esp_err_t ret = esp_https_ota(&ota_config);
-        if (ret == ESP_OK) {
+        if (ret == ESP_OK)
+        {
             Log->println("OTA Succeeded, Rebooting...");
             esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
             restartEsp(RestartReason::OTACompleted);
             break;
-        } else {
+        }
+        else
+        {
             Log->println("Firmware upgrade failed, retrying in 5 seconds");
             retryCount++;
             esp_task_wdt_reset();
             delay(5000);
             continue;
         }
-        while (1) {
+        while (1)
+        {
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
     }
@@ -359,7 +382,8 @@ void otaTask(void *pvParameter)
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
-    esp_task_wdt_config_t twdt_config = {
+    esp_task_wdt_config_t twdt_config =
+    {
         .timeout_ms = 300000,
         .idle_core_mask = 0,
         .trigger_panic = true,
@@ -375,13 +399,13 @@ void setupTasks(bool ota)
     {
         xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
         esp_task_wdt_add(networkTaskHandle);
-        #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
         if(!network->isApOpen())
         {
             xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
             esp_task_wdt_add(nukiTaskHandle);
         }
-        #endif
+#endif
     }
 }
 
@@ -392,13 +416,13 @@ void setup()
     Serial.begin(115200);
     Log = &Serial;
 
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
     static char linebuf[1024];
     setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
     esp_rom_install_channel_putc(1, &ets_putc_handler);
     //ets_install_putc1(&ets_putc_handler);
-    #endif
+#endif
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
@@ -408,24 +432,36 @@ void setup()
 
     initializeRestartReason();
 
-    if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0)) doOta = true;
+    if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0))
+    {
+        doOta = true;
+    }
 
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     if(preferences->getBool(preference_enable_bootloop_reset, false))
     {
         bootloopDetection();
     }
-    #endif
+#endif
 
-    #ifdef NUKI_HUB_UPDATER
+#ifdef NUKI_HUB_UPDATER
     Log->print(F("Nuki Hub OTA version "));
     Log->println(NUKI_HUB_VERSION);
     Log->print(F("Nuki Hub OTA build "));
     Log->println();
 
-    if(preferences->getString(preference_updater_version, "") != NUKI_HUB_VERSION) preferences->putString(preference_updater_version, NUKI_HUB_VERSION);
-    if(preferences->getString(preference_updater_build, "") != NUKI_HUB_BUILD) preferences->putString(preference_updater_build, NUKI_HUB_BUILD);
-    if(preferences->getString(preference_updater_date, "") != NUKI_HUB_DATE) preferences->putString(preference_updater_date, NUKI_HUB_DATE);
+    if(preferences->getString(preference_updater_version, "") != NUKI_HUB_VERSION)
+    {
+        preferences->putString(preference_updater_version, NUKI_HUB_VERSION);
+    }
+    if(preferences->getString(preference_updater_build, "") != NUKI_HUB_BUILD)
+    {
+        preferences->putString(preference_updater_build, NUKI_HUB_BUILD);
+    }
+    if(preferences->getString(preference_updater_date, "") != NUKI_HUB_DATE)
+    {
+        preferences->putString(preference_updater_date, NUKI_HUB_DATE);
+    }
 
     network = new NukiNetwork(preferences);
     network->initialize();
@@ -436,9 +472,12 @@ void setup()
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
         webCfgServer->initialize();
         psychicServer->listen(80);
-        psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });
+        psychicServer->onNotFound([](PsychicRequest* request)
+        {
+            return request->redirect("/");
+        });
     }
-    #else
+#else
     Log->print(F("Nuki Hub version "));
     Log->println(NUKI_HUB_VERSION);
     Log->print(F("Nuki Hub build "));
@@ -466,7 +505,7 @@ void setup()
 
     network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
     network->initialize();
-    
+
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
 
@@ -477,7 +516,7 @@ void setup()
         lockEnabled = false;
         openerEnabled = false;
     }
-    
+
     bleScanner = new BleScanner::Scanner();
     // Scan interval and window according to Nuki recommendations:
     // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
@@ -522,10 +561,13 @@ void setup()
             {
                 webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
                 webCfgServer->initialize();
-                psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/"); });
+                psychicServer->onNotFound([](PsychicRequest* request)
+                {
+                    return request->redirect("/");
+                });
             }
             /*
-            #ifdef DEBUG_NUKIHUB
+#ifdef DEBUG_NUKIHUB
             else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
 
             if(preferences->getBool(preference_webserial_enabled, false))
@@ -534,21 +576,27 @@ void setup()
               WebSerial.begin(asyncServer);
               WebSerial.setBuffer(1024);
             }
-            #endif
+#endif
             */
         }
     }
-    #endif
+#endif
 
-    if(doOta) setupTasks(true);
-    else setupTasks(false);
+    if(doOta)
+    {
+        setupTasks(true);
+    }
+    else
+    {
+        setupTasks(false);
+    }
 
-    #ifdef DEBUG_NUKIHUB
+#ifdef DEBUG_NUKIHUB
     Log->print("Task Name\tStatus\tPrio\tHWM\tTask\tAffinity\n");
     char stats_buffer[1024];
     vTaskList(stats_buffer);
     Log->println(stats_buffer);
-    #endif
+#endif
 }
 
 void loop()

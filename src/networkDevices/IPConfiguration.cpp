@@ -3,7 +3,7 @@
 #include "../Logger.h"
 
 IPConfiguration::IPConfiguration(Preferences *preferences)
-: _preferences(preferences)
+    : _preferences(preferences)
 {
     if(!dhcpEnabled() && _preferences->getString(preference_ip_address, "").length() <= 0)
     {
@@ -23,10 +23,14 @@ IPConfiguration::IPConfiguration(Preferences *preferences)
     }
     else
     {
-        Log->print(F("IP address: ")); Log->print(ipAddress());
-        Log->print(F(", Subnet: ")); Log->print(subnet());
-        Log->print(F(", Gateway: ")); Log->print(defaultGateway());
-        Log->print(F(", DNS: ")); Log->println(dnsServer());
+        Log->print(F("IP address: "));
+        Log->print(ipAddress());
+        Log->print(F(", Subnet: "));
+        Log->print(subnet());
+        Log->print(F(", Gateway: "));
+        Log->print(defaultGateway());
+        Log->print(F(", DNS: "));
+        Log->println(dnsServer());
     }
 }
 
