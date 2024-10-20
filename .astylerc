@@ -1,3 +1,5 @@
 --style=allman
 --add-braces
 --exclude=lib
+--suffix=none
+
