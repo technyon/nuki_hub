@@ -268,7 +268,7 @@ void NukiWrapper::update()
 
     if(_nukiOfficial->getOffCommandExecutedTs() > 0 && ts >= _nukiOfficial->getOffCommandExecutedTs())
     {
-        nukiInst->_nextLockAction = _offCommand;
+        _nextLockAction = _offCommand;
         _nukiOfficial->clearOffCommandExecutedTs();
     }
     if(_nextLockAction != (NukiLock::LockAction)0xff)

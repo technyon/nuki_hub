@@ -10,7 +10,6 @@
 #include "networkDevices/W5500Definitions.h"
 
 Gpio* Gpio::_inst = nullptr;
-const uint Gpio::_debounceTime = GPIO_DEBOUNCE_TIME;
 
 Gpio::Gpio(Preferences* preferences)
 : _preferences(preferences)
@@ -29,42 +28,50 @@ Gpio::Gpio(Preferences* preferences)
 
 bool Gpio::isTriggered(const PinEntry& entry)
 {
+//    Log->println(" ------------ ");
+
     const int threshold = 3;
 
-    int state = digitalRead(entry.pin);
+    uint8_t state = digitalRead(entry.pin);
+    uint8_t lastState = (_triggerState[entry.pin] & 0x80) >> 7;
 
-    if(entry.role == PinRole::GeneralInputPullDown)
+    uint8_t pinState = _triggerState[entry.pin] & 0x7f;
+    pinState = pinState << 1 | state;
+    _triggerState[entry.pin] = (pinState & 0x7f) | lastState << 7;
+//    Log->print("Trigger state: ");
+//    Log->println(_triggerState[entry.pin], 2);
+
+    pinState = pinState & 0x07;
+//    Log->print("Val: ");
+//    Log->println(pinState);
+
+
+    if(pinState != 0x00 && pinState != 0x07)
     {
-        state = 1 - state;
+        return false;
     }
+//    Log->print("Last State: ");
+//    Log->println(lastState);
+//    Log->print("State: ");
+//    Log->println(state);
 
-    if(state == LOW)
+    if(state != lastState)
     {
-        if (_triggerCount[entry.pin] >= 0)
-        {
-            _triggerCount[entry.pin]++;
-        }
-
-        if (_triggerCount[entry.pin] >= threshold)
-        {
-            _triggerCount[entry.pin] = -1;
-            return true;
-        }
+//        Log->print("State changed: ");
+//        Log->println(state);
+        _triggerState[entry.pin] = (pinState & 0x7f) | state << 7;
     }
     else
     {
-        if (_triggerCount[entry.pin] < 0)
-        {
-            _triggerCount[entry.pin]--;
-
-            if(_triggerCount[entry.pin] <= -threshold)
-            {
-                _triggerCount[entry.pin] = 0;
-            }
-        }
+        return false;
     }
 
-    return false;
+    if(entry.role == PinRole::GeneralInputPullDown || entry.role == PinRole::GeneralInputPullUp)
+    {
+        return true;
+    }
+
+    return state == LOW;
 }
 
 void Gpio::onTimer()
@@ -113,10 +120,10 @@ void Gpio::isrOnTimer()
 
 void Gpio::init()
 {
-    _inst->_triggerCount.reserve(_inst->availablePins().size());
+    _inst->_triggerState.reserve(_inst->availablePins().size());
     for(int i=0; i<_inst->availablePins().size(); i++)
     {
-        _inst->_triggerCount.push_back(0);
+        _inst->_triggerState.push_back(0);
     }
 
     bool hasInputPin = false;
