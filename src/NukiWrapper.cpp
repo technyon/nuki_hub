@@ -275,7 +275,7 @@ void NukiWrapper::update()
     }
 
     int64_t lastReceivedBeaconTs = _nukiLock.getLastReceivedBeaconTs();
-    int64_t ts = (esp_timer_get_time() / 1000);
+    int64_t ts = espMillis();
     uint8_t queryCommands = _network->queryCommands();
 
     if(_restartBeaconTimeout > 0 &&
@@ -521,7 +521,7 @@ void NukiWrapper::updateKeyTurnerState()
             Log->print(F("Query lock state retrying in "));
             Log->print(_retryDelay);
             Log->println("ms");
-            _nextLockStateUpdateTs = (esp_timer_get_time() / 1000) + _retryDelay;
+            _nextLockStateUpdateTs = espMillis() + _retryDelay;
         }
         return;
     }
@@ -532,7 +532,7 @@ void NukiWrapper::updateKeyTurnerState()
 
     if(lockState != _lastKeyTurnerState.lockState)
     {
-        _statusUpdatedTs = esp_timer_get_time() / 1000;
+        _statusUpdatedTs = espMillis();
     }
 
     if(lockState == NukiLock::LockState::Locked ||
@@ -550,7 +550,7 @@ void NukiWrapper::updateKeyTurnerState()
 
         updateGpioOutputs();
     }
-    else if(!_nukiOfficial->getOffConnected() && (esp_timer_get_time() / 1000) < _statusUpdatedTs + 10000)
+    else if(!_nukiOfficial->getOffConnected() && espMillis() < _statusUpdatedTs + 10000)
     {
         _statusUpdated = true;
         Log->println(F("Lock: Keep updating status on intermediate lock state"));
@@ -723,7 +723,7 @@ void NukiWrapper::updateConfig()
     {
         ++_retryConfigCount;
         Log->println(F("Invalid/Unexpected lock config and/or advanced config recieved, retrying in 10 seconds"));
-        int64_t ts = (esp_timer_get_time() / 1000);
+        int64_t ts = espMillis();
         _nextConfigUpdateTs = ts + 10000;
     }
 }
@@ -758,7 +758,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            _waitAuthLogUpdateTs = (esp_timer_get_time() / 1000) + 5000;
+            _waitAuthLogUpdateTs = espMillis() + 5000;
             delay(100);
 
             std::list<NukiLock::LogEntry> log;
@@ -842,7 +842,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            _waitKeypadUpdateTs = (esp_timer_get_time() / 1000) + 5000;
+            _waitKeypadUpdateTs = espMillis() + 5000;
         }
     }
     else
@@ -918,7 +918,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
         printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            _waitTimeControlUpdateTs = (esp_timer_get_time() / 1000) + 5000;
+            _waitTimeControlUpdateTs = espMillis() + 5000;
         }
     }
     else
@@ -1032,7 +1032,7 @@ void NukiWrapper::updateAuth(bool retrieved)
 
 void NukiWrapper::postponeBleWatchdog()
 {
-    _disableBleWatchdogTs = (esp_timer_get_time() / 1000) + 15000;
+    _disableBleWatchdogTs = espMillis() + 15000;
 }
 
 NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
@@ -1118,7 +1118,7 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
         {
             if(_preferences->getBool(preference_official_hybrid_actions, false))
             {
-                _nukiOfficial->setOffCommandExecutedTs((esp_timer_get_time() / 1000) + 2000);
+                _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
                 _offCommand = action;
                 _network->publishOffAction((int)action);
             }
@@ -2349,7 +2349,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         jsonResult["general"] = "noChange";
     }
 
-    _nextConfigUpdateTs = (esp_timer_get_time() / 1000) + 300;
+    _nextConfigUpdateTs = espMillis() + 300;
 
     serializeJson(jsonResult, _resbuf, sizeof(_resbuf));
     _network->publishConfigCommandResult(_resbuf);
@@ -2394,7 +2394,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs((esp_timer_get_time() / 1000) + 2000);
+            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
             _offCommand = NukiLock::LockAction::Lock;
             _network->publishOffAction(2);
         }
@@ -2406,7 +2406,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs((esp_timer_get_time() / 1000) + 2000);
+            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
             _offCommand = NukiLock::LockAction::Unlock;
             _network->publishOffAction(1);
         }
@@ -2418,7 +2418,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs((esp_timer_get_time() / 1000) + 2000);
+            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
             _offCommand = NukiLock::LockAction::Unlatch;
             _network->publishOffAction(3);
         }
@@ -2430,7 +2430,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs((esp_timer_get_time() / 1000) + 2000);
+            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
             _offCommand = NukiLock::LockAction::LockNgo;
             _network->publishOffAction(4);
         }
@@ -2442,7 +2442,7 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs((esp_timer_get_time() / 1000) + 2000);
+            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
             _offCommand = NukiLock::LockAction::LockNgoUnlatch;
             _network->publishOffAction(5);
         }
@@ -3398,7 +3398,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
             _network->publishTimeControlCommandResult(resultStr);
         }
 
-        _nextConfigUpdateTs = (esp_timer_get_time() / 1000) + 300;
+        _nextConfigUpdateTs = espMillis() + 300;
     }
     else
     {
@@ -3967,7 +3967,7 @@ void NukiWrapper::notify(Nuki::EventType eventType)
 {
     if(!_nukiOfficial->getOffConnected())
     {
-        if(_nukiOfficial->getOffEnabled() && _intervalHybridLockstate > 0 && (esp_timer_get_time() / 1000) > (_intervalHybridLockstate * 1000))
+        if(_nukiOfficial->getOffEnabled() && _intervalHybridLockstate > 0 && espMillis() > (_intervalHybridLockstate * 1000))
         {
             Log->println("OffKeyTurnerStatusUpdated");
             _statusUpdated = true;
@@ -3978,7 +3978,7 @@ void NukiWrapper::notify(Nuki::EventType eventType)
             {
                 Log->println("KeyTurnerStatusUpdated");
                 _statusUpdated = true;
-                _statusUpdatedTs = esp_timer_get_time() / 1000;
+                _statusUpdatedTs = espMillis();
                 _network->publishStatusUpdated(_statusUpdated);
             }
         }

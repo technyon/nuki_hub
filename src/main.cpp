@@ -7,6 +7,7 @@
 #include "esp_https_ota.h"
 #include "esp_task_wdt.h"
 #include "Config.h"
+#include "EspMillis.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
@@ -131,7 +132,7 @@ void networkTask(void *pvParameters)
     }
     while(true)
     {
-        int64_t ts = (esp_timer_get_time() / 1000);
+        int64_t ts = espMillis();
         if(ts > 120000 && ts < 125000)
         {
             if(bootloopCounter > 0)
@@ -162,10 +163,10 @@ void networkTask(void *pvParameters)
         }
 #endif
 
-        if((esp_timer_get_time() / 1000) - networkLoopTs > 120000)
+        if(espMillis() - networkLoopTs > 120000)
         {
             Log->println("networkTask is running");
-            networkLoopTs = esp_timer_get_time() / 1000;
+            networkLoopTs = espMillis();
         }
 
         esp_task_wdt_reset();
@@ -212,10 +213,10 @@ void nukiTask(void *pvParameters)
             nukiOpener->update();
         }
 
-        if((esp_timer_get_time() / 1000) - nukiLoopTs > 120000)
+        if(espMillis() - nukiLoopTs > 120000)
         {
             Log->println("nukiTask is running");
-            nukiLoopTs = esp_timer_get_time() / 1000;
+            nukiLoopTs = espMillis();
         }
 
         esp_task_wdt_reset();

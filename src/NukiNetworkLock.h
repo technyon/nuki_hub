@@ -14,6 +14,7 @@
 #include "LockActionResult.h"
 #include "NukiOfficial.h"
 #include "NukiPublisher.h"
+#include "EspMillis.h"
 
 class NukiNetworkLock : public MqttReceiver
 {

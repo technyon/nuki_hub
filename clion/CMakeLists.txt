@@ -51,6 +51,7 @@ set(SRCFILES
         ../src/util/NetworkDeviceInstantiator.cpp
         ../src/NukiOfficial.cpp
         ../src/NukiPublisher.cpp
+        ../src/EspMillis.h
 )
 
 file(GLOB_RECURSE SRCFILESREC

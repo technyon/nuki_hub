@@ -6,6 +6,7 @@
 #include "NukiConstants.h"
 #include "NukiOpenerConstants.h"
 #include "NukiNetworkLock.h"
+#include "EspMillis.h"
 
 class NukiNetworkOpener : public MqttReceiver
 {

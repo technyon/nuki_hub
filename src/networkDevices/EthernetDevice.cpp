@@ -87,7 +87,7 @@ void EthernetDevice::initialize()
         criticalEthFailure = false;
         if(!_ipConfiguration->dhcpEnabled())
         {
-            _checkIpTs = (esp_timer_get_time() / 1000) + 2000;
+            _checkIpTs = espMillis() + 2000;
         }
     }
 #endif
@@ -126,7 +126,7 @@ void EthernetDevice::update()
         {
             Log->println(F("ETH Set static IP"));
             ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
-            _checkIpTs = (esp_timer_get_time() / 1000) + 2000;
+            _checkIpTs = espMillis() + 2000;
         }
         else
         {
@@ -213,7 +213,7 @@ bool EthernetDevice::isApOpen()
 
 void EthernetDevice::onDisconnected()
 {
-    if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000))
+    if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
     {
         restartEsp(RestartReason::RestartOnDisconnectWatchdog);
     }

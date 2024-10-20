@@ -235,7 +235,7 @@ bool WifiDevice::connect()
     {
         Log->print("No network found with SSID: ");
         Log->println(ssid);
-        if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000))
+        if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
         {
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
@@ -287,7 +287,7 @@ bool WifiDevice::connect()
 
         if (status != WL_CONNECTED)
         {
-            if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000))
+            if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
             {
                 restartEsp(RestartReason::RestartOnDisconnectWatchdog);
                 _connecting = false;
@@ -349,7 +349,7 @@ void WifiDevice::onDisconnected()
     if(_connected)
     {
         _connected = false;
-        _disconnectTs = (esp_timer_get_time() / 1000);
+        _disconnectTs = espMillis();
         Log->println(F("Wi-Fi disconnected"));
 
         //QUICK RECONNECT
@@ -377,7 +377,7 @@ void WifiDevice::onDisconnected()
 
         if(!isConnected())
         {
-            if(_preferences->getBool(preference_restart_on_disconnect, false) && ((esp_timer_get_time() / 1000) > 60000))
+            if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
             {
                 restartEsp(RestartReason::RestartOnDisconnectWatchdog);
             }

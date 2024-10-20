@@ -7,6 +7,7 @@
 #include "networkDevices/IPConfiguration.h"
 #include "enums/NetworkDeviceType.h"
 #include "util/NetworkUtil.h"
+#include "EspMillis.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "MqttReceiver.h"

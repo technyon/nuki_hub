@@ -359,7 +359,7 @@ void NukiNetwork::readSettings()
 
 bool NukiNetwork::update()
 {
-    int64_t ts = (esp_timer_get_time() / 1000);
+    int64_t ts = espMillis();
     _device->update();
 
     if(!_mqttEnabled || _device->isApOpen())
@@ -375,7 +375,7 @@ bool NukiNetwork::update()
         {
             forceEnableWebServer = true;
         }
-        if(_restartOnDisconnect && (esp_timer_get_time() / 1000) > 60000)
+        if(_restartOnDisconnect && espMillis() > 60000)
         {
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
@@ -604,7 +604,7 @@ bool NukiNetwork::update()
     {
         uint8_t pin = gpioTs.first;
         int64_t ts = gpioTs.second;
-        if(ts != 0 && (((esp_timer_get_time() / 1000) - ts) >= GPIO_DEBOUNCE_TIME))
+        if(ts != 0 && ((espMillis() - ts) >= GPIO_DEBOUNCE_TIME))
         {
             _gpioTs[pin] = 0;
 
@@ -814,7 +814,7 @@ void NukiNetwork::parseGpioTopics(char* topic, int topic_len, char* data, int da
 
 void NukiNetwork::gpioActionCallback(const GpioAction &action, const int &pin)
 {
-    _gpioTs[pin] = (esp_timer_get_time() / 1000);
+    _gpioTs[pin] = espMillis();
 }
 
 void NukiNetwork::disableAutoRestarts()

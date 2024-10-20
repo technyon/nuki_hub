@@ -1012,7 +1012,7 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
                 return(ESP_FAIL);
             }
 
-            _otaStartTs = esp_timer_get_time() / 1000;
+            _otaStartTs = espMillis();
             esp_task_wdt_config_t twdt_config =
             {
                 .timeout_ms = 30000,
@@ -3985,7 +3985,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     response.print("\nUpdater build date: ");
     response.print(_preferences->getString(preference_updater_date, ""));
     response.print("\nUptime (min): ");
-    response.print(esp_timer_get_time() / 1000 / 1000 / 60);
+    response.print(espMillis() / 1000 / 60);
     response.print("\nConfig version: ");
     response.print(_preferences->getInt(preference_config_version));
     response.print("\nLast restart reason FW: ");

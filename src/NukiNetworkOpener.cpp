@@ -131,7 +131,7 @@ void NukiNetworkOpener::initialize()
 
 void NukiNetworkOpener::update()
 {
-    if(_resetRingStateTs != 0 && (esp_timer_get_time() / 1000) >= _resetRingStateTs)
+    if(_resetRingStateTs != 0 && espMillis() >= _resetRingStateTs)
     {
         _resetRingStateTs = 0;
         publishString(mqtt_topic_lock_binary_ring, "standby", true);
@@ -441,7 +441,7 @@ void NukiNetworkOpener::publishRing(const bool locked)
     }
 
     publishString(mqtt_topic_lock_binary_ring, "ring", true);
-    _resetRingStateTs = (esp_timer_get_time() / 1000) + 2000;
+    _resetRingStateTs = espMillis() + 2000;
 }
 
 void NukiNetworkOpener::publishState(NukiOpener::OpenerState lockState)

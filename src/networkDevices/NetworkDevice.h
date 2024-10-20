@@ -1,5 +1,6 @@
 #pragma once
 #include "IPConfiguration.h"
+#include "../EspMillis.h"
 
 class NetworkDevice
 {
