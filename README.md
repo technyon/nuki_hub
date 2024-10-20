@@ -675,9 +675,9 @@ Examples:
 
 ## GPIO lock control (optional)
 
-The lock can be controlled via GPIO.<br>
+The lock can be controlled via GPIO. To trigger actions, a connection to ground has to be present for at lease 300ms (or to +3.3V for "General input (pull-down)"). <br>
 <br>
-To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can be configured for a specific role:
+To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can e configured for a specific role:
 - Disabled: The GPIO is disabled
 - Input: Lock: When connect to Ground, a lock command is sent to the lock
 - Input: Unlock: When connect to Ground, an unlock command is sent to the lock
