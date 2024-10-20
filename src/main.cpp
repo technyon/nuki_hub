@@ -7,7 +7,6 @@
 #include "esp_https_ota.h"
 #include "esp_task_wdt.h"
 #include "Config.h"
-#include "EspMillis.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
@@ -20,6 +19,8 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
+#include "EspMillis.h"
+
 /*
 #ifdef DEBUG_NUKIHUB
 #include <WString.h>
@@ -52,6 +53,7 @@ int64_t restartTs = ((2^64) - (5 * 1000 * 60000)) / 1000;
 #include "../../src/PreferencesKeys.h"
 #include "../../src/RestartReason.h"
 #include "../../src/NukiNetwork.h"
+#include "../../src/EspMillis.h"
 
 int64_t restartTs = 10 * 1000 * 60000;
 
