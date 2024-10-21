@@ -74,6 +74,7 @@ The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using P
 | Apple HomeKit integration via Matter |  | x |
 | MQTT API | x | x (only for SL > 3, Pro models) |
 | Wired LAN support | x |  |
+| Power over Ethernet (PoE) | x (if supported by LAN/ESP module) |  |
 | WLAN support | x | x (only for SL > 3, Pro Models) || Home Assistant integration | x (full integration of most Nuki features) | x |
 | Home Automation platform integration | x | x |
 | Cloud support | (optional via smarthome solution) | x |
