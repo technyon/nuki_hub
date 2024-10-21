@@ -64,6 +64,32 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter. The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 and the ability to connect over WIFI6 (C6)
 
+## Feature comparison Nuki Hub vs. Nuki Bridge
+
+| Feature | Nuki Hub | Nuki Bridge |
+|---|---|---|
+| Bridge API |  | x |
+| Smart Lock remote control | (optional via smarthome solution) | x |
+| Smart Home integration via Matter |  | x |
+| Apple HomeKit integration via Matter |  | x |
+| MQTT API | x | x (only for SL > 3, Pro models) |
+| Wired LAN support | x |  |
+| WLAN support | x | x (only for SL > 3, Pro Models) || Home Assistant integration | x (full integration of most Nuki features) | x |
+| Home Automation platform integration | x | x |
+| Cloud support | (optional via smarthome solution) | x |
+| Cloud-less operation | x | x (since fw 3.8.2, to be tested) |
+| Smarthome app integration |  | x |
+| Nuki Smartlocks all models | x | x |
+| Nuki opener | x | x |
+| Nuki Keypad (1.0 and 2.0) | x | x |
+| MQTT encryption | x |  |
+| Fine-grained access control of MQTT API | x |  |
+| Export of lock actions via MQTT API | x |  |
+| Control via GPIO | x |  |
+| Hybrid mode for Pro locks | x |  |
+
+
+
 ## Support Nuki Hub development
 
 If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
