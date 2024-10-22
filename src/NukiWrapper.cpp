@@ -2643,7 +2643,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
     String allowedFromTime;
     String allowedUntilTime;
 
-    if(json["code"].is<unsigned int>())
+    if(json["code"].is<JsonVariant>())
     {
         code = json["code"].as<unsigned int>();
     }
@@ -2652,7 +2652,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         code = 12;
     }
 
-    if(json["enabled"].is<unsigned int>())
+    if(json["enabled"].is<JsonVariant>())
     {
         enabled = json["enabled"].as<unsigned int>();
     }
@@ -2661,7 +2661,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         enabled = 2;
     }
 
-    if(json["timeLimited"].is<unsigned int>())
+    if(json["timeLimited"].is<JsonVariant>())
     {
         timeLimited = json["timeLimited"].as<unsigned int>();
     }
@@ -2670,27 +2670,27 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         timeLimited = 2;
     }
 
-    if(json["name"].is<String>())
+    if(json["name"].is<JsonVariant>())
     {
         name = json["name"].as<String>();
     }
-    if(json["allowedFrom"].is<String>())
+    if(json["allowedFrom"].is<JsonVariant>())
     {
         allowedFrom = json["allowedFrom"].as<String>();
     }
-    if(json["allowedUntil"].is<String>())
+    if(json["allowedUntil"].is<JsonVariant>())
     {
         allowedUntil = json["allowedUntil"].as<String>();
     }
-    if(json["allowedWeekdays"].is<String>())
+    if(json["allowedWeekdays"].is<JsonVariant>())
     {
         allowedWeekdays = json["allowedWeekdays"].as<String>();
     }
-    if(json["allowedFromTime"].is<String>())
+    if(json["allowedFromTime"].is<JsonVariant>())
     {
         allowedFromTime = json["allowedFromTime"].as<String>();
     }
-    if(json["allowedUntilTime"].is<String>())
+    if(json["allowedUntilTime"].is<JsonVariant>())
     {
         allowedUntilTime = json["allowedUntilTime"].as<String>();
     }
@@ -3160,7 +3160,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
     String lockAction;
     NukiLock::LockAction timeControlLockAction;
 
-    if(json["enabled"].is<unsigned int>())
+    if(json["enabled"].is<JsonVariant>())
     {
         enabled = json["enabled"].as<unsigned int>();
     }
@@ -3169,15 +3169,15 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
         enabled = 2;
     }
 
-    if(json["weekdays"].is<String>())
+    if(json["weekdays"].is<JsonVariant>())
     {
         weekdays = json["weekdays"].as<String>();
     }
-    if(json["time"].is<String>())
+    if(json["time"].is<JsonVariant>())
     {
         time = json["time"].as<String>();
     }
-    if(json["lockAction"].is<String>())
+    if(json["lockAction"].is<JsonVariant>())
     {
         lockAction = json["lockAction"].as<String>();
     }
@@ -3452,7 +3452,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
     String allowedFromTime;
     String allowedUntilTime;
 
-    if(json["remoteAllowed"].is<unsigned int>())
+    if(json["remoteAllowed"].is<JsonVariant>())
     {
         remoteAllowed = json["remoteAllowed"].as<unsigned int>();
     }
@@ -3461,7 +3461,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
         remoteAllowed = 2;
     }
 
-    if(json["enabled"].is<unsigned int>())
+    if(json["enabled"].is<JsonVariant>())
     {
         enabled = json["enabled"].as<unsigned int>();
     }
@@ -3470,7 +3470,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
         enabled = 2;
     }
 
-    if(json["timeLimited"].is<unsigned int>())
+    if(json["timeLimited"].is<JsonVariant>())
     {
         timeLimited = json["timeLimited"].as<unsigned int>();
     }
@@ -3479,28 +3479,28 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
         timeLimited = 2;
     }
 
-    if(json["name"].is<String>())
+    if(json["name"].is<JsonVariant>())
     {
         name = json["name"].as<String>();
     }
-    //if(json["sharedKey"].is<String>()) sharedKey = json["sharedKey"].as<String>();
-    if(json["allowedFrom"].is<String>())
+    //if(json["sharedKey"].is<JsonVariant>()) sharedKey = json["sharedKey"].as<String>();
+    if(json["allowedFrom"].is<JsonVariant>())
     {
         allowedFrom = json["allowedFrom"].as<String>();
     }
-    if(json["allowedUntil"].is<String>())
+    if(json["allowedUntil"].is<JsonVariant>())
     {
         allowedUntil = json["allowedUntil"].as<String>();
     }
-    if(json["allowedWeekdays"].is<String>())
+    if(json["allowedWeekdays"].is<JsonVariant>())
     {
         allowedWeekdays = json["allowedWeekdays"].as<String>();
     }
-    if(json["allowedFromTime"].is<String>())
+    if(json["allowedFromTime"].is<JsonVariant>())
     {
         allowedFromTime = json["allowedFromTime"].as<String>();
     }
-    if(json["allowedUntilTime"].is<String>())
+    if(json["allowedUntilTime"].is<JsonVariant>())
     {
         allowedUntilTime = json["allowedUntilTime"].as<String>();
     }
