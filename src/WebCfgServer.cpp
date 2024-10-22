@@ -3068,7 +3068,7 @@ bool WebCfgServer::processImport(PsychicRequest *request, String& message)
 
             for(const auto& key : bytePrefs)
             {
-                if(!doc[key].isNull() && doc[key].is<String>())
+                if(!doc[key].isNull() && doc[key].is<JsonVariant>())
                 {
                     String value = doc[key].as<String>();
                     unsigned char tmpchar[32];
