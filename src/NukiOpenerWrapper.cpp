@@ -2672,7 +2672,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
                     if(allowedUntil.length() > 0)
                     {
-                        if(allowedUntil.length() > 0 == 19)
+                        if(allowedUntil.length() == 19)
                         {
                             allowedUntilAr[0] = (uint16_t)allowedUntil.substring(0, 4).toInt();
                             allowedUntilAr[1] = (uint8_t)allowedUntil.substring(5, 7).toInt();
@@ -3478,7 +3478,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
                     if(allowedUntil.length() > 0)
                     {
-                        if(allowedUntil.length() > 0 == 19)
+                        if(allowedUntil.length() == 19)
                         {
                             allowedUntilAr[0] = (uint16_t)allowedUntil.substring(0, 4).toInt();
                             allowedUntilAr[1] = (uint8_t)allowedUntil.substring(5, 7).toInt();
