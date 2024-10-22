@@ -2192,6 +2192,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 //configChanged = true;
             }
         }
+        else if(key == "KPCHECK")
+        {
+            if(_preferences->getBool(preference_keypad_check_code_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_keypad_check_code_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                //configChanged = true;
+            }
+        }
         else if(key == "KPENA")
         {
             if(_preferences->getBool(preference_keypad_control_enabled, false) != (value == "1"))
@@ -3378,7 +3388,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
     printInputField(&response, "CREDPASSRE", "Retype password", "*", 30, "", true);
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.print("</form>");
+    response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var pattern = /^[ -~]*$/; if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
     if(_nuki != nullptr)
     {
         response.print("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -3685,6 +3695,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
         printCheckBox(&response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
         printCheckBox(&response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
         printCheckBox(&response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
+        printCheckBox(&response, "KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");      
     }
     printCheckBox(&response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
     printCheckBox(&response, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
@@ -4176,6 +4187,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     response.print(_preferences->getBool(preference_keypad_topic_per_entry, false) ? "Yes" : "No");
     response.print("\nPublish Keypad codes: ");
     response.print(_preferences->getBool(preference_keypad_publish_code, false) ? "Yes" : "No");
+    response.print("\nAllow checking Keypad codes: ");
+    response.print(_preferences->getBool(preference_keypad_check_code_enabled, false) ? "Yes" : "No");
     response.print("\nMax keypad entries to retrieve: ");
     response.print(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
     response.print("\nPublish timecontrol info: ");
