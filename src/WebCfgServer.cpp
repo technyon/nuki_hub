@@ -2945,7 +2945,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
             {
                 _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
                 Log->print(F("Setting changed: "));
-                Log->println("ACLCONFBADVANCEDOPENER");
+                Log->println("ACLCONFADVANCEDOPENER");
                 //configChanged = true;
                 break;
             }
