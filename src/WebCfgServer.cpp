@@ -2955,7 +2955,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
             {
                 _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
                 Log->print(F("Setting changed: "));
-                Log->println("ACLCONFBADVANCEDOPENER");
+                Log->println("ACLCONFADVANCEDOPENER");
                 //configChanged = true;
                 break;
             }
@@ -3078,7 +3078,7 @@ bool WebCfgServer::processImport(PsychicRequest *request, String& message)
 
             for(const auto& key : bytePrefs)
             {
-                if(!doc[key].isNull() && doc[key].is<String>())
+                if(!doc[key].isNull() && doc[key].is<JsonVariant>())
                 {
                     String value = doc[key].as<String>();
                     unsigned char tmpchar[32];

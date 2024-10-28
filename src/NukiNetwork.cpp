@@ -206,6 +206,7 @@ bool NukiNetwork::update()
 #else
 void NukiNetwork::initialize()
 {
+    _mqtt_cfg.task.stack_size = MQTT_STACK_SIZE;
     _hostname = _preferences->getString(preference_hostname, "");
 
     if(_hostname == "")
