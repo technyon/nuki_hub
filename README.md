@@ -679,7 +679,7 @@ Information about current authorization entries is published as JSON data to the
 This needs to be enabled separately by checking "Publish authorization entries information" under "Access Level Configuration" and saving the configuration.
 By default a maximum of 10 entries are published.
 
-To change Nuki Lock/Opener authorization settings set the `authorization/actionJson` topic to a JSON formatted value containing the following nodes.
+To change Nuki Lock/Opener authorization settings set the `authorization/action` topic to a JSON formatted value containing the following nodes.
 
 
 | Node             | Delete   | Add      | Update   | Usage                                                                                                            | Possible values                        |
