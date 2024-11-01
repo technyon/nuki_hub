@@ -4,7 +4,7 @@
 
 #define NUKI_HUB_VERSION "9.02"
 #define NUKI_HUB_BUILD "unknownbuildnr"
-#define NUKI_HUB_DATE "2024-10-28"
+#define NUKI_HUB_DATE "2024-11-01"
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_OTA_MANIFEST_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/manifest.json"
@@ -110,11 +110,9 @@
 #define MQTT_QOS_LEVEL 1
 #define MQTT_CLEAN_SESSIONS false
 #define MQTT_KEEP_ALIVE 60
-#define MQTT_STACK_SIZE 12288
 #define GPIO_DEBOUNCE_TIME 200
 #define CHAR_BUFFER_SIZE 4096
 #define NUKI_TASK_SIZE 8192
-#define PD_TASK_SIZE 1024
 #define MAX_AUTHLOG 5
 #define MAX_KEYPAD 10
 #define MAX_TIMECONTROL 10
@@ -122,3 +120,4 @@
 #endif
 
 #define NETWORK_TASK_SIZE 12288
+#define HTTPD_TASK_SIZE 8192

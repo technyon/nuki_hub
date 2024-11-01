@@ -1,0 +1,61 @@
+# Datatypes (KEYWORD1)
+espMqttClient	KEYWORD1
+espMqttClientSecure	KEYWORD1
+
+OnConnectCallback	KEYWORD1
+OnDisconnectCallback	KEYWORD1
+OnSubscribeCallback	KEYWORD1
+OnUnsubscribeCallback	KEYWORD1
+OnMessageCallback	KEYWORD1
+OnPublishCallback	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+setKeepAlive	KEYWORD2
+setClientId	KEYWORD2
+setCleanSession	KEYWORD2
+setCredentials	KEYWORD2
+setWill	KEYWORD2
+setServer	KEYWORD2
+
+setInsecure	KEYWORD2
+setCACert	KEYWORD2
+setCertificate	KEYWORD2
+setPrivateKey	KEYWORD2
+setPreSharedKey	KEYWORD2
+setFingerprint	KEYWORD2
+setTrustAnchors	KEYWORD2
+setClientRSACert	KEYWORD2
+setClientECCert	KEYWORD2
+setCertStore	KEYWORD2
+
+onConnect	KEYWORD2
+onDisconnect	KEYWORD2
+onSubscribe	KEYWORD2
+onUnsubscribe	KEYWORD2
+onMessage	KEYWORD2
+onPublish	KEYWORD2
+
+connected	KEYWORD2
+connect	KEYWORD2
+disconnect	KEYWORD2
+subscribe	KEYWORD2
+unsubscribe	KEYWORD2
+publish	KEYWORD2
+clearQueue	KEYWORD2
+loop	KEYWORD2
+getClientId	KEYWORD2
+queueSize KEYWORD2
+
+# Structures (KEYWORD3)
+espMqttClientTypes	KEYWORD3
+MessageProperties	KEYWORD3
+DisconnectReason	KEYWORD3
+
+# Constants (LITERAL1)
+TCP_DISCONNECTED	LITERAL1
+MQTT_UNACCEPTABLE_PROTOCOL_VERSION	LITERAL1
+MQTT_IDENTIFIER_REJECTED	LITERAL1
+MQTT_SERVER_UNAVAILABLE	LITERAL1
+MQTT_MALFORMED_CREDENTIALS	LITERAL1
+MQTT_NOT_AUTHORIZED	LITERAL1
+TLS_BAD_FINGERPRINT	LITERAL1

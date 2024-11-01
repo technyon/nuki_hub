@@ -27,33 +27,27 @@ void NukiPublisher::publishBool(const char *topic, const bool value, bool retain
     _network->publishBool(_mqttPath, topic, value, retain);
 }
 
-bool NukiPublisher::publishString(const char *topic, const String &value, bool retain)
+void NukiPublisher::publishString(const char *topic, const String &value, bool retain)
 {
-    char str[value.length() + 1];
-    memset(str, 0, sizeof(str));
-    memcpy(str, value.begin(), value.length());
-    return publishString(topic, str, retain);
+    publishString(topic, value.c_str(), retain);
 }
 
-bool NukiPublisher::publishString(const char *topic, const std::string &value, bool retain)
+void NukiPublisher::publishString(const char *topic, const std::string &value, bool retain)
 {
-    char str[value.size() + 1];
-    memset(str, 0, sizeof(str));
-    memcpy(str, value.data(), value.length());
-    return publishString(topic, str, retain);
+    publishString(topic, value.c_str(), retain);
 }
 
-bool NukiPublisher::publishString(const char *topic, const char *value, bool retain)
+void NukiPublisher::publishString(const char *topic, const char *value, bool retain)
 {
-    return _network->publishString(_mqttPath, topic, value, retain);
+    _network->publishString(_mqttPath, topic, value, retain);
 }
 
 void NukiPublisher::publishULong(const char *topic, const unsigned long value, bool retain)
 {
-    return _network->publishULong(_mqttPath, topic, value, retain);
+    _network->publishULong(_mqttPath, topic, value, retain);
 }
 
 void NukiPublisher::publishLongLong(const char *topic, int64_t value, bool retain)
 {
-    return _network->publishLongLong(_mqttPath, topic, value, retain);
+    _network->publishLongLong(_mqttPath, topic, value, retain);
 }

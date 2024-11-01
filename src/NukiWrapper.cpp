@@ -82,6 +82,8 @@ void NukiWrapper::initialize(const bool& firstStart)
             Log->println("Failed to clear NVS Wi-Fi configuration");
         }
 #endif
+        _preferences->putString(preference_mqtt_lock_path, "nukihub");
+        
         _preferences->putBool(preference_check_updates, true);
         _preferences->putBool(preference_opener_continuous_mode, false);
         _preferences->putBool(preference_official_hybrid_enabled, false);
@@ -183,6 +185,7 @@ void NukiWrapper::readSettings()
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
+    _pairedAsApp = _preferences->getBool(preference_register_as_app, false);
 
     _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
     _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
@@ -355,79 +358,78 @@ void NukiWrapper::update()
             _nextLockAction = (NukiLock::LockAction) 0xff;
         }
     }
-    if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
+    if(_network->mqttConnectionState() == 2)
     {
-        Log->println("Updating Lock state based on status, timer or query");
-        _statusUpdated = false;
-        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
-        updateKeyTurnerState();
-        _network->publishStatusUpdated(_statusUpdated);
-    }
-    if(!_statusUpdated)
-    {
-        if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
+        if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
         {
-            Log->println("Updating Lock battery state based on timer or query");
-            _nextBatteryReportTs = ts + _intervalBattery * 1000;
-            updateBatteryState();
+            Log->println("Updating Lock state based on status, timer or query");
+            _statusUpdated = false;
+            _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
+            updateKeyTurnerState();
+            _network->publishStatusUpdated(_statusUpdated);
         }
-        if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs || (queryCommands & QUERY_COMMAND_CONFIG) > 0)
+        if(!_statusUpdated)
         {
-            Log->println("Updating Lock config based on timer or query");
-            _nextConfigUpdateTs = ts + _intervalConfig * 1000;
-            updateConfig();
-            if(_hassEnabled && !_hassSetupCompleted)
+            if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
+            {
+                Log->println("Updating Lock battery state based on timer or query");
+                _nextBatteryReportTs = ts + _intervalBattery * 1000;
+                updateBatteryState();
+            }
+            if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs || (queryCommands & QUERY_COMMAND_CONFIG) > 0)
+            {
+                Log->println("Updating Lock config based on timer or query");
+                _nextConfigUpdateTs = ts + _intervalConfig * 1000;
+                updateConfig();
+            }
+            if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
+            {
+                _waitAuthLogUpdateTs = 0;
+                updateAuthData(true);
+            }
+            if(_waitKeypadUpdateTs != 0 && ts > _waitKeypadUpdateTs)
+            {
+                _waitKeypadUpdateTs = 0;
+                updateKeypad(true);
+            }
+            if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
+            {
+                _waitTimeControlUpdateTs = 0;
+                updateTimeControl(true);
+            }
+            if(_waitAuthUpdateTs != 0 && ts > _waitAuthUpdateTs)
+            {
+                _waitAuthUpdateTs = 0;
+                updateAuth(true);
+            }
+            if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
             {
                 setupHASS();
             }
-        }
-        if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
-        {
-            _waitAuthLogUpdateTs = 0;
-            updateAuthData(true);
-        }
-        if(_waitKeypadUpdateTs != 0 && ts > _waitKeypadUpdateTs)
-        {
-            _waitKeypadUpdateTs = 0;
-            updateKeypad(true);
-        }
-        if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
-        {
-            _waitTimeControlUpdateTs = 0;
-            updateTimeControl(true);
-        }
-        if(_waitAuthUpdateTs != 0 && ts > _waitAuthUpdateTs)
-        {
-            _waitAuthUpdateTs = 0;
-            updateAuth(true);
-        }
-        if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && _network->reconnected())
-        {
-            setupHASS();
-        }
-        if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
-        {
-            _nextRssiTs = ts + _rssiPublishInterval;
-
-            int rssi = _nukiLock.getRssi();
-            if(rssi != _lastRssi)
+            if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
             {
-                _network->publishRssi(rssi);
-                _lastRssi = rssi;
+                _nextRssiTs = ts + _rssiPublishInterval;
+
+                int rssi = _nukiLock.getRssi();
+                if(rssi != _lastRssi)
+                {
+                    _network->publishRssi(rssi);
+                    _lastRssi = rssi;
+                }
+            }
+            if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
+            {
+                Log->println("Updating Lock keypad based on timer or query");
+                _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
+                updateKeypad(false);
             }
         }
-        if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
+        if(_clearAuthData)
         {
-            Log->println("Updating Lock keypad based on timer or query");
-            _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
-            updateKeypad(false);
+            Log->println("Clearing Lock auth data");
+            _network->clearAuthorizationInfo();
+            _clearAuthData = false;
         }
-    }
-    if(_clearAuthData)
-    {
-        Log->println("Clearing Lock auth data");
-        _network->clearAuthorizationInfo();
-        _clearAuthData = false;
     }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiLock::KeyTurnerState));
@@ -621,7 +623,7 @@ void NukiWrapper::updateConfig()
 
         if(_preferences->getUInt(preference_nuki_id_lock, 0) == _nukiConfig.nukiId)
         {
-            _hasKeypad = _nukiConfig.hasKeypad > 0 || _nukiConfig.hasKeypadV2 > 0;
+            _hasKeypad = _nukiConfig.hasKeypad == 1 || _nukiConfig.hasKeypadV2 == 1;
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
             if(_preferences->getBool(preference_conf_info_enabled, true))
@@ -961,6 +963,12 @@ void NukiWrapper::updateTimeControl(bool retrieved)
 
 void NukiWrapper::updateAuth(bool retrieved)
 {
+    if(!isPinValid())
+    {
+        Log->println(F("No valid Nuki Lock PIN set"));
+        return;
+    }
+    
     if(!_preferences->getBool(preference_auth_info_enabled))
     {
         return;
@@ -3974,7 +3982,7 @@ void NukiWrapper::notify(Nuki::EventType eventType)
         }
         else
         {
-            if(eventType == Nuki::EventType::KeyTurnerStatusUpdated)
+            if(!_pairedAsApp && eventType == Nuki::EventType::KeyTurnerStatusUpdated && !_statusUpdated)
             {
                 Log->println("KeyTurnerStatusUpdated");
                 _statusUpdated = true;
@@ -4053,6 +4061,7 @@ void NukiWrapper::setupHASS()
     }
 
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+    baseTopic.concat("/lock");
     char uidString[20];
     itoa(_nukiConfig.nukiId, uidString, 16);
 
