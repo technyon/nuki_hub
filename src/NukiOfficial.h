@@ -69,7 +69,7 @@ private:
     uint8_t offTrigger = 0;
     uint32_t offAuthId = 0;
     uint32_t offCodeId = 0;
-//    uint8_t offContext = 0;
+    //uint8_t offContext = 0;
     bool offEnabled = false;
 };
 

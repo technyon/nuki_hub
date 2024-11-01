@@ -54,6 +54,7 @@ private:
     esp_err_t buildAccLvlHtml(PsychicRequest *request);
     esp_err_t buildCredHtml(PsychicRequest *request);
     esp_err_t buildImportExportHtml(PsychicRequest *request);
+    esp_err_t buildNetworkConfigHtml(PsychicRequest *request);
     esp_err_t buildMqttConfigHtml(PsychicRequest *request);
     esp_err_t buildStatusHtml(PsychicRequest *request);    
     esp_err_t buildAdvancedConfigHtml(PsychicRequest *request);

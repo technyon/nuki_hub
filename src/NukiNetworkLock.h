@@ -57,7 +57,7 @@ public:
     void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
     void setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char* value));
-    void onMqttDataReceived(char* topic, int topic_len, char* data, int data_len) override;
+    void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
     void publishFloat(const char* topic, const float value, bool retain, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value, bool retain);
@@ -65,12 +65,12 @@ public:
     void publishULong(const char* topic, const unsigned long value, bool retain);
     void publishLongLong(const char* topic, int64_t value, bool retain);    
     void publishBool(const char* topic, const bool value, bool retain);
-    bool publishString(const char* topic, const String& value, bool retain);
-    bool publishString(const char* topic, const std::string& value, bool retain);
-    bool publishString(const char* topic, const char* value, bool retain);
+    void publishString(const char* topic, const String& value, bool retain);
+    void publishString(const char* topic, const std::string& value, bool retain);
+    void publishString(const char* topic, const char* value, bool retain);
 
     const uint32_t getAuthId() const;
-
+    int mqttConnectionState();
     bool reconnected();
     uint8_t queryCommands();
 
@@ -99,7 +99,7 @@ private:
     bool _firstTunerStatePublish = true;
     int64_t _lastMaintenanceTs = 0;
     bool _haEnabled = false;
-    bool _reconnected = false;
+    bool _reconnected = false; //SETBACK
     bool _disableNonJSON = false;
 
     String _keypadCommandName = "";

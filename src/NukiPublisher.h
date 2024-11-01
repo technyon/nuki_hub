@@ -14,9 +14,9 @@ public:
     void publishULong(const char* topic, const unsigned long value, bool retain);
     void publishLongLong(const char* topic, int64_t value, bool retain);
     void publishBool(const char* topic, const bool value, bool retain);
-    bool publishString(const char* topic, const String& value, bool retain);
-    bool publishString(const char* topic, const std::string& value, bool retain);
-    bool publishString(const char* topic, const char* value, bool retain);
+    void publishString(const char* topic, const String& value, bool retain);
+    void publishString(const char* topic, const std::string& value, bool retain);
+    void publishString(const char* topic, const char* value, bool retain);
 
 private:
     NukiNetwork* _network;
