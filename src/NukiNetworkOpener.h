@@ -48,9 +48,10 @@ public:
     void setKeypadJsonCommandReceivedCallback(void (*keypadJsonCommandReceivedReceivedCallback)(const char* value));
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
     void setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char* value));
-    void onMqttDataReceived(char* topic, int topic_len, char* data, int data_len) override;
+    void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
 
-    bool reconnected();
+    int mqttConnectionState();
+    bool reconnected(); //SETBACK
     uint8_t queryCommands();
     char _nukiName[33];
 
@@ -87,7 +88,7 @@ private:
     bool _isConnected = false;
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
-    bool _reconnected = false;
+    bool _reconnected = false; //SETBACK
     bool _disableNonJSON = false;
 
     String _keypadCommandName = "";

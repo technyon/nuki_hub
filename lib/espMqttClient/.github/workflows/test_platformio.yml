@@ -1,0 +1,26 @@
+name: Test with Platformio
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/bertmelis/pio-test-container
+
+    services:
+          mqtt:
+              image: eclipse-mosquitto:2.0
+              volumes:
+                - ${{ github.workspace }}/.github/mosquitto:/mosquitto/config
+              options: --name mqtt
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restart MQTT
+        # Restart MQTT after volumes have been checked out
+        uses: docker://docker
+        with:
+          args: docker restart mqtt
+      - name: Test
+        run: |
+          pio test -e native -v

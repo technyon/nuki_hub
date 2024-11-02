@@ -106,6 +106,7 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
     bool _disableNonJSON = false;
+    bool _pairedAsApp = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryConfigCount = 0;

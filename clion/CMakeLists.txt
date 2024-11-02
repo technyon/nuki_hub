@@ -62,6 +62,12 @@ file(GLOB_RECURSE SRCFILESREC
         lib/ArduinoJson/src/*.hpp
         lib/PsychicHttp/src/*.cpp
         lib/PsychicHttp/src/*.h
+        lib/espMqttClient/src/*.cpp
+        lib/espMqttClient/src/*.h
+        lib/espMqttClient/src/Packets/*.cpp
+        lib/espMqttClient/src/Packets/*.h
+        lib/espMqttClient/src/Transport/*.cpp
+        lib/espMqttClient/src/Transport/*.h        
 )
 
 add_executable(dummy

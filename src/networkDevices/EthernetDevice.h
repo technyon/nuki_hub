@@ -11,6 +11,9 @@
 #include <NetworkClientSecure.h>
 #include <Preferences.h>
 #include "NetworkDevice.h"
+#ifndef NUKI_HUB_UPDATER
+#include "espMqttClient.h"
+#endif
 
 class EthernetDevice : public NetworkDevice
 {
@@ -45,8 +48,8 @@ public:
     virtual void initialize();
     virtual void reconfigure();
     virtual void update();
-    virtual void scan(bool passive = false, bool async = true);
 
+    virtual void scan(bool passive = false, bool async = true);
     virtual bool isConnected();
     virtual bool isApOpen();
 
@@ -58,10 +61,12 @@ public:
 private:
     Preferences* _preferences;
 
+    void init();
     void onDisconnected();
     void onNetworkEvent(arduino_event_id_t event, arduino_event_info_t info);
 
     bool _connected = false;
+    char* _path;
     bool _hardwareInitialized = false;
 
     const std::string _deviceName;
@@ -85,4 +90,10 @@ private:
     eth_phy_type_t _type;
     eth_clock_mode_t _clock_mode;
     bool _useSpi = false;
+
+    #ifndef NUKI_HUB_UPDATER
+    char _ca[TLS_CA_MAX_SIZE] = {0};
+    char _cert[TLS_CERT_MAX_SIZE] = {0};
+    char _key[TLS_KEY_MAX_SIZE] = {0};
+    #endif
 };

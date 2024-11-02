@@ -25,6 +25,7 @@ enum class RestartReason
     DeviceUnpaired,
     NukiHubReset,
     ReconfigureWebServer,
+    DisableNetworkIfNotConnected,
     NotApplicable
 };
 
@@ -112,6 +113,8 @@ inline static String getRestartReason()
             return "DeviceUnpaired";
         case RestartReason::NukiHubReset:
             return "NukiHubFactoryReset";
+        case RestartReason::DisableNetworkIfNotConnected:
+            return "NetworkDisabledOnNotConnected";
         case RestartReason::NotApplicable:
             return "NotApplicable";
         default:

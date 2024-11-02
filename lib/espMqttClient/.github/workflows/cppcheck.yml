@@ -1,0 +1,13 @@
+name: Cppcheck
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/bertmelis/pio-test-container
+    steps:
+    - uses: actions/checkout@v4
+    - name: Cppcheck
+      run: |
+        pio check --fail-on-defect=medium --fail-on-defect=high --flags "--inline-suppr --enable=warning --enable=style --enable=performance --suppress=unusedFunction --suppress=preprocessorErrorDirective" --skip-packages

@@ -42,6 +42,7 @@ Gpio* gpio = nullptr;
 
 bool lockEnabled = false;
 bool openerEnabled = false;
+bool wifiConnected = false;
 
 TaskHandle_t nukiTaskHandle = nullptr;
 
@@ -64,12 +65,16 @@ NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 Preferences* preferences = nullptr;
 
+RTC_NOINIT_ATTR int espRunning;
 RTC_NOINIT_ATTR int restartReason;
 RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
 RTC_NOINIT_ATTR bool rebuildGpioRequested;
 RTC_NOINIT_ATTR uint64_t bootloopValidDetect;
 RTC_NOINIT_ATTR int8_t bootloopCounter;
 RTC_NOINIT_ATTR bool forceEnableWebServer;
+RTC_NOINIT_ATTR bool disableNetwork;
+RTC_NOINIT_ATTR bool wifiFallback;
+RTC_NOINIT_ATTR bool ethCriticalFailure;
 
 bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
@@ -144,14 +149,9 @@ void networkTask(void *pvParameters)
             }
         }
 
-        bool connected = network->update();
-
-#ifndef NUKI_HUB_UPDATER
-        if(connected && networkLock != nullptr)
-        {
-            networkLock->update();
-        }
-
+        network->update();
+        bool connected = network->isConnected();
+        
 #ifdef DEBUG_NUKIHUB
         if(connected && reroute)
         {
@@ -159,6 +159,15 @@ void networkTask(void *pvParameters)
             setReroute();
         }
 #endif
+
+#ifndef NUKI_HUB_UPDATER
+        wifiConnected = network->wifiConnected();
+
+        if(connected && lockEnabled)
+        {
+            networkLock->update();
+        }
+
         if(connected && openerEnabled)
         {
             networkOpener->update();
@@ -172,7 +181,6 @@ void networkTask(void *pvParameters)
         }
 
         esp_task_wdt_reset();
-        delay(100);
     }
 }
 
@@ -184,35 +192,38 @@ void nukiTask(void *pvParameters)
 
     while(true)
     {
-        bleScanner->update();
-        delay(20);
-
-        bool needsPairing = (lockEnabled && !nuki->isPaired()) || (openerEnabled && !nukiOpener->isPaired());
-
-        if (needsPairing)
+        if(disableNetwork || wifiConnected)
         {
-            delay(5000);
-        }
-        else if (!whiteListed)
-        {
-            whiteListed = true;
+            bleScanner->update();
+            delay(20);
+
+            bool needsPairing = (lockEnabled && !nuki->isPaired()) || (openerEnabled && !nukiOpener->isPaired());
+
+            if (needsPairing)
+            {
+                delay(5000);
+            }
+            else if (!whiteListed)
+            {
+                whiteListed = true;
+                if(lockEnabled)
+                {
+                    bleScanner->whitelist(nuki->getBleAddress());
+                }
+                if(openerEnabled)
+                {
+                    bleScanner->whitelist(nukiOpener->getBleAddress());
+                }
+            }
+
             if(lockEnabled)
             {
-                bleScanner->whitelist(nuki->getBleAddress());
+                nuki->update();
             }
             if(openerEnabled)
             {
-                bleScanner->whitelist(nukiOpener->getBleAddress());
+                nukiOpener->update();
             }
-        }
-
-        if(lockEnabled)
-        {
-            nuki->update();
-        }
-        if(openerEnabled)
-        {
-            nukiOpener->update();
         }
 
         if(espMillis() - nukiLoopTs > 120000)
@@ -241,7 +252,6 @@ void bootloopDetection()
     if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
-            true ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         bootloopCounter++;
@@ -400,10 +410,13 @@ void setupTasks(bool ota)
     }
     else
     {
-        xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
-        esp_task_wdt_add(networkTaskHandle);
+        if(!disableNetwork)
+        {
+            xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
+            esp_task_wdt_add(networkTaskHandle);
+        }
 #ifndef NUKI_HUB_UPDATER
-        if(!network->isApOpen())
+        if(!network->isApOpen() && (lockEnabled || openerEnabled))
         {
             xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
             esp_task_wdt_add(nukiTaskHandle);
@@ -414,12 +427,16 @@ void setupTasks(bool ota)
 
 void setup()
 {
+    //Set Log level to error for all TAGS
     esp_log_level_set("*", ESP_LOG_ERROR);
+    //Set Log level to none for mqtt TAG
     esp_log_level_set("mqtt", ESP_LOG_NONE);
+    //Start Serial and setup Log class
     Serial.begin(115200);
     Log = &Serial;
 
 #ifndef NUKI_HUB_UPDATER
+    //
     stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
     static char linebuf[1024];
     setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
@@ -435,6 +452,17 @@ void setup()
 
     initializeRestartReason();
 
+    //default disableNetwork RTC_ATTR to false on power-on
+    if(espRunning != 1)
+    {
+        espRunning = 1;
+        forceEnableWebServer = false;
+        disableNetwork = false;
+        wifiFallback = false;
+        ethCriticalFailure = false;
+    }
+
+    //determine if an OTA update was requested
     if((partitionType==1 && preferences->getString(preference_ota_updater_url, "").length() > 0) || (partitionType==2 && preferences->getString(preference_ota_main_url, "").length() > 0))
     {
         doOta = true;
@@ -496,7 +524,7 @@ void setup()
         deviceIdOpener->assignId(deviceIdLock->get());
     }
 
-    char16_t buffer_size = preferences->getInt(preference_buffer_size, 4096);
+    char16_t buffer_size = preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE);
     CharBuffer::initialize(buffer_size);
 
     gpio = new Gpio(preferences);
@@ -520,26 +548,26 @@ void setup()
         openerEnabled = false;
     }
 
-    bleScanner = new BleScanner::Scanner();
-    // Scan interval and window according to Nuki recommendations:
-    // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
-    bleScanner->initialize("NukiHub", true, 40, 40);
-    bleScanner->setScanDuration(0);
-
-    nukiOfficial = new NukiOfficial(preferences);
-
-    networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
-    networkLock->initialize();
-
-    if(openerEnabled)
+    if(lockEnabled || openerEnabled)
     {
-        networkOpener = new NukiNetworkOpener(network, preferences, CharBuffer::get(), buffer_size);
-        networkOpener->initialize();
+        bleScanner = new BleScanner::Scanner();
+        // Scan interval and window according to Nuki recommendations:
+        // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
+        bleScanner->initialize("NukiHub", true, 40, 40);
+        bleScanner->setScanDuration(0);
     }
 
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
     {
+        nukiOfficial = new NukiOfficial(preferences);
+        networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
+
+        if(!disableNetwork)
+        {
+            networkLock->initialize();
+        }
+
         nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences);
         nuki->initialize(firstStart);
     }
@@ -547,41 +575,47 @@ void setup()
     Log->println(openerEnabled ? F("Nuki Opener enabled") : F("Nuki Opener disabled"));
     if(openerEnabled)
     {
+        networkOpener = new NukiNetworkOpener(network, preferences, CharBuffer::get(), buffer_size);
+
+        if(!disableNetwork)
+        {
+            networkOpener->initialize();
+        }
+        
         nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences);
         nukiOpener->initialize();
     }
 
-    if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false))
+    if(!doOta && !disableNetwork && (forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false)))
     {
-        if(!doOta)
+        psychicServer = new PsychicHttpServer;
+        psychicServer->config.max_uri_handlers = 40;
+        psychicServer->config.stack_size = HTTPD_TASK_SIZE;
+        psychicServer->maxUploadSize = 8192;
+        psychicServer->maxRequestBodySize = 8192;
+        psychicServer->listen(80);
+
+        if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
         {
-            psychicServer = new PsychicHttpServer;
-            psychicServer->config.max_uri_handlers = 40;
-            psychicServer->config.stack_size = 8192;
-            psychicServer->listen(80);
-
-            if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
+            webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
+            webCfgServer->initialize();
+            psychicServer->onNotFound([](PsychicRequest* request)
             {
-                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
-                webCfgServer->initialize();
-                psychicServer->onNotFound([](PsychicRequest* request)
-                {
-                    return request->redirect("/");
-                });
-            }
-            /*
-#ifdef DEBUG_NUKIHUB
-            else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
-
-            if(preferences->getBool(preference_webserial_enabled, false))
-            {
-              WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
-              WebSerial.begin(asyncServer);
-              WebSerial.setBuffer(1024);
-            }
-#endif
-            */
+                return request->redirect("/");
+            });
         }
+        /*
+#ifdef DEBUG_NUKIHUB
+        else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
+
+        if(preferences->getBool(preference_webserial_enabled, false))
+        {
+          WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
+          WebSerial.begin(asyncServer);
+          WebSerial.setBuffer(1024);
+        }
+#endif
+        */
     }
 #endif
 
