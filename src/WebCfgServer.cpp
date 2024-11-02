@@ -245,6 +245,14 @@ void WebCfgServer::initialize()
                 }
             return buildCredHtml(request);
         });
+        _psychicServer->on("/ntwconfig", HTTP_GET, [&](PsychicRequest *request)
+        {
+            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword))
+                {
+                    return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                }
+            return buildNetworkConfigHtml(request);
+        });
         _psychicServer->on("/mqttconfig", HTTP_GET, [&](PsychicRequest *request)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0) if(!request->authenticate(_credUser, _credPassword))
@@ -1518,16 +1526,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 configChanged = true;
             }
         }
-        else if(key == "MQTTOPPATH")
-        {
-            if(_preferences->getString(preference_mqtt_opener_path, "") != value)
-            {
-                _preferences->putString(preference_mqtt_opener_path, value);
-                Log->print(F("Setting changed: "));
-                Log->println(key);
-                configChanged = true;
-            }
-        }
         else if(key == "MQTTCA")
         {
             if(_preferences->getString(preference_mqtt_ca, "") != value)
@@ -2126,6 +2124,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 //configChanged = true;
+            }
+        }
+        else if(key == "DISNTWNOCON")
+        {
+            if(_preferences->getBool(preference_disable_network_not_connected, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_disable_network_not_connected, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
             }
         }
         else if(key == "OTAUPD")
@@ -3344,7 +3352,8 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
     }
     response.print("</table><br>");
     response.print("<ul id=\"tblnav\">");
-    buildNavigationMenuEntry(&response, "MQTT and Network Configuration", "/mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
+    buildNavigationMenuEntry(&response, "Network Configuration", "/ntwconfig");
+    buildNavigationMenuEntry(&response, "MQTT Configuration", "/mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
     buildNavigationMenuEntry(&response, "Nuki Configuration", "/nukicfg");
     buildNavigationMenuEntry(&response, "Access Level Configuration", "/acclvl");
     buildNavigationMenuEntry(&response, "Credentials", "/cred", _pinsConfigured ? "" : "Please configure PIN");
@@ -3454,48 +3463,23 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request)
 {
     PsychicStreamResponse response(request, "text/plain");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
-    response.print("<h3>Basic MQTT and Network Configuration</h3>");
+    response.print("<h3>Network Configuration</h3>");
     response.print("<table>");
     printInputField(&response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100, "");
-    printInputField(&response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100, "");
-    printInputField(&response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
-    printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
-    printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
-    response.print("</table><br>");
-
-    response.print("<h3>Advanced MQTT and Network Configuration</h3>");
-    response.print("<table>");
-    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
-    printInputField(&response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
-    if(_preferences->getBool(preference_opener_enabled, false))
-    {
-        printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
-    }
-    printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, true, true);
-    printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, true, true);
-    printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, true, true);
     printDropDown(&response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions(), "");
+    printInputField(&response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     printInputField(&response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6, "");
 #endif
-    printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
-    printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
-    printCheckBox(&response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
-    printCheckBox(&response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
-    printCheckBox(&response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid_enabled), "");
-    printCheckBox(&response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
-    printInputField(&response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
-    // printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), ""); // NOT IMPLEMENTED (YET?)
     response.print("</table>");
-    response.print("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
     printCheckBox(&response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
@@ -3504,6 +3488,47 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printInputField(&response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
     printInputField(&response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
     response.print("</table>");
+    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("</form>");
+    response.print("</body></html>");
+    return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
+{
+    PsychicStreamResponse response(request, "text/plain");
+    response.beginSend();
+    buildHtmlHeader(&response);
+    response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    response.print("<h3>Basic MQTT Configuration</h3>");
+    response.print("<table>");
+    printInputField(&response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100, "");
+    printInputField(&response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
+    printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
+    printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
+    printInputField(&response, "MQTTPATH", "MQTT NukiHub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
+    response.print("</table><br>");
+
+    response.print("<h3>Advanced MQTT Configuration</h3>");
+    response.print("<table>");
+    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
+    if(_preferences->getBool(preference_opener_enabled, false))
+    {
+        printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
+    }
+    printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, true, true);
+    printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, true, true);
+    printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, true, true);
+    printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
+    printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
+    printCheckBox(&response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
+    printCheckBox(&response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
+    printCheckBox(&response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid_enabled), "");
+    printCheckBox(&response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
+    printInputField(&response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
+    // printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), ""); // NOT IMPLEMENTED (YET?)
+    response.print("</table>");
+    response.print("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
     response.print("</body></html>");
@@ -3522,6 +3547,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
     response.print("<tr><td>Current bootloop prevention state</td><td>");
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.print("</td></tr>");
+    printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");        
     printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
     printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
@@ -3864,15 +3890,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request)
     response.print("<h3>Basic Nuki Configuration</h3>");
     response.print("<table>");
     printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled), "");
-    if(_preferences->getBool(preference_lock_enabled))
-    {
-        printInputField(&response, "MQTTPATH", "MQTT Nuki Lock Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
-    }
     printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
-    if(_preferences->getBool(preference_opener_enabled))
-    {
-        printInputField(&response, "MQTTOPPATH", "MQTT Nuki Opener Path", _preferences->getString(preference_mqtt_opener_path).c_str(), 180, "");
-    }
     response.print("</table><br>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
     response.print("<table>");
@@ -4137,16 +4155,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     response.print(_preferences->getString(preference_mqtt_user, "").length() > 0 ? "***" : "Not set");
     response.print("\nMQTT password: ");
     response.print(_preferences->getString(preference_mqtt_password, "").length() > 0 ? "***" : "Not set");
-    if(_preferences->getBool(preference_lock_enabled, true))
-    {
-        response.print("\nMQTT lock base topic: ");
-        response.print(_preferences->getString(preference_mqtt_lock_path, ""));
-    }
-    if(_preferences->getBool(preference_opener_enabled, false))
-    {
-        response.print("\nMQTT opener base topic: ");
-        response.print(_preferences->getString(preference_mqtt_lock_path, ""));
-    }
+    response.print("\nMQTT base topic: ");
+    response.print(_preferences->getString(preference_mqtt_lock_path, ""));
     response.print("\nMQTT SSL CA: ");
     response.print(_preferences->getString(preference_mqtt_ca, "").length() > 0 ? "***" : "Not set");
     response.print("\nMQTT SSL CRT: ");
@@ -4430,7 +4440,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
         response.print(_nukiOpener->isPaired() ? _nukiOpener->isPinValid() ? "Yes" : "No" : "-");
         response.print("\nOpener has keypad: ");
         response.print(_nukiOpener->hasKeypad() ? "Yes" : "No");
-        if(_nuki->hasKeypad())
+        if(_nukiOpener->hasKeypad())
         {
             response.print("\nKeypad highest entries count: ");
             response.print(_preferences->getInt(preference_opener_max_keypad_code_count, 0));

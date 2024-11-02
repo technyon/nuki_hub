@@ -18,7 +18,6 @@
 #define preference_lock_enabled (char*)"lockena"
 #define preference_mqtt_lock_path (char*)"mqttpath"
 #define preference_opener_enabled (char*)"openerena"
-#define preference_mqtt_opener_path (char*)"mqttoppath"
 #define preference_mqtt_ca (char*)"mqttca"
 #define preference_mqtt_crt (char*)"mqttcrt"
 #define preference_mqtt_key (char*)"mqttkey"
@@ -54,6 +53,7 @@
 #define preference_official_hybrid_enabled (char*)"offHybrid"
 #define preference_wifi_ssid (char*)"wifiSSID"
 #define preference_wifi_pass (char*)"wifiPass"
+#define preference_disable_network_not_connected (char*)"disNtwNoCon"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_ntw_reconfigure (char*)"ntwRECONF"
@@ -276,7 +276,7 @@ private:
             preference_started_before, preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_nuki_id_lock, preference_nuki_id_opener,
             preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates,
             preference_webserver_enabled, preference_lock_enabled, preference_lock_pin_status, preference_mqtt_lock_path, preference_opener_enabled, preference_opener_pin_status,
-            preference_opener_continuous_mode, preference_mqtt_opener_path, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
+            preference_opener_continuous_mode, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
             preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt,
             preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
             preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware,
@@ -292,7 +292,8 @@ private:
             preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
             preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
             preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
-            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_keypad_check_code_enabled, preference_wifi_ssid, preference_wifi_pass
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass,
+            preference_keypad_check_code_enabled, preference_disable_network_not_connected
     };
     std::vector<char*> _redact =
     {
@@ -308,7 +309,7 @@ private:
             preference_publish_authdata, preference_publish_debug_info, preference_official_hybrid_enabled,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled,
-            preference_ntw_reconfigure, preference_keypad_check_code_enabled
+            preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected
     };
     std::vector<char*> _bytePrefs =
     {

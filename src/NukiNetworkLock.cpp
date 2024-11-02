@@ -37,18 +37,12 @@ NukiNetworkLock::~NukiNetworkLock()
 void NukiNetworkLock::initialize()
 {
     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
-    if(mqttPath.length() > 0)
+    mqttPath.concat("/lock");
+
+    size_t len = mqttPath.length();
+    for(int i=0; i < len; i++)
     {
-        size_t len = mqttPath.length();
-        for(int i=0; i < len; i++)
-        {
-            _mqttPath[i] = mqttPath.charAt(i);
-        }
-    }
-    else
-    {
-        strcpy(_mqttPath, "nuki");
-        _preferences->putString(preference_mqtt_lock_path, _mqttPath);
+        _mqttPath[i] = mqttPath.charAt(i);
     }
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
@@ -58,18 +52,6 @@ void NukiNetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_config_action);
-    _network->subscribe(_mqttPath, mqtt_topic_reset);
-    _network->initTopic(_mqttPath, mqtt_topic_reset, "0");
-
-    if(_preferences->getBool(preference_update_from_mqtt, false))
-    {
-        _network->subscribe(_mqttPath, mqtt_topic_update);
-        _network->initTopic(_mqttPath, mqtt_topic_update, "0");
-    }
-
-    _network->subscribe(_mqttPath, mqtt_topic_webserver_action);
-    _network->initTopic(_mqttPath, mqtt_topic_webserver_action, "--");
-    _network->initTopic(_mqttPath, mqtt_topic_webserver_state, (_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer ? "1" : "0"));
 
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
@@ -100,7 +82,6 @@ void NukiNetworkLock::initialize()
         _network->removeTopic(_mqttPath, mqtt_topic_battery_max_turn_current);
         _network->removeTopic(_mqttPath, mqtt_topic_battery_lock_distance);
         _network->removeTopic(_mqttPath, mqtt_topic_battery_keypad_critical);
-        //_network->removeTopic(_mqttPath, mqtt_topic_presence);
     }
 
     if(!_preferences->getBool(preference_conf_info_enabled, true))
@@ -119,34 +100,34 @@ void NukiNetworkLock::initialize()
     {
         if(!_disableNonJSON)
         {
-            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
-            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
-            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
-            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
-            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_action, "--");
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
+            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
+            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
+            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
+            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_code);
+            _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
         }
 
-        _network->subscribe(_mqttPath, mqtt_topic_query_keypad);
-        _network->subscribe(_mqttPath, mqtt_topic_keypad_json_action);
         _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
         _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
+        _network->subscribe(_mqttPath, mqtt_topic_query_keypad);
+        _network->subscribe(_mqttPath, mqtt_topic_keypad_json_action);
     }
 
     if(_preferences->getBool(preference_timecontrol_control_enabled))
     {
-        _network->subscribe(_mqttPath, mqtt_topic_timecontrol_action);
         _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
+        _network->subscribe(_mqttPath, mqtt_topic_timecontrol_action);
     }
 
     if(_preferences->getBool(preference_auth_control_enabled))
     {
-        _network->subscribe(_mqttPath, mqtt_topic_auth_action);
         _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
+        _network->subscribe(_mqttPath, mqtt_topic_auth_action);
     }
 
     if(_nukiOfficial->getOffEnabled())
@@ -163,7 +144,7 @@ void NukiNetworkLock::initialize()
     {
         _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
     }
-
+    
     _network->addReconnectedCallback([&]()
     {
         _reconnected = true;
@@ -178,8 +159,10 @@ void NukiNetworkLock::update()
     }
 }
 
-void NukiNetworkLock::onMqttDataReceived(char* topic, int topic_len, char* data, int data_len)
+void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
+    char* data = (char*)payload;
+    
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
         Log->println("MQTT recently connected, ignoring lock action.");
@@ -445,22 +428,22 @@ void NukiNetworkLock::onMqttDataReceived(char* topic, int topic_len, char* data,
     if(comparePrefixedPath(topic, mqtt_topic_query_config) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_CONFIG;
-        publishString(mqtt_topic_query_config, "0", true);
+        publishInt(mqtt_topic_query_config, 0, true);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_query_lockstate) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_LOCKSTATE;
-        publishString(mqtt_topic_query_lockstate, "0", true);
+        publishInt(mqtt_topic_query_lockstate, 0, true);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_query_keypad) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_KEYPAD;
-        publishString(mqtt_topic_query_keypad, "0", true);
+        publishInt(mqtt_topic_query_keypad, 0, true);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_query_battery) && strcmp(data, "1") == 0)
     {
         _queryCommands = _queryCommands | QUERY_COMMAND_BATTERY;
-        publishString(mqtt_topic_query_battery, "0", true);
+        publishInt(mqtt_topic_query_battery, 0, true);
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_config_action))
@@ -1053,6 +1036,7 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
     char uidString[20];
     itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+    baseTopic.concat("/lock");
     JsonDocument json;
 
     for(const auto& entry : entries)
@@ -1296,6 +1280,7 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
     char uidString[20];
     itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+    baseTopic.concat("/lock");
     JsonDocument json;
 
     for(const auto& entry : timeControlEntries)
@@ -1428,6 +1413,7 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
     char uidString[20];
     itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
+    baseTopic.concat("/lock");
     JsonDocument json;
 
     for(const auto& entry : authEntries)
@@ -1680,7 +1666,9 @@ bool NukiNetworkLock::comparePrefixedPath(const char *fullPath, const char *subP
 void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name,  char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
                                         char *unlockAction, char *openAction)
 {
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, "~/maintenance/mqttConnectionState", hasKeypad, lockAction, unlockAction, openAction);
+    String availabilityTopic = _preferences->getString(preference_mqtt_lock_path);
+    availabilityTopic.concat("/maintenance/mqttConnectionState");
+    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
     _network->publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
 
     if(hasDoorSensor)
@@ -1719,57 +1707,63 @@ void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic,
 
 void NukiNetworkLock::removeHASSConfig(char *uidString)
 {
-    return  _network->removeHASSConfig(uidString);
+    _network->removeHASSConfig(uidString);
 }
 
 void NukiNetworkLock::publishOffAction(const int value)
 {
-    return _network->publishInt(_nukiOfficial->getMqttPath(), mqtt_topic_official_lock_action, value, false);
+    _network->publishInt(_nukiOfficial->getMqttPath(), mqtt_topic_official_lock_action, value, false);
 }
 
 void NukiNetworkLock::publishFloat(const char *topic, const float value, bool retain, const uint8_t precision)
 {
-    return _nukiPublisher->publishFloat(topic, value, retain, precision);
+    _nukiPublisher->publishFloat(topic, value, retain, precision);
 }
 
 void NukiNetworkLock::publishInt(const char *topic, const int value, bool retain)
 {
-    return _nukiPublisher->publishInt(topic, value, retain);
+    _nukiPublisher->publishInt(topic, value, retain);
 }
 
 void NukiNetworkLock::publishUInt(const char *topic, const unsigned int value, bool retain)
 {
-    return _nukiPublisher->publishUInt(topic, value, retain);
+    _nukiPublisher->publishUInt(topic, value, retain);
 }
 
 void NukiNetworkLock::publishBool(const char *topic, const bool value, bool retain)
 {
-    return _nukiPublisher->publishBool(topic, value, retain);
+    _nukiPublisher->publishBool(topic, value, retain);
 }
 
-bool NukiNetworkLock::publishString(const char *topic, const String &value, bool retain)
+void NukiNetworkLock::publishString(const char *topic, const String &value, bool retain)
 {
-    return _nukiPublisher->publishString(topic, value, retain);
+    char str[value.length() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.begin(), value.length());
+    publishString(topic, str, retain);
 }
 
-bool NukiNetworkLock::publishString(const char *topic, const std::string &value, bool retain)
+void NukiNetworkLock::publishString(const char *topic, const std::string &value, bool retain)
 {
-    return _nukiPublisher->publishString(topic, value, retain);
+    char str[value.size() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.data(), value.length());
+    publishString(topic, str, retain);
 }
 
-bool NukiNetworkLock::publishString(const char *topic, const char *value, bool retain)
+void NukiNetworkLock::publishString(const char *topic, const char *value, bool retain)
 {
-    return _nukiPublisher->publishString(topic, value, retain);
+    _nukiPublisher->publishString(topic, value, retain);
 }
 
 void NukiNetworkLock::publishULong(const char *topic, const unsigned long value, bool retain)
 {
-    return _nukiPublisher->publishULong(topic, value, retain);
+    _nukiPublisher->publishULong(topic, value, retain);
 }
 
 void NukiNetworkLock::publishLongLong(const char *topic, int64_t value, bool retain)
 {
-    return _nukiPublisher->publishLongLong(topic, value, retain);
+    _nukiPublisher->publishLongLong(topic, value, retain);
 }
 
 String NukiNetworkLock::concat(String a, String b)
@@ -1784,6 +1778,11 @@ bool NukiNetworkLock::reconnected()
     bool r = _reconnected;
     _reconnected = false;
     return r;
+}
+
+int NukiNetworkLock::mqttConnectionState()
+{
+    return _network->mqttConnectionState();
 }
 
 uint8_t NukiNetworkLock::queryCommands()

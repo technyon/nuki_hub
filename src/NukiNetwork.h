@@ -11,7 +11,6 @@
 
 #ifndef NUKI_HUB_UPDATER
 #include "MqttReceiver.h"
-#include "mqtt_client.h"
 #include "MqttTopics.h"
 #include "Gpio.h"
 #include <ArduinoJson.h>
@@ -28,6 +27,7 @@ public:
     void scan(bool passive = false, bool async = true);
     bool isApOpen();
     bool isConnected();
+    bool wifiConnected();
     void clearWifiFallback();
 
     const String networkDeviceName() const;
@@ -55,7 +55,7 @@ public:
     void publishULong(const char* prefix, const char* topic, const unsigned long value, bool retain);
     void publishLongLong(const char* prefix, const char* topic, int64_t value, bool retain);
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain);
-    bool publishString(const char* prefix, const char* topic, const char* value, bool retain);
+    void publishString(const char* prefix, const char* topic, const char* value, bool retain);
 
     void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
     void publishHASSConfigAdditionalLockEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
@@ -91,7 +91,6 @@ public:
     bool mqttRecentlyConnected();
     bool pathEquals(const char* prefix, const char* path, const char* referencePath);
     uint16_t subscribe(const char* topic, uint8_t qos);
-
     void addReconnectedCallback(std::function<void()> reconnectedCallback);
     #endif
 private:
@@ -106,8 +105,8 @@ private:
     IPConfiguration* _ipConfiguration = nullptr;
     String _hostname;
     char _hostnameArr[101] = {0};
+    char _nukiHubPath[181] = {0};
     NetworkDevice* _device = nullptr;
-
     std::function<void()> _keepAliveCallback = nullptr;
     std::vector<std::function<void()>> _reconnectedCallbacks;
 
@@ -118,10 +117,11 @@ private:
     bool _offEnabled = false;
 
     #ifndef NUKI_HUB_UPDATER
-    static void mqtt_event_handler_cb(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
-    void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
-    void onMqttDataReceived(char* topic, int topic_len, char* data, int data_len);
-    void parseGpioTopics(char* topic, int topic_len, char* data, int data_len);
+    static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
+    void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
+    void onMqttConnect(const bool& sessionPresent);
+    void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
+    void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void gpioActionCallback(const GpioAction& action, const int& pin);
 
     String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
@@ -144,23 +144,17 @@ private:
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
     String _discoveryTopic;
+    String _brokerAddr;
 
     Gpio* _gpio;
-  
-    esp_mqtt_client_config_t _mqtt_cfg = { 0 };
-    bool _mqttClientInitiated = false;
+
     int _mqttConnectionState = 0;
-    bool _mqttConnected = false;
     int _mqttConnectCounter = 0;
     int _mqttPort = 1883;
     long _mqttConnectedTs = -1;
+    bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
 
-    esp_mqtt_client_handle_t _mqttClient;
-    char _ca[TLS_CA_MAX_SIZE] = {0};
-    char _cert[TLS_CERT_MAX_SIZE] = {0};
-    char _key[TLS_KEY_MAX_SIZE] = {0};
-    
     int64_t _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};
@@ -170,6 +164,7 @@ private:
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;
     bool _restartOnDisconnect = false;
+    bool _disableNetworkIfNotConnected = false;
     bool _checkUpdates = false;
     bool _firstConnect = true;
     bool _publishDebugInfo = false;
@@ -177,6 +172,7 @@ private:
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
     int64_t _lastConnectedTs = 0;
+    int64_t _lastMQTTConnectionAttemptTs = 0;
     int64_t _lastMaintenanceTs = 0;
     int64_t _lastUpdateCheckTs = 0;
     int64_t _lastRssiTs = 0;

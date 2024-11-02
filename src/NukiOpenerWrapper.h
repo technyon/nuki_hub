@@ -107,6 +107,7 @@ private:
     bool _clearAuthData = false;
     bool _disableNonJSON = false;
     bool _checkKeypadCodes = false;
+    bool _pairedAsApp = false;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryConfigCount = 0;
