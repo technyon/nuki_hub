@@ -185,8 +185,9 @@ void NukiWrapper::readSettings()
     _retryDelay = _preferences->getInt(preference_command_retry_delay);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval) * 1000;
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
+    _checkKeypadCodes = _preferences->getBool(preference_keypad_check_code_enabled, false);
     _pairedAsApp = _preferences->getBool(preference_register_as_app, false);
-
+  
     _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
     _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
 
@@ -429,6 +430,10 @@ void NukiWrapper::update()
             Log->println("Clearing Lock auth data");
             _network->clearAuthorizationInfo();
             _clearAuthData = false;
+        }
+        if(_checkKeypadCodes && _invalidCount > 0 && (ts - (120000 * _invalidCount)) > _lastCodeCheck)
+        {
+            _invalidCount--;
         }
     }
 
@@ -875,10 +880,13 @@ void NukiWrapper::updateKeypad(bool retrieved)
         _network->publishKeypad(entries, _maxKeypadCodeCount);
 
         _keypadCodeIds.clear();
+        _keypadCodes.clear();
         _keypadCodeIds.reserve(entries.size());
+        _keypadCodes.reserve(entries.size());
         for(const auto& entry : entries)
         {
             _keypadCodeIds.push_back(entry.codeId);
+            _keypadCodes.push_back(entry.code);
         }
     }
 
@@ -2711,417 +2719,425 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         {
             idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId) != _keypadCodeIds.end();
         }
-
-        Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        int retryCount = 0;
-
-        while(retryCount < _nrOfRetries + 1)
-        {
-            if(strcmp(action, "delete") == 0)
+        
+        if(strcmp(action, "check") == 0) {
+            if(!_preferences->getBool(preference_keypad_check_code_enabled, false))
             {
-                if(idExists)
+                _network->publishKeypadJsonCommandResult("checkingKeypadCodesDisabled");
+                return;
+            }
+
+            if((pow(_invalidCount, 5) + _lastCodeCheck) > espMillis())
+            {
+                _network->publishKeypadJsonCommandResult("checkingCodesBlockedTooManyInvalid");
+                _lastCodeCheck = espMillis();
+                return;
+            }
+
+            _lastCodeCheck = espMillis();
+
+            if(idExists)
+            {
+                auto it1 = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId);
+                int index = it1 - _keypadCodeIds.begin();
+                Log->print(F("Check keypad code: "));
+
+                if(code == _keypadCodes[index])
                 {
-                    result = _nukiLock.deleteKeypadEntry(codeId);
-                    Log->print(F("Delete keypad code: "));
-                    Log->println((int)result);
+                    _invalidCount = 0;
+                    _network->publishKeypadJsonCommandResult("codeValid");
+                    Log->println("Valid");
+                    return;
                 }
                 else
                 {
-                    _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                    _invalidCount++;
+                    _network->publishKeypadJsonCommandResult("codeInvalid");
+                    Log->print("Invalid\nInvalid count: ");
+                    Log->println(_invalidCount);
                     return;
                 }
             }
-            else if(strcmp(action, "add") == 0 || strcmp(action, "update") == 0)
+            else
             {
-                if(name.length() < 1)
-                {
-                    if (strcmp(action, "update") != 0)
+                _invalidCount++;
+                _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                Log->print("Invalid count: ");
+                Log->println(_invalidCount);
+                return;
+            }
+        }
+        else
+        {
+
+            Nuki::CmdResult result = (Nuki::CmdResult)-1;
+            int retryCount = 0;
+
+            while(retryCount < _nrOfRetries + 1)
+            {
+                if(strcmp(action, "delete") == 0) {
+                    if(idExists)
                     {
-                        _network->publishKeypadJsonCommandResult("noNameSet");
+                        result = _nukiLock.deleteKeypadEntry(codeId);
+                        Log->print(F("Delete keypad code: "));
+                        Log->println((int)result);
+                    }
+                    else
+                    {
+                        _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
                         return;
                     }
                 }
-
-                if(code != 12)
+                else if(strcmp(action, "add") == 0 || strcmp(action, "update") == 0)
                 {
-                    String codeStr = json["code"].as<String>();
-                    bool codeValid = code > 100000 && code < 1000000 && (codeStr.indexOf('0') == -1);
-
-                    if (!codeValid)
+                    if(name.length() < 1)
                     {
-                        _network->publishKeypadJsonCommandResult("noValidCodeSet");
-                        return;
-                    }
-                }
-                else if (strcmp(action, "update") != 0)
-                {
-                    _network->publishKeypadJsonCommandResult("noCodeSet");
-                    return;
-                }
-
-                unsigned int allowedFromAr[6];
-                unsigned int allowedUntilAr[6];
-                unsigned int allowedFromTimeAr[2];
-                unsigned int allowedUntilTimeAr[2];
-                uint8_t allowedWeekdaysInt = 0;
-
-                if(timeLimited == 1)
-                {
-                    if(allowedFrom.length() > 0)
-                    {
-                        if(allowedFrom.length() == 19)
+                        if (strcmp(action, "update") != 0)
                         {
-                            allowedFromAr[0] = (uint16_t)allowedFrom.substring(0, 4).toInt();
-                            allowedFromAr[1] = (uint8_t)allowedFrom.substring(5, 7).toInt();
-                            allowedFromAr[2] = (uint8_t)allowedFrom.substring(8, 10).toInt();
-                            allowedFromAr[3] = (uint8_t)allowedFrom.substring(11, 13).toInt();
-                            allowedFromAr[4] = (uint8_t)allowedFrom.substring(14, 16).toInt();
-                            allowedFromAr[5] = (uint8_t)allowedFrom.substring(17, 19).toInt();
+                            _network->publishKeypadJsonCommandResult("noNameSet");
+                            return;
+                        }
+                    }
 
-                            if(allowedFromAr[0] < 2000 || allowedFromAr[0] > 3000 || allowedFromAr[1] < 1 || allowedFromAr[1] > 12 || allowedFromAr[2] < 1 || allowedFromAr[2] > 31 || allowedFromAr[3] < 0 || allowedFromAr[3] > 23 || allowedFromAr[4] < 0 || allowedFromAr[4] > 59 || allowedFromAr[5] < 0 || allowedFromAr[5] > 59)
+                    if(code != 12)
+                    {
+                        String codeStr = json["code"].as<String>();
+                        bool codeValid = code > 100000 && code < 1000000 && (codeStr.indexOf('0') == -1);
+
+                        if (!codeValid)
+                        {
+                            _network->publishKeypadJsonCommandResult("noValidCodeSet");
+                            return;
+                        }
+                    }
+                    else if (strcmp(action, "update") != 0)
+                    {
+                        _network->publishKeypadJsonCommandResult("noCodeSet");
+                        return;
+                    }
+
+                    unsigned int allowedFromAr[6];
+                    unsigned int allowedUntilAr[6];
+                    unsigned int allowedFromTimeAr[2];
+                    unsigned int allowedUntilTimeAr[2];
+                    uint8_t allowedWeekdaysInt = 0;
+
+                    if(timeLimited == 1)
+                    {
+                        if(allowedFrom.length() > 0)
+                        {
+                            if(allowedFrom.length() == 19)
+                            {
+                                allowedFromAr[0] = (uint16_t)allowedFrom.substring(0, 4).toInt();
+                                allowedFromAr[1] = (uint8_t)allowedFrom.substring(5, 7).toInt();
+                                allowedFromAr[2] = (uint8_t)allowedFrom.substring(8, 10).toInt();
+                                allowedFromAr[3] = (uint8_t)allowedFrom.substring(11, 13).toInt();
+                                allowedFromAr[4] = (uint8_t)allowedFrom.substring(14, 16).toInt();
+                                allowedFromAr[5] = (uint8_t)allowedFrom.substring(17, 19).toInt();
+
+                                if(allowedFromAr[0] < 2000 || allowedFromAr[0] > 3000 || allowedFromAr[1] < 1 || allowedFromAr[1] > 12 || allowedFromAr[2] < 1 || allowedFromAr[2] > 31 || allowedFromAr[3] < 0 || allowedFromAr[3] > 23 || allowedFromAr[4] < 0 || allowedFromAr[4] > 59 || allowedFromAr[5] < 0 || allowedFromAr[5] > 59)
+                                {
+                                    _network->publishKeypadJsonCommandResult("invalidAllowedFrom");
+                                    return;
+                                }
+                            }
+                            else
                             {
                                 _network->publishKeypadJsonCommandResult("invalidAllowedFrom");
                                 return;
                             }
                         }
-                        else
-                        {
-                            _network->publishKeypadJsonCommandResult("invalidAllowedFrom");
-                            return;
-                        }
-                    }
 
-                    if(allowedUntil.length() > 0)
-                    {
-                        if(allowedUntil.length() == 19)
+                        if(allowedUntil.length() > 0)
                         {
-                            allowedUntilAr[0] = (uint16_t)allowedUntil.substring(0, 4).toInt();
-                            allowedUntilAr[1] = (uint8_t)allowedUntil.substring(5, 7).toInt();
-                            allowedUntilAr[2] = (uint8_t)allowedUntil.substring(8, 10).toInt();
-                            allowedUntilAr[3] = (uint8_t)allowedUntil.substring(11, 13).toInt();
-                            allowedUntilAr[4] = (uint8_t)allowedUntil.substring(14, 16).toInt();
-                            allowedUntilAr[5] = (uint8_t)allowedUntil.substring(17, 19).toInt();
+                            if(allowedUntil.length() == 19)
+                            {
+                                allowedUntilAr[0] = (uint16_t)allowedUntil.substring(0, 4).toInt();
+                                allowedUntilAr[1] = (uint8_t)allowedUntil.substring(5, 7).toInt();
+                                allowedUntilAr[2] = (uint8_t)allowedUntil.substring(8, 10).toInt();
+                                allowedUntilAr[3] = (uint8_t)allowedUntil.substring(11, 13).toInt();
+                                allowedUntilAr[4] = (uint8_t)allowedUntil.substring(14, 16).toInt();
+                                allowedUntilAr[5] = (uint8_t)allowedUntil.substring(17, 19).toInt();
 
-                            if(allowedUntilAr[0] < 2000 || allowedUntilAr[0] > 3000 || allowedUntilAr[1] < 1 || allowedUntilAr[1] > 12 || allowedUntilAr[2] < 1 || allowedUntilAr[2] > 31 || allowedUntilAr[3] < 0 || allowedUntilAr[3] > 23 || allowedUntilAr[4] < 0 || allowedUntilAr[4] > 59 || allowedUntilAr[5] < 0 || allowedUntilAr[5] > 59)
+                                if(allowedUntilAr[0] < 2000 || allowedUntilAr[0] > 3000 || allowedUntilAr[1] < 1 || allowedUntilAr[1] > 12 || allowedUntilAr[2] < 1 || allowedUntilAr[2] > 31 || allowedUntilAr[3] < 0 || allowedUntilAr[3] > 23 || allowedUntilAr[4] < 0 || allowedUntilAr[4] > 59 || allowedUntilAr[5] < 0 || allowedUntilAr[5] > 59)
+                                {
+                                    _network->publishKeypadJsonCommandResult("invalidAllowedUntil");
+                                    return;
+                                }
+                            }
+                            else
                             {
                                 _network->publishKeypadJsonCommandResult("invalidAllowedUntil");
                                 return;
                             }
                         }
-                        else
-                        {
-                            _network->publishKeypadJsonCommandResult("invalidAllowedUntil");
-                            return;
-                        }
-                    }
 
-                    if(allowedFromTime.length() > 0)
-                    {
-                        if(allowedFromTime.length() == 5)
+                        if(allowedFromTime.length() > 0)
                         {
-                            allowedFromTimeAr[0] = (uint8_t)allowedFromTime.substring(0, 2).toInt();
-                            allowedFromTimeAr[1] = (uint8_t)allowedFromTime.substring(3, 5).toInt();
+                            if(allowedFromTime.length() == 5)
+                            {
+                                allowedFromTimeAr[0] = (uint8_t)allowedFromTime.substring(0, 2).toInt();
+                                allowedFromTimeAr[1] = (uint8_t)allowedFromTime.substring(3, 5).toInt();
 
-                            if(allowedFromTimeAr[0] < 0 || allowedFromTimeAr[0] > 23 || allowedFromTimeAr[1] < 0 || allowedFromTimeAr[1] > 59)
+                                if(allowedFromTimeAr[0] < 0 || allowedFromTimeAr[0] > 23 || allowedFromTimeAr[1] < 0 || allowedFromTimeAr[1] > 59)
+                                {
+                                    _network->publishKeypadJsonCommandResult("invalidAllowedFromTime");
+                                    return;
+                                }
+                            }
+                            else
                             {
                                 _network->publishKeypadJsonCommandResult("invalidAllowedFromTime");
                                 return;
                             }
                         }
-                        else
-                        {
-                            _network->publishKeypadJsonCommandResult("invalidAllowedFromTime");
-                            return;
-                        }
-                    }
 
-                    if(allowedUntilTime.length() > 0)
-                    {
-                        if(allowedUntilTime.length() == 5)
+                        if(allowedUntilTime.length() > 0)
                         {
-                            allowedUntilTimeAr[0] = (uint8_t)allowedUntilTime.substring(0, 2).toInt();
-                            allowedUntilTimeAr[1] = (uint8_t)allowedUntilTime.substring(3, 5).toInt();
+                            if(allowedUntilTime.length() == 5)
+                            {
+                                allowedUntilTimeAr[0] = (uint8_t)allowedUntilTime.substring(0, 2).toInt();
+                                allowedUntilTimeAr[1] = (uint8_t)allowedUntilTime.substring(3, 5).toInt();
 
-                            if(allowedUntilTimeAr[0] < 0 || allowedUntilTimeAr[0] > 23 || allowedUntilTimeAr[1] < 0 || allowedUntilTimeAr[1] > 59)
+                                if(allowedUntilTimeAr[0] < 0 || allowedUntilTimeAr[0] > 23 || allowedUntilTimeAr[1] < 0 || allowedUntilTimeAr[1] > 59)
+                                {
+                                    _network->publishKeypadJsonCommandResult("invalidAllowedUntilTime");
+                                    return;
+                                }
+                            }
+                            else
                             {
                                 _network->publishKeypadJsonCommandResult("invalidAllowedUntilTime");
                                 return;
                             }
                         }
-                        else
+
+                        if(allowedWeekdays.indexOf("mon") >= 0) allowedWeekdaysInt += 64;
+                        if(allowedWeekdays.indexOf("tue") >= 0) allowedWeekdaysInt += 32;
+                        if(allowedWeekdays.indexOf("wed") >= 0) allowedWeekdaysInt += 16;
+                        if(allowedWeekdays.indexOf("thu") >= 0) allowedWeekdaysInt += 8;
+                        if(allowedWeekdays.indexOf("fri") >= 0) allowedWeekdaysInt += 4;
+                        if(allowedWeekdays.indexOf("sat") >= 0) allowedWeekdaysInt += 2;
+                        if(allowedWeekdays.indexOf("sun") >= 0) allowedWeekdaysInt += 1;
+                    }
+
+                    if(strcmp(action, "add") == 0)
+                    {
+                        NukiLock::NewKeypadEntry entry;
+                        memset(&entry, 0, sizeof(entry));
+                        size_t nameLen = name.length();
+                        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+                        entry.code = code;
+                        entry.timeLimited = timeLimited == 1 ? 1 : 0;
+
+                        if(allowedFrom.length() > 0)
                         {
-                            _network->publishKeypadJsonCommandResult("invalidAllowedUntilTime");
+                            entry.allowedFromYear = allowedFromAr[0];
+                            entry.allowedFromMonth = allowedFromAr[1];
+                            entry.allowedFromDay = allowedFromAr[2];
+                            entry.allowedFromHour = allowedFromAr[3];
+                            entry.allowedFromMin = allowedFromAr[4];
+                            entry.allowedFromSec = allowedFromAr[5];
+                        }
+
+                        if(allowedUntil.length() > 0)
+                        {
+                            entry.allowedUntilYear = allowedUntilAr[0];
+                            entry.allowedUntilMonth = allowedUntilAr[1];
+                            entry.allowedUntilDay = allowedUntilAr[2];
+                            entry.allowedUntilHour = allowedUntilAr[3];
+                            entry.allowedUntilMin = allowedUntilAr[4];
+                            entry.allowedUntilSec = allowedUntilAr[5];
+                        }
+
+                        entry.allowedWeekdays = allowedWeekdaysInt;
+
+                        if(allowedFromTime.length() > 0)
+                        {
+                            entry.allowedFromTimeHour = allowedFromTimeAr[0];
+                            entry.allowedFromTimeMin = allowedFromTimeAr[1];
+                        }
+
+                        if(allowedUntilTime.length() > 0)
+                        {
+                            entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
+                            entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
+                        }
+
+                        result = _nukiLock.addKeypadEntry(entry);
+                        Log->print(F("Add keypad code: "));
+                        Log->println((int)result);
+                    }
+                    else if (strcmp(action, "update") == 0)
+                    {
+                        if(!codeId)
+                        {
+                            _network->publishKeypadJsonCommandResult("noCodeIdSet");
                             return;
                         }
-                    }
 
-                    if(allowedWeekdays.indexOf("mon") >= 0)
-                    {
-                        allowedWeekdaysInt += 64;
-                    }
-                    if(allowedWeekdays.indexOf("tue") >= 0)
-                    {
-                        allowedWeekdaysInt += 32;
-                    }
-                    if(allowedWeekdays.indexOf("wed") >= 0)
-                    {
-                        allowedWeekdaysInt += 16;
-                    }
-                    if(allowedWeekdays.indexOf("thu") >= 0)
-                    {
-                        allowedWeekdaysInt += 8;
-                    }
-                    if(allowedWeekdays.indexOf("fri") >= 0)
-                    {
-                        allowedWeekdaysInt += 4;
-                    }
-                    if(allowedWeekdays.indexOf("sat") >= 0)
-                    {
-                        allowedWeekdaysInt += 2;
-                    }
-                    if(allowedWeekdays.indexOf("sun") >= 0)
-                    {
-                        allowedWeekdaysInt += 1;
-                    }
-                }
-
-                if(strcmp(action, "add") == 0)
-                {
-                    NukiLock::NewKeypadEntry entry;
-                    memset(&entry, 0, sizeof(entry));
-                    size_t nameLen = name.length();
-                    memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
-                    entry.code = code;
-                    entry.timeLimited = timeLimited == 1 ? 1 : 0;
-
-                    if(allowedFrom.length() > 0)
-                    {
-                        entry.allowedFromYear = allowedFromAr[0];
-                        entry.allowedFromMonth = allowedFromAr[1];
-                        entry.allowedFromDay = allowedFromAr[2];
-                        entry.allowedFromHour = allowedFromAr[3];
-                        entry.allowedFromMin = allowedFromAr[4];
-                        entry.allowedFromSec = allowedFromAr[5];
-                    }
-
-                    if(allowedUntil.length() > 0)
-                    {
-                        entry.allowedUntilYear = allowedUntilAr[0];
-                        entry.allowedUntilMonth = allowedUntilAr[1];
-                        entry.allowedUntilDay = allowedUntilAr[2];
-                        entry.allowedUntilHour = allowedUntilAr[3];
-                        entry.allowedUntilMin = allowedUntilAr[4];
-                        entry.allowedUntilSec = allowedUntilAr[5];
-                    }
-
-                    entry.allowedWeekdays = allowedWeekdaysInt;
-
-                    if(allowedFromTime.length() > 0)
-                    {
-                        entry.allowedFromTimeHour = allowedFromTimeAr[0];
-                        entry.allowedFromTimeMin = allowedFromTimeAr[1];
-                    }
-
-                    if(allowedUntilTime.length() > 0)
-                    {
-                        entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
-                        entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
-                    }
-
-                    result = _nukiLock.addKeypadEntry(entry);
-                    Log->print(F("Add keypad code: "));
-                    Log->println((int)result);
-                }
-                else if (strcmp(action, "update") == 0)
-                {
-                    if(!codeId)
-                    {
-                        _network->publishKeypadJsonCommandResult("noCodeIdSet");
-                        return;
-                    }
-
-                    if(!idExists)
-                    {
-                        _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
-                        return;
-                    }
-
-                    Nuki::CmdResult resultKp = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-                    bool foundExisting = false;
-
-                    if(resultKp == Nuki::CmdResult::Success)
-                    {
-                        delay(250);
-                        std::list<NukiLock::KeypadEntry> entries;
-                        _nukiLock.getKeypadEntries(&entries);
-
-                        for(const auto& entry : entries)
+                        if(!idExists)
                         {
-                            if (codeId != entry.codeId)
-                            {
-                                continue;
-                            }
-                            else
-                            {
-                                foundExisting = true;
-                            }
-
-                            if(name.length() < 1)
-                            {
-                                memset(oldName, 0, sizeof(oldName));
-                                memcpy(oldName, entry.name, sizeof(entry.name));
-                            }
-                            if(code == 12)
-                            {
-                                code = entry.code;
-                            }
-                            if(enabled == 2)
-                            {
-                                enabled = entry.enabled;
-                            }
-                            if(timeLimited == 2)
-                            {
-                                timeLimited = entry.timeLimited;
-                            }
-                            if(allowedFrom.length() < 1)
-                            {
-                                allowedFrom = "old";
-                                allowedFromAr[0] = entry.allowedFromYear;
-                                allowedFromAr[1] = entry.allowedFromMonth;
-                                allowedFromAr[2] = entry.allowedFromDay;
-                                allowedFromAr[3] = entry.allowedFromHour;
-                                allowedFromAr[4] = entry.allowedFromMin;
-                                allowedFromAr[5] = entry.allowedFromSec;
-                            }
-                            if(allowedUntil.length() < 1)
-                            {
-                                allowedUntil = "old";
-                                allowedUntilAr[0] = entry.allowedUntilYear;
-                                allowedUntilAr[1] = entry.allowedUntilMonth;
-                                allowedUntilAr[2] = entry.allowedUntilDay;
-                                allowedUntilAr[3] = entry.allowedUntilHour;
-                                allowedUntilAr[4] = entry.allowedUntilMin;
-                                allowedUntilAr[5] = entry.allowedUntilSec;
-                            }
-                            if(allowedWeekdays.length() < 1)
-                            {
-                                allowedWeekdaysInt = entry.allowedWeekdays;
-                            }
-                            if(allowedFromTime.length() < 1)
-                            {
-                                allowedFromTime = "old";
-                                allowedFromTimeAr[0] = entry.allowedFromTimeHour;
-                                allowedFromTimeAr[1] = entry.allowedFromTimeMin;
-                            }
-
-                            if(allowedUntilTime.length() < 1)
-                            {
-                                allowedUntilTime = "old";
-                                allowedUntilTimeAr[0] = entry.allowedUntilTimeHour;
-                                allowedUntilTimeAr[1] = entry.allowedUntilTimeMin;
-                            }
+                            _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                            return;
                         }
 
-                        if(!foundExisting)
+                        Nuki::CmdResult resultKp = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+                        bool foundExisting = false;
+
+                        if(resultKp == Nuki::CmdResult::Success)
+                        {
+                            delay(5000);
+                            std::list<NukiLock::KeypadEntry> entries;
+                            _nukiLock.getKeypadEntries(&entries);
+
+                            for(const auto& entry : entries)
+                            {
+                                if (codeId != entry.codeId) continue;
+                                else foundExisting = true;
+
+                                if(name.length() < 1)
+                                {
+                                    memset(oldName, 0, sizeof(oldName));
+                                    memcpy(oldName, entry.name, sizeof(entry.name));
+                                }
+                                if(code == 12) code = entry.code;
+                                if(enabled == 2) enabled = entry.enabled;
+                                if(timeLimited == 2) timeLimited = entry.timeLimited;
+                                if(allowedFrom.length() < 1)
+                                {
+                                    allowedFrom = "old";
+                                    allowedFromAr[0] = entry.allowedFromYear;
+                                    allowedFromAr[1] = entry.allowedFromMonth;
+                                    allowedFromAr[2] = entry.allowedFromDay;
+                                    allowedFromAr[3] = entry.allowedFromHour;
+                                    allowedFromAr[4] = entry.allowedFromMin;
+                                    allowedFromAr[5] = entry.allowedFromSec;
+                                }
+                                if(allowedUntil.length() < 1)
+                                {
+                                    allowedUntil = "old";
+                                    allowedUntilAr[0] = entry.allowedUntilYear;
+                                    allowedUntilAr[1] = entry.allowedUntilMonth;
+                                    allowedUntilAr[2] = entry.allowedUntilDay;
+                                    allowedUntilAr[3] = entry.allowedUntilHour;
+                                    allowedUntilAr[4] = entry.allowedUntilMin;
+                                    allowedUntilAr[5] = entry.allowedUntilSec;
+                                }
+                                if(allowedWeekdays.length() < 1) allowedWeekdaysInt = entry.allowedWeekdays;
+                                if(allowedFromTime.length() < 1)
+                                {
+                                    allowedFromTime = "old";
+                                    allowedFromTimeAr[0] = entry.allowedFromTimeHour;
+                                    allowedFromTimeAr[1] = entry.allowedFromTimeMin;
+                                }
+
+                                if(allowedUntilTime.length() < 1)
+                                {
+                                    allowedUntilTime = "old";
+                                    allowedUntilTimeAr[0] = entry.allowedUntilTimeHour;
+                                    allowedUntilTimeAr[1] = entry.allowedUntilTimeMin;
+                                }
+
+                            }
+
+                            if(!foundExisting)
+                            {
+                                _network->publishKeypadJsonCommandResult("failedToRetrieveExistingKeypadEntry");
+                                return;
+                            }
+                        }
+                        else
                         {
                             _network->publishKeypadJsonCommandResult("failedToRetrieveExistingKeypadEntry");
                             return;
                         }
-                    }
-                    else
-                    {
-                        _network->publishKeypadJsonCommandResult("failedToRetrieveExistingKeypadEntry");
-                        return;
-                    }
 
-                    NukiLock::UpdatedKeypadEntry entry;
+                        NukiLock::UpdatedKeypadEntry entry;
 
-                    memset(&entry, 0, sizeof(entry));
-                    entry.codeId = codeId;
-                    entry.code = code;
+                        memset(&entry, 0, sizeof(entry));
+                        entry.codeId = codeId;
+                        entry.code = code;
 
-                    if(name.length() < 1)
-                    {
-                        size_t nameLen = strlen(oldName);
-                        memcpy(&entry.name, oldName, nameLen > 20 ? 20 : nameLen);
-                    }
-                    else
-                    {
-                        size_t nameLen = name.length();
-                        memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
-                    }
-                    entry.enabled = enabled;
-                    entry.timeLimited = timeLimited;
-
-                    if(enabled == 1)
-                    {
-                        if(timeLimited == 1)
+                        if(name.length() < 1)
                         {
-                            if(allowedFrom.length() > 0)
-                            {
-                                entry.allowedFromYear = allowedFromAr[0];
-                                entry.allowedFromMonth = allowedFromAr[1];
-                                entry.allowedFromDay = allowedFromAr[2];
-                                entry.allowedFromHour = allowedFromAr[3];
-                                entry.allowedFromMin = allowedFromAr[4];
-                                entry.allowedFromSec = allowedFromAr[5];
-                            }
+                            size_t nameLen = strlen(oldName);
+                            memcpy(&entry.name, oldName, nameLen > 20 ? 20 : nameLen);
+                        }
+                        else
+                        {
+                            size_t nameLen = name.length();
+                            memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
+                        }
+                        entry.enabled = enabled;
+                        entry.timeLimited = timeLimited;
 
-                            if(allowedUntil.length() > 0)
+                        if(enabled == 1)
+                        {
+                            if(timeLimited == 1)
                             {
-                                entry.allowedUntilYear = allowedUntilAr[0];
-                                entry.allowedUntilMonth = allowedUntilAr[1];
-                                entry.allowedUntilDay = allowedUntilAr[2];
-                                entry.allowedUntilHour = allowedUntilAr[3];
-                                entry.allowedUntilMin = allowedUntilAr[4];
-                                entry.allowedUntilSec = allowedUntilAr[5];
-                            }
+                                if(allowedFrom.length() > 0)
+                                {
+                                    entry.allowedFromYear = allowedFromAr[0];
+                                    entry.allowedFromMonth = allowedFromAr[1];
+                                    entry.allowedFromDay = allowedFromAr[2];
+                                    entry.allowedFromHour = allowedFromAr[3];
+                                    entry.allowedFromMin = allowedFromAr[4];
+                                    entry.allowedFromSec = allowedFromAr[5];
+                                }
 
-                            entry.allowedWeekdays = allowedWeekdaysInt;
+                                if(allowedUntil.length() > 0)
+                                {
+                                    entry.allowedUntilYear = allowedUntilAr[0];
+                                    entry.allowedUntilMonth = allowedUntilAr[1];
+                                    entry.allowedUntilDay = allowedUntilAr[2];
+                                    entry.allowedUntilHour = allowedUntilAr[3];
+                                    entry.allowedUntilMin = allowedUntilAr[4];
+                                    entry.allowedUntilSec = allowedUntilAr[5];
+                                }
 
-                            if(allowedFromTime.length() > 0)
-                            {
-                                entry.allowedFromTimeHour = allowedFromTimeAr[0];
-                                entry.allowedFromTimeMin = allowedFromTimeAr[1];
-                            }
+                                entry.allowedWeekdays = allowedWeekdaysInt;
 
-                            if(allowedUntilTime.length() > 0)
-                            {
-                                entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
-                                entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
+                                if(allowedFromTime.length() > 0)
+                                {
+                                    entry.allowedFromTimeHour = allowedFromTimeAr[0];
+                                    entry.allowedFromTimeMin = allowedFromTimeAr[1];
+                                }
+
+                                if(allowedUntilTime.length() > 0)
+                                {
+                                    entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
+                                    entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
+                                }
                             }
                         }
+
+                        result = _nukiLock.updateKeypadEntry(entry);
+                        Log->print(F("Update keypad code: "));
+                        Log->println((int)result);
                     }
-
-                    result = _nukiLock.updateKeypadEntry(entry);
-                    Log->print(F("Update keypad code: "));
-                    Log->println((int)result);
                 }
-            }
-            else
-            {
-                _network->publishKeypadJsonCommandResult("invalidAction");
-                return;
+                else
+                {
+                    _network->publishKeypadJsonCommandResult("invalidAction");
+                    return;
+                }
+
+                if(result != Nuki::CmdResult::Success) {
+                    ++retryCount;
+                }
+                else break;
             }
 
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            updateKeypad(false);
 
-        updateKeypad(false);
-
-        if((int)result != -1)
-        {
-            char resultStr[15];
-            memset(&resultStr, 0, sizeof(resultStr));
-            NukiLock::cmdResultToString(result, resultStr);
-            _network->publishKeypadJsonCommandResult(resultStr);
+            if((int)result != -1)
+            {
+                char resultStr[15];
+                memset(&resultStr, 0, sizeof(resultStr));
+                NukiLock::cmdResultToString(result, resultStr);
+                _network->publishKeypadJsonCommandResult(resultStr);
+            }
         }
     }
     else
@@ -3316,7 +3332,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
-                        delay(250);
+                        delay(5000);
                         std::list<NukiLock::TimeControlEntry> timeControlEntries;
                         _nukiLock.getTimeControlEntries(&timeControlEntries);
 
@@ -3446,7 +3462,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
 
     char oldName[33];
     const char *action = json["action"].as<const char*>();
-    uint16_t authId = json["authId"].as<unsigned int>();
+    uint32_t authId = json["authId"].as<unsigned int>();
     //uint8_t idType = json["idType"].as<unsigned int>();
     //unsigned char secretKeyK[32] = {0x00};
     uint8_t remoteAllowed;
@@ -3771,11 +3787,11 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     Nuki::CmdResult resultAuth = _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
-                    delay(250);
                     bool foundExisting = false;
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
+                        delay(5000);
                         std::list<NukiLock::AuthorizationEntry> entries;
                         _nukiLock.getAuthorizationEntries(&entries);
 

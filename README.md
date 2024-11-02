@@ -245,6 +245,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Publish keypad entries information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
 - Also publish keypad codes (Only available when a Keypad is detected): Enable to publish the actual keypad codes through MQTT, note that is could be considered a security risk
 - Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
+- Allow checking if keypad codes are valid (Only available when a Keypad is detected): Enable to allow checking if a given codeId and code combination is valid through MQTT, note that is could be considered a security risk
 - Publish timecontrol information: Enable to publish information about timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol)" section of this README
 - Add, modify and delete timecontrol entries: Enable to allow configuration of timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol)" section of this README
 - Publish authorization information: Enable to publish information about authorization entries through MQTT, see the "[Authorization](#authorization)" section of this README
@@ -588,19 +589,19 @@ By default a maximum of 10 entries are published.
 
 To change Nuki Lock/Opener keypad settings set the `[lock/opener]/keypad/actionJson` topic to a JSON formatted value containing the following nodes.
 
-| Node             | Delete   | Add      | Update   | Usage                                                                                                            | Possible values                        |
-|------------------|----------|----------|----------|------------------------------------------------------------------------------------------------------------------|----------------------------------------|
-| action           | Required | Required | Required | The action to execute                                                                                            | "delete", "add", "update"              |
-| codeId           | Required | Not used | Required | The code ID of the existing code to delete or update                                                             | Integer                                |
-| code             | Not used | Required | Optional | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
-| enabled          | Not used | Not used | Optional | Enable or disable the code, always enabled on add                                                                | 1 = enabled, 0 = disabled              |
-| name             | Not used | Required | Optional | The name of the code to create or update                                                                         | String, max 20 chars                   |
-| timeLimited      | Not used | Optional | Optional | If this authorization is restricted to access only at certain times, requires enabled = 1                        | 1 = enabled, 0 = disabled              |
-| allowedFrom      | Not used | Optional | Optional | The start timestamp from which access should be allowed (requires enabled = 1 and timeLimited = 1)               | "YYYY-MM-DD HH:MM:SS"                  |
-| allowedUntil     | Not used | Optional | Optional | The end timestamp until access should be allowed (requires enabled = 1 and timeLimited = 1)                      | "YYYY-MM-DD HH:MM:SS"                  |
-| allowedWeekdays  | Not used | Optional | Optional | Weekdays on which access should be allowed (requires enabled = 1 and timeLimited = 1)     | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun"|
-| allowedFromTime  | Not used | Optional | Optional | The start time per day from which access should be allowed (requires enabled = 1 and timeLimited = 1)            | "HH:MM"                                |
-| allowedUntilTime | Not used | Optional | Optional | The end time per day until access should be allowed (requires enabled = 1 and timeLimited = 1)                   | "HH:MM"                                |
+| Node             | Delete   | Add      | Update   |  Check   | Usage                                                                                                            | Possible values                        |
+|------------------|----------|----------|----------|----------|------------------------------------------------------------------------------------------------------------------|----------------------------------------|
+| action           | Required | Required | Required | Required | The action to execute                                                                                            | "delete", "add", "update", "check"     |
+| codeId           | Required | Not used | Required | Required | The code ID of the existing code to delete or update                                                             | Integer                                |
+| code             | Not used | Required | Optional | Required | The code to create or update                                                                       | 6-digit Integer without zero's, can't start with "12"|
+| enabled          | Not used | Not used | Optional | Not used | Enable or disable the code, always enabled on add                                                                | 1 = enabled, 0 = disabled              |
+| name             | Not used | Required | Optional | Not used | The name of the code to create or update                                                                         | String, max 20 chars                   |
+| timeLimited      | Not used | Optional | Optional | Not used | If this authorization is restricted to access only at certain times, requires enabled = 1                        | 1 = enabled, 0 = disabled              |
+| allowedFrom      | Not used | Optional | Optional | Not used | The start timestamp from which access should be allowed (requires enabled = 1 and timeLimited = 1)               | "YYYY-MM-DD HH:MM:SS"                  |
+| allowedUntil     | Not used | Optional | Optional | Not used | The end timestamp until access should be allowed (requires enabled = 1 and timeLimited = 1)                      | "YYYY-MM-DD HH:MM:SS"                  |
+| allowedWeekdays  | Not used | Optional | Optional | Not used | Weekdays on which access should be allowed (requires enabled = 1 and timeLimited = 1)     | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun"|
+| allowedFromTime  | Not used | Optional | Optional | Not used | The start time per day from which access should be allowed (requires enabled = 1 and timeLimited = 1)            | "HH:MM"                                |
+| allowedUntilTime | Not used | Optional | Optional | Not used | The end time per day until access should be allowed (requires enabled = 1 and timeLimited = 1)                   | "HH:MM"                                |
 
 Examples:
 - Delete: `{ "action": "delete", "codeId": "1234" }`
@@ -609,7 +610,7 @@ Examples:
 
 ### Result of attempted keypad code changes
 
-The result of the last configuration change action will be published to the `[lock/opener]/configuration/commandResultJson` MQTT topic.<br>
+The result of the last keypad change action will be published to the `[lock/opener]/configuration/commandResultJson` MQTT topic.<br>
 Possible values are "noValidPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
 
 ## Keypad control (alternative, optional)
@@ -664,7 +665,7 @@ To change Nuki Lock/Opener timecontrol settings set the `[lock/opener]/timecontr
 | enabled          | Not used | Not used | Optional | Enable or disable the entry, always enabled on add                                       | 1 = enabled, 0 = disabled                                      |
 | weekdays         | Not used | Optional | Optional | Weekdays on which the chosen lock action should be exectued (requires enabled = 1)       | Array of days: "mon", "tue", "wed", "thu" , "fri" "sat", "sun" |
 | time             | Not used | Required | Optional | The time on which the chosen lock action should be executed (requires enabled = 1)       | "HH:MM"                                                        |
-| lockAction       | Not used | Required | Optional | The lock action that should be executed on the chosen weekdays at the chosen time (requires enabled = 1) | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM                                                            |
+| lockAction       | Not used | Required | Optional | The lock action that should be executed on the chosen weekdays at the chosen time (requires enabled = 1) | For the Nuki lock: "Unlock", "Lock", "Unlatch", "LockNgo", "LockNgoUnlatch", "FullLock". For the Nuki Opener: "ActivateRTO", "DeactivateRTO", "ElectricStrikeActuation", "ActivateCM", "DeactivateCM |
 
 Examples:
 - Delete: `{ "action": "delete", "entryId": "1234" }`

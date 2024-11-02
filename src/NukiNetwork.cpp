@@ -607,12 +607,12 @@ bool NukiNetwork::reconnect()
 {
     _mqttConnectionState = 0;
 
-    while (!_device->mqttConnected() && (esp_timer_get_time() / 1000) > _nextReconnect)
+    while (!_device->mqttConnected() && espMillis() > _nextReconnect)
     {
         if(strcmp(_mqttBrokerAddr, "") == 0)
         {
             Log->println(F("MQTT Broker not configured, aborting connection attempt."));
-            _nextReconnect = (esp_timer_get_time() / 1000) + 5000;
+            _nextReconnect = espMillis() + 5000;
             return false;
         }
 
@@ -634,9 +634,9 @@ bool NukiNetwork::reconnect()
         _device->mqttSetServer(_mqttBrokerAddr, _mqttPort);
         _device->mqttConnect();
 
-        int64_t timeout = (esp_timer_get_time() / 1000) + 60000;
+        int64_t timeout = espMillis() + 60000;
 
-        while(!_connectReplyReceived && (esp_timer_get_time() / 1000) < timeout)
+        while(!_connectReplyReceived && espMillis() < timeout)
         {
             delay(50);
             _device->update();
@@ -696,7 +696,7 @@ bool NukiNetwork::reconnect()
             Log->print(F("MQTT connect failed, rc="));
             _device->printError();
             _mqttConnectionState = 0;
-            _nextReconnect = (esp_timer_get_time() / 1000) + 5000;
+            _nextReconnect = espMillis() + 5000;
             //_device->mqttDisconnect(true);
         }
     }
