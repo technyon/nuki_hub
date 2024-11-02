@@ -431,7 +431,7 @@ void NukiWrapper::update()
             _network->clearAuthorizationInfo();
             _clearAuthData = false;
         }
-        if(_checkKeypadCodes && _invalidCount > 0 && ts - 120000 < _lastCodeCheck)
+        if(_checkKeypadCodes && _invalidCount > 0 && (ts - (120000 * _invalidCount)) > _lastCodeCheck)
         {
             _invalidCount--;
         }
@@ -2727,14 +2727,14 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                 return;
             }
 
-            if(pow(_invalidCount, 5) + _lastCodeCheck > (esp_timer_get_time() / 1000))
+            if((pow(_invalidCount, 5) + _lastCodeCheck) > espMillis())
             {
                 _network->publishKeypadJsonCommandResult("checkingCodesBlockedTooManyInvalid");
-                _lastCodeCheck = (esp_timer_get_time() / 1000);
+                _lastCodeCheck = espMillis();
                 return;
             }
 
-            _lastCodeCheck = (esp_timer_get_time() / 1000);
+            _lastCodeCheck = espMillis();
 
             if(idExists)
             {
@@ -2753,7 +2753,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                 {
                     _invalidCount++;
                     _network->publishKeypadJsonCommandResult("codeInvalid");
-                    Log->println("Invalid");
+                    Log->print("Invalid\nInvalid count: ");
+                    Log->println(_invalidCount);
                     return;
                 }
             }
@@ -2761,6 +2762,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             {
                 _invalidCount++;
                 _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                Log->print("Invalid count: ");
+                Log->println(_invalidCount);
                 return;
             }
         }
@@ -2846,6 +2849,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
 
                         if(allowedUntil.length() > 0)
+                        {
                             if(allowedUntil.length() == 19)
                             {
                                 allowedUntilAr[0] = (uint16_t)allowedUntil.substring(0, 4).toInt();
@@ -2983,7 +2987,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
                         if(resultKp == Nuki::CmdResult::Success)
                         {
-                            delay(250);
+                            delay(5000);
                             std::list<NukiLock::KeypadEntry> entries;
                             _nukiLock.getKeypadEntries(&entries);
 
@@ -3328,7 +3332,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
-                        delay(250);
+                        delay(5000);
                         std::list<NukiLock::TimeControlEntry> timeControlEntries;
                         _nukiLock.getTimeControlEntries(&timeControlEntries);
 
@@ -3458,7 +3462,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
 
     char oldName[33];
     const char *action = json["action"].as<const char*>();
-    uint16_t authId = json["authId"].as<unsigned int>();
+    uint32_t authId = json["authId"].as<unsigned int>();
     //uint8_t idType = json["idType"].as<unsigned int>();
     //unsigned char secretKeyK[32] = {0x00};
     uint8_t remoteAllowed;
@@ -3783,11 +3787,11 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     Nuki::CmdResult resultAuth = _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
-                    delay(250);
                     bool foundExisting = false;
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
+                        delay(5000);
                         std::list<NukiLock::AuthorizationEntry> entries;
                         _nukiLock.getAuthorizationEntries(&entries);
 

@@ -3389,15 +3389,15 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
     PsychicStreamResponse response(request, "text/plain");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
+    response.print("<form id=\"credfrm\" class=\"adapt\" onsubmit=\"return testcreds();\" method=\"post\" action=\"savecfg\">");
     response.print("<h3>Credentials</h3>");
     response.print("<table>");
-    printInputField(&response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "", false, true);
-    printInputField(&response, "CREDPASS", "Password", "*", 30, "", true, true);
-    printInputField(&response, "CREDPASSRE", "Retype password", "*", 30, "", true);
+    printInputField(&response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "id=\"inputuser\"", false, true);
+    printInputField(&response, "CREDPASS", "Password", "*", 30, "id=\"inputpass\"", true, true);
+    printInputField(&response, "CREDPASSRE", "Retype password", "*", 30, "id=\"inputpass2\"", true);
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var pattern = /^[ -~]*$/; if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
+    response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var input_pass2 = document.getElementById(\"inputpass2\").value; var pattern = /^[ -~]*$/; if(input_user == '#' || input_user == '') { return true; } if (input_pass != input_pass2) { alert('Passwords do not match'); return false;} if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
     if(_nuki != nullptr)
     {
         response.print("<br><br><form class=\"adapt\" method=\"post\" action=\"savecfg\">");

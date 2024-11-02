@@ -278,8 +278,8 @@ void NukiOpenerWrapper::update()
             updateKeypad(false);
         }
     }
-    
-    if(_checkKeypadCodes && _invalidCount > 0 && ts - 120000 < _lastCodeCheck)
+
+    if(_checkKeypadCodes && _invalidCount > 0 && (ts - (120000 * _invalidCount)) > _lastCodeCheck)
     {
         _invalidCount--;
     }
@@ -893,8 +893,8 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
     {
         Log->println(F("No valid Nuki Lock PIN set"));
         return;
-    }  
-  
+    }
+
     if(!_preferences->getBool(preference_auth_info_enabled))
     {
         return;
@@ -2613,14 +2613,14 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 return;
             }
 
-            if(pow(_invalidCount, 5) + _lastCodeCheck > (esp_timer_get_time() / 1000))
+            if((pow(_invalidCount, 5) + _lastCodeCheck) > espMillis())
             {
                 _network->publishKeypadJsonCommandResult("checkingCodesBlockedTooManyInvalid");
-                _lastCodeCheck = (esp_timer_get_time() / 1000);
+                _lastCodeCheck = espMillis();
                 return;
             }
 
-            _lastCodeCheck = (esp_timer_get_time() / 1000);
+            _lastCodeCheck = espMillis();
 
             if(idExists)
             {
@@ -2639,7 +2639,8 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 {
                     _invalidCount++;
                     _network->publishKeypadJsonCommandResult("codeInvalid");
-                    Log->println("Invalid");
+                    Log->print("Invalid\nInvalid count: ");
+                    Log->println(_invalidCount);
                     return;
                 }
             }
@@ -2647,12 +2648,13 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             {
                 _invalidCount++;
                 _network->publishKeypadJsonCommandResult("noExistingCodeIdSet");
+                Log->print("Invalid count: ");
+                Log->println(_invalidCount);
                 return;
             }
         }
         else
         {
-
             Nuki::CmdResult result = (Nuki::CmdResult)-1;
             int retryCount = 0;
 
@@ -2732,6 +2734,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
 
                         if(allowedUntil.length() > 0)
+                        {
                             if(allowedUntil.length() == 19)
                             {
                                 allowedUntilAr[0] = (uint16_t)allowedUntil.substring(0, 4).toInt();
@@ -2869,7 +2872,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
                         if(resultKp == Nuki::CmdResult::Success)
                         {
-                            delay(250);
+                            delay(5000);
                             std::list<NukiOpener::KeypadEntry> entries;
                             _nukiOpener.getKeypadEntries(&entries);
 
@@ -3213,7 +3216,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
-                        delay(250);
+                        delay(5000);
                         std::list<NukiOpener::TimeControlEntry> timeControlEntries;
                         _nukiOpener.getTimeControlEntries(&timeControlEntries);
 
@@ -3342,7 +3345,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
     char oldName[33];
     const char *action = json["action"].as<const char*>();
-    uint16_t authId = json["authId"].as<unsigned int>();
+    uint32_t authId = json["authId"].as<unsigned int>();
     //uint8_t idType = json["idType"].as<unsigned int>();
     //unsigned char secretKeyK[32] = {0x00};
     uint8_t remoteAllowed;
@@ -3669,7 +3672,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
-                        delay(250);
+                        delay(5000);
                         std::list<NukiOpener::AuthorizationEntry> entries;
                         _nukiOpener.getAuthorizationEntries(&entries);
 
