@@ -61,6 +61,12 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
     {
         _mqttConnectionStateTopic[i] = connectionStateTopic.charAt(i);
     }
+
+    if(_preferences->getString(preference_mqtt_hass_discovery, "") != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
+    {
+        _preferences->putBool(preference_mqtt_hass_enabled, true);
+    }
+
 #endif
 
     setupDevice();

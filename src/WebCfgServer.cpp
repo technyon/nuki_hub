@@ -1726,6 +1726,33 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 //configChanged = true;
             }
         }
+        else if(key == "ENHADISC")
+        {
+            if(_preferences->getBool(preference_mqtt_hass_enabled, false) != (value == "1"))
+            {
+                if(!_preferences->getBool(preference_mqtt_hass_enabled, false))
+                {
+                    if (_nuki != nullptr)
+                    {
+                        _nuki->disableHASS();
+                    }
+                    if (_nukiOpener != nullptr)
+                    {
+                        _nukiOpener->disableHASS();
+                    }
+
+                    _preferences->putString(preference_mqtt_hass_discovery, "");
+                }
+                else if(_preferences->getString(preference_mqtt_hass_discovery, "") == "")
+                {
+                    _preferences->putString(preference_mqtt_hass_discovery, "homeassistant");
+                }
+                _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "HASSDISCOVERY")
         {
             if(_preferences->getString(preference_mqtt_hass_discovery, "") != value)
@@ -1739,6 +1766,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                     _nukiOpener->disableHASS();
                 }
                 _preferences->putString(preference_mqtt_hass_discovery, value);
+
+                if(value != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
+                {
+                    _preferences->putBool(preference_mqtt_hass_enabled, true);
+                }
+                else if(value == "" && _preferences->getBool(preference_mqtt_hass_enabled, false))
+                {
+                    _preferences->putBool(preference_mqtt_hass_enabled, false);
+                }
+
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -3507,11 +3544,12 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
     printInputField(&response, "MQTTPATH", "MQTT NukiHub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
+    printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "");
     response.print("</table><br>");
 
     response.print("<h3>Advanced MQTT Configuration</h3>");
     response.print("<table>");
-    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
+    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (usually \"homeassistant\")", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
     if(_preferences->getBool(preference_opener_enabled, false))
     {
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
@@ -3547,7 +3585,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
     response.print("<tr><td>Current bootloop prevention state</td><td>");
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.print("</td></tr>");
-    printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");        
+    printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
     printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
     printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
@@ -3721,7 +3759,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
         printCheckBox(&response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
         printCheckBox(&response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
         printCheckBox(&response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
-        printCheckBox(&response, "KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");      
+        printCheckBox(&response, "KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");
     }
     printCheckBox(&response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
     printCheckBox(&response, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
