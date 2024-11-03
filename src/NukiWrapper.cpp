@@ -359,16 +359,16 @@ void NukiWrapper::update()
             _nextLockAction = (NukiLock::LockAction) 0xff;
         }
     }
+    if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
+    {
+        Log->println("Updating Lock state based on status, timer or query");
+        _statusUpdated = false;
+        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
+        updateKeyTurnerState();
+        _network->publishStatusUpdated(_statusUpdated);
+    }
     if(_network->mqttConnectionState() == 2)
     {
-        if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
-        {
-            Log->println("Updating Lock state based on status, timer or query");
-            _statusUpdated = false;
-            _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
-            updateKeyTurnerState();
-            _network->publishStatusUpdated(_statusUpdated);
-        }
         if(!_statusUpdated)
         {
             if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
@@ -628,7 +628,7 @@ void NukiWrapper::updateConfig()
 
         if(_preferences->getUInt(preference_nuki_id_lock, 0) == _nukiConfig.nukiId)
         {
-            _hasKeypad = _nukiConfig.hasKeypad == 1 || _nukiConfig.hasKeypadV2 == 1;
+            _hasKeypad = _nukiConfig.hasKeypad == 1 || (_nukiConfig.hasKeypadV2 > 0 &&  _nukiConfig.hasKeypadV2 != 252);
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
             if(_preferences->getBool(preference_conf_info_enabled, true))
@@ -3998,12 +3998,21 @@ void NukiWrapper::notify(Nuki::EventType eventType)
         }
         else
         {
-            if(!_pairedAsApp && eventType == Nuki::EventType::KeyTurnerStatusUpdated && !_statusUpdated)
+            if(eventType == Nuki::EventType::KeyTurnerStatusReset)
             {
-                Log->println("KeyTurnerStatusUpdated");
-                _statusUpdated = true;
-                _statusUpdatedTs = espMillis();
-                _network->publishStatusUpdated(_statusUpdated);
+                _newSignal = false;
+                Log->println("KeyTurnerStatusReset");
+            }
+            else if(eventType == Nuki::EventType::KeyTurnerStatusUpdated)
+            {
+                if(!_statusUpdated && !_newSignal)
+                {
+                    _newSignal = true;
+                    Log->println("KeyTurnerStatusUpdated");
+                    _statusUpdated = true;
+                    _statusUpdatedTs = espMillis();
+                    _network->publishStatusUpdated(_statusUpdated);
+                }
             }
         }
     }
