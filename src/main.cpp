@@ -201,7 +201,7 @@ void nukiTask(void *pvParameters)
 
             if (needsPairing)
             {
-                delay(5000);
+                delay(2500);
             }
             else if (!whiteListed)
             {
