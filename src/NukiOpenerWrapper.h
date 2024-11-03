@@ -135,12 +135,14 @@ private:
 
     bool _paired = false;
     bool _statusUpdated = false;
+    bool _newSignal = false;
     bool _hasKeypad = false;
     bool _keypadEnabled = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;
     int _rssiPublishInterval = 0;
+    int64_t _statusUpdatedTs = 0;
     int64_t _nextLockStateUpdateTs = 0;
     int64_t _nextBatteryReportTs = 0;
     int64_t _nextConfigUpdateTs = 0;

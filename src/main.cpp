@@ -500,9 +500,11 @@ void setup()
     if(!doOta)
     {
         psychicServer = new PsychicHttpServer;
+        psychicServer->config.max_uri_handlers = 40;
+        psychicServer->config.stack_size = HTTPD_TASK_SIZE;
+        psychicServer->listen(80);
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
         webCfgServer->initialize();
-        psychicServer->listen(80);
         psychicServer->onNotFound([](PsychicRequest* request)
         {
             return request->redirect("/");
@@ -591,8 +593,6 @@ void setup()
         psychicServer = new PsychicHttpServer;
         psychicServer->config.max_uri_handlers = 40;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-        psychicServer->maxUploadSize = 8192;
-        psychicServer->maxRequestBodySize = 8192;
         psychicServer->listen(80);
 
         if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
