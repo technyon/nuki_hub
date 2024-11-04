@@ -690,7 +690,7 @@ bool NukiNetwork::reconnect()
 
             for(const String& topic : _subscribedTopics)
             {
-                _device->mqttSubscribe(topic.c_str(), MQTT_QOS_LEVEL);
+                subscribe(topic.c_str(), MQTT_QOS_LEVEL);
             }
 
             publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
@@ -4052,6 +4052,8 @@ void NukiNetwork::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* st
 
 uint16_t NukiNetwork::subscribe(const char *topic, uint8_t qos)
 {
+    Log->print("Subscribing to MQTT topic: ");
+    Log->println(topic);
     return _device->mqttSubscribe(topic, qos);
 }
 
