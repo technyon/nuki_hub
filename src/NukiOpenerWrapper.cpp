@@ -272,9 +272,9 @@ void NukiOpenerWrapper::update()
     }
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
-        _statusUpdated = false;
-        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         updateKeyTurnerState();
+        _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
+        _statusUpdated = false;
         _network->publishStatusUpdated(_statusUpdated);
     }
     if(_network->mqttConnectionState() == 2)
@@ -448,7 +448,8 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     }
     _retryLockstateCount = 0;
 
-    if(_statusUpdated &&
+    if((!isPinValid() || !_publishAuthData) &&
+            _statusUpdated &&
             _keyTurnerState.lockState == NukiOpener::LockState::Locked &&
             _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked &&
             _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState)
@@ -458,7 +459,8 @@ void NukiOpenerWrapper::updateKeyTurnerState()
     }
     else
     {
-        if(_keyTurnerState.lockState != _lastKeyTurnerState.lockState &&
+        if((!isPinValid() || !_publishAuthData) &&
+                _keyTurnerState.lockState != _lastKeyTurnerState.lockState &&
                 _keyTurnerState.lockState == NukiOpener::LockState::Open &&
                 _keyTurnerState.trigger == NukiOpener::Trigger::Manual)
         {
@@ -3882,14 +3884,14 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
 {
     if(eventType == Nuki::EventType::KeyTurnerStatusReset)
     {
-        _newSignal = false;
+        _newSignal = 0;
         Log->println("KeyTurnerStatusReset");
     }
     else if(eventType == Nuki::EventType::KeyTurnerStatusUpdated)
     {
-        if(!_statusUpdated && !_newSignal)
+        if(!_statusUpdated && _newSignal < 5)
         {
-            _newSignal = true;
+            _newSignal++;
             Log->println("KeyTurnerStatusUpdated");
             _statusUpdated = true;
             _statusUpdatedTs = espMillis();

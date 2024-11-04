@@ -1737,12 +1737,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                     {
                         _nukiOpener->disableHASS();
                     }
-
-                    _preferences->putString(preference_mqtt_hass_discovery, "");
-                }
-                else if(_preferences->getString(preference_mqtt_hass_discovery, "") == "")
-                {
-                    _preferences->putString(preference_mqtt_hass_discovery, "homeassistant");
                 }
                 _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
                 Log->print(F("Setting changed: "));
@@ -1763,16 +1757,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                     _nukiOpener->disableHASS();
                 }
                 _preferences->putString(preference_mqtt_hass_discovery, value);
-
-                if(value != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
-                {
-                    _preferences->putBool(preference_mqtt_hass_enabled, true);
-                }
-                else if(value == "" && _preferences->getBool(preference_mqtt_hass_enabled, false))
-                {
-                    _preferences->putBool(preference_mqtt_hass_enabled, false);
-                }
-
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -3541,12 +3525,12 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
     printInputField(&response, "MQTTPATH", "MQTT NukiHub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
-    printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "");
+    printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
     response.print("</table><br>");
 
     response.print("<h3>Advanced MQTT Configuration</h3>");
     response.print("<table>");
-    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (usually \"homeassistant\")", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
+    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (usually \"homeassistant\")", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "class=\"chkHass\"");
     if(_preferences->getBool(preference_opener_enabled, false))
     {
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
@@ -3566,7 +3550,9 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     response.print("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
-    response.print("</body></html>");
+    response.print("</body>");
+    response.print("<script>window.onload = function() { var hassChk; var hassTxt; for (var el of document.getElementsByClassName('chkHass')) { if (el.constructor.name === 'HTMLInputElement' && el.type === 'checkbox') { hassChk = el; el.addEventListener('change', hassChkChange); } else if (el.constructor.name==='HTMLInputElement' && el.type==='text') { hassTxt=el; el.addEventListener('keyup', hassTxtChange); } } function hassChkChange() { if(hassChk.checked == true) { if(hassTxt.value.length == 0) { hassTxt.value = 'homeassistant'; } } else { hassTxt.value = ''; } } function hassTxtChange() { if(hassTxt.value.length == 0) { hassChk.checked = false; } else { hassChk.checked = true; } } };</script>");
+    response.print("</html>");
     return response.endSend();
 }
 

@@ -43,6 +43,7 @@ void NukiNetworkOpener::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
     _network->initTopic(_mqttPath, mqtt_topic_lock_binary_ring, "standby");
+    _network->initTopic(_mqttPath, mqtt_topic_lock_ring, "standby");
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
@@ -128,6 +129,7 @@ void NukiNetworkOpener::update()
     {
         _resetRingStateTs = 0;
         publishString(mqtt_topic_lock_binary_ring, "standby", true);
+        publishString(mqtt_topic_lock_ring, "standby", true);
     }
 }
 
@@ -647,10 +649,25 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
         if(log.index > _lastRollingLog)
         {
-            _lastRollingLog = log.index;
             serializeJson(entry, _buffer, _bufferSize);
             publishString(mqtt_topic_lock_log_rolling, _buffer, true);
             publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
+            
+            if(log.loggingType == NukiOpener::LoggingType::DoorbellRecognition && _lastRollingLog > 0)
+            {
+                if((log.data[0] & 3) == 0)
+                {
+                    Log->println(F("Nuki opener: Ring detected (Locked)"));
+                    publishRing(true);
+                }
+                else
+                {
+                    Log->println(F("Nuki opener: Ring detected (Open)"));
+                    publishRing(false);
+                }
+            }
+            
+            _lastRollingLog = log.index;
         }
     }
 
@@ -658,7 +675,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
     if(latest)
     {
-        publishString(mqtt_topic_lock_log_latest, _buffer, true);
+        publishString(mqtt_topic_lock_log_latest, _buffer, true);        
     }
     else
     {
