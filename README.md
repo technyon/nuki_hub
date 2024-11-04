@@ -203,10 +203,11 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT User: If using authentication on the MQTT broker set to a username with read/write rights on the MQTT broker, set to # to clear
 - MQTT Password : If using authentication on the MQTT broker set to the password belonging to a username with read/write rights on the MQTT broker, set to # to clear
 - MQTT NukiHub Path: Set to the preferred MQTT root topic for NukiHub, defaults to "nukihub". Make sure this topic is unique when using multiple ESP32 NukiHub devices
+- Enable Home Assistant auto discovery: Enable Home Assistant MQTT auto discovery. Will automatically create entities in Home Assistant for NukiHub and connected Nuki Lock and/or Opener when enabled.
 
 #### Advanced MQTT Configuration
 
-- Home Assistant discovery topic: Set to the Home Assistant auto discovery topic, leave empty to disable auto discovery. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
+- Home Assistant discovery topic: Set to the Home Assistant auto discovery topic. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "[Home Assistant Discovery](#home-assistant-discovery-optional)" section of this README.
 - MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 - MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.

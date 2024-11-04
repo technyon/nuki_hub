@@ -292,14 +292,31 @@ void WebCfgServer::initialize()
             {
                 return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
             }
-            if(_allowRestartToPortal)
+            String value = "";
+            if(request->hasParam("CONFIRMTOKEN"))
             {
-                esp_err_t res = buildConfirmHtml(request, "Restarting. Connect to ESP access point (\"NukiHub\" with password \"NukiHubESP32\") to reconfigure Wi-Fi.", 0);
-                waitAndProcess(false, 1000);
-                _network->reconfigureDevice();
-                return res;
+                const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
+                if(p->value() != "")
+                {
+                    value = p->value();
+                }
             }
-            return(ESP_OK);
+            else
+            {
+                return buildConfirmHtml(request, "No confirm code set.", 3, true);
+            }
+            if(value != _confirmCode)
+            {
+                return request->redirect("/");
+            }
+            if(!_allowRestartToPortal)
+            {
+                return buildConfirmHtml(request, "Can't reset WiFi when network device is Ethernet", 3, true);
+            }
+            esp_err_t res = buildConfirmHtml(request, "Restarting. Connect to ESP access point (\"NukiHub\" with password \"NukiHubESP32\") to reconfigure Wi-Fi.", 0);
+            waitAndProcess(false, 1000);
+            _network->reconfigureDevice();
+            return res;
         });
 #endif
         _psychicServer->on("/unpairlock", HTTP_POST, [&](PsychicRequest *request)
@@ -1721,6 +1738,27 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 //configChanged = true;
+            }
+        }
+        else if(key == "ENHADISC")
+        {
+            if(_preferences->getBool(preference_mqtt_hass_enabled, false) != (value == "1"))
+            {
+                if(!_preferences->getBool(preference_mqtt_hass_enabled, false))
+                {
+                    if (_nuki != nullptr)
+                    {
+                        _nuki->disableHASS();
+                    }
+                    if (_nukiOpener != nullptr)
+                    {
+                        _nukiOpener->disableHASS();
+                    }
+                }
+                _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
             }
         }
         else if(key == "HASSDISCOVERY")
@@ -3342,37 +3380,37 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
             printParameter(&response, "Nuki Opener PIN status", openerState.c_str(), "", "openerPin");
         }
     }
-    printParameter(&response, "Firmware", NUKI_HUB_VERSION, "/info", "firmware");
+    printParameter(&response, "Firmware", NUKI_HUB_VERSION, "/info?", "firmware");
     if(_preferences->getBool(preference_check_updates))
     {
-        printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
+        printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota?", "ota");
     }
     response.print("</table><br>");
     response.print("<ul id=\"tblnav\">");
-    buildNavigationMenuEntry(&response, "Network Configuration", "/ntwconfig");
-    buildNavigationMenuEntry(&response, "MQTT Configuration", "/mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
-    buildNavigationMenuEntry(&response, "Nuki Configuration", "/nukicfg");
-    buildNavigationMenuEntry(&response, "Access Level Configuration", "/acclvl");
-    buildNavigationMenuEntry(&response, "Credentials", "/cred", _pinsConfigured ? "" : "Please configure PIN");
-    buildNavigationMenuEntry(&response, "GPIO Configuration", "/gpiocfg");
-    buildNavigationMenuEntry(&response, "Firmware update", "/ota");
-    buildNavigationMenuEntry(&response, "Import/Export Configuration", "/impexpcfg");
+    buildNavigationMenuEntry(&response, "Network Configuration", "/ntwconfig?");
+    buildNavigationMenuEntry(&response, "MQTT Configuration", "/mqttconfig?",  _brokerConfigured ? "" : "Please configure MQTT broker");
+    buildNavigationMenuEntry(&response, "Nuki Configuration", "/nukicfg?");
+    buildNavigationMenuEntry(&response, "Access Level Configuration", "/acclvl?");
+    buildNavigationMenuEntry(&response, "Credentials", "/cred?", _pinsConfigured ? "" : "Please configure PIN");
+    buildNavigationMenuEntry(&response, "GPIO Configuration", "/gpiocfg?");
+    buildNavigationMenuEntry(&response, "Firmware update", "/ota?");
+    buildNavigationMenuEntry(&response, "Import/Export Configuration", "/impexpcfg?");
     if(_preferences->getInt(preference_network_hardware, 0) == 11)
     {
-        buildNavigationMenuEntry(&response, "Custom Ethernet Configuration", "/custntw");
+        buildNavigationMenuEntry(&response, "Custom Ethernet Configuration", "/custntw?");
     }
     if (_preferences->getBool(preference_publish_debug_info, false))
     {
-        buildNavigationMenuEntry(&response, "Advanced Configuration", "/advanced");
+        buildNavigationMenuEntry(&response, "Advanced Configuration", "/advanced?");
     }
     if(_preferences->getBool(preference_webserial_enabled, false))
     {
-        buildNavigationMenuEntry(&response, "Open Webserial", "/webserial");
+        buildNavigationMenuEntry(&response, "Open Webserial", "/webserial?");
     }
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     if(_allowRestartToPortal)
     {
-        buildNavigationMenuEntry(&response, "Configure Wi-Fi", "/wifi");
+        buildNavigationMenuEntry(&response, "Configure Wi-Fi", "/wifi?");
     }
 #endif
     String rebooturl = "/reboot?CONFIRMTOKEN=" + _confirmCode;
@@ -3504,11 +3542,12 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
     printInputField(&response, "MQTTPATH", "MQTT NukiHub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
+    printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
     response.print("</table><br>");
 
     response.print("<h3>Advanced MQTT Configuration</h3>");
     response.print("<table>");
-    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (empty to disable; usually homeassistant)", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "");
+    printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (usually \"homeassistant\")", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "class=\"chkHass\"");
     if(_preferences->getBool(preference_opener_enabled, false))
     {
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
@@ -3528,7 +3567,9 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     response.print("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
-    response.print("</body></html>");
+    response.print("</body>");
+    response.print("<script>window.onload = function() { var hassChk; var hassTxt; for (var el of document.getElementsByClassName('chkHass')) { if (el.constructor.name === 'HTMLInputElement' && el.type === 'checkbox') { hassChk = el; el.addEventListener('change', hassChkChange); } else if (el.constructor.name==='HTMLInputElement' && el.type==='text') { hassTxt=el; el.addEventListener('keyup', hassTxtChange); } } function hassChkChange() { if(hassChk.checked == true) { if(hassTxt.value.length == 0) { hassTxt.value = 'homeassistant'; } } else { hassTxt.value = ''; } } function hassTxtChange() { if(hassTxt.value.length == 0) { hassChk.checked = false; } else { hassChk.checked = true; } } };</script>");
+    response.print("</html>");
     return response.endSend();
 }
 
@@ -3544,7 +3585,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
     response.print("<tr><td>Current bootloop prevention state</td><td>");
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.print("</td></tr>");
-    printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");        
+    printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
     printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
     printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
@@ -3718,7 +3759,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
         printCheckBox(&response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
         printCheckBox(&response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
         printCheckBox(&response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
-        printCheckBox(&response, "KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");      
+        printCheckBox(&response, "KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");
     }
     printCheckBox(&response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
     printCheckBox(&response, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
@@ -3978,7 +4019,8 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
     buildHtmlHeader(&response);
     response.print("<h3>Wi-Fi</h3>");
     response.print("Click confirm to remove saved WiFi settings and restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
-    buildNavigationButton(&response, "Confirm", "/wifimanager");
+    String wifiMgrUrl = "/wifimanager?CONFIRMTOKEN=" + _confirmCode;
+    buildNavigationButton(&response, "Confirm", wifiMgrUrl.c_str());
     response.print("</body></html>");
     return response.endSend();
 }

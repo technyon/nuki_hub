@@ -155,6 +155,7 @@ private:
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
 
+    int64_t _publishedUpTime = 0;
     int64_t _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};

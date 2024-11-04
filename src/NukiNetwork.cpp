@@ -61,6 +61,12 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
     {
         _mqttConnectionStateTopic[i] = connectionStateTopic.charAt(i);
     }
+
+    if(_preferences->getString(preference_mqtt_hass_discovery, "") != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
+    {
+        _preferences->putBool(preference_mqtt_hass_enabled, true);
+    }
+
 #endif
 
     setupDevice();
@@ -455,8 +461,13 @@ bool NukiNetwork::update()
 
     if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
     {
-        publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60, true);
-        publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
+        int64_t curUptime = ts / 1000 / 60;
+        if(curUptime > _publishedUpTime)
+        {
+            publishULong(_maintenancePathPrefix, mqtt_topic_uptime, curUptime, true);
+            _publishedUpTime = curUptime;
+        }
+        //publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
 
         if(_lastMaintenanceTs == 0)
         {
@@ -2694,6 +2705,7 @@ void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, co
     json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{(char*)"val_tpl", (char*)"{ \"event_type\": \"{{ value }}\" }"}});
     json["event_types"][0] = "ring";
     json["event_types"][1] = "ringlocked";
+    json["event_types"][2] = "standby";
     serializeJson(json, _buffer, _bufferSize);
     String path = createHassTopicPath("event", "ring", uidString);
     _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
