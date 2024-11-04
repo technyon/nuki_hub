@@ -461,8 +461,13 @@ bool NukiNetwork::update()
 
     if(_lastMaintenanceTs == 0 || (ts - _lastMaintenanceTs) > 30000)
     {
-        publishULong(_maintenancePathPrefix, mqtt_topic_uptime, ts / 1000 / 60, true);
-        publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
+        int64_t curUptime = ts / 1000 / 60;
+        if(curUptime > _publishedUpTime)
+        {
+            publishULong(_maintenancePathPrefix, mqtt_topic_uptime, curUptime, true);
+            _publishedUpTime = curUptime;
+        }
+        //publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
 
         if(_lastMaintenanceTs == 0)
         {

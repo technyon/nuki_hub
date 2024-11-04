@@ -292,14 +292,31 @@ void WebCfgServer::initialize()
             {
                 return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
             }
-            if(_allowRestartToPortal)
+            String value = "";
+            if(request->hasParam("CONFIRMTOKEN"))
             {
-                esp_err_t res = buildConfirmHtml(request, "Restarting. Connect to ESP access point (\"NukiHub\" with password \"NukiHubESP32\") to reconfigure Wi-Fi.", 0);
-                waitAndProcess(false, 1000);
-                _network->reconfigureDevice();
-                return res;
+                const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
+                if(p->value() != "")
+                {
+                    value = p->value();
+                }
             }
-            return(ESP_OK);
+            else
+            {
+                return buildConfirmHtml(request, "No confirm code set.", 3, true);
+            }
+            if(value != _confirmCode)
+            {
+                return request->redirect("/");
+            }
+            if(!_allowRestartToPortal)
+            {
+                return buildConfirmHtml(request, "Can't reset WiFi when network device is Ethernet", 3, true);
+            }
+            esp_err_t res = buildConfirmHtml(request, "Restarting. Connect to ESP access point (\"NukiHub\" with password \"NukiHubESP32\") to reconfigure Wi-Fi.", 0);
+            waitAndProcess(false, 1000);
+            _network->reconfigureDevice();
+            return res;
         });
 #endif
         _psychicServer->on("/unpairlock", HTTP_POST, [&](PsychicRequest *request)
@@ -3363,37 +3380,37 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
             printParameter(&response, "Nuki Opener PIN status", openerState.c_str(), "", "openerPin");
         }
     }
-    printParameter(&response, "Firmware", NUKI_HUB_VERSION, "/info", "firmware");
+    printParameter(&response, "Firmware", NUKI_HUB_VERSION, "/info?", "firmware");
     if(_preferences->getBool(preference_check_updates))
     {
-        printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota", "ota");
+        printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/ota?", "ota");
     }
     response.print("</table><br>");
     response.print("<ul id=\"tblnav\">");
-    buildNavigationMenuEntry(&response, "Network Configuration", "/ntwconfig");
-    buildNavigationMenuEntry(&response, "MQTT Configuration", "/mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
-    buildNavigationMenuEntry(&response, "Nuki Configuration", "/nukicfg");
-    buildNavigationMenuEntry(&response, "Access Level Configuration", "/acclvl");
-    buildNavigationMenuEntry(&response, "Credentials", "/cred", _pinsConfigured ? "" : "Please configure PIN");
-    buildNavigationMenuEntry(&response, "GPIO Configuration", "/gpiocfg");
-    buildNavigationMenuEntry(&response, "Firmware update", "/ota");
-    buildNavigationMenuEntry(&response, "Import/Export Configuration", "/impexpcfg");
+    buildNavigationMenuEntry(&response, "Network Configuration", "/ntwconfig?");
+    buildNavigationMenuEntry(&response, "MQTT Configuration", "/mqttconfig?",  _brokerConfigured ? "" : "Please configure MQTT broker");
+    buildNavigationMenuEntry(&response, "Nuki Configuration", "/nukicfg?");
+    buildNavigationMenuEntry(&response, "Access Level Configuration", "/acclvl?");
+    buildNavigationMenuEntry(&response, "Credentials", "/cred?", _pinsConfigured ? "" : "Please configure PIN");
+    buildNavigationMenuEntry(&response, "GPIO Configuration", "/gpiocfg?");
+    buildNavigationMenuEntry(&response, "Firmware update", "/ota?");
+    buildNavigationMenuEntry(&response, "Import/Export Configuration", "/impexpcfg?");
     if(_preferences->getInt(preference_network_hardware, 0) == 11)
     {
-        buildNavigationMenuEntry(&response, "Custom Ethernet Configuration", "/custntw");
+        buildNavigationMenuEntry(&response, "Custom Ethernet Configuration", "/custntw?");
     }
     if (_preferences->getBool(preference_publish_debug_info, false))
     {
-        buildNavigationMenuEntry(&response, "Advanced Configuration", "/advanced");
+        buildNavigationMenuEntry(&response, "Advanced Configuration", "/advanced?");
     }
     if(_preferences->getBool(preference_webserial_enabled, false))
     {
-        buildNavigationMenuEntry(&response, "Open Webserial", "/webserial");
+        buildNavigationMenuEntry(&response, "Open Webserial", "/webserial?");
     }
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     if(_allowRestartToPortal)
     {
-        buildNavigationMenuEntry(&response, "Configure Wi-Fi", "/wifi");
+        buildNavigationMenuEntry(&response, "Configure Wi-Fi", "/wifi?");
     }
 #endif
     String rebooturl = "/reboot?CONFIRMTOKEN=" + _confirmCode;
@@ -4002,7 +4019,8 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
     buildHtmlHeader(&response);
     response.print("<h3>Wi-Fi</h3>");
     response.print("Click confirm to remove saved WiFi settings and restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
-    buildNavigationButton(&response, "Confirm", "/wifimanager");
+    String wifiMgrUrl = "/wifimanager?CONFIRMTOKEN=" + _confirmCode;
+    buildNavigationButton(&response, "Confirm", wifiMgrUrl.c_str());
     response.print("</body></html>");
     return response.endSend();
 }
