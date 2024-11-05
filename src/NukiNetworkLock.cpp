@@ -1663,53 +1663,6 @@ bool NukiNetworkLock::comparePrefixedPath(const char *fullPath, const char *subP
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
-void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name,  char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
-                                        char *unlockAction, char *openAction)
-{
-    String availabilityTopic = _preferences->getString(preference_mqtt_lock_path);
-    availabilityTopic.concat("/maintenance/mqttConnectionState");
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
-
-    if(hasDoorSensor)
-    {
-        _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
-    }
-
-#ifndef CONFIG_IDF_TARGET_ESP32H2
-    _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
-#endif
-
-    if(publishAuthData)
-    {
-        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
-    }
-
-    if(hasKeypad)
-    {
-        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
-    }
-}
-
-void NukiNetworkLock::removeHASSConfig(char *uidString)
-{
-    _network->removeHASSConfig(uidString);
-}
-
 void NukiNetworkLock::publishOffAction(const int value)
 {
     _network->publishInt(_nukiOfficial->getMqttPath(), mqtt_topic_official_lock_action, value, false);

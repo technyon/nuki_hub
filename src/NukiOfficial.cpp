@@ -88,7 +88,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     bool publishBatteryJson = false;
     memset(&str, 0, sizeof(str));
 
-    Log->println("Official Nuki change recieved");
+    Log->println("Official Nuki change received");
     Log->print(F("Topic: "));
     Log->println(topic);
     Log->print(F("Value: "));

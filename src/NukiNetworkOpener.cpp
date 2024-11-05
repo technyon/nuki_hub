@@ -859,38 +859,6 @@ void NukiNetworkOpener::publishBleAddress(const std::string &address)
     publishString(mqtt_topic_lock_address, address, true);
 }
 
-void NukiNetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const bool& publishAuthData, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
-{
-    String availabilityTopic = _preferences->getString(preference_mqtt_lock_path);
-    availabilityTopic.concat("/maintenance/mqttConnectionState");
-
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigAdditionalOpenerEntities(deviceType, baseTopic, name, uidString);
-    if(publishAuthData)
-    {
-        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
-    }
-    if(hasKeypad)
-    {
-        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
-    }
-}
-
-void NukiNetworkOpener::removeHASSConfig(char* uidString)
-{
-    _network->removeHASSConfig(uidString);
-}
-
 void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
 {
     bool publishCode = _preferences->getBool(preference_keypad_publish_code, false);

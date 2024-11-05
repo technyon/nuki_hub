@@ -48,6 +48,7 @@
 #define preference_gpio_configuration (char*)"gpiocfg"
 #define preference_mqtt_hass_enabled (char*)"hassena"
 #define preference_mqtt_hass_discovery (char*)"hassdiscovery"
+#define preference_hass_device_discovery (char*)"hassdevdisc"
 #define preference_webserver_enabled (char*)"websrvena"
 #define preference_update_from_mqtt (char*)"updMqtt"
 #define preference_disable_non_json (char*)"disnonjson"
@@ -294,7 +295,7 @@ private:
             preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
             preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass,
-            preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled
+            preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled, preference_hass_device_discovery
     };
     std::vector<char*> _redact =
     {
@@ -309,7 +310,7 @@ private:
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_publish_debug_info, preference_official_hybrid_enabled, preference_mqtt_hass_enabled,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
-            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled,
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled, preference_hass_device_discovery,
             preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected
     };
     std::vector<char*> _bytePrefs =

@@ -204,6 +204,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT Password : If using authentication on the MQTT broker set to the password belonging to a username with read/write rights on the MQTT broker, set to # to clear
 - MQTT NukiHub Path: Set to the preferred MQTT root topic for NukiHub, defaults to "nukihub". Make sure this topic is unique when using multiple ESP32 NukiHub devices
 - Enable Home Assistant auto discovery: Enable Home Assistant MQTT auto discovery. Will automatically create entities in Home Assistant for NukiHub and connected Nuki Lock and/or Opener when enabled.
+- Use Home Assistant device based discovery: Use Home Assistant Device discovery instead of single component discovery. Recommended, but requires Home Assistant 2024.11 or newer.
 
 #### Advanced MQTT Configuration
 

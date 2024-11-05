@@ -405,7 +405,8 @@ void NukiWrapper::update()
             }
             if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
             {
-                setupHASS();
+                _network->setupHASS(1);
+                _hassSetupCompleted = true;
             }
             if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
             {
@@ -693,13 +694,13 @@ void NukiWrapper::updateConfig()
         }
         else
         {
-            Log->println(F("Invalid/Unexpected lock config recieved, ID does not matched saved ID"));
+            Log->println(F("Invalid/Unexpected lock config received, ID does not matched saved ID"));
             expectedConfig = false;
         }
     }
     else
     {
-        Log->println(F("Invalid/Unexpected lock config recieved, Config is not valid"));
+        Log->println(F("Invalid/Unexpected lock config received, Config is not valid"));
         expectedConfig = false;
     }
 
@@ -716,7 +717,7 @@ void NukiWrapper::updateConfig()
         }
         else
         {
-            Log->println(F("Invalid/Unexpected lock advanced config recieved, Advanced config is not valid"));
+            Log->println(F("Invalid/Unexpected lock advanced config received, Advanced config is not valid"));
             expectedConfig = false;
         }
     }
@@ -729,7 +730,7 @@ void NukiWrapper::updateConfig()
     else
     {
         ++_retryConfigCount;
-        Log->println(F("Invalid/Unexpected lock config and/or advanced config recieved, retrying in 10 seconds"));
+        Log->println(F("Invalid/Unexpected lock config and/or advanced config received, retrying in 10 seconds"));
         int64_t ts = espMillis();
         _nextConfigUpdateTs = ts + 10000;
     }
@@ -4074,40 +4075,11 @@ void NukiWrapper::readAdvancedConfig()
     }
 }
 
-void NukiWrapper::setupHASS()
-{
-    if(!_nukiConfigValid)
-    {
-        return;
-    }
-    if(_preferences->getUInt(preference_nuki_id_lock, 0) != _nukiConfig.nukiId)
-    {
-        return;
-    }
-
-    String baseTopic = _preferences->getString(preference_mqtt_lock_path);
-    baseTopic.concat("/lock");
-    char uidString[20];
-    itoa(_nukiConfig.nukiId, uidString, 16);
-
-    _network->publishHASSConfig((char*)"SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), _hasKeypad, _publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
-    _hassSetupCompleted = true;
-
-    Log->println("HASS setup for lock completed.");
-}
-
 bool NukiWrapper::hasDoorSensor() const
 {
     return _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating;
-}
-
-void NukiWrapper::disableHASS()
-{
-    char uidString[20];
-    itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
-    _network->removeHASSConfig(uidString);
 }
 
 const BLEAddress NukiWrapper::getBleAddress() const

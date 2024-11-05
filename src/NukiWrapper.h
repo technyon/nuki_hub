@@ -33,8 +33,6 @@ public:
     uint16_t getPin();
     void unpair();
 
-    void disableHASS();
-
     void disableWatchdog();
 
     const NukiLock::KeyTurnerState& keyTurnerState();
@@ -80,8 +78,6 @@ private:
 
     void readConfig();
     void readAdvancedConfig();
-
-    void setupHASS();
 
     void printCommandResult(Nuki::CmdResult result);
 

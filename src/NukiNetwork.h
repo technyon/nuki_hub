@@ -56,32 +56,6 @@ public:
     void publishLongLong(const char* prefix, const char* topic, int64_t value, bool retain);
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain);
     void publishString(const char* prefix, const char* topic, const char* value, bool retain);
-
-    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
-    void publishHASSConfigAdditionalLockEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigAdditionalOpenerEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigKeypad(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void removeHASSConfig(char* uidString);
-    void removeHASSConfigTopic(char* deviceType, char* name, char* uidString);
-    void publishHassTopic(const String& mqttDeviceType,
-                          const String& mqttDeviceName,
-                          const String& uidString,
-                          const String& uidStringPostfix,
-                          const String& displayName,
-                          const String& name,
-                          const String& baseTopic,
-                          const String& stateTopic,
-                          const String& deviceType,
-                          const String& deviceClass,
-                          const String& stateClass = "",
-                          const String& entityCat = "",
-                          const String& commandTopic = "",
-                          std::vector<std::pair<char*, char*>> additionalEntries = {}
-                          );
-    void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
     void removeTopic(const String& mqttPath, const String& mqttTopic);
     void batteryTypeToString(const Nuki::BatteryType battype, char* str);
     void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);
@@ -123,22 +97,25 @@ private:
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
     void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void gpioActionCallback(const GpioAction& action, const int& pin);
-
-    String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
-    JsonDocument createHassJson(const String& uidString,
-                        const String& uidStringPostfix,
-                        const String& displayName,
-                        const String& name,
-                        const String& baseTopic,
-                        const String& stateTopic,
-                        const String& deviceType,
-                        const String& deviceClass,
-                        const String& stateClass = "",
-                        const String& entityCat = "",
-                        const String& commandTopic = "",
-                        std::vector<std::pair<char*, char*>> additionalEntries = {}
-                        );
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
+    void setupHASS(int type);
+    void disableHASS();
+    void publishHassTopic(const String& mqttDeviceType,
+                           const String& mqttDeviceName,
+                           const String& uidString,
+                           const String& uidStringPostfix,
+                           const String& displayName,
+                           const String& name,
+                           const String& baseTopic,
+                           const String& stateTopic,
+                           const String& deviceType,
+                           const String& deviceClass,
+                           const String& stateClass,
+                           const String& entityCat,
+                           const String& commandTopic,
+                           std::vector<std::pair<char*, char*>> additionalEntries
+                          );
+    void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};

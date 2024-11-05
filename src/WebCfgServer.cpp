@@ -1740,39 +1740,35 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 //configChanged = true;
             }
         }
+        else if(key == "HADEVDISC")
+        {
+            if(_preferences->getBool(preference_hass_device_discovery, false) != (value == "1"))
+            {
+                _network->disableHASS();
+                _preferences->putBool(preference_hass_device_discovery, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "ENHADISC")
         {
             if(_preferences->getBool(preference_mqtt_hass_enabled, false) != (value == "1"))
             {
-                if(!_preferences->getBool(preference_mqtt_hass_enabled, false))
-                {
-                    if (_nuki != nullptr)
-                    {
-                        _nuki->disableHASS();
-                    }
-                    if (_nukiOpener != nullptr)
-                    {
-                        _nukiOpener->disableHASS();
-                    }
-                }
+                _network->disableHASS();
                 _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
             }
         }
+        
+        HADEVDISC
         else if(key == "HASSDISCOVERY")
         {
             if(_preferences->getString(preference_mqtt_hass_discovery, "") != value)
             {
-                if (_nuki != nullptr)
-                {
-                    _nuki->disableHASS();
-                }
-                if (_nukiOpener != nullptr)
-                {
-                    _nukiOpener->disableHASS();
-                }
+                _network->disableHASS();
                 _preferences->putString(preference_mqtt_hass_discovery, value);
                 Log->print(F("Setting changed: "));
                 Log->println(key);
@@ -3543,6 +3539,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
     printInputField(&response, "MQTTPATH", "MQTT NukiHub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
     printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
+    printCheckBox(&response, "HADEVDISC", "Use Home Assistant device based discovery", _preferences->getBool(preference_hass_device_discovery), "");
     response.print("</table><br>");
 
     response.print("<h3>Advanced MQTT Configuration</h3>");
@@ -4209,7 +4206,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     response.print(_preferences->getInt(preference_command_nr_of_retries, 3));
     response.print("\nBluetooth command retry delay (ms): ");
     response.print(_preferences->getInt(preference_command_retry_delay, 100));
-    response.print("\nSeconds until reboot when no BLE beacons recieved: ");
+    response.print("\nSeconds until reboot when no BLE beacons received: ");
     response.print(_preferences->getInt(preference_restart_ble_beacon_lost, 60));
     response.print("\n\n------------ QUERY / PUBLISH SETTINGS ------------");
     response.print("\nLock/Opener state query interval (s): ");
@@ -4643,14 +4640,14 @@ esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, bool opener)
 
     if(!opener && _nuki != nullptr)
     {
-        _nuki->disableHASS();
         _nuki->unpair();
     }
     if(opener && _nukiOpener != nullptr)
     {
-        _nukiOpener->disableHASS();
         _nukiOpener->unpair();
     }
+    
+    _network->disableHASS();
     waitAndProcess(false, 1000);
     restartEsp(RestartReason::DeviceUnpaired);
     return res;
@@ -4769,15 +4766,14 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
 
     if(_nuki != nullptr)
     {
-        _nuki->disableHASS();
         _nuki->unpair();
     }
     if(_nukiOpener != nullptr)
     {
-        _nukiOpener->disableHASS();
         _nukiOpener->unpair();
     }
 
+    _network->disableHASS();
     _preferences->clear();
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
