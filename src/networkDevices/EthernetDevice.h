@@ -61,7 +61,6 @@ public:
 private:
     Preferences* _preferences;
 
-    void init();
     void onDisconnected();
     void onNetworkEvent(arduino_event_id_t event, arduino_event_info_t info);
 
@@ -90,10 +89,4 @@ private:
     eth_phy_type_t _type;
     eth_clock_mode_t _clock_mode;
     bool _useSpi = false;
-
-    #ifndef NUKI_HUB_UPDATER
-    char _ca[TLS_CA_MAX_SIZE] = {0};
-    char _cert[TLS_CERT_MAX_SIZE] = {0};
-    char _key[TLS_KEY_MAX_SIZE] = {0};
-    #endif
 };

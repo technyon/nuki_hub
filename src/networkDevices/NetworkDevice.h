@@ -10,8 +10,9 @@
 class NetworkDevice
 {
 public:
-    explicit NetworkDevice(const String& hostname, const IPConfiguration* ipConfiguration)
+    explicit NetworkDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
     : _hostname(hostname),
+      _preferences(preferences),
       _ipConfiguration(ipConfiguration)
     {}
 
@@ -19,7 +20,6 @@ public:
 
     virtual void initialize() = 0;
     virtual void reconfigure() = 0;
-    virtual void printError();
 
     virtual void update();
     virtual void scan(bool passive = false, bool async = true) = 0;
@@ -57,8 +57,14 @@ protected:
 
     bool _useEncryption = false;
     bool _mqttEnabled = true;
+
+    void init();
     
     MqttClient *getMqttClient() const;
+
+    char _ca[TLS_CA_MAX_SIZE] = {0};
+    char _cert[TLS_CERT_MAX_SIZE] = {0};
+    char _key[TLS_KEY_MAX_SIZE] = {0};
     #endif
     
     const String _hostname;
