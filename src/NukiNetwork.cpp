@@ -365,17 +365,6 @@ bool NukiNetwork::update()
     int64_t ts = espMillis();
     _device->update();
 
-    if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
-    {
-        if(!_webEnabled)
-        {
-            forceEnableWebServer = true;
-        }
-        Log->println("Network timeout has been reached, restarting ...");
-        delay(200);
-        restartEsp(RestartReason::NetworkTimeoutWatchdog);
-    }
-
     if(disableNetwork || !_mqttEnabled || _device->isApOpen())
     {
         return false;
