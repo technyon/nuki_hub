@@ -119,10 +119,12 @@ private:
     #ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
+    void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length);
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
     void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void gpioActionCallback(const GpioAction& action, const int& pin);
+    bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
     JsonDocument createHassJson(const String& uidString,
@@ -139,6 +141,7 @@ private:
                         std::vector<std::pair<char*, char*>> additionalEntries = {}
                         );
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
+    void buildMqttPath(const char *path, char *outPath);
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
