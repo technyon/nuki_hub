@@ -21,7 +21,7 @@ Scanner::Scanner(int reservedSubscribers) {
 }
 
 void Scanner::initialize(const std::string& deviceName, const bool wantDuplicates, const uint16_t interval, const uint16_t window) {
-  if (!BLEDevice::getInitialized()) {
+  if (!BLEDevice::isInitialized()) {
     if (wantDuplicates) {
       // reduce memory footprint, cache is not used anyway
       #ifdef CONFIG_BTDM_BLE_SCAN_DUPL
