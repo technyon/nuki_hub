@@ -239,6 +239,14 @@ void NukiNetwork::initialize()
 
     if(!disableNetwork)
     {
+        String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
+
+        size_t len = mqttPath.length();
+        for(int i=0; i < len; i++)
+        {
+            _nukiHubPath[i] = mqttPath.charAt(i);
+        }
+      
         _hostname = _preferences->getString(preference_hostname, "");
 
         if(_hostname == "")
@@ -720,6 +728,32 @@ void NukiNetwork::initTopic(const char *prefix, const char *path, const char *va
     _initTopics[pathStr] = valueStr;
 }
 
+void NukiNetwork::buildMqttPath(const char *path, char *outPath)
+{
+    int offset = 0;
+    char inPath[181] = {0};
+
+    memcpy(inPath, _nukiHubPath, sizeof(_nukiHubPath));
+
+    for(const char& c : inPath)
+    {
+        if(c == 0x00)
+        {
+            break;
+        }
+        outPath[offset] = c;
+        ++offset;
+    }
+    int i=0;
+    while(outPath[i] != 0x00)
+    {
+        outPath[offset] = path[i];
+        ++i;
+        ++offset;
+    }
+    outPath[i+1] = 0x00;
+}
+
 void NukiNetwork::buildMqttPath(char* outPath, std::initializer_list<const char*> paths)
 {
     int offset = 0;
@@ -770,6 +804,8 @@ void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties
     if(_mqttConnectedTs == -1 || (millis() - _mqttConnectedTs < 2000)) return;
 
     parseGpioTopics(properties, topic, payload, len, index, total);
+    
+    onMqttDataReceived(topic, (byte*)payload, index);
 
     for(auto receiver : _mqttReceivers)
     {
@@ -777,6 +813,155 @@ void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties
     }
 }
 
+void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
+{
+    char* data = (char*)payload;
+    
+    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(data, "1") == 0)
+    {
+        Log->println(F("Restart requested via MQTT."));
+        clearWifiFallback();
+        delay(200);
+        restartEsp(RestartReason::RequestedViaMqtt);
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
+    {
+        Log->println(F("Update requested via MQTT."));
+
+        bool otaManifestSuccess = false;
+        JsonDocument doc;
+
+        NetworkClientSecure *client = new NetworkClientSecure;
+        if (client)
+        {
+            client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+            {
+                HTTPClient https;
+                https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+                https.useHTTP10(true);
+
+                if (https.begin(*client, GITHUB_OTA_MANIFEST_URL))
+                {
+                    int httpResponseCode = https.GET();
+
+                    if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                    {
+                        DeserializationError jsonError = deserializeJson(doc, https.getStream());
+
+                        if (!jsonError)
+                        {
+                            otaManifestSuccess = true;
+                        }
+                    }
+                }
+                https.end();
+            }
+            delete client;
+        }
+
+        if (otaManifestSuccess)
+        {
+            String currentVersion = NUKI_HUB_VERSION;
+
+            if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str()))
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+                    Log->println(F("Updating to latest release version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+            else if(currentVersion.indexOf("beta") > 0)
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["beta"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["beta"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["beta"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest beta version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_BETA_RELEASE_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_BETA_UPDATER_BINARY_URL);
+                    Log->println(F("Updating to latest beta version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+            else if(currentVersion.indexOf("master") > 0)
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["master"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["master"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["master"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest development version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_RELEASE_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+                    Log->println(F("Updating to latest developmemt version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+            else
+            {
+                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
+                {
+                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+                    Log->println(F("Updating to latest release version."));
+                    delay(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+        }
+        else
+        {
+            Log->println(F("Failed to retrieve OTA manifest, OTA update aborted."));
+        }
+    }
+    else if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
+    {
+        if(strcmp(data, "") == 0 ||
+                strcmp(data, "--") == 0)
+        {
+            return;
+        }
+
+        if(strcmp(data, "1") == 0)
+        {
+            if(_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer)
+            {
+                return;
+            }
+            Log->println(F("Webserver enabled, restarting."));
+            _preferences->putBool(preference_webserver_enabled, true);
+
+        }
+        else if (strcmp(data, "0") == 0)
+        {
+            if(!_preferences->getBool(preference_webserver_enabled, true) && !forceEnableWebServer)
+            {
+                return;
+            }
+            Log->println(F("Webserver disabled, restarting."));
+            _preferences->putBool(preference_webserver_enabled, false);
+        }
+
+        clearWifiFallback();
+        delay(200);
+        restartEsp(RestartReason::ReconfigureWebServer);
+    }    
+}
 
 void NukiNetwork::parseGpioTopics(const espMqttClientTypes::MessageProperties &properties, const char *topic, const uint8_t *payload, size_t& len, size_t& index, size_t& total)
 {
@@ -1152,6 +1337,14 @@ uint16_t NukiNetwork::subscribe(const char *topic, uint8_t qos)
     Log->print("Subscribing to MQTT topic: ");
     Log->println(topic);
     return _device->mqttSubscribe(topic, qos);
+}
+
+bool NukiNetwork::comparePrefixedPath(const char *fullPath, const char *subPath)
+{
+    char prefixedPath[500];
+    buildMqttPath(subPath, prefixedPath);
+
+    return strcmp(fullPath, prefixedPath) == 0;
 }
 
 void NukiNetwork::addReconnectedCallback(std::function<void()> reconnectedCallback)
