@@ -1762,8 +1762,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 configChanged = true;
             }
         }
-        
-        HADEVDISC
         else if(key == "HASSDISCOVERY")
         {
             if(_preferences->getString(preference_mqtt_hass_discovery, "") != value)
@@ -3539,12 +3537,12 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
     printInputField(&response, "MQTTPATH", "MQTT NukiHub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
     printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
-    printCheckBox(&response, "HADEVDISC", "Use Home Assistant device based discovery", _preferences->getBool(preference_hass_device_discovery), "");
     response.print("</table><br>");
 
     response.print("<h3>Advanced MQTT Configuration</h3>");
     response.print("<table>");
     printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (usually \"homeassistant\")", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "class=\"chkHass\"");
+    //printCheckBox(&response, "HADEVDISC", "Use Home Assistant device based discovery (2024.11+)", _preferences->getBool(preference_hass_device_discovery), "");
     if(_preferences->getBool(preference_opener_enabled, false))
     {
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");

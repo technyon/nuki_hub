@@ -56,6 +56,7 @@ public:
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
     void setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char* value));
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
+    void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
 
     void publishFloat(const char* topic, const float value, bool retain, const uint8_t precision = 2);
     void publishInt(const char* topic, const int value, bool retain);

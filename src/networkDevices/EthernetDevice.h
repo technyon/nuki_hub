@@ -11,9 +11,6 @@
 #include <NetworkClientSecure.h>
 #include <Preferences.h>
 #include "NetworkDevice.h"
-#ifndef NUKI_HUB_UPDATER
-#include "espMqttClient.h"
-#endif
 
 class EthernetDevice : public NetworkDevice
 {
@@ -65,16 +62,20 @@ private:
     void onNetworkEvent(arduino_event_id_t event, arduino_event_info_t info);
 
     bool _connected = false;
-    char* _path;
     bool _hardwareInitialized = false;
+    bool _useSpi = false;
+
+    int64_t _checkIpTs = -1;
 
     const std::string _deviceName;
     uint8_t _phy_addr;
+    eth_phy_type_t _type;
 
     // LAN8720
     int _power;
     int _mdc;
     int _mdio;
+    eth_clock_mode_t _clock_mode;
 
     // W55000 and DM9051
     int _cs;
@@ -83,10 +84,4 @@ private:
     int _spi_sck;
     int _spi_miso;
     int _spi_mosi;
-
-    int64_t _checkIpTs = -1;
-
-    eth_phy_type_t _type;
-    eth_clock_mode_t _clock_mode;
-    bool _useSpi = false;
 };

@@ -47,6 +47,7 @@ public:
     void setTimeControlCommandReceivedCallback(void (*timeControlCommandReceivedReceivedCallback)(const char* value));
     void setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char* value));
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
+    void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
 
     int mqttConnectionState();
     bool reconnected(); //SETBACK

@@ -17,7 +17,7 @@ public:
     NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences);
     virtual ~NukiWrapper();
 
-    void initialize(const bool& firstStart);
+    void initialize();
     void readSettings();
     void update();
 

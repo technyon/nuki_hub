@@ -1556,6 +1556,11 @@ uint8_t NukiNetworkOpener::queryCommands()
     return qc;
 }
 
+void NukiNetworkOpener::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
+{
+    _network->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);
+}
+
 void NukiNetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str)
 {
     switch (btnPressAction)

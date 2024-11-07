@@ -1,9 +1,10 @@
+#include "WifiDevice.h"
 #include "esp_wifi.h"
 #include <WiFi.h>
-#include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../RestartReason.h"
+#include "../EspMillis.h"
 
 WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
     : NetworkDevice(hostname, preferences, ipConfiguration),

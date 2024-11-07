@@ -1,6 +1,3 @@
-#ifndef CONFIG_IDF_TARGET_ESP32H2
-#include "esp_wifi.h"
-#endif
 #include "NukiWrapper.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
@@ -50,7 +47,7 @@ NukiWrapper::~NukiWrapper()
 }
 
 
-void NukiWrapper::initialize(const bool& firstStart)
+void NukiWrapper::initialize()
 {
     _nukiLock.initialize();
     _nukiLock.registerBleScanner(_bleScanner);
@@ -58,75 +55,7 @@ void NukiWrapper::initialize(const bool& firstStart)
     _nukiLock.setConnectTimeout(3);
     _nukiLock.setDisconnectTimeout(5000);
 
-    if(firstStart)
-    {
-        Log->println("First start, setting preference defaults");
-
-#ifndef CONFIG_IDF_TARGET_ESP32H2
-        wifi_config_t wifi_cfg;
-        if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
-        {
-            Log->println("Failed to get Wi-Fi configuration in RAM");
-        }
-
-        if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK)
-        {
-            Log->println("Failed to set storage Wi-Fi");
-        }
-
-        memset(wifi_cfg.sta.ssid, 0, sizeof(wifi_cfg.sta.ssid));
-        memset(wifi_cfg.sta.password, 0, sizeof(wifi_cfg.sta.password));
-
-        if (esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
-        {
-            Log->println("Failed to clear NVS Wi-Fi configuration");
-        }
-#endif
-        _preferences->putString(preference_mqtt_lock_path, "nukihub");
-        
-        _preferences->putBool(preference_check_updates, true);
-        _preferences->putBool(preference_opener_continuous_mode, false);
-        _preferences->putBool(preference_official_hybrid_enabled, false);
-        _preferences->putBool(preference_official_hybrid_actions, false);
-        _preferences->putBool(preference_official_hybrid_retry, false);
-        _preferences->putBool(preference_disable_non_json, false);
-        _preferences->putBool(preference_update_from_mqtt, false);
-        _preferences->putBool(preference_ip_dhcp_enabled, true);
-        _preferences->putBool(preference_enable_bootloop_reset, false);
-        _preferences->putBool(preference_show_secrets, false);
-
-        _preferences->putBool(preference_conf_info_enabled, true);
-        _preferences->putBool(preference_keypad_info_enabled, false);
-        _preferences->putBool(preference_keypad_topic_per_entry, false);
-        _preferences->putBool(preference_keypad_publish_code, false);
-        _preferences->putBool(preference_keypad_control_enabled, false);
-        _preferences->putBool(preference_timecontrol_info_enabled, false);
-        _preferences->putBool(preference_timecontrol_topic_per_entry, false);
-        _preferences->putBool(preference_timecontrol_control_enabled, false);
-        _preferences->putBool(preference_publish_authdata, false);
-        _preferences->putBool(preference_register_as_app, false);
-        _preferences->putBool(preference_register_opener_as_app, false);
-
-        _preferences->putInt(preference_mqtt_broker_port, 1883);
-        _preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
-        _preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
-        _preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
-        _preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
-        _preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
-        _preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
-        _preferences->putInt(preference_query_interval_hybrid_lockstate, 600);
-        _preferences->putInt(preference_rssi_publish_interval, 60);
-        _preferences->putInt(preference_network_timeout, 60);
-        _preferences->putInt(preference_command_nr_of_retries, 3);
-        _preferences->putInt(preference_command_retry_delay, 100);
-        _preferences->putInt(preference_restart_ble_beacon_lost, 60);
-        _preferences->putInt(preference_query_interval_lockstate, 1800);
-        _preferences->putInt(preference_query_interval_configuration, 3600);
-        _preferences->putInt(preference_query_interval_battery, 1800);
-        _preferences->putInt(preference_query_interval_keypad, 1800);
-    }
-
-    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
     readSettings();
 }
 
@@ -405,7 +334,7 @@ void NukiWrapper::update()
             }
             if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
             {
-                _network->setupHASS(1);
+                _network->setupHASS(1, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), _hasKeypad);
                 _hassSetupCompleted = true;
             }
             if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))

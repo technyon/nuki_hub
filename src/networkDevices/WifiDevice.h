@@ -1,7 +1,5 @@
 #pragma once
 
-#include <WiFiClient.h>
-#include <NetworkClientSecure.h>
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #include "IPConfiguration.h"
@@ -29,10 +27,10 @@ private:
     void onDisconnected();
     void onConnected();
     bool connect();
-    char* _path;
 
     Preferences* _preferences = nullptr;
 
+    char* _path;
     int _foundNetworks = 0;
     int _disconnectCount = 0;
     bool _connectOnScanDone = false;

@@ -54,7 +54,7 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.setConnectTimeout(3);
     _nukiOpener.setDisconnectTimeout(5000);
 
-    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
     readSettings();
 }
 
@@ -313,7 +313,7 @@ void NukiOpenerWrapper::update()
             }
             if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
             {
-                _network->setupHASS(2);
+                _network->setupHASS(2, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), false, _hasKeypad);
                 _hassSetupCompleted = true;
             }
             if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))

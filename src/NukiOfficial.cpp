@@ -13,7 +13,6 @@ NukiOfficial::NukiOfficial(Preferences *preferences)
     _disableNonJSON = preferences->getBool(preference_disable_non_json, false);
 }
 
-
 void NukiOfficial::setUid(const uint32_t& uid)
 {
     char uidString[20];
@@ -42,7 +41,6 @@ void NukiOfficial::setPublisher(NukiPublisher *publisher)
 {
     _publisher = publisher;
 }
-
 
 const char *NukiOfficial::getMqttPath() const
 {
@@ -99,14 +97,14 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
         Log->print(F("Connected: "));
         Log->println((strcmp(value, "true") == 0 ? 1 : 0));
         offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
-        _publisher->publishBool(mqtt_hybrid_state, offConnected, true);
+        _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
     }
     else if(strcmp(topic, mqtt_topic_official_state) == 0)
     {
         offState = atoi(value);
         _statusUpdated = true;
         Log->println(F("Lock: Updating status on Hybrid state change"));
-        _publisher->publishBool(mqtt_hybrid_state, offConnected, true);
+        _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
         NukiLock::lockstateToString((NukiLock::LockState)offState, str);
         _publisher->publishString(mqtt_topic_lock_state, str, true);
 

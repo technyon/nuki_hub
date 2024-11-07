@@ -2,6 +2,7 @@
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../RestartReason.h"
+#include "../EspMillis.h"
 
 extern bool ethCriticalFailure;
 extern bool wifiFallback;
@@ -48,7 +49,9 @@ EthernetDevice::EthernetDevice(const String &hostname,
       _useSpi(true),
       _preferences(preferences)
 {
+#ifndef NUKI_HUB_UPDATER
     NetworkDevice::init();
+#endif
 }
 
 const String EthernetDevice::deviceName() const

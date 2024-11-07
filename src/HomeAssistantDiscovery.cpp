@@ -1,139 +1,460 @@
-void NukiWrapper::setupHASS(int type)
+#include "HomeAssistantDiscovery.h"
+#include "Config.h"
+#include "Logger.h"
+#include "PreferencesKeys.h"
+#include "MqttTopics.h"
+
+HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preferences *preferences, char* buffer, size_t bufferSize)
+: _device(device),
+  _preferences(preferences),
+  _buffer(buffer),
+  _bufferSize(bufferSize)
 {
-    if(_preferences->getUInt(preference_nuki_id_lock, 0) != _nukiConfig.nukiId)
-    {
-        return;
-    }
-
-    String baseTopic = _preferences->getString(preference_mqtt_lock_path);
-    baseTopic.concat("/lock");
-    char uidString[20];
-    itoa(_nukiConfig.nukiId, uidString, 16);
-
-    _network->publishHASSConfig((char*)"SmartLock", baseTopic.c_str(),(char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), _hasKeypad, _publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
-    Log->println("HASS setup for lock completed.");
+    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+    _baseTopic = _preferences->getString(preference_mqtt_lock_path);
+    _offEnabled = _preferences->getBool(preference_official_hybrid_enabled, false);
+    _checkUpdates = _preferences->getBool(preference_check_updates, false);
+    _updateFromMQTT = _preferences->getBool(preference_update_from_mqtt, false);
+    _hostname = _preferences->getString(preference_hostname, "");
+    sprintf(_nukiHubUidString, "%u", _preferences->getUInt(preference_device_id_lock, 0));
 }
 
-void NukiWrapper::disableHASS()
+void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
 {
     char uidString[20];
-    itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
-    _network->removeHASSConfig(uidString);
+    itoa(nukiId, uidString, 16);
+    bool publishAuthData = _preferences->getBool(preference_publish_authdata, false);
+
+    if(type == 0)
+    {
+        publishHASSNukiHubConfig();
+        Log->println("HASS setup for NukiHub completed.");
+    }
+    else if(type == 1)
+    {
+        if(_preferences->getUInt(preference_nuki_id_lock, 0) != nukiId)
+        {
+            return;
+        }
+        String lockTopic = _baseTopic;
+        lockTopic.concat("/lock");
+        publishHASSConfig((char*)"SmartLock", lockTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
+        Log->println("HASS setup for lock completed.");
+    }
+    else if(type == 2)
+    {
+        if(_preferences->getUInt(preference_nuki_id_opener, 0) != nukiId)
+        {
+            return;
+        }
+        String openerTopic = _baseTopic;
+        openerTopic.concat("/opener");
+        if(_preferences->getBool(preference_opener_continuous_mode, false))
+        {
+            publishHASSConfig((char*)"Opener", openerTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
+        }
+        else
+        {
+            publishHASSConfig((char*)"Opener", openerTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
+        }
+
+        Log->println("HASS setup for opener completed.");
+    }
 }
 
-void NukiOpenerWrapper::setupHASS()
+void HomeAssistantDiscovery::disableHASS()
 {
-    if(_preferences->getUInt(preference_nuki_id_opener, 0) != _nukiConfig.nukiId)
-    {
-        return;
-    }
+    removeHASSConfig(_nukiHubUidString);
 
-    String baseTopic = _preferences->getString(preference_mqtt_lock_path);
-    baseTopic.concat("/opener");
     char uidString[20];
-    itoa(_nukiConfig.nukiId, uidString, 16);
 
-    if(_preferences->getBool(preference_opener_continuous_mode, false))
+    if(_preferences->getUInt(preference_nuki_id_lock, 0) != 0)
     {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), _publishAuthData, _hasKeypad, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
+        itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
+        removeHASSConfig(uidString);
+    }
+    if(_preferences->getUInt(preference_nuki_id_opener, 0) != 0)
+    {
+        itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
+        removeHASSConfig(uidString);
+    }
+}
+
+void HomeAssistantDiscovery::publishHASSNukiHubConfig()
+{
+    JsonDocument json;
+    json.clear();
+    JsonObject dev = json["dev"].to<JsonObject>();
+    JsonArray ids = dev["ids"].to<JsonArray>();
+    ids.add(String("nuki_") + _nukiHubUidString);
+    json["dev"]["mf"] = "Technyon";
+    json["dev"]["mdl"] = "NukiHub";
+    json["dev"]["name"] = _hostname.c_str();
+    json["dev"]["sw"] = NUKI_HUB_VERSION;
+    json["dev"]["hw"] = NUKI_HUB_HW;
+
+    String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url, "");
+
+    if (cuUrl != "")
+    {
+        json["dev"]["cu"] = cuUrl;
     }
     else
     {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), _publishAuthData, _hasKeypad, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
+        json["dev"]["cu"] = "http://" + _device->localIP();
     }
 
-    _hassSetupCompleted = true;
+    json["~"] = _baseTopic;
+    json["name"] = "Restart Nuki Hub";
+    json["unique_id"] = String(_nukiHubUidString) + "_reset";
+    json["avty"][0]["t"] = String("~") + mqtt_topic_mqtt_connection_state;
+    json["opt"] = "false";
+    json["stat_t"] = String("~") + mqtt_topic_reset;
+    json["ent_cat"] = "diagnostic";
+    json["cmd_t"] = String("~") + mqtt_topic_reset;
+    json["ic"] = "mdi:restart";
+    json["pl_on"] = "1";
+    json["pl_off"] = "0";
+    json["stat_on"] = "1";
+    json["stat_off"] = "0";
 
-    Log->println("HASS setup for opener completed.");
-}
+    serializeJson(json, _buffer, _bufferSize);
 
-void NukiOpenerWrapper::disableHASS()
-{
-    char uidString[20];
-    itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
-    _network->removeHASSConfig(uidString);
-}
+    String path = _preferences->getString(preference_mqtt_hass_discovery, "homeassistant");
+    path.concat("/switch/");
+    path.concat(_nukiHubUidString);
+    path.concat("/reset/config");
 
-void NukiNetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const bool& publishAuthData, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
-{
-    String availabilityTopic = _preferences->getString(preference_mqtt_lock_path);
-    availabilityTopic.concat("/maintenance/mqttConnectionState");
-
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigAdditionalOpenerEntities(deviceType, baseTopic, name, uidString);
-    if(publishAuthData)
-    {
-        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
-    }
-    if(hasKeypad)
-    {
-        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
-    }
-}
-
-void NukiNetworkOpener::removeHASSConfig(char* uidString)
-{
-    _network->removeHASSConfig(uidString);
-}
-
-void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name,  char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
-                                        char *unlockAction, char *openAction)
-{
-    String availabilityTopic = _preferences->getString(preference_mqtt_lock_path);
-    availabilityTopic.concat("/maintenance/mqttConnectionState");
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
-
-    if(hasDoorSensor)
-    {
-        _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
-    }
+    _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-    _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
+    publishHassTopic("sensor",
+                     "wifi_signal_strength",
+                     _nukiHubUidString,
+                     "_wifi_signal_strength",
+                     "WIFI signal strength",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_wifi_rssi,
+                     "NukiHub",
+                     "signal_strength",
+                     "measurement",
+                     "diagnostic",
+                     "",
+    { {(char*)"unit_of_meas", (char*)"dBm"} });
 #endif
 
+    // MQTT Connected
+    publishHassTopic("binary_sensor",
+                     "mqtt_connected",
+                     _nukiHubUidString,
+                     "_mqtt_connected",
+                     "MQTT connected",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_mqtt_connection_state,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        {(char*)"pl_on", (char*)"online"},
+        {(char*)"pl_off", (char*)"offline"},
+        {(char*)"ic", (char*)"mdi:lan-connect"}
+    });
+
+    // Network device
+    publishHassTopic("sensor",
+                     "network_device",
+                     _nukiHubUidString,
+                     "_network_device",
+                     "Network device",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_network_device,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    { { (char*)"en", (char*)"true" }});
+
+    // Nuki Hub Webserver enabled
+    publishHassTopic("switch",
+                     "webserver",
+                     _nukiHubUidString,
+                     "_webserver",
+                     "Nuki Hub webserver enabled",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_webserver_state,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     String("~") + mqtt_topic_webserver_action,
+    {
+        { (char*)"pl_on", (char*)"1" },
+        { (char*)"pl_off", (char*)"0" },
+        { (char*)"stat_on", (char*)"1" },
+        { (char*)"stat_off", (char*)"0" }
+    });
+
+    // Uptime
+    publishHassTopic("sensor",
+                     "uptime",
+                     _nukiHubUidString,
+                     "_uptime",
+                     "Uptime",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_uptime,
+                     "NukiHub",
+                     "duration",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        { (char*)"en", (char*)"true" },
+        { (char*)"unit_of_meas", (char*)"min"}
+    });
+
+    if(_preferences->getBool(preference_mqtt_log_enabled, false))
+    {
+        // MQTT Log
+        publishHassTopic("sensor",
+                         "mqtt_log",
+                         _nukiHubUidString,
+                         "_mqtt_log",
+                         "MQTT Log",
+                         _hostname.c_str(),
+                         _baseTopic.c_str(),
+                         String("~") + mqtt_topic_log,
+                         "NukiHub",
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+        { { (char*)"en", (char*)"true" }});
+    }
+    else
+    {
+        removeHassTopic((char*)"sensor", (char*)"mqtt_log", _nukiHubUidString);
+    }
+
+    // Nuki Hub version
+    publishHassTopic("sensor",
+                     "nuki_hub_version",
+                     _nukiHubUidString,
+                     "_nuki_hub_version",
+                     "Nuki Hub version",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_info_nuki_hub_version,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        { (char*)"en", (char*)"true" },
+        {(char*)"ic", (char*)"mdi:counter"}
+    });
+
+    // Nuki Hub build
+    publishHassTopic("sensor",
+                     "nuki_hub_build",
+                     _nukiHubUidString,
+                     "_nuki_hub_build",
+                     "Nuki Hub build",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_info_nuki_hub_build,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        { (char*)"en", (char*)"true" },
+        {(char*)"ic", (char*)"mdi:counter"}
+    });
+
+    // Nuki Hub restart reason
+    publishHassTopic("sensor",
+                     "nuki_hub_restart_reason",
+                     _nukiHubUidString,
+                     "_nuki_hub_restart_reason",
+                     "Nuki Hub restart reason",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_restart_reason_fw,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    { { (char*)"en", (char*)"true" }});
+
+    // Nuki Hub restart reason ESP
+    publishHassTopic("sensor",
+                     "nuki_hub_restart_reason_esp",
+                     _nukiHubUidString,
+                     "_nuki_hub_restart_reason_esp",
+                     "Nuki Hub restart reason ESP",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_restart_reason_esp,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    { { (char*)"en", (char*)"true" }});
+
+    if(_checkUpdates)
+    {
+        // NUKI Hub latest
+        publishHassTopic("sensor",
+                         "nuki_hub_latest",
+                         _nukiHubUidString,
+                         "_nuki_hub_latest",
+                         "NUKI Hub latest",
+                         _hostname.c_str(),
+                         _baseTopic.c_str(),
+                         String("~") + mqtt_topic_info_nuki_hub_latest,
+                         "NukiHub",
+                         "",
+                         "",
+                         "diagnostic",
+                         "",
+        {
+            { (char*)"en", (char*)"true" },
+            {(char*)"ic", (char*)"mdi:counter"}
+        });
+
+        // NUKI Hub update
+        char latest_version_topic[250];
+        _baseTopic.toCharArray(latest_version_topic,_baseTopic.length() + 1);
+        strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
+
+        if(!_updateFromMQTT)
+        {
+            publishHassTopic("update",
+                             "nuki_hub_update",
+                             _nukiHubUidString,
+                             "_nuki_hub_update",
+                             "NUKI Hub firmware update",
+                             _hostname.c_str(),
+                             _baseTopic.c_str(),
+                             String("~") + mqtt_topic_info_nuki_hub_version,
+                             "NukiHub",
+                             "firmware",
+                             "",
+                             "diagnostic",
+                             "",
+            {
+                { (char*)"en", (char*)"true" },
+                { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
+                { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
+                { (char*)"l_ver_t", (char*)latest_version_topic }
+            });
+        }
+        else
+        {
+            publishHassTopic("update",
+                             "nuki_hub_update",
+                             _nukiHubUidString,
+                             "_nuki_hub_update",
+                             "NUKI Hub firmware update",
+                             _hostname.c_str(),
+                             _baseTopic.c_str(),
+                             String("~") + mqtt_topic_info_nuki_hub_version,
+                             "NukiHub",
+                             "firmware",
+                             "",
+                             "diagnostic",
+                             String("~") + mqtt_topic_update,
+            {
+                { (char*)"en", (char*)"true" },
+                { (char*)"pl_inst", (char*)"1" },
+                { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
+                { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
+                { (char*)"l_ver_t", (char*)latest_version_topic }
+            });
+        }
+    }
+    else
+    {
+        removeHassTopic((char*)"sensor", (char*)"nuki_hub_latest", _nukiHubUidString);
+        removeHassTopic((char*)"update", (char*)"nuki_hub_update", _nukiHubUidString);
+    }
+
+    // Nuki Hub IP Address
+    publishHassTopic("sensor",
+                     "nuki_hub_ip",
+                     _nukiHubUidString,
+                     "_nuki_hub_ip",
+                     "Nuki Hub IP",
+                     _hostname.c_str(),
+                     _baseTopic.c_str(),
+                     String("~") + mqtt_topic_info_nuki_hub_ip,
+                     "NukiHub",
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        { (char*)"en", (char*)"true" },
+        {(char*)"ic", (char*)"mdi:ip"}
+    });
+}
+
+void HomeAssistantDiscovery::publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction, char *unlockAction, char *openAction)
+{
+    String availabilityTopic = _baseTopic;
+    availabilityTopic.concat(mqtt_topic_mqtt_connection_state);
+
+    publishHASSDeviceConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
+
+    if(strcmp(deviceType, "SmartLock") == 0)
+    {
+        publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        publishHASSConfigAdditionalOpenerEntities(deviceType, baseTopic, name, uidString);
+    }
+    if(hasDoorSensor)
+    {
+        publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
+    }
+    else
+    {
+        removeHASSConfigTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
+    }
     if(publishAuthData)
     {
-        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
+        publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
     }
     else
     {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
+        removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
+        removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
     }
-
     if(hasKeypad)
     {
-        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
+        publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
     }
     else
     {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
+        removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
+        removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
     }
 }
 
-void NukiNetworkLock::removeHASSConfig(char *uidString)
-{
-    _network->removeHASSConfig(uidString);
-}
-
-void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
+void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
 {
     JsonDocument json;
     json.clear();
@@ -145,6 +466,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
     json["dev"]["name"] = name;
     json["dev"]["sw"] = softwareVersion;
     json["dev"]["hw"] = hardwareVersion;
+    json["dev"]["via_device"] = String("nuki_") + _nukiHubUidString;
 
     String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url, "");
 
@@ -191,6 +513,45 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
     path.concat("/smartlock/config");
 
     _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+
+
+    // Firmware version
+    publishHassTopic("sensor",
+                     "firmware_version",
+                     uidString,
+                     "_firmware_version",
+                     "Firmware version",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_info_firmware_version,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        { (char*)"en", (char*)"true" },
+        {(char*)"ic", (char*)"mdi:counter"}
+    });
+
+    // Hardware version
+    publishHassTopic("sensor",
+                     "hardware_version",
+                     uidString,
+                     "_hardware_version",
+                     "Hardware version",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_info_hardware_version,
+                     deviceType,
+                     "",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        { (char*)"en", (char*)"true" },
+        {(char*)"ic", (char*)"mdi:counter"}
+    });
 
     // Battery critical
     publishHassTopic("binary_sensor",
@@ -247,133 +608,12 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
                      "",
     { { (char*)"en", (char*)"true" } });
 
-    // MQTT Connected
-    publishHassTopic("binary_sensor",
-                     "mqtt_connected",
-                     uidString,
-                     "_mqtt_connected",
-                     "MQTT connected",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_mqtt_connection_state,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        {(char*)"pl_on", (char*)"online"},
-        {(char*)"pl_off", (char*)"offline"},
-        {(char*)"ic", (char*)"mdi:lan-connect"}
-    });
-
-    // Reset
-    publishHassTopic("switch",
-                     "reset",
-                     uidString,
-                     "_reset",
-                     "Restart Nuki Hub",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_reset,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     String("~") + mqtt_topic_reset,
-    {
-        { (char*)"ic", (char*)"mdi:restart" },
-        { (char*)"pl_on", (char*)"1" },
-        { (char*)"pl_off", (char*)"0" },
-        { (char*)"stat_on", (char*)"1" },
-        { (char*)"stat_off", (char*)"0" }
-    });
-
-    // Network device
-    publishHassTopic("sensor",
-                     "network_device",
-                     uidString,
-                     "_network_device",
-                     "Network device",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_network_device,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    { { (char*)"en", (char*)"true" }});
-
-    // Nuki Hub Webserver enabled
-    publishHassTopic("switch",
-                     "webserver",
-                     uidString,
-                     "_webserver",
-                     "Nuki Hub webserver enabled",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_webserver_state,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     _lockPath + mqtt_topic_webserver_action,
-    {
-        { (char*)"pl_on", (char*)"1" },
-        { (char*)"pl_off", (char*)"0" },
-        { (char*)"stat_on", (char*)"1" },
-        { (char*)"stat_off", (char*)"0" }
-    });
-
-    // Uptime
-    publishHassTopic("sensor",
-                     "uptime",
-                     uidString,
-                     "_uptime",
-                     "Uptime",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_uptime,
-                     deviceType,
-                     "duration",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"en", (char*)"true" },
-        { (char*)"unit_of_meas", (char*)"min"}
-    });
-
-    if(_preferences->getBool(preference_mqtt_log_enabled, false))
-    {
-        // MQTT Log
-        publishHassTopic("sensor",
-                         "mqtt_log",
-                         uidString,
-                         "_mqtt_log",
-                         "MQTT Log",
-                         name,
-                         baseTopic,
-                         _lockPath + mqtt_topic_log,
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         "",
-        { { (char*)"en", (char*)"true" }});
-    }
-    else
-    {
-        removeHassTopic((char*)"sensor", (char*)"mqtt_log", uidString);
-    }
-
     if(_offEnabled)
     {
         // Hybrid connected
-        String hybridPath = _lockPath;
+        String hybridPath = _baseTopic;
         hybridPath.concat("/lock");
-        hybridPath.concat(mqtt_hybrid_state);
+        hybridPath.concat(mqtt_topic_hybrid_state);
         publishHassTopic("binary_sensor",
                          "hybrid_connected",
                          uidString,
@@ -397,211 +637,6 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
     {
         removeHassTopic((char*)"binary_sensor", (char*)"hybrid_connected", uidString);
     }
-
-    // Firmware version
-    publishHassTopic("sensor",
-                     "firmware_version",
-                     uidString,
-                     "_firmware_version",
-                     "Firmware version",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_info_firmware_version,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"en", (char*)"true" },
-        {(char*)"ic", (char*)"mdi:counter"}
-    });
-
-    // Hardware version
-    publishHassTopic("sensor",
-                     "hardware_version",
-                     uidString,
-                     "_hardware_version",
-                     "Hardware version",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_info_hardware_version,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"en", (char*)"true" },
-        {(char*)"ic", (char*)"mdi:counter"}
-    });
-
-    // Nuki Hub version
-    publishHassTopic("sensor",
-                     "nuki_hub_version",
-                     uidString,
-                     "_nuki_hub_version",
-                     "Nuki Hub version",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_info_nuki_hub_version,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"en", (char*)"true" },
-        {(char*)"ic", (char*)"mdi:counter"}
-    });
-
-    // Nuki Hub build
-    publishHassTopic("sensor",
-                     "nuki_hub_build",
-                     uidString,
-                     "_nuki_hub_build",
-                     "Nuki Hub build",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_info_nuki_hub_build,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"en", (char*)"true" },
-        {(char*)"ic", (char*)"mdi:counter"}
-    });
-
-    // Nuki Hub restart reason
-    publishHassTopic("sensor",
-                     "nuki_hub_restart_reason",
-                     uidString,
-                     "_nuki_hub_restart_reason",
-                     "Nuki Hub restart reason",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_restart_reason_fw,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    { { (char*)"en", (char*)"true" }});
-
-    // Nuki Hub restart reason ESP
-    publishHassTopic("sensor",
-                     "nuki_hub_restart_reason_esp",
-                     uidString,
-                     "_nuki_hub_restart_reason_esp",
-                     "Nuki Hub restart reason ESP",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_restart_reason_esp,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    { { (char*)"en", (char*)"true" }});
-
-    if(_checkUpdates)
-    {
-        // NUKI Hub latest
-        publishHassTopic("sensor",
-                         "nuki_hub_latest",
-                         uidString,
-                         "_nuki_hub_latest",
-                         "NUKI Hub latest",
-                         name,
-                         baseTopic,
-                         _lockPath + mqtt_topic_info_nuki_hub_latest,
-                         deviceType,
-                         "",
-                         "",
-                         "diagnostic",
-                         "",
-        {
-            { (char*)"en", (char*)"true" },
-            {(char*)"ic", (char*)"mdi:counter"}
-        });
-
-        // NUKI Hub update
-        char latest_version_topic[250];
-        _lockPath.toCharArray(latest_version_topic,_lockPath.length() + 1);
-        strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
-
-        if(!_updateFromMQTT)
-        {
-            publishHassTopic("update",
-                             "nuki_hub_update",
-                             uidString,
-                             "_nuki_hub_update",
-                             "NUKI Hub firmware update",
-                             name,
-                             baseTopic,
-                             _lockPath + mqtt_topic_info_nuki_hub_version,
-                             deviceType,
-                             "firmware",
-                             "",
-                             "diagnostic",
-                             "",
-            {
-                { (char*)"en", (char*)"true" },
-                { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
-                { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
-                { (char*)"l_ver_t", (char*)latest_version_topic }
-            });
-        }
-        else
-        {
-            publishHassTopic("update",
-                             "nuki_hub_update",
-                             uidString,
-                             "_nuki_hub_update",
-                             "NUKI Hub firmware update",
-                             name,
-                             baseTopic,
-                             _lockPath + mqtt_topic_info_nuki_hub_version,
-                             deviceType,
-                             "firmware",
-                             "",
-                             "diagnostic",
-                             _lockPath + mqtt_topic_update,
-            {
-                { (char*)"en", (char*)"true" },
-                { (char*)"pl_inst", (char*)"1" },
-                { (char*)"ent_pic", (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/master/icon/favicon-32x32.png" },
-                { (char*)"rel_u", (char*)GITHUB_LATEST_RELEASE_URL },
-                { (char*)"l_ver_t", (char*)latest_version_topic }
-            });
-        }
-    }
-    else
-    {
-        removeHassTopic((char*)"sensor", (char*)"nuki_hub_latest", uidString);
-        removeHassTopic((char*)"update", (char*)"nuki_hub_update", uidString);
-    }
-
-    // Nuki Hub IP Address
-    publishHassTopic("sensor",
-                     "nuki_hub_ip",
-                     uidString,
-                     "_nuki_hub_ip",
-                     "Nuki Hub IP",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_info_nuki_hub_ip,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"en", (char*)"true" },
-        {(char*)"ic", (char*)"mdi:ip"}
-    });
 
     // Query Lock State
     publishHassTopic("button",
@@ -676,7 +711,7 @@ void NukiNetwork::publishHASSConfig(char* deviceType, const char* baseTopic, cha
     { {(char*)"unit_of_meas", (char*)"dBm"} });
 }
 
-void NukiNetwork::publishHASSConfigAdditionalLockEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
@@ -1790,7 +1825,7 @@ void NukiNetwork::publishHASSConfigAdditionalLockEntities(char *deviceType, cons
     }
 }
 
-void NukiNetwork::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void HomeAssistantDiscovery::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     publishHassTopic("binary_sensor",
                      "door_sensor",
@@ -1812,7 +1847,7 @@ void NukiNetwork::publishHASSConfigDoorSensor(char *deviceType, const char *base
     });
 }
 
-void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
@@ -1942,9 +1977,9 @@ void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, co
         {
             { (char*)"en", (char*)"true" },
             { (char*)"ic", (char*)"mdi:led-variant-on" },
-            { (char*)"pl_on", (char*)"{ \"ledEnabled\": \"1\"}" },
-            { (char*)"pl_off", (char*)"{ \"ledEnabled\": \"0\"}" },
-            { (char*)"val_tpl", (char*)"{{value_json.ledEnabled}}" },
+            { (char*)"pl_on", (char*)"{ \"ledFlashEnabled\": \"1\"}" },
+            { (char*)"pl_off", (char*)"{ \"ledFlashEnabled\": \"0\"}" },
+            { (char*)"val_tpl", (char*)"{{value_json.ledFlashEnabled}}" },
             { (char*)"stat_on", (char*)"1" },
             { (char*)"stat_off", (char*)"0" }
         });
@@ -2709,7 +2744,7 @@ void NukiNetwork::publishHASSConfigAdditionalOpenerEntities(char *deviceType, co
     }
 }
 
-void NukiNetwork::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void HomeAssistantDiscovery::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     publishHassTopic("sensor",
                      "last_action_authorization",
@@ -2731,7 +2766,6 @@ void NukiNetwork::publishHASSConfigAccessLog(char *deviceType, const char *baseT
 
     String rollingSate = "~";
     rollingSate.concat(mqtt_topic_lock_log_rolling);
-    const char *rollingStateChr = rollingSate.c_str();
 
     publishHassTopic("sensor",
                      "rolling_log",
@@ -2748,12 +2782,12 @@ void NukiNetwork::publishHASSConfigAccessLog(char *deviceType, const char *baseT
                      "",
     {
         { (char*)"ic", (char*)"mdi:format-list-bulleted" },
-        { (char*)"json_attr_t", (char*)rollingStateChr },
+        { (char*)"json_attr_t", (char*)rollingSate.c_str() },
         { (char*)"val_tpl", (char*)"{{value_json.index}}" }
     });
 }
 
-void NukiNetwork::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, char *name, char *uidString)
+void HomeAssistantDiscovery::publishHASSConfigKeypad(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
     // Keypad battery critical
     publishHassTopic("binary_sensor",
@@ -2813,25 +2847,7 @@ void NukiNetwork::publishHASSConfigKeypad(char *deviceType, const char *baseTopi
     });
 }
 
-void NukiNetwork::publishHASSWifiRssiConfig(char *deviceType, const char *baseTopic, char *name, char *uidString)
-{
-    publishHassTopic("sensor",
-                     "wifi_signal_strength",
-                     uidString,
-                     "_wifi_signal_strength",
-                     "WIFI signal strength",
-                     name,
-                     baseTopic,
-                     _lockPath + mqtt_topic_wifi_rssi,
-                     deviceType,
-                     "signal_strength",
-                     "measurement",
-                     "diagnostic",
-                     "",
-    { {(char*)"unit_of_meas", (char*)"dBm"} });
-}
-
-void NukiNetwork::publishHassTopic(const String& mqttDeviceType,
+void HomeAssistantDiscovery::publishHassTopic(const String& mqttDeviceType,
                                    const String& mqttDeviceName,
                                    const String& uidString,
                                    const String& uidStringPostfix,
@@ -2857,7 +2873,7 @@ void NukiNetwork::publishHassTopic(const String& mqttDeviceType,
     }
 }
 
-String NukiNetwork::createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
+String HomeAssistantDiscovery::createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
     String path = _discoveryTopic;
     path.concat("/");
@@ -2871,7 +2887,7 @@ String NukiNetwork::createHassTopicPath(const String& mqttDeviceType, const Stri
     return path;
 }
 
-void NukiNetwork::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
+void HomeAssistantDiscovery::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
     if (_discoveryTopic != "")
     {
@@ -2880,7 +2896,7 @@ void NukiNetwork::removeHassTopic(const String& mqttDeviceType, const String& mq
     }
 }
 
-void NukiNetwork::removeHASSConfig(char* uidString)
+void HomeAssistantDiscovery::removeHASSConfig(char* uidString)
 {
     removeHassTopic((char*)"lock", (char*)"smartlock", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"battery_low", uidString);
@@ -2976,33 +2992,31 @@ void NukiNetwork::removeHASSConfig(char* uidString)
     removeHassTopic((char*)"sensor", (char*)"nuki_hub_restart_reason_esp", uidString);
 }
 
-void NukiNetwork::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)
+void HomeAssistantDiscovery::removeHASSConfigTopic(char *deviceType, char *name, char *uidString)
 {
     removeHassTopic(deviceType, name, uidString);
 }
 
-JsonDocument NukiNetwork::createHassJson(const String& uidString,
-        const String& uidStringPostfix,
-        const String& displayName,
-        const String& name,
-        const String& baseTopic,
-        const String& stateTopic,
-        const String& deviceType,
-        const String& deviceClass,
-        const String& stateClass,
-        const String& entityCat,
-        const String& commandTopic,
-        std::vector<std::pair<char*, char*>> additionalEntries
-                                        )
+JsonDocument HomeAssistantDiscovery::createHassJson(const String& uidString,
+                                                    const String& uidStringPostfix,
+                                                    const String& displayName,
+                                                    const String& name,
+                                                    const String& baseTopic,
+                                                    const String& stateTopic,
+                                                    const String& deviceType,
+                                                    const String& deviceClass,
+                                                    const String& stateClass,
+                                                    const String& entityCat,
+                                                    const String& commandTopic,
+                                                    std::vector<std::pair<char*, char*>> additionalEntries
+                                                                                    )
 {
     JsonDocument json;
     json.clear();
     JsonObject dev = json["dev"].to<JsonObject>();
     JsonArray ids = dev["ids"].to<JsonArray>();
     ids.add(String("nuki_") + uidString);
-    json["dev"]["mf"] = "Nuki";
-    json["dev"]["mdl"] = deviceType;
-    json["dev"]["name"] = name;
+
     json["~"] = baseTopic;
     json["name"] = displayName;
     json["unique_id"] = String(uidString) + uidStringPostfix;
@@ -3032,7 +3046,7 @@ JsonDocument NukiNetwork::createHassJson(const String& uidString,
         json["cmd_t"] = commandTopic;
     }
 
-    json["avty"]["t"] = _lockPath + mqtt_topic_mqtt_connection_state;
+    json["avty"]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
 
     for(const auto& entry : additionalEntries)
     {
