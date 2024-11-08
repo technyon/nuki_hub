@@ -54,7 +54,7 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.setConnectTimeout(3);
     _nukiOpener.setDisconnectTimeout(5000);
 
-    _hassEnabled = _preferences->getString(preference_mqtt_hass_discovery) != "";
+    _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
     readSettings();
 }
 
@@ -313,7 +313,8 @@ void NukiOpenerWrapper::update()
             }
             if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
             {
-                setupHASS();
+                _network->setupHASS(2, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), false, _hasKeypad);
+                _hassSetupCompleted = true;
             }
             if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
             {
@@ -610,13 +611,13 @@ void NukiOpenerWrapper::updateConfig()
         }
         else
         {
-            Log->println(F("Invalid/Unexpected opener config recieved, ID does not matched saved ID"));
+            Log->println(F("Invalid/Unexpected opener config received, ID does not matched saved ID"));
             expectedConfig = false;
         }
     }
     else
     {
-        Log->println(F("Invalid/Unexpected opener config recieved, Config is not valid"));
+        Log->println(F("Invalid/Unexpected opener config received, Config is not valid"));
         expectedConfig = false;
     }
 
@@ -633,7 +634,7 @@ void NukiOpenerWrapper::updateConfig()
         }
         else
         {
-            Log->println(F("Invalid/Unexpected opener advanced config recieved, Advanced config is not valid"));
+            Log->println(F("Invalid/Unexpected opener advanced config received, Advanced config is not valid"));
             expectedConfig = false;
         }
     }
@@ -646,7 +647,7 @@ void NukiOpenerWrapper::updateConfig()
     else
     {
         ++_retryConfigCount;
-        Log->println(F("Invalid/Unexpected opener config and/or advanced config recieved, retrying in 10 seconds"));
+        Log->println(F("Invalid/Unexpected opener config and/or advanced config received, retrying in 10 seconds"));
         int64_t ts = espMillis();
         _nextConfigUpdateTs = ts + 10000;
     }
@@ -3955,43 +3956,6 @@ void NukiOpenerWrapper::readAdvancedConfig()
     Log->print(F("Opener advanced config result: "));
     Log->println(resultStr);
     postponeBleWatchdog();
-}
-
-void NukiOpenerWrapper::setupHASS()
-{
-    if(!_nukiConfigValid)
-    {
-        return;
-    }
-    if(_preferences->getUInt(preference_nuki_id_opener, 0) != _nukiConfig.nukiId)
-    {
-        return;
-    }
-
-    String baseTopic = _preferences->getString(preference_mqtt_lock_path);
-    baseTopic.concat("/opener");
-    char uidString[20];
-    itoa(_nukiConfig.nukiId, uidString, 16);
-
-    if(_preferences->getBool(preference_opener_continuous_mode, false))
-    {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), _publishAuthData, _hasKeypad, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
-    }
-    else
-    {
-        _network->publishHASSConfig((char*)"Opener", baseTopic.c_str(), (char*)_nukiConfig.name, uidString, _firmwareVersion.c_str(), _hardwareVersion.c_str(), _publishAuthData, _hasKeypad, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
-    }
-
-    _hassSetupCompleted = true;
-
-    Log->println("HASS setup for opener completed.");
-}
-
-void NukiOpenerWrapper::disableHASS()
-{
-    char uidString[20];
-    itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
-    _network->removeHASSConfig(uidString);
 }
 
 void NukiOpenerWrapper::printCommandResult(Nuki::CmdResult result)

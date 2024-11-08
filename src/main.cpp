@@ -446,7 +446,7 @@ void setup()
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
-    bool firstStart = initPreferences(preferences);
+    initPreferences(preferences);
     bool doOta = false;
     uint8_t partitionType = checkPartition();
 
@@ -467,13 +467,6 @@ void setup()
     {
         doOta = true;
     }
-
-#ifndef NUKI_HUB_UPDATER
-    if(preferences->getBool(preference_enable_bootloop_reset, false))
-    {
-        bootloopDetection();
-    }
-#endif
 
 #ifdef NUKI_HUB_UPDATER
     Log->print(F("Nuki Hub OTA version "));
@@ -511,6 +504,11 @@ void setup()
         });
     }
 #else
+    if(preferences->getBool(preference_enable_bootloop_reset, false))
+    {
+        bootloopDetection();
+    }
+
     Log->print(F("Nuki Hub version "));
     Log->println(NUKI_HUB_VERSION);
     Log->print(F("Nuki Hub build "));
@@ -571,7 +569,7 @@ void setup()
         }
 
         nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences);
-        nuki->initialize(firstStart);
+        nuki->initialize();
     }
 
     Log->println(openerEnabled ? F("Nuki Opener enabled") : F("Nuki Opener disabled"));
