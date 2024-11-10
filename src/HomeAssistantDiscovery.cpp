@@ -1954,6 +1954,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
     json = createHassJson(uidString, "_ring_event", "Ring", name, baseTopic, String("~") + mqtt_topic_lock_ring, deviceType, "doorbell", "", "", "", {{(char*)"val_tpl", (char*)"{ \"event_type\": \"{{ value }}\" }"}});
     json["event_types"][0] = "ring";
     json["event_types"][1] = "ringlocked";
+    json["event_types"][2] = "standby";
     serializeJson(json, _buffer, _bufferSize);
     String path = createHassTopicPath("event", "ring", uidString);
     _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
