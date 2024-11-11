@@ -49,7 +49,7 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 
 ## Recommended ESP32 devices
 
-- If WIFI6 is required: ESP32-C6
+- If WIFI6 is absolutely required: ESP32-C6
 - If PoE is required: Any of the above mentioned devices with PoE or any other ESP device in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html)
 - If you want maximum performance and intend to run any or multiple of the following:
   - a Nuki Lock and Nuki Opener and/or 
@@ -69,17 +69,17 @@ The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using P
 | Feature | Nuki Hub | Nuki Bridge |
 |---|---|---|
 | Bridge API |  | x |
-| Smart Lock remote control | (optional via smarthome solution) | x |
+| Smart Lock remote control | x | x |
 | Smart Home integration via Matter |  | x |
 | Apple HomeKit integration via Matter |  | x |
-| MQTT API | x | x (only for SL > 3, Pro models) |
+| MQTT API | x | x (only for SL 3, 4 and 4 Pro models) |
 | Wired LAN support | x |  |
 | Power over Ethernet (PoE) | x (if supported by LAN/ESP module) |  |
-| WLAN support | x | x (only for SL > 3, Pro Models) || Home Assistant integration | x (full integration of most Nuki features) | x |
+| WLAN support | x | x (only for SL 3 and 4 Pro Models) || Home Assistant integration | x (full integration of most Nuki features) | x |
 | Home Automation platform integration | x | x |
-| Cloud support | (optional via smarthome solution) | x |
-| Cloud-less operation | x | x (since fw 3.8.2, to be tested) |
-| Smarthome app integration |  | x |
+| Cloud support | x (optional via smarthome solution) | x |
+| Cloud-less operation | x | x (since fw 3.8.2) |
+| Official Nuki app integration |  | x |
 | Nuki Smartlocks all models | x | x |
 | Nuki opener | x | x |
 | Nuki Keypad (1.0 and 2.0) | x | x |
@@ -87,14 +87,12 @@ The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using P
 | Fine-grained access control of MQTT API | x |  |
 | Export of lock actions via MQTT API | x |  |
 | Control via GPIO | x |  |
-| Hybrid mode for Pro locks | x |  |
-
-
+| Hybrid mode for WiFI and Thread connected locks | x |  |
 
 ## Support Nuki Hub development
 
 If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
-REF443RM5HR5X<br>
+REF2BJHFVHZKK<br>
 This will also give you a 10% discount on your order.<br>
 <br>
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:<br>
@@ -345,39 +343,39 @@ After importing the device will reboot.
 - opener/retry: Reports the current number of retries for the current command. 0 when command is successful, "failed" if the number of retries is greater than the maximum configured number of retries.
 
 ### Configuration
-- [lock/opener]/configuration/buttonEnabled: 1 if the Nuki Lock/Opener button is enabled, otherwise 0.
-- [lock/opener]/configuration/ledEnabled: 1 if the Nuki Lock/Opener LED is enabled, otherwise 0.
-- [lock/opener]/configuration/ledBrightness: Set to the brightness of the LED on the Nuki Lock (0=min; 5=max) (Lock only).
-- [lock/opener]/configuration/singleLock: 0 if the Nuki Lock is set to double-lock the door, otherwise 1 (= single-lock) (Lock only).
-- [lock/opener]/configuration/autoLock:  1 if the Nuki Lock is set to Auto Lock, otherwise 0 (Lock only).
-- [lock/opener]/configuration/autoUnlock: 1 if the Nuki Lock is set to Auto Unlock, otherwise 0 (Lock only).
-- [lock/opener]/configuration/soundLevel: Set to the volume for sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
-- [lock/opener]/configuration/action: Allows changing configuration settings of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible actions/values
-- [lock/opener]/configuration/commandResult: Result of the last configuration change action as JSON data. See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible values
-- [lock/opener]/configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings. Please note: Longitude and Latitude of the Lock/Opener are not published to MQTT by design. These values can still be changed though.
-- [lock/opener]/configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for available settings.
+- [lock/opener/]configuration/buttonEnabled: 1 if the Nuki Lock/Opener button is enabled, otherwise 0.
+- [lock/opener/]configuration/ledEnabled: 1 if the Nuki Lock/Opener LED is enabled, otherwise 0.
+- [lock/opener/]configuration/ledBrightness: Set to the brightness of the LED on the Nuki Lock (0=min; 5=max) (Lock only).
+- [lock/opener/]configuration/singleLock: 0 if the Nuki Lock is set to double-lock the door, otherwise 1 (= single-lock) (Lock only).
+- [lock/opener/]configuration/autoLock:  1 if the Nuki Lock is set to Auto Lock, otherwise 0 (Lock only).
+- [lock/opener/]configuration/autoUnlock: 1 if the Nuki Lock is set to Auto Unlock, otherwise 0 (Lock only).
+- [lock/opener/]configuration/soundLevel: Set to the volume for sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
+- [lock/opener/]configuration/action: Allows changing configuration settings of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible actions/values
+- [lock/opener/]configuration/commandResult: Result of the last configuration change action as JSON data. See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible values
+- [lock/opener/]configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings. Please note: Longitude and Latitude of the Lock/Opener are not published to MQTT by design. These values can still be changed though.
+- [lock/opener/]configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for available settings.
 
 ### Query
 
-- [lock/opener]/query/lockstate: Set to 1 to trigger query lockstate. Auto-resets to 0.
-- [lock/opener]/query/config: Set to 1 to trigger query config. Auto-resets to 0.
-- [lock/opener]/query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
-- [lock/opener]/query/battery: Set to 1 to trigger query battery. Auto-resets to 0.
-- [lock/opener]/query/lockstateCommandResult: Set to 1 to trigger query lockstate command result. Auto-resets to 0.
+- [lock/opener/]query/lockstate: Set to 1 to trigger query lockstate. Auto-resets to 0.
+- [lock/opener/]query/config: Set to 1 to trigger query config. Auto-resets to 0.
+- [lock/opener/]query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
+- [lock/opener/]query/battery: Set to 1 to trigger query battery. Auto-resets to 0.
+- [lock/opener/]query/lockstateCommandResult: Set to 1 to trigger query lockstate command result. Auto-resets to 0.
 
 ### Battery
 
-- [lock/opener]/battery/level: Battery level in percent (Lock only).
-- [lock/opener]/battery/critical: 1 if battery level is critical, otherwise 0.
-- [lock/opener]/battery/charging: 1 if charging, otherwise 0 (Lock only).
-- [lock/opener]/battery/voltage: Current Battery voltage (V).
-- [lock/opener]/battery/drain: The drain of the last lock action in Milliwattseconds (mWs) (Lock only).
-- [lock/opener]/battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
-- [lock/opener]/battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
-- [lock/opener]/battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0.
-- [lock/opener]/battery/doorSensorCritical (only available in hybdrid mode): 1 if the battery level of a connected doorsensor is critical, otherwise 0.
-- [lock/opener]/battery/basicJson: The current battery state (critical, charging, level and keypad critical) of the Nuki Lock/Opener as JSON data.
-- [lock/opener]/battery/advancedJson: : The current battery state (critical, batteryDrain, batteryVoltage, lockAction, startVoltage, lowestVoltage, lockDistance, startTemperature, maxTurnCurrent and batteryResistance) of the Nuki Lock/Opener as JSON data.
+- [lock/opener/]battery/level: Battery level in percent (Lock only).
+- [lock/opener/]battery/critical: 1 if battery level is critical, otherwise 0.
+- [lock/opener/]battery/charging: 1 if charging, otherwise 0 (Lock only).
+- [lock/opener/]battery/voltage: Current Battery voltage (V).
+- [lock/opener/]battery/drain: The drain of the last lock action in Milliwattseconds (mWs) (Lock only).
+- [lock/opener/]battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
+- [lock/opener/]battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
+- [lock/opener/]battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0.
+- [lock/opener/]battery/doorSensorCritical (only available in hybrid mode): 1 if the battery level of a connected doorsensor is critical, otherwise 0.
+- [lock/opener/]battery/basicJson: The current battery state (critical, charging, level and keypad critical) of the Nuki Lock/Opener as JSON data.
+- [lock/opener/]battery/advancedJson: : The current battery state (critical, batteryDrain, batteryVoltage, lockAction, startVoltage, lowestVoltage, lockDistance, startTemperature, maxTurnCurrent and batteryResistance) of the Nuki Lock/Opener as JSON data.
 
 ### Keypad
 
@@ -390,8 +388,8 @@ After importing the device will reboot.
 ### Info
 
 - info/nukiHubVersion: Set to the current version number of the Nuki Hub firmware.
-- info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware.
-- info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener.
+- [lock/opener/]info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware.
+- [lock/opener/]info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener.
 - info/nukiHubIp: Set to the IP of the Nuki Hub.
 - info/nukiHubLatest: Set to the latest available Nuki Hub firmware version number (if update checking is enabled in the settings).
 
@@ -519,10 +517,10 @@ If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#hom
 After the initial installation of the Nuki Hub firmware via serial connection, further updates can be deployed via OTA update from a browser.<br>
 In the configuration portal, select "Firmware update" from the main page.<br>
 <br>
-The easiest way to upgrade Nuki Hub, if Nuki Hub is connected to the internet, is to select "Auto Update".<br>
+The easiest way to upgrade Nuki Hub, if Nuki Hub is connected to the internet, is to select "Update to latest version".<br>
 This will download the latest Nuki Hub and Nuki Hub updater and automatically upgrade both applications.<br>
 Nuki Hub will reboot 3 times during this process, which will take about 5 minutes.<br>
-If you have enabled "Allow updating using MQTT" you can also use the Home Assistant updater or write "1" to the `nukihub/maintanance/reset` topic to start the update process.<br>
+If you have enabled "Allow updating using MQTT" you can also use the Home Assistant updater or write "1" to the `nukihub/maintanance/update` topic to start the update process.<br>
 <br>
 Alternatively you can select a binary file from your file system to update Nuki Hub or the Nuki Hub updator manually<br>
 You can only update Nuki Hub from the Nuki Hub updater and update the updater only from Nuki Hub<br>
@@ -566,7 +564,7 @@ openssl req -new -key server.key -out server.csr -subj "/C=US/ST=YourState/L=You
 ## Home Assistant Discovery (optional)
 
 This software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/) for integrating Nuki Hub with Home Assistant.<br>
-To enable autodiscovery, supply the discovery topic that is configured in your Home Assistant instance (If you have not changed this setting in Home Assistant the default is "homeassistant") in the MQTT Configuration page.<br>
+To enable autodiscovery, enable the checkbox on the "MQTT Configuration" page.<br>
 Once enabled, the Nuki Lock and/or Opener and related entities should automatically appear in your Home Assistant MQTT devices.
 
 The following mapping between Home Assistant services and Nuki commands is setup when enabling autodiscovery:
@@ -734,7 +732,7 @@ To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can
 If you prefer to connect to via Ethernet instead of Wi-Fi, you either use one of the supported ESP32 modules with built-in ethernet (see "[Supported devices](#supported-devices)" section)
 or wire a seperate SPI Ethernet module.<Br>
 Currently the Wiznet W5x00 Module (W5100, W5200, W5500), DN9051 and KSZ8851SNL chips are supported.<br>
-To use a supported module, flash the firmware, connect via Wi-Fi and select the correct network hardware in the "MQTT and Network Configuration" section.
+To use a supported module, flash the firmware, connect via Wi-Fi and select the correct network hardware in the "Network Configuration" section.
 
 To wire an external W5x00 module to the ESP, use this wiring scheme:
 
@@ -749,7 +747,7 @@ To wire an external W5x00 module to the ESP, use this wiring scheme:
 
 Now connect via Wi-Fi and change the network hardware to "Generic W5500".<br>
 
-If Ethernet hwardware isn't detected, Wi-Fi is used as a fallback, unless this is disabled in the settings.<br>
+If Ethernet hardware isn't detected or initialised properly after changing the network device, Wi-Fi will be used as a fallback.<br>
 <br>
 Note: LAN8720 modules are only supported on the ESP32 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
 
@@ -758,7 +756,7 @@ Note: LAN8720 modules are only supported on the ESP32 and ESP32-Solo1, not on th
 ### Random Wi-Fi disconnects
 
 Unfortunately the ESP32 has problems with some access points and reconnecting fails.<br>
-As a workaround you can navigate to "MQTT and Network Configuration" and enable "Restart on disconnect".<br>
+As a workaround you can navigate to "Network Configuration" and enable "Restart on disconnect".<br>
 This will reboot the ESP as soon as it gets disconnected from Wi-Fi.<br>
 Also, this reduces the config portal timeout to three minutes to prevent the ESP being stuck in config mode in case an access point is offline temporarily.<br>
 If this still doesn't fix the disconnects and the ESP becomes unreachable, the "Restart timer" option can be used as a last resort.<br>
@@ -781,7 +779,7 @@ A note about the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32
 
 Make sure you are using at least version 2023.8.0 of Home Assistant.<br>
 The Home Assistant developers have made changes to MQTT auto discovery which break support for older version and Nuki Hub has adopted these changes.<br>
-This unfortunately means that older versions of Home Assistant are not supported by the Nuki Hub discovery implemenation anymore.
+This unfortunately means that older versions of Home Assistant are not supported by the Nuki Hub discovery implementation anymore.
 
 ## FAQ
 
@@ -815,7 +813,7 @@ This button is disabled by default, but can be enabled in the Home Assistant UI.
 ### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
 
 When using multiple Nuki devices, different paths for each device have to be configured.<br>
-Navigate to "Nuki Configuration" and change the "MQTT Nuki Smartlock Path" or "MQTT Nuki Opener Path" under "Basic Nuki Configuration" for at least one of the devices.<br>
+Navigate to "MQTT Configuration" and change the "MQTT NukiHub Path" under "Basic MQTT Configuration" for at least one of the devices.<br>
 
 ### The Nuki battery is draining quickly.
 

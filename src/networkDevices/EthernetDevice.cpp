@@ -1,17 +1,14 @@
 #include "EthernetDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
-#ifndef NUKI_HUB_UPDATER
-#include "../MqttTopics.h"
-#include "espMqttClient.h"
-#endif
 #include "../RestartReason.h"
+#include "../EspMillis.h"
 
 extern bool ethCriticalFailure;
 extern bool wifiFallback;
 
 EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode)
-    : NetworkDevice(hostname, ipConfiguration),
+    : NetworkDevice(hostname, preferences, ipConfiguration),
       _deviceName(deviceName),
       _phy_addr(phy_addr),
       _power(power),
@@ -22,7 +19,9 @@ EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences,
       _useSpi(false),
       _preferences(preferences)
 {
-    init();
+#ifndef NUKI_HUB_UPDATER
+    NetworkDevice::init();
+#endif
 }
 
 EthernetDevice::EthernetDevice(const String &hostname,
@@ -37,7 +36,7 @@ EthernetDevice::EthernetDevice(const String &hostname,
                                int spi_miso,
                                int spi_mosi,
                                eth_phy_type_t ethtype)
-    : NetworkDevice(hostname, ipConfiguration),
+    : NetworkDevice(hostname, preferences, ipConfiguration),
       _deviceName(deviceName),
       _phy_addr(phy_addr),
       _cs(cs),
@@ -50,51 +49,8 @@ EthernetDevice::EthernetDevice(const String &hostname,
       _useSpi(true),
       _preferences(preferences)
 {
-    init();
-}
-
-void EthernetDevice::init()
-{
 #ifndef NUKI_HUB_UPDATER
-    size_t caLength = _preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
-    size_t crtLength = _preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
-    size_t keyLength = _preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
-
-    _useEncryption = caLength > 1;  // length is 1 when empty
-
-    if(_useEncryption)
-    {
-        Log->println(F("MQTT over TLS."));
-        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
-        _mqttClientSecure->setCACert(_ca);
-        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
-        {
-            Log->println(F("MQTT with client certificate."));
-            _mqttClientSecure->setCertificate(_cert);
-            _mqttClientSecure->setPrivateKey(_key);
-        }
-    } else
-    {
-        Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
-    }
-
-    if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
-    {
-        MqttLoggerMode mode;
-
-        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
-        else mode = MqttLoggerMode::MqttAndSerial;
-
-        _path = new char[200];
-        memset(_path, 0, sizeof(_path));
-
-        String pathStr = _preferences->getString(preference_mqtt_lock_path);
-        pathStr.concat(mqtt_topic_log);
-        strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, mode);
-    }
+    NetworkDevice::init();
 #endif
 }
 

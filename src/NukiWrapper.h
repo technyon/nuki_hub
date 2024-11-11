@@ -17,7 +17,7 @@ public:
     NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences);
     virtual ~NukiWrapper();
 
-    void initialize(const bool& firstStart);
+    void initialize();
     void readSettings();
     void update();
 
@@ -32,8 +32,6 @@ public:
     void setPin(const uint16_t pin);
     uint16_t getPin();
     void unpair();
-
-    void disableHASS();
 
     void disableWatchdog();
 
@@ -80,8 +78,6 @@ private:
 
     void readConfig();
     void readAdvancedConfig();
-
-    void setupHASS();
 
     void printCommandResult(Nuki::CmdResult result);
 

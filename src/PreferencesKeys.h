@@ -2,6 +2,9 @@
 
 #include <vector>
 #include "Config.h"
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+#include "esp_wifi.h"
+#endif
 
 //CHANGE REQUIRES REBOOT TO TAKE EFFECT
 #define preference_ip_dhcp_enabled (char*)"dhcpena"
@@ -48,6 +51,7 @@
 #define preference_gpio_configuration (char*)"gpiocfg"
 #define preference_mqtt_hass_enabled (char*)"hassena"
 #define preference_mqtt_hass_discovery (char*)"hassdiscovery"
+#define preference_hass_device_discovery (char*)"hassdevdisc"
 #define preference_webserver_enabled (char*)"websrvena"
 #define preference_update_from_mqtt (char*)"updMqtt"
 #define preference_disable_non_json (char*)"disnonjson"
@@ -128,17 +132,17 @@
 #define preference_presence_detection_timeout (char*)"prdtimeout"
 #define preference_network_wifi_fallback_disabled (char*)"nwwififb"
 
-inline bool initPreferences(Preferences* preferences)
+inline void initPreferences(Preferences* preferences)
 {
     #ifdef NUKI_HUB_UPDATER
-    bool firstStart = false;
-    return firstStart;
+    return;
     #else
     bool firstStart = !preferences->getBool(preference_started_before);
-    #endif
 
     if(firstStart)
     {
+        Serial.println("First start, setting preference defaults");
+        
         preferences->putBool(preference_started_before, true);
         preferences->putBool(preference_lock_enabled, true);
         uint32_t aclPrefs[17] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
@@ -151,6 +155,69 @@ inline bool initPreferences(Preferences* preferences)
         preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
         uint32_t advancedOpenerConfigAclPrefs[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
+
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+        wifi_config_t wifi_cfg;
+        if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
+        {
+            Serial.println("Failed to get Wi-Fi configuration in RAM");
+        }
+
+        if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK)
+        {
+            Serial.println("Failed to set storage Wi-Fi");
+        }
+
+        memset(wifi_cfg.sta.ssid, 0, sizeof(wifi_cfg.sta.ssid));
+        memset(wifi_cfg.sta.password, 0, sizeof(wifi_cfg.sta.password));
+
+        if (esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
+        {
+            Serial.println("Failed to clear NVS Wi-Fi configuration");
+        }
+#endif
+        preferences->putString(preference_mqtt_lock_path, "nukihub");
+        
+        preferences->putBool(preference_check_updates, true);
+        preferences->putBool(preference_opener_continuous_mode, false);
+        preferences->putBool(preference_official_hybrid_enabled, false);
+        preferences->putBool(preference_official_hybrid_actions, false);
+        preferences->putBool(preference_official_hybrid_retry, false);
+        preferences->putBool(preference_disable_non_json, false);
+        preferences->putBool(preference_update_from_mqtt, false);
+        preferences->putBool(preference_ip_dhcp_enabled, true);
+        preferences->putBool(preference_enable_bootloop_reset, false);
+        preferences->putBool(preference_show_secrets, false);
+
+        preferences->putBool(preference_conf_info_enabled, true);
+        preferences->putBool(preference_keypad_info_enabled, false);
+        preferences->putBool(preference_keypad_topic_per_entry, false);
+        preferences->putBool(preference_keypad_publish_code, false);
+        preferences->putBool(preference_keypad_control_enabled, false);
+        preferences->putBool(preference_timecontrol_info_enabled, false);
+        preferences->putBool(preference_timecontrol_topic_per_entry, false);
+        preferences->putBool(preference_timecontrol_control_enabled, false);
+        preferences->putBool(preference_publish_authdata, false);
+        preferences->putBool(preference_register_as_app, false);
+        preferences->putBool(preference_register_opener_as_app, false);
+
+        preferences->putInt(preference_mqtt_broker_port, 1883);
+        preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
+        preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
+        preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
+        preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
+        preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
+        preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
+        preferences->putInt(preference_query_interval_hybrid_lockstate, 600);
+        preferences->putInt(preference_rssi_publish_interval, 60);
+        preferences->putInt(preference_network_timeout, 60);
+        preferences->putInt(preference_command_nr_of_retries, 3);
+        preferences->putInt(preference_command_retry_delay, 100);
+        preferences->putInt(preference_restart_ble_beacon_lost, 60);
+        preferences->putInt(preference_query_interval_lockstate, 1800);
+        preferences->putInt(preference_query_interval_configuration, 3600);
+        preferences->putInt(preference_query_interval_battery, 1800);
+        preferences->putInt(preference_query_interval_keypad, 1800);  
     }
     else
     {
@@ -265,8 +332,7 @@ inline bool initPreferences(Preferences* preferences)
             preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);
         }
     }
-
-    return firstStart;
+    #endif
 }
 
 class DebugPreferences
@@ -294,7 +360,7 @@ private:
             preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
             preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass,
-            preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled
+            preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled, preference_hass_device_discovery
     };
     std::vector<char*> _redact =
     {
@@ -309,7 +375,7 @@ private:
             preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
             preference_publish_authdata, preference_publish_debug_info, preference_official_hybrid_enabled, preference_mqtt_hass_enabled,
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
-            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled,
+            preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled, preference_hass_device_discovery,
             preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected
     };
     std::vector<char*> _bytePrefs =

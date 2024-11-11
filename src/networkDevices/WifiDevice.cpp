@@ -1,60 +1,19 @@
+#include "WifiDevice.h"
 #include "esp_wifi.h"
 #include <WiFi.h>
-#include "WifiDevice.h"
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
-#ifndef NUKI_HUB_UPDATER
-#include "../MqttTopics.h"
-#include "espMqttClient.h"
-#endif
 #include "../RestartReason.h"
+#include "../EspMillis.h"
 
 WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
-    : NetworkDevice(hostname, ipConfiguration),
+    : NetworkDevice(hostname, preferences, ipConfiguration),
       _preferences(preferences)
 {
-    #ifndef NUKI_HUB_UPDATER
-    size_t caLength = preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
-    size_t crtLength = preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
-    size_t keyLength = preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
-
-    _useEncryption = caLength > 1;  // length is 1 when empty
-
-    if(_useEncryption)
-    {
-        Log->println(F("MQTT over TLS."));
-        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
-        _mqttClientSecure->setCACert(_ca);
-        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
-        {
-            Log->println(F("MQTT with client certificate."));
-            _mqttClientSecure->setCertificate(_cert);
-            _mqttClientSecure->setPrivateKey(_key);
-        }
-    } 
-    else
-    {
-        Log->println(F("MQTT without TLS."));
-        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
-    }
-
-    if(preferences->getBool(preference_mqtt_log_enabled, false) || preferences->getBool(preference_webserial_enabled, false))
-    {
-        MqttLoggerMode mode;
-
-        if(preferences->getBool(preference_mqtt_log_enabled, false) && preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
-        else mode = MqttLoggerMode::MqttAndSerial;
-        _path = new char[200];
-        memset(_path, 0, sizeof(_path));
-        String pathStr = preferences->getString(preference_mqtt_lock_path);
-        pathStr.concat(mqtt_topic_log);
-        strcpy(_path, pathStr.c_str());
-        Log = new MqttLogger(*getMqttClient(), _path, mode);
-    }
-    #endif
+#ifndef NUKI_HUB_UPDATER
+    NetworkDevice::init();
+#endif
 }
-
 
 const String WifiDevice::deviceName() const
 {
