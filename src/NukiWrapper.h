@@ -65,7 +65,7 @@ private:
     void onAuthCommandReceived(const char* value);
     void onGpioActionReceived(const GpioAction& action, const int& pin);
 
-    void updateKeyTurnerState();
+    bool updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
     void updateAuthData(bool retrieved);
