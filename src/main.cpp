@@ -46,7 +46,7 @@ bool wifiConnected = false;
 
 TaskHandle_t nukiTaskHandle = nullptr;
 
-int64_t restartTs = ((2^64) - (5 * 1000 * 60000)) / 1000;
+int64_t restartTs = (pow(2,64) - (5 * 1000 * 60000)) / 1000;
 
 #else
 #include "../../src/WebCfgServer.h"
@@ -201,7 +201,7 @@ void nukiTask(void *pvParameters)
 
             if (needsPairing)
             {
-                delay(5000);
+                delay(2500);
             }
             else if (!whiteListed)
             {
@@ -446,7 +446,7 @@ void setup()
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
-    bool firstStart = initPreferences(preferences);
+    initPreferences(preferences);
     bool doOta = false;
     uint8_t partitionType = checkPartition();
 
@@ -467,13 +467,6 @@ void setup()
     {
         doOta = true;
     }
-
-#ifndef NUKI_HUB_UPDATER
-    if(preferences->getBool(preference_enable_bootloop_reset, false))
-    {
-        bootloopDetection();
-    }
-#endif
 
 #ifdef NUKI_HUB_UPDATER
     Log->print(F("Nuki Hub OTA version "));
@@ -500,15 +493,22 @@ void setup()
     if(!doOta)
     {
         psychicServer = new PsychicHttpServer;
+        psychicServer->config.max_uri_handlers = 40;
+        psychicServer->config.stack_size = HTTPD_TASK_SIZE;
+        psychicServer->listen(80);
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
         webCfgServer->initialize();
-        psychicServer->listen(80);
         psychicServer->onNotFound([](PsychicRequest* request)
         {
             return request->redirect("/");
         });
     }
 #else
+    if(preferences->getBool(preference_enable_bootloop_reset, false))
+    {
+        bootloopDetection();
+    }
+
     Log->print(F("Nuki Hub version "));
     Log->println(NUKI_HUB_VERSION);
     Log->print(F("Nuki Hub build "));
@@ -569,7 +569,7 @@ void setup()
         }
 
         nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences);
-        nuki->initialize(firstStart);
+        nuki->initialize();
     }
 
     Log->println(openerEnabled ? F("Nuki Opener enabled") : F("Nuki Opener disabled"));
@@ -591,8 +591,6 @@ void setup()
         psychicServer = new PsychicHttpServer;
         psychicServer->config.max_uri_handlers = 40;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-        psychicServer->maxUploadSize = 8192;
-        psychicServer->maxRequestBodySize = 8192;
         psychicServer->listen(80);
 
         if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))

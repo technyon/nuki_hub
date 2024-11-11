@@ -43,6 +43,7 @@ void NukiNetworkOpener::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
     _network->initTopic(_mqttPath, mqtt_topic_lock_binary_ring, "standby");
+    _network->initTopic(_mqttPath, mqtt_topic_lock_ring, "standby");
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
@@ -128,6 +129,7 @@ void NukiNetworkOpener::update()
     {
         _resetRingStateTs = 0;
         publishString(mqtt_topic_lock_binary_ring, "standby", true);
+        publishString(mqtt_topic_lock_ring, "standby", true);
     }
 }
 
@@ -647,10 +649,25 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
         if(log.index > _lastRollingLog)
         {
-            _lastRollingLog = log.index;
             serializeJson(entry, _buffer, _bufferSize);
             publishString(mqtt_topic_lock_log_rolling, _buffer, true);
             publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
+            
+            if(log.loggingType == NukiOpener::LoggingType::DoorbellRecognition && _lastRollingLog > 0)
+            {
+                if((log.data[0] & 3) == 0)
+                {
+                    Log->println(F("Nuki opener: Ring detected (Locked)"));
+                    publishRing(true);
+                }
+                else
+                {
+                    Log->println(F("Nuki opener: Ring detected (Open)"));
+                    publishRing(false);
+                }
+            }
+            
+            _lastRollingLog = log.index;
         }
     }
 
@@ -658,7 +675,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
     if(latest)
     {
-        publishString(mqtt_topic_lock_log_latest, _buffer, true);
+        publishString(mqtt_topic_lock_log_latest, _buffer, true);        
     }
     else
     {
@@ -840,38 +857,6 @@ void NukiNetworkOpener::publishRetry(const std::string& message)
 void NukiNetworkOpener::publishBleAddress(const std::string &address)
 {
     publishString(mqtt_topic_lock_address, address, true);
-}
-
-void NukiNetworkOpener::publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const bool& publishAuthData, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction)
-{
-    String availabilityTopic = _preferences->getString(preference_mqtt_lock_path);
-    availabilityTopic.concat("/maintenance/mqttConnectionState");
-
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigAdditionalOpenerEntities(deviceType, baseTopic, name, uidString);
-    if(publishAuthData)
-    {
-        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
-    }
-    if(hasKeypad)
-    {
-        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
-    }
-}
-
-void NukiNetworkOpener::removeHASSConfig(char* uidString)
-{
-    _network->removeHASSConfig(uidString);
 }
 
 void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount)
@@ -1569,6 +1554,11 @@ uint8_t NukiNetworkOpener::queryCommands()
     uint8_t qc = _queryCommands;
     _queryCommands = 0;
     return qc;
+}
+
+void NukiNetworkOpener::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
+{
+    _network->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);
 }
 
 void NukiNetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str)

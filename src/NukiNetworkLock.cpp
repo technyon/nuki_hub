@@ -7,8 +7,6 @@
 #include "RestartReason.h"
 #include <ArduinoJson.h>
 #include <ctype.h>
-#include <HTTPClient.h>
-#include <NetworkClientSecure.h>
 
 extern bool forceEnableWebServer;
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
@@ -169,152 +167,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         return;
     }
 
-    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(data, "1") == 0)
-    {
-        Log->println(F("Restart requested via MQTT."));
-        _network->clearWifiFallback();
-        delay(200);
-        restartEsp(RestartReason::RequestedViaMqtt);
-    }
-    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
-    {
-        Log->println(F("Update requested via MQTT."));
-
-        bool otaManifestSuccess = false;
-        JsonDocument doc;
-
-        NetworkClientSecure *client = new NetworkClientSecure;
-        if (client)
-        {
-            client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
-            {
-                HTTPClient https;
-                https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-                https.useHTTP10(true);
-
-                if (https.begin(*client, GITHUB_OTA_MANIFEST_URL))
-                {
-                    int httpResponseCode = https.GET();
-
-                    if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
-                    {
-                        DeserializationError jsonError = deserializeJson(doc, https.getStream());
-
-                        if (!jsonError)
-                        {
-                            otaManifestSuccess = true;
-                        }
-                    }
-                }
-                https.end();
-            }
-            delete client;
-        }
-
-        if (otaManifestSuccess)
-        {
-            String currentVersion = NUKI_HUB_VERSION;
-
-            if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str()))
-            {
-                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-                    Log->println(F("Updating to latest release version."));
-                    delay(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
-            }
-            else if(currentVersion.indexOf("beta") > 0)
-            {
-                if(strcmp(NUKI_HUB_VERSION, doc["beta"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["beta"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["beta"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println(F("Nuki Hub is already on the latest beta version, OTA update aborted."));
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_BETA_RELEASE_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_BETA_UPDATER_BINARY_URL);
-                    Log->println(F("Updating to latest beta version."));
-                    delay(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
-            }
-            else if(currentVersion.indexOf("master") > 0)
-            {
-                if(strcmp(NUKI_HUB_VERSION, doc["master"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["master"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["master"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println(F("Nuki Hub is already on the latest development version, OTA update aborted."));
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_MASTER_UPDATER_BINARY_URL);
-                    Log->println(F("Updating to latest developmemt version."));
-                    delay(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
-            }
-            else
-            {
-                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-                    Log->println(F("Updating to latest release version."));
-                    delay(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
-            }
-        }
-        else
-        {
-            Log->println(F("Failed to retrieve OTA manifest, OTA update aborted."));
-        }
-    }
-    else if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
-    {
-        if(strcmp(data, "") == 0 ||
-                strcmp(data, "--") == 0)
-        {
-            return;
-        }
-
-        if(strcmp(data, "1") == 0)
-        {
-            if(_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer)
-            {
-                return;
-            }
-            Log->println(F("Webserver enabled, restarting."));
-            _preferences->putBool(preference_webserver_enabled, true);
-
-        }
-        else if (strcmp(data, "0") == 0)
-        {
-            if(!_preferences->getBool(preference_webserver_enabled, true) && !forceEnableWebServer)
-            {
-                return;
-            }
-            Log->println(F("Webserver disabled, restarting."));
-            _preferences->putBool(preference_webserver_enabled, false);
-        }
-
-        publishString(mqtt_topic_webserver_action, "--", true);
-        _network->clearWifiFallback();
-        delay(200);
-        restartEsp(RestartReason::ReconfigureWebServer);
-    }
-    else if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
+    if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
     {
         if(strcmp(data, "") == 0 ||
                 strcmp(data, "--") == 0)
@@ -1663,53 +1516,6 @@ bool NukiNetworkLock::comparePrefixedPath(const char *fullPath, const char *subP
     return strcmp(fullPath, prefixedPath) == 0;
 }
 
-void NukiNetworkLock::publishHASSConfig(char *deviceType, const char *baseTopic, char *name,  char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction,
-                                        char *unlockAction, char *openAction)
-{
-    String availabilityTopic = _preferences->getString(preference_mqtt_lock_path);
-    availabilityTopic.concat("/maintenance/mqttConnectionState");
-    _network->publishHASSConfig(deviceType, baseTopic, name, uidString, softwareVersion, hardwareVersion, availabilityTopic.c_str(), hasKeypad, lockAction, unlockAction, openAction);
-    _network->publishHASSConfigAdditionalLockEntities(deviceType, baseTopic, name, uidString);
-
-    if(hasDoorSensor)
-    {
-        _network->publishHASSConfigDoorSensor(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
-    }
-
-#ifndef CONFIG_IDF_TARGET_ESP32H2
-    _network->publishHASSWifiRssiConfig(deviceType, baseTopic, name, uidString);
-#endif
-
-    if(publishAuthData)
-    {
-        _network->publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
-    }
-
-    if(hasKeypad)
-    {
-        _network->publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
-    }
-    else
-    {
-        _network->removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
-        _network->removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
-    }
-}
-
-void NukiNetworkLock::removeHASSConfig(char *uidString)
-{
-    _network->removeHASSConfig(uidString);
-}
-
 void NukiNetworkLock::publishOffAction(const int value)
 {
     _network->publishInt(_nukiOfficial->getMqttPath(), mqtt_topic_official_lock_action, value, false);
@@ -1790,6 +1596,11 @@ uint8_t NukiNetworkLock::queryCommands()
     uint8_t qc = _queryCommands;
     _queryCommands = 0;
     return qc;
+}
+
+void NukiNetworkLock::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
+{
+    _network->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);
 }
 
 void NukiNetworkLock::buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str)

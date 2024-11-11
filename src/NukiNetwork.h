@@ -15,6 +15,7 @@
 #include "Gpio.h"
 #include <ArduinoJson.h>
 #include "NukiConstants.h"
+#include "HomeAssistantDiscovery.h"
 #endif
 
 class NukiNetwork
@@ -56,36 +57,30 @@ public:
     void publishLongLong(const char* prefix, const char* topic, int64_t value, bool retain);
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain);
     void publishString(const char* prefix, const char* topic, const char* value, bool retain);
-
-    void publishHASSConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
-    void publishHASSConfigAdditionalLockEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigAdditionalOpenerEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSConfigKeypad(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void publishHASSWifiRssiConfig(char* deviceType, const char* baseTopic, char* name, char* uidString);
-    void removeHASSConfig(char* uidString);
-    void removeHASSConfigTopic(char* deviceType, char* name, char* uidString);
-    void publishHassTopic(const String& mqttDeviceType,
-                          const String& mqttDeviceName,
-                          const String& uidString,
-                          const String& uidStringPostfix,
-                          const String& displayName,
-                          const String& name,
-                          const String& baseTopic,
-                          const String& stateTopic,
-                          const String& deviceType,
-                          const String& deviceClass,
-                          const String& stateClass = "",
-                          const String& entityCat = "",
-                          const String& commandTopic = "",
-                          std::vector<std::pair<char*, char*>> additionalEntries = {}
-                          );
-    void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
+    void publish(const char *topic, const char *value, bool retain);
     void removeTopic(const String& mqttPath, const String& mqttTopic);
     void batteryTypeToString(const Nuki::BatteryType battype, char* str);
     void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
+
+    void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
+    void disableHASS();
+    void publishHassTopic(const String& mqttDeviceType,
+                           const String& mqttDeviceName,
+                           const String& uidString,
+                           const String& uidStringPostfix,
+                           const String& displayName,
+                           const String& name,
+                           const String& baseTopic,
+                           const String& stateTopic,
+                           const String& deviceType,
+                           const String& deviceClass,
+                           const String& stateClass,
+                           const String& entityCat,
+                           const String& commandTopic,
+                           std::vector<std::pair<char*, char*>> additionalEntries
+                          );
+    void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
     bool mqttRecentlyConnected();
@@ -113,38 +108,25 @@ private:
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
     bool _firstBootAfterDeviceChange = false;
     bool _webEnabled = true;
-    bool _updateFromMQTT = false;
-    bool _offEnabled = false;
 
     #ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
+    void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length);
     void onMqttConnect(const bool& sessionPresent);
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
     void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void gpioActionCallback(const GpioAction& action, const int& pin);
-
-    String createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
-    JsonDocument createHassJson(const String& uidString,
-                        const String& uidStringPostfix,
-                        const String& displayName,
-                        const String& name,
-                        const String& baseTopic,
-                        const String& stateTopic,
-                        const String& deviceType,
-                        const String& deviceClass,
-                        const String& stateClass = "",
-                        const String& entityCat = "",
-                        const String& commandTopic = "",
-                        std::vector<std::pair<char*, char*>> additionalEntries = {}
-                        );
+    bool comparePrefixedPath(const char* fullPath, const char* subPath);
+    void buildMqttPath(const char *path, char *outPath);
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
-    String _discoveryTopic;
     String _brokerAddr;
+
+    HomeAssistantDiscovery* _hadiscovery = nullptr;
 
     Gpio* _gpio;
 
@@ -155,6 +137,7 @@ private:
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
 
+    int64_t _publishedUpTime = 0;
     int64_t _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};

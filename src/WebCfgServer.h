@@ -2,7 +2,9 @@
 
 #include <Preferences.h>
 #include <PsychicHttp.h>
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
 #include <PsychicHttpsServer.h>
+#endif
 #include "esp_ota_ops.h"
 #include "Config.h"
 
