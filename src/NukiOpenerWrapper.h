@@ -60,7 +60,7 @@ private:
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
 
-    void updateKeyTurnerState();
+    bool updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
     void updateAuthData(bool retrieved);

@@ -291,8 +291,7 @@ void NukiWrapper::update()
     if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         Log->println("Updating Lock state based on status, timer or query");
-        updateKeyTurnerState();
-        _statusUpdated = false;
+        _statusUpdated = updateKeyTurnerState();
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         _network->publishStatusUpdated(_statusUpdated);
     }
@@ -427,8 +426,9 @@ void NukiWrapper::unpair()
     _paired = false;
 }
 
-void NukiWrapper::updateKeyTurnerState()
+bool NukiWrapper::updateKeyTurnerState()
 {
+    bool updateStatus = false;
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     int retryCount = 0;
 
@@ -460,7 +460,7 @@ void NukiWrapper::updateKeyTurnerState()
             Log->println("ms");
             _nextLockStateUpdateTs = espMillis() + _retryDelay;
         }
-        return;
+        return false;
     }
 
     _retryLockstateCount = 0;
@@ -489,7 +489,7 @@ void NukiWrapper::updateKeyTurnerState()
     }
     else if(!_nukiOfficial->getOffConnected() && espMillis() < _statusUpdatedTs + 10000)
     {
-        _statusUpdated = true;
+        updateStatus = true;
         Log->println(F("Lock: Keep updating status on intermediate lock state"));
     }
 
@@ -501,6 +501,7 @@ void NukiWrapper::updateKeyTurnerState()
 
     postponeBleWatchdog();
     Log->println(F("Done querying lock state"));
+    return updateStatus;
 }
 
 void NukiWrapper::updateBatteryState()

@@ -4063,10 +4063,10 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     if(esp_psram_get_size() > 0)
     {
         response.print("\nPSRAM Available: Yes");
-        response.print("\nTotal PSRAM: ");
-        response.print(esp_psram_get_size());
         response.print("\nFree PSRAM: ");
         response.print((esp_get_free_heap_size() - ESP.getFreeHeap()));
+        response.print("\nTotal PSRAM: ");
+        response.print(esp_psram_get_size());
         response.print("\nTotal free heap: ");
         response.print(esp_get_free_heap_size());
     }
