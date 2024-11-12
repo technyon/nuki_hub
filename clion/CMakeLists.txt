@@ -4,6 +4,7 @@ project(nukihub)
 
 add_compile_definitions(CONFIG_IDF_TARGET_ESP32)
 add_compile_definitions(NUKI_64BIT_TIME)
+add_compile_definitions(NUKI_USE_LATEST_NIMBLE)
 
 set(SRCFILES
         ../src/Config.h
