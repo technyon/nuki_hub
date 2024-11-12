@@ -272,9 +272,8 @@ void NukiOpenerWrapper::update()
     }
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
-        updateKeyTurnerState();
+        _statusUpdated = updateKeyTurnerState();
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
-        _statusUpdated = false;
         _network->publishStatusUpdated(_statusUpdated);
     }
     if(_network->mqttConnectionState() == 2)
@@ -418,8 +417,9 @@ void NukiOpenerWrapper::unpair()
     _paired = false;
 }
 
-void NukiOpenerWrapper::updateKeyTurnerState()
+bool NukiOpenerWrapper::updateKeyTurnerState()
 {
+    bool updateStatus = false;
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     int retryCount = 0;
 
@@ -445,7 +445,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
         {
             _nextLockStateUpdateTs = espMillis() + _retryDelay;
         }
-        return;
+        return false;
     }
     _retryLockstateCount = 0;
 
@@ -491,6 +491,7 @@ void NukiOpenerWrapper::updateKeyTurnerState()
 
     postponeBleWatchdog();
     Log->println(F("Done querying opener state"));
+    return updateStatus;
 }
 
 void NukiOpenerWrapper::updateBatteryState()
