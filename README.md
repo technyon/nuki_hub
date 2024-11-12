@@ -34,6 +34,9 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Keypad 1.0
 - Nuki Keypad 2.0
 
+<b>Untested but probably supported:</b>
+- Nuki Smart Lock Ultra
+
 <b>Supported Ethernet devices:</b><br>
 As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with built-in wired ethernet are supported:
 - [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)
