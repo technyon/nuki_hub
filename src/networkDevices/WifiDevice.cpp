@@ -1,6 +1,7 @@
 #include "WifiDevice.h"
 #include "esp_wifi.h"
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../RestartReason.h"
@@ -62,7 +63,7 @@ void WifiDevice::initialize()
                              String(F(" and channel: ")) + String(WiFi.channel(i)));
             }
 
-            if (_connectOnScanDone && _foundNetworks > 0)
+            if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
             {
                 connect();
             }
@@ -199,6 +200,10 @@ void WifiDevice::openAP()
         WiFi.softAPsetHostname(_hostname.c_str());
         WiFi.softAP("NukiHub", "NukiHubESP32");
         _startAP = false;
+        
+        if(MDNS.begin(_hostname.c_str())){
+          MDNS.addService("http", "tcp", 80);
+        }
     }
 }
 
@@ -212,107 +217,104 @@ bool WifiDevice::connect()
     delay(500);
 
     int bestConnection = -1;
-    for (int i = 0; i < _foundNetworks; i++)
+    
+    if(_preferences->getBool(preference_find_best_rssi, false))
     {
-        if (ssid == WiFi.SSID(i))
+        for (int i = 0; i < _foundNetworks; i++)
         {
-            Log->println(String(F("Saved SSID ")) + ssid + String(F(" found with RSSI: ")) +
-                         String(WiFi.RSSI(i)) + String(F("(")) +
-                         String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
-                         String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
-                         String(F(" and channel: ")) + String(WiFi.channel(i)));
-            if (bestConnection == -1)
+            if (ssid == WiFi.SSID(i))
             {
-                bestConnection = i;
-            }
-            else
-            {
-                if (WiFi.RSSI(i) > WiFi.RSSI(bestConnection))
+                Log->println(String(F("Saved SSID ")) + ssid + String(F(" found with RSSI: ")) +
+                             String(WiFi.RSSI(i)) + String(F("(")) +
+                             String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
+                             String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
+                             String(F(" and channel: ")) + String(WiFi.channel(i)));
+                if (bestConnection == -1)
                 {
                     bestConnection = i;
                 }
+                else
+                {
+                    if (WiFi.RSSI(i) > WiFi.RSSI(bestConnection))
+                    {
+                        bestConnection = i;
+                    }
+                }
             }
+        }
+        
+        if (bestConnection == -1)
+        {
+            Log->print("No network found with SSID: ");
+            Log->println(ssid);
+        }
+        else
+        {
+            Log->println(String(F("Trying to connect to SSID ")) + ssid + String(F(" found with RSSI: ")) +
+                         String(WiFi.RSSI(bestConnection)) + String(F("(")) +
+                         String(constrain((100.0 + WiFi.RSSI(bestConnection)) * 2, 0, 100)) +
+                         String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(bestConnection) +
+                         String(F(" and channel: ")) + String(WiFi.channel(bestConnection)));
         }
     }
 
-    if (bestConnection == -1)
+    _connecting = true;
+    esp_wifi_scan_stop();
+
+    if(!_ipConfiguration->dhcpEnabled())
     {
-        Log->print("No network found with SSID: ");
-        Log->println(ssid);
-        if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
-        {
-            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-        }
+        WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
+    }
+
+    WiFi.begin(ssid, pass);
+    auto status = WiFi.waitForConnectResult(10000);
+
+    switch (status)
+    {
+    case WL_CONNECTED:
+        Log->println("WiFi connected");
+        break;
+    case WL_NO_SSID_AVAIL:
+        Log->println("WiFi SSID not available");
+        break;
+    case WL_CONNECT_FAILED:
+        Log->println("WiFi connection failed");
+        break;
+    case WL_IDLE_STATUS:
+        Log->println("WiFi changing status");
+        break;
+    case WL_DISCONNECTED:
+        Log->println("WiFi disconnected");
+        break;
+    default:
+        Log->println("WiFi timeout");
+        break;
+    }
+
+    if (status != WL_CONNECTED)
+    {
+        Log->println("Retrying");
         _connectOnScanDone = true;
         _openAP = false;
         scan(false, true);
+        _connecting = false;
         return false;
     }
     else
     {
-        _connecting = true;
-        esp_wifi_scan_stop();
-        Log->println(String(F("Trying to connect to SSID ")) + ssid + String(F(" found with RSSI: ")) +
-                     String(WiFi.RSSI(bestConnection)) + String(F("(")) +
-                     String(constrain((100.0 + WiFi.RSSI(bestConnection)) * 2, 0, 100)) +
-                     String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(bestConnection) +
-                     String(F(" and channel: ")) + String(WiFi.channel(bestConnection)));
-
-
-        if(!_ipConfiguration->dhcpEnabled())
+        if(!_preferences->getBool(preference_wifi_converted, false))
         {
-            WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
+            _preferences->putBool(preference_wifi_converted, true);
         }
+        _connecting = false;
+        return true;
+    }
 
-        WiFi.begin(ssid, pass);
-        auto status = WiFi.waitForConnectResult(10000);
-
-        switch (status)
-        {
-        case WL_CONNECTED:
-            Log->println("WiFi connected");
-            break;
-        case WL_NO_SSID_AVAIL:
-            Log->println("WiFi SSID not available");
-            break;
-        case WL_CONNECT_FAILED:
-            Log->println("WiFi connection failed");
-            break;
-        case WL_IDLE_STATUS:
-            Log->println("WiFi changing status");
-            break;
-        case WL_DISCONNECTED:
-            Log->println("WiFi disconnected");
-            break;
-        default:
-            Log->println("WiFi timeout");
-            break;
-        }
-
-        if (status != WL_CONNECTED)
-        {
-            if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
-            {
-                restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-                _connecting = false;
-                return false;
-            }
-            Log->println("Retrying");
-            _connectOnScanDone = true;
-            _openAP = false;
-            scan(false, true);
-            _connecting = false;
-            return false;
-        }
-        else
-        {
-            if(!_preferences->getBool(preference_wifi_converted, false))
-            {
-                _preferences->putBool(preference_wifi_converted, true);
-            }
-            _connecting = false;
-            return true;
-        }
+    if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
+    {
+        restartEsp(RestartReason::RestartOnDisconnectWatchdog);
+        _connecting = false;
+        return false;
     }
 
     return false;
