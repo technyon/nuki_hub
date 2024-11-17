@@ -151,7 +151,7 @@ private:
     int64_t _lastRssi = 0;
     int64_t _disableBleWatchdogTs = 0;
     uint32_t _basicOpenerConfigAclPrefs[16];
-    uint32_t _advancedOpenerConfigAclPrefs[20];
+    uint32_t _advancedOpenerConfigAclPrefs[21];
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;

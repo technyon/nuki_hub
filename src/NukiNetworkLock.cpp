@@ -855,6 +855,7 @@ void NukiNetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &conf
     json["autoLockEnabled"] = config.autoLockEnabled;
     json["immediateAutoLockEnabled"] = config.immediateAutoLockEnabled;
     json["autoUpdateEnabled"] = config.autoUpdateEnabled;
+    json["rebootNuki"] = 0;
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_advanced_json, _buffer, true);

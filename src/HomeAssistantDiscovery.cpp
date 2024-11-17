@@ -717,7 +717,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
     uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedLockConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedLockConfigAclPrefs[23] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     if(_preferences->getBool(preference_conf_info_enabled, true))
     {
@@ -1823,6 +1823,34 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     {
         removeHassTopic((char*)"switch", (char*)"auto_update_enabled", uidString);
     }
+
+    if((int)advancedLockConfigAclPrefs[22] == 1)
+    {
+        // Reboot Nuki
+        publishHassTopic("button",
+                         "reboot_nuki",
+                         uidString,
+                         "_reboot_nuki",
+                         "Reboot Nuki",
+                         name,
+                         baseTopic,
+                         "",
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         String("~") + mqtt_topic_config_action,
+        {
+            { (char*)"en", (char*)"true" },
+            { (char*)"pl_on", (char*)"{ \"rebootNuki\": \"1\"}" },
+            { (char*)"pl_off", (char*)"{ \"rebootNuki\": \"0\"}" },
+            { (char*)"val_tpl", (char*)"{{value_json.rebootNuki}}" }
+        });
+    }
+    else
+    {
+        removeHassTopic((char*)"button", (char*)"reboot_nuki", uidString);
+    }
 }
 
 void HomeAssistantDiscovery::publishHASSConfigDoorSensor(char *deviceType, const char *baseTopic, char *name, char *uidString)
@@ -1852,7 +1880,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
     uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedOpenerConfigAclPrefs[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedOpenerConfigAclPrefs[21] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     if(_preferences->getBool(preference_conf_info_enabled, true))
     {
@@ -2743,6 +2771,34 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
     {
         removeHassTopic((char*)"switch", (char*)"automatic_battery_type_detection", uidString);
     }
+
+    if((int)advancedOpenerConfigAclPrefs[20] == 1)
+    {
+        // Reboot Nuki
+        publishHassTopic("button",
+                         "reboot_nuki",
+                         uidString,
+                         "_reboot_nuki",
+                         "Reboot Nuki",
+                         name,
+                         baseTopic,
+                         "",
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         String("~") + mqtt_topic_config_action,
+        {
+            { (char*)"en", (char*)"true" },
+            { (char*)"pl_on", (char*)"{ \"rebootNuki\": \"1\"}" },
+            { (char*)"pl_off", (char*)"{ \"rebootNuki\": \"0\"}" },
+            { (char*)"val_tpl", (char*)"{{value_json.rebootNuki}}" }
+        });
+    }
+    else
+    {
+        removeHassTopic((char*)"button", (char*)"reboot_nuki", uidString);
+    }
 }
 
 void HomeAssistantDiscovery::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
@@ -2934,6 +2990,7 @@ void HomeAssistantDiscovery::removeHASSConfig(char* uidString)
     removeHassTopic((char*)"button", (char*)"query_commandresult", uidString);
     removeHassTopic((char*)"switch", (char*)"auto_lock", uidString);
     removeHassTopic((char*)"switch", (char*)"auto_unlock", uidString);
+    removeHassTopic((char*)"button", (char*)"reboot_nuki", uidString);
     removeHassTopic((char*)"switch", (char*)"double_lock", uidString);
     removeHassTopic((char*)"switch", (char*)"automatic_battery_type_detection", uidString);
     removeHassTopic((char*)"select", (char*)"battery_type", uidString);

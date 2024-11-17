@@ -1515,7 +1515,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
 
     Nuki::CmdResult cmdResult;
     const char *basicKeys[14] = {"name", "latitude", "longitude", "pairingEnabled", "buttonEnabled", "ledFlashEnabled", "timeZoneOffset", "dstMode", "fobAction1",  "fobAction2", "fobAction3", "operatingMode", "advertisingMode", "timeZone"};
-    const char *advancedKeys[20] = {"intercomID", "busModeSwitch", "shortCircuitDuration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection"};
+    const char *advancedKeys[21] = {"intercomID", "busModeSwitch", "shortCircuitDuration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection", "rebootNuki"};
     bool basicUpdated = false;
     bool advancedUpdated = false;
 
@@ -1846,7 +1846,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         }
     }
 
-    for(int j=0; j < 20; j++)
+    for(int j=0; j < 21; j++)
     {
         if(json[advancedKeys[j]])
         {
@@ -2259,6 +2259,19 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                             {
                                 cmdResult = _nukiOpener.enableAutoBatteryTypeDetection((keyvalue > 0));
                             }
+                        }
+                        else
+                        {
+                            jsonResult[advancedKeys[j]] = "invalidValue";
+                        }
+                    }
+                    else if(strcmp(advancedKeys[j], "rebootNuki") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
+
+                        if(keyvalue == 1)
+                        {
+                            cmdResult = _nukiOpener.requestReboot();
                         }
                         else
                         {
