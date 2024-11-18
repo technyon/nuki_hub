@@ -1515,15 +1515,36 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
 
     Nuki::CmdResult cmdResult;
     const char *basicKeys[14] = {"name", "latitude", "longitude", "pairingEnabled", "buttonEnabled", "ledFlashEnabled", "timeZoneOffset", "dstMode", "fobAction1",  "fobAction2", "fobAction3", "operatingMode", "advertisingMode", "timeZone"};
-    const char *advancedKeys[20] = {"intercomID", "busModeSwitch", "shortCircuitDuration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection"};
+    const char *advancedKeys[21] = {"intercomID", "busModeSwitch", "shortCircuitDuration", "electricStrikeDelay", "randomElectricStrikeDelay", "electricStrikeDuration", "disableRtoAfterRing", "rtoTimeout", "doorbellSuppression", "doorbellSuppressionDuration", "soundRing", "soundOpen", "soundRto", "soundCm", "soundConfirmation", "soundLevel", "singleButtonPressAction", "doubleButtonPressAction", "batteryType", "automaticBatteryTypeDetection", "rebootNuki"};
     bool basicUpdated = false;
     bool advancedUpdated = false;
 
     for(int i=0; i < 14; i++)
     {
-        if(json[basicKeys[i]])
+        if(json[basicKeys[i]].is<JsonVariantConst>())
         {
-            const char *jsonchar = json[basicKeys[i]].as<const char*>();
+            JsonVariantConst jsonKey = json[basicKeys[i]];
+            char *jsonchar;
+
+            if (jsonKey.is<float>())
+            {
+                itoa(jsonKey, jsonchar, 10);
+            }
+            else if (jsonKey.is<bool>())
+            {
+                if (jsonKey)
+                {
+                    itoa(1, jsonchar, 10);
+                }
+                else
+                {
+                    itoa(0, jsonchar, 10);
+                }
+            }
+            else if (jsonKey.is<const char*>())
+            {
+                jsonchar = (char*)jsonKey.as<const char*>();
+            }
 
             if(strlen(jsonchar) == 0)
             {
@@ -1846,11 +1867,32 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
         }
     }
 
-    for(int j=0; j < 20; j++)
+    for(int j=0; j < 21; j++)
     {
-        if(json[advancedKeys[j]])
+        if(json[advancedKeys[j]].is<JsonVariantConst>())
         {
-            const char *jsonchar = json[advancedKeys[j]].as<const char*>();
+            JsonVariantConst jsonKey = json[advancedKeys[i]];
+            char *jsonchar;
+
+            if (jsonKey.is<float>())
+            {
+                itoa(jsonKey, jsonchar, 10);
+            }
+            else if (jsonKey.is<bool>())
+            {
+                if (jsonKey)
+                {
+                    itoa(1, jsonchar, 10);
+                }
+                else
+                {
+                    itoa(0, jsonchar, 10);
+                }
+            }
+            else if (jsonKey.is<const char*>())
+            {
+                jsonchar = (char*)jsonKey.as<const char*>();
+            }
 
             if(strlen(jsonchar) == 0)
             {
@@ -2259,6 +2301,19 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                             {
                                 cmdResult = _nukiOpener.enableAutoBatteryTypeDetection((keyvalue > 0));
                             }
+                        }
+                        else
+                        {
+                            jsonResult[advancedKeys[j]] = "invalidValue";
+                        }
+                    }
+                    else if(strcmp(advancedKeys[j], "rebootNuki") == 0)
+                    {
+                        const uint8_t keyvalue = atoi(jsonchar);
+
+                        if(keyvalue == 1)
+                        {
+                            cmdResult = _nukiOpener.requestReboot();
                         }
                         else
                         {

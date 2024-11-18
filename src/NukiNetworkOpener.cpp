@@ -834,6 +834,7 @@ void NukiNetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &
     _network->batteryTypeToString(config.batteryType, str);
     json["batteryType"] = str;
     json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
+    json["rebootNuki"] = 0;
 
     serializeJson(json, _buffer, _bufferSize);
     publishString(mqtt_topic_config_advanced_json, _buffer, true);

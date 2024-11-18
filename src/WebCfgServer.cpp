@@ -1465,8 +1465,8 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
     uint32_t aclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedLockConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedOpenerConfigAclPrefs[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedLockConfigAclPrefs[23] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedOpenerConfigAclPrefs[21] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     int params = request->params();
 
@@ -2567,6 +2567,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
         {
             advancedLockConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
         }
+        else if(key == "CONFLCKRBTNUKI")
+        {
+            advancedLockConfigAclPrefs[22] = ((value == "1") ? 1 : 0);
+        }
         else if(key == "CONFOPNNAME")
         {
             basicOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
@@ -2702,6 +2706,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
         else if(key == "CONFOPNABTD")
         {
             advancedOpenerConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFOPNRBTNUKI")
+        {
+            advancedOpenerConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
         }
         else if(key == "REGAPP")
         {
@@ -2950,9 +2958,9 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
     {
         uint32_t curAclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         uint32_t curBasicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        uint32_t curAdvancedLockConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t curAdvancedLockConfigAclPrefs[23] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         uint32_t curBasicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        uint32_t curAdvancedOpenerConfigAclPrefs[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t curAdvancedOpenerConfigAclPrefs[21] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         _preferences->getBytes(preference_acl, &curAclPrefs, sizeof(curAclPrefs));
         _preferences->getBytes(preference_conf_lock_basic_acl, &curBasicLockConfigAclPrefs, sizeof(curBasicLockConfigAclPrefs));
         _preferences->getBytes(preference_conf_lock_advanced_acl, &curAdvancedLockConfigAclPrefs, sizeof(curAdvancedLockConfigAclPrefs));
@@ -2981,7 +2989,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 break;
             }
         }
-        for(int i=0; i < 22; i++)
+        for(int i=0; i < 23; i++)
         {
             if(curAdvancedLockConfigAclPrefs[i] != advancedLockConfigAclPrefs[i])
             {
@@ -3004,7 +3012,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 break;
             }
         }
-        for(int i=0; i < 20; i++)
+        for(int i=0; i < 21; i++)
         {
             if(curAdvancedOpenerConfigAclPrefs[i] != advancedOpenerConfigAclPrefs[i])
             {
@@ -3789,7 +3797,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
     {
         uint32_t basicLockConfigAclPrefs[16];
         _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
-        uint32_t advancedLockConfigAclPrefs[22];
+        uint32_t advancedLockConfigAclPrefs[23];
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
 
         response.print("<h3>Nuki Lock Access Control</h3>");
@@ -3856,6 +3864,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
         printCheckBox(&response, "CONFLCKALENA", "Auto lock enabled", ((int)advancedLockConfigAclPrefs[19] == 1), "chk_config_lock");
         printCheckBox(&response, "CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1), "chk_config_lock");
         printCheckBox(&response, "CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1), "chk_config_lock");
+        printCheckBox(&response, "CONFLCKRBTNUKI", "Reboot Nuki", ((int)advancedLockConfigAclPrefs[22] == 1), "chk_config_lock");
         response.print("</table><br>");
         response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
@@ -3863,7 +3872,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
     {
         uint32_t basicOpenerConfigAclPrefs[14];
         _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
-        uint32_t advancedOpenerConfigAclPrefs[20];
+        uint32_t advancedOpenerConfigAclPrefs[21];
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
         response.print("<h3>Nuki Opener Access Control</h3>");
@@ -3925,6 +3934,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
         printCheckBox(&response, "CONFOPNDBPA", "Double button press action", ((int)advancedOpenerConfigAclPrefs[17] == 1), "chk_config_opener");
         printCheckBox(&response, "CONFOPNBATT", "Battery type", ((int)advancedOpenerConfigAclPrefs[18] == 1), "chk_config_opener");
         printCheckBox(&response, "CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1), "chk_config_opener");
+        printCheckBox(&response, "CONFOPNRBTNUKI", "Reboot Nuki", ((int)advancedOpenerConfigAclPrefs[20] == 1), "chk_config_opener");
         response.print("</table><br>");
         response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
@@ -4340,7 +4350,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
         }
         uint32_t basicLockConfigAclPrefs[16];
         _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
-        uint32_t advancedLockConfigAclPrefs[22];
+        uint32_t advancedLockConfigAclPrefs[23];
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
         response.print("\n\n------------ NUKI LOCK ACL ------------");
         response.print("\nLock: ");
@@ -4438,6 +4448,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
         response.print((int)advancedLockConfigAclPrefs[20] ? "Allowed" : "Disallowed");
         response.print("\nAuto update enabled: ");
         response.print((int)advancedLockConfigAclPrefs[21] ? "Allowed" : "Disallowed");
+        response.print("\nReboot Nuki: ");
+        response.print((int)advancedLockConfigAclPrefs[22] ? "Allowed" : "Disallowed");
 
         if(_preferences->getBool(preference_show_secrets))
         {
@@ -4511,7 +4523,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
         response.print(_preferences->getBool(preference_opener_continuous_mode, false) ? "Yes" : "No");
         uint32_t basicOpenerConfigAclPrefs[14];
         _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
-        uint32_t advancedOpenerConfigAclPrefs[20];
+        uint32_t advancedOpenerConfigAclPrefs[21];
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
         response.print("\n\n------------ NUKI OPENER ACL ------------");
         response.print("\nActivate Ring-to-Open: ");
@@ -4599,6 +4611,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
         response.print((int)advancedOpenerConfigAclPrefs[18] ? "Allowed" : "Disallowed");
         response.print("\nAutomatic battery type detection: ");
         response.print((int)advancedOpenerConfigAclPrefs[19] ? "Allowed" : "Disallowed");
+        response.print("\nReboot Nuki: ");
+        response.print((int)advancedOpenerConfigAclPrefs[20] ? "Allowed" : "Disallowed");
         if(_preferences->getBool(preference_show_secrets))
         {
             char tmp[16];
