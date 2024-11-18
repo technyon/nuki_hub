@@ -111,13 +111,7 @@ void WifiDevice::initialize()
                     }
                 }
 
-                memset(wifi_cfg.sta.ssid, 0, sizeof(wifi_cfg.sta.ssid));
-                memset(wifi_cfg.sta.password, 0, sizeof(wifi_cfg.sta.password));
-
-                if (esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
-                {
-                    Log->println("Failed to clear NVS Wi-Fi configuration");
-                }
+                WiFi.disconnect(true, true);
 
                 if(found)
                 {
