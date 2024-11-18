@@ -1871,7 +1871,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     {
         if(json[advancedKeys[j]].is<JsonVariantConst>())
         {
-            JsonVariantConst jsonKey = json[advancedKeys[i]];
+            JsonVariantConst jsonKey = json[advancedKeys[j]];
             char *jsonchar;
 
             if (jsonKey.is<float>())
