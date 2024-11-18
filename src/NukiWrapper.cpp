@@ -116,7 +116,7 @@ void NukiWrapper::readSettings()
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
     _checkKeypadCodes = _preferences->getBool(preference_keypad_check_code_enabled, false);
     _pairedAsApp = _preferences->getBool(preference_register_as_app, false);
-  
+
     _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
     _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
 
@@ -907,7 +907,7 @@ void NukiWrapper::updateAuth(bool retrieved)
         Log->println(F("No valid Nuki Lock PIN set"));
         return;
     }
-    
+
     if(!_preferences->getBool(preference_auth_info_enabled))
     {
         return;
@@ -1421,6 +1421,10 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         return;
     }
 
+    Log->println(value);
+    serializeJson(json, _resbuf, sizeof(_resbuf));
+    Log->println(_resbuf);
+
     Nuki::CmdResult cmdResult;
     const char *basicKeys[16] = {"name", "latitude", "longitude", "autoUnlatch", "pairingEnabled", "buttonEnabled", "ledEnabled", "ledBrightness", "timeZoneOffset", "dstMode", "fobAction1",  "fobAction2", "fobAction3", "singleLock", "advertisingMode", "timeZone"};
     const char *advancedKeys[23] = {"unlockedPositionOffsetDegrees", "lockedPositionOffsetDegrees", "singleLockedPositionOffsetDegrees", "unlockedToLockedTransitionOffsetDegrees", "lockNgoTimeout", "singleButtonPressAction", "doubleButtonPressAction", "detachedCylinder", "batteryType", "automaticBatteryTypeDetection", "unlatchDuration", "autoLockTimeOut",  "autoUnLockDisabled", "nightModeEnabled", "nightModeStartTime", "nightModeEndTime", "nightModeAutoLockEnabled", "nightModeAutoUnlockDisabled", "nightModeImmediateLockOnStart", "autoLockEnabled", "immediateAutoLockEnabled", "autoUpdateEnabled", "rebootNuki"};
@@ -1429,9 +1433,30 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
 
     for(int i=0; i < 16; i++)
     {
-        if(json[basicKeys[i]])
+        if(json[basicKeys[i]].is<JsonVariantConst>())
         {
-            const char *jsonchar = json[basicKeys[i]].as<const char*>();
+            JsonVariantConst jsonKey = json[basicKeys[i]];
+            char *jsonchar;
+
+            if (jsonKey.is<float>())
+            {
+                itoa(jsonKey, jsonchar, 10);
+            }
+            else if (jsonKey.is<bool>())
+            {
+                if (jsonKey)
+                {
+                    itoa(1, jsonchar, 10);
+                }
+                else
+                {
+                    itoa(0, jsonchar, 10);
+                }
+            }
+            else if (jsonKey.is<const char*>())
+            {
+                jsonchar = (char*)jsonKey.as<const char*>();
+            }
 
             if(strlen(jsonchar) == 0)
             {
@@ -1796,9 +1821,30 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
 
     for(int j=0; j < 23; j++)
     {
-        if(json[advancedKeys[j]])
+        if(json[advancedKeys[j]].is<JsonVariantConst>())
         {
-            const char *jsonchar = json[advancedKeys[j]].as<const char*>();
+            JsonVariantConst jsonKey = json[advancedKeys[i]];
+            char *jsonchar;
+
+            if (jsonKey.is<float>())
+            {
+                itoa(jsonKey, jsonchar, 10);
+            }
+            else if (jsonKey.is<bool>())
+            {
+                if (jsonKey)
+                {
+                    itoa(1, jsonchar, 10);
+                }
+                else
+                {
+                    itoa(0, jsonchar, 10);
+                }
+            }
+            else if (jsonKey.is<const char*>())
+            {
+                jsonchar = (char*)jsonKey.as<const char*>();
+            }
 
             if(strlen(jsonchar) == 0)
             {
@@ -2663,7 +2709,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         {
             idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId) != _keypadCodeIds.end();
         }
-        
+
         if(strcmp(action, "check") == 0) {
             if(!_preferences->getBool(preference_keypad_check_code_enabled, false))
             {

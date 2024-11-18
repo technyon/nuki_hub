@@ -1521,9 +1521,30 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
 
     for(int i=0; i < 14; i++)
     {
-        if(json[basicKeys[i]])
+        if(json[basicKeys[i]].is<JsonVariantConst>())
         {
-            const char *jsonchar = json[basicKeys[i]].as<const char*>();
+            JsonVariantConst jsonKey = json[basicKeys[i]];
+            char *jsonchar;
+
+            if (jsonKey.is<float>())
+            {
+                itoa(jsonKey, jsonchar, 10);
+            }
+            else if (jsonKey.is<bool>())
+            {
+                if (jsonKey)
+                {
+                    itoa(1, jsonchar, 10);
+                }
+                else
+                {
+                    itoa(0, jsonchar, 10);
+                }
+            }
+            else if (jsonKey.is<const char*>())
+            {
+                jsonchar = (char*)jsonKey.as<const char*>();
+            }
 
             if(strlen(jsonchar) == 0)
             {
@@ -1848,9 +1869,30 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
 
     for(int j=0; j < 21; j++)
     {
-        if(json[advancedKeys[j]])
+        if(json[advancedKeys[j]].is<JsonVariantConst>())
         {
-            const char *jsonchar = json[advancedKeys[j]].as<const char*>();
+            JsonVariantConst jsonKey = json[advancedKeys[i]];
+            char *jsonchar;
+
+            if (jsonKey.is<float>())
+            {
+                itoa(jsonKey, jsonchar, 10);
+            }
+            else if (jsonKey.is<bool>())
+            {
+                if (jsonKey)
+                {
+                    itoa(1, jsonchar, 10);
+                }
+                else
+                {
+                    itoa(0, jsonchar, 10);
+                }
+            }
+            else if (jsonKey.is<const char*>())
+            {
+                jsonchar = (char*)jsonKey.as<const char*>();
+            }
 
             if(strlen(jsonchar) == 0)
             {
