@@ -141,10 +141,10 @@ void NukiNetwork::setupDevice()
         {
             onMqttDisconnect(reason);
         });
-        
+
     _hadiscovery = new HomeAssistantDiscovery(_device, _preferences, _buffer, _bufferSize);
 #endif
-  
+
 }
 
 void NukiNetwork::reconfigureDevice()
@@ -658,32 +658,90 @@ bool NukiNetwork::reconnect()
             delay(100);
             _device->mqttOnMessage(onMqttDataReceivedCallback);
 
-            initTopic(_maintenancePathPrefix, mqtt_topic_reset, "0");
-            subscribe(_maintenancePathPrefix, mqtt_topic_reset);
-
-            if(_preferences->getBool(preference_update_from_mqtt, false))
-            {
-                initTopic(_maintenancePathPrefix, mqtt_topic_update, "0");
-                subscribe(_maintenancePathPrefix, mqtt_topic_update);
-            }
-
-            initTopic(_maintenancePathPrefix, mqtt_topic_webserver_action, "--");
-            subscribe(_maintenancePathPrefix, mqtt_topic_webserver_action);
-            initTopic(_maintenancePathPrefix, mqtt_topic_webserver_state, (_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer ? "1" : "0"));
-
             if(_firstConnect)
             {
                 _firstConnect = false;
+
+                if(_preferences->getBool(preference_reset_mqtt_topics, false))
+                {
+                    char mqttLockPath[181] = {0};
+                    char mqttOpenerPath[181] = {0};
+                    char mqttOldOpenerPath[181] = {0};
+                    char mqttOldOpenerPath2[181] = {0};
+                    String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
+                    mqttPath.concat("/lock");
+
+                    size_t len = mqttPath.length();
+                    for(int i=0; i < len; i++)
+                    {
+                        mqttLockPath[i] = mqttPath.charAt(i);
+                    }
+
+                    mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
+                    mqttPath.concat("/opener");
+
+                    len = mqttPath.length();
+                    for(int i=0; i < len; i++)
+                    {
+                        mqttOpenerPath[i] = mqttPath.charAt(i);
+                    }
+
+                    mqttPath = _preferences->getString(preference_mqtt_opener_path, "");
+
+                    len = mqttPath.length();
+                    for(int i=0; i < len; i++)
+                    {
+                        mqttOldOpenerPath[i] = mqttPath.charAt(i);
+                    }
+
+                    mqttPath = _preferences->getString(preference_mqtt_opener_path, "");
+                    mqttPath.concat("/lock");
+
+                    len = mqttPath.length();
+                    for(int i=0; i < len; i++)
+                    {
+                        mqttOldOpenerPath2[i] = mqttPath.charAt(i);
+                    }
+
+                    MqttTopics mqttTopics;
+
+                    const std::vector<char*> mqttTopicsKeys = mqttTopics.getMqttTopics();
+
+                    for(const auto& topic : mqttTopicsKeys)
+                    {
+                        removeTopic(_maintenancePathPrefix, topic);
+                        removeTopic(mqttLockPath, topic);
+                        removeTopic(mqttOpenerPath, topic);
+                        removeTopic(mqttOldOpenerPath, topic);
+                        removeTopic(mqttOldOpenerPath2, topic);
+                    }
+
+                    _preferences->putBool(preference_reset_mqtt_topics, false);
+                }
+
                 publishString(_maintenancePathPrefix, mqtt_topic_network_device, _device->deviceName().c_str(), true);
                 for(const auto& it : _initTopics)
                 {
                     publish(it.first.c_str(), it.second.c_str(), true);
                 }
-                
+
                 if(_preferences->getBool(preference_mqtt_hass_enabled, false))
                 {
                     setupHASS(0, 0, {0}, {0}, {0}, false, false);
                 }
+
+                initTopic(_maintenancePathPrefix, mqtt_topic_reset, "0");
+                subscribe(_maintenancePathPrefix, mqtt_topic_reset);
+
+                if(_preferences->getBool(preference_update_from_mqtt, false))
+                {
+                    initTopic(_maintenancePathPrefix, mqtt_topic_update, "0");
+                    subscribe(_maintenancePathPrefix, mqtt_topic_update);
+                }
+
+                initTopic(_maintenancePathPrefix, mqtt_topic_webserver_action, "--");
+                subscribe(_maintenancePathPrefix, mqtt_topic_webserver_action);
+                initTopic(_maintenancePathPrefix, mqtt_topic_webserver_state, (_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer ? "1" : "0"));
             }
 
             for(const String& topic : _subscribedTopics)
