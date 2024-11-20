@@ -125,6 +125,7 @@
 #define preference_opener_max_timecontrol_entry_count (char*)"opmaxtc"
 #define preference_latest_version (char*)"latest"
 #define preference_wifi_converted (char*)"wifiConv"
+#define preference_reset_mqtt_topics (char*)"rstMqtt"
 
 //OBSOLETE
 #define preference_access_level (char*)"accLvl"
@@ -132,6 +133,7 @@
 #define preference_network_hardware_gpio (char*)"nwhwdt"
 #define preference_presence_detection_timeout (char*)"prdtimeout"
 #define preference_network_wifi_fallback_disabled (char*)"nwwififb"
+#define preference_mqtt_opener_path (char*)"mqttoppath"
 
 inline void initPreferences(Preferences* preferences)
 {
@@ -203,7 +205,7 @@ inline void initPreferences(Preferences* preferences)
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         WiFi.begin();
         WiFi.disconnect(true, true);
-#endif        
+#endif
     }
     else
     {
@@ -315,6 +317,7 @@ inline void initPreferences(Preferences* preferences)
                 }
             }
 
+            preferences->putBool(preference_reset_mqtt_topics, true);
             preferences->putInt(preference_config_version, atof(NUKI_HUB_VERSION) * 100);
         }
     }
