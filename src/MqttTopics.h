@@ -57,6 +57,7 @@
 #define mqtt_topic_query_lockstate_command_result (char*)"/query/lockstateCommandResult"
 
 #define mqtt_topic_battery_level (char*)"/battery/level"
+#define mqtt_topic_battery_debug (char*)"/battery/debug"
 #define mqtt_topic_battery_critical (char*)"/battery/critical"
 #define mqtt_topic_battery_charging (char*)"/battery/charging"
 #define mqtt_topic_battery_voltage (char*)"/battery/voltage"

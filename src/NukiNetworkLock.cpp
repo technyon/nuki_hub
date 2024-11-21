@@ -479,6 +479,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
             publishBool(mqtt_topic_battery_charging, charging, true);
             publishInt(mqtt_topic_battery_level, level, true);
         }
+        publishInt(mqtt_topic_battery_debug, keyTurnerState.criticalBatteryState, false);
 
         if((_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState) && !_disableNonJSON)
         {
