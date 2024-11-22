@@ -63,16 +63,7 @@ void WifiDevice::initialize()
                              String(F(" and channel: ")) + String(WiFi.channel(i)));
             }
 
-            if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
-            {
-                connect();
-            }
-            else if (_connectOnScanDone)
-            {
-                Log->println("No networks found, restarting scan");
-                scan(false, true);
-            }
-            else if (_openAP)
+            if (_openAP)
             {
                 openAP();
             }
@@ -126,6 +117,15 @@ void WifiDevice::initialize()
                     restartEsp(RestartReason::ReconfigureWifi);
                     return;
                 }
+            }
+            else if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
+            {
+                connect();
+            }
+            else if (_connectOnScanDone)
+            {
+                Log->println("No networks found, restarting scan");
+                scan(false, true);
             }
         }
     });
