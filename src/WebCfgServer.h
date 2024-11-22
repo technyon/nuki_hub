@@ -72,7 +72,6 @@ private:
     esp_err_t processFactoryReset(PsychicRequest *request);
     void printTextarea(PsychicStreamResponse *response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(PsychicStreamResponse *response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options, const String className);
-    void buildNavigationButton(PsychicStreamResponse *response, const char* caption, const char* targetPath, const char* labelText = "");
     void buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;

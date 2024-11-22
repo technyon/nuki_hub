@@ -4041,10 +4041,11 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
     PsychicStreamResponse response(request, "text/plain");
     response.beginSend();
     buildHtmlHeader(&response);
+    response.print("<form method=\"get\" action=\"wifimanager\">");
     response.print("<h3>Wi-Fi</h3>");
-    response.print("Click confirm to remove saved WiFi settings and restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br>");
-    String wifiMgrUrl = "/wifimanager?CONFIRMTOKEN=" + _confirmCode;
-    buildNavigationButton(&response, "Confirm", wifiMgrUrl.c_str());
+    response.print("Click confirm to remove saved WiFi settings and restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br><br>");
+    response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><input type=\"submit\" value=\"Reboot\" /></form>");
+    response.print("</form>");
     response.print("</body></html>");
     return response.endSend();
 }
@@ -4894,18 +4895,6 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
 
     response->print("</select>");
     response->print("</td></tr>");
-}
-
-void WebCfgServer::buildNavigationButton(PsychicStreamResponse *response, const char *caption, const char *targetPath, const char* labelText)
-{
-    response->print("<form method=\"get\" action=\"");
-    response->print(targetPath);
-    response->print("\">");
-    response->print("<button type=\"submit\">");
-    response->print(caption);
-    response->print("</button> ");
-    response->print(labelText);
-    response->print("</form>");
 }
 
 void WebCfgServer::buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage)
