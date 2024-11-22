@@ -63,16 +63,7 @@ void WifiDevice::initialize()
                              String(F(" and channel: ")) + String(WiFi.channel(i)));
             }
 
-            if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
-            {
-                connect();
-            }
-            else if (_connectOnScanDone)
-            {
-                Log->println("No networks found, restarting scan");
-                scan(false, true);
-            }
-            else if (_openAP)
+            if (_openAP)
             {
                 openAP();
             }
@@ -126,6 +117,15 @@ void WifiDevice::initialize()
                     restartEsp(RestartReason::ReconfigureWifi);
                     return;
                 }
+            }
+            else if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
+            {
+                connect();
+            }
+            else if (_connectOnScanDone)
+            {
+                Log->println("No networks found, restarting scan");
+                scan(false, true);
             }
         }
     });
@@ -190,14 +190,16 @@ void WifiDevice::openAP()
 {
     if(_startAP)
     {
-        WiFi.mode(WIFI_AP_STA);
-        WiFi.softAPsetHostname(_hostname.c_str());
-        WiFi.softAP("NukiHub", "NukiHubESP32");
         _startAP = false;
+        WiFi.mode(WIFI_AP);
+        delay(500);
+        WiFi.softAPsetHostname(_hostname.c_str());
+        delay(500);
+        WiFi.softAP("NukiHub", "NukiHubESP32");
         
-        if(MDNS.begin(_hostname.c_str())){
-          MDNS.addService("http", "tcp", 80);
-        }
+        //if(MDNS.begin(_hostname.c_str())){
+        //  MDNS.addService("http", "tcp", 80);
+        //}
     }
 }
 
