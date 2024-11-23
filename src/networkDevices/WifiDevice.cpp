@@ -105,8 +105,8 @@ void WifiDevice::openAP()
 bool WifiDevice::connect()
 {
     bool ret = false;
-    String ssid = _preferences->getString(preference_wifi_ssid, "");
-    String pass = _preferences->getString(preference_wifi_pass, "");
+    ssid = _preferences->getString(preference_wifi_ssid, "");
+    pass = _preferences->getString(preference_wifi_pass, "");
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(_hostname.c_str());
     delay(500);
@@ -166,24 +166,24 @@ bool WifiDevice::connect()
 
     switch (status)
     {
-    case WL_CONNECTED:
-        Log->println("WiFi connected");
-        break;
-    case WL_NO_SSID_AVAIL:
-        Log->println("WiFi SSID not available");
-        break;
-    case WL_CONNECT_FAILED:
-        Log->println("WiFi connection failed");
-        break;
-    case WL_IDLE_STATUS:
-        Log->println("WiFi changing status");
-        break;
-    case WL_DISCONNECTED:
-        Log->println("WiFi disconnected");
-        break;
-    default:
-        Log->println("WiFi timeout");
-        break;
+        case WL_CONNECTED:
+            Log->println("WiFi connected");
+            break;
+        case WL_NO_SSID_AVAIL:
+            Log->println("WiFi SSID not available");
+            break;
+        case WL_CONNECT_FAILED:
+            Log->println("WiFi connection failed");
+            break;
+        case WL_IDLE_STATUS:
+            Log->println("WiFi changing status");
+            break;
+        case WL_DISCONNECTED:
+            Log->println("WiFi disconnected");
+            break;
+        default:
+            Log->println("WiFi timeout");
+            break;
     }
 
     if (status != WL_CONNECTED)
@@ -250,62 +250,61 @@ void WifiDevice::onConnected()
 
 void WifiDevice::onDisconnected()
 {
-    if(_connected)
+    if (!_connected) return;
+    _connected = false;
+
+    Log->println("Wi-Fi disconnected");
+
+    //QUICK RECONNECT
+    _connecting = true;
+    ssid = _preferences->getString(preference_wifi_ssid, "");
+    pass = _preferences->getString(preference_wifi_pass, "");
+
+    if(!_ipConfiguration->dhcpEnabled())
     {
-        _connected = false;
-        Log->println("Wi-Fi disconnected");
+        WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
+    }
 
-        //QUICK RECONNECT
-        _connecting = true;
-        String ssid = _preferences->getString(preference_wifi_ssid, "");
-        String pass = _preferences->getString(preference_wifi_pass, "");
+    WiFi.begin(ssid, pass);
 
-        if(!_ipConfiguration->dhcpEnabled())
+    int loop = 0;
+
+    while(!isConnected() && loop < 200)
+    {
+        loop++;
+        delay(100);
+    }
+
+    _connecting = false;
+    //END QUICK RECONNECT
+
+    if(!isConnected())
+    {
+        if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
         {
-            WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
-        }
-
-        WiFi.begin(ssid, pass);
-
-        int loop = 0;
-
-        while(!isConnected() && loop < 200)
-        {
-            loop++;
+            Log->println("Restart on disconnect watchdog triggered, rebooting");
             delay(100);
+            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
 
-        _connecting = false;
-        //END QUICK RECONNECT
+        WiFi.disconnect(true);
+        WiFi.mode(WIFI_STA);
+        WiFi.disconnect();
+        delay(500);
 
-        if(!isConnected())
+        wifi_mode_t wifiMode;
+        esp_wifi_get_mode(&wifiMode);
+
+        while (wifiMode != WIFI_MODE_STA || WiFi.status() == WL_CONNECTED)
         {
-            if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
-            {
-                Log->println("Restart on disconnect watchdog triggered, rebooting");
-                delay(100);
-                restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-            }
-
-            WiFi.disconnect(true);
-            WiFi.mode(WIFI_STA);
-            WiFi.disconnect();
             delay(500);
-
-            wifi_mode_t wifiMode;
+            Log->println("Waiting for WiFi mode change or disconnection.");
             esp_wifi_get_mode(&wifiMode);
-
-            while (wifiMode != WIFI_MODE_STA || WiFi.status() == WL_CONNECTED)
-            {
-                delay(500);
-                Log->println("Waiting for WiFi mode change or disconnection.");
-                esp_wifi_get_mode(&wifiMode);
-            }
-
-            _connectOnScanDone = true;
-            _openAP = false;
-            scan(false, true);
         }
+
+        _connectOnScanDone = true;
+        _openAP = false;
+        scan(false, true);
     }
 }
 
