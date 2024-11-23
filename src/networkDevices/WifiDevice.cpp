@@ -253,7 +253,7 @@ void WifiDevice::onDisconnected()
     if(_connected)
     {
         _connected = false;
-        Log->println(F("Wi-Fi disconnected"));
+        Log->println("Wi-Fi disconnected");
 
         //QUICK RECONNECT
         _connecting = true;
@@ -282,6 +282,8 @@ void WifiDevice::onDisconnected()
         {
             if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
             {
+                Log->println("Restart on disconnect watchdog triggered, rebooting");
+                delay(100);
                 restartEsp(RestartReason::RestartOnDisconnectWatchdog);
             }
 
@@ -296,7 +298,7 @@ void WifiDevice::onDisconnected()
             while (wifiMode != WIFI_MODE_STA || WiFi.status() == WL_CONNECTED)
             {
                 delay(500);
-                Log->println(F("Waiting for WiFi mode change or disconnection."));
+                Log->println("Waiting for WiFi mode change or disconnection.");
                 esp_wifi_get_mode(&wifiMode);
             }
 
