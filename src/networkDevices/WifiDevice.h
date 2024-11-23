@@ -3,6 +3,9 @@
 #include <Preferences.h>
 #include "NetworkDevice.h"
 #include "IPConfiguration.h"
+#include "esp_wifi.h"
+#include <WiFi.h>
+#include <ESPmDNS.h>
 
 class WifiDevice : public NetworkDevice
 {
@@ -22,17 +25,22 @@ public:
     
     String localIP() override;
     String BSSIDstr() override;
+
 private:
     void openAP();
     void onDisconnected();
     void onConnected();
     bool connect();
+    bool isWifiConfigured() const;
+
+    void onWifiEvent(const WiFiEvent_t& event, const WiFiEventInfo_t& info);
 
     Preferences* _preferences = nullptr;
 
-    char* _path;
+    String ssid;
+    String pass;
+
     int _foundNetworks = 0;
-    int _disconnectCount = 0;
     bool _connectOnScanDone = false;
     bool _connecting = false;
     bool _openAP = false;
@@ -40,7 +48,4 @@ private:
     bool _convertOldWiFi = false;
     bool _connected = false;
     bool _hasIP = false;
-    uint8_t _connectedChannel = 0;
-    uint8_t* _connectedBSSID;
-    int64_t _disconnectTs = 0;
 };

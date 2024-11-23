@@ -1,7 +1,4 @@
 #include "WifiDevice.h"
-#include "esp_wifi.h"
-#include <WiFi.h>
-#include <ESPmDNS.h>
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../RestartReason.h"
@@ -23,117 +20,19 @@ const String WifiDevice::deviceName() const
 
 void WifiDevice::initialize()
 {
-    String ssid = _preferences->getString(preference_wifi_ssid, "");
-    String pass = _preferences->getString(preference_wifi_pass, "");
+    ssid = _preferences->getString(preference_wifi_ssid, "");
+    pass = _preferences->getString(preference_wifi_pass, "");
     WiFi.setHostname(_hostname.c_str());
 
     WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
     {
-        if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED || event == ARDUINO_EVENT_WIFI_STA_STOP)
-        {
-            if(!_openAP && !_connecting && _connected)
-            {
-                onDisconnected();
-                _hasIP = false;
-            }
-        }
-        else if(event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
-        {
-            _hasIP = true;
-        }
-        else if(event == ARDUINO_EVENT_WIFI_STA_LOST_IP)
-        {
-            _hasIP = false;
-        }
-        else if(event == ARDUINO_EVENT_WIFI_STA_CONNECTED)
-        {
-            onConnected();
-        }
-        else if(event == ARDUINO_EVENT_WIFI_SCAN_DONE)
-        {
-            Log->println(F("Wi-Fi scan done"));
-            _foundNetworks = WiFi.scanComplete();
-
-            for (int i = 0; i < _foundNetworks; i++)
-            {
-                Log->println(String(F("SSID ")) + WiFi.SSID(i) + String(F(" found with RSSI: ")) +
-                             String(WiFi.RSSI(i)) + String(F("(")) +
-                             String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
-                             String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
-                             String(F(" and channel: ")) + String(WiFi.channel(i)));
-            }
-
-            if (_openAP)
-            {
-                openAP();
-            }
-            else if(_convertOldWiFi)
-            {
-                Log->println("Trying to convert old WiFi settings");
-                _convertOldWiFi = false;
-                _preferences->putBool(preference_wifi_converted, true);
-
-                wifi_config_t wifi_cfg;
-                if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
-                {
-                    Log->println("Failed to get Wi-Fi configuration in RAM");
-                }
-
-                if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK)
-                {
-                    Log->println("Failed to set storage Wi-Fi");
-                }
-
-                String tempSSID = String(reinterpret_cast<const char*>(wifi_cfg.sta.ssid));
-                String tempPass = String(reinterpret_cast<const char*>(wifi_cfg.sta.password));
-                tempSSID.trim();
-                tempPass.trim();
-                bool found = false;
-
-                for (int i = 0; i < _foundNetworks; i++)
-                {
-                    if(tempSSID.length() > 0 && tempSSID == WiFi.SSID(i) && tempPass.length() > 0)
-                    {
-                        _preferences->putString(preference_wifi_ssid, tempSSID);
-                        _preferences->putString(preference_wifi_pass, tempPass);
-                        Log->println("Succesfully converted old WiFi settings");
-                        found = true;
-                        break;
-                    }
-                }
-
-                WiFi.disconnect(true, true);
-
-                if(found)
-                {
-                    Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
-                    _connectOnScanDone = true;
-                    _openAP = false;
-                    scan(false, true);
-                    return;
-                }
-                else
-                {
-                    restartEsp(RestartReason::ReconfigureWifi);
-                    return;
-                }
-            }
-            else if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
-            {
-                connect();
-            }
-            else if (_connectOnScanDone)
-            {
-                Log->println("No networks found, restarting scan");
-                scan(false, true);
-            }
-        }
+        onWifiEvent(event, info);
     });
 
     ssid.trim();
     pass.trim();
 
-    if(ssid.length() > 0 && pass.length() > 0)
+    if(isWifiConfigured())
     {
         Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
         _connectOnScanDone = true;
@@ -316,6 +215,11 @@ bool WifiDevice::connect()
     return false;
 }
 
+bool WifiDevice::isWifiConfigured() const
+{
+    return ssid.length() > 0 && pass.length() > 0;
+}
+
 void WifiDevice::reconfigure()
 {
     _preferences->putString(preference_wifi_ssid, "");
@@ -341,8 +245,6 @@ bool WifiDevice::isConnected()
 void WifiDevice::onConnected()
 {
     Log->println(F("Wi-Fi connected"));
-    _connectedChannel = WiFi.channel();
-    _connectedBSSID = WiFi.BSSID();
     _connected = true;
 }
 
@@ -351,7 +253,6 @@ void WifiDevice::onDisconnected()
     if(_connected)
     {
         _connected = false;
-        _disconnectTs = espMillis();
         Log->println(F("Wi-Fi disconnected"));
 
         //QUICK RECONNECT
@@ -424,4 +325,107 @@ String WifiDevice::BSSIDstr()
 bool WifiDevice::isApOpen()
 {
     return _openAP;
+}
+
+void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &info)
+{
+    if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED || event == ARDUINO_EVENT_WIFI_STA_STOP)
+    {
+        if(!_openAP && !_connecting && _connected)
+        {
+            onDisconnected();
+            _hasIP = false;
+        }
+    }
+    else if(event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
+    {
+        _hasIP = true;
+    }
+    else if(event == ARDUINO_EVENT_WIFI_STA_LOST_IP)
+    {
+        _hasIP = false;
+    }
+    else if(event == ARDUINO_EVENT_WIFI_STA_CONNECTED)
+    {
+        onConnected();
+    }
+    else if(event == ARDUINO_EVENT_WIFI_SCAN_DONE)
+    {
+        Log->println(F("Wi-Fi scan done"));
+        _foundNetworks = WiFi.scanComplete();
+
+        for (int i = 0; i < _foundNetworks; i++)
+        {
+            Log->println(String(F("SSID ")) + WiFi.SSID(i) + String(F(" found with RSSI: ")) +
+                         String(WiFi.RSSI(i)) + String(F("(")) +
+                         String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
+                         String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
+                         String(F(" and channel: ")) + String(WiFi.channel(i)));
+        }
+
+        if (_openAP)
+        {
+            openAP();
+        }
+        else if(_convertOldWiFi)
+        {
+            Log->println("Trying to convert old WiFi settings");
+            _convertOldWiFi = false;
+            _preferences->putBool(preference_wifi_converted, true);
+
+            wifi_config_t wifi_cfg;
+            if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
+            {
+                Log->println("Failed to get Wi-Fi configuration in RAM");
+            }
+
+            if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK)
+            {
+                Log->println("Failed to set storage Wi-Fi");
+            }
+
+            String tempSSID = String(reinterpret_cast<const char*>(wifi_cfg.sta.ssid));
+            String tempPass = String(reinterpret_cast<const char*>(wifi_cfg.sta.password));
+            tempSSID.trim();
+            tempPass.trim();
+            bool found = false;
+
+            for (int i = 0; i < _foundNetworks; i++)
+            {
+                if(tempSSID.length() > 0 && tempSSID == WiFi.SSID(i) && tempPass.length() > 0)
+                {
+                    _preferences->putString(preference_wifi_ssid, tempSSID);
+                    _preferences->putString(preference_wifi_pass, tempPass);
+                    Log->println("Succesfully converted old WiFi settings");
+                    found = true;
+                    break;
+                }
+            }
+
+            WiFi.disconnect(true, true);
+
+            if(found)
+            {
+                Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
+                _connectOnScanDone = true;
+                _openAP = false;
+                scan(false, true);
+                return;
+            }
+            else
+            {
+                restartEsp(RestartReason::ReconfigureWifi);
+                return;
+            }
+        }
+        else if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
+        {
+            connect();
+        }
+        else if (_connectOnScanDone)
+        {
+            Log->println("No networks found, restarting scan");
+            scan(false, true);
+        }
+    }
 }
