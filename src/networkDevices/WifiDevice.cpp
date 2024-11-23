@@ -95,7 +95,7 @@ void WifiDevice::openAP()
         WiFi.softAPsetHostname(_hostname.c_str());
         delay(500);
         WiFi.softAP("NukiHub", "NukiHubESP32");
-        
+
         //if(MDNS.begin(_hostname.c_str())){
         //  MDNS.addService("http", "tcp", 80);
         //}
@@ -112,7 +112,7 @@ bool WifiDevice::connect()
     delay(500);
 
     int bestConnection = -1;
-    
+
     if(_preferences->getBool(preference_find_best_rssi, false))
     {
         for (int i = 0; i < _foundNetworks; i++)
@@ -137,7 +137,7 @@ bool WifiDevice::connect()
                 }
             }
         }
-        
+
         if (bestConnection == -1)
         {
             Log->print("No network found with SSID: ");
@@ -166,24 +166,24 @@ bool WifiDevice::connect()
 
     switch (status)
     {
-        case WL_CONNECTED:
-            Log->println("WiFi connected");
-            break;
-        case WL_NO_SSID_AVAIL:
-            Log->println("WiFi SSID not available");
-            break;
-        case WL_CONNECT_FAILED:
-            Log->println("WiFi connection failed");
-            break;
-        case WL_IDLE_STATUS:
-            Log->println("WiFi changing status");
-            break;
-        case WL_DISCONNECTED:
-            Log->println("WiFi disconnected");
-            break;
-        default:
-            Log->println("WiFi timeout");
-            break;
+    case WL_CONNECTED:
+        Log->println("WiFi connected");
+        break;
+    case WL_NO_SSID_AVAIL:
+        Log->println("WiFi SSID not available");
+        break;
+    case WL_CONNECT_FAILED:
+        Log->println("WiFi connection failed");
+        break;
+    case WL_IDLE_STATUS:
+        Log->println("WiFi changing status");
+        break;
+    case WL_DISCONNECTED:
+        Log->println("WiFi disconnected");
+        break;
+    default:
+        Log->println("WiFi timeout");
+        break;
     }
 
     if (status != WL_CONNECTED)
@@ -250,7 +250,10 @@ void WifiDevice::onConnected()
 
 void WifiDevice::onDisconnected()
 {
-    if (!_connected) return;
+    if (!_connected)
+    {
+        return;
+    }
     _connected = false;
 
     Log->println("Wi-Fi disconnected");

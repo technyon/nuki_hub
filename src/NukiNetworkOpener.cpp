@@ -33,7 +33,7 @@ void NukiNetworkOpener::initialize()
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
-    
+
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
@@ -47,7 +47,7 @@ void NukiNetworkOpener::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
-    
+
     if(_disableNonJSON)
     {
         _network->removeTopic(_mqttPath, mqtt_topic_keypad_command_action);
@@ -86,7 +86,7 @@ void NukiNetworkOpener::initialize()
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_id, "0");
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_name, "--");
             _network->initTopic(_mqttPath, mqtt_topic_keypad_command_code, "000000");
-            _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");          
+            _network->initTopic(_mqttPath, mqtt_topic_keypad_command_enabled, "1");
             _network->subscribe(_mqttPath, mqtt_topic_keypad_command_action);
             _network->subscribe(_mqttPath, mqtt_topic_keypad_command_id);
             _network->subscribe(_mqttPath, mqtt_topic_keypad_command_name);
@@ -118,9 +118,9 @@ void NukiNetworkOpener::initialize()
     }
 
     _network->addReconnectedCallback([&]()
-     {
-         _reconnected = true;
-     });
+    {
+        _reconnected = true;
+    });
 }
 
 void NukiNetworkOpener::update()
@@ -136,7 +136,7 @@ void NukiNetworkOpener::update()
 void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* data = (char*)payload;
-    
+
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
         Log->println("MQTT recently connected, ignoring opener action.");
@@ -652,7 +652,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
             serializeJson(entry, _buffer, _bufferSize);
             publishString(mqtt_topic_lock_log_rolling, _buffer, true);
             publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
-            
+
             if(log.loggingType == NukiOpener::LoggingType::DoorbellRecognition && _lastRollingLog > 0)
             {
                 if((log.data[0] & 3) == 0)
@@ -666,7 +666,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                     publishRing(false);
                 }
             }
-            
+
             _lastRollingLog = log.index;
         }
     }
@@ -675,7 +675,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
     if(latest)
     {
-        publishString(mqtt_topic_lock_log_latest, _buffer, true);        
+        publishString(mqtt_topic_lock_log_latest, _buffer, true);
     }
     else
     {

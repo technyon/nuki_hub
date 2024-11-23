@@ -142,7 +142,7 @@ void NukiNetworkLock::initialize()
     {
         _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
     }
-    
+
     _network->addReconnectedCallback([&]()
     {
         _reconnected = true;
@@ -160,7 +160,7 @@ void NukiNetworkLock::update()
 void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* data = (char*)payload;
-    
+
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
         Log->println("MQTT recently connected, ignoring lock action.");

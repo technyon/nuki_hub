@@ -126,7 +126,7 @@ void EthernetDevice::initialize()
 void EthernetDevice::update()
 {
     NetworkDevice::update();
-  
+
     if(_checkIpTs != -1 && _checkIpTs < espMillis())
     {
         if(_ipConfiguration->ipAddress() != ETH.localIP())
@@ -136,7 +136,7 @@ void EthernetDevice::update()
             _checkIpTs = espMillis() + 5000;
             return;
         }
-        
+
         _checkIpTs = -1;
     }
 }

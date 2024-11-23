@@ -25,7 +25,8 @@ void NetworkDevice::init()
             _mqttClientSecure->setCertificate(_cert);
             _mqttClientSecure->setPrivateKey(_key);
         }
-    } else
+    }
+    else
     {
         Log->println(F("MQTT without TLS."));
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
@@ -35,9 +36,18 @@ void NetworkDevice::init()
     {
         MqttLoggerMode mode;
 
-        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::MqttAndSerialAndWeb;
-        else if (_preferences->getBool(preference_webserial_enabled, false)) mode = MqttLoggerMode::SerialAndWeb;
-        else mode = MqttLoggerMode::MqttAndSerial;
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) && _preferences->getBool(preference_webserial_enabled, false))
+        {
+            mode = MqttLoggerMode::MqttAndSerialAndWeb;
+        }
+        else if (_preferences->getBool(preference_webserial_enabled, false))
+        {
+            mode = MqttLoggerMode::SerialAndWeb;
+        }
+        else
+        {
+            mode = MqttLoggerMode::MqttAndSerial;
+        }
 
         _path = new char[200];
         memset(_path, 0, sizeof(_path));

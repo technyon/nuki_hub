@@ -355,13 +355,13 @@ void otaTask(void *pvParameter)
         updateUrl = preferences->getString(preference_ota_main_url);
         preferences->putString(preference_ota_main_url, "");
     }
-    
+
     while(!network->isConnected())
     {
         Log->println("OTA waiting for network");
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
-    
+
     Log->println("Starting OTA task");
     esp_http_client_config_t config =
     {

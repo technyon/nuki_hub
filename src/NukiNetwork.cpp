@@ -134,13 +134,13 @@ void NukiNetwork::setupDevice()
 
 #ifndef NUKI_HUB_UPDATER
     _device->mqttOnConnect([&](bool sessionPresent)
-        {
-            onMqttConnect(sessionPresent);
-        });
+    {
+        onMqttConnect(sessionPresent);
+    });
     _device->mqttOnDisconnect([&](espMqttClientTypes::DisconnectReason reason)
-        {
-            onMqttDisconnect(reason);
-        });
+    {
+        onMqttDisconnect(reason);
+    });
 
     _hadiscovery = new HomeAssistantDiscovery(_device, _preferences, _buffer, _bufferSize);
 #endif
@@ -199,7 +199,10 @@ bool NukiNetwork::wifiConnected()
     {
         return true;
     }
-    else return _device->isConnected();
+    else
+    {
+        return _device->isConnected();
+    }
 }
 
 #ifdef NUKI_HUB_UPDATER
@@ -309,29 +312,29 @@ void NukiNetwork::initialize()
         {
             switch (pinEntry.role)
             {
-                case PinRole::GeneralInputPullDown:
-                case PinRole::GeneralInputPullUp:
-                    if(rebGpio)
-                    {
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
-                        publishString(_lockPath.c_str(), gpioPath, "input", false);
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                        publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str(), false);
-                    }
-                    break;
-                case PinRole::GeneralOutput:
-                    if(rebGpio)
-                    {
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
-                        publishString(_lockPath.c_str(), gpioPath, "output", false);
-                        buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                        publishString(_lockPath.c_str(), gpioPath, "0", false);
-                    }
+            case PinRole::GeneralInputPullDown:
+            case PinRole::GeneralInputPullUp:
+                if(rebGpio)
+                {
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                    publishString(_lockPath.c_str(), gpioPath, "input", false);
                     buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
-                    subscribe(_lockPath.c_str(), gpioPath);
-                    break;
-                default:
-                    break;
+                    publishString(_lockPath.c_str(), gpioPath, std::to_string(digitalRead(pinEntry.pin)).c_str(), false);
+                }
+                break;
+            case PinRole::GeneralOutput:
+                if(rebGpio)
+                {
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_role});
+                    publishString(_lockPath.c_str(), gpioPath, "output", false);
+                    buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                    publishString(_lockPath.c_str(), gpioPath, "0", false);
+                }
+                buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pinEntry.pin)).c_str(), mqtt_topic_gpio_state});
+                subscribe(_lockPath.c_str(), gpioPath);
+                break;
+            default:
+                break;
             }
         }
 
@@ -376,7 +379,8 @@ bool NukiNetwork::update()
     {
         _mqttConnectCounter = 0;
 
-        if(_firstDisconnected) {
+        if(_firstDisconnected)
+        {
             _firstDisconnected = false;
             _device->mqttDisconnect(true);
         }
@@ -421,7 +425,10 @@ bool NukiNetwork::update()
             delay(200);
             restartEsp(RestartReason::ReconfigureWebServer);
         }
-        else if(!_webEnabled) forceEnableWebServer = false;
+        else if(!_webEnabled)
+        {
+            forceEnableWebServer = false;
+        }
         delay(2000);
     }
 
@@ -429,7 +436,10 @@ bool NukiNetwork::update()
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
         {
-            if(!_webEnabled) forceEnableWebServer = true;
+            if(!_webEnabled)
+            {
+                forceEnableWebServer = true;
+            }
             Log->println("Network timeout has been reached, restarting ...");
             delay(200);
             restartEsp(RestartReason::NetworkTimeoutWatchdog);
@@ -577,33 +587,33 @@ void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &r
     Log->print("MQTT disconnected. Reason: ");
     switch(reason)
     {
-        case espMqttClientTypes::DisconnectReason::USER_OK:
-            Log->println(F("USER_OK"));
-            break;
-        case espMqttClientTypes::DisconnectReason::MQTT_UNACCEPTABLE_PROTOCOL_VERSION:
-            Log->println(F("MQTT_UNACCEPTABLE_PROTOCOL_VERSION"));
-            break;
-        case espMqttClientTypes::DisconnectReason::MQTT_IDENTIFIER_REJECTED:
-            Log->println(F("MQTT_IDENTIFIER_REJECTED"));
-            break;
-        case espMqttClientTypes::DisconnectReason::MQTT_SERVER_UNAVAILABLE:
-            Log->println(F("MQTT_SERVER_UNAVAILABLE"));
-            break;
-        case espMqttClientTypes::DisconnectReason::MQTT_MALFORMED_CREDENTIALS:
-            Log->println(F("MQTT_MALFORMED_CREDENTIALS"));
-            break;
-        case espMqttClientTypes::DisconnectReason::MQTT_NOT_AUTHORIZED:
-            Log->println(F("MQTT_NOT_AUTHORIZED"));
-            break;
-        case espMqttClientTypes::DisconnectReason::TLS_BAD_FINGERPRINT:
-            Log->println(F("TLS_BAD_FINGERPRINT"));
-            break;
-        case espMqttClientTypes::DisconnectReason::TCP_DISCONNECTED:
-            Log->println(F("TCP_DISCONNECTED"));
-            break;
-        default:
-            Log->println(F("Unknown"));
-            break;
+    case espMqttClientTypes::DisconnectReason::USER_OK:
+        Log->println(F("USER_OK"));
+        break;
+    case espMqttClientTypes::DisconnectReason::MQTT_UNACCEPTABLE_PROTOCOL_VERSION:
+        Log->println(F("MQTT_UNACCEPTABLE_PROTOCOL_VERSION"));
+        break;
+    case espMqttClientTypes::DisconnectReason::MQTT_IDENTIFIER_REJECTED:
+        Log->println(F("MQTT_IDENTIFIER_REJECTED"));
+        break;
+    case espMqttClientTypes::DisconnectReason::MQTT_SERVER_UNAVAILABLE:
+        Log->println(F("MQTT_SERVER_UNAVAILABLE"));
+        break;
+    case espMqttClientTypes::DisconnectReason::MQTT_MALFORMED_CREDENTIALS:
+        Log->println(F("MQTT_MALFORMED_CREDENTIALS"));
+        break;
+    case espMqttClientTypes::DisconnectReason::MQTT_NOT_AUTHORIZED:
+        Log->println(F("MQTT_NOT_AUTHORIZED"));
+        break;
+    case espMqttClientTypes::DisconnectReason::TLS_BAD_FINGERPRINT:
+        Log->println(F("TLS_BAD_FINGERPRINT"));
+        break;
+    case espMqttClientTypes::DisconnectReason::TCP_DISCONNECTED:
+        Log->println(F("TCP_DISCONNECTED"));
+        break;
+    default:
+        Log->println(F("Unknown"));
+        break;
     }
 }
 
@@ -630,7 +640,8 @@ bool NukiNetwork::reconnect()
         }
         else
         {
-            Log->print(F("MQTT: Connecting with user: ")); Log->println(_mqttUser);
+            Log->print(F("MQTT: Connecting with user: "));
+            Log->println(_mqttUser);
             _device->mqttSetCredentials(_mqttUser, _mqttPass);
         }
 
@@ -858,7 +869,10 @@ void NukiNetwork::onMqttDataReceivedCallback(const espMqttClientTypes::MessagePr
 
 void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)
 {
-    if(_mqttConnectedTs == -1 || (millis() - _mqttConnectedTs < 2000)) return;
+    if(_mqttConnectedTs == -1 || (millis() - _mqttConnectedTs < 2000))
+    {
+        return;
+    }
 
     parseGpioTopics(properties, topic, payload, len, index, total);
 

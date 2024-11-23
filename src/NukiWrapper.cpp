@@ -2710,7 +2710,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             idExists = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId) != _keypadCodeIds.end();
         }
 
-        if(strcmp(action, "check") == 0) {
+        if(strcmp(action, "check") == 0)
+        {
             if(!_preferences->getBool(preference_keypad_check_code_enabled, false))
             {
                 _network->publishKeypadJsonCommandResult("checkingKeypadCodesDisabled");
@@ -2765,7 +2766,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
             while(retryCount < _nrOfRetries + 1)
             {
-                if(strcmp(action, "delete") == 0) {
+                if(strcmp(action, "delete") == 0)
+                {
                     if(idExists)
                     {
                         result = _nukiLock.deleteKeypadEntry(codeId);
@@ -2902,13 +2904,34 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                             }
                         }
 
-                        if(allowedWeekdays.indexOf("mon") >= 0) allowedWeekdaysInt += 64;
-                        if(allowedWeekdays.indexOf("tue") >= 0) allowedWeekdaysInt += 32;
-                        if(allowedWeekdays.indexOf("wed") >= 0) allowedWeekdaysInt += 16;
-                        if(allowedWeekdays.indexOf("thu") >= 0) allowedWeekdaysInt += 8;
-                        if(allowedWeekdays.indexOf("fri") >= 0) allowedWeekdaysInt += 4;
-                        if(allowedWeekdays.indexOf("sat") >= 0) allowedWeekdaysInt += 2;
-                        if(allowedWeekdays.indexOf("sun") >= 0) allowedWeekdaysInt += 1;
+                        if(allowedWeekdays.indexOf("mon") >= 0)
+                        {
+                            allowedWeekdaysInt += 64;
+                        }
+                        if(allowedWeekdays.indexOf("tue") >= 0)
+                        {
+                            allowedWeekdaysInt += 32;
+                        }
+                        if(allowedWeekdays.indexOf("wed") >= 0)
+                        {
+                            allowedWeekdaysInt += 16;
+                        }
+                        if(allowedWeekdays.indexOf("thu") >= 0)
+                        {
+                            allowedWeekdaysInt += 8;
+                        }
+                        if(allowedWeekdays.indexOf("fri") >= 0)
+                        {
+                            allowedWeekdaysInt += 4;
+                        }
+                        if(allowedWeekdays.indexOf("sat") >= 0)
+                        {
+                            allowedWeekdaysInt += 2;
+                        }
+                        if(allowedWeekdays.indexOf("sun") >= 0)
+                        {
+                            allowedWeekdaysInt += 1;
+                        }
                     }
 
                     if(strcmp(action, "add") == 0)
@@ -2983,17 +3006,32 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
                             for(const auto& entry : entries)
                             {
-                                if (codeId != entry.codeId) continue;
-                                else foundExisting = true;
+                                if (codeId != entry.codeId)
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    foundExisting = true;
+                                }
 
                                 if(name.length() < 1)
                                 {
                                     memset(oldName, 0, sizeof(oldName));
                                     memcpy(oldName, entry.name, sizeof(entry.name));
                                 }
-                                if(code == 12) code = entry.code;
-                                if(enabled == 2) enabled = entry.enabled;
-                                if(timeLimited == 2) timeLimited = entry.timeLimited;
+                                if(code == 12)
+                                {
+                                    code = entry.code;
+                                }
+                                if(enabled == 2)
+                                {
+                                    enabled = entry.enabled;
+                                }
+                                if(timeLimited == 2)
+                                {
+                                    timeLimited = entry.timeLimited;
+                                }
                                 if(allowedFrom.length() < 1)
                                 {
                                     allowedFrom = "old";
@@ -3014,7 +3052,10 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                                     allowedUntilAr[4] = entry.allowedUntilMin;
                                     allowedUntilAr[5] = entry.allowedUntilSec;
                                 }
-                                if(allowedWeekdays.length() < 1) allowedWeekdaysInt = entry.allowedWeekdays;
+                                if(allowedWeekdays.length() < 1)
+                                {
+                                    allowedWeekdaysInt = entry.allowedWeekdays;
+                                }
                                 if(allowedFromTime.length() < 1)
                                 {
                                     allowedFromTime = "old";
@@ -3113,10 +3154,14 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                     return;
                 }
 
-                if(result != Nuki::CmdResult::Success) {
+                if(result != Nuki::CmdResult::Success)
+                {
                     ++retryCount;
                 }
-                else break;
+                else
+                {
+                    break;
+                }
             }
 
             updateKeypad(false);

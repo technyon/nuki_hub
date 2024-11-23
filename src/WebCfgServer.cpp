@@ -159,9 +159,9 @@ void WebCfgServer::initialize()
         _psychicServer->on("/savewifi", HTTP_POST, [&](PsychicRequest *request)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-                {
-                    return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
-                }
+            {
+                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            }
             String message = "";
             bool connected = processWiFi(request, message);
             esp_err_t res = buildConfirmHtml(request, message, 10, true);
@@ -3534,7 +3534,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request)
 #endif
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
-    printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");    
+    printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");
     response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");

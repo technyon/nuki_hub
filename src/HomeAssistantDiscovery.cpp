@@ -5,10 +5,10 @@
 #include "MqttTopics.h"
 
 HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preferences *preferences, char* buffer, size_t bufferSize)
-: _device(device),
-  _preferences(preferences),
-  _buffer(buffer),
-  _bufferSize(bufferSize)
+    : _device(device),
+      _preferences(preferences),
+      _buffer(buffer),
+      _bufferSize(bufferSize)
 {
     _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
     _baseTopic = _preferences->getString(preference_mqtt_lock_path);
@@ -2905,20 +2905,20 @@ void HomeAssistantDiscovery::publishHASSConfigKeypad(char *deviceType, const cha
 }
 
 void HomeAssistantDiscovery::publishHassTopic(const String& mqttDeviceType,
-                                   const String& mqttDeviceName,
-                                   const String& uidString,
-                                   const String& uidStringPostfix,
-                                   const String& displayName,
-                                   const String& name,
-                                   const String& baseTopic,
-                                   const String& stateTopic,
-                                   const String& deviceType,
-                                   const String& deviceClass,
-                                   const String& stateClass,
-                                   const String& entityCat,
-                                   const String& commandTopic,
-                                   std::vector<std::pair<char*, char*>> additionalEntries
-                                  )
+        const String& mqttDeviceName,
+        const String& uidString,
+        const String& uidStringPostfix,
+        const String& displayName,
+        const String& name,
+        const String& baseTopic,
+        const String& stateTopic,
+        const String& deviceType,
+        const String& deviceClass,
+        const String& stateClass,
+        const String& entityCat,
+        const String& commandTopic,
+        std::vector<std::pair<char*, char*>> additionalEntries
+                                             )
 {
     if (_discoveryTopic != "")
     {
@@ -3056,18 +3056,18 @@ void HomeAssistantDiscovery::removeHASSConfigTopic(char *deviceType, char *name,
 }
 
 JsonDocument HomeAssistantDiscovery::createHassJson(const String& uidString,
-                                                    const String& uidStringPostfix,
-                                                    const String& displayName,
-                                                    const String& name,
-                                                    const String& baseTopic,
-                                                    const String& stateTopic,
-                                                    const String& deviceType,
-                                                    const String& deviceClass,
-                                                    const String& stateClass,
-                                                    const String& entityCat,
-                                                    const String& commandTopic,
-                                                    std::vector<std::pair<char*, char*>> additionalEntries
-                                                                                    )
+        const String& uidStringPostfix,
+        const String& displayName,
+        const String& name,
+        const String& baseTopic,
+        const String& stateTopic,
+        const String& deviceType,
+        const String& deviceClass,
+        const String& stateClass,
+        const String& entityCat,
+        const String& commandTopic,
+        std::vector<std::pair<char*, char*>> additionalEntries
+                                                   )
 {
     JsonDocument json;
     json.clear();
