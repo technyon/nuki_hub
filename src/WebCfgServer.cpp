@@ -47,7 +47,6 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
         memset(&_credUser, 0, sizeof(_credUser));
         memset(&_credPassword, 0, sizeof(_credPassword));
 
-        _hasCredentials = true;
         const char *user = str.c_str();
         memcpy(&_credUser, user, str.length());
 
@@ -960,22 +959,6 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildOtaCompletedHtml(PsychicRequest *request)
-{
-    PsychicStreamResponse response(request, "text/plain");
-    response.beginSend();
-    buildHtmlHeader(&response);
-
-    response.print("<div>Over-the-air update completed.<br>You will be forwarded automatically.</div>");
-    response.print("<script type=\"text/javascript\">");
-    response.print("window.addEventListener('load', function () {");
-    response.print("   setTimeout(\"location.href = '/';\",10000);");
-    response.print("});");
-    response.print("</script>");
-    response.print("</body></html>");
-    return response.endSend();
-}
-
 void WebCfgServer::buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader)
 {
     response->print("<html><head>");
@@ -1002,11 +985,6 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
             vTaskDelay( 50 / portTICK_PERIOD_MS);
         }
     }
-}
-
-void WebCfgServer::printProgress(size_t prg, size_t sz)
-{
-    Log->printf("Progress: %d%%\n", (prg*100)/_otaContentLen);
 }
 
 esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final)
@@ -1042,7 +1020,6 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
                 return(ESP_FAIL);
             }
 
-            _otaStartTs = espMillis();
             esp_task_wdt_config_t twdt_config =
             {
                 .timeout_ms = 30000,
