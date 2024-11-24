@@ -50,20 +50,12 @@ public:
     void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
 
     int mqttConnectionState();
-    bool reconnected(); //SETBACK
     uint8_t queryCommands();
     char _nukiName[33];
 
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
-    void publishFloat(const char* topic, const float value, bool retain, const uint8_t precision = 2);
-    void publishInt(const char* topic, const int value, bool retain);
-    void publishUInt(const char* topic, const unsigned int value, bool retain);
-    void publishBool(const char* topic, const bool value, bool retain);
-    void publishString(const char* topic, const String& value, bool retain);
-    void publishString(const char* topic, const std::string& value, bool retain);
-    void publishString(const char* topic, const char* value, bool retain);
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
 
     void buildMqttPath(const char* path, char* outPath);
@@ -84,10 +76,8 @@ private:
 
     std::map<uint32_t, String> _authEntries;
     char _mqttPath[181] = {0};
-    bool _isConnected = false;
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
-    bool _reconnected = false; //SETBACK
     bool _disableNonJSON = false;
 
     String _keypadCommandName = "";
@@ -98,10 +88,7 @@ private:
     uint8_t _queryCommands = 0;
     uint32_t _authId = 0;
     char _authName[33];
-    bool _authFound = false;
     uint32_t _lastRollingLog = 0;
-
-    NukiOpener::LockState _currentLockState = NukiOpener::LockState::Undefined;
 
     char* _buffer;
     const size_t _bufferSize;
