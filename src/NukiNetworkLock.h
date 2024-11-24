@@ -58,19 +58,8 @@ public:
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
     void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
 
-    void publishFloat(const char* topic, const float value, bool retain, const uint8_t precision = 2);
-    void publishInt(const char* topic, const int value, bool retain);
-    void publishUInt(const char* topic, const unsigned int value, bool retain);
-    void publishULong(const char* topic, const unsigned long value, bool retain);
-    void publishLongLong(const char* topic, int64_t value, bool retain);    
-    void publishBool(const char* topic, const bool value, bool retain);
-    void publishString(const char* topic, const String& value, bool retain);
-    void publishString(const char* topic, const std::string& value, bool retain);
-    void publishString(const char* topic, const char* value, bool retain);
-
     const uint32_t getAuthId() const;
     int mqttConnectionState();
-    bool reconnected();
     uint8_t queryCommands();
 
 private:

@@ -1,3 +1,4 @@
+#include <cstring>
 #include "NukiPublisher.h"
 
 
@@ -29,12 +30,18 @@ void NukiPublisher::publishBool(const char *topic, const bool value, bool retain
 
 void NukiPublisher::publishString(const char *topic, const String &value, bool retain)
 {
-    publishString(topic, value.c_str(), retain);
+    char str[value.length() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.begin(), value.length());
+    publishString(topic, str, retain);
 }
 
 void NukiPublisher::publishString(const char *topic, const std::string &value, bool retain)
 {
-    publishString(topic, value.c_str(), retain);
+    char str[value.size() + 1];
+    memset(str, 0, sizeof(str));
+    memcpy(str, value.data(), value.length());
+    publishString(topic, str, retain);
 }
 
 void NukiPublisher::publishString(const char *topic, const char *value, bool retain)
