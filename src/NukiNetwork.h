@@ -124,7 +124,6 @@ private:
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
     String _lockPath;
-    String _brokerAddr;
 
     HomeAssistantDiscovery* _hadiscovery = nullptr;
 
@@ -142,7 +141,6 @@ private:
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};
     char _mqttPass[31] = {0};
-    char _mqttPresencePrefix[181] = {0};
     char _maintenancePathPrefix[181] = {0};
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;
@@ -155,7 +153,6 @@ private:
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
     int64_t _lastConnectedTs = 0;
-    int64_t _lastMQTTConnectionAttemptTs = 0;
     int64_t _lastMaintenanceTs = 0;
     int64_t _lastUpdateCheckTs = 0;
     int64_t _lastRssiTs = 0;
