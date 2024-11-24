@@ -68,11 +68,11 @@ void WifiDevice::scan(bool passive, bool async)
 
         if(async)
         {
-            Log->println(F("Wi-Fi async scan started"));
+            Log->println("Wi-Fi async scan started");
         }
         else
         {
-            Log->println(F("Wi-Fi sync scan started"));
+            Log->println("Wi-Fi sync scan started");
         }
         if(passive)
         {
@@ -105,8 +105,6 @@ void WifiDevice::openAP()
 bool WifiDevice::connect()
 {
     bool ret = false;
-    ssid = _preferences->getString(preference_wifi_ssid, "");
-    pass = _preferences->getString(preference_wifi_pass, "");
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(_hostname.c_str());
     delay(500);
@@ -119,11 +117,11 @@ bool WifiDevice::connect()
         {
             if (ssid == WiFi.SSID(i))
             {
-                Log->println(String(F("Saved SSID ")) + ssid + String(F(" found with RSSI: ")) +
+                Log->println(String("Saved SSID ") + ssid + String(" found with RSSI: ") +
                              String(WiFi.RSSI(i)) + String(F("(")) +
                              String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
-                             String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
-                             String(F(" and channel: ")) + String(WiFi.channel(i)));
+                             String(" %) and BSSID: ") + WiFi.BSSIDstr(i) +
+                             String(" and channel: ") + String(WiFi.channel(i)));
                 if (bestConnection == -1)
                 {
                     bestConnection = i;
@@ -145,11 +143,11 @@ bool WifiDevice::connect()
         }
         else
         {
-            Log->println(String(F("Trying to connect to SSID ")) + ssid + String(F(" found with RSSI: ")) +
+            Log->println(String("Trying to connect to SSID ") + ssid + String(" found with RSSI: ") +
                          String(WiFi.RSSI(bestConnection)) + String(F("(")) +
                          String(constrain((100.0 + WiFi.RSSI(bestConnection)) * 2, 0, 100)) +
-                         String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(bestConnection) +
-                         String(F(" and channel: ")) + String(WiFi.channel(bestConnection)));
+                         String(" %) and BSSID: ") + WiFi.BSSIDstr(bestConnection) +
+                         String(" and channel: ") + String(WiFi.channel(bestConnection)));
         }
     }
 
@@ -244,7 +242,7 @@ bool WifiDevice::isConnected()
 
 void WifiDevice::onConnected()
 {
-    Log->println(F("Wi-Fi connected"));
+    Log->println("Wi-Fi connected");
     _connected = true;
 }
 
@@ -260,8 +258,6 @@ void WifiDevice::onDisconnected()
 
     //QUICK RECONNECT
     _connecting = true;
-    ssid = _preferences->getString(preference_wifi_ssid, "");
-    pass = _preferences->getString(preference_wifi_pass, "");
 
     if(!_ipConfiguration->dhcpEnabled())
     {
@@ -355,16 +351,16 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
     }
     else if(event == ARDUINO_EVENT_WIFI_SCAN_DONE)
     {
-        Log->println(F("Wi-Fi scan done"));
+        Log->println("Wi-Fi scan done");
         _foundNetworks = WiFi.scanComplete();
 
         for (int i = 0; i < _foundNetworks; i++)
         {
-            Log->println(String(F("SSID ")) + WiFi.SSID(i) + String(F(" found with RSSI: ")) +
+            Log->println(String("SSID ") + WiFi.SSID(i) + String(" found with RSSI: ") +
                          String(WiFi.RSSI(i)) + String(F("(")) +
                          String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
-                         String(F(" %) and BSSID: ")) + WiFi.BSSIDstr(i) +
-                         String(F(" and channel: ")) + String(WiFi.channel(i)));
+                         String(" %) and BSSID: ") + WiFi.BSSIDstr(i) +
+                         String(" and channel: ") + String(WiFi.channel(i)));
         }
 
         if (_openAP)
