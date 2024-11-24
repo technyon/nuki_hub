@@ -85,9 +85,7 @@ private:
     char _mqttPath[181] = {0};
 
     bool _firstTunerStatePublish = true;
-    int64_t _lastMaintenanceTs = 0;
     bool _haEnabled = false;
-    bool _reconnected = false; //SETBACK
     bool _disableNonJSON = false;
 
     String _keypadCommandName = "";

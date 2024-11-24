@@ -142,11 +142,12 @@ void NukiNetworkLock::initialize()
     {
         _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
     }
-
+/*
     _network->addReconnectedCallback([&]()
     {
         _reconnected = true;
     });
+*/
 }
 
 void NukiNetworkLock::update()
