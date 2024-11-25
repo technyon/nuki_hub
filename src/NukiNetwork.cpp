@@ -731,10 +731,6 @@ bool NukiNetwork::reconnect()
                 }
 
                 publishString(_maintenancePathPrefix, mqtt_topic_network_device, _device->deviceName().c_str(), true);
-                for(const auto& it : _initTopics)
-                {
-                    publish(it.first.c_str(), it.second.c_str(), true);
-                }
 
                 if(_preferences->getBool(preference_mqtt_hass_enabled, false))
                 {
@@ -753,6 +749,11 @@ bool NukiNetwork::reconnect()
                 initTopic(_maintenancePathPrefix, mqtt_topic_webserver_action, "--");
                 subscribe(_maintenancePathPrefix, mqtt_topic_webserver_action);
                 initTopic(_maintenancePathPrefix, mqtt_topic_webserver_state, (_preferences->getBool(preference_webserver_enabled, true) || forceEnableWebServer ? "1" : "0"));
+
+                for(const auto& it : _initTopics)
+                {
+                    publish(it.first.c_str(), it.second.c_str(), true);
+                }
             }
 
             for(const String& topic : _subscribedTopics)
