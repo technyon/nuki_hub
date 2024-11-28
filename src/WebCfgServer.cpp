@@ -1586,7 +1586,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
         }
         else if(key == "NWCUSTADDR")
         {
-            if(_preferences->getInt(preference_network_custom_addr, 0) != value.toInt())
+            if(_preferences->getInt(preference_network_custom_addr, -1) != value.toInt())
             {
                 networkReconfigure = true;
                 _preferences->putInt(preference_network_custom_addr, value.toInt());
