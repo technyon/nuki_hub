@@ -573,6 +573,26 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
         {(char*)"val_tpl", (char*)"{{value_json.critical}}" }
     });
 
+    // Battery charging
+    publishHassTopic("binary_sensor",
+                     "battery_charging",
+                     uidString,
+                     "_battery_charging",
+                     "Battery charging",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_battery_basic_json,
+                     deviceType,
+                     "battery",
+                     "",
+                     "diagnostic",
+                     "",
+    {
+        {(char*)"pl_on", (char*)"1"},
+        {(char*)"pl_off", (char*)"0"},
+        {(char*)"val_tpl", (char*)"{{value_json.charging}}" }
+    });
+    
     // Battery voltage
     publishHassTopic("sensor",
                      "battery_voltage",
@@ -2955,6 +2975,7 @@ void HomeAssistantDiscovery::removeHASSConfig(char* uidString)
 {
     removeHassTopic((char*)"lock", (char*)"smartlock", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"battery_low", uidString);
+    removeHassTopic((char*)"binary_sensor", (char*)"battery_charging", uidString);    
     removeHassTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
     removeHassTopic((char*)"sensor", (char*)"battery_voltage", uidString);
     removeHassTopic((char*)"sensor", (char*)"trigger", uidString);
