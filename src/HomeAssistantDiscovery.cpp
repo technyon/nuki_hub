@@ -2790,9 +2790,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
                          String("~") + mqtt_topic_config_action,
         {
             { (char*)"en", (char*)"true" },
-            { (char*)"pl_on", (char*)"{ \"rebootNuki\": \"1\"}" },
-            { (char*)"pl_off", (char*)"{ \"rebootNuki\": \"0\"}" },
-            { (char*)"val_tpl", (char*)"{{value_json.rebootNuki}}" }
+            { (char*)"pl_prs", (char*)"{ \"rebootNuki\": \"1\"}" }
         });
     }
     else
