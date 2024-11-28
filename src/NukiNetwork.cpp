@@ -723,8 +723,11 @@ bool NukiNetwork::reconnect()
                         removeTopic(_maintenancePathPrefix, topic);
                         removeTopic(mqttLockPath, topic);
                         removeTopic(mqttOpenerPath, topic);
-                        removeTopic(mqttOldOpenerPath, topic);
-                        removeTopic(mqttOldOpenerPath2, topic);
+                        if (len > 5)
+                        {
+                            removeTopic(mqttOldOpenerPath, topic);
+                            removeTopic(mqttOldOpenerPath2, topic);
+                        }
                     }
 
                     _preferences->putBool(preference_reset_mqtt_topics, false);
