@@ -608,7 +608,7 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
                      "",
     { { (char*)"en", (char*)"true" } });
 
-    if(_offEnabled)
+    if(_offEnabled && strcmp(deviceType, "SmartLock") == 0)
     {
         // Hybrid connected
         String hybridPath = _baseTopic;
