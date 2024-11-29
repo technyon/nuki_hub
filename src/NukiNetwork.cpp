@@ -1126,7 +1126,7 @@ void NukiNetwork::publishUInt(const char* prefix, const char *topic, const unsig
 void NukiNetwork::publishULong(const char* prefix, const char *topic, const unsigned long value, bool retain)
 {
     char str[30];
-    utoa(value, str, 10);
+    ultoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
     publish(path, str, retain);
@@ -1134,23 +1134,11 @@ void NukiNetwork::publishULong(const char* prefix, const char *topic, const unsi
 
 void NukiNetwork::publishLongLong(const char* prefix, const char *topic, int64_t value, bool retain)
 {
-    static char result[21] = "";
-    memset(&result[0], 0, sizeof(result));
-    char temp[21] = "";
-    char c;
-    uint8_t base = 10;
-
-    while (value)
-    {
-        int num = value % base;
-        value /= base;
-        c = '0' + num;
-        sprintf(temp, "%c%s", c, result);
-        strcpy(result, temp);
-    }
+    char str[30];
+    lltoa(value, str, 10);
     char path[200] = {0};
     buildMqttPath(path, { prefix, topic });
-    publish(path, result, retain);
+    publish(path, str, retain);
 }
 
 void NukiNetwork::publishBool(const char* prefix, const char *topic, const bool value, bool retain)
