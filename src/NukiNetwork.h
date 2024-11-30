@@ -57,7 +57,8 @@ public:
     void publishLongLong(const char* prefix, const char* topic, int64_t value, bool retain);
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain);
     void publishString(const char* prefix, const char* topic, const char* value, bool retain);
-    void publish(const char *topic, const char *value, bool retain);
+    void publish(const char* prefix, const char *topic, const char *value, bool retain);
+    void publish(const char* path, const char *value, bool retain);
     void removeTopic(const String& mqttPath, const String& mqttTopic);
     void batteryTypeToString(const Nuki::BatteryType battype, char* str);
     void advertisingModeToString(const Nuki::AdvertisingMode advmode, char* str);

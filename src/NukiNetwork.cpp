@@ -1100,66 +1100,59 @@ void NukiNetwork::publishFloat(const char* prefix, const char* topic, const floa
 {
     char str[30];
     dtostrf(value, 0, precision, str);
-    char path[200] = {0};
-    buildMqttPath(path, { prefix, topic });
-    publish(path, str, retain);
+    publish(prefix, topic, str, retain);
 }
 
 void NukiNetwork::publishInt(const char* prefix, const char *topic, const int value, bool retain)
 {
     char str[30];
     itoa(value, str, 10);
-    char path[200] = {0};
-    buildMqttPath(path, { prefix, topic });
-    publish(path, str, retain);
+    publish(prefix, topic, str, retain);
 }
 
 void NukiNetwork::publishUInt(const char* prefix, const char *topic, const unsigned int value, bool retain)
 {
     char str[30];
     utoa(value, str, 10);
-    char path[200] = {0};
-    buildMqttPath(path, { prefix, topic });
-    publish(path, str, retain);
+    publish(prefix, topic, str, retain);
 }
 
 void NukiNetwork::publishULong(const char* prefix, const char *topic, const unsigned long value, bool retain)
 {
     char str[30];
     ultoa(value, str, 10);
-    char path[200] = {0};
-    buildMqttPath(path, { prefix, topic });
-    publish(path, str, retain);
+    publish(prefix, topic, str, retain);
 }
 
 void NukiNetwork::publishLongLong(const char* prefix, const char *topic, int64_t value, bool retain)
 {
     char str[30];
     lltoa(value, str, 10);
-    char path[200] = {0};
-    buildMqttPath(path, { prefix, topic });
-    publish(path, str, retain);
+    publish(prefix, topic, str, retain);
 }
 
 void NukiNetwork::publishBool(const char* prefix, const char *topic, const bool value, bool retain)
 {
     char str[2] = {0};
     str[0] = value ? '1' : '0';
-    char path[200] = {0};
-    buildMqttPath(path, { prefix, topic });
-    publish(path, str, retain);
+    publish(prefix, topic, str, retain);
 }
 
 void NukiNetwork::publishString(const char* prefix, const char *topic, const char *value, bool retain)
 {
-    char path[200] = {0};
-    buildMqttPath(path, { prefix, topic });
-    publish(path, value, retain);
+    publish(prefix, topic, value, retain);
 }
 
-void NukiNetwork::publish(const char *topic, const char *value, bool retain)
+void NukiNetwork::publish(const char* prefix, const char *topic, const char *value, bool retain)
 {
-    _device->mqttPublish(topic, MQTT_QOS_LEVEL, retain, value);
+    char path[200] = {0};
+    buildMqttPath(path, { prefix, topic });
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value);
+}
+
+void NukiNetwork::publish(const char* path, const char *value, bool retain)
+{
+    _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value);
 }
 
 void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)
