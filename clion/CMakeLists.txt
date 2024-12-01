@@ -72,6 +72,15 @@ file(GLOB_RECURSE SRCFILESREC
         lib/espMqttClient/src/Transport/*.h        
 )
 
+include_directories(
+        ../lib/ArduinoJson/src
+        ../lib/BleScanner/src
+        ../lib/CRC16/src
+        ../lib/MqttLogger/src
+        ../lib/nuki_ble/src
+        ../lib/PsychicHttp/src
+)
+
 add_executable(dummy
         ../src/main.cpp
         ${SRCFILES}
