@@ -892,7 +892,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
 {
     char* data = (char*)payload;
 
-    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(data, "1") == 0)
+    if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(data, "1") == 0 && !mqttRecentlyConnected())
     {
         Log->println(F("Restart requested via MQTT."));
         clearWifiFallback();
