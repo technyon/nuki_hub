@@ -523,7 +523,7 @@ esp_err_t WebCfgServer::buildSSIDListHtml(PsychicRequest *request)
     _network->scan(true, false);
     createSsidList();
 
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
 
     for (int i = 0; i < _ssidList.size(); i++)
@@ -575,7 +575,7 @@ void WebCfgServer::createSsidList()
 esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request)
 {
     String header = "<style>.trssid:hover { cursor: pointer; color: blue; }</style><script>let intervalId; window.onload = function() { intervalId = setInterval(updateSSID, 3000); }; function updateSSID() { var request = new XMLHttpRequest(); request.open('GET', '/ssidlist', true); request.onload = () => { if (document.getElementById(\"aplist\") !== null) { document.getElementById(\"aplist\").innerHTML = request.responseText; } }; request.send(); }</script>";
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
     response.print("<h3>Available WiFi networks</h3>");
@@ -741,7 +741,7 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, String& message)
 
 esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
 
     buildHtmlHeader(&response);
@@ -1104,7 +1104,7 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
 
 esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay, bool redirect)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     String header;
 
@@ -3272,7 +3272,7 @@ void WebCfgServer::processGpioArgs(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<div id=\"upform\"><h4>Import configuration</h4>");
@@ -3290,7 +3290,7 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request)
 esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request)
 {
     String header = "<script>window.onload=function(){var physelect=document.getElementsByName('NWCUSTPHY')[0];hideshowopt(physelect.value);physelect.addEventListener('change', function(event){var select=event.target;var selectedOption=select.options[select.selectedIndex];hideshowopt(selectedOption.getAttribute('value'));});};function hideshowopt(value){if(value>=1&&value<=3){hideopt('internalopt',true);hideopt('externalopt',false);}else if(value>=4&&value<=9){hideopt('internalopt', false);hideopt('externalopt', true);}else {hideopt('internalopt', true);hideopt('externalopt', true);}}function hideopt(opts,hide){var hideopts = document.getElementsByClassName(opts);for(var i=0;i<hideopts.length;i++){if(hide==true){hideopts[i].style.display='none';}else{hideopts[i].style.display='block';}}}</script>";
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
     response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -3320,7 +3320,7 @@ esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request)
 esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
 {
     String header = "<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
     if(_rebootRequired)
@@ -3418,7 +3418,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form id=\"credfrm\" class=\"adapt\" onsubmit=\"return testcreds();\" method=\"post\" action=\"savecfg\">");
@@ -3497,7 +3497,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -3529,7 +3529,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -3574,7 +3574,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -3739,7 +3739,7 @@ String WebCfgServer::pinStateToString(uint8_t value)
 
 esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
 
@@ -3922,7 +3922,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"savecfg\">");
@@ -3963,7 +3963,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request)
 
 esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form method=\"post\" action=\"savegpiocfg\">");
@@ -4015,7 +4015,7 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request)
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
 {
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form method=\"get\" action=\"wifimanager\">");
@@ -4032,7 +4032,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
-    PsychicStreamResponse response(request, "text/plain");
+    PsychicStreamResponse response(request, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<h3>System Information</h3><pre>");
