@@ -18,7 +18,7 @@ namespace BleScanner {
 
 class Subscriber {
   public:
-    virtual void onResult(NimBLEAdvertisedDevice* advertisedDevice) = 0;
+    virtual void onResult(const NimBLEAdvertisedDevice* advertisedDevice) = 0;
 };
 
 class Publisher {

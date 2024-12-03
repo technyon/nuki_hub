@@ -93,7 +93,7 @@ void Scanner::unsubscribe(Subscriber* subscriber) {
   }
 }
 
-void Scanner::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+void Scanner::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
   for (const auto& subscriber : subscribers) {
     subscriber->onResult(advertisedDevice);
   }
