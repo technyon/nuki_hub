@@ -38,7 +38,7 @@ with open('ota/manifest.json', 'r+') as json_file:
 
         data[args.ota_type]['time'] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         data[args.ota_type]['version'] = str(version)
-        data[args.ota_type]['version_int'] = str(version*100)
+        data[args.ota_type]['version_int'] = str(int((float(version)*100)+0.1))
 
         if (args.ota_type == "release"):
             data[args.ota_type]['fullversion'] = str(version)

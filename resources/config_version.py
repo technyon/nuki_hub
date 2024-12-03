@@ -31,7 +31,7 @@ elif (data[args.ota_type]['version'] == version):
 else:
     number = 1
 
-version_int = version*100
+version_int = int((float(version)*100)+0.1)
 content_new = ""
 
 with open ('src/Config.h', 'r' ) as readfile:
