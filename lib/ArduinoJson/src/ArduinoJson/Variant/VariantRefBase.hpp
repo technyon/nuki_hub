@@ -207,7 +207,7 @@ class VariantRefBase : public VariantTag {
     if (key.template is<size_t>())
       return operator[](key.template as<size_t>());
     else
-      return operator[](key.template as<const char*>());
+      return operator[](key.template as<JsonString>());
   }
 
   // DEPRECATED: use add<JsonVariant>() instead

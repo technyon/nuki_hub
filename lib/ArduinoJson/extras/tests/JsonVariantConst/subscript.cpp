@@ -50,20 +50,22 @@ TEST_CASE("JsonVariantConst::operator[]") {
 
   SECTION("object") {
     JsonObject object = doc.to<JsonObject>();
-    object["a"] = "A";
-    object["b"] = "B";
+    object["ab"_s] = "AB";
+    object["abc"_s] = "ABC";
+    object["abc\0d"_s] = "ABCD";
 
     SECTION("supports const char*") {
-      REQUIRE("A"_s == var["a"]);
-      REQUIRE("B"_s == var["b"]);
-      REQUIRE(var["c"].isNull());
+      REQUIRE(var["ab"] == "AB"_s);
+      REQUIRE(var["abc"] == "ABC"_s);
+      REQUIRE(var["def"].isNull());
       REQUIRE(var[0].isNull());
     }
 
     SECTION("supports std::string") {
-      REQUIRE("A"_s == var["a"_s]);
-      REQUIRE("B"_s == var["b"_s]);
-      REQUIRE(var["c"_s].isNull());
+      REQUIRE(var["ab"_s] == "AB"_s);
+      REQUIRE(var["abc"_s] == "ABC"_s);
+      REQUIRE(var["abc\0d"_s] == "ABCD"_s);
+      REQUIRE(var["def"_s].isNull());
     }
 
 #if defined(HAS_VARIABLE_LENGTH_ARRAY) && \
@@ -71,16 +73,23 @@ TEST_CASE("JsonVariantConst::operator[]") {
     SECTION("supports VLA") {
       size_t i = 16;
       char vla[i];
-      strcpy(vla, "a");
+      strcpy(vla, "abc");
 
-      REQUIRE("A"_s == var[vla]);
+      REQUIRE(var[vla] == "ABC"_s);
     }
 #endif
 
     SECTION("supports JsonVariant") {
-      object["c"] = "b";
-      REQUIRE(var[var["c"]] == "B");
-      REQUIRE(var[var["d"]].isNull());
+      object["key1"] = "ab";
+      object["key2"] = "abc";
+      object["key3"] = "abc\0d"_s;
+      object["key4"] = "foo";
+
+      REQUIRE(var[var["key1"]] == "AB"_s);
+      REQUIRE(var[var["key2"]] == "ABC"_s);
+      REQUIRE(var[var["key3"]] == "ABCD"_s);
+      REQUIRE(var[var["key4"]].isNull());
+      REQUIRE(var[var["key5"]].isNull());
     }
   }
 }

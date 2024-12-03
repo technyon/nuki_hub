@@ -83,7 +83,7 @@ class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
      *
      * @param advertisedDevice
      */
-    void onResult(NimBLEAdvertisedDevice* advertisedDevice) override;
+    void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
     
     /**
      * @brief Whitelist a specific BLE Address

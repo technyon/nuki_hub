@@ -44,13 +44,25 @@ TEST_CASE("JsonDocument::containsKey()") {
     REQUIRE(doc.containsKey("hello") == false);
   }
 
-  SECTION("support JsonVariant") {
+  SECTION("supports JsonVariant") {
     doc["hello"] = "world";
     doc["key"] = "hello";
 
     REQUIRE(doc.containsKey(doc["key"]) == true);
     REQUIRE(doc.containsKey(doc["foo"]) == false);
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("supports VLAs") {
+    size_t i = 16;
+    char vla[i];
+    strcpy(vla, "hello");
+
+    doc["hello"] = "world";
+
+    REQUIRE(doc.containsKey(vla) == true);
+  }
+#endif
 }
 
 TEST_CASE("MemberProxy::containsKey()") {
@@ -70,6 +82,18 @@ TEST_CASE("MemberProxy::containsKey()") {
     REQUIRE(mp.containsKey("key"_s) == true);
     REQUIRE(mp.containsKey("key"_s) == true);
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("supports VLAs") {
+    size_t i = 16;
+    char vla[i];
+    strcpy(vla, "hello");
+
+    mp["hello"] = "world";
+
+    REQUIRE(mp.containsKey(vla) == true);
+  }
+#endif
 }
 
 TEST_CASE("JsonObject::containsKey()") {
@@ -175,6 +199,18 @@ TEST_CASE("JsonVariant::containsKey()") {
     REQUIRE(var.containsKey(doc["key"]) == true);
     REQUIRE(var.containsKey(doc["foo"]) == false);
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("supports VLAs") {
+    size_t i = 16;
+    char vla[i];
+    strcpy(vla, "hello");
+
+    var["hello"] = "world";
+
+    REQUIRE(var.containsKey(vla) == true);
+  }
+#endif
 }
 
 TEST_CASE("JsonVariantConst::containsKey()") {

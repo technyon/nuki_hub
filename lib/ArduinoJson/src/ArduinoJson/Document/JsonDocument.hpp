@@ -142,6 +142,13 @@ class JsonDocument : public detail::VariantOperators<const JsonDocument&> {
     return to<JsonVariant>().set(src);
   }
 
+  // Replaces the root with the specified value.
+  // https://arduinojson.org/v7/api/jsondocument/set/
+  template <typename TChar>
+  bool set(TChar* src) {
+    return to<JsonVariant>().set(src);
+  }
+
   // Clears the document and converts it to the specified type.
   // https://arduinojson.org/v7/api/jsondocument/to/
   template <typename T>
@@ -232,8 +239,8 @@ class JsonDocument : public detail::VariantOperators<const JsonDocument&> {
   template <typename TVariant>
   detail::enable_if_t<detail::IsVariant<TVariant>::value, JsonVariantConst>
   operator[](const TVariant& key) const {
-    if (key.template is<const char*>())
-      return operator[](key.template as<const char*>());
+    if (key.template is<JsonString>())
+      return operator[](key.template as<JsonString>());
     if (key.template is<size_t>())
       return operator[](key.template as<size_t>());
     return {};

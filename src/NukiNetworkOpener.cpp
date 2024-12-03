@@ -453,19 +453,19 @@ void NukiNetworkOpener::publishState(NukiOpener::OpenerState lockState)
         {
         case NukiOpener::LockState::Locked:
             _nukiPublisher->publishString(mqtt_topic_lock_ha_state, "locked", true);
-                _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "locked", true);
+            _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "locked", true);
             break;
         case NukiOpener::LockState::RTOactive:
             _nukiPublisher->publishString(mqtt_topic_lock_ha_state, "unlocked", true);
-                _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "unlocked", true);
+            _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "unlocked", true);
             break;
         case NukiOpener::LockState::Open:
             _nukiPublisher->publishString(mqtt_topic_lock_ha_state, "open", true);
-                _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "unlocked", true);
+            _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "unlocked", true);
             break;
         case NukiOpener::LockState::Opening:
             _nukiPublisher->publishString(mqtt_topic_lock_ha_state, "opening", true);
-                _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "unlocked", true);
+            _nukiPublisher->publishString(mqtt_topic_lock_binary_state, "unlocked", true);
             break;
         case NukiOpener::LockState::Undefined:
         case NukiOpener::LockState::Uncalibrated:

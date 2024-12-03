@@ -253,9 +253,15 @@ TEST_CASE("JsonObject::operator[]") {
 
   SECTION("JsonVariant") {
     obj["hello"] = "world";
-    doc["key"] = "hello";
+    obj["a\0b"_s] = "ABC";
 
-    REQUIRE(obj[obj["key"]] == "world");
-    REQUIRE(obj[obj["foo"]] == nullptr);
+    doc["key1"] = "hello";
+    doc["key2"] = "a\0b"_s;
+    doc["key3"] = "foo";
+
+    REQUIRE(obj[obj["key1"]] == "world");
+    REQUIRE(obj[obj["key2"]] == "ABC");
+    REQUIRE(obj[obj["key3"]] == nullptr);
+    REQUIRE(obj[obj["key4"]] == nullptr);
   }
 }

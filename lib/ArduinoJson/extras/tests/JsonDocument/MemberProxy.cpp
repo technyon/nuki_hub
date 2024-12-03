@@ -14,8 +14,8 @@
 using ArduinoJson::detail::sizeofArray;
 using ArduinoJson::detail::sizeofObject;
 
-typedef ArduinoJson::detail::MemberProxy<JsonDocument&, const char*>
-    MemberProxy;
+using MemberProxy =
+    ArduinoJson::detail::MemberProxy<JsonDocument&, const char*>;
 
 TEST_CASE("MemberProxy::add()") {
   JsonDocument doc;
@@ -32,6 +32,18 @@ TEST_CASE("MemberProxy::add()") {
 
     REQUIRE(doc.as<std::string>() == "{\"hello\":[\"world\"]}");
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("add(vla)") {
+    size_t i = 16;
+    char vla[i];
+    strcpy(vla, "world");
+
+    mp.add(vla);
+
+    REQUIRE(doc.as<std::string>() == "{\"hello\":[\"world\"]}");
+  }
+#endif
 }
 
 TEST_CASE("MemberProxy::clear()") {
@@ -195,6 +207,18 @@ TEST_CASE("MemberProxy::set()") {
 
     REQUIRE(doc.as<std::string>() == "{\"hello\":\"world\"}");
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("set(vla)") {
+    size_t i = 8;
+    char vla[i];
+    strcpy(vla, "world");
+
+    mp.set(vla);
+
+    REQUIRE(doc.as<std::string>() == "{\"hello\":\"world\"}");
+  }
+#endif
 }
 
 TEST_CASE("MemberProxy::size()") {

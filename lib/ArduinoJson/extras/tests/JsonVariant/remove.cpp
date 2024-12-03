@@ -83,6 +83,23 @@ TEST_CASE("JsonVariant::remove(std::string)") {
   REQUIRE(var.as<std::string>() == "{\"a\":1}");
 }
 
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+TEST_CASE("JsonVariant::remove(VLA)") {
+  JsonDocument doc;
+  JsonVariant var = doc.to<JsonVariant>();
+
+  var["a"] = 1;
+  var["b"] = 2;
+  size_t i = 16;
+  char vla[i];
+  strcpy(vla, "b");
+
+  var.remove("b"_s);
+
+  REQUIRE(var.as<std::string>() == "{\"a\":1}");
+}
+#endif
+
 TEST_CASE("JsonVariant::remove(JsonVariant) from object") {
   JsonDocument doc;
   JsonVariant var = doc.to<JsonVariant>();

@@ -7,7 +7,7 @@
 
 #include "Literals.hpp"
 
-typedef ArduinoJson::detail::ElementProxy<JsonDocument&> ElementProxy;
+using ElementProxy = ArduinoJson::detail::ElementProxy<JsonDocument&>;
 
 TEST_CASE("ElementProxy::add()") {
   JsonDocument doc;
@@ -26,13 +26,25 @@ TEST_CASE("ElementProxy::add()") {
     REQUIRE(doc.as<std::string>() == "[[\"world\"]]");
   }
 
-  SECTION("set(char[])") {
+  SECTION("add(char[])") {
     char s[] = "world";
     ep.add(s);
     strcpy(s, "!!!!!");
 
     REQUIRE(doc.as<std::string>() == "[[\"world\"]]");
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("set(vla)") {
+    size_t i = 8;
+    char vla[i];
+    strcpy(vla, "world");
+
+    ep.add(vla);
+
+    REQUIRE(doc.as<std::string>() == "[[\"world\"]]");
+  }
+#endif
 }
 
 TEST_CASE("ElementProxy::clear()") {
@@ -166,6 +178,18 @@ TEST_CASE("ElementProxy::set()") {
 
     REQUIRE(doc.as<std::string>() == "[\"world\"]");
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("set(VLA)") {
+    size_t i = 8;
+    char vla[i];
+    strcpy(vla, "world");
+
+    ep.set(vla);
+
+    REQUIRE(doc.as<std::string>() == "[\"world\"]");
+  }
+#endif
 }
 
 TEST_CASE("ElementProxy::size()") {
@@ -205,6 +229,18 @@ TEST_CASE("ElementProxy::operator[]") {
 
     REQUIRE(doc.as<std::string>() == "[null,[null,null,42]]");
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("set VLA") {
+    size_t i = 8;
+    char vla[i];
+    strcpy(vla, "world");
+
+    ep[0] = vla;
+
+    REQUIRE(doc.as<std::string>() == "[null,[\"world\"]]");
+  }
+#endif
 }
 
 TEST_CASE("ElementProxy cast to JsonVariantConst") {

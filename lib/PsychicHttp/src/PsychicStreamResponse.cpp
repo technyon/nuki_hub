@@ -5,8 +5,8 @@
 PsychicStreamResponse::PsychicStreamResponse(PsychicRequest *request, const String& contentType)
  : PsychicResponse(request), _buffer(NULL) {
 
-  setContentType(contentType.c_str());
-  addHeader("Content-Disposition", "inline");
+  //setContentType(contentType.c_str());
+  //addHeader("Content-Disposition", "inline");
 }
 
  

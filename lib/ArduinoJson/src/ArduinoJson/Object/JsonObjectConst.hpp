@@ -16,7 +16,7 @@ class JsonObjectConst : public detail::VariantOperators<JsonObjectConst> {
   friend class detail::VariantAttorney;
 
  public:
-  typedef JsonObjectConstIterator iterator;
+  using iterator = JsonObjectConstIterator;
 
   // Creates an unbound reference.
   JsonObjectConst() : data_(0), resources_(0) {}
@@ -121,8 +121,8 @@ class JsonObjectConst : public detail::VariantOperators<JsonObjectConst> {
   template <typename TVariant>
   detail::enable_if_t<detail::IsVariant<TVariant>::value, JsonVariantConst>
   operator[](const TVariant& key) const {
-    if (key.template is<const char*>())
-      return operator[](key.template as<const char*>());
+    if (key.template is<JsonString>())
+      return operator[](key.template as<JsonString>());
     else
       return JsonVariantConst();
   }
