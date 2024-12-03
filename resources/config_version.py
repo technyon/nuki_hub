@@ -7,7 +7,7 @@ parser.add_argument('ota_type', type=str)
 args = parser.parse_args()
 
 regex = r"\#define NUKI_HUB_VERSION \"(.*)\""
-regex2 = r"\#define NUKI_HUB_VERSION_INT \"(.*)\""
+regex2 = r"\#define NUKI_HUB_VERSION_INT \(uint32_t\)\"(.*)\""
 version = "unknown"
 
 with open('src/Config.h', 'r') as file:
