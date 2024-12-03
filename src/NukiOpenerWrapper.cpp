@@ -257,6 +257,9 @@ void NukiOpenerWrapper::update()
             _nextLockAction = (NukiOpener::LockAction) 0xff;
             _network->publishRetry("--");
             retryCount = 0;
+            _statusUpdated = true;
+            Log->println(F("Opener: updating status after action"));
+            _statusUpdatedTs = ts;
             if(_intervalLockstate > 10)
             {
                 _nextLockStateUpdateTs = ts + 10 * 1000;
@@ -439,15 +442,26 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 
     if(result != Nuki::CmdResult::Success)
     {
+        Log->println("Query opener state failed");
         _retryLockstateCount++;
         postponeBleWatchdog();
         if(_retryLockstateCount < _nrOfRetries + 1)
         {
+            Log->print(F("Query opener state retrying in "));
+            Log->print(_retryDelay);
+            Log->println("ms");
             _nextLockStateUpdateTs = espMillis() + _retryDelay;
         }
         return false;
     }
     _retryLockstateCount = 0;
+
+    const NukiOpener::LockState& lockState = _keyTurnerState.lockState;
+
+    if(lockState != _lastKeyTurnerState.lockState)
+    {
+        _statusUpdatedTs = espMillis();
+    }
 
     if((!isPinValid() || !_publishAuthData) &&
             _statusUpdated &&
@@ -478,6 +492,12 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 
         updateGpioOutputs();
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+
+        if((_keyTurnerState.lockState == NukiOpener::LockState::Open || _keyTurnerState.lockState == NukiOpener::LockState::Opening) && espMillis() < _statusUpdatedTs + 10000)
+        {
+            updateStatus = true;
+            Log->println(F("Opener: Keep updating status on intermediate lock state"));
+        }
 
         if(_keyTurnerState.nukiState == NukiOpener::State::ContinuousMode)
         {
