@@ -1,6 +1,13 @@
 ArduinoJson: change log
 =======================
 
+v7.2.1 (2024-11-15)
+------
+
+* Forbid `deserializeJson(JsonArray|JsonObject, ...)` (issue #2135)
+* Fix VLA support in `JsonDocument::set()`
+* Fix `operator[](variant)` ignoring NUL characters
+
 v7.2.0 (2024-09-18)
 ------
 

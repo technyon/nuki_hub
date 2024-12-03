@@ -16,6 +16,7 @@ add_executable(JsonDocumentTests
 	nesting.cpp
 	overflowed.cpp
 	remove.cpp
+	set.cpp
 	shrinkToFit.cpp
 	size.cpp
 	subscript.cpp

@@ -4,9 +4,9 @@ dependencies:
 
   esp-nimble-cpp:
     git: https://github.com/h2zero/esp-nimble-cpp.git
-    version: 020c61700dce2174769f855d45ab0ea70a2aaac4
+    version: 6c85cfa6c3d5ec9c46b87c761925b1bcb5c3827c
     
-  espressif/libsodium: "^1.0.20~1"
+  espressif/libsodium: "^1.0.20~2"
 
   # # Defining a dependency from the registry:
   # # https://components.espressif.com/component/example/cmp

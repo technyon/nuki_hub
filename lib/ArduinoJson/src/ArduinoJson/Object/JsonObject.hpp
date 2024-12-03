@@ -17,7 +17,7 @@ class JsonObject : public detail::VariantOperators<JsonObject> {
   friend class detail::VariantAttorney;
 
  public:
-  typedef JsonObjectIterator iterator;
+  using iterator = JsonObjectIterator;
 
   // Creates an unbound reference.
   JsonObject() : data_(0), resources_(0) {}
@@ -121,10 +121,10 @@ class JsonObject : public detail::VariantOperators<JsonObject> {
   // https://arduinojson.org/v7/api/jsonobject/subscript/
   template <typename TVariant>
   detail::enable_if_t<detail::IsVariant<TVariant>::value,
-                      detail::MemberProxy<JsonObject, const char*>>
+                      detail::MemberProxy<JsonObject, JsonString>>
   operator[](const TVariant& key) const {
-    if (key.template is<const char*>())
-      return {*this, key.template as<const char*>()};
+    if (key.template is<JsonString>())
+      return {*this, key.template as<JsonString>()};
     else
       return {*this, nullptr};
   }

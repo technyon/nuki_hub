@@ -79,6 +79,24 @@ TEST_CASE("JsonDocument::add(T)") {
                              Allocate(sizeofString("example")),
                          });
   }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("VLA") {
+    size_t i = 16;
+    char vla[i];
+    strcpy(vla, "example");
+
+    doc.add(vla);
+    doc.add(vla);
+
+    CHECK(doc[0].as<const char*>() == doc[1].as<const char*>());
+    REQUIRE("example"_s == doc[0]);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("example")),
+                         });
+  }
+#endif
 }
 
 TEST_CASE("JsonDocument::add<T>()") {

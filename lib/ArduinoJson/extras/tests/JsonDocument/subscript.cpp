@@ -12,28 +12,55 @@ TEST_CASE("JsonDocument::operator[]") {
   const JsonDocument& cdoc = doc;
 
   SECTION("object") {
-    deserializeJson(doc, "{\"hello\":\"world\"}");
+    doc["abc"_s] = "ABC";
+    doc["abc\0d"_s] = "ABCD";
 
     SECTION("const char*") {
-      REQUIRE(doc["hello"] == "world");
-      REQUIRE(cdoc["hello"] == "world");
+      REQUIRE(doc["abc"] == "ABC");
+      REQUIRE(cdoc["abc"] == "ABC");
     }
 
     SECTION("std::string") {
-      REQUIRE(doc["hello"_s] == "world");
-      REQUIRE(cdoc["hello"_s] == "world");
+      REQUIRE(doc["abc"_s] == "ABC");
+      REQUIRE(cdoc["abc"_s] == "ABC");
+      REQUIRE(doc["abc\0d"_s] == "ABCD");
+      REQUIRE(cdoc["abc\0d"_s] == "ABCD");
     }
 
     SECTION("JsonVariant") {
-      doc["key"] = "hello";
-      REQUIRE(doc[doc["key"]] == "world");
-      REQUIRE(cdoc[cdoc["key"]] == "world");
+      doc["key1"] = "abc";
+      doc["key2"] = "abc\0d"_s;
+      doc["key3"] = "foo";
+
+      CHECK(doc[doc["key1"]] == "ABC");
+      CHECK(doc[doc["key2"]] == "ABCD");
+      CHECK(doc[doc["key3"]] == nullptr);
+      CHECK(doc[doc["key4"]] == nullptr);
+
+      CHECK(cdoc[cdoc["key1"]] == "ABC");
+      CHECK(cdoc[cdoc["key2"]] == "ABCD");
+      CHECK(cdoc[cdoc["key3"]] == nullptr);
+      CHECK(cdoc[cdoc["key4"]] == nullptr);
     }
 
     SECTION("supports operator|") {
-      REQUIRE((doc["hello"] | "nope") == "world"_s);
-      REQUIRE((doc["world"] | "nope") == "nope"_s);
+      REQUIRE((doc["abc"] | "nope") == "ABC"_s);
+      REQUIRE((doc["def"] | "nope") == "nope"_s);
     }
+
+#if defined(HAS_VARIABLE_LENGTH_ARRAY) && \
+    !defined(SUBSCRIPT_CONFLICTS_WITH_BUILTIN_OPERATOR)
+    SECTION("supports VLAs") {
+      size_t i = 16;
+      char vla[i];
+      strcpy(vla, "hello");
+
+      doc[vla] = "world";
+
+      REQUIRE(doc[vla] == "world");
+      REQUIRE(cdoc[vla] == "world");
+    }
+#endif
   }
 
   SECTION("array") {

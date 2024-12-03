@@ -12,77 +12,101 @@
 #include "custom_string.hpp"
 #include "weird_strcmp.hpp"
 
+using ArduinoJson::JsonString;
 using namespace ArduinoJson::detail;
 
-TEST_CASE("ZeroTerminatedRamString") {
-  SECTION("null") {
-    ZeroTerminatedRamString s = adaptString(static_cast<const char*>(0));
+TEST_CASE("adaptString()") {
+  SECTION("null const char*") {
+    auto s = adaptString(static_cast<const char*>(0));
 
     CHECK(s.isNull() == true);
     CHECK(s.size() == 0);
+    CHECK(s.isLinked() == true);
   }
 
-  SECTION("non-null") {
-    ZeroTerminatedRamString s = adaptString("bravo");
+  SECTION("non-null const char*") {
+    auto s = adaptString("bravo");
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
+    CHECK(s.isLinked() == true);
   }
-}
 
-TEST_CASE("SizedRamString") {
-  SECTION("null") {
-    SizedRamString s = adaptString(static_cast<const char*>(0), 10);
+  SECTION("null const char* + size") {
+    auto s = adaptString(static_cast<const char*>(0), 10);
 
     CHECK(s.isNull() == true);
+    CHECK(s.isLinked() == false);
   }
 
-  SECTION("non-null") {
-    SizedRamString s = adaptString("bravo", 5);
+  SECTION("non-null const char* + size") {
+    auto s = adaptString("bravo", 5);
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
+    CHECK(s.isLinked() == false);
   }
-}
 
-TEST_CASE("FlashString") {
-  SECTION("null") {
-    FlashString s = adaptString(static_cast<const __FlashStringHelper*>(0));
+  SECTION("null Flash string") {
+    auto s = adaptString(static_cast<const __FlashStringHelper*>(0));
 
     CHECK(s.isNull() == true);
     CHECK(s.size() == 0);
+    CHECK(s.isLinked() == false);
   }
 
-  SECTION("non-null") {
-    FlashString s = adaptString(F("bravo"));
+  SECTION("non-null Flash string") {
+    auto s = adaptString(F("bravo"));
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
+    CHECK(s.isLinked() == false);
   }
-}
 
-TEST_CASE("std::string") {
-  std::string orig("bravo");
-  SizedRamString s = adaptString(orig);
+  SECTION("std::string") {
+    std::string orig("bravo");
+    auto s = adaptString(orig);
 
-  CHECK(s.isNull() == false);
-  CHECK(s.size() == 5);
-}
+    CHECK(s.isNull() == false);
+    CHECK(s.size() == 5);
+    CHECK(s.isLinked() == false);
+  }
 
-TEST_CASE("Arduino String") {
-  ::String orig("bravo");
-  SizedRamString s = adaptString(orig);
+  SECTION("Arduino String") {
+    ::String orig("bravo");
+    auto s = adaptString(orig);
 
-  CHECK(s.isNull() == false);
-  CHECK(s.size() == 5);
-}
+    CHECK(s.isNull() == false);
+    CHECK(s.size() == 5);
+    CHECK(s.isLinked() == false);
+  }
 
-TEST_CASE("custom_string") {
-  custom_string orig("bravo");
-  SizedRamString s = adaptString(orig);
+  SECTION("custom_string") {
+    custom_string orig("bravo");
+    auto s = adaptString(orig);
 
-  CHECK(s.isNull() == false);
-  CHECK(s.size() == 5);
+    CHECK(s.isNull() == false);
+    CHECK(s.size() == 5);
+    CHECK(s.isLinked() == false);
+  }
+
+  SECTION("JsonString linked") {
+    JsonString orig("hello", JsonString::Ownership::Linked);
+    auto s = adaptString(orig);
+
+    CHECK(s.isNull() == false);
+    CHECK(s.size() == 5);
+    CHECK(s.isLinked() == true);
+  }
+
+  SECTION("JsonString copied") {
+    JsonString orig("hello", JsonString::Ownership::Copied);
+    auto s = adaptString(orig);
+
+    CHECK(s.isNull() == false);
+    CHECK(s.size() == 5);
+    CHECK(s.isLinked() == false);
+  }
 }
 
 struct EmptyStruct {};
@@ -97,6 +121,7 @@ TEST_CASE("IsString<T>") {
   CHECK(IsString<::String>::value == true);
   CHECK(IsString<::StringSumHelper>::value == true);
   CHECK(IsString<const EmptyStruct*>::value == false);
+  CHECK(IsString<JsonString>::value == true);
 }
 
 TEST_CASE("stringCompare") {

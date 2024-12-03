@@ -116,12 +116,19 @@ TEST_CASE("JsonVariant::operator[]") {
     }
 
     SECTION("use JsonVariant as key") {
-      object["a"] = "a";
-      object["b"] = "b";
-      object["c"] = "b";
+      object["a"] = "A";
+      object["ab"] = "AB";
+      object["ab\0c"_s] = "ABC";
+      object["key1"] = "a";
+      object["key2"] = "ab";
+      object["key3"] = "ab\0c"_s;
+      object["key4"] = "foo";
 
-      REQUIRE(var[var["c"]] == "b");
-      REQUIRE(var[var["d"]].isNull());
+      REQUIRE(var[var["key1"]] == "A");
+      REQUIRE(var[var["key2"]] == "AB");
+      REQUIRE(var[var["key3"]] == "ABC");
+      REQUIRE(var[var["key4"]].isNull());
+      REQUIRE(var[var["key5"]].isNull());
     }
   }
 
