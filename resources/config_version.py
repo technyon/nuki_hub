@@ -29,12 +29,14 @@ elif (data[args.ota_type]['version'] == version):
     number = data[args.ota_type]['number'] + 1
 else:
     number = 1
-    
+
+version_int = version*100
 content_new = ""
 
 with open ('src/Config.h', 'r' ) as readfile:
     file_content = readfile.read()
     content_new = re.sub(regex, "#define NUKI_HUB_VERSION \"" + str(version) + "-" + args.ota_type + str(number) + "\"", file_content, flags = re.M)
+    content_new = re.sub(regex, "#define NUKI_HUB_VERSION_INT \"" + str(version_int) + "-" + args.ota_type + str(number) + "\"", content_new, flags = re.M)
 
 with open('src/Config.h', 'w') as writefile:
     writefile.write(content_new)

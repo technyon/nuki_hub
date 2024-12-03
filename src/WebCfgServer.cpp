@@ -875,7 +875,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
         String currentVersion = NUKI_HUB_VERSION;
         const char* latestVersion;
 
-        if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str()))
+        if(atof(doc["release"]["version_int"]) >= NUKI_HUB_VERSION_INT)
         {
             latestVersion = doc["release"]["fullversion"];
         }

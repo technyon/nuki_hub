@@ -212,18 +212,16 @@ inline void initPreferences(Preferences* preferences)
     else
     {
         int lastConfigVer = preferences->getInt(preference_config_version);
-        int currentConfigVer = atof(NUKI_HUB_VERSION) * 100;
 
         Log->print("Last config version: ");
         Log->println(lastConfigVer);
         Log->print("Current config version: ");
-        Log->println(currentConfigVer);
 
-        if(lastConfigVer >= currentConfigVer) return;
+        if(lastConfigVer >= NUKI_HUB_VERSION_INT) return;
 
         if (lastConfigVer < 834)
         {
-            Log->println("Migration 834");
+            Log->println("Migration 8.34");
 
             if(preferences->getInt(preference_keypad_control_enabled))
             {
@@ -315,7 +313,7 @@ inline void initPreferences(Preferences* preferences)
         }
         if (lastConfigVer < 901)
         {
-            Log->println("Migration 901");
+            Log->println("Migration 9.01");
 
             #if defined(CONFIG_IDF_TARGET_ESP32S3)
             if (preferences->getInt(preference_network_hardware) == 3)
@@ -328,10 +326,13 @@ inline void initPreferences(Preferences* preferences)
                 preferences->putInt(preference_network_hardware, 3);
             }
 
+        }
+        if (lastConfigVer < 902)
+        {
+            Log->println("Migration 9.02");
             preferences->putBool(preference_reset_mqtt_topics, true);
         }
-
-        preferences->putInt(preference_config_version, currentConfigVer);
+        preferences->putInt(preference_config_version, NUKI_HUB_VERSION_INT);
     }
     #endif
 }
