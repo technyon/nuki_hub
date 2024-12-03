@@ -7,6 +7,7 @@ parser.add_argument('ota_type', type=str)
 args = parser.parse_args()
 
 regex = r"\#define NUKI_HUB_VERSION \"(.*)\""
+regex2 = r"\#define NUKI_HUB_VERSION_INT \"(.*)\""
 version = "unknown"
 
 with open('src/Config.h', 'r') as file:
@@ -36,7 +37,7 @@ content_new = ""
 with open ('src/Config.h', 'r' ) as readfile:
     file_content = readfile.read()
     content_new = re.sub(regex, "#define NUKI_HUB_VERSION \"" + str(version) + "-" + args.ota_type + str(number) + "\"", file_content, flags = re.M)
-    content_new = re.sub(regex, "#define NUKI_HUB_VERSION_INT \"" + str(version_int) + "-" + args.ota_type + str(number) + "\"", content_new, flags = re.M)
+    content_new = re.sub(regex2, "#define NUKI_HUB_VERSION_INT (uint32_t)\"" + str(version_int) + "\"", content_new, flags = re.M)
 
 with open('src/Config.h', 'w') as writefile:
     writefile.write(content_new)
