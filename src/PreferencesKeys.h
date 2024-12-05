@@ -217,7 +217,7 @@ inline void initPreferences(Preferences* preferences)
         Log->println(lastConfigVer);
         Log->print("Current config version: ");
 
-        if(lastConfigVer >= NUKI_HUB_VERSION_INT) return;
+        if(lastConfigVer >= NUKI_HUB_VERSION_INT && lastConfigVer < 20000) return;
 
         if (lastConfigVer < 834)
         {
