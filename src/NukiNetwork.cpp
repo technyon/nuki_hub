@@ -961,8 +961,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                 }
                 else
                 {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_BETA_RELEASE_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_BETA_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
                     Log->println(F("Updating to latest beta version."));
                     delay(200);
                     restartEsp(RestartReason::OTAReboot);
@@ -976,8 +976,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                 }
                 else
                 {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+                    _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
                     Log->println(F("Updating to latest developmemt version."));
                     delay(200);
                     restartEsp(RestartReason::OTAReboot);
