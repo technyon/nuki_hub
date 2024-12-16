@@ -2,8 +2,8 @@
 
 #include "sdkconfig.h"
 
-#define NUKI_HUB_VERSION "9.03"
-#define NUKI_HUB_VERSION_INT (uint32_t)903
+#define NUKI_HUB_VERSION "9.04"
+#define NUKI_HUB_VERSION_INT (uint32_t)904
 #define NUKI_HUB_BUILD "unknownbuildnr"
 #define NUKI_HUB_DATE "2024-12-03"
 
