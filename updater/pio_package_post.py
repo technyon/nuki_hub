@@ -6,8 +6,8 @@ from pathlib import Path
 
 def get_board_name(env):
     board = env.get('BOARD_MCU')
-    if env.get('BOARD') == 'esp32-solo1':
-        board = env.get('BOARD').replace('-', '')
+    if env.get('BOARD') == 'nuki-esp32solo1':
+        board = 'esp32solo1'
     elif env.get('BOARD') == 'nuki-esp32-s3-oct':
         board = 'esp32s3oct'
     return board
