@@ -48,7 +48,13 @@ NukiOpenerWrapper::~NukiOpenerWrapper()
 
 void NukiOpenerWrapper::initialize()
 {
-    _nukiOpener.initialize();
+    _nukiOpener.setDebugConnect(_preferences->getBool(preference_debug_connect, false));
+    _nukiOpener.setDebugCommunication(_preferences->getBool(preference_debug_communication, false));
+    _nukiOpener.setDebugReadableData(_preferences->getBool(preference_debug_readable_data, false));
+    _nukiOpener.setDebugHexData(_preferences->getBool(preference_debug_hex_data, false));
+    _nukiOpener.setDebugCommand(_preferences->getBool(preference_debug_command, false));
+
+    _nukiOpener.initialize(_preferences->getBool(preference_connect_mode, false));
     _nukiOpener.registerBleScanner(_bleScanner);
     _nukiOpener.setEventHandler(this);
     _nukiOpener.setConnectTimeout(3);

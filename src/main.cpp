@@ -7,6 +7,7 @@
 #include "esp_https_ota.h"
 #include "esp_task_wdt.h"
 #include "Config.h"
+#include "esp32-hal-log.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
@@ -115,17 +116,31 @@ int _log_vprintf(const char *fmt, va_list args)
 void setReroute()
 {
     esp_log_set_vprintf(_log_vprintf);
+
+    #ifdef DEBUG_NUKIHUB
+    esp_log_level_set("*", ESP_LOG_DEBUG);
+    esp_log_level_set("nvs", ESP_LOG_INFO);
+    esp_log_level_set("wifi", ESP_LOG_INFO);
+    #else
+    esp_log_level_set("*", ESP_LOG_NONE);
+    esp_log_level_set("httpd", ESP_LOG_ERROR);
+    esp_log_level_set("httpd_sess", ESP_LOG_ERROR);
+    esp_log_level_set("httpd_parse", ESP_LOG_ERROR);
+    esp_log_level_set("httpd_txrx", ESP_LOG_ERROR);
+    esp_log_level_set("httpd_uri", ESP_LOG_ERROR);
+    esp_log_level_set("event", ESP_LOG_ERROR);  
+    esp_log_level_set("psychic", ESP_LOG_ERROR);
+    esp_log_level_set("ARDUINO", ESP_LOG_DEBUG);
+    esp_log_level_set("nvs", ESP_LOG_ERROR);
+    esp_log_level_set("wifi", ESP_LOG_ERROR);
+
+    #endif
+
     if(preferences->getBool(preference_mqtt_log_enabled))
     {
-        esp_log_level_set("*", ESP_LOG_INFO);
         esp_log_level_set("mqtt", ESP_LOG_NONE);
     }
-    else
-    {
-        esp_log_level_set("*", ESP_LOG_DEBUG);
-        esp_log_level_set("nvs", ESP_LOG_INFO);
-        esp_log_level_set("wifi", ESP_LOG_INFO);
-    }
+
 }
 #endif
 
@@ -174,13 +189,13 @@ void networkTask(void *pvParameters)
         network->update();
         bool connected = network->isConnected();
 
-#ifdef DEBUG_NUKIHUB
+        #ifndef NUKI_HUB_UPDATER
         if(connected && reroute)
         {
             reroute = false;
             setReroute();
         }
-#endif
+        #endif
 
 #ifndef NUKI_HUB_UPDATER
         wifiConnected = network->wifiConnected();

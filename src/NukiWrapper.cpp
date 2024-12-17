@@ -49,7 +49,13 @@ NukiWrapper::~NukiWrapper()
 
 void NukiWrapper::initialize()
 {
-    _nukiLock.initialize();
+    _nukiLock.setDebugConnect(_preferences->getBool(preference_debug_connect, false));
+    _nukiLock.setDebugCommunication(_preferences->getBool(preference_debug_communication, false));
+    _nukiLock.setDebugReadableData(_preferences->getBool(preference_debug_readable_data, false));
+    _nukiLock.setDebugHexData(_preferences->getBool(preference_debug_hex_data, false));
+    _nukiLock.setDebugCommand(_preferences->getBool(preference_debug_command, false));
+    
+    _nukiLock.initialize(_preferences->getBool(preference_connect_mode, false));
     _nukiLock.registerBleScanner(_bleScanner);
     _nukiLock.setEventHandler(this);
     _nukiLock.setConnectTimeout(3);
