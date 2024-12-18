@@ -2190,6 +2190,56 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 //configChanged = true;
             }
         }
+        else if(key == "DBGCONN")
+        {
+            if(_preferences->getBool(preference_debug_connect, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_debug_connect, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DBGCOMMU")
+        {
+            if(_preferences->getBool(preference_debug_communication, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_debug_communication, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DBGREAD")
+        {
+            if(_preferences->getBool(preference_debug_readable_data, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_debug_readable_data, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DBGHEX")
+        {
+            if(_preferences->getBool(preference_debug_hex_data, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_debug_hex_data, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DBGCOMM")
+        {
+            if(_preferences->getBool(preference_debug_command, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_debug_command, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "ACLLVLCHANGED")
         {
             aclLvlChanged = true;
@@ -2723,6 +2773,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
             if(_preferences->getBool(preference_opener_enabled, false) != (value == "1"))
             {
                 _preferences->putBool(preference_opener_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "CONNMODE")
+        {
+            if(_preferences->getBool(preference_connect_mode, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_connect_mode, (value == "1"));
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -3613,6 +3673,13 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
     }
     printInputField(&response, "OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
     printInputField(&response, "OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
+
+    printCheckBox(&response, "DBGCONN", "Enable Nuki connect debug logging", _preferences->getBool(preference_debug_connect, false), "");
+    printCheckBox(&response, "DBGCOMMU", "Enable Nuki communication debug logging", _preferences->getBool(preference_debug_communication, false), "");
+    printCheckBox(&response, "DBGREAD", "Enable Nuki readable data debug logging", _preferences->getBool(preference_debug_readable_data, false), "");
+    printCheckBox(&response, "DBGHEX", "Enable Nuki hex data debug logging", _preferences->getBool(preference_debug_hex_data, false), "");
+    printCheckBox(&response, "DBGCOMM", "Enable Nuki command debug logging", _preferences->getBool(preference_debug_command, false), "");
+
     response.print("</table>");
 
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -3930,6 +3997,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request)
     response.print("<table>");
     printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled), "");
     printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
+    printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, false), "");
     response.print("</table><br>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
     response.print("<table>");
