@@ -5,6 +5,7 @@
 #include "RestartReason.h"
 #include <NukiLockUtils.h>
 #include "Config.h"
+#include "hal/wdt_hal.h"
 
 NukiWrapper* nukiInst = nullptr;
 
@@ -190,6 +191,10 @@ void NukiWrapper::readSettings()
 
 void NukiWrapper::update()
 {
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     if(!_paired)
     {
         Log->println(F("Nuki lock start pairing"));
