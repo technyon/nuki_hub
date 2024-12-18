@@ -10,6 +10,7 @@
 #include "networkDevices/WifiDevice.h"
 #endif
 #include "networkDevices/EthernetDevice.h"
+#include "hal/wdt_hal.h"
 
 NukiNetwork* NukiNetwork::_inst = nullptr;
 
@@ -225,6 +226,10 @@ void NukiNetwork::initialize()
 
 bool NukiNetwork::update()
 {
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     _device->update();
     return true;
 }
@@ -367,6 +372,10 @@ void NukiNetwork::readSettings()
 
 bool NukiNetwork::update()
 {
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     int64_t ts = espMillis();
     _device->update();
 
