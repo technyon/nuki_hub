@@ -461,6 +461,9 @@ void setupTasks(bool ota)
 void setup()
 {
     //Set Log level to error for all TAGS
+#ifndef DEBUG_NUKIHUB
+    esp_log_set_level_master(ESP_LOG_ERROR);
+#endif
     esp_log_level_set("*", ESP_LOG_ERROR);
     //Set Log level to none for mqtt TAG
     esp_log_level_set("mqtt", ESP_LOG_NONE);

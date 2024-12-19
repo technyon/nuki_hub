@@ -215,7 +215,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_debug_readable_data, false);
         preferences->putBool(preference_debug_hex_data, false);
         preferences->putBool(preference_debug_command, false);
-        preferences->putBool(preference_connect_mode, false);
+        preferences->putBool(preference_connect_mode, true);
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         WiFi.begin();

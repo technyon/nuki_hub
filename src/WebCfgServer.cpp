@@ -2780,7 +2780,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
         }
         else if(key == "CONNMODE")
         {
-            if(_preferences->getBool(preference_connect_mode, false) != (value == "1"))
+            if(_preferences->getBool(preference_connect_mode, true) != (value == "1"))
             {
                 _preferences->putBool(preference_connect_mode, (value == "1"));
                 Log->print(F("Setting changed: "));
@@ -3997,7 +3997,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request)
     response.print("<table>");
     printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled), "");
     printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
-    printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, false), "");
+    printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, true), "");
     response.print("</table><br>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
     response.print("<table>");
