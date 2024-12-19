@@ -55,7 +55,13 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.setDebugHexData(_preferences->getBool(preference_debug_hex_data, false));
     _nukiOpener.setDebugCommand(_preferences->getBool(preference_debug_command, false));
 
-    _nukiOpener.initialize(_preferences->getBool(preference_connect_mode, false));
+    if (_preferences->getBool(preference_debug_connect, false) || _preferences->getBool(preference_debug_communication, false) || _preferences->getBool(preference_debug_readable_data, false) ||
+        _preferences->getBool(preference_debug_hex_data, false) || _preferences->getBool(preference_debug_command, false))
+    {
+      esp_log_set_level_master(ESP_LOG_DEBUG);
+    }
+
+    _nukiOpener.initialize(_preferences->getBool(preference_connect_mode, true));
     _nukiOpener.registerBleScanner(_bleScanner);
     _nukiOpener.setEventHandler(this);
     _nukiOpener.setConnectTimeout(3);
