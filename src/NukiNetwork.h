@@ -151,6 +151,7 @@ private:
     bool _firstConnect = true;
     bool _publishDebugInfo = false;
     bool _logIp = true;
+    bool _retainGpio = false;
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
     int64_t _lastConnectedTs = 0;
