@@ -3313,17 +3313,28 @@ void WebCfgServer::processGpioArgs(PsychicRequest *request)
 {
     int params = request->params();
     std::vector<PinEntry> pinConfiguration;
-
+        
     for(int index = 0; index < params; index++)
     {
         const PsychicWebParameter* p = request->getParam(index);
-        PinRole role = (PinRole)p->value().toInt();
-        if(role != PinRole::Disabled)
+      
+        if(p->name() == "RETGPIO")
         {
-            PinEntry entry;
-            entry.pin = p->name().toInt();
-            entry.role = role;
-            pinConfiguration.push_back(entry);
+            if(_preferences->getBool(preference_retain_gpio, false) != (p->value() == "1"))
+            {
+                _preferences->putBool(preference_retain_gpio, (p->value() == "1"));
+            }
+        }
+        else
+        {
+            PinRole role = (PinRole)p->value().toInt();
+            if(role != PinRole::Disabled)
+            {
+                PinEntry entry;
+                entry.pin = p->name().toInt();
+                entry.role = role;
+                pinConfiguration.push_back(entry);
+            }
         }
     }
 
@@ -4037,6 +4048,8 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request)
     response.print("<form method=\"post\" action=\"savegpiocfg\">");
     response.print("<h3>GPIO Configuration</h3>");
     response.print("<table>");
+    printCheckBox(&response, "RETGPIO", "Retain Input GPIO MQTT state", _preferences->getBool(preference_retain_gpio, false), "");
+        
     std::vector<std::pair<String, String>> options;
     String gpiopreselects = "var gpio = []; ";
 
