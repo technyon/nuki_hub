@@ -4,6 +4,10 @@
 #include "../RestartReason.h"
 #include "../EspMillis.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp_private/esp_gpio_reserve.h"
+#endif
+
 extern bool ethCriticalFailure;
 extern bool wifiFallback;
 
@@ -87,6 +91,14 @@ void EthernetDevice::initialize()
     else
     {
         Log->println(F("Use RMII"));
+
+        // Workaround for failing RMII initialization with pioarduino 3.1.0
+        // Revoke all GPIO's some of them set by init PSRAM in IDF
+        // sources:
+        // https://github.com/arendst/Tasmota/commit/f8fbe153000591727e40b5007e0de78c33833131
+        // https://github.com/arendst/Tasmota/commit/f8fbe153000591727e40b5007e0de78c33833131#diff-32fc0eefbf488dd507b3bef52189bbe37158737aba6f96fe98a8746dc5021955R417
+        esp_gpio_revoke(0xFFFFFFFFFFFFFFFF);
+
         ethCriticalFailure = true;
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _mdc, _mdio, _power, _clock_mode);
         ethCriticalFailure = false;
