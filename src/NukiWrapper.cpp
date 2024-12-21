@@ -59,7 +59,8 @@ void NukiWrapper::initialize()
     if (_preferences->getBool(preference_debug_connect, false) || _preferences->getBool(preference_debug_communication, false) || _preferences->getBool(preference_debug_readable_data, false) ||
         _preferences->getBool(preference_debug_hex_data, false) || _preferences->getBool(preference_debug_command, false))
     {
-      esp_log_set_level_master(ESP_LOG_DEBUG);
+        esp_log_level_set("*", ESP_LOG_ERROR);
+//      esp_log_set_level_master(ESP_LOG_DEBUG);
     }
 
     _nukiLock.initialize(_preferences->getBool(preference_connect_mode, true));
