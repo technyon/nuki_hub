@@ -54,6 +54,8 @@ set(SRCFILES
         ../src/NukiOfficial.cpp
         ../src/NukiPublisher.cpp
         ../src/EspMillis.h
+        ../src/util/PSRAM.cpp
+        ../src/util/PSRAM.h
 )
 
 file(GLOB_RECURSE SRCFILESREC
@@ -79,6 +81,7 @@ include_directories(
         ../lib/MqttLogger/src
         ../lib/nuki_ble/src
         ../lib/PsychicHttp/src
+        ../src
 )
 
 add_executable(dummy
