@@ -8,6 +8,7 @@
 #include "esp_task_wdt.h"
 #include "Config.h"
 #include "esp32-hal-log.h"
+#include "hal/wdt_hal.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
@@ -110,7 +111,7 @@ int _log_vprintf(const char *fmt, va_list args)
     {
         Log->write((uint8_t *)log_print_buffer, (size_t)ret);
     }
-    return 0; //return vprintf(fmt, args);
+    return 0;
 }
 
 void setReroute()
@@ -122,6 +123,7 @@ void setReroute()
     esp_log_level_set("nvs", ESP_LOG_INFO);
     esp_log_level_set("wifi", ESP_LOG_INFO);
     #else
+    /*
     esp_log_level_set("*", ESP_LOG_NONE);
     esp_log_level_set("httpd", ESP_LOG_ERROR);
     esp_log_level_set("httpd_sess", ESP_LOG_ERROR);
@@ -133,7 +135,7 @@ void setReroute()
     esp_log_level_set("ARDUINO", ESP_LOG_DEBUG);
     esp_log_level_set("nvs", ESP_LOG_ERROR);
     esp_log_level_set("wifi", ESP_LOG_ERROR);
-
+    */
     #endif
 
     if(preferences->getBool(preference_mqtt_log_enabled))
@@ -352,6 +354,12 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         Log->println("HTTP_EVENT_REDIRECT");
         break;
     }
+
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
     return ESP_OK;
 }
 
@@ -461,9 +469,6 @@ void setupTasks(bool ota)
 void setup()
 {
     //Set Log level to error for all TAGS
-#ifndef DEBUG_NUKIHUB
-    esp_log_set_level_master(ESP_LOG_ERROR);
-#endif
     esp_log_level_set("*", ESP_LOG_ERROR);
     //Set Log level to none for mqtt TAG
     esp_log_level_set("mqtt", ESP_LOG_NONE);
