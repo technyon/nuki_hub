@@ -6,9 +6,9 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp_private/esp_gpio_reserve.h"
-#include "util/PSRAM.h"
 #include <bootloader_common.h>
-
+#include "esp_psram.h"
+#include "esp32-hal.h"
 #endif
 
 extern bool ethCriticalFailure;
@@ -101,7 +101,7 @@ void EthernetDevice::initialize()
         // https://github.com/arendst/Tasmota/commit/f8fbe153000591727e40b5007e0de78c33833131
         // https://github.com/arendst/Tasmota/commit/f8fbe153000591727e40b5007e0de78c33833131#diff-32fc0eefbf488dd507b3bef52189bbe37158737aba6f96fe98a8746dc5021955R417
         uint32_t pkg_version = bootloader_common_get_chip_ver_pkg();
-        if(PSRAM::found && pkg_version <= 3)
+        if(esp_psram_get_size() <= 0 && pkg_version <= 3)
         {
             esp_gpio_revoke(0xFFFFFFFFFFFFFFFF);
         }

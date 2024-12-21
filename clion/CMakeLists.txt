@@ -54,8 +54,6 @@ set(SRCFILES
         ../src/NukiOfficial.cpp
         ../src/NukiPublisher.cpp
         ../src/EspMillis.h
-        ../src/util/PSRAM.cpp
-        ../src/util/PSRAM.h
 )
 
 file(GLOB_RECURSE SRCFILESREC
