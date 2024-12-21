@@ -1,0 +1,26 @@
+{
+    "release": {
+        "time": "2024-12-21",
+        "version": "9.05",
+        "version_int": "905",
+        "fullversion": "9.05",
+        "build": "12444947845.7.1",
+        "number": 1
+    },
+    "beta": {
+        "time": "0000-00-00",
+        "version": "No beta available",
+        "version_int": "No beta available",
+        "fullversion": "No beta available",
+        "build": "",
+        "number": "0"
+    },
+    "master": {
+        "time": "2024-12-21",
+        "version": "9.05",
+        "version_int": "905",
+        "fullversion": "9.05-master7",
+        "build": "12444487137.194.1",
+        "number": 7
+    }
+}
