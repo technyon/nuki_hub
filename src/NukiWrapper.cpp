@@ -55,12 +55,7 @@ void NukiWrapper::initialize()
     _nukiLock.setDebugReadableData(_preferences->getBool(preference_debug_readable_data, false));
     _nukiLock.setDebugHexData(_preferences->getBool(preference_debug_hex_data, false));
     _nukiLock.setDebugCommand(_preferences->getBool(preference_debug_command, false));
-
-    if (_preferences->getBool(preference_debug_connect, false) || _preferences->getBool(preference_debug_communication, false) || _preferences->getBool(preference_debug_readable_data, false) ||
-        _preferences->getBool(preference_debug_hex_data, false) || _preferences->getBool(preference_debug_command, false))
-    {
-      esp_log_set_level_master(ESP_LOG_DEBUG);
-    }
+    _nukiLock.registerLogger(Log);
 
     _nukiLock.initialize(_preferences->getBool(preference_connect_mode, true));
     _nukiLock.registerBleScanner(_bleScanner);
