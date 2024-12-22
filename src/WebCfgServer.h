@@ -58,6 +58,7 @@ private:
     esp_err_t buildImportExportHtml(PsychicRequest *request);
     esp_err_t buildNetworkConfigHtml(PsychicRequest *request);
     esp_err_t buildMqttConfigHtml(PsychicRequest *request);
+    esp_err_t buildMqttSSLConfigHtml(PsychicRequest *request, int type=0);
     esp_err_t buildStatusHtml(PsychicRequest *request);    
     esp_err_t buildAdvancedConfigHtml(PsychicRequest *request);
     esp_err_t buildNukiConfigHtml(PsychicRequest *request);
@@ -100,7 +101,7 @@ private:
     String _confirmCode = "----";
     
     esp_err_t buildSSIDListHtml(PsychicRequest *request);
-    esp_err_t buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay = 5, bool redirect = false);
+    esp_err_t buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, bool debug = false);
     esp_err_t sendCss(PsychicRequest *request);
     esp_err_t sendFavicon(PsychicRequest *request);

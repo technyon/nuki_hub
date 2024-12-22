@@ -534,7 +534,7 @@ void setup()
     if(!doOta)
     {
         psychicServer = new PsychicHttpServer;
-        psychicServer->config.max_uri_handlers = 40;
+        psychicServer->config.max_uri_handlers = 10;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
         psychicServer->listen(80);
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
@@ -630,7 +630,7 @@ void setup()
     if(!doOta && !disableNetwork && (forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false)))
     {
         psychicServer = new PsychicHttpServer;
-        psychicServer->config.max_uri_handlers = 40;
+        psychicServer->config.max_uri_handlers = 10;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
         psychicServer->listen(80);
 
