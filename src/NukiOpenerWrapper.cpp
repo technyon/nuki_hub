@@ -4032,6 +4032,10 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
             _network->publishStatusUpdated(_statusUpdated);
         }
     }
+    else if(eventType == Nuki::EventType::ERROR_BAD_PIN)
+    {
+        _preferences->putInt(preference_lock_pin_status, 2);
+    }
 }
 
 void NukiOpenerWrapper::readConfig()
