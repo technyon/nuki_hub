@@ -4797,10 +4797,12 @@ esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, bool opener)
     if(!opener && _nuki != nullptr)
     {
         _nuki->unpair();
+        _preferences->putInt(preference_lock_pin_status, 4);
     }
     if(opener && _nukiOpener != nullptr)
     {
         _nukiOpener->unpair();
+        _preferences->putInt(preference_opener_pin_status, 4);
     }
 
     _network->disableHASS();
