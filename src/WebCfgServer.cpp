@@ -269,6 +269,18 @@ void WebCfgServer::initialize()
             {
                 return buildMqttConfigHtml(request);
             }
+            else if (value == "mqttcaconfig")
+            {
+                return buildMqttSSLConfigHtml(request, 0);
+            }
+            else if (value == "mqttcrtconfig")
+            {
+                return buildMqttSSLConfigHtml(request, 1);
+            }
+            else if (value == "mqttkeyconfig")
+            {
+                return buildMqttSSLConfigHtml(request, 2);
+            }
             else if (value == "nukicfg")
             {
                 return buildNukiConfigHtml(request);
@@ -394,7 +406,14 @@ void WebCfgServer::initialize()
             {
                 String message = "";
                 bool restart = processArgs(request, message);
-                return buildConfirmHtml(request, message, 3, true);
+                if(request->hasParam("mqttssl")) 
+                {
+                    return buildConfirmHtml(request, message, 3, true, "/get?page=mqttconfig");
+                }
+                else 
+                {
+                    return buildConfirmHtml(request, message, 3, true);
+                }
             }
             else if (value == "savegpiocfg")
             {
@@ -1098,7 +1117,7 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
     }
 }
 
-esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay, bool redirect)
+esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay, bool redirect, String redirectTo)
 {
     PsychicStreamResponse response(request, "text/html");
     response.beginSend();
@@ -1112,7 +1131,7 @@ esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, const String &
     else
     {
         String delay(redirectDelay * 1000);
-        header = "<script type=\"text/JavaScript\">function Redirect() { window.location.href = \"/\"; } setTimeout(function() { Redirect(); }, " + delay + "); </script>";
+        header = "<script type=\"text/JavaScript\">function Redirect() { window.location.href = \"" + redirectTo + "\"; } setTimeout(function() { Redirect(); }, " + delay + "); </script>";
     }
     buildHtmlHeader(&response, header);
     response.print(message);
@@ -3628,9 +3647,9 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     {
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
     }
-    printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, true, true);
-    printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, true, true);
-    printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, true, true);
+    response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><button title=\"Set MQTT SSL CA Certificate\" onclick=\" window.open('/get?page=mqttcaconfig', '_self'); return false;\">Change</button></td></tr>");
+    response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client CA Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
+    response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");    
     printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(&response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
@@ -3645,6 +3664,37 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     response.print("</form>");
     response.print("</body>");
     response.print("<script>window.onload = function() { var hassChk; var hassTxt; for (var el of document.getElementsByClassName('chkHass')) { if (el.constructor.name === 'HTMLInputElement' && el.type === 'checkbox') { hassChk = el; el.addEventListener('change', hassChkChange); } else if (el.constructor.name==='HTMLInputElement' && el.type==='text') { hassTxt=el; el.addEventListener('keyup', hassTxtChange); } } function hassChkChange() { if(hassChk.checked == true) { if(hassTxt.value.length == 0) { hassTxt.value = 'homeassistant'; } } else { hassTxt.value = ''; } } function hassTxtChange() { if(hassTxt.value.length == 0) { hassChk.checked = false; } else { hassChk.checked = true; } } };</script>");
+    response.print("</html>");
+    return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, int type)
+{
+    PsychicStreamResponse response(request, "text/html");
+    response.beginSend();
+    buildHtmlHeader(&response);
+    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
+    response.print("<input type=\"hidden\" name=\"mqttssl\" value=\"1\">");
+    response.print("<h3>MQTT SSL Configuration</h3>");
+    response.print("<table>");
+
+    if (type == 0)
+    {
+        printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, true, true);
+    }
+    else if (type == 1)
+    {
+        printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, true, true);
+    }
+    else
+    {
+        printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, true, true);
+    }
+    response.print("</table>");
+    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("</form>");
+    response.print("</body>");
     response.print("</html>");
     return response.endSend();
 }
