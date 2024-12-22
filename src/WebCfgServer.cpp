@@ -389,13 +389,13 @@ void WebCfgServer::initialize()
                 }
             }
 
+            #ifndef NUKI_HUB_UPDATER
             if (value == "savecfg")
             {
                 String message = "";
                 bool restart = processArgs(request, message);
                 return buildConfirmHtml(request, message, 3, true);
             }
-            #ifndef NUKI_HUB_UPDATER
             else if (value == "savegpiocfg")
             {
                 processGpioArgs(request);
@@ -423,8 +423,10 @@ void WebCfgServer::initialize()
                 bool restart = processImport(request, message);
                 return buildConfirmHtml(request, message, 3, true);
             }            
-            #endif
             else
+            #else
+            if (1 == 1)
+            #endif
             {
                 if(!_network->isApOpen())
                 {
