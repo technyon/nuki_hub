@@ -34,7 +34,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Keypad 1.0
 - Nuki Keypad 2.0
 
-<b>Untested but probably supported:</b>
+<b>Not (yet?) supported:</b>
 - Nuki Smart Lock Ultra
 
 <b>Supported Ethernet devices:</b><br>
