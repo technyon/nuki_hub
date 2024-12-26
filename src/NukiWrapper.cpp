@@ -124,6 +124,9 @@ void NukiWrapper::readSettings()
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
     _checkKeypadCodes = _preferences->getBool(preference_keypad_check_code_enabled, false);
     _pairedAsApp = _preferences->getBool(preference_register_as_app, false);
+    _forceDoorsensor = _preferences->getBool(preference_lock_force_doorsensor, false);
+    _forceKeypad = _preferences->getBool(preference_lock_force_keypad, false);
+    _forceId = _preferences->getBool(preference_lock_force_id, false);
 
     _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
     _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
@@ -434,7 +437,10 @@ void NukiWrapper::unpair()
     nukiBlePref.clear();
     nukiBlePref.end();
     _deviceId->assignNewId();
-    _preferences->remove(preference_nuki_id_lock);
+    if (!_forceId) 
+    {
+        _preferences->remove(preference_nuki_id_lock);
+    }
     _paired = false;
 }
 
@@ -557,7 +563,7 @@ void NukiWrapper::updateConfig()
 
     if(_nukiConfigValid)
     {
-        if(_preferences->getUInt(preference_nuki_id_lock, 0) == 0  || _retryConfigCount == 10)
+        if(!_forceId && (_preferences->getUInt(preference_nuki_id_lock, 0) == 0  || _retryConfigCount == 10))
         {
             char uidString[20];
             itoa(_nukiConfig.nukiId, uidString, 16);
@@ -4031,7 +4037,7 @@ const bool NukiWrapper::isPaired() const
 
 const bool NukiWrapper::hasKeypad() const
 {
-    return _hasKeypad;
+    return _forceKeypad || _hasKeypad;
 }
 
 void NukiWrapper::notify(Nuki::EventType eventType)
@@ -4127,7 +4133,8 @@ void NukiWrapper::readAdvancedConfig()
 
 bool NukiWrapper::hasDoorSensor() const
 {
-    return _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
+    return _forceDoorsensor ||
+           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating;
 }
