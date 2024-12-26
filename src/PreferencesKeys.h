@@ -210,14 +210,14 @@ inline void initPreferences(Preferences* preferences)
         preferences->putInt(preference_query_interval_configuration, 3600);
         preferences->putInt(preference_query_interval_battery, 1800);
         preferences->putInt(preference_query_interval_keypad, 1800);
-        
+
         preferences->putBool(preference_debug_connect, false);
         preferences->putBool(preference_debug_communication, false);
         preferences->putBool(preference_debug_readable_data, false);
         preferences->putBool(preference_debug_hex_data, false);
         preferences->putBool(preference_debug_command, false);
         preferences->putBool(preference_connect_mode, true);
-        
+
         preferences->putBool(preference_retain_gpio, false);
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
@@ -232,6 +232,7 @@ inline void initPreferences(Preferences* preferences)
         Log->print("Last config version: ");
         Log->println(lastConfigVer);
         Log->print("Current config version: ");
+        Log->println(NUKI_HUB_VERSION_INT);
 
         if(lastConfigVer >= NUKI_HUB_VERSION_INT && lastConfigVer < 20000) return;
 
@@ -380,7 +381,7 @@ private:
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass,
             preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled, preference_hass_device_discovery, preference_retain_gpio,
             preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode
-            
+
     };
     std::vector<char*> _redact =
     {

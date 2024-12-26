@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "esp32-hal-log.h"
 #include "hal/wdt_hal.h"
+#include "esp_chip_info.h"
 
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
@@ -22,6 +23,7 @@
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
 #include "EspMillis.h"
+#include "NimBLEDevice.h"
 
 /*
 #ifdef DEBUG_NUKIHUB
@@ -444,16 +446,20 @@ void setupTasks(bool ota)
     };
     esp_task_wdt_reconfigure(&twdt_config);
 
+    esp_chip_info_t info;
+    esp_chip_info(&info);
+    uint8_t espCores = info.cores;
+
     if(ota)
     {
-        xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, 1);
+        xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, (espCores > 1) ? 1 : 0);
         esp_task_wdt_add(otaTaskHandle);
     }
     else
     {
         if(!disableNetwork)
         {
-            xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, 1);
+            xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, (espCores > 1) ? 1 : 0);
             esp_task_wdt_add(networkTaskHandle);
         }
 #ifndef NUKI_HUB_UPDATER
