@@ -123,6 +123,8 @@ void NukiOpenerWrapper::readSettings()
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
     _checkKeypadCodes = _preferences->getBool(preference_keypad_check_code_enabled, false);
     _pairedAsApp = _preferences->getBool(preference_register_opener_as_app, false);
+    _forceKeypad = _preferences->getBool(preference_opener_force_keypad, false);
+    _forceId = _preferences->getBool(preference_opener_force_id, false);
 
     _preferences->getBytes(preference_conf_opener_basic_acl, &_basicOpenerConfigAclPrefs, sizeof(_basicOpenerConfigAclPrefs));
     _preferences->getBytes(preference_conf_opener_advanced_acl, &_advancedOpenerConfigAclPrefs, sizeof(_advancedOpenerConfigAclPrefs));
@@ -428,7 +430,10 @@ void NukiOpenerWrapper::unpair()
     nukiBlePref.clear();
     nukiBlePref.end();
     _deviceId->assignNewId();
-    _preferences->remove(preference_nuki_id_opener);
+    if(!_forceId)
+    {
+        _preferences->remove(preference_nuki_id_opener);
+    }
     _paired = false;
 }
 
@@ -563,7 +568,7 @@ void NukiOpenerWrapper::updateConfig()
 
     if(_nukiConfigValid)
     {
-        if(_preferences->getUInt(preference_nuki_id_opener, 0) == 0  || _retryConfigCount == 10)
+        if(!_forceId && (_preferences->getUInt(preference_nuki_id_opener, 0) == 0  || _retryConfigCount == 10))
         {
             char uidString[20];
             itoa(_nukiConfig.nukiId, uidString, 16);
@@ -4001,7 +4006,7 @@ const bool NukiOpenerWrapper::isPaired() const
 
 const bool NukiOpenerWrapper::hasKeypad() const
 {
-    return _hasKeypad;
+    return _forceKeypad || _hasKeypad;
 }
 
 const BLEAddress NukiOpenerWrapper::getBleAddress() const

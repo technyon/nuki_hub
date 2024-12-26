@@ -132,7 +132,10 @@ private:
     bool _statusUpdated = false;
     int _newSignal = 0;
     bool _hasKeypad = false;
+    bool _forceDoorsensor = false;
+    bool _forceKeypad = false;
     bool _keypadEnabled = false;
+    bool _forceId = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;

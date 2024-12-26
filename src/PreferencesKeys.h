@@ -113,6 +113,11 @@
 #define preference_official_hybrid_retry (char*)"hybridRtry"
 #define preference_keypad_check_code_enabled (char*)"kpChkEna"
 #define preference_retain_gpio (char*)"retGpio"
+#define preference_lock_force_id (char*)"lckForceId"
+#define preference_lock_force_doorsensor (char*)"lckForceDrsns"
+#define preference_lock_force_keypad (char*)"lckForceKp"
+#define preference_opener_force_id (char*)"opForceId"
+#define preference_opener_force_keypad (char*)"opForceKp"
 
 //NOT USER CHANGABLE
 #define preference_updater_version (char*)"updVer"
@@ -380,8 +385,8 @@ private:
             preference_network_custom_pwr, preference_network_custom_mdio, preference_ntw_reconfigure, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass,
             preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled, preference_hass_device_discovery, preference_retain_gpio,
-            preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode
-
+            preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
+            preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad
     };
     std::vector<char*> _redact =
     {
@@ -398,7 +403,8 @@ private:
             preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled, preference_hass_device_discovery,
             preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi,
-            preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode
+            preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
+            preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad
     };
     std::vector<char*> _bytePrefs =
     {

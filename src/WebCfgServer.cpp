@@ -112,7 +112,7 @@ void WebCfgServer::initialize()
         }
         return sendFavicon(request);
     });
-    
+
     if(_network->isApOpen())
     {
 #ifndef CONFIG_IDF_TARGET_ESP32H2
@@ -365,7 +365,7 @@ void WebCfgServer::initialize()
                 #else
                 return request->redirect("/");
                 #endif
-            }            
+            }
             else
             {
                 if(!_network->isApOpen())
@@ -406,11 +406,11 @@ void WebCfgServer::initialize()
             {
                 String message = "";
                 bool restart = processArgs(request, message);
-                if(request->hasParam("mqttssl")) 
+                if(request->hasParam("mqttssl"))
                 {
                     return buildConfirmHtml(request, message, 3, true, "/get?page=mqttconfig");
                 }
-                else 
+                else
                 {
                     return buildConfirmHtml(request, message, 3, true);
                 }
@@ -441,7 +441,7 @@ void WebCfgServer::initialize()
                 String message = "";
                 bool restart = processImport(request, message);
                 return buildConfirmHtml(request, message, 3, true);
-            }            
+            }
             else
             #else
             if (1 == 1)
@@ -461,7 +461,7 @@ void WebCfgServer::initialize()
                     return buildWifiConnectHtml(request);
                 }
                 #endif
-            }            
+            }
         });
 
         PsychicUploadHandler *updateHandler = new PsychicUploadHandler();
@@ -2255,6 +2255,51 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 configChanged = true;
             }
         }
+        else if(key == "LCKFORCEID")
+        {
+            if(_preferences->getBool(preference_lock_force_id, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_lock_force_id, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+            }
+        }
+        else if(key == "LCKFORCEKP")
+        {
+            if(_preferences->getBool(preference_lock_force_keypad, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_lock_force_keypad, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+            }
+        }
+        else if(key == "LCKFORCEDS")
+        {
+            if(_preferences->getBool(preference_lock_force_doorsensor, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_lock_force_doorsensor, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+            }
+        }
+        else if(key == "OPFORCEID")
+        {
+            if(_preferences->getBool(preference_opener_force_id, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_opener_force_id, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+            }
+        }
+        else if(key == "OPFORCEKP")
+        {
+            if(_preferences->getBool(preference_opener_force_keypad, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_opener_force_keypad, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+            }
+        }
         else if(key == "ACLLVLCHANGED")
         {
             aclLvlChanged = true;
@@ -3649,7 +3694,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     }
     response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><button title=\"Set MQTT SSL CA Certificate\" onclick=\" window.open('/get?page=mqttcaconfig', '_self'); return false;\">Change</button></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client CA Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
-    response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");    
+    response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");
     printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
     printCheckBox(&response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
@@ -3741,6 +3786,28 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
     }
     printInputField(&response, "OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
     printInputField(&response, "OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
+
+    std::vector<std::pair<String, String>> optionsForce;
+    optionsForce.push_back(std::make_pair("0", "Do not force"));
+    optionsForce.push_back(std::make_pair("1", "Force unavailable"));
+    optionsForce.push_back(std::make_pair("2", "Force available"));
+
+    if(_nuki != nullptr)
+    {
+        char uidString[20];
+        itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
+        printCheckBox(&response, "LCKFORCEID", ((String)"Force Lock ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_lock_force_id, false), "");
+        printCheckBox(&response, "LCKFORCEKP", "Force Lock Keypad connected", _preferences->getBool(preference_lock_force_keypad, false), "");
+        printCheckBox(&response, "LCKFORCEDS", "Force Lock Doorsensor connected", _preferences->getBool(preference_lock_force_doorsensor, false), "");
+    }
+
+    if(_nukiOpener != nullptr)
+    {
+        char uidString[20];
+        itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
+        printCheckBox(&response, "OPFORCEID", ((String)"Force Opener ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_opener_force_id, false), "");
+        printCheckBox(&response, "OPFORCEKP", "Force Opener Keypad", _preferences->getBool(preference_opener_force_keypad, false), "");
+    }
 
     printCheckBox(&response, "DBGCONN", "Enable Nuki connect debug logging", _preferences->getBool(preference_debug_connect, false), "");
     printCheckBox(&response, "DBGCOMMU", "Enable Nuki communication debug logging", _preferences->getBool(preference_debug_communication, false), "");
