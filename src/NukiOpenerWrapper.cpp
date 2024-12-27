@@ -4041,6 +4041,11 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
     {
         _preferences->putInt(preference_lock_pin_status, 2);
     }
+    else if(eventType == Nuki::EventType::BLE_ERROR_ON_DISCONNECT)
+    {
+        Log->println("Error in disconnecting BLE client, rebooting");
+        restartEsp(RestartReason::BLEError);
+    }
 }
 
 void NukiOpenerWrapper::readConfig()

@@ -4,6 +4,7 @@ enum class RestartReason
 {
     RequestedViaMqtt,
     RequestedViaWebServer,
+    BLEError,
     BLEBeaconWatchdog,
     RestartOnDisconnectWatchdog,
     RestartIntervalWatchdog,
@@ -73,6 +74,8 @@ inline static String getRestartReason()
             return "RequestedViaWebServer";
         case RestartReason::ReconfigureWebServer:
             return "ReconfigureWebServer";
+        case RestartReason::BLEError:
+            return "BLEError";
         case RestartReason::BLEBeaconWatchdog:
             return "BLEBeaconWatchdog";
         case RestartReason::RestartOnDisconnectWatchdog:
