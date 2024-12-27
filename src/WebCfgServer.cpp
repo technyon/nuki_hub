@@ -1156,7 +1156,7 @@ esp_err_t WebCfgServer::sendFavicon(PsychicRequest *request)
     response.addHeader("Cache-Control", "public, max-age=604800");
     response.setCode(200);
     response.setContentType("image/png");
-    response.setContent((const char*)favicon_32x32);
+    response.setContent((const uint8_t *)favicon_32x32, sizeof(favicon_32x32));
     return response.send();
 }
 
