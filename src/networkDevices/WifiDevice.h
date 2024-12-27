@@ -41,11 +41,7 @@ private:
     String pass;
 
     int _foundNetworks = 0;
-    bool _connectOnScanDone = false;
-    bool _connecting = false;
     bool _openAP = false;
     bool _startAP = true;
-    bool _convertOldWiFi = false;
     bool _connected = false;
-    bool _hasIP = false;
 };

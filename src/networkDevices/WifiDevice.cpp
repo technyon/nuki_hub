@@ -21,7 +21,9 @@ const String WifiDevice::deviceName() const
 void WifiDevice::initialize()
 {
     ssid = _preferences->getString(preference_wifi_ssid, "");
+    ssid.trim();
     pass = _preferences->getString(preference_wifi_pass, "");
+    pass.trim();
     WiFi.setHostname(_hostname.c_str());
 
     WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
@@ -29,59 +31,49 @@ void WifiDevice::initialize()
         onWifiEvent(event, info);
     });
 
-    ssid.trim();
-    pass.trim();
-
     if(isWifiConfigured())
     {
         Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
-        _connectOnScanDone = true;
         _openAP = false;
-        scan(false, true);
-        return;
-    }
-    else if(!_preferences->getBool(preference_wifi_converted, false))
-    {
-        _connectOnScanDone = false;
-        _openAP = false;
-        _convertOldWiFi = true;
-        scan(false, true);
-        return;
     }
     else
     {
         Log->println("No SSID or Wifi password saved, opening AP");
-        _connectOnScanDone = false;
         _openAP = true;
-        scan(false, true);
-        return;
     }
+
+    scan(false, true);
+    return;
 }
 
 void WifiDevice::scan(bool passive, bool async)
 {
-    if(!_connecting)
+    if (!_openAP)
     {
-        WiFi.scanDelete();
-        WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
-        WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
+        WiFi.disconnect(true);
+        WiFi.mode(WIFI_STA);
+        WiFi.disconnect();
+    }
 
-        if(async)
-        {
-            Log->println("Wi-Fi async scan started");
-        }
-        else
-        {
-            Log->println("Wi-Fi sync scan started");
-        }
-        if(passive)
-        {
-            WiFi.scanNetworks(async,false,true,75U);
-        }
-        else
-        {
-            WiFi.scanNetworks(async);
-        }
+    WiFi.scanDelete();
+    WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+    WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
+
+    if(async)
+    {
+        Log->println("Wi-Fi async scan started");
+    }
+    else
+    {
+        Log->println("Wi-Fi sync scan started");
+    }
+    if(passive)
+    {
+        WiFi.scanNetworks(async,false,true,75U);
+    }
+    else
+    {
+        WiFi.scanNetworks(async);
     }
 }
 
@@ -89,6 +81,7 @@ void WifiDevice::openAP()
 {
     if(_startAP)
     {
+        Log->println("Starting AP with SSID NukiHub and Password NukiHubESP32");
         _startAP = false;
         WiFi.mode(WIFI_AP);
         delay(500);
@@ -104,7 +97,6 @@ void WifiDevice::openAP()
 
 bool WifiDevice::connect()
 {
-    bool ret = false;
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(_hostname.c_str());
     delay(500);
@@ -151,66 +143,43 @@ bool WifiDevice::connect()
         }
     }
 
-    _connecting = true;
-    esp_wifi_scan_stop();
-
     if(!_ipConfiguration->dhcpEnabled())
     {
         WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
     }
 
     WiFi.begin(ssid, pass);
-    auto status = WiFi.waitForConnectResult(10000);
 
-    switch (status)
+    Log->print("WiFi connecting");
+    int loop = 0;
+    while(!isConnected() && loop < 150)
     {
-    case WL_CONNECTED:
-        Log->println("WiFi connected");
-        break;
-    case WL_NO_SSID_AVAIL:
-        Log->println("WiFi SSID not available");
-        break;
-    case WL_CONNECT_FAILED:
-        Log->println("WiFi connection failed");
-        break;
-    case WL_IDLE_STATUS:
-        Log->println("WiFi changing status");
-        break;
-    case WL_DISCONNECTED:
-        Log->println("WiFi disconnected");
-        break;
-    default:
-        Log->println("WiFi timeout");
-        break;
+         Log->print(".");
+        delay(100);
+        loop++;
     }
+    Log->println("");
 
-    if (status != WL_CONNECTED)
+    if (!isConnected())
     {
-        Log->println("Retrying");
-        _connectOnScanDone = true;
-        _openAP = false;
-        scan(false, true);
-        _connecting = false;
-        return false;
-    }
-    else
-    {
-        if(!_preferences->getBool(preference_wifi_converted, false))
+        Log->println("Failed to connect within 15 seconds");
+
+        if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
         {
-            _preferences->putBool(preference_wifi_converted, true);
+            Log->println("Restart on disconnect watchdog triggered, rebooting");
+            delay(100);
+            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
-        _connecting = false;
-        return true;
-    }
+        else
+        {
+            Log->println("Retrying WiFi connection");
+            scan(false, true);
+        }
 
-    if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
-    {
-        restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-        _connecting = false;
         return false;
     }
 
-    return false;
+    return true;
 }
 
 bool WifiDevice::isWifiConfigured() const
@@ -228,16 +197,7 @@ void WifiDevice::reconfigure()
 
 bool WifiDevice::isConnected()
 {
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        return false;
-    }
-    if (!_hasIP)
-    {
-        return false;
-    }
-
-    return true;
+    return WiFi.isConnected();
 }
 
 void WifiDevice::onConnected()
@@ -255,56 +215,7 @@ void WifiDevice::onDisconnected()
     _connected = false;
 
     Log->println("Wi-Fi disconnected");
-
-    //QUICK RECONNECT
-    _connecting = true;
-
-    if(!_ipConfiguration->dhcpEnabled())
-    {
-        WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
-    }
-
-    WiFi.begin(ssid, pass);
-
-    int loop = 0;
-
-    while(!isConnected() && loop < 200)
-    {
-        loop++;
-        delay(100);
-    }
-
-    _connecting = false;
-    //END QUICK RECONNECT
-
-    if(!isConnected())
-    {
-        if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
-        {
-            Log->println("Restart on disconnect watchdog triggered, rebooting");
-            delay(100);
-            restartEsp(RestartReason::RestartOnDisconnectWatchdog);
-        }
-
-        WiFi.disconnect(true);
-        WiFi.mode(WIFI_STA);
-        WiFi.disconnect();
-        delay(500);
-
-        wifi_mode_t wifiMode;
-        esp_wifi_get_mode(&wifiMode);
-
-        while (wifiMode != WIFI_MODE_STA || WiFi.status() == WL_CONNECTED)
-        {
-            delay(500);
-            Log->println("Waiting for WiFi mode change or disconnection.");
-            esp_wifi_get_mode(&wifiMode);
-        }
-
-        _connectOnScanDone = true;
-        _openAP = false;
-        scan(false, true);
-    }
+    connect();
 }
 
 int8_t WifiDevice::signalStrength()
@@ -329,29 +240,14 @@ bool WifiDevice::isApOpen()
 
 void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &info)
 {
-    if(event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED || event == ARDUINO_EVENT_WIFI_STA_STOP)
-    {
-        if(!_openAP && !_connecting && _connected)
-        {
-            onDisconnected();
-            _hasIP = false;
-        }
-    }
-    else if(event == ARDUINO_EVENT_WIFI_STA_GOT_IP)
-    {
-        _hasIP = true;
-    }
-    else if(event == ARDUINO_EVENT_WIFI_STA_LOST_IP)
-    {
-        _hasIP = false;
-    }
-    else if(event == ARDUINO_EVENT_WIFI_STA_CONNECTED)
-    {
-        onConnected();
-    }
-    else if(event == ARDUINO_EVENT_WIFI_SCAN_DONE)
-    {
-        Log->println("Wi-Fi scan done");
+  Log->printf("[WiFi-event] event: %d\n", event);
+
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_READY:               
+        Log->println("WiFi interface ready"); 
+        break;
+    case ARDUINO_EVENT_WIFI_SCAN_DONE:           
+        Log->println("Completed scan for access points");
         _foundNetworks = WiFi.scanComplete();
 
         for (int i = 0; i < _foundNetworks; i++)
@@ -367,65 +263,84 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
         {
             openAP();
         }
-        else if(_convertOldWiFi)
+        else if (_foundNetworks > 0 || _preferences->getBool(preference_find_best_rssi, false))
         {
-            Log->println("Trying to convert old WiFi settings");
-            _convertOldWiFi = false;
-            _preferences->putBool(preference_wifi_converted, true);
-
-            wifi_config_t wifi_cfg;
-            if(esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK)
-            {
-                Log->println("Failed to get Wi-Fi configuration in RAM");
-            }
-
-            if (esp_wifi_set_storage(WIFI_STORAGE_FLASH) != ESP_OK)
-            {
-                Log->println("Failed to set storage Wi-Fi");
-            }
-
-            String tempSSID = String(reinterpret_cast<const char*>(wifi_cfg.sta.ssid));
-            String tempPass = String(reinterpret_cast<const char*>(wifi_cfg.sta.password));
-            tempSSID.trim();
-            tempPass.trim();
-            bool found = false;
-
-            for (int i = 0; i < _foundNetworks; i++)
-            {
-                if(tempSSID.length() > 0 && tempSSID == WiFi.SSID(i) && tempPass.length() > 0)
-                {
-                    _preferences->putString(preference_wifi_ssid, tempSSID);
-                    _preferences->putString(preference_wifi_pass, tempPass);
-                    Log->println("Succesfully converted old WiFi settings");
-                    found = true;
-                    break;
-                }
-            }
-
-            WiFi.disconnect(true, true);
-
-            if(found)
-            {
-                Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
-                _connectOnScanDone = true;
-                _openAP = false;
-                scan(false, true);
-                return;
-            }
-            else
-            {
-                restartEsp(RestartReason::ReconfigureWifi);
-                return;
-            }
-        }
-        else if ((_connectOnScanDone && _foundNetworks > 0) || _preferences->getBool(preference_find_best_rssi, false))
-        {
+            esp_wifi_scan_stop();
             connect();
         }
-        else if (_connectOnScanDone)
+        else
         {
             Log->println("No networks found, restarting scan");
             scan(false, true);
         }
-    }
+        break;
+    case ARDUINO_EVENT_WIFI_STA_START:           
+        Log->println("WiFi client started"); 
+        break;
+    case ARDUINO_EVENT_WIFI_STA_STOP:            
+        Log->println("WiFi clients stopped"); 
+        if(!_openAP)
+        {
+            onDisconnected();
+        }
+        break;
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:       
+        Log->println("Connected to access point");
+        if(!_openAP)
+        {
+            onConnected();
+        }
+        break;
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:    
+        Log->println("Disconnected from WiFi access point"); 
+        if(!_openAP)
+        {
+            onDisconnected();
+        }
+        break;
+    case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE: 
+        Log->println("Authentication mode of access point has changed"); 
+        break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+        Log->print("Obtained IP address: ");
+        Log->println(WiFi.localIP());
+        if(!_openAP)
+        {
+            onConnected();
+        }
+        break;
+    case ARDUINO_EVENT_WIFI_STA_LOST_IP:        
+        Log->println("Lost IP address and IP address is reset to 0");
+        if(!_openAP)
+        {
+            onDisconnected();
+        }
+        break;
+    case ARDUINO_EVENT_WIFI_AP_START:           
+        Log->println("WiFi access point started");
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STOP:            
+        Log->println("WiFi access point  stopped"); 
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STACONNECTED:    
+        Log->println("Client connected"); 
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED: 
+        Log->println("Client disconnected"); 
+        break;
+    case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:   
+        Log->println("Assigned IP address to client"); 
+        break;
+    case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:  
+        Log->println("Received probe request"); 
+        break;
+    case ARDUINO_EVENT_WIFI_AP_GOT_IP6:         
+        Log->println("AP IPv6 is preferred"); 
+        break;
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:        
+        Log->println("STA IPv6 is preferred"); 
+        break;
+    default:                                    
+        break;
+  }
 }
