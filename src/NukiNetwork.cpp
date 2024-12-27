@@ -637,6 +637,11 @@ bool NukiNetwork::reconnect()
         {
             Log->println(F("MQTT Broker not configured, aborting connection attempt."));
             _nextReconnect = espMillis() + 5000;
+            
+            if(_device->isConnected())
+            {
+                _lastConnectedTs = espMillis();
+            }
             return false;
         }
 
