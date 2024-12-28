@@ -50,7 +50,7 @@ bool wifiConnected = false;
 
 TaskHandle_t nukiTaskHandle = nullptr;
 
-int64_t restartTs = (pow(2,64) - (5 * 1000 * 60000)) / 1000;
+int64_t restartTs = (pow(2,63) - (5 * 1000 * 60000)) / 1000;
 
 #else
 #include "../../src/WebCfgServer.h"
