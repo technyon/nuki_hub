@@ -121,16 +121,17 @@ After configuring Wi-Fi, the ESP should automatically connect to your network.<b
 <br>
 To configure the connection to the MQTT broker, first connect your client device to the same Wi-Fi network the ESP32 is connected to.<br>
 In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router).<br><br>
-Next click on "Edit" below "MQTT Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and a password if required by your MQTT broker.<br>
+Next click on "MQTT Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and password if required by your MQTT broker.<br>
 <br>
-The firmware supports SSL encryption for MQTT, however most people and especially home users don't use this.<br>
-In that case leave all fields starting with "MQTT SSL" blank. Otherwise see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
+The firmware supports SSL encryption for MQTT, however most people don't use this.<br>
+See the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 
 ## Pairing with a Nuki Lock or Opener
 
 Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
 After enabling the setting press the button on the Nuki device for a few seconds.<br>
-Pairing should be automatic when the ESP32 is powered on.<br>
+Pairing should be automatic whenever the ESP32 is powered on and no lock is paired.<br>
+To pair with an opener you need to first enable the opener on the "Nuki configuration" page of NukiHub.<br>
 <br>
 When pairing is successful, the web interface should show "Paired: Yes".<br>
 MQTT nodes like lock state and battery level should now reflect the reported values from the lock.<br>
@@ -148,7 +149,7 @@ See [hybrid mode](/HYBRID.md) for more information.
 
 ESP32 devices have a limited amount of free RAM available.<br>
 <br>
-On version 9.01 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
+On version >=9.00 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
 - ESP32: 60 kilobytes / 60.000 bytes
 - Other variants (C3/S3/C6/H2): 90-120 kilobytes / 90.000-120.000 bytes
 
@@ -161,7 +162,7 @@ This free amount of RAM can be reduced (temporarily) by certain actions (such as
 
 The currently available RAM/Heap can be found on the info page of the Web configurator of Nuki Hub.<br>
 <br>
-When the ESP32 runs out of available RAM this device can crash or otherwise unexpected behaviour can occur.<br>
+When the ESP32 runs out of available RAM the device can crash or otherwise unexpected behaviour can occur.<br>
 <br>
 Nuki Hub does allow for the use of embedded PSRAM on the regular binaries whenever it is available.<br>
 PSRAM is usually 2, 4 or 8MB in size and thus greatly enlarges the 320kb of internal RAM that is available.<br>
