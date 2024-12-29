@@ -538,8 +538,7 @@ Selecting the wrong binary will lead to an unsuccessfull update<br>
 <br>
 <b> Note for users upgrading from Nuki Hub 8.35 or lower:</b><br>
 Updating to version 9.00 requires a change to the partition table of the ESP32.<br>
-Please follow the instructions for the [First time installation](#first-time-installation) once when updating to Nuki Hub 9.00 from an earlier version.<br>
-Your settings will not be affected when updating using the above instructions (do not select erase device when updating using Webflash).<br>
+Please follow the instructions for the [First time installation](#first-time-installation) one time when updating to Nuki Hub 9.00 from an earlier version.<br>
 
 ## MQTT Encryption (optional)
 
@@ -582,7 +581,6 @@ The following mapping between Home Assistant services and Nuki commands is setup
 | lock.open   | Unlatch   | Electric Strike Actuation | Electric Strike Actuation |
 
 NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this software. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
-NOTE2: Home Assistant can be setup manually using the [MQTT Lock integration](https://www.home-assistant.io/integrations/lock.mqtt/), but this is not recommended
 
 ## Keypad control using JSON (optional)
 
@@ -758,29 +756,18 @@ If Ethernet hardware isn't detected or initialised properly after changing the n
 <br>
 Note: LAN8720 modules are only supported on the ESP32 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
 
-## Troubleshooting
-
-### Random Wi-Fi disconnects
-
-Unfortunately the ESP32 has problems with some access points and reconnecting fails.<br>
-As a workaround you can navigate to "Network Configuration" and enable "Restart on disconnect".<br>
-This will reboot the ESP as soon as it gets disconnected from Wi-Fi.<br>
-Also, this reduces the config portal timeout to three minutes to prevent the ESP being stuck in config mode in case an access point is offline temporarily.<br>
-If this still doesn't fix the disconnects and the ESP becomes unreachable, the "Restart timer" option can be used as a last resort.<br>
-It will restart the ESP after a configured amount of time.
+## FAQ / Troubleshooting
 
 ### Pairing with the lock (or opener) doesn't work
 
 First, make sure the firmware version of the Nuki device is up-to-date, older versions have issues pairing.<br>
-Next, try erasing the ESP32 flash and then (re-)flash the firmware.<br>
-To erase the flash, use the espressif download tool and click the "Erase" button.<br>
-Afterwards flash the firmware as described in the "how-to-flash.txt" file or using Webflash.<br>
-<br>
 
-Also, check that pairing is allowed. In the Nuki smartphone app, go to "Settings" --> "Features & Configuration" --> "Button & LED" and make sure "Bluetooh Pairing" is enabled.<br>
+Check that pairing is allowed. In the Nuki smartphone app, go to "Settings" --> "Features & Configuration" --> "Button & LED" and make sure "Bluetooh Pairing" is enabled.<br>
 Next press the button for several seconds untill the LED light remains lit.
 
-A note about the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32). Here the initial Bluetooth reception is very poor (range less than one meter). The reason is that the module does not have an antenna on the PCB, but only an IPEX connector. By retrofitting an external SMA antenna (IPEX, or other names U.FL, IPAX, IPX, AMC, MHF, UMCC), Bluetooth/Wi-Fi works over several meters.
+On some devices, such as the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32) the Bluetooth reception is very poor (range less than one meter).<br>
+The reason is that some modules do not have an antenna on the PCB, but only an IPEX connector.<br>
+By retrofitting an external SMA antenna (IPEX, or other names U.FL, IPAX, IPX, AMC, MHF, UMCC), Bluetooth/Wi-Fi works over several meters.<br>
 
 ### In Home Assistant, the lock/opener is shown as unavailable
 
@@ -788,21 +775,20 @@ Make sure you are using at least version 2023.8.0 of Home Assistant.<br>
 The Home Assistant developers have made changes to MQTT auto discovery which break support for older version and Nuki Hub has adopted these changes.<br>
 This unfortunately means that older versions of Home Assistant are not supported by the Nuki Hub discovery implementation anymore.
 
-## FAQ
-
-### Nuki Hub in bridge mode doesn't work when Wi-Fi on a Nuki Smartlock Pro (3.0 / 4.0) is turned on.
+### Nuki Hub in bridge mode doesn't work when Thread or Wi-Fi on a Nuki Smartlock (3.0 Pro / 4.0 / 4.0 Pro) is turned on.
 
 According to Nuki this is by design and part of the specification of the Pro lock.<br>
-You can use either the built-in Wi-Fi or a Bridge (which Nuki Hub registers as).<br>
-Or use Nuki Hub in Hybrid mode using Wi-Fi or Thread, see [hybrid mode](/HYBRID.md)<br>
-Using both at the same time is not supported.
+You can use either the built-in Wi-Fi/Thread or a Bridge (which Nuki Hub registers as), using both at the same time is not supported.<br>
+Or you can use Nuki Hub in Hybrid mode using Wi-Fi or Thread, see [hybrid mode](/HYBRID.md)<br>
 
 ### Certain functionality doesn't work (e. g. changing configuration, setting keypad codes)
 
 Some functionality is restricted by the Lock (or Opener) firmware and is only accessible when the PIN is provided.<br>
-When setting up the lock (or opener), you have to set a PIN in the Nuki smartphone app.<br>
-Navigate to the Nuki Hub Credentials page, enter this PIN and click save.<br>
-Check the main page of the configurator to see if the entered PIN is valid
+When first setting up the lock (or opener), you have to set a PIN in the Nuki smartphone app.<br>
+Navigate to the Nuki Hub Credentials page, enter this PIN, click save and reboot.<br>
+Check the main page of the configurator to see if the entered PIN is valid.
+
+Also make sure that the you have enabled the specific functionality on the "Access Level Configuration" page of NukiHub.
 
 ### Authorization data isn't published
 
