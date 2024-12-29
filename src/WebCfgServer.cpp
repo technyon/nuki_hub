@@ -3615,7 +3615,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
     response.print("<br><br><h3>Factory reset Nuki Hub</h3>");
     response.print("<h4 class=\"warning\">This will reset all settings to default and unpair Nuki Lock and/or Opener.");
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-    response.print("Optionally will also reset WiFi settings and reopen WiFi manager portal.");
+    response.print(" Optionally will also reset WiFi settings and reopen WiFi manager portal.");
 #endif
     response.print("</h4>");
     response.print("<form class=\"adapt\" method=\"post\" action=\"/post\">");
@@ -4997,14 +4997,18 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
     {
         _nukiOpener->unpair();
     }
+    
+    String ssid = _preferences->getString(preference_wifi_ssid, "");
+    String pass = _preferences->getString(preference_wifi_pass, "");
 
     _network->disableHASS();
     _preferences->clear();
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-    if(resetWifi)
+    if(!resetWifi)
     {
-        _network->reconfigureDevice();
+        _preferences->putString(preference_wifi_ssid, ssid);
+        _preferences->putString(preference_wifi_pass, pass);
     }
 #endif
 
