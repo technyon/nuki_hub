@@ -67,30 +67,37 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter. The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 and the ability to connect over WIFI6 (C6)
 
-## Feature comparison Nuki Hub vs. Nuki Bridge
+## Feature comparison
+
+### Feature comparison Nuki Hub vs. Nuki Bridge
 
 | Feature | Nuki Hub | Nuki Bridge |
 |---|---|---|
-| Bridge API |  | x |
-| Smart Lock remote control | x | x |
-| Smart Home integration via Matter |  | x |
-| Apple HomeKit integration via Matter |  | x |
-| MQTT API | x | x (only for SL 3, 4 and 4 Pro models) |
-| Wired LAN support | x |  |
-| Power over Ethernet (PoE) | x (if supported by LAN/ESP module) |  |
-| WLAN support | x | x (only for SL 3 and 4 Pro Models) || Home Assistant integration | x (full integration of most Nuki features) | x |
-| Home Automation platform integration | x | x |
-| Cloud support | x (optional via smarthome solution) | x |
-| Cloud-less operation | x | x (since fw 3.8.2) |
-| Official Nuki app integration |  | x |
-| Nuki Smartlocks all models | x | x |
-| Nuki opener | x | x |
-| Nuki Keypad (1.0 and 2.0) | x | x |
-| MQTT encryption | x |  |
-| Fine-grained access control of MQTT API | x |  |
-| Export of lock actions via MQTT API | x |  |
-| Control via GPIO | x |  |
-| Hybrid mode for WiFI and Thread connected locks | x |  |
+| Smart Lock/Opener (remote) control | :white_check_mark: | :white_check_mark: |
+| MQTT | :white_check_mark: | :no_entry: |
+| Wired LAN support, optionally with Power over Ethernet (PoE) | :white_check_mark: | :no_entry: |
+| Smart Home (e.g. Home Assistant) integration | :white_check_mark: | :white_check_mark: (limited) |
+| Cloud support | :white_check_mark: (optional through smarthome solution) | :white_check_mark: |
+| Cloud-less operation | :white_check_mark: | :white_check_mark: |
+| Nuki Keypad (1.0 and 2.0) support | :white_check_mark: | :white_check_mark: |
+| Control via GPIO | :white_check_mark: | :no_entry: |
+| Hybrid mode for WiFI and Thread connected locks | :white_check_mark: | :no_entry: |
+
+### Feature comparison Nuki Hub vs. Nuki official MQTT API over WiFi/Thread (Smart Lock >=3.0 Pro)
+
+| Feature | Nuki Hub | Nuki official MQTT API |
+|---|---|---|
+| Smart Lock/Opener (remote) control | :white_check_mark: | :white_check_mark: |
+| Opener support | :white_check_mark: | :no_entry: |
+| Optional MQTT SSL support | :white_check_mark: | :no_entry: |
+| Wired LAN support, optionally with Power over Ethernet (PoE) | :white_check_mark: | :no_entry: |
+| Smart Home (e.g. Home Assistant) integration | :white_check_mark: | :white_check_mark: (limited) |
+| Cloud support | :white_check_mark: (optional through smarthome solution) | :white_check_mark: (optional through smarthome solution) |
+| Cloud-less operation | :white_check_mark: | :white_check_mark: (limited) |
+| Nuki Keypad (1.0 and 2.0) support | :white_check_mark: | :white_check_mark: (limited) |
+| Control via GPIO | :white_check_mark: | :no_entry: |
+| Hybrid mode combining Bluetooth and WiFi/Thread | :white_check_mark: | :no_entry: |
+| Feature parity with the Nuki app (e.g. changing device settings, keypad codes, authorizations etc.) | :white_check_mark: | :no_entry: |
 
 ## Support Nuki Hub development
 
