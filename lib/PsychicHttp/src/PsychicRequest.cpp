@@ -371,6 +371,11 @@ void PsychicRequest::_setUri(const char* uri)
   }
 }
 
+int PsychicRequest::params()
+{
+  return _params.size();
+}
+
 void PsychicRequest::_addParams(const String& params, bool post)
 {
   size_t start = 0;
@@ -419,6 +424,18 @@ PsychicWebParameter* PsychicRequest::getParam(const char* key)
     if (param->name().equals(key))
       return param;
 
+  return NULL;
+}
+
+PsychicWebParameter * PsychicRequest::getParam(int index)
+{
+  if (_params.size() > index){
+    std::list<PsychicWebParameter*>::iterator it = _params.begin();
+    for(int i=0; i<index; i++){
+        ++it;
+    }
+    return *it;
+  }
   return NULL;
 }
 
@@ -519,13 +536,14 @@ bool PsychicRequest::authenticate(const char* username, const char* password)
       // ESP_LOGD(PH_TAG, "Hash of user:realm:pass=%s", _H1.c_str());
 
       String _H2 = "";
-      if (_method == HTTP_GET) {
+      http_method method = this->method();
+      if (method == HTTP_GET) {
         _H2 = md5str(String(F("GET:")) + _url);
-      } else if (_method == HTTP_POST) {
+      } else if (method == HTTP_POST) {
         _H2 = md5str(String(F("POST:")) + _url);
-      } else if (_method == HTTP_PUT) {
+      } else if (method == HTTP_PUT) {
         _H2 = md5str(String(F("PUT:")) + _url);
-      } else if (_method == HTTP_DELETE) {
+      } else if (method == HTTP_DELETE) {
         _H2 = md5str(String(F("DELETE:")) + _url);
       } else {
         _H2 = md5str(String(F("GET:")) + _url);

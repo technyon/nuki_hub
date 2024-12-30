@@ -5,11 +5,9 @@
 #include "PsychicStaticFileHandler.h"
 #include "PsychicWebHandler.h"
 #include "PsychicWebSocket.h"
+#ifndef CONFIG_IDF_TARGET_ESP32H2
 #include "WiFi.h"
-#ifdef PSY_ENABLE_ETHERNET
-  #include "ETH.h"
 #endif
-
 PsychicHttpServer::PsychicHttpServer(uint16_t port)
 {
   maxRequestBodySize = MAX_REQUEST_BODY_SIZE;
@@ -82,31 +80,10 @@ uint16_t PsychicHttpServer::getPort()
   return this->config.server_port;
 }
 
-bool PsychicHttpServer::isConnected()
-{
-  if (WiFi.softAPIP())
-    return true;
-  if (WiFi.localIP())
-    return true;
-
-#ifdef PSY_ENABLE_ETHERNET
-  if (ETH.localIP())
-    return true;
-#endif
-
-  return false;
-}
-
 esp_err_t PsychicHttpServer::start()
 {
   if (_running)
     return ESP_OK;
-
-  // starting without network will crash us.
-  if (!isConnected()) {
-    ESP_LOGE(PH_TAG, "Server start failed - no network.");
-    return ESP_FAIL;
-  }
 
   esp_err_t ret;
 
@@ -630,12 +607,20 @@ const std::list<PsychicClient*>& PsychicHttpServer::getClientList()
 
 bool ON_STA_FILTER(PsychicRequest* request)
 {
+  #if defined(CONFIG_IDF_TARGET_ESP32H2)
+  return false;
+  #else
   return WiFi.localIP() == request->client()->localIP();
+  #endif
 }
 
 bool ON_AP_FILTER(PsychicRequest* request)
 {
+  #if defined(CONFIG_IDF_TARGET_ESP32H2)
+  return false;
+  #else
   return WiFi.softAPIP() == request->client()->localIP();
+  #endif
 }
 
 String urlDecode(const char* encoded)

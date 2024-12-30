@@ -73,7 +73,6 @@ class PsychicHttpServer
     virtual void setPort(uint16_t port);
     virtual uint16_t getPort();
 
-    bool isConnected();
     bool isRunning() { return _running; }
     esp_err_t begin() { return start(); }
     esp_err_t end() { return stop(); }
