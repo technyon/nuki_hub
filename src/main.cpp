@@ -80,6 +80,7 @@ RTC_NOINIT_ATTR bool disableNetwork;
 RTC_NOINIT_ATTR bool wifiFallback;
 RTC_NOINIT_ATTR bool ethCriticalFailure;
 
+bool doOta = false;
 bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
 
@@ -132,7 +133,7 @@ void setReroute()
     esp_log_level_set("httpd_parse", ESP_LOG_ERROR);
     esp_log_level_set("httpd_txrx", ESP_LOG_ERROR);
     esp_log_level_set("httpd_uri", ESP_LOG_ERROR);
-    esp_log_level_set("event", ESP_LOG_ERROR);  
+    esp_log_level_set("event", ESP_LOG_ERROR);
     esp_log_level_set("psychic", ESP_LOG_ERROR);
     esp_log_level_set("ARDUINO", ESP_LOG_DEBUG);
     esp_log_level_set("nvs", ESP_LOG_ERROR);
@@ -494,7 +495,6 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     initPreferences(preferences);
-    bool doOta = false;
     uint8_t partitionType = checkPartition();
 
     initializeRestartReason();
@@ -540,15 +540,13 @@ void setup()
     if(!doOta)
     {
         psychicServer = new PsychicHttpServer;
-        psychicServer->config.max_uri_handlers = 10;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-        psychicServer->listen(80);
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
         webCfgServer->initialize();
-        psychicServer->onNotFound([](PsychicRequest* request)
-        {
-            return request->redirect("/");
+        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+            return response->redirect("/");
         });
+        psychicServer->begin();
     }
 #else
     if(preferences->getBool(preference_enable_bootloop_reset, false))
@@ -636,18 +634,16 @@ void setup()
     if(!doOta && !disableNetwork && (forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false)))
     {
         psychicServer = new PsychicHttpServer;
-        psychicServer->config.max_uri_handlers = 10;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-        psychicServer->listen(80);
 
         if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
         {
             webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
             webCfgServer->initialize();
-            psychicServer->onNotFound([](PsychicRequest* request)
-            {
-                return request->redirect("/");
+            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                return response->redirect("/");
             });
+            psychicServer->begin();
         }
         /*
 #ifdef DEBUG_NUKIHUB
@@ -656,7 +652,7 @@ void setup()
         if(preferences->getBool(preference_webserial_enabled, false))
         {
           WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
-          WebSerial.begin(asyncServer);
+          WebSerial.begin(psychicServer);
           WebSerial.setBuffer(1024);
         }
 #endif

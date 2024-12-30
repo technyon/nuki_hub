@@ -48,29 +48,29 @@ public:
 
 private:
     #ifndef NUKI_HUB_UPDATER
-    esp_err_t sendSettings(PsychicRequest *request);
-    bool processArgs(PsychicRequest *request, String& message);
-    bool processImport(PsychicRequest *request, String& message);
-    void processGpioArgs(PsychicRequest *request);
-    esp_err_t buildHtml(PsychicRequest *request);
-    esp_err_t buildAccLvlHtml(PsychicRequest *request);
-    esp_err_t buildCredHtml(PsychicRequest *request);
-    esp_err_t buildImportExportHtml(PsychicRequest *request);
-    esp_err_t buildNetworkConfigHtml(PsychicRequest *request);
-    esp_err_t buildMqttConfigHtml(PsychicRequest *request);
-    esp_err_t buildMqttSSLConfigHtml(PsychicRequest *request, int type=0);
-    esp_err_t buildStatusHtml(PsychicRequest *request);    
-    esp_err_t buildAdvancedConfigHtml(PsychicRequest *request);
-    esp_err_t buildNukiConfigHtml(PsychicRequest *request);
-    esp_err_t buildGpioConfigHtml(PsychicRequest *request);
+    esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp);
+    bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
+    bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
+    void processGpioArgs(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildAccLvlHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildCredHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildImportExportHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildMqttConfigHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildMqttSSLConfigHtml(PsychicRequest *request, PsychicResponse* resp, int type=0);
+    esp_err_t buildStatusHtml(PsychicRequest *request, PsychicResponse* resp);    
+    esp_err_t buildAdvancedConfigHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildNukiConfigHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildGpioConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     #ifndef CONFIG_IDF_TARGET_ESP32H2
-    esp_err_t buildConfigureWifiHtml(PsychicRequest *request);
+    esp_err_t buildConfigureWifiHtml(PsychicRequest *request, PsychicResponse* resp);
     #endif
-    esp_err_t buildInfoHtml(PsychicRequest *request);
-    esp_err_t buildCustomNetworkConfigHtml(PsychicRequest *request);
-    esp_err_t processUnpair(PsychicRequest *request, bool opener);
-    esp_err_t processUpdate(PsychicRequest *request);
-    esp_err_t processFactoryReset(PsychicRequest *request);
+    esp_err_t buildInfoHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildCustomNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t processUnpair(PsychicRequest *request, PsychicResponse* resp, bool opener);
+    esp_err_t processUpdate(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t processFactoryReset(PsychicRequest *request, PsychicResponse* resp);
     void printTextarea(PsychicStreamResponse *response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(PsychicStreamResponse *response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options, const String className);
     void buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage = "");
@@ -100,19 +100,19 @@ private:
     String generateConfirmCode();
     String _confirmCode = "----";
     
-    esp_err_t buildSSIDListHtml(PsychicRequest *request);
-    esp_err_t buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
-    esp_err_t buildOtaHtml(PsychicRequest *request, bool debug = false);
-    esp_err_t sendCss(PsychicRequest *request);
-    esp_err_t sendFavicon(PsychicRequest *request);
+    esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
+    esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
+    esp_err_t sendCss(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendFavicon(PsychicRequest *request, PsychicResponse* resp);
     void createSsidList();
     void buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader = "");
     void waitAndProcess(const bool blocking, const uint32_t duration);
     esp_err_t handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final);
     void printCheckBox(PsychicStreamResponse *response, const char* token, const char* description, const bool value, const char* htmlClass);
     #ifndef CONFIG_IDF_TARGET_ESP32H2
-    esp_err_t buildWifiConnectHtml(PsychicRequest *request);
-    bool processWiFi(PsychicRequest *request, String& message);
+    esp_err_t buildWifiConnectHtml(PsychicRequest *request, PsychicResponse* resp);
+    bool processWiFi(PsychicRequest *request, PsychicResponse* resp, String& message);
     
     #endif
     void printInputField(PsychicStreamResponse *response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* args, const bool& isPassword = false, const bool& showLengthRestriction = false);

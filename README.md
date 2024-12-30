@@ -274,8 +274,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Credentials
 
-- User: Pick a username to enable HTTP Basic authentication for the Web Configuration, Set to "#" to disable authentication.
-- Password/Retype password: Pick a password to enable HTTP Basic authentication for the Web Configuration.
+- User: Pick a username to enable HTTP authentication for the Web Configuration, Set to "#" to disable authentication.
+- Password/Retype password: Pick a password to enable HTTP authentication for the Web Configuration.
+- Use Digest Authentication (more secure): Enable to use HTTP Digest Authentication instead of HTTP Basic Authentication. Digest authentication is more secure, especially over unencrypted (HTTP) connections.
 
 #### Nuki Lock PIN / Nuki Opener PIN
 
