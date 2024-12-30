@@ -138,8 +138,8 @@
 #define preference_lock_max_timecontrol_entry_count (char*)"maxtc"
 #define preference_opener_max_timecontrol_entry_count (char*)"opmaxtc"
 #define preference_latest_version (char*)"latest"
-#define preference_wifi_converted (char*)"wifiConv"
 #define preference_reset_mqtt_topics (char*)"rstMqtt"
+#define preference_nukihub_id (char*)"nukihubId"
 
 //OBSOLETE
 #define preference_access_level (char*)"accLvl"
@@ -386,7 +386,7 @@ private:
             preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass,
             preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled, preference_hass_device_discovery, preference_retain_gpio,
             preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
-            preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad
+            preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_nukihub_id
     };
     std::vector<char*> _redact =
     {
