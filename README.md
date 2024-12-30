@@ -587,7 +587,10 @@ The following mapping between Home Assistant services and Nuki commands is setup
 | lock.unlock | Unlock    | Enable Ring To Open       | Enable Continuous Mode    |
 | lock.open   | Unlatch   | Electric Strike Actuation | Electric Strike Actuation |
 
-NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations. In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this software. Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
+NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations.<br>
+In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this software.<br>
+Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
+If you experience "ghost" entities/devices related to NukiHub you can completely purge NukiHub related Home Assistant discovery topics from your MQTT broker by following the instructions [here](#purging-home-assistant-discovery-mqtt-topics)
 
 ## Keypad control using JSON (optional)
 
@@ -781,6 +784,16 @@ By retrofitting an external SMA antenna (IPEX, or other names U.FL, IPAX, IPX, A
 Make sure you are using at least version 2023.8.0 of Home Assistant.<br>
 The Home Assistant developers have made changes to MQTT auto discovery which break support for older version and Nuki Hub has adopted these changes.<br>
 This unfortunately means that older versions of Home Assistant are not supported by the Nuki Hub discovery implementation anymore.
+
+### Purging Home Assistant discovery MQTT topics
+
+- Download the latest version of MQTT Explorer for your system from https://mqtt-explorer.com/
+- Run MQTT Explorer and connect to your MQTT broker
+- Enter `ids":["nuki_` in the MQTT explorer search bar
+- Click on the root `homeassistant` topic
+- Press delete on your keyboard
+- Click Yes to confirm deletion
+- Reboot all NukiHub devices connected to the MQTT broker to recreate the correct topics for Home Assistant
 
 ### Nuki Hub in bridge mode doesn't work when Thread or Wi-Fi on a Nuki Smartlock (3.0 Pro / 4.0 / 4.0 Pro) is turned on.
 

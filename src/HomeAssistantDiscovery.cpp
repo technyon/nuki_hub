@@ -16,7 +16,35 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
     _checkUpdates = _preferences->getBool(preference_check_updates, false);
     _updateFromMQTT = _preferences->getBool(preference_update_from_mqtt, false);
     _hostname = _preferences->getString(preference_hostname, "");
-    sprintf(_nukiHubUidString, "%u", _preferences->getUInt(preference_device_id_lock, 0));
+    uint32_t savedDevId = _preferences->getUInt(preference_nukihub_id, 0);
+    uint32_t curDevId = ESP.getEfuseMac() & 0xFFFFFFFF;
+
+    if (savedDevId == 0)
+    {
+        _preferences->putUInt(preference_nukihub_id, curDevId);
+        char uidString[20];
+        itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
+        removeHASSConfig(uidString);
+        delay(3000);
+    }
+    else if(savedDevId != curDevId)
+    {
+        _preferences->putUInt(preference_nukihub_id, curDevId);
+        Log->print("Efuse ID: ");
+        Log->println(curDevId);
+        Log->print("Saved ID: ");
+        Log->println(savedDevId);
+        Log->println("Efuse ID and NukiHub device ID do not match, removing HASS setup for incorrect NukiHub device ID.");
+        char uidString[20];
+        itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
+        removeHASSConfig(uidString);
+        delay(3000);
+        itoa(savedDevId, uidString, 10);
+        removeHASSConfig(uidString);
+        delay(3000);
+    }
+
+    sprintf(_nukiHubUidString, "%u", curDevId);
 }
 
 void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
@@ -65,6 +93,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
 void HomeAssistantDiscovery::disableHASS()
 {
     removeHASSConfig(_nukiHubUidString);
+    delay(3000);
 
     char uidString[20];
 
@@ -72,11 +101,13 @@ void HomeAssistantDiscovery::disableHASS()
     {
         itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
         removeHASSConfig(uidString);
+        delay(3000);
     }
     if(_preferences->getUInt(preference_nuki_id_opener, 0) != 0)
     {
         itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
         removeHASSConfig(uidString);
+        delay(3000);
     }
 }
 
@@ -592,7 +623,7 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
         {(char*)"pl_off", (char*)"0"},
         {(char*)"val_tpl", (char*)"{{value_json.charging}}" }
     });
-    
+
     // Battery voltage
     publishHassTopic("sensor",
                      "battery_voltage",
@@ -2973,9 +3004,12 @@ void HomeAssistantDiscovery::removeHassTopic(const String& mqttDeviceType, const
 
 void HomeAssistantDiscovery::removeHASSConfig(char* uidString)
 {
+    Log->println("Removing HASS entities with ID:");
+    Log->println(uidString);
+
     removeHassTopic((char*)"lock", (char*)"smartlock", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"battery_low", uidString);
-    removeHassTopic((char*)"binary_sensor", (char*)"battery_charging", uidString);    
+    removeHassTopic((char*)"binary_sensor", (char*)"battery_charging", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
     removeHassTopic((char*)"sensor", (char*)"battery_voltage", uidString);
     removeHassTopic((char*)"sensor", (char*)"trigger", uidString);

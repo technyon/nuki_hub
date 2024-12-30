@@ -1265,14 +1265,6 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request)
         {
             continue;
         }
-        if(strcmp(key, preference_device_id_lock) == 0)
-        {
-            continue;
-        }
-        if(strcmp(key, preference_device_id_opener) == 0)
-        {
-            continue;
-        }
         if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end())
             {
                 continue;
@@ -4475,6 +4467,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
         response.print(_preferences->getString(preference_mqtt_hass_discovery, "") + "/");
         response.print("\nNuki Hub configuration URL for HA: ");
         response.print(_preferences->getString(preference_mqtt_hass_cu_url, "").length() > 0 ? _preferences->getString(preference_mqtt_hass_cu_url, "") : "http://" + _network->localIP());
+        response.print("\nNuki Hub ID: ");
+        response.print(_preferences->getUInt(preference_nukihub_id, 0));
     }
     else
     {
