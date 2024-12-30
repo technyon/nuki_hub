@@ -206,30 +206,25 @@ void setup()
       //do we want secure or not?
       if (app_enable_ssl)
       {
-        server.listen(443, server_cert.c_str(), server_key.c_str());
+        server.setCertificate(server_cert.c_str(), server_key.c_str());
         
         //this creates a 2nd server listening on port 80 and redirects all requests HTTPS
         PsychicHttpServer *redirectServer = new PsychicHttpServer();
         redirectServer->config.ctrl_port = 20424; // just a random port different from the default one
-        redirectServer->listen(80);
-        redirectServer->onNotFound([](PsychicRequest *request) {
+        redirectServer->onNotFound([](PsychicRequest *request, PsychicResponse *response) {
           String url = "https://" + request->host() + request->url();
-          return request->redirect(url.c_str());
+          return response->redirect(url.c_str());
         });
       }
-      else
-        server.listen(80);
-    #else
-      server.listen(80);
     #endif
 
     //serve static files from LittleFS/www on / only to clients on same wifi network
     //this is where our /index.html file lives
-    server.serveStatic("/", LittleFS, "/www/")->setFilter(ON_STA_FILTER);
+    server.serveStatic("/", LittleFS, "/www/")->addFilter(ON_STA_FILTER);
 
     //serve static files from LittleFS/www-ap on / only to clients on SoftAP
     //this is where our /index.html file lives
-    server.serveStatic("/", LittleFS, "/www-ap/")->setFilter(ON_AP_FILTER);
+    server.serveStatic("/", LittleFS, "/www-ap/")->addFilter(ON_AP_FILTER);
 
     //serve static files from LittleFS/img on /img
     //it's more efficient to serve everything from a single www directory, but this is also possible.
@@ -240,16 +235,16 @@ void setup()
 
     //example callback everytime a connection is opened
     server.onOpen([](PsychicClient *client) {
-      Serial.printf("[http] connection #%u connected from %s\n", client->socket(), client->localIP().toString());
+      Serial.printf("[http] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str());
     });
 
     //example callback everytime a connection is closed
     server.onClose([](PsychicClient *client) {
-      Serial.printf("[http] connection #%u closed from %s\n", client->socket(), client->localIP().toString());
+      Serial.printf("[http] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str());
     });
 
     //api - json message passed in as post body
-    server.on("/api", HTTP_POST, [](PsychicRequest *request)
+    server.on("/api", HTTP_POST, [](PsychicRequest *request, PsychicResponse *response)
     {
       //load our JSON request
       StaticJsonDocument<1024> json;
@@ -272,18 +267,18 @@ void setup()
       //serialize and return
       String jsonBuffer;
       serializeJson(output, jsonBuffer);
-      return request->reply(200, "application/json", jsonBuffer.c_str());
+      return response->send(200, "application/json", jsonBuffer.c_str());
     });
 
     //api - parameters passed in via query eg. /api/endpoint?foo=bar
-    server.on("/ip", HTTP_GET, [](PsychicRequest *request)
+    server.on("/ip", HTTP_GET, [](PsychicRequest *request, PsychicResponse *response)
     {
       String output = "Your IP is: " + request->client()->remoteIP().toString();
-      return request->reply(output.c_str());
+      return response->send(output.c_str());
     });
 
     //api - parameters passed in via query eg. /api/endpoint?foo=bar
-    server.on("/api", HTTP_GET, [](PsychicRequest *request)
+    server.on("/api", HTTP_GET, [](PsychicRequest *request, PsychicResponse *response)
     {
       //create a response object
       StaticJsonDocument<128> output;
@@ -301,65 +296,64 @@ void setup()
       //serialize and return
       String jsonBuffer;
       serializeJson(output, jsonBuffer);
-      return request->reply(200, "application/json", jsonBuffer.c_str());
+      return response->send(200, "application/json", jsonBuffer.c_str());
     });
 
     //how to redirect a request
-    server.on("/redirect", HTTP_GET, [](PsychicRequest *request)
+    server.on("/redirect", HTTP_GET, [](PsychicRequest *request, PsychicResponse *response)
     {
-      return request->redirect("/alien.png");
+      return response->redirect("/alien.png");
     });
 
     //how to do basic auth
-    server.on("/auth-basic", HTTP_GET, [](PsychicRequest *request)
+    server.on("/auth-basic", HTTP_GET, [](PsychicRequest *request, PsychicResponse *response)
     {
       if (!request->authenticate(app_user, app_pass))
         return request->requestAuthentication(BASIC_AUTH, app_name, "You must log in.");
-      return request->reply("Auth Basic Success!");
+      return response->send("Auth Basic Success!");
     });
 
     //how to do digest auth
-    server.on("/auth-digest", HTTP_GET, [](PsychicRequest *request)
+    server.on("/auth-digest", HTTP_GET, [](PsychicRequest *request, PsychicResponse *response)
     {
       if (!request->authenticate(app_user, app_pass))
         return request->requestAuthentication(DIGEST_AUTH, app_name, "You must log in.");
-      return request->reply("Auth Digest Success!");
+      return response->send("Auth Digest Success!");
     });
 
     //example of getting / setting cookies
-    server.on("/cookies", HTTP_GET, [](PsychicRequest *request)
+    server.on("/cookies", HTTP_GET, [](PsychicRequest *request, PsychicResponse *response)
     {
-      PsychicResponse response(request);
-
       int counter = 0;
-      if (request->hasCookie("counter"))
+      char cookie[14];
+      size_t size = 14;
+      if (request->getCookie("counter", cookie, &size) == ESP_OK)
       {
-        counter = std::stoi(request->getCookie("counter").c_str());
+        // value is null-terminated.
+        counter = std::stoi(cookie);
         counter++;
       }
+      sprintf(cookie, "%d", counter);
 
-      char cookie[10];
-      sprintf(cookie, "%i", counter);
-
-      response.setCookie("counter", cookie);
-      response.setContent(cookie);
-      return response.send();
+      response->setCookie("counter", cookie);
+      response->setContent(cookie);
+      return response->send();
     });
 
     //example of getting POST variables
-    server.on("/post", HTTP_POST, [](PsychicRequest *request)
+    server.on("/post", HTTP_POST, [](PsychicRequest *request, PsychicResponse *response)
     {
       String output;
       output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
       output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
 
-      return request->reply(output.c_str());
+      return response->send(output.c_str());
     });
 
     //you can set up a custom 404 handler.
-    server.onNotFound([](PsychicRequest *request)
+    server.onNotFound([](PsychicRequest *request, PsychicResponse *response)
     {
-      return request->reply(404, "text/html", "Custom 404 Handler");
+      return response->send(404, "text/html", "Custom 404 Handler");
     });
 
     //handle a very basic upload as post body
@@ -393,12 +387,12 @@ void setup()
     });
 
     //gets called after upload has been handled
-    uploadHandler->onRequest([](PsychicRequest *request)
+    uploadHandler->onRequest([](PsychicRequest *request, PsychicResponse *response)
     {
       String url = "/" + request->getFilename();
       String output = "<a href=\"" + url + "\">" + url + "</a>";
 
-      return request->reply(output.c_str());
+      return response->send(output.c_str());
     });
 
     //wildcard basic file upload - POST to /upload/filename.ext
@@ -435,7 +429,7 @@ void setup()
     });
 
     //gets called after upload has been handled
-    multipartHandler->onRequest([](PsychicRequest *request)
+    multipartHandler->onRequest([](PsychicRequest *request, PsychicResponse *response)
     {
       PsychicWebParameter *file = request->getParam("file_upload");
 
@@ -447,7 +441,7 @@ void setup()
       output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
       output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
       
-      return request->reply(output.c_str());
+      return response->send(output.c_str());
     });
 
     //wildcard basic file upload - POST to /upload/filename.ext
@@ -455,7 +449,7 @@ void setup()
 
     //a websocket echo server
     websocketHandler.onOpen([](PsychicWebSocketClient *client) {
-      Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->localIP().toString());
+      Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str());
       client->sendMessage("Hello!");
     });
     websocketHandler.onFrame([](PsychicWebSocketRequest *request, httpd_ws_frame *frame) {
@@ -463,17 +457,17 @@ void setup()
         return request->reply(frame);
     });
     websocketHandler.onClose([](PsychicWebSocketClient *client) {
-      Serial.printf("[socket] connection #%u closed from %s\n", client->socket(), client->localIP().toString());
+      Serial.printf("[socket] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str());
     });
     server.on("/ws", &websocketHandler);
 
     //EventSource server
     eventSource.onOpen([](PsychicEventSourceClient *client) {
-      Serial.printf("[eventsource] connection #%u connected from %s\n", client->socket(), client->localIP().toString());
+      Serial.printf("[eventsource] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str());
       client->send("Hello user!", NULL, millis(), 1000);
     });
     eventSource.onClose([](PsychicEventSourceClient *client) {
-      Serial.printf("[eventsource] connection #%u closed from %s\n", client->socket(), client->localIP().toString());
+      Serial.printf("[eventsource] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str());
     });
     server.on("/events", &eventSource);
   }
@@ -486,10 +480,10 @@ void loop()
 {
   if (millis() - lastUpdate > 2000)
   {
-    sprintf(output, "Millis: %d\n", millis());
+    sprintf(output, "Millis: %lu\n", millis());
     websocketHandler.sendAll(output);
 
-    sprintf(output, "%d", millis());
+    sprintf(output, "%lu", millis());
     eventSource.send(output, "millis", millis(), 0);
 
     lastUpdate = millis();

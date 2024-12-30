@@ -4,10 +4,12 @@
 #include "PsychicCore.h"
 
 /*
-* PsychicClient :: Generic wrapper around the ESP-IDF socket
-*/
+ * PsychicClient :: Generic wrapper around the ESP-IDF socket
+ */
 
-class PsychicClient {
+class PsychicClient
+{
+
   protected:
     httpd_handle_t _server;
     int _socket;
@@ -16,9 +18,9 @@ class PsychicClient {
     PsychicClient(httpd_handle_t server, int socket);
     ~PsychicClient();
 
-    //no idea if this is the right way to do it or not, but lets see.
-    //pointer to our derived class (eg. PsychicWebSocketConnection)
-    void *_friend;
+    // no idea if this is the right way to do it or not, but lets see.
+    // pointer to our derived class (eg. PsychicWebSocketConnection)
+    void* _friend;
 
     bool isNew = false;
 
@@ -29,7 +31,9 @@ class PsychicClient {
     esp_err_t close();
 
     IPAddress localIP();
+    uint16_t localPort() const;
     IPAddress remoteIP();
+    uint16_t remotePort() const;
 };
 
 #endif

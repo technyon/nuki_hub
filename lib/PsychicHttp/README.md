@@ -23,7 +23,7 @@ PsychicHttp is a webserver library for ESP32 + Arduino framework which uses the 
 ## Differences from ESPAsyncWebserver
 
 * No templating system (anyone actually use this?)
-* No url rewriting (but you can use request->redirect)
+* No url rewriting (but you can use response->redirect)
 
 # Usage
 
@@ -120,7 +120,7 @@ If you have existing code using ESPAsyncWebserver, you will feel right at home w
 
 ## setup() Stuff
 
-* no more server.begin(), call server.listen(80), before you add your handlers
+* add your handlers and call server.begin()
 * server has a configurable limit on .on() endpoints. change it with ```server.config.max_uri_handlers = 20;``` as needed.
 * check your callback function definitions:
    * AsyncWebServerRequest -> PsychicRequest
@@ -136,7 +136,7 @@ If you have existing code using ESPAsyncWebserver, you will feel right at home w
 
 ## Requests / Responses
 
-* request->send is now request->reply()
+* request->send is now response->send()
 * if you create a response, call response->send() directly, not request->send(reply)
 * request->headers() is not supported by ESP-IDF, you have to just check for the header you need.
 * No AsyncCallbackJsonWebHandler (for now... can add if needed)
@@ -163,9 +163,6 @@ void setup()
    server.config.max_uri_handlers = 20; 
 
    //connect to wifi
-
-   //start the server listening on port 80 (standard HTTP port)
-   server.listen(80);
 
    //call server methods to attach endpoints and handlers
    server.on(...);
@@ -198,7 +195,7 @@ The ```server.on(...)``` returns a pointer to the endpoint, which can be used to
 
 ```cpp
 //respond to /url only from requests to the AP
-server.on("/url", HTTP_GET, request_callback)->setFilter(ON_AP_FILTER);
+server.on("/url", HTTP_GET, request_callback)->addFilter(ON_AP_FILTER);
 
 //require authentication on /url
 server.on("/url", HTTP_GET, request_callback)->setAuthentication("user", "pass");
@@ -212,7 +209,7 @@ server.on("/ws")->attachHandler(&websocketHandler);
 
 The ```PsychicWebHandler``` class is for handling standard web requests.  It provides a single callback: ```onRequest()```.  This callback is called when the handler receives a valid HTTP request.
 
-One major difference from ESPAsyncWebserver is that this callback needs to return an esp_err_t variable to let the server know the result of processing the request.  The ```response->reply()``` and ```request->send()``` functions will return this.  It is a good habit to return the result of these functions as sending the response will close the connection.
+One major difference from ESPAsyncWebserver is that this callback needs to return an esp_err_t variable to let the server know the result of processing the request.  The ```response->send()``` and ```request->send()``` functions will return this.  It is a good habit to return the result of these functions as sending the response will close the connection.
 
 The function definition for the onRequest callback is:
 
@@ -226,7 +223,7 @@ Here is a simple example that sends back the client's IP on the URL /ip
 server.on("/ip", [](PsychicRequest *request)
 {
    String output = "Your IP is: " + request->client()->remoteIP().toString();
-   return request->reply(output.c_str());
+   return response->send(output.c_str());
 });
 ```
 
@@ -294,7 +291,7 @@ It's worth noting that there is no standard way of passing in a filename for thi
    String url = "/" + request->getFilename();
    String output = "<a href=\"" + url + "\">" + url + "</a>";
 
-   return request->reply(output.c_str());
+   return response->send(output.c_str());
  });
 
  //wildcard basic file upload - POST to /upload/filename.ext
@@ -352,7 +349,7 @@ Very similar to the basic upload, with 2 key differences:
    output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
    output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
    
-   return request->reply(output.c_str());
+   return response->send(output.c_str());
  });
 
  //upload to /multipart url
@@ -374,11 +371,11 @@ The ```server.serveStatic()``` function handles creating the handler and assigni
 ```cpp
 //serve static files from LittleFS/www on / only to clients on same wifi network
 //this is where our /index.html file lives
-server.serveStatic("/", LittleFS, "/www/")->setFilter(ON_STA_FILTER);
+server.serveStatic("/", LittleFS, "/www/")->addFilter(ON_STA_FILTER);
 
 //serve static files from LittleFS/www-ap on / only to clients on SoftAP
 //this is where our /index.html file lives
-server.serveStatic("/", LittleFS, "/www-ap/")->setFilter(ON_AP_FILTER);
+server.serveStatic("/", LittleFS, "/www-ap/")->addFilter(ON_AP_FILTER);
 
 //serve static files from LittleFS/img on /img
 //it's more efficient to serve everything from a single www directory, but this is also possible.
@@ -426,17 +423,17 @@ Here is a basic example of using WebSockets:
  PsychicWebSocketHandler websocketHandler();
 
  websocketHandler.onOpen([](PsychicWebSocketClient *client) {
-   Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString());
+   Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString().c_str());
    client->sendMessage("Hello!");
  });
 
  websocketHandler.onFrame([](PsychicWebSocketRequest *request, httpd_ws_frame *frame) {
      Serial.printf("[socket] #%d sent: %s\n", request->client()->socket(), (char *)frame->payload);
-     return request->reply(frame);
+     return response->send(frame);
  });
 
  websocketHandler.onClose([](PsychicWebSocketClient *client) {
-   Serial.printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString());
+   Serial.printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString().c_str());
  });
 
  //attach the handler to /ws.  You can then connect to ws://ip.address/ws
@@ -452,7 +449,7 @@ The onFrame() callback has 2 parameters:
  
 For sending data on the websocket connection, there are 3 methods:
 
-* ```request->reply()``` - only available in the onFrame() callback context.
+* ```response->send()``` - only available in the onFrame() callback context.
 * ```webSocketHandler.sendAll()``` - can be used anywhere to send websocket messages to all connected clients.
 * ```client->send()``` - can be used anywhere* to send a websocket message to a specific client
 
@@ -488,12 +485,12 @@ Here is a basic example of using PsychicEventSource:
  PsychicEventSource eventSource;
 
  eventSource.onOpen([](PsychicEventSourceClient *client) {
-   Serial.printf("[eventsource] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString());
+   Serial.printf("[eventsource] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString().c_str());
    client->send("Hello user!", NULL, millis(), 1000);
  });
 
  eventSource.onClose([](PsychicEventSourceClient *client) {
-   Serial.printf("[eventsource] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString());
+   Serial.printf("[eventsource] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString().c_str());
  });
 
  //attach the handler to /events
@@ -524,7 +521,7 @@ PsychicHttp supports HTTPS / SSL out of the box, however there are some limitati
 #include <PsychicHttp.h>
 #include <PsychicHttpsServer.h>
 PsychicHttpsServer server;
-server.listen(443, server_cert, server_key);
+server.setCertificate(server_cert, server_key);
 ```
 
 ```server_cert``` and ```server_key``` are both ```const char *``` parameters which contain the server certificate and private key, respectively.
@@ -552,10 +549,9 @@ Last, but not least, you can create a separate HTTP server on port 80 that redir
 //this creates a 2nd server listening on port 80 and redirects all requests HTTPS
 PsychicHttpServer *redirectServer = new PsychicHttpServer();
 redirectServer->config.ctrl_port = 20420; // just a random port different from the default one
-redirectServer->listen(80);
 redirectServer->onNotFound([](PsychicRequest *request) {
    String url = "https://" + request->host() + request->url();
-   return request->redirect(url.c_str());
+   return response->redirect(url.c_str());
 });
 ```
 
@@ -775,51 +771,22 @@ With all due respect to @me-no-dev who has done some amazing work in the open so
 
 ArduinoMongoose is a good alternative, although the latency issues when it gets fully loaded can be very annoying. I believe it is also cross platform to other microcontrollers as well, but I haven't tested that. The other issue here is that it is based on an old version of a modified Mongoose library that will be difficult to update as it is a major revision behind and several security updates behind as well.  Big thanks to @jeremypoulter though as PsychicHttp is a fork of ArduinoMongoose so it's built on strong bones.
 
+# Community / Support
+
+The best way to get support is probably with Github issues.  There is also a [Discord chat](https://discord.gg/CM5abjGG) that is pretty active.
+
 # Roadmap
 
-## v1.2: ESPAsyncWebserver Parity
+## v2.0: ESPAsyncWebserver Parity
 
-
-Change:
-Modify the request handling to bring initail url matching and filtering into PsychicHttpServer itself.
-
-Benefits: 
-* Fix a bug with filter() where endpoint is matched, but filter fails and it doesn't continue matching further endpoints (checks are in different codebases)
-* HTTP_ANY support
-* unlimited endpoints
-  * we would use a List to store endpoints
-  * dont have to pre-declare config.max_uri_handlers;
-* much more flexibility for future
-
-Issues
-* it would log a warning on every request as if its a 404. (httpd_uri.c:298)
-* req->user_ctx is not passed in. (httpd_uri.c:309)
-    * but... user_ctx is something we could store in the psychicendpoint data
-  * Websocket support assumes an endpoint with matching url / method (httpd_uri.c:312)
-    * we could copy and bring this code into our own internal request processor
-  * would need to manually maintain more code (~100 lines?) and be more prone to esp-idf http_server updates causing problems.
-
-How to implement
-* set config.max_uri_handlers = 1;
-* possibly do not register any uri_handlers (looks like it would be fastest way to exit httpd_find_uri_handler (httpd_uri.c:94))
-  * looks like 404 is set by default, so should work.
-* modify PsychicEndpoint to store the stuff we would pass to http_server
-* create a new function handleRequest() before PsychicHttpServer::defaultNotFoundHandler to process incoming requests.
-  * bring in code from PsychicHttpServer::notFoundHandler
-  * add new code to loop over endpoints to call match and filter
-* bring code from esp-idf library
-
-* templating system
-* regex url matching
-* rewrite urls?
-* What else are we missing?
-
+* As much ESPAsyncWebServer compatibility as possible
+* Update benchmarks and get new data
+  * we should also track program size and memory usage
 
 ## Longterm Wants
 
 * investigate websocket performance gap
 * support for esp-idf framework
-* support for arduino 3.0 framework
 * Enable worker based multithreading with esp-idf v5.x
 * 100-continue support?
      

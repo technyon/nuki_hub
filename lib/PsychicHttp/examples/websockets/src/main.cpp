@@ -9,38 +9,39 @@
 */
 
 /**********************************************************************************************
-* Note: this demo relies on various files to be uploaded on the LittleFS partition
-* PlatformIO -> Build Filesystem Image and then PlatformIO -> Upload Filesystem Image
-**********************************************************************************************/
+ * Note: this demo relies on various files to be uploaded on the LittleFS partition
+ * PlatformIO -> Build Filesystem Image and then PlatformIO -> Upload Filesystem Image
+ **********************************************************************************************/
 
+#include "_secret.h"
 #include <Arduino.h>
-#include <WiFi.h>
-#include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <ESPmDNS.h>
-#include <esp_sntp.h>
-#include "_secret.h"
+#include <LittleFS.h>
 #include <PsychicHttp.h>
+#include <WiFi.h>
+#include <esp_sntp.h>
 #include <freertos/queue.h>
 
 #ifndef WIFI_SSID
   #error "You need to enter your wifi credentials. Rename secret.h to _secret.h and enter your credentials there."
 #endif
 
-//Enter your WIFI credentials in secret.h
-const char *ssid = WIFI_SSID;
-const char *password = WIFI_PASS;
+// Enter your WIFI credentials in secret.h
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
 
-//hostname for mdns (psychic.local)
-const char *local_hostname = "psychic";
+// hostname for mdns (psychic.local)
+const char* local_hostname = "psychic";
 
 PsychicHttpServer server;
 PsychicWebSocketHandler websocketHandler;
 
-typedef struct {
-  int socket;
-  char *buffer;
-  size_t len;
+typedef struct
+{
+    int socket;
+    char* buffer;
+    size_t len;
 } WebsocketMessage;
 
 QueueHandle_t wsMessages;
@@ -50,7 +51,7 @@ bool connectToWifi()
   Serial.print("[WiFi] Connecting to ");
   Serial.println(ssid);
 
-  //setup our wifi
+  // setup our wifi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
@@ -113,7 +114,7 @@ void setup()
   Serial.begin(115200);
   delay(10);
 
-  //prepare our message queue of 10 messages
+  // prepare our message queue of 10 messages
   wsMessages = xQueueCreate(10, sizeof(WebsocketMessage));
   if (wsMessages == 0)
     Serial.printf("Failed to create queue= %p\n", wsMessages);
@@ -122,34 +123,33 @@ void setup()
   // To debug, please enable Core Debug Level to Verbose
   if (connectToWifi())
   {
-    //set up our esp32 to listen on the local_hostname.local domain
-    if (!MDNS.begin(local_hostname)) {
+    // set up our esp32 to listen on the local_hostname.local domain
+    if (!MDNS.begin(local_hostname))
+    {
       Serial.println("Error starting mDNS");
       return;
     }
     MDNS.addService("http", "tcp", 80);
 
-    if(!LittleFS.begin())
+    if (!LittleFS.begin())
     {
       Serial.println("LittleFS Mount Failed. Do Platform -> Build Filesystem Image and Platform -> Upload Filesystem Image from VSCode");
       return;
     }
 
-    server.listen(80);
+    // this is where our /index.html file lives
+    //  curl -i http://psychic.local/
+    server.serveStatic("/", LittleFS, "/www/");
 
-    //this is where our /index.html file lives
-    // curl -i http://psychic.local/
-    PsychicStaticFileHandler* handler = server.serveStatic("/", LittleFS, "/www/");
-
-    //a websocket echo server
-    // npm install -g wscat
-    // wscat -c ws://psychic.local/ws
-    websocketHandler.onOpen([](PsychicWebSocketClient *client) {
-      Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString());
-      client->sendMessage("Hello!");
-    });
-    websocketHandler.onFrame([](PsychicWebSocketRequest *request, httpd_ws_frame *frame)
-    {
+    // a websocket echo server
+    //  npm install -g wscat
+    //  wscat -c ws://psychic.local/ws
+    websocketHandler.onOpen([](PsychicWebSocketClient* client)
+                            {
+      Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString().c_str());
+      client->sendMessage("Hello!"); });
+    websocketHandler.onFrame([](PsychicWebSocketRequest* request, httpd_ws_frame* frame)
+                             {
       Serial.printf("[socket] #%d sent: %s\n", request->client()->socket(), (char *)frame->payload);
 
       //we are allocating memory here, and the worker will free it
@@ -181,11 +181,9 @@ void setup()
       if (!uxQueueSpacesAvailable(wsMessages))
         return request->reply("Queue Full");
 
-      return ESP_OK;
-    });
-    websocketHandler.onClose([](PsychicWebSocketClient *client) {
-      Serial.printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString());
-    });
+      return ESP_OK; });
+    websocketHandler.onClose([](PsychicWebSocketClient* client)
+                             { Serial.printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString().c_str()); });
     server.on("/ws", &websocketHandler);
   }
 }
@@ -195,29 +193,30 @@ char output[60];
 
 void loop()
 {
-  //process our websockets outside the callback.
+  // process our websockets outside the callback.
   WebsocketMessage message;
   while (xQueueReceive(wsMessages, &message, 0) == pdTRUE)
   {
-    //make sure our client is still good.
-    PsychicWebSocketClient *client = websocketHandler.getClient(message.socket);
-    if (client == NULL) {
+    // make sure our client is still good.
+    PsychicWebSocketClient* client = websocketHandler.getClient(message.socket);
+    if (client == NULL)
+    {
       Serial.printf("[socket] client #%d bad, bailing\n", message.socket);
       return;
     }
 
-    //echo it back to the client.
-    //alternatively, this is where you would deserialize a json message, parse it, and generate a response if needed
+    // echo it back to the client.
+    // alternatively, this is where you would deserialize a json message, parse it, and generate a response if needed
     client->sendMessage(HTTPD_WS_TYPE_TEXT, message.buffer, message.len);
 
-    //make sure to release our memory!
+    // make sure to release our memory!
     free(message.buffer);
   }
 
-  //send a periodic update to all clients
+  // send a periodic update to all clients
   if (millis() - lastUpdate > 2000)
   {
-    sprintf(output, "Millis: %d\n", millis());
+    sprintf(output, "Millis: %lu\n", millis());
     websocketHandler.sendAll(output);
 
     lastUpdate = millis();

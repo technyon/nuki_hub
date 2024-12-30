@@ -1,3 +1,23 @@
+# v2.0
+
+* Modified the request handling to bring initial url matching and filtering into PsychicHttpServer itself.
+    * Fixed a bug with filter() where endpoint is matched, but filter fails and it doesn't continue matching further endpoints on same uri (checks were in different codebases)
+    * HTTP_ANY support
+    * unlimited endpoints (no more need to manually set config.max_uri_handlers)
+    * much more flexibility for future
+* Endpoint Matching Updates
+    * Endpoint matching functions can be set on server level (```server.setURIMatchFunction()```) or endpoint level (```endpoint.setURIMatchFunction()```)
+    * Added convenience macros MATCH_SIMPLE, MATCH_WILDCARD, and MATCH_REGEX
+    * Added regex matching of URIs, enable it with define PSY_ENABLE_REGEX
+    * On regex matched requests, you can get match data with request->getRegexMatches()
+* Ported URL rewrite functionality from ESPAsyncWS
+
+## Changes required from v1.x to v2.0:
+
+* add a ```server.begin()``` or ```server.start()``` after all your ```server.on()``` calls
+* remove any calls to ```config.max_uri_handlers```
+* if you are using a custom ```server.config.uri_match_fn``` to match uris, change it to ```server.setURIMatchFunction()```
+
 # v1.2.1
 
 * Fix bug with missing include preventing the HTTPS server from compiling.

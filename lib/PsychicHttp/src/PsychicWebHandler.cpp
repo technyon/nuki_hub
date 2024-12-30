@@ -1,21 +1,22 @@
 #include "PsychicWebHandler.h"
 
-PsychicWebHandler::PsychicWebHandler() : 
-  PsychicHandler(),
-  _requestCallback(NULL),
-  _onOpen(NULL),
-  _onClose(NULL)
-  {}
+PsychicWebHandler::PsychicWebHandler() : PsychicHandler(),
+                                         _requestCallback(NULL),
+                                         _onOpen(NULL),
+                                         _onClose(NULL)
+{
+}
 PsychicWebHandler::~PsychicWebHandler() {}
 
-bool PsychicWebHandler::canHandle(PsychicRequest *request) {
+bool PsychicWebHandler::canHandle(PsychicRequest* request)
+{
   return true;
 }
 
-esp_err_t PsychicWebHandler::handleRequest(PsychicRequest *request)
+esp_err_t PsychicWebHandler::handleRequest(PsychicRequest* request, PsychicResponse* response)
 {
-  //lookup our client
-  PsychicClient *client = checkForNewClient(request->client());
+  // lookup our client
+  PsychicClient* client = checkForNewClient(request->client());
   if (client->isNew)
     openCallback(client);
 
@@ -27,48 +28,53 @@ esp_err_t PsychicWebHandler::handleRequest(PsychicRequest *request)
     /* Respond with 400 Bad Request */
     char error[60];
     sprintf(error, "Request body must be less than %lu bytes!", request->server()->maxRequestBodySize);
-    httpd_resp_send_err(request->request(), HTTPD_400_BAD_REQUEST, error);
+    response->send(400, "text/html", error);
 
     /* Return failure to close underlying connection else the incoming file content will keep the socket busy */
     return ESP_FAIL;
   }
 
-  //get our body loaded up.
+  // get our body loaded up.
   esp_err_t err = request->loadBody();
   if (err != ESP_OK)
-    return err;
+    return response->send(400, "text/html", "Error loading request body.");
 
-  //load our params in.
+  // load our params in.
   request->loadParams();
 
-  //okay, pass on to our callback.
+  // okay, pass on to our callback.
   if (this->_requestCallback != NULL)
-    err = this->_requestCallback(request);
+    err = this->_requestCallback(request, response);
 
   return err;
 }
 
-PsychicWebHandler * PsychicWebHandler::onRequest(PsychicHttpRequestCallback fn) {
+PsychicWebHandler* PsychicWebHandler::onRequest(PsychicHttpRequestCallback fn)
+{
   _requestCallback = fn;
   return this;
 }
 
-void PsychicWebHandler::openCallback(PsychicClient *client) {
+void PsychicWebHandler::openCallback(PsychicClient* client)
+{
   if (_onOpen != NULL)
     _onOpen(client);
 }
 
-void PsychicWebHandler::closeCallback(PsychicClient *client) {
+void PsychicWebHandler::closeCallback(PsychicClient* client)
+{
   if (_onClose != NULL)
     _onClose(getClient(client));
 }
 
-PsychicWebHandler * PsychicWebHandler::onOpen(PsychicClientCallback fn) {
+PsychicWebHandler* PsychicWebHandler::onOpen(PsychicClientCallback fn)
+{
   _onOpen = fn;
   return this;
 }
 
-PsychicWebHandler * PsychicWebHandler::onClose(PsychicClientCallback fn) {
+PsychicWebHandler* PsychicWebHandler::onClose(PsychicClientCallback fn)
+{
   _onClose = fn;
   return this;
 }

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>WebSocket Message Rate Test</title>
+</head>
+
+<body>
+	<h1>WebSocket Message Rate Test</h1>
+	<p>Time Remaining: <span id="time_remaining">0</span></p>
+	<p>Messages Count: <span id="message_count">0</span></p>
+	<p>Messages per second: <span id="rate">0</span></p>
+	<label for="duration">Test Duration (seconds):</label>
+	<input type="number" id="duration" value="30" min="1">
+	<p>
+		<button id="startTestSmall">Start Test (256b json)</button>
+		<button id="startTestBig">Start Test (2k json)</button>
+	</p>
+	<p id="status"></p>
+
+	<script>
+		let ws;
+		let messageCount = 0;
+		let startTime;
+		let endTime;
+		let testRunning = false;
+		let smallPayload = { "user": { "id": 123456789, "name": "JohnDoe", "email": "johndoe@example.com", "preferences": { "theme": "dark", "notifications": { "email": true, "sms": false }, "language": "en" } } };
+		let bigPayload = { "user": { "id": 123456789, "name": "JohnDoe", "email": "johndoe@example.com", "preferences": { "theme": "dark", "notifications": { "email": true, "sms": false }, "language": "en", "options": { "option1": "value1", "option2": "value2", "option3": "value3", "option4": "value4", "option5": "value5", "option6": "value6", "option7": "value7", "option8": "value8", "option9": "value9", "option10": "value10", "option11": "value11", "option12": "value12", "option13": "value13", "option14": "value14", "option15": "value15", "option16": "value16", "option17": "value17", "option18": "value18", "option19": "value19", "option20": "value20", "option21": "value21", "option22": "value22", "option23": "value23", "option24": "value24", "option25": "value25", "option26": "value26", "option27": "value27", "option28": "value28", "option29": "value29", "option30": "value30", "option31": "value31", "option32": "value32", "option33": "value33", "option34": "value34", "option35": "value35", "option36": "value36", "option37": "value37", "option38": "value38", "option39": "value39", "option40": "value40", "option41": "value41", "option42": "value42", "option43": "value43", "option44": "value44", "option45": "value45", "option46": "value46", "option47": "value47", "option48": "value48", "option49": "value49", "option50": "value50", "option51": "value51", "option52": "value52", "option53": "value53", "option54": "value54", "option55": "value55", "option56": "value56", "option57": "value57", "option58": "value58", "option59": "value59", "option60": "value60", "option61": "value61", "option62": "value62", "option63": "value63", "option64": "value64", "option65": "value65", "option66": "value66", "option67": "value67", "option68": "value68", "option69": "value69", "option70": "value70", "option71": "value71", "option72": "value72", "option73": "value73", "option74": "value74", "option75": "value75", "option76": "value76", "option77": "value77", "option78": "value78", "option79": "value79", "option80": "value80", "option81": "value81", "option82": "value82", "option83": "value83", "option84": "value84", "option85": "value85", "option86": "value86", "option87": "value87", "option88": "value88", "option89": "value89", "option90": "value90", "option91": "value91", "option92": "value92", "option93": "value93", "option94": "value94", "option95": "value95", "option96": "value96", "option97": "value97", "option98": "value98", "option99": "value99", "option100": "value100", "option101": "value101", "option102": "value102", "option103": "value103", "option104": "value104", "option105": "value105", "option106": "value106", "option107": "value107", "option108": "value108", "option109": "value109", "option110": "value110", "option111": "value111", "option112": "value112", "option113": "value113", "option114": "value114", "option115": "value115", "option116": "value116", "option117": "value117", "option118": "value118", "option119": "value119", "option120": "value120" } } } };
+		let payload;
+
+		// Function to update the message rate
+		function updateRate(force = false) {
+			const currentTime = Date.now();
+			const elapsedTime = (currentTime - startTime) / 1000; // in seconds
+			let remainingTime = (endTime - currentTime) / 1000; // in seconds
+			remainingTime = Math.max(0, remainingTime);
+			const rate = messageCount / elapsedTime;
+
+			if (rate) {
+				document.getElementById('rate').innerText = rate.toFixed(2);
+				document.getElementById('message_count').innerText = messageCount;
+				document.getElementById('time_remaining').innerText = remainingTime.toFixed(2);
+			}
+
+			if (testRunning)
+				setTimeout(updateRate, 25);
+		}
+
+		function startTestSmall() {
+			payload = smallPayload;
+			startTest();
+		}
+
+		function startTestBig() {
+			payload = bigPayload;
+			startTest();
+		}
+
+		// Function to start the WebSocket connection and the test
+		function startTest() {
+			if (testRunning) return;
+
+			console.log("Payload length: " + JSON.stringify(payload).length);
+
+			document.getElementById('startTestSmall').disabled = true;
+			document.getElementById('startTestBig').disabled = true;
+
+			document.getElementById('status').innerText = 'Connecting';
+
+			const durationInput = document.getElementById('duration').value;
+			const testDuration = parseInt(durationInput) * 1000 || 60000; // default to 60 seconds if invalid
+
+			// Determine the WebSocket protocol based on the current protocol
+			const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+			ws = new WebSocket(`${protocol}${window.location.host}/ws`);
+
+			ws.onopen = function () {
+				document.getElementById('status').innerText = 'Connected';
+				startTime = Date.now();
+				endTime = startTime + testDuration;
+				messageCount = 0;
+				testRunning = true;
+				sendAndReceiveMessage();
+
+				updateRate();
+			};
+
+			ws.onmessage = function (event) {
+				try {
+					const parsedData = JSON.parse(event.data);
+
+					if (parsedData.user) {
+						messageCount++;
+						if (testRunning) {
+							sendAndReceiveMessage();
+						}
+					}
+				} catch (err) { }
+			};
+
+			ws.onerror = function (error) {
+				document.getElementById('status').innerText = 'Error: ' + error.message;
+			};
+
+			ws.onclose = function () {
+				//document.getElementById('status').innerText = 'Connection Closed';
+			};
+		}
+
+		// Function to send a message and wait for the response
+		function sendAndReceiveMessage() {
+			if (Date.now() >= endTime) {
+				testRunning = false;
+				document.getElementById('startTestSmall').disabled = false;
+				document.getElementById('startTestBig').disabled = false;
+				if (ws.readyState === WebSocket.OPEN) {
+					ws.close();
+				}
+				document.getElementById('status').innerText = 'Test Finished';
+				updateRate(true);
+			} else {
+				if (ws.readyState === WebSocket.OPEN) {
+					ws.send(JSON.stringify(payload));
+				}
+			}
+		}
+
+		document.getElementById('startTestSmall').addEventListener('click', startTestSmall);
+		document.getElementById('startTestBig').addEventListener('click', startTestBig);
+	</script>
+</body>
+
+</html>

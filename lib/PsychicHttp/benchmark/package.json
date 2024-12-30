@@ -1,7 +1,10 @@
 {
   "dependencies": {
+    "autocannon": "^7.15.0",
     "axios": "^1.6.2",
+    "csv-writer": "^1.6.0",
     "eventsource": "^2.0.2",
+    "loadtest": "^8.0.9",
     "ws": "^8.14.2"
   }
 }

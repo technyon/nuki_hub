@@ -8,7 +8,7 @@
   CONDITIONS OF ANY KIND, either express or implied.
   
 */
-char *TAG = "OTA"; // ESP_LOG tag
+#define TAG "OTA" // ESP_LOG tag
 
 // PsychicHttp
 #include <Arduino.h>
@@ -100,7 +100,6 @@ void setup()
 
     //setup server config stuff here
     server.config.max_uri_handlers = 20;     //maximum number of uri handlers (.on() calls) 
-    server.listen(80);
 
     DefaultHeaders::Instance().addHeader("Server", "PsychicHttp");
 
@@ -109,8 +108,8 @@ void setup()
     
     //you can set up a custom 404 handler.
     // curl -i http://psychic.local/404
-    server.onNotFound([](PsychicRequest *request) {
-      return request->reply(404, "text/html", "Custom 404 Handler");
+    server.onNotFound([](PsychicRequest *request, PsychicResponse *response) {
+      return response->send(404, "text/html", "Custom 404 Handler");
     });
 
     // OTA
@@ -177,34 +176,34 @@ void setup()
     }
     });  // end onUpload
 
-    updateHandler->onRequest([](PsychicRequest *request) {  // triggered when update is completed (either OK or KO) and returns request's response (important)
+    updateHandler->onRequest([](PsychicRequest *request, PsychicResponse *response) {  // triggered when update is completed (either OK or KO) and returns request's response (important)
       String result; // request result
       // code below is executed when update is finished
       if (!Update.hasError()) { // update is OK
         ESP_LOGI(TAG,"Update code or data OK Update.errorString() %s", Update.errorString());
         result = "<b style='color:green'>Update done for file.</b>";
-        return request->reply(200,"text/html",result.c_str());
+        return response->send(200,"text/html",result.c_str());
         // ESP.restart();                                              // restart ESP if needed
       } // end update is OK
       else { // update is KO, send request with pretty print error
         result = " Update.errorString() " + String(Update.errorString()); 
         ESP_LOGE(TAG,"ERROR : error %s",result.c_str());    
-        return request->reply(500, "text/html", result.c_str());
+        return response->send(500, "text/html", result.c_str());
       } // end update is KO
     });
 
-    server.on("/update", HTTP_GET, [](PsychicRequest*request){
-      PsychicFileResponse response(request, LittleFS, "/update.html");
+    server.on("/update", HTTP_GET, [](PsychicRequest*request, PsychicResponse *res){
+      PsychicFileResponse response(res, LittleFS, "/update.html");
       return response.send();
     });
     
     server.on("/update", HTTP_POST, updateHandler);
 
-    server.on("/restart", HTTP_POST, [](PsychicRequest *request) {
+    server.on("/restart", HTTP_POST, [](PsychicRequest *request, PsychicResponse *response) {
       String output = "<b style='color:green'>Restarting ...</b>";
       ESP_LOGI(TAG,"%s",output.c_str());      
       esprestart=true;
-      return request->reply(output.c_str());      
+      return response->send(output.c_str());      
     });    
  } // end onRequest
 
