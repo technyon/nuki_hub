@@ -5,7 +5,9 @@
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-#include <esp_psram.h>
+#include "esp_psram.h"
+#include "FS.h"
+#include "SPIFFS.h"
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
@@ -77,13 +79,13 @@ void WebCfgServer::initialize()
 {
     _psychicServer->onOpen([&](PsychicClient* client) { Log->printf("[http] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str()); });
     _psychicServer->onClose([&](PsychicClient* client) { Log->printf("[http] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str()); });
-    
+
     HTTPAuthMethod auth_type = BASIC_AUTH;
     if (_preferences->getBool(preference_http_auth_type, false))
     {
         auth_type = DIGEST_AUTH;
     }
-    
+
     _psychicServer->on("/", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
@@ -297,6 +299,14 @@ void WebCfgServer::initialize()
             {
                 return buildMqttSSLConfigHtml(request, resp, 2);
             }
+            else if (value == "httpcrtconfig")
+            {
+                return buildHttpSSLConfigHtml(request, resp, 1);
+            }
+            else if (value == "httpkeyconfig")
+            {
+                return buildHttpSSLConfigHtml(request, resp, 2);
+            }
             else if (value == "nukicfg")
             {
                 return buildNukiConfigHtml(request, resp);
@@ -428,6 +438,10 @@ void WebCfgServer::initialize()
                 {
                     return buildConfirmHtml(request, resp, message, 3, true, "/get?page=mqttconfig");
                 }
+                else if(request->hasParam("httpssl"))
+                {
+                    return buildConfirmHtml(request, resp, message, 3, true, "/get?page=ntwconfig");
+                }
                 else
                 {
                     return buildConfirmHtml(request, resp, message, 3, true);
@@ -491,7 +505,7 @@ void WebCfgServer::initialize()
             {
                 return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
-            
+
             return handleOtaUpload(request, filename, index, data, len, last);
         });
 
@@ -501,7 +515,7 @@ void WebCfgServer::initialize()
             {
                 return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
-            
+
             String result;
             if (!Update.hasError())
             {
@@ -1588,6 +1602,74 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 configChanged = true;
             }
         }
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        else if(key == "HTTPCRT")
+        {
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+                    if (!file) {
+                        Log->println("Failed to open /http_ssl.crt for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /http_ssl.crt");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/http_ssl.crt")) {
+                        Serial.println("Failed to delete /http_ssl.crt");
+                    }
+                }
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "HTTPKEY")
+        {
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+                    if (!file) {
+                        Log->println("Failed to open /http_ssl.key for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /http_ssl.key");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/http_ssl.key")) {
+                        Serial.println("Failed to delete /http_ssl.key");
+                    }
+                }
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        #endif
         else if(key == "NWHW")
         {
             if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
@@ -3681,6 +3763,13 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    if(esp_psram_get_size() > 0)
+    {
+        response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
+        response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set MQTT SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
+    }
+    #endif
     response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
@@ -3722,7 +3811,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
     }
     response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><button title=\"Set MQTT SSL CA Certificate\" onclick=\" window.open('/get?page=mqttcaconfig', '_self'); return false;\">Change</button></td></tr>");
-    response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client CA Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
+    response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");
     printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
@@ -3764,6 +3853,81 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
     else
     {
         printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, true, true);
+    }
+    response.print("</table>");
+    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("</form>");
+    response.print("</body>");
+    response.print("</html>");
+    return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicResponse* resp, int type)
+{
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    buildHtmlHeader(&response);
+    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
+    response.print("<input type=\"hidden\" name=\"httpssl\" value=\"1\">");
+    response.print("<h3>HTTP SSL Configuration</h3>");
+    response.print("<table>");
+
+    if (type == 1)
+    {
+        char cert[4400] = {0};
+        
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt");
+            if (!file || file.isDirectory()) {
+                Log->println("http_ssl.crt not found");
+            }
+            else
+            {
+                Log->println("Reading http_ssl.crt");
+                uint32_t i = 0;
+                while(file.available()){
+                     cert[i] = file.read();
+                     i++;
+                }
+                file.close();
+            }
+        }
+        #endif
+        printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", cert, 4400, true, true);
+    }
+    else
+    {
+        char key[2200] = {0};
+        
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.key");
+            if (!file || file.isDirectory()) {
+                Log->println("http_ssl.key not found");
+            }
+            else
+            {
+                Log->println("Reading http_ssl.key");
+                uint32_t i = 0;
+                while(file.available()){
+                     key[i] = file.read();
+                     i++;
+                }
+                file.close();
+            }
+        }
+        #endif
+        printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", key, 2200, true, true);
     }
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -4348,6 +4512,10 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_cred_password, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
+    //response.print("\nHTTP SSL CRT: ");
+    //response.print(_preferences->getString(preference_http_crt, "").length() > 0 ? "***" : "Not set");
+    //response.print("\nHTTP SSL Key: ");
+    //response.print(_preferences->getString(preference_http_key, "").length() > 0 ? "***" : "Not set");
     response.print("\nPublish debug information enabled: ");
     response.print(_preferences->getBool(preference_publish_debug_info, false) ? "Yes" : "No");
     response.print("\nMQTT log enabled: ");

@@ -59,7 +59,8 @@ private:
     esp_err_t buildNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildMqttConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildMqttSSLConfigHtml(PsychicRequest *request, PsychicResponse* resp, int type=0);
-    esp_err_t buildStatusHtml(PsychicRequest *request, PsychicResponse* resp);    
+    esp_err_t buildHttpSSLConfigHtml(PsychicRequest *request, PsychicResponse* resp, int type=0);
+    esp_err_t buildStatusHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildAdvancedConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildNukiConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildGpioConfigHtml(PsychicRequest *request, PsychicResponse* resp);
@@ -94,12 +95,12 @@ private:
     bool _brokerConfigured = false;
     bool _rebootRequired = false;
     #endif
-    
+
     std::vector<String> _ssidList;
     std::vector<int> _rssiList;
     String generateConfirmCode();
     String _confirmCode = "----";
-    
+
     esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
@@ -113,11 +114,11 @@ private:
     #ifndef CONFIG_IDF_TARGET_ESP32H2
     esp_err_t buildWifiConnectHtml(PsychicRequest *request, PsychicResponse* resp);
     bool processWiFi(PsychicRequest *request, PsychicResponse* resp, String& message);
-    
+
     #endif
     void printInputField(PsychicStreamResponse *response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* args, const bool& isPassword = false, const bool& showLengthRestriction = false);
     void printInputField(PsychicStreamResponse *response, const char* token, const char* description, const int value, size_t maxLength, const char* args);
-    
+
     PsychicHttpServer* _psychicServer = nullptr;
     NukiNetwork* _network = nullptr;
     Preferences* _preferences = nullptr;

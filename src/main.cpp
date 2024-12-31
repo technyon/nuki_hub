@@ -10,6 +10,11 @@
 #include "esp32-hal-log.h"
 #include "hal/wdt_hal.h"
 #include "esp_chip_info.h"
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#include "esp_psram.h"
+#include "FS.h"
+#include "SPIFFS.h"
+#endif
 
 #ifndef NUKI_HUB_UPDATER
 #include "NukiWrapper.h"
@@ -65,8 +70,10 @@ int64_t restartTs = 10 * 60 * 1000;
 #endif
 
 PsychicHttpServer* psychicServer = nullptr;
+PsychicHttpsServer* psychicSSLServer = nullptr;
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
+WebCfgServer* webCfgServerSSL = nullptr;
 Preferences* preferences = nullptr;
 
 RTC_NOINIT_ATTR int espRunning;
@@ -539,14 +546,84 @@ void setup()
 
     if(!doOta)
     {
-        psychicServer = new PsychicHttpServer;
-        psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-        webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
-        webCfgServer->initialize();
-        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
-            return response->redirect("/");
-        });
-        psychicServer->begin();
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        bool failed = false;
+
+        if (esp_psram_get_size() <= 0) {
+            Log->println("Not running on PSRAM enabled device");
+            failed = true;
+        }
+        else
+        {
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+                failed = true;
+            }
+            else
+            {
+                File file = SPIFFS.open("/http_ssl.crt");
+                if (!file || file.isDirectory()) {
+                    failed = true;
+                    Log->println("http_ssl.crt not found");
+                }
+                else
+                {
+                    char cert[4400] = {0};
+
+                    Log->println("Reading http_ssl.crt");
+                    uint32_t i = 0;
+                    while(file.available()){
+                         cert[i] = file.read();
+                         i++;
+                    }
+                    file.close();
+
+                    File file2 = SPIFFS.open("/http_ssl.key");
+                    if (!file2 || file2.isDirectory()) {
+                        failed = true;
+                        Log->println("http_ssl.key not found");
+                    }
+                    else
+                    {
+                        char key[2200] = {0};
+
+                        Log->println("Reading http_ssl.key");
+                        i = 0;
+                        while(file2.available()){
+                             key[i] = file2.read();
+                             i++;
+                        }
+                        file2.close();
+
+                        psychicSSLServer = new PsychicHttpsServer;
+                        psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
+                        psychicSSLServer->setCertificate(cert, key);
+                        psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
+                        webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer);
+                        webCfgServerSSL->initialize();
+                        psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                            return response->redirect("/");
+                        });
+                        psychicSSLServer->begin();
+                    }
+                }
+            }
+        }
+
+        if (failed)
+        {
+        #endif
+            psychicServer = new PsychicHttpServer;
+            psychicServer->config.stack_size = HTTPD_TASK_SIZE;
+            webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
+            webCfgServer->initialize();
+            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                return response->redirect("/");
+            });
+            psychicServer->begin();
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        }
+        #endif
     }
 #else
     if(preferences->getBool(preference_enable_bootloop_reset, false))
@@ -633,17 +710,86 @@ void setup()
 
     if(!doOta && !disableNetwork && (forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false)))
     {
-        psychicServer = new PsychicHttpServer;
-        psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-
         if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
         {
-            webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
-            webCfgServer->initialize();
-            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
-                return response->redirect("/");
-            });
-            psychicServer->begin();
+            #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+            bool failed = false;
+
+            if (esp_psram_get_size() <= 0) {
+                Log->println("Not running on PSRAM enabled device");
+                failed = true;
+            }
+            else
+            {
+                if (!SPIFFS.begin(true)) {
+                    Log->println("SPIFFS Mount Failed");
+                    failed = true;
+                }
+                else
+                {
+                    File file = SPIFFS.open("/http_ssl.crt");
+                    if (!file || file.isDirectory()) {
+                        failed = true;
+                        Log->println("http_ssl.crt not found");
+                    }
+                    else
+                    {
+                        char cert[4400] = {0};
+
+                        Log->println("Reading http_ssl.crt");
+                        uint32_t i = 0;
+                        while(file.available()){
+                             cert[i] = file.read();
+                             i++;
+                        }
+                        file.close();
+
+                        File file2 = SPIFFS.open("/http_ssl.key");
+                        if (!file2 || file2.isDirectory()) {
+                            failed = true;
+                            Log->println("http_ssl.key not found");
+                        }
+                        else
+                        {
+                            char key[2200] = {0};
+
+                            Log->println("Reading http_ssl.key");
+                            i = 0;
+                            while(file2.available()){
+                                 key[i] = file2.read();
+                                 i++;
+                            }
+                            file2.close();
+
+                            psychicSSLServer = new PsychicHttpsServer;
+                            psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
+                            psychicSSLServer->setCertificate(cert, key);
+                            psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
+                            webCfgServerSSL = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer);
+                            webCfgServerSSL->initialize();
+                            psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                                return response->redirect("/");
+                            });
+                            psychicSSLServer->begin();
+                        }
+                    }
+                }
+            }
+
+            if (failed)
+            {
+            #endif
+                psychicServer = new PsychicHttpServer;
+                psychicServer->config.stack_size = HTTPD_TASK_SIZE;
+                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
+                webCfgServer->initialize();
+                psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                    return response->redirect("/");
+                });
+                psychicServer->begin();
+            #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+            }
+            #endif
         }
         /*
 #ifdef DEBUG_NUKIHUB

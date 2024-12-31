@@ -52,20 +52,16 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 
 ## Recommended ESP32 devices
 
-- If WIFI6 is absolutely required: ESP32-C6
-- If PoE is required: Any of the above mentioned devices with PoE or any other ESP device in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html)
-- If you want maximum performance and intend to run any or multiple of the following:
-  - a Nuki Lock and Nuki Opener and/or 
-  - MQTT SSL and/or 
-  - HTTP SSL and/or 
-  - large amounts of keypad codes, timecontrol or authorization entries
-  - Developing/debugging Nuki devices and/or Nuki Hub
+We don't recommend using single-core ESP32 devices (ESP32-C3, ESP32-C6, ESP32-H2, ESP32-Solo1).<br>
+Although NukiHub supports single-core devices, NukiHub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs much better on dual-core devices.<br>
 
-  An ESP32-S3 with 2MB of PSRAM or more (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8)
-  
-- In general when buying a new device when size and a couple of dollars more or less are not an issue: An ESP32-S3 with 2MB of PSRAM or more.<br>
+When buying a new device in 2025 we can only recommend the ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
+The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter.<br>
+The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
 
-The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter. The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 and the ability to connect over WIFI6 (C6)
+Other considerations:
+- If PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the M5stack Atom S3R with the M5stack AtomPoe W5500 module
+- If WIFI6 is absolutely required (it probably isn't): ESP32-C6
 
 ## Feature comparison
 
@@ -194,6 +190,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
 - Restart on disconnect: Enable to restart the Nuki Hub when disconnected from the network.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
+- HTTP SSL Certificate (PSRAM enabled devices only): Optionally set to the SSL certificate of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
+- HTTP SSL Key (PSRAM enabled devices only): Optionally set to the SSL key of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
 
 #### IP Address assignment
 
@@ -575,6 +573,23 @@ openssl req -new -key server.key -out server.csr -subj "/C=US/ST=YourState/L=You
 # sign it
  openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 3650
 ```
+
+## HTTPS Server (optional, PSRAM enabled devices only)
+
+The Webconfigurator can use/force HTTPS on PSRAM enabled devices.<br>
+To enable SSL encryption, supply the certificate and key in the Network configuration page and reboot NukiHub.<br>
+
+Example self-signed certificate creation for your HTTPS server:
+```console
+
+# make a Certificate and key pair, MAKE SURE THE CN MATCHES THE DOMAIN AT WHICH NUKIHUB IS AVAILABLE
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout nukihub.key -out nukihub.crt -subj "/C=US/ST=YourState/L=YourCity/O=YourOrganization/OU=YourUnit/CN=YourCAName"
+
+```
+
+Although you can use the HTTPS server in this way your client device will not trust the certificate by default.
+An option would be to configure a proxy SSL server (such as Caddy, Traefik, nginx) with a non-self signed (e.g. let's encrypt) SSL certificate and have this proxy server connect to NukiHub over SSL and trust the self-signed NukiHub certificate for this connection.
+
 ## Home Assistant Discovery (optional)
 
 This software supports [MQTT Discovery](https://www.home-assistant.io/docs/mqtt/discovery/) for integrating Nuki Hub with Home Assistant.<br>
