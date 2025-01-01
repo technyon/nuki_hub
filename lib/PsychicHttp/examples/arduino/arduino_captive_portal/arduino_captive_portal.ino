@@ -14,7 +14,7 @@
 #include <ESPmDNS.h>
 #include <PsychicHttp.h>
 
-char* TAG = "CAPTPORT";
+#define TAG "CAPTPORT"
 
 // captiveportal
 // credits https://github.com/me-no-dev/ESPAsyncWebServer/blob/master/examples/CaptivePortal/CaptivePortal.ino
@@ -29,10 +29,10 @@ public:
     // ... if needed some tests ... return(false);
     return true;  // activate captive portal
   }
-  esp_err_t handleRequest(PsychicRequest *request) {   
+  esp_err_t handleRequest(PsychicRequest *request, PsychicResponse *response) {   
    //PsychicFileResponse response(request, LittleFS, "/captiveportal.html"); // uncomment : for captive portal page, if any, eg "captiveportal.html"
    //return response.send();                                                 // uncomment : return captive portal page
-   return request->reply(200,"text/html","Welcome to captive portal !");     // simple text, comment if captive portal page
+   return response->send(200,"text/html","Welcome to captive portal !");     // simple text, comment if captive portal page
   }
 };
 CaptiveRequestHandler *captivehandler=NULL;             // handler for captive portal
@@ -128,7 +128,6 @@ void setup() {
 
     //setup server config stuff here
     server.config.max_uri_handlers = 20; //maximum number of uri handlers (.on() calls)
-    server.listen(80);
         
     DefaultHeaders::Instance().addHeader("Server", "PsychicHttp");
 

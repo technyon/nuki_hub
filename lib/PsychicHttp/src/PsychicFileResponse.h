@@ -6,16 +6,18 @@
 
 class PsychicRequest;
 
-class PsychicFileResponse: public PsychicResponse
+class PsychicFileResponse : public PsychicResponseDelegate
 {
-  using File = fs::File;
-  using FS = fs::FS;
-  private:
+    using File = fs::File;
+    using FS = fs::FS;
+
+  protected:
     File _content;
-    void _setContentType(const String& path);
+    void _setContentTypeFromPath(const String& path);
+
   public:
-    PsychicFileResponse(PsychicRequest *request, FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    PsychicFileResponse(PsychicRequest *request, File content, const String& path, const String& contentType=String(), bool download=false);
+    PsychicFileResponse(PsychicResponse* response, FS& fs, const String& path, const String& contentType = String(), bool download = false);
+    PsychicFileResponse(PsychicResponse* response, File content, const String& path, const String& contentType = String(), bool download = false);
     ~PsychicFileResponse();
     esp_err_t send();
 };

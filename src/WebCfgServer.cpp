@@ -5,7 +5,9 @@
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-#include <esp_psram.h>
+#include "esp_psram.h"
+#include "FS.h"
+#include "SPIFFS.h"
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
@@ -75,64 +77,80 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
 
 void WebCfgServer::initialize()
 {
-    _psychicServer->on("/", HTTP_GET, [&](PsychicRequest *request)
+    _psychicServer->onOpen([&](PsychicClient* client) { Log->printf("[http] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str()); });
+    _psychicServer->onClose([&](PsychicClient* client) { Log->printf("[http] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str()); });
+
+    HTTPAuthMethod auth_type = BASIC_AUTH;
+    if (_preferences->getBool(preference_http_auth_type, false))
+    {
+        auth_type = DIGEST_AUTH;
+    }
+
+    _psychicServer->on("/", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
         {
-            return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
         }
+
+#ifndef CONFIG_IDF_TARGET_ESP32H2
         if(!_network->isApOpen())
         {
-#ifndef NUKI_HUB_UPDATER
-            return buildHtml(request);
-#else
-            return buildOtaHtml(request);
 #endif
-        }
+#ifndef NUKI_HUB_UPDATER
+            return buildHtml(request, resp);
+#else
+            return buildOtaHtml(request, resp);
+#endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
+        }
         else
         {
-            return buildWifiConnectHtml(request);
+            return buildWifiConnectHtml(request, resp);
         }
 #endif
     });
-    _psychicServer->on("/style.css", HTTP_GET, [&](PsychicRequest *request)
+    _psychicServer->on("/style.css", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
         {
-            return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
         }
-        return sendCss(request);
+
+        return sendCss(request, resp);
     });
-    _psychicServer->on("/favicon.ico", HTTP_GET, [&](PsychicRequest *request)
+    _psychicServer->on("/favicon.ico", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
         if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
         {
-            return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+            return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
         }
-        return sendFavicon(request);
+
+        return sendFavicon(request, resp);
     });
 
     if(_network->isApOpen())
     {
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-        _psychicServer->on("/ssidlist", HTTP_GET, [&](PsychicRequest *request)
+        _psychicServer->on("/ssidlist", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
             {
-                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
-            return buildSSIDListHtml(request);
+
+            return buildSSIDListHtml(request, resp);
         });
-        _psychicServer->on("/savewifi", HTTP_POST, [&](PsychicRequest *request)
+        _psychicServer->on("/savewifi", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
             {
-                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
+
             String message = "";
-            bool connected = processWiFi(request, message);
-            esp_err_t res = buildConfirmHtml(request, message, 10, true);
+            bool connected = processWiFi(request, resp, message);
+            esp_err_t res = buildConfirmHtml(request, resp, message, 10, true);
 
             if(connected)
             {
@@ -142,11 +160,11 @@ void WebCfgServer::initialize()
             }
             return res;
         });
-        _psychicServer->on("/reboot", HTTP_GET, [&](PsychicRequest *request)
+        _psychicServer->on("/reboot", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
             {
-                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
 
             String value = "";
@@ -160,14 +178,14 @@ void WebCfgServer::initialize()
             }
             else
             {
-                return buildConfirmHtml(request, "No confirm code set.", 3, true);
+                return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
             }
 
             if(value != _confirmCode)
             {
-                return request->redirect("/");
+                return resp->redirect("/");
             }
-            esp_err_t res = buildConfirmHtml(request, "Rebooting...", 2, true);
+            esp_err_t res = buildConfirmHtml(request, resp, "Rebooting...", 2, true);
             waitAndProcess(true, 1000);
             restartEsp(RestartReason::RequestedViaWebServer);
             return res;
@@ -176,11 +194,11 @@ void WebCfgServer::initialize()
     }
     else
     {
-        _psychicServer->on("/get", HTTP_GET, [&](PsychicRequest *request)
+        _psychicServer->on("/get", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
             {
-                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
 
             String value = "";
@@ -206,14 +224,14 @@ void WebCfgServer::initialize()
                 }
                 else
                 {
-                    return buildConfirmHtml(request, "No confirm code set.", 3, true);
+                    return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
                 }
 
                 if(value != _confirmCode)
                 {
-                    return request->redirect("/");
+                    return resp->redirect("/");
                 }
-                esp_err_t res = buildConfirmHtml(request, "Rebooting...", 2, true);
+                esp_err_t res = buildConfirmHtml(request, resp, "Rebooting...", 2, true);
                 waitAndProcess(true, 1000);
                 restartEsp(RestartReason::RequestedViaWebServer);
                 return res;
@@ -221,78 +239,86 @@ void WebCfgServer::initialize()
             #ifndef NUKI_HUB_UPDATER
             else if (value == "info")
             {
-                return buildInfoHtml(request);
+                return buildInfoHtml(request, resp);
             }
             else if (value == "debugon")
             {
                 _preferences->putBool(preference_publish_debug_info, true);
-                return buildConfirmHtml(request, "Debug On", 3, true);
+                return buildConfirmHtml(request, resp, "Debug On", 3, true);
             }
             else if (value == "debugoff")
             {
                 _preferences->putBool(preference_publish_debug_info, false);
-                return buildConfirmHtml(request, "Debug Off", 3, true);
+                return buildConfirmHtml(request, resp, "Debug Off", 3, true);
             }
             else if (value == "export")
             {
-                return sendSettings(request);
+                return sendSettings(request, resp);
             }
             else if (value == "impexpcfg")
             {
-                return buildImportExportHtml(request);
+                return buildImportExportHtml(request, resp);
             }
             else if (value == "status")
             {
-                return buildStatusHtml(request);
+                return buildStatusHtml(request, resp);
             }
             else if (value == "acclvl")
             {
-                return buildAccLvlHtml(request);
+                return buildAccLvlHtml(request, resp);
             }
             else if (value == "custntw")
             {
-                return buildCustomNetworkConfigHtml(request);
+                return buildCustomNetworkConfigHtml(request, resp);
             }
             else if (value == "advanced")
             {
-                return buildAdvancedConfigHtml(request);
+                return buildAdvancedConfigHtml(request, resp);
             }
             else if (value == "cred")
             {
-                return buildCredHtml(request);
+                return buildCredHtml(request, resp);
             }
             else if (value == "ntwconfig")
             {
-                return buildNetworkConfigHtml(request);
+                return buildNetworkConfigHtml(request, resp);
             }
             else if (value == "mqttconfig")
             {
-                return buildMqttConfigHtml(request);
+                return buildMqttConfigHtml(request, resp);
             }
             else if (value == "mqttcaconfig")
             {
-                return buildMqttSSLConfigHtml(request, 0);
+                return buildMqttSSLConfigHtml(request, resp, 0);
             }
             else if (value == "mqttcrtconfig")
             {
-                return buildMqttSSLConfigHtml(request, 1);
+                return buildMqttSSLConfigHtml(request, resp, 1);
             }
             else if (value == "mqttkeyconfig")
             {
-                return buildMqttSSLConfigHtml(request, 2);
+                return buildMqttSSLConfigHtml(request, resp, 2);
+            }
+            else if (value == "httpcrtconfig")
+            {
+                return buildHttpSSLConfigHtml(request, resp, 1);
+            }
+            else if (value == "httpkeyconfig")
+            {
+                return buildHttpSSLConfigHtml(request, resp, 2);
             }
             else if (value == "nukicfg")
             {
-                return buildNukiConfigHtml(request);
+                return buildNukiConfigHtml(request, resp);
             }
             else if (value == "gpiocfg")
             {
-                return buildGpioConfigHtml(request);
+                return buildGpioConfigHtml(request, resp);
             }
             #ifndef CONFIG_IDF_TARGET_ESP32H2
             else if (value == "wifi")
             {
-                return buildConfigureWifiHtml(request);
+                return buildConfigureWifiHtml(request, resp);
             }
             else if (value == "wifimanager")
             {
@@ -307,17 +333,17 @@ void WebCfgServer::initialize()
                 }
                 else
                 {
-                    return buildConfirmHtml(request, "No confirm code set.", 3, true);
+                    return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
                 }
                 if(value != _confirmCode)
                 {
-                    return request->redirect("/");
+                    return resp->redirect("/");
                 }
                 if(!_allowRestartToPortal)
                 {
-                    return buildConfirmHtml(request, "Can't reset WiFi when network device is Ethernet", 3, true);
+                    return buildConfirmHtml(request, resp, "Can't reset WiFi when network device is Ethernet", 3, true);
                 }
-                esp_err_t res = buildConfirmHtml(request, "Restarting. Connect to ESP access point (\"NukiHub\" with password \"NukiHubESP32\") to reconfigure Wi-Fi.", 0);
+                esp_err_t res = buildConfirmHtml(request, resp, "Restarting. Connect to ESP access point (\"NukiHub\" with password \"NukiHubESP32\") to reconfigure Wi-Fi.", 0);
                 waitAndProcess(false, 1000);
                 _network->reconfigureDevice();
                 return res;
@@ -326,11 +352,11 @@ void WebCfgServer::initialize()
             #endif
             else if (value == "ota")
             {
-                return buildOtaHtml(request);
+                return buildOtaHtml(request, resp);
             }
             else if (value == "otadebug")
             {
-                return buildOtaHtml(request, true);
+                return buildOtaHtml(request, resp, true);
             }
             else if (value == "reboottoota")
             {
@@ -345,14 +371,14 @@ void WebCfgServer::initialize()
                 }
                 else
                 {
-                    return buildConfirmHtml(request, "No confirm code set.", 3, true);
+                    return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
                 }
 
                 if(value != _confirmCode)
                 {
-                    return request->redirect("/");
+                    return resp->redirect("/");
                 }
-                esp_err_t res = buildConfirmHtml(request, "Rebooting to other partition...", 2, true);
+                esp_err_t res = buildConfirmHtml(request, resp, "Rebooting to other partition...", 2, true);
                 waitAndProcess(true, 1000);
                 esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
                 restartEsp(RestartReason::OTAReboot);
@@ -361,34 +387,36 @@ void WebCfgServer::initialize()
             else if (value == "autoupdate")
             {
                 #ifndef NUKI_HUB_UPDATER
-                return processUpdate(request);
+                return processUpdate(request, resp);
                 #else
-                return request->redirect("/");
+                return resp->redirect("/");
                 #endif
             }
             else
             {
+                #ifndef CONFIG_IDF_TARGET_ESP32H2
                 if(!_network->isApOpen())
                 {
+                #endif
                     #ifndef NUKI_HUB_UPDATER
-                    return buildHtml(request);
+                    return buildHtml(request, resp);
                     #else
-                    return buildOtaHtml(request);
+                    return buildOtaHtml(request, resp);
                     #endif
-                }
                 #ifndef CONFIG_IDF_TARGET_ESP32H2
+                }
                 else
                 {
-                    return buildWifiConnectHtml(request);
+                    return buildWifiConnectHtml(request, resp);
                 }
                 #endif
             }
         });
-        _psychicServer->on("/post", HTTP_POST, [&](PsychicRequest *request)
+        _psychicServer->on("/post", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
             {
-                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
 
             String value = "";
@@ -405,20 +433,24 @@ void WebCfgServer::initialize()
             if (value == "savecfg")
             {
                 String message = "";
-                bool restart = processArgs(request, message);
+                bool restart = processArgs(request, resp, message);
                 if(request->hasParam("mqttssl"))
                 {
-                    return buildConfirmHtml(request, message, 3, true, "/get?page=mqttconfig");
+                    return buildConfirmHtml(request, resp, message, 3, true, "/get?page=mqttconfig");
+                }
+                else if(request->hasParam("httpssl"))
+                {
+                    return buildConfirmHtml(request, resp, message, 3, true, "/get?page=ntwconfig");
                 }
                 else
                 {
-                    return buildConfirmHtml(request, message, 3, true);
+                    return buildConfirmHtml(request, resp, message, 3, true);
                 }
             }
             else if (value == "savegpiocfg")
             {
-                processGpioArgs(request);
-                esp_err_t res = buildConfirmHtml(request, "Saving GPIO configuration. Restarting.", 3, true);
+                processGpioArgs(request, resp);
+                esp_err_t res = buildConfirmHtml(request, resp, "Saving GPIO configuration. Restarting.", 3, true);
                 Log->println(F("Restarting"));
                 waitAndProcess(true, 1000);
                 restartEsp(RestartReason::GpioConfigurationUpdated);
@@ -426,60 +458,62 @@ void WebCfgServer::initialize()
             }
             else if (value == "unpairlock")
             {
-                return processUnpair(request, false);
+                return processUnpair(request, resp, false);
             }
             else if (value == "unpairopener")
             {
-                return processUnpair(request, true);
+                return processUnpair(request, resp, true);
             }
             else if (value == "factoryreset")
             {
-                return processFactoryReset(request);
+                return processFactoryReset(request, resp);
             }
             else if (value == "import")
             {
                 String message = "";
-                bool restart = processImport(request, message);
-                return buildConfirmHtml(request, message, 3, true);
+                bool restart = processImport(request, resp, message);
+                return buildConfirmHtml(request, resp, message, 3, true);
             }
             else
             #else
             if (1 == 1)
             #endif
             {
+                #ifndef CONFIG_IDF_TARGET_ESP32H2
                 if(!_network->isApOpen())
                 {
+                #endif
                     #ifndef NUKI_HUB_UPDATER
-                    return buildHtml(request);
+                    return buildHtml(request, resp);
                     #else
-                    return buildOtaHtml(request);
+                    return buildOtaHtml(request, resp);
                     #endif
-                }
                 #ifndef CONFIG_IDF_TARGET_ESP32H2
+                }
                 else
                 {
-                    return buildWifiConnectHtml(request);
+                    return buildWifiConnectHtml(request, resp);
                 }
                 #endif
             }
         });
 
         PsychicUploadHandler *updateHandler = new PsychicUploadHandler();
-        updateHandler->onUpload([&](PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final)
+        updateHandler->onUpload([&](PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool last)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
             {
-                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
-            return handleOtaUpload(request, filename, index, data, len, final);
-        }
-                               );
 
-        updateHandler->onRequest([&](PsychicRequest *request)
+            return handleOtaUpload(request, filename, index, data, len, last);
+        });
+
+        updateHandler->onRequest([&](PsychicRequest* request, PsychicResponse* resp)
         {
             if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
             {
-                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
             }
 
             String result;
@@ -488,7 +522,10 @@ void WebCfgServer::initialize()
                 Log->print("Update code or data OK Update.errorString() ");
                 Log->println(Update.errorString());
                 result = "<b style='color:green'>Update OK.</b>";
-                esp_err_t res = request->reply(200,"text/html",result.c_str());
+                resp->setCode(200);
+                resp->setContentType("text/html");
+                resp->setContent(result.c_str());
+                esp_err_t res = resp->send();
                 restartEsp(RestartReason::OTACompleted);
                 return res;
             }
@@ -497,7 +534,10 @@ void WebCfgServer::initialize()
                 result = " Update.errorString() " + String(Update.errorString());
                 Log->print("ERROR : error ");
                 Log->println(result.c_str());
-                esp_err_t res = request->reply(500, "text/html", result.c_str());
+                resp->setCode(500);
+                resp->setContentType("text/html");
+                resp->setContent(result.c_str());
+                esp_err_t res = resp->send();
                 restartEsp(RestartReason::OTAAborted);
                 return res;
             }
@@ -531,12 +571,12 @@ void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *to
 }
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-esp_err_t WebCfgServer::buildSSIDListHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     _network->scan(true, false);
     createSsidList();
 
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
 
     for (int i = 0; i < _ssidList.size(); i++)
@@ -585,10 +625,10 @@ void WebCfgServer::createSsidList()
     }
 }
 
-esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     String header = "<style>.trssid:hover { cursor: pointer; color: blue; }</style><script>let intervalId; window.onload = function() { intervalId = setInterval(updateSSID, 3000); }; function updateSSID() { var request = new XMLHttpRequest(); request.open('GET', '/ssidlist', true); request.onload = () => { if (document.getElementById(\"aplist\") !== null) { document.getElementById(\"aplist\").innerHTML = request.responseText; } }; request.send(); }</script>";
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
     response.print("<h3>Available WiFi networks</h3>");
@@ -622,7 +662,7 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-bool WebCfgServer::processWiFi(PsychicRequest *request, String& message)
+bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, String& message)
 {
     bool res = false;
     int params = request->params();
@@ -752,9 +792,9 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, String& message)
 }
 #endif
 
-esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, bool debug)
+esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
 
     buildHtmlHeader(&response);
@@ -1117,9 +1157,9 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
     }
 }
 
-esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, const String &message, uint32_t redirectDelay, bool redirect, String redirectTo)
+esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay, bool redirect, String redirectTo)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     String header;
 
@@ -1139,25 +1179,23 @@ esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, const String &
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::sendCss(PsychicRequest *request)
+esp_err_t WebCfgServer::sendCss(PsychicRequest* request, PsychicResponse* resp)
 {
     // escaped by https://www.cescaper.com/
-    PsychicResponse response(request);
-    response.addHeader("Cache-Control", "public, max-age=3600");
-    response.setCode(200);
-    response.setContentType("text/css");
-    response.setContent(stylecss);
-    return response.send();
+    resp->addHeader("Cache-Control", "public, max-age=3600");
+    resp->setCode(200);
+    resp->setContentType("text/css");
+    resp->setContent(stylecss);
+    return resp->send();
 }
 
-esp_err_t WebCfgServer::sendFavicon(PsychicRequest *request)
+esp_err_t WebCfgServer::sendFavicon(PsychicRequest* request, PsychicResponse* resp)
 {
-    PsychicResponse response(request);
-    response.addHeader("Cache-Control", "public, max-age=604800");
-    response.setCode(200);
-    response.setContentType("image/png");
-    response.setContent((const uint8_t *)favicon_32x32, sizeof(favicon_32x32));
-    return response.send();
+    resp->addHeader("Cache-Control", "public, max-age=604800");
+    resp->setCode(200);
+    resp->setContentType("image/png");
+    resp->setContent((const uint8_t *)favicon_32x32, sizeof(favicon_32x32));
+    return resp->send();
 }
 
 String WebCfgServer::generateConfirmCode()
@@ -1166,7 +1204,7 @@ String WebCfgServer::generateConfirmCode()
     return String(code);
 }
 
-void WebCfgServer::printInputField(PsychicStreamResponse *response,
+void WebCfgServer::printInputField(PsychicStreamResponse* response,
                                    const char *token,
                                    const char *description,
                                    const char *value,
@@ -1223,7 +1261,7 @@ void WebCfgServer::printInputField(PsychicStreamResponse *response,
 }
 
 #ifndef NUKI_HUB_UPDATER
-esp_err_t WebCfgServer::sendSettings(PsychicRequest *request)
+esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* resp)
 {
     bool redacted = false;
     bool pairing = false;
@@ -1425,11 +1463,13 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request)
     }
 
     serializeJsonPretty(json, jsonPretty);
-
-    return request->reply(200, "application/json", jsonPretty.c_str());
+    resp->setCode(200);
+    resp->setContentType("application/json");
+    resp->setContent(jsonPretty.c_str());
+    return resp->send();
 }
 
-bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
+bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, String& message)
 {
     bool configChanged = false;
     bool aclLvlChanged = false;
@@ -1562,6 +1602,74 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 configChanged = true;
             }
         }
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        else if(key == "HTTPCRT")
+        {
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+                    if (!file) {
+                        Log->println("Failed to open /http_ssl.crt for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /http_ssl.crt");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/http_ssl.crt")) {
+                        Serial.println("Failed to delete /http_ssl.crt");
+                    }
+                }
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "HTTPKEY")
+        {
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+                    if (!file) {
+                        Log->println("Failed to open /http_ssl.key for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /http_ssl.key");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/http_ssl.key")) {
+                        Serial.println("Failed to delete /http_ssl.key");
+                    }
+                }
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        #endif
         else if(key == "NWHW")
         {
             if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
@@ -2426,6 +2534,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
                 //configChanged = true;
             }
         }
+        else if(key == "CREDDIGEST")
+        {
+            if(_preferences->getBool(preference_http_auth_type, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_http_auth_type, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "ACLLCKLCK")
         {
             aclPrefs[0] = ((value == "1") ? 1 : 0);
@@ -2996,7 +3114,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
         configChanged = true;
     }
 
-    if(pass1 != "" && pass1 == pass2)
+    if(pass1 != "" && pass1 != "*" && pass1 == pass2)
     {
         if(_preferences->getString(preference_cred_password, "") != pass1)
         {
@@ -3137,7 +3255,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, String& message)
     return configChanged;
 }
 
-bool WebCfgServer::processImport(PsychicRequest *request, String& message)
+bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp, String& message)
 {
     bool configChanged = false;
     unsigned char currentBleAddress[6];
@@ -3361,7 +3479,7 @@ bool WebCfgServer::processImport(PsychicRequest *request, String& message)
     return configChanged;
 }
 
-void WebCfgServer::processGpioArgs(PsychicRequest *request)
+void WebCfgServer::processGpioArgs(PsychicRequest *request, PsychicResponse* resp)
 {
     int params = request->params();
     std::vector<PinEntry> pinConfiguration;
@@ -3393,9 +3511,9 @@ void WebCfgServer::processGpioArgs(PsychicRequest *request)
     _gpio->savePinConfiguration(pinConfiguration);
 }
 
-esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<div id=\"upform\"><h4>Import configuration</h4>");
@@ -3411,10 +3529,10 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     String header = "<script>window.onload=function(){var physelect=document.getElementsByName('NWCUSTPHY')[0];hideshowopt(physelect.value);physelect.addEventListener('change', function(event){var select=event.target;var selectedOption=select.options[select.selectedIndex];hideshowopt(selectedOption.getAttribute('value'));});};function hideshowopt(value){if(value>=1&&value<=3){hideopt('internalopt',true);hideopt('externalopt',false);}else if(value>=4&&value<=9){hideopt('internalopt', false);hideopt('externalopt', true);}else {hideopt('internalopt', true);hideopt('externalopt', true);}}function hideopt(opts,hide){var hideopts = document.getElementsByClassName(opts);for(var i=0;i<hideopts.length;i++){if(hide==true){hideopts[i].style.display='none';}else{hideopts[i].style.display='block';}}}</script>";
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
     response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
@@ -3442,10 +3560,10 @@ esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     String header = "<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
     if(_rebootRequired)
@@ -3541,9 +3659,9 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form id=\"credfrm\" class=\"adapt\" onsubmit=\"return testcreds();\" method=\"post\" action=\"post\">");
@@ -3553,6 +3671,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
     printInputField(&response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "id=\"inputuser\"", false, true);
     printInputField(&response, "CREDPASS", "Password", "*", 30, "id=\"inputpass\"", true, true);
     printInputField(&response, "CREDPASSRE", "Retype password", "*", 30, "id=\"inputpass2\"", true);
+    printCheckBox(&response, "CREDDIGEST", "Use Digest Authentication (more secure)", _preferences->getBool(preference_http_auth_type, false), "");
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var input_pass2 = document.getElementById(\"inputpass2\").value; var pattern = /^[ -~]*$/; if(input_user == '#' || input_user == '') { return true; } if (input_pass != input_pass2) { alert('Passwords do not match'); return false;} if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
@@ -3626,9 +3745,9 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
@@ -3644,6 +3763,13 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request)
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    if(esp_psram_get_size() > 0)
+    {
+        response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
+        response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set MQTT SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
+    }
+    #endif
     response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
@@ -3659,9 +3785,9 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
@@ -3685,7 +3811,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
     }
     response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><button title=\"Set MQTT SSL CA Certificate\" onclick=\" window.open('/get?page=mqttcaconfig', '_self'); return false;\">Change</button></td></tr>");
-    response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client CA Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
+    response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");
     printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
     printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
@@ -3705,9 +3831,9 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, int type)
+esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicResponse* resp, int type)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
@@ -3736,9 +3862,84 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, int type
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicResponse* resp, int type)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    buildHtmlHeader(&response);
+    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
+    response.print("<input type=\"hidden\" name=\"httpssl\" value=\"1\">");
+    response.print("<h3>HTTP SSL Configuration</h3>");
+    response.print("<table>");
+
+    if (type == 1)
+    {
+        char cert[4400] = {0};
+        
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt");
+            if (!file || file.isDirectory()) {
+                Log->println("http_ssl.crt not found");
+            }
+            else
+            {
+                Log->println("Reading http_ssl.crt");
+                uint32_t i = 0;
+                while(file.available()){
+                     cert[i] = file.read();
+                     i++;
+                }
+                file.close();
+            }
+        }
+        #endif
+        printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", cert, 4400, true, true);
+    }
+    else
+    {
+        char key[2200] = {0};
+        
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.key");
+            if (!file || file.isDirectory()) {
+                Log->println("http_ssl.key not found");
+            }
+            else
+            {
+                Log->println("Reading http_ssl.key");
+                uint32_t i = 0;
+                while(file.available()){
+                     key[i] = file.read();
+                     i++;
+                }
+                file.close();
+            }
+        }
+        #endif
+        printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", key, 2200, true, true);
+    }
+    response.print("</table>");
+    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("</form>");
+    response.print("</body>");
+    response.print("</html>");
+    return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
@@ -3815,7 +4016,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     JsonDocument json;
     String jsonStr;
@@ -3913,7 +4114,10 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request)
     }
 
     serializeJson(json, jsonStr);
-    return request->reply(200, "application/json", jsonStr.c_str());
+    resp->setCode(200);
+    resp->setContentType("application/json");
+    resp->setContent(jsonStr.c_str());
+    return resp->send();
 }
 
 String WebCfgServer::pinStateToString(uint8_t value)
@@ -3931,9 +4135,9 @@ String WebCfgServer::pinStateToString(uint8_t value)
     }
 }
 
-esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
 
@@ -4115,9 +4319,9 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
@@ -4158,9 +4362,9 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form method=\"post\" action=\"post\">");
@@ -4213,9 +4417,9 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request)
 }
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<form method=\"get\" action=\"get\">");
@@ -4229,11 +4433,11 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request)
 }
 #endif
 
-esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
+esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
-    PsychicStreamResponse response(request, "text/html");
+    PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<h3>System Information</h3><pre>");
@@ -4308,6 +4512,10 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     response.print(_preferences->getString(preference_cred_password, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
+    //response.print("\nHTTP SSL CRT: ");
+    //response.print(_preferences->getString(preference_http_crt, "").length() > 0 ? "***" : "Not set");
+    //response.print("\nHTTP SSL Key: ");
+    //response.print(_preferences->getString(preference_http_key, "").length() > 0 ? "***" : "Not set");
     response.print("\nPublish debug information enabled: ");
     response.print(_preferences->getBool(preference_publish_debug_info, false) ? "Yes" : "No");
     response.print("\nMQTT log enabled: ");
@@ -4836,7 +5044,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request)
     return response.endSend();
 }
 
-esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, bool opener)
+esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, PsychicResponse* resp, bool opener)
 {
     String value = "";
     if(request->hasParam("CONFIRMTOKEN"))
@@ -4850,10 +5058,10 @@ esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, bool opener)
 
     if(value != _confirmCode)
     {
-        return buildConfirmHtml(request, "Confirm code is invalid.", 3, true);
+        return buildConfirmHtml(request, resp, "Confirm code is invalid.", 3, true);
     }
 
-    esp_err_t res = buildConfirmHtml(request, opener ? "Unpairing Nuki Opener and restarting." : "Unpairing Nuki Lock and restarting.", 3, true);
+    esp_err_t res = buildConfirmHtml(request, resp, opener ? "Unpairing Nuki Opener and restarting." : "Unpairing Nuki Lock and restarting.", 3, true);
 
     if(!opener && _nuki != nullptr)
     {
@@ -4872,7 +5080,7 @@ esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, bool opener)
     return res;
 }
 
-esp_err_t WebCfgServer::processUpdate(PsychicRequest *request)
+esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* resp)
 {
     esp_err_t res;
     String value = "";
@@ -4887,20 +5095,20 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request)
 
     if(value != _confirmCode)
     {
-        return buildConfirmHtml(request, "Confirm code is invalid.", 3, true);
+        return buildConfirmHtml(request, resp, "Confirm code is invalid.", 3, true);
     }
 
     if(request->hasParam("beta"))
     {
         if(request->hasParam("debug"))
         {
-            res = buildConfirmHtml(request, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG BETA version", 2, true);
+            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG BETA version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL_DBG);
             _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL_DBG);
         }
         else
         {
-            res = buildConfirmHtml(request, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
+            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
             _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
         }
@@ -4909,13 +5117,13 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request)
     {
         if(request->hasParam("debug"))
         {
-            res = buildConfirmHtml(request, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG DEVELOPMENT version", 2, true);
+            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG DEVELOPMENT version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL_DBG);
             _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL_DBG);
         }
         else
         {
-            res = buildConfirmHtml(request, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
+            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
             _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
         }
@@ -4924,13 +5132,13 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request)
     {
         if(request->hasParam("debug"))
         {
-            res = buildConfirmHtml(request, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG RELEASE version", 2, true);
+            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG RELEASE version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
             _preferences->putString(preference_ota_main_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
         }
         else
         {
-            res = buildConfirmHtml(request, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
+            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
             _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
             _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
         }
@@ -4940,7 +5148,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request)
     return res;
 }
 
-esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
+esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request, PsychicResponse* resp)
 {
     esp_err_t res;
     String value = "";
@@ -4956,7 +5164,7 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
     bool resetWifi = false;
     if(value.length() == 0 || value != _confirmCode)
     {
-        return buildConfirmHtml(request, "Confirm code is invalid.", 3, true);
+        return buildConfirmHtml(request, resp, "Confirm code is invalid.", 3, true);
     }
     else
     {
@@ -4973,11 +5181,11 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
         if(value2 == "1")
         {
             resetWifi = true;
-            res = buildConfirmHtml(request, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener and resetting WiFi.", 3, true);
+            res = buildConfirmHtml(request, resp, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener and resetting WiFi.", 3, true);
         }
         else
         {
-            res = buildConfirmHtml(request, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener.", 3, true);
+            res = buildConfirmHtml(request, resp, "Factory resetting Nuki Hub, unpairing Nuki Lock and Nuki Opener.", 3, true);
         }
     }
 
@@ -4991,7 +5199,7 @@ esp_err_t WebCfgServer::processFactoryReset(PsychicRequest *request)
     {
         _nukiOpener->unpair();
     }
-    
+
     String ssid = _preferences->getString(preference_wifi_ssid, "");
     String pass = _preferences->getString(preference_wifi_pass, "");
 

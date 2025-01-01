@@ -28,7 +28,7 @@ public:
   esp_err_t handleRequest(PsychicRequest *request) {   
    //PsychicFileResponse response(request, LittleFS, "/captiveportal.html"); // uncomment : for captive portal page, if any, eg "captiveportal.html"
    //return response.send();                                                 // uncomment : return captive portal page
-   return request->reply(200,"text/html","Welcome to captive portal !");     // simple text, comment if captive portal page
+   return response->send(200,"text/html","Welcome to captive portal !");     // simple text, comment if captive portal page
   }
 };
 CaptiveRequestHandler *captivehandler=NULL;             // handler for captive portal

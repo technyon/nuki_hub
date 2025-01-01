@@ -8,18 +8,18 @@
 
 */
 #include <Arduino.h>
-#include <WiFi.h>
+#include <ArduinoJSON.h>
+#include <LittleFS.h>
 #include <MongooseCore.h>
 #include <MongooseHttpServer.h>
-#include <LittleFS.h>
-#include <ArduinoJSON.h>
+#include <WiFi.h>
 
-const char *ssid = "";
-const char *password = "";
+const char* ssid = "";
+const char* password = "";
 
 MongooseHttpServer server;
 
-const char *htmlContent = R"(
+const char* htmlContent = R"(
 <!DOCTYPE html>
 <html>
 <head>
@@ -154,25 +154,23 @@ void setup()
   // To debug, please enable Core Debug Level to Verbose
   if (connectToWifi())
   {
-    if(!LittleFS.begin())
+    if (!LittleFS.begin())
     {
       Serial.println("LittleFS Mount Failed. Do Platform -> Build Filesystem Image and Platform -> Upload Filesystem Image from VSCode");
       return;
     }
 
-    //start our server
+    // start our server
     Mongoose.begin();
     server.begin(80);
 
-    //index file
-    server.on("/", HTTP_GET, [](MongooseHttpServerRequest *request)
-    {      
-      request->send(200, "text/html", htmlContent);
-    });
+    // index file
+    server.on("/", HTTP_GET, [](MongooseHttpServerRequest* request)
+              { request->send(200, "text/html", htmlContent); });
 
-    //api - parameters passed in via query eg. /api/endpoint?foo=bar
-    server.on("/api", HTTP_GET, [](MongooseHttpServerRequest *request)
-    {
+    // api - parameters passed in via query eg. /api/endpoint?foo=bar
+    server.on("/api", HTTP_GET, [](MongooseHttpServerRequest* request)
+              {
       //create a response object
       StaticJsonDocument<128> output;
       output["msg"] = "status";
@@ -189,19 +187,18 @@ void setup()
       //serialize and return
       String jsonBuffer;
       serializeJson(output, jsonBuffer);
-      request->send(200, "application/json", jsonBuffer.c_str());
-    });
+      request->send(200, "application/json", jsonBuffer.c_str()); });
 
-    //websocket
-    server.on("/ws$")->
-    onFrame([](MongooseHttpWebSocketConnection *connection, int flags, uint8_t *data, size_t len) {
-      connection->send(WEBSOCKET_OP_TEXT, data, len);
-      //server.sendAll(connection, (char *)data);
-    });
+    // websocket
+    server.on("/ws$")->onFrame([](MongooseHttpWebSocketConnection* connection, int flags, uint8_t* data, size_t len)
+                               {
+                                 connection->send(WEBSOCKET_OP_TEXT, data, len);
+                                 // server.sendAll(connection, (char *)data);
+                               });
 
-    //hack - no servestatic
-    server.on("/alien.png", HTTP_GET, [](MongooseHttpServerRequest *request)
-    {
+    // hack - no servestatic
+    server.on("/alien.png", HTTP_GET, [](MongooseHttpServerRequest* request)
+              {
       //open our file
       File fp = LittleFS.open("/www/alien.png");
       size_t length = fp.size();
@@ -223,8 +220,7 @@ void setup()
         free(data);
       }
       else
-        request->send(503);
-    });
+        request->send(503); });
   }
 }
 

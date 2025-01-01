@@ -1,0 +1,14 @@
+[submodule "examples/esp-idf/components/UrlEncode"]
+	path = examples/esp-idf/components/UrlEncode
+	url = https://github.com/dzungpv/UrlEncode
+[submodule "examples/esp-idf/components/ArduinoJson"]
+	path = examples/esp-idf/components/ArduinoJson
+	url = https://github.com/bblanchon/ArduinoJson
+	branch = 7.x
+[submodule "examples/esp-idf/components/arduino-esp32"]
+	path = examples/esp-idf/components/arduino-esp32
+	url = https://github.com/espressif/arduino-esp32
+	branch = idf-release/v4.4
+[submodule "examples/esp-idf/components/esp_littlefs"]
+	path = examples/esp-idf/components/esp_littlefs
+	url = https://github.com/joltwallet/esp_littlefs.git

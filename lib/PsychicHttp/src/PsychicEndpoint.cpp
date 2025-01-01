@@ -1,90 +1,140 @@
 #include "PsychicEndpoint.h"
 #include "PsychicHttpServer.h"
 
-PsychicEndpoint::PsychicEndpoint() :
-  _server(NULL),
-  _uri(""),
-  _method(HTTP_GET),
-  _handler(NULL)
+PsychicEndpoint::PsychicEndpoint() : _server(NULL),
+                                     _uri(""),
+                                     _method(HTTP_GET),
+                                     _handler(NULL)
 {
 }
 
-PsychicEndpoint::PsychicEndpoint(PsychicHttpServer *server, http_method method, const char * uri) :
-  _server(server),
-  _uri(uri),
-  _method(method),
-  _handler(NULL)
+PsychicEndpoint::PsychicEndpoint(PsychicHttpServer* server, int method, const char* uri) : _server(server),
+                                                                                           _uri(uri),
+                                                                                           _method(method),
+                                                                                           _handler(NULL)
 {
 }
 
-PsychicEndpoint * PsychicEndpoint::setHandler(PsychicHandler *handler)
+PsychicEndpoint* PsychicEndpoint::setHandler(PsychicHandler* handler)
 {
-  //clean up old / default handler
+  // clean up old / default handler
   if (_handler != NULL)
     delete _handler;
 
-  //get our new pointer
+  // get our new pointer
   _handler = handler;
 
-  //keep a pointer to the server
+  // keep a pointer to the server
   _handler->_server = _server;
 
   return this;
 }
 
-PsychicHandler * PsychicEndpoint::handler()
+PsychicHandler* PsychicEndpoint::handler()
 {
   return _handler;
 }
 
-String PsychicEndpoint::uri() {
+String PsychicEndpoint::uri()
+{
   return _uri;
 }
 
-esp_err_t PsychicEndpoint::requestCallback(httpd_req_t *req)
+esp_err_t PsychicEndpoint::requestCallback(httpd_req_t* req)
 {
-  #ifdef ENABLE_ASYNC
-    if (is_on_async_worker_thread() == false) {
-      if (submit_async_req(req, PsychicEndpoint::requestCallback) == ESP_OK) {
-        return ESP_OK;
-      } else {
-        httpd_resp_set_status(req, "503 Busy");
-        httpd_resp_sendstr(req, "No workers available. Server busy.</div>");
-        return ESP_OK;
-      }
+#ifdef ENABLE_ASYNC
+  if (is_on_async_worker_thread() == false) {
+    if (submit_async_req(req, PsychicEndpoint::requestCallback) == ESP_OK) {
+      return ESP_OK;
+    } else {
+      httpd_resp_set_status(req, "503 Busy");
+      httpd_resp_sendstr(req, "No workers available. Server busy.</div>");
+      return ESP_OK;
     }
-  #endif
+  }
+#endif
 
-  PsychicEndpoint *self = (PsychicEndpoint *)req->user_ctx;
-  PsychicHandler *handler = self->handler();
+  PsychicEndpoint* self = (PsychicEndpoint*)req->user_ctx;
   PsychicRequest request(self->_server, req);
 
-  //make sure we have a handler
-  if (handler != NULL)
-  {
-    if (handler->filter(&request) && handler->canHandle(&request))
-    {
-      //check our credentials
-       if (handler->needsAuthentication(&request))
-        return handler->authenticate(&request);
+  esp_err_t err = self->process(&request);
 
-      //pass it to our handler
-      return handler->handleRequest(&request);
-    }
-    //pass it to our generic handlers
-    else
-      return PsychicHttpServer::notFoundHandler(req, HTTPD_500_INTERNAL_SERVER_ERROR);
-  }
+  if (err == HTTPD_404_NOT_FOUND)
+    return PsychicHttpServer::requestHandler(req);
+
+  if (err == ESP_ERR_HTTPD_INVALID_REQ)
+    return request.response()->error(HTTPD_500_INTERNAL_SERVER_ERROR, "No handler registered.");
+
+  return err;
+}
+
+bool PsychicEndpoint::matches(const char* uri)
+{
+  // we only want to match the path, no GET strings
+  char* ptr;
+  size_t position = 0;
+
+  // look for a ? and set our path length to that,
+  ptr = strchr(uri, '?');
+  if (ptr != NULL)
+    position = (size_t)(int)(ptr - uri);
+  // or use the whole uri if not found
   else
-    return request.reply(500, "text/html", "No handler registered.");
+    position = strlen(uri);
+
+  // do we have a per-endpoint match function
+  if (this->getURIMatchFunction() != NULL) {
+    // ESP_LOGD(PH_TAG, "Match? %s == %s (%d)", _uri.c_str(), uri, position);
+    return this->getURIMatchFunction()(_uri.c_str(), uri, (size_t)position);
+  }
+  // do we have a global match function
+  if (_server->getURIMatchFunction() != NULL) {
+    // ESP_LOGD(PH_TAG, "Match? %s == %s (%d)", _uri.c_str(), uri, position);
+    return _server->getURIMatchFunction()(_uri.c_str(), uri, (size_t)position);
+  } else {
+    ESP_LOGE(PH_TAG, "No uri matching function set");
+    return false;
+  }
 }
 
-PsychicEndpoint* PsychicEndpoint::setFilter(PsychicRequestFilterFunction fn) {
-  _handler->setFilter(fn);
+httpd_uri_match_func_t PsychicEndpoint::getURIMatchFunction()
+{
+  return _uri_match_fn;
+}
+
+void PsychicEndpoint::setURIMatchFunction(httpd_uri_match_func_t match_fn)
+{
+  _uri_match_fn = match_fn;
+}
+
+PsychicEndpoint* PsychicEndpoint::addFilter(PsychicRequestFilterFunction fn)
+{
+  _handler->addFilter(fn);
   return this;
 }
 
-PsychicEndpoint* PsychicEndpoint::setAuthentication(const char *username, const char *password, HTTPAuthMethod method, const char *realm, const char *authFailMsg) {
-  _handler->setAuthentication(username, password, method, realm, authFailMsg);
+PsychicEndpoint* PsychicEndpoint::addMiddleware(PsychicMiddleware* middleware)
+{
+  _handler->addMiddleware(middleware);
   return this;
-};
+}
+
+PsychicEndpoint* PsychicEndpoint::addMiddleware(PsychicMiddlewareCallback fn)
+{
+  _handler->addMiddleware(fn);
+  return this;
+}
+
+void PsychicEndpoint::removeMiddleware(PsychicMiddleware* middleware)
+{
+  _handler->removeMiddleware(middleware);
+}
+
+esp_err_t PsychicEndpoint::process(PsychicRequest* request)
+{
+  esp_err_t ret = ESP_ERR_HTTPD_INVALID_REQ;
+  if (_handler != NULL)
+    ret = _handler->process(request);
+  ESP_LOGD(PH_TAG, "Endpoint %s processed %s: %s", _uri.c_str(), request->uri().c_str(), esp_err_to_name(ret));
+  return ret;
+}

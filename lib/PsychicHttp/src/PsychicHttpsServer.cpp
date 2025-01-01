@@ -2,9 +2,9 @@
 
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
 
-PsychicHttpsServer::PsychicHttpsServer() : PsychicHttpServer()
+PsychicHttpsServer::PsychicHttpsServer(uint16_t port) : PsychicHttpServer(port)
 {
-  //for a SSL server
+  // for a SSL server
   ssl_config = HTTPD_SSL_CONFIG_DEFAULT();
   ssl_config.httpd.open_fn = PsychicHttpServer::openCallback;
   ssl_config.httpd.close_fn = PsychicHttpServer::closeCallback;
@@ -18,44 +18,53 @@ PsychicHttpsServer::PsychicHttpsServer() : PsychicHttpServer()
   // if we set it higher than 2 and use all the connections, we get lots of memory errors.
   // not to mention there is no heap left over for the program itself.
   ssl_config.httpd.max_open_sockets = 2;
+
+  setPort(port);
 }
 
 PsychicHttpsServer::~PsychicHttpsServer() {}
 
-esp_err_t PsychicHttpsServer::listen(uint16_t port, const char *cert, const char *private_key)
+void PsychicHttpsServer::setPort(uint16_t port)
 {
-  this->_use_ssl = true;
-
   this->ssl_config.port_secure = port;
+}
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 2)
-    this->ssl_config.servercert = (uint8_t *)cert;
-    this->ssl_config.servercert_len = strlen(cert)+1;
-#else
-    this->ssl_config.cacert_pem = (uint8_t *)cert;
-    this->ssl_config.cacert_len = strlen(cert)+1;
-#endif
+uint16_t PsychicHttpsServer::getPort()
+{
+  return this->ssl_config.port_secure;
+}
 
-  this->ssl_config.prvtkey_pem = (uint8_t *)private_key;
-  this->ssl_config.prvtkey_len = strlen(private_key)+1;
+void PsychicHttpsServer::setCertificate(const uint8_t* cert, size_t cert_size, const uint8_t* private_key, size_t private_key_size)
+{
+  if (cert) {
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 2)
+    this->ssl_config.servercert = cert;
+    this->ssl_config.servercert_len = cert_size;
+  #else
+    this->ssl_config.cacert_pem = cert;
+    this->ssl_config.cacert_len = cert_size;
+  #endif
+  }
 
-  return this->_start();
+  if (private_key) {
+    this->ssl_config.prvtkey_pem = private_key;
+    this->ssl_config.prvtkey_len = private_key_size;
+  }
 }
 
 esp_err_t PsychicHttpsServer::_startServer()
 {
-  if (this->_use_ssl)
-    return httpd_ssl_start(&this->server, &this->ssl_config);
-  else
-    return httpd_start(&this->server, &this->config);
+  return httpd_ssl_start(&this->server, &this->ssl_config);
 }
 
-void PsychicHttpsServer::stop()
+esp_err_t PsychicHttpsServer::_stopServer()
 {
-  if (this->_use_ssl)
-    httpd_ssl_stop(this->server);
-  else
-    httpd_stop(this->server);
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 2)
+  return httpd_ssl_stop(this->server);
+  #else
+  httpd_ssl_stop(this->server);
+  return ESP_OK;
+  #endif
 }
 
 #endif // CONFIG_ESP_HTTPS_SERVER_ENABLE

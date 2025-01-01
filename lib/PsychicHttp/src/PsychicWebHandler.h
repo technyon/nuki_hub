@@ -7,10 +7,11 @@
 #include "PsychicHandler.h"
 
 /*
-* HANDLER :: Can be attached to any endpoint or as a generic request handler.
-*/
+ * HANDLER :: Can be attached to any endpoint or as a generic request handler.
+ */
 
-class PsychicWebHandler : public PsychicHandler {
+class PsychicWebHandler : public PsychicHandler
+{
   protected:
     PsychicHttpRequestCallback _requestCallback;
     PsychicClientCallback _onOpen;
@@ -20,15 +21,15 @@ class PsychicWebHandler : public PsychicHandler {
     PsychicWebHandler();
     ~PsychicWebHandler();
 
-    virtual bool canHandle(PsychicRequest *request) override;
-    virtual esp_err_t handleRequest(PsychicRequest *request) override;
-    PsychicWebHandler * onRequest(PsychicHttpRequestCallback fn);
+    virtual bool canHandle(PsychicRequest* request) override;
+    virtual esp_err_t handleRequest(PsychicRequest* request, PsychicResponse* response) override;
+    PsychicWebHandler* onRequest(PsychicHttpRequestCallback fn);
 
-    virtual void openCallback(PsychicClient *client);
-    virtual void closeCallback(PsychicClient *client);
+    virtual void openCallback(PsychicClient* client);
+    virtual void closeCallback(PsychicClient* client);
 
-    PsychicWebHandler *onOpen(PsychicClientCallback fn);
-    PsychicWebHandler *onClose(PsychicClientCallback fn);
+    PsychicWebHandler* onOpen(PsychicClientCallback fn);
+    PsychicWebHandler* onClose(PsychicClientCallback fn);
 };
 
 #endif

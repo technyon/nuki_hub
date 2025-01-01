@@ -20,9 +20,9 @@
 #ifndef PsychicEventSource_H_
 #define PsychicEventSource_H_
 
+#include "PsychicClient.h"
 #include "PsychicCore.h"
 #include "PsychicHandler.h"
-#include "PsychicClient.h"
 #include "PsychicResponse.h"
 
 class PsychicEventSource;
@@ -30,24 +30,38 @@ class PsychicEventSourceResponse;
 class PsychicEventSourceClient;
 class PsychicResponse;
 
-typedef std::function<void(PsychicEventSourceClient *client)> PsychicEventSourceClientCallback;
+typedef std::function<void(PsychicEventSourceClient* client)> PsychicEventSourceClientCallback;
 
-class PsychicEventSourceClient : public PsychicClient {
-  friend PsychicEventSource;
+typedef struct {
+    httpd_handle_t handle;
+    int socket;
+    char* event;
+    size_t len;
+    transfer_complete_cb callback;
+    void* arg;
+} async_event_transfer_t;
+
+class PsychicEventSourceClient : public PsychicClient
+{
+    friend PsychicEventSource;
 
   protected:
     uint32_t _lastId;
+    esp_err_t _sendEventAsync(httpd_handle_t handle, int socket, const char* event, size_t len);
+    static void _sendEventWorkCallback(void* arg);
+    static void _sendEventSentCallback(esp_err_t err, int socket, void* arg);
 
   public:
-    PsychicEventSourceClient(PsychicClient *client);
+    PsychicEventSourceClient(PsychicClient* client);
     ~PsychicEventSourceClient();
 
     uint32_t lastId() const { return _lastId; }
-    void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
-    void sendEvent(const char *event);
+    void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
+    void sendEvent(const char* event);
 };
 
-class PsychicEventSource : public PsychicHandler {
+class PsychicEventSource : public PsychicHandler
+{
   private:
     PsychicEventSourceClientCallback _onOpen;
     PsychicEventSourceClientCallback _onClose;
@@ -56,27 +70,28 @@ class PsychicEventSource : public PsychicHandler {
     PsychicEventSource();
     ~PsychicEventSource();
 
-    PsychicEventSourceClient * getClient(int socket) override;
-    PsychicEventSourceClient * getClient(PsychicClient *client) override;
-    void addClient(PsychicClient *client) override;
-    void removeClient(PsychicClient *client) override;
-    void openCallback(PsychicClient *client) override;
-    void closeCallback(PsychicClient *client) override;
+    PsychicEventSourceClient* getClient(int socket) override;
+    PsychicEventSourceClient* getClient(PsychicClient* client) override;
+    void addClient(PsychicClient* client) override;
+    void removeClient(PsychicClient* client) override;
+    void openCallback(PsychicClient* client) override;
+    void closeCallback(PsychicClient* client) override;
 
-    PsychicEventSource *onOpen(PsychicEventSourceClientCallback fn);
-    PsychicEventSource *onClose(PsychicEventSourceClientCallback fn);
+    PsychicEventSource* onOpen(PsychicEventSourceClientCallback fn);
+    PsychicEventSource* onClose(PsychicEventSourceClientCallback fn);
 
-    esp_err_t handleRequest(PsychicRequest *request) override final;
+    esp_err_t handleRequest(PsychicRequest* request, PsychicResponse* response) override final;
 
-    void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
+    void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
 };
 
-class PsychicEventSourceResponse: public PsychicResponse {
+class PsychicEventSourceResponse : public PsychicResponseDelegate
+{
   public:
-    PsychicEventSourceResponse(PsychicRequest *request);
-    virtual esp_err_t send() override;
+    PsychicEventSourceResponse(PsychicResponse* response);
+    esp_err_t send();
 };
 
-String generateEventMessage(const char *message, const char *event, uint32_t id, uint32_t reconnect);
+String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect);
 
 #endif /* PsychicEventSource_H_ */

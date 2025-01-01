@@ -2,18 +2,21 @@
 #define PsychicStaticFileHandler_h
 
 #include "PsychicCore.h"
-#include "PsychicWebHandler.h"
+#include "PsychicFileResponse.h"
 #include "PsychicRequest.h"
 #include "PsychicResponse.h"
-#include "PsychicFileResponse.h"
+#include "PsychicWebHandler.h"
 
-class PsychicStaticFileHandler : public PsychicWebHandler {
-  using File = fs::File;
-  using FS = fs::FS;
+class PsychicStaticFileHandler : public PsychicWebHandler
+{
+    using File = fs::File;
+    using FS = fs::FS;
+
   private:
-    bool _getFile(PsychicRequest *request);
+    bool _getFile(PsychicRequest* request);
     bool _fileExists(const String& path);
     uint8_t _countBits(const uint8_t value) const;
+
   protected:
     FS _fs;
     File _file;
@@ -26,16 +29,17 @@ class PsychicStaticFileHandler : public PsychicWebHandler {
     bool _isDir;
     bool _gzipFirst;
     uint8_t _gzipStats;
+
   public:
     PsychicStaticFileHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
-    bool canHandle(PsychicRequest *request) override;
-    esp_err_t handleRequest(PsychicRequest *request) override;
-    PsychicStaticFileHandler& setIsDir(bool isDir);
-    PsychicStaticFileHandler& setDefaultFile(const char* filename);
-    PsychicStaticFileHandler& setCacheControl(const char* cache_control);
-    PsychicStaticFileHandler& setLastModified(const char* last_modified);
-    PsychicStaticFileHandler& setLastModified(struct tm* last_modified);
-    //PsychicStaticFileHandler& setTemplateProcessor(AwsTemplateProcessor newCallback) {_callback = newCallback; return *this;}
+    bool canHandle(PsychicRequest* request) override;
+    esp_err_t handleRequest(PsychicRequest* request, PsychicResponse* response) override;
+    PsychicStaticFileHandler* setIsDir(bool isDir);
+    PsychicStaticFileHandler* setDefaultFile(const char* filename);
+    PsychicStaticFileHandler* setCacheControl(const char* cache_control);
+    PsychicStaticFileHandler* setLastModified(const char* last_modified);
+    PsychicStaticFileHandler* setLastModified(struct tm* last_modified);
+    // PsychicStaticFileHandler* setTemplateProcessor(AwsTemplateProcessor newCallback) {_callback = newCallback; return *this;}
 };
 
 #endif /* PsychicHttp_h */

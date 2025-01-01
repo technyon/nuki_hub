@@ -1,37 +1,42 @@
 #!/usr/bin/env bash
 #Command to install the testers:
-# npm install -g autocannon
+# npm install
 
-TEST_IP="192.168.2.131"
-TEST_TIME=60
-LOG_FILE=psychic-http-loadtest.log
+TEST_IP="psychic.local"
+TEST_TIME=10
+#LOG_FILE=psychic-http-loadtest.log
+LOG_FILE=_psychic-http-loadtest.json
+RESULTS_FILE=http-loadtest-results.csv
 TIMEOUT=10000
+WORKERS=1
 PROTOCOL=http
 #PROTOCOL=https
 
-if test -f "$LOG_FILE"; then
-  rm $LOG_FILE
-fi
+echo "url,connections,rps,latency,errors" > $RESULTS_FILE
 
 for CONCURRENCY in 1 2 3 4 5 6 7 8 9 10 15 20
-#for CONCURRENCY in 20
 do
   printf "\n\nCLIENTS: *** $CONCURRENCY ***\n\n" >> $LOG_FILE
   echo "Testing $CONCURRENCY clients on $PROTOCOL://$TEST_IP/"
-  #loadtest -c $CONCURRENCY --cores 1 -t $TEST_TIME --timeout $TIMEOUT "$PROTOCOL://$TEST_IP/" --quiet >> $LOG_FILE
-  autocannon -c $CONCURRENCY -w 1 -d $TEST_TIME --renderStatusCodes "$PROTOCOL://$TEST_IP/" >> $LOG_FILE 2>&1
-  printf "\n\n----------------\n\n" >> $LOG_FILE
-  sleep 1
-
-  echo "Testing $CONCURRENCY clients on $PROTOCOL://$TEST_IP/api"
-  #loadtest -c $CONCURRENCY --cores 1 -t $TEST_TIME --timeout $TIMEOUT "$PROTOCOL://$TEST_IP/api?foo=bar" --quiet >> $LOG_FILE
-  autocannon -c $CONCURRENCY -w 1 -d $TEST_TIME --renderStatusCodes "$PROTOCOL://$TEST_IP/api?foo=bar" >> $LOG_FILE 2>&1
-  printf "\n\n----------------\n\n" >> $LOG_FILE
-  sleep 1
-  
-  echo "Testing $CONCURRENCY clients on $PROTOCOL://$TEST_IP/alien.png"
-  #loadtest -c $CONCURRENCY --cores 1 -t $TEST_TIME --timeout $TIMEOUT "$PROTOCOL://$TEST_IP/alien.png" --quiet >> $LOG_FILE
-  autocannon -c $CONCURRENCY -w 1 -d $TEST_TIME --renderStatusCodes "$PROTOCOL://$TEST_IP/alien.png" >> $LOG_FILE 2>&1
-  printf "\n\n----------------\n\n" >> $LOG_FILE
-  sleep 1
+  autocannon -c $CONCURRENCY -w $WORKERS -d $TEST_TIME -j "$PROTOCOL://$TEST_IP/" > $LOG_FILE
+  node parse-http-test.js $LOG_FILE $RESULTS_FILE
+  sleep 5
 done
+
+for CONCURRENCY in 1 2 3 4 5 6 7 8 9 10 15 20
+do
+  echo "Testing $CONCURRENCY clients on $PROTOCOL://$TEST_IP/api"
+  autocannon -c $CONCURRENCY -w $WORKERS -d $TEST_TIME -j "$PROTOCOL://$TEST_IP/api?foo=bar" > $LOG_FILE
+  node parse-http-test.js $LOG_FILE $RESULTS_FILE
+  sleep 5
+done
+
+for CONCURRENCY in 1 2 3 4 5 6 7 8 9 10 15 20
+do
+  echo "Testing $CONCURRENCY clients on $PROTOCOL://$TEST_IP/alien.png"
+  autocannon -c $CONCURRENCY -w $WORKERS -d $TEST_TIME -j "$PROTOCOL://$TEST_IP/alien.png" > $LOG_FILE
+  node parse-http-test.js $LOG_FILE $RESULTS_FILE
+  sleep 5
+done
+
+rm $LOG_FILE
