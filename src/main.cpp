@@ -352,7 +352,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         Log->println("HTTP_EVENT_ON_HEADER");
         break;
     case HTTP_EVENT_ON_DATA:
-        Log->print(".");
+        Log->println("HTTP_EVENT_ON_DATA");
         break;
     case HTTP_EVENT_ON_FINISH:
         Log->println("HTTP_EVENT_ON_FINISH");
