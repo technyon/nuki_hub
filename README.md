@@ -60,8 +60,26 @@ The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using P
 The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
 
 Other considerations:
-- If PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the M5stack Atom S3R with the M5stack AtomPoe W5500 module
+- If Ethernet/PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the M5stack Atom S3R with the M5stack AtomPoe W5500 module
 - If WIFI6 is absolutely required (it probably isn't): ESP32-C6
+
+Devices ranked best-to-worst:
+- ESP32-S3 with PSRAM
+- ......
+- ......
+- ESP32 with PSRAM
+- ......<br>
+(Devices below will not support some NukiHub functions)
+- ......
+- ESP32-S3 without PSRAM
+- ESP32 without PSRAM
+- ...... <br>
+(Devices below will not support many NukiHub functions)
+- ...... 
+- ESP32-C6
+- ESP32-solo1
+- ESP32-C3
+- ESP32-H2
 
 ## Feature comparison
 
