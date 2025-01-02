@@ -879,6 +879,12 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
     response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('latestver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
     response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('betaver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
     response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('devver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    #if defined(CONFIG_IDF_TARGET_ESP32S3)
+    if(esp_psram_get_size() <= 0)
+    {
+        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to other PSRAM release version\"></form>");
+    }
+    #endif
     response.print("<div style=\"clear: both\"></div><br>");
 
     response.print("<b>Current version: </b><span id=\"currentver\">");
@@ -5128,6 +5134,14 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
             _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
         }
     }
+    #if defined(CONFIG_IDF_TARGET_ESP32S3)
+    else if(request->hasParam("other"))
+    {
+        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
+        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_OTHER);
+        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL_OTHER);
+    }
+    #endif
     else
     {
         if(request->hasParam("debug"))
