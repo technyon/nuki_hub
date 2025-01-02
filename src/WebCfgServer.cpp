@@ -1676,6 +1676,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             }
         }
         #endif
+        else if(key == "UPTIME")
+        {
+            if(_preferences->getBool(preference_update_time, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_update_time, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "NWHW")
         {
             if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
@@ -4360,7 +4370,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     }
     printInputField(&response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
-
+    printCheckBox(&response, "UPTIME", "Update Nuki Hub and Lock/Opener time using NTP", _preferences->getBool(preference_update_time, false), "");
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");

@@ -6,6 +6,8 @@
 #include <NukiOpenerUtils.h>
 #include "Config.h"
 #include "hal/wdt_hal.h"
+#include <time.h>
+#include "esp_sntp.h"
 
 NukiOpenerWrapper* nukiOpenerInst;
 Preferences* nukiOpenerPreferences = nullptr;
@@ -55,7 +57,7 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.setDebugHexData(_preferences->getBool(preference_debug_hex_data, false));
     _nukiOpener.setDebugCommand(_preferences->getBool(preference_debug_command, false));
     _nukiOpener.registerLogger(Log);
-    
+
     _nukiOpener.initialize(_preferences->getBool(preference_connect_mode, true));
     _nukiOpener.registerBleScanner(_bleScanner);
     _nukiOpener.setEventHandler(this);
@@ -316,6 +318,11 @@ void NukiOpenerWrapper::update()
             {
                 _waitKeypadUpdateTs = 0;
                 updateKeypad(true);
+            }
+            if(_preferences->getBool(preference_update_time, false) && ts > (120 * 1000) && ts > _nextTimeUpdateTs)
+            {
+                _nextTimeUpdateTs = ts + (12 * 60 * 60 * 1000);
+                updateTime();
             }
             if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
             {
@@ -4153,4 +4160,40 @@ void NukiOpenerWrapper::updateGpioOutputs()
             break;
         }
     }
+}
+
+void NukiOpenerWrapper::updateTime()
+{
+    if(!isPinValid())
+    {
+        Log->println(F("No valid PIN set"));
+        return;
+    }
+
+    time_t now;
+    tm tm;
+    time(&now);
+    localtime_r(&now, &tm);
+
+    if (int(tm.tm_year + 1900) < int(2025))
+    {
+        Log->println(F("NTP Time not valid, not updating Nuki device"));
+        return;
+    }
+
+    Nuki::TimeValue nukiTime;
+    nukiTime.year = tm.tm_year + 1900;
+    nukiTime.month = tm.tm_mon + 1;
+    nukiTime.day = tm.tm_mday;
+    nukiTime.hour = tm.tm_hour;
+    nukiTime.minute = tm.tm_min;
+    nukiTime.second = tm.tm_sec;
+
+    Nuki::CmdResult cmdResult = _nukiOpener.updateTime(nukiTime);
+
+    char resultStr[15] = {0};
+    NukiOpener::cmdResultToString(cmdResult, resultStr);
+
+    Log->print(F("Opener time update result: "));
+    Log->println(resultStr);
 }

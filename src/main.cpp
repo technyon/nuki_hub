@@ -29,6 +29,8 @@
 #include "RestartReason.h"
 #include "EspMillis.h"
 #include "NimBLEDevice.h"
+#include <time.h>
+#include "esp_sntp.h"
 
 /*
 #ifdef DEBUG_NUKIHUB
@@ -249,7 +251,6 @@ void nukiTask(void *pvParameters)
 {
     int64_t nukiLoopTs = 0;
     bool whiteListed = false;
-
     while(true)
     {
         if(disableNetwork || wifiConnected)
@@ -437,7 +438,6 @@ void otaTask(void *pvParameter)
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
     }
-
     Log->println("Firmware upgrade failed, restarting");
     esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
     restartEsp(RestartReason::OTAAborted);
@@ -478,6 +478,10 @@ void setupTasks(bool ota)
         }
 #endif
     }
+}
+
+void cbSyncTime(struct timeval *tv)  {
+  Log->println(F("NTP time synched"));
 }
 
 void setup()
@@ -803,6 +807,13 @@ void setup()
         }
 #endif
         */
+    }
+
+    if(preferences->getBool(preference_update_time, false))
+    {
+        sntp_set_sync_interval(12 * 60 * 60 * 1000UL);
+        sntp_set_time_sync_notification_cb(cbSyncTime);
+        configTime(0, 0, "pool.ntp.org");
     }
 #endif
 
