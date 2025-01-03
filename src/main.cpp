@@ -249,6 +249,19 @@ void networkTask(void *pvParameters)
 #ifndef NUKI_HUB_UPDATER
 void nukiTask(void *pvParameters)
 {
+    if (preferences->getBool(preference_mqtt_ssl_enabled, false))
+    {
+        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        if (esp_psram_get_size() <= 0) 
+        {
+            Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
+            delay(20000);
+        }
+        #else
+        Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
+        delay(20000);
+        #endif
+    }
     int64_t nukiLoopTs = 0;
     bool whiteListed = false;
     while(true)
@@ -572,15 +585,13 @@ void setup()
                 }
                 else
                 {
-                    char cert[4400] = {0};
-
                     Log->println("Reading http_ssl.crt");
-                    uint32_t i = 0;
-                    while(file.available()){
-                         cert[i] = file.read();
-                         i++;
-                    }
+                    size_t filesize = file.size();
+                    char cert[filesize + 1];
+
+                    file.read((uint8_t *)cert, sizeof(cert));
                     file.close();
+                    cert[filesize] = '\0';
 
                     File file2 = SPIFFS.open("/http_ssl.key");
                     if (!file2 || file2.isDirectory()) {
@@ -589,15 +600,13 @@ void setup()
                     }
                     else
                     {
-                        char key[2200] = {0};
-
                         Log->println("Reading http_ssl.key");
-                        i = 0;
-                        while(file2.available()){
-                             key[i] = file2.read();
-                             i++;
-                        }
+                        size_t filesize2 = file2.size();
+                        char key[filesize2 + 1];
+
+                        file2.read((uint8_t *)key, sizeof(key));
                         file2.close();
+                        key[filesize2] = '\0';
 
                         psychicSSLServer = new PsychicHttpsServer;
                         psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
@@ -738,15 +747,13 @@ void setup()
                     }
                     else
                     {
-                        char cert[4400] = {0};
-
                         Log->println("Reading http_ssl.crt");
-                        uint32_t i = 0;
-                        while(file.available()){
-                             cert[i] = file.read();
-                             i++;
-                        }
+                        size_t filesize = file.size();
+                        char cert[filesize + 1];
+
+                        file.read((uint8_t *)cert, sizeof(cert));
                         file.close();
+                        cert[filesize] = '\0';
 
                         File file2 = SPIFFS.open("/http_ssl.key");
                         if (!file2 || file2.isDirectory()) {
@@ -755,15 +762,13 @@ void setup()
                         }
                         else
                         {
-                            char key[2200] = {0};
-
                             Log->println("Reading http_ssl.key");
-                            i = 0;
-                            while(file2.available()){
-                                 key[i] = file2.read();
-                                 i++;
-                            }
+                            size_t filesize2 = file2.size();
+                            char key[filesize2 + 1];
+
+                            file2.read((uint8_t *)key, sizeof(key));
                             file2.close();
+                            key[filesize2] = '\0';
 
                             psychicSSLServer = new PsychicHttpsServer;
                             psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;

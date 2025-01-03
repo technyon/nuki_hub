@@ -4,10 +4,10 @@
 #include "Logger.h"
 #include "RestartReason.h"
 #include <esp_task_wdt.h>
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-#include "esp_psram.h"
 #include "FS.h"
 #include "SPIFFS.h"
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#include "esp_psram.h"
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
@@ -112,20 +112,10 @@ void WebCfgServer::initialize()
     });
     _psychicServer->on("/style.css", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-        {
-            return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-        }
-
         return sendCss(request, resp);
     });
     _psychicServer->on("/favicon.ico", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-        {
-            return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-        }
-
         return sendFavicon(request, resp);
     });
 
@@ -1269,206 +1259,335 @@ void WebCfgServer::printInputField(PsychicStreamResponse *response,
 #ifndef NUKI_HUB_UPDATER
 esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* resp)
 {
-    bool redacted = false;
-    bool pairing = false;
-
-    if(request->hasParam("redacted"))
-    {
-        const PsychicWebParameter* p = request->getParam("redacted");
-        if(p->value() == "1")
-        {
-            redacted = true;
-        }
-    }
-    if(request->hasParam("pairing"))
-    {
-        const PsychicWebParameter* p = request->getParam("pairing");
-        if(p->value() == "1")
-        {
-            pairing = true;
-        }
-    }
-
     JsonDocument json;
     String jsonPretty;
+    String name;
 
-    DebugPreferences debugPreferences;
-
-    const std::vector<char*> keysPrefs = debugPreferences.getPreferencesKeys();
-    const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
-    const std::vector<char*> redactedPrefs = debugPreferences.getPreferencesRedactedKeys();
-    const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
-
-    for(const auto& key : keysPrefs)
+    if(request->hasParam("type"))
     {
-        if(strcmp(key, preference_show_secrets) == 0)
+        name = "nuki_hub_http_ssl.json";
+        const PsychicWebParameter* p = request->getParam("type");
+        if(p->value() == "https")
         {
-            continue;
-        }
-        if(strcmp(key, preference_latest_version) == 0)
-        {
-            continue;
-        }
-        if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end())
-            {
-                continue;
+            name = "nuki_hub_http_ssl.json";
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
             }
-        if(!_preferences->isKey(key))
-        {
-            json[key] = "";
-        }
-        else if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end())
-        {
-            json[key] = _preferences->getBool(key) ? "1" : "0";
+            else
+            {
+                File file = SPIFFS.open("/http_ssl.crt");
+                if (!file || file.isDirectory()) {
+                    Log->println("http_ssl.crt not found");
+                }
+                else
+                {
+                    Log->println("Reading http_ssl.crt");
+                    size_t filesize = file.size();
+                    char cert[filesize + 1];
+
+                    file.read((uint8_t *)cert, sizeof(cert));
+                    file.close();
+                    cert[filesize] = '\0';
+                    json["http_ssl.crt"] = cert;
+                }
+            }
+
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                File file = SPIFFS.open("/http_ssl.key");
+                if (!file || file.isDirectory()) {
+                    Log->println("http_ssl.key not found");
+                }
+                else
+                {
+                    Log->println("Reading http_ssl.key");
+                    size_t filesize = file.size();
+                    char key[filesize + 1];
+
+                    file.read((uint8_t *)key, sizeof(key));
+                    file.close();
+                    key[filesize] = '\0';
+                    json["http_ssl.key"] = key;
+                }
+            }
         }
         else
         {
-            switch(_preferences->getType(key))
+            name = "nuki_hub_mqtt_ssl.json";
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
             {
-            case PT_I8:
-                json[key] = String(_preferences->getChar(key));
-                break;
-            case PT_I16:
-                json[key] = String(_preferences->getShort(key));
-                break;
-            case PT_I32:
-                json[key] = String(_preferences->getInt(key));
-                break;
-            case PT_I64:
-                json[key] = String(_preferences->getLong64(key));
-                break;
-            case PT_U8:
-                json[key] = String(_preferences->getUChar(key));
-                break;
-            case PT_U16:
-                json[key] = String(_preferences->getUShort(key));
-                break;
-            case PT_U32:
-                json[key] = String(_preferences->getUInt(key));
-                break;
-            case PT_U64:
-                json[key] = String(_preferences->getULong64(key));
-                break;
-            case PT_STR:
-                json[key] = _preferences->getString(key);
-                break;
-            default:
-                json[key] = _preferences->getString(key);
-                break;
+                File file = SPIFFS.open("/mqtt_ssl.ca");
+                if (!file || file.isDirectory()) {
+                    Log->println("mqtt_ssl.ca not found");
+                }
+                else
+                {
+                    Log->println("Reading mqtt_ssl.ca");
+                    size_t filesize = file.size();
+                    char ca[filesize + 1];
+
+                    file.read((uint8_t *)ca, sizeof(ca));
+                    file.close();
+                    ca[filesize] = '\0';
+                    json["mqtt_ssl.ca"] = ca;
+                }
+            }
+
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                File file = SPIFFS.open("/mqtt_ssl.crt");
+                if (!file || file.isDirectory()) {
+                    Log->println("mqtt_ssl.crt not found");
+                }
+                else
+                {
+                    Log->println("Reading mqtt_ssl.crt");
+                    size_t filesize = file.size();
+                    char cert[filesize + 1];
+
+                    file.read((uint8_t *)cert, sizeof(cert));
+                    file.close();
+                    cert[filesize] = '\0';
+                    json["mqtt_ssl.crt"] = cert;
+                }
+            }
+
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                File file = SPIFFS.open("/mqtt_ssl.key");
+                if (!file || file.isDirectory()) {
+                    Log->println("mqtt_ssl.key not found");
+                }
+                else
+                {
+                    Log->println("Reading mqtt_ssl.key");
+                    size_t filesize = file.size();
+                    char key[filesize + 1];
+
+                    file.read((uint8_t *)key, sizeof(key));
+                    file.close();
+                    key[filesize] = '\0';
+                    json["mqtt_ssl.key"] = key;
+                }
             }
         }
     }
-
-    if(pairing)
+    else
     {
-        if(_nuki != nullptr)
+        name = "nuki_hub_settings.json";
+        bool redacted = false;
+        bool pairing = false;
+
+        if(request->hasParam("redacted"))
         {
-            unsigned char currentBleAddress[6];
-            unsigned char authorizationId[4] = {0x00};
-            unsigned char secretKeyK[32] = {0x00};
-            uint16_t storedPincode = 0000;
-            Preferences nukiBlePref;
-            nukiBlePref.begin("NukiHub", false);
-            nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
-            nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
-            nukiBlePref.getBytes("authorizationId", authorizationId, 4);
-            nukiBlePref.getBytes("securityPinCode", &storedPincode, 2);
-            nukiBlePref.end();
+            const PsychicWebParameter* p = request->getParam("redacted");
+            if(p->value() == "1")
+            {
+                redacted = true;
+            }
+        }
+        if(request->hasParam("pairing"))
+        {
+            const PsychicWebParameter* p = request->getParam("pairing");
+            if(p->value() == "1")
+            {
+                pairing = true;
+            }
+        }
+
+        DebugPreferences debugPreferences;
+
+        const std::vector<char*> keysPrefs = debugPreferences.getPreferencesKeys();
+        const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
+        const std::vector<char*> redactedPrefs = debugPreferences.getPreferencesRedactedKeys();
+        const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
+
+        for(const auto& key : keysPrefs)
+        {
+            if(strcmp(key, preference_show_secrets) == 0)
+            {
+                continue;
+            }
+            if(strcmp(key, preference_latest_version) == 0)
+            {
+                continue;
+            }
+            if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end())
+                {
+                    continue;
+                }
+            if(!_preferences->isKey(key))
+            {
+                json[key] = "";
+            }
+            else if(std::find(boolPrefs.begin(), boolPrefs.end(), key) != boolPrefs.end())
+            {
+                json[key] = _preferences->getBool(key) ? "1" : "0";
+            }
+            else
+            {
+                switch(_preferences->getType(key))
+                {
+                case PT_I8:
+                    json[key] = String(_preferences->getChar(key));
+                    break;
+                case PT_I16:
+                    json[key] = String(_preferences->getShort(key));
+                    break;
+                case PT_I32:
+                    json[key] = String(_preferences->getInt(key));
+                    break;
+                case PT_I64:
+                    json[key] = String(_preferences->getLong64(key));
+                    break;
+                case PT_U8:
+                    json[key] = String(_preferences->getUChar(key));
+                    break;
+                case PT_U16:
+                    json[key] = String(_preferences->getUShort(key));
+                    break;
+                case PT_U32:
+                    json[key] = String(_preferences->getUInt(key));
+                    break;
+                case PT_U64:
+                    json[key] = String(_preferences->getULong64(key));
+                    break;
+                case PT_STR:
+                    json[key] = _preferences->getString(key);
+                    break;
+                default:
+                    json[key] = _preferences->getString(key);
+                    break;
+                }
+            }
+        }
+
+        if(pairing)
+        {
+            if(_nuki != nullptr)
+            {
+                unsigned char currentBleAddress[6];
+                unsigned char authorizationId[4] = {0x00};
+                unsigned char secretKeyK[32] = {0x00};
+                uint16_t storedPincode = 0000;
+                Preferences nukiBlePref;
+                nukiBlePref.begin("NukiHub", false);
+                nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
+                nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
+                nukiBlePref.getBytes("authorizationId", authorizationId, 4);
+                nukiBlePref.getBytes("securityPinCode", &storedPincode, 2);
+                nukiBlePref.end();
+                char text[255];
+                text[0] = '\0';
+                for(int i = 0 ; i < 6 ; i++)
+                {
+                    size_t offset = strlen(text);
+                    sprintf(&(text[offset]), "%02x", currentBleAddress[i]);
+                }
+                json["bleAddressLock"] = text;
+                memset(text, 0, sizeof(text));
+                text[0] = '\0';
+                for(int i = 0 ; i < 32 ; i++)
+                {
+                    size_t offset = strlen(text);
+                    sprintf(&(text[offset]), "%02x", secretKeyK[i]);
+                }
+                json["secretKeyKLock"] = text;
+                memset(text, 0, sizeof(text));
+                text[0] = '\0';
+                for(int i = 0 ; i < 4 ; i++)
+                {
+                    size_t offset = strlen(text);
+                    sprintf(&(text[offset]), "%02x", authorizationId[i]);
+                }
+                json["authorizationIdLock"] = text;
+                memset(text, 0, sizeof(text));
+                json["securityPinCodeLock"] = storedPincode;
+            }
+            if(_nukiOpener != nullptr)
+            {
+                unsigned char currentBleAddressOpn[6];
+                unsigned char authorizationIdOpn[4] = {0x00};
+                unsigned char secretKeyKOpn[32] = {0x00};
+                uint16_t storedPincodeOpn = 0000;
+                Preferences nukiBlePref;
+                nukiBlePref.begin("NukiHubopener", false);
+                nukiBlePref.getBytes("bleAddress", currentBleAddressOpn, 6);
+                nukiBlePref.getBytes("secretKeyK", secretKeyKOpn, 32);
+                nukiBlePref.getBytes("authorizationId", authorizationIdOpn, 4);
+                nukiBlePref.getBytes("securityPinCode", &storedPincodeOpn, 2);
+                nukiBlePref.end();
+                char text[255];
+                text[0] = '\0';
+                for(int i = 0 ; i < 6 ; i++)
+                {
+                    size_t offset = strlen(text);
+                    sprintf(&(text[offset]), "%02x", currentBleAddressOpn[i]);
+                }
+                json["bleAddressOpener"] = text;
+                memset(text, 0, sizeof(text));
+                text[0] = '\0';
+                for(int i = 0 ; i < 32 ; i++)
+                {
+                    size_t offset = strlen(text);
+                    sprintf(&(text[offset]), "%02x", secretKeyKOpn[i]);
+                }
+                json["secretKeyKOpener"] = text;
+                memset(text, 0, sizeof(text));
+                text[0] = '\0';
+                for(int i = 0 ; i < 4 ; i++)
+                {
+                    size_t offset = strlen(text);
+                    sprintf(&(text[offset]), "%02x", authorizationIdOpn[i]);
+                }
+                json["authorizationIdOpener"] = text;
+                memset(text, 0, sizeof(text));
+                json["securityPinCodeOpener"] = storedPincodeOpn;
+            }
+        }
+
+        for(const auto& key : bytePrefs)
+        {
+            size_t storedLength = _preferences->getBytesLength(key);
+            if(storedLength == 0)
+            {
+                continue;
+            }
+            uint8_t serialized[storedLength];
+            memset(serialized, 0, sizeof(serialized));
+            size_t size = _preferences->getBytes(key, serialized, sizeof(serialized));
+            if(size == 0)
+            {
+                continue;
+            }
             char text[255];
             text[0] = '\0';
-            for(int i = 0 ; i < 6 ; i++)
+            for(int i = 0 ; i < size ; i++)
             {
                 size_t offset = strlen(text);
-                sprintf(&(text[offset]), "%02x", currentBleAddress[i]);
+                sprintf(&(text[offset]), "%02x", serialized[i]);
             }
-            json["bleAddressLock"] = text;
+            json[key] = text;
             memset(text, 0, sizeof(text));
-            text[0] = '\0';
-            for(int i = 0 ; i < 32 ; i++)
-            {
-                size_t offset = strlen(text);
-                sprintf(&(text[offset]), "%02x", secretKeyK[i]);
-            }
-            json["secretKeyKLock"] = text;
-            memset(text, 0, sizeof(text));
-            text[0] = '\0';
-            for(int i = 0 ; i < 4 ; i++)
-            {
-                size_t offset = strlen(text);
-                sprintf(&(text[offset]), "%02x", authorizationId[i]);
-            }
-            json["authorizationIdLock"] = text;
-            memset(text, 0, sizeof(text));
-            json["securityPinCodeLock"] = storedPincode;
         }
-        if(_nukiOpener != nullptr)
-        {
-            unsigned char currentBleAddressOpn[6];
-            unsigned char authorizationIdOpn[4] = {0x00};
-            unsigned char secretKeyKOpn[32] = {0x00};
-            uint16_t storedPincodeOpn = 0000;
-            Preferences nukiBlePref;
-            nukiBlePref.begin("NukiHubopener", false);
-            nukiBlePref.getBytes("bleAddress", currentBleAddressOpn, 6);
-            nukiBlePref.getBytes("secretKeyK", secretKeyKOpn, 32);
-            nukiBlePref.getBytes("authorizationId", authorizationIdOpn, 4);
-            nukiBlePref.getBytes("securityPinCode", &storedPincodeOpn, 2);
-            nukiBlePref.end();
-            char text[255];
-            text[0] = '\0';
-            for(int i = 0 ; i < 6 ; i++)
-            {
-                size_t offset = strlen(text);
-                sprintf(&(text[offset]), "%02x", currentBleAddressOpn[i]);
-            }
-            json["bleAddressOpener"] = text;
-            memset(text, 0, sizeof(text));
-            text[0] = '\0';
-            for(int i = 0 ; i < 32 ; i++)
-            {
-                size_t offset = strlen(text);
-                sprintf(&(text[offset]), "%02x", secretKeyKOpn[i]);
-            }
-            json["secretKeyKOpener"] = text;
-            memset(text, 0, sizeof(text));
-            text[0] = '\0';
-            for(int i = 0 ; i < 4 ; i++)
-            {
-                size_t offset = strlen(text);
-                sprintf(&(text[offset]), "%02x", authorizationIdOpn[i]);
-            }
-            json["authorizationIdOpener"] = text;
-            memset(text, 0, sizeof(text));
-            json["securityPinCodeOpener"] = storedPincodeOpn;
-        }
-    }
-
-    for(const auto& key : bytePrefs)
-    {
-        size_t storedLength = _preferences->getBytesLength(key);
-        if(storedLength == 0)
-        {
-            continue;
-        }
-        uint8_t serialized[storedLength];
-        memset(serialized, 0, sizeof(serialized));
-        size_t size = _preferences->getBytes(key, serialized, sizeof(serialized));
-        if(size == 0)
-        {
-            continue;
-        }
-        char text[255];
-        text[0] = '\0';
-        for(int i = 0 ; i < size ; i++)
-        {
-            size_t offset = strlen(text);
-            sprintf(&(text[offset]), "%02x", serialized[i]);
-        }
-        json[key] = text;
-        memset(text, 0, sizeof(text));
     }
 
     serializeJsonPretty(json, jsonPretty);
+    char buf[26 + name.length()];
+    snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", name.c_str());
+    resp->addHeader("Content-Disposition", buf);
     resp->setCode(200);
     resp->setContentType("application/json");
     resp->setContent(jsonPretty.c_str());
@@ -1580,9 +1699,32 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "MQTTCA")
         {
-            if(_preferences->getString(preference_mqtt_ca, "") != value)
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
             {
-                _preferences->putString(preference_mqtt_ca, value);
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/mqtt_ssl.ca", FILE_WRITE);
+                    if (!file) {
+                        Log->println("Failed to open /mqtt_ssl.ca for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /mqtt_ssl.ca");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/mqtt_ssl.ca")) {
+                        Serial.println("Failed to delete /mqtt_ssl.ca");
+                    }
+                }
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -1590,9 +1732,32 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "MQTTCRT")
         {
-            if(_preferences->getString(preference_mqtt_crt, "") != value)
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
             {
-                _preferences->putString(preference_mqtt_crt, value);
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/mqtt_ssl.crt", FILE_WRITE);
+                    if (!file) {
+                        Log->println("Failed to open /mqtt_ssl.crt for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /mqtt_ssl.crt");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/mqtt_ssl.crt")) {
+                        Serial.println("Failed to delete /mqtt_ssl.crt");
+                    }
+                }
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -1600,9 +1765,32 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "MQTTKEY")
         {
-            if(_preferences->getString(preference_mqtt_key, "") != value)
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
             {
-                _preferences->putString(preference_mqtt_key, value);
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/mqtt_ssl.key", FILE_WRITE);
+                    if (!file) {
+                        Log->println("Failed to open /mqtt_ssl.key for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /mqtt_ssl.key");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/mqtt_ssl.key")) {
+                        Serial.println("Failed to delete /mqtt_ssl.key");
+                    }
+                }
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -1954,6 +2142,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             if(_preferences->getBool(preference_mqtt_log_enabled, false) != (value == "1"))
             {
                 _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "MQTTSENA")
+        {
+            if(_preferences->getBool(preference_mqtt_ssl_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_mqtt_ssl_enabled, (value == "1"));
                 Log->print(F("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -3541,6 +3739,13 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     response.print("<button title=\"Basic export\" onclick=\" window.open('/get?page=export', '_self'); return false;\">Basic export</button>");
     response.print("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/get?page=export&redacted=1'); return false;\">Export with redacted settings</button>");
     response.print("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/get?page=export&redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    if(esp_psram_get_size() > 0)
+    {
+        response.print("<br><br><button title=\"Export HTTP SSL certificate and key\" onclick=\" window.open('/get?page=export&type=https'); return false;\">Export HTTP SSL certificate and key</button>");
+    }
+    #endif
+    response.print("<br><br><button title=\"Export MQTT SSL CA, client certificate and client key\" onclick=\" window.open('/get?page=export&type=mqtts'); return false;\">Export MQTT SSL CA, client certificate and client key</button>");
     response.print("</div></body></html>");
     return response.endSend();
 }
@@ -3783,7 +3988,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     if(esp_psram_get_size() > 0)
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
-        response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set MQTT SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
+        response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
     }
     #endif
     response.print("</table>");
@@ -3826,6 +4031,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     {
         printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
     }
+    printCheckBox(&response, "MQTTSENA", "Enable MQTT SSL", _preferences->getBool(preference_mqtt_ssl_enabled, false), "");
     response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><button title=\"Set MQTT SSL CA Certificate\" onclick=\" window.open('/get?page=mqttcaconfig', '_self'); return false;\">Change</button></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");
@@ -3860,15 +4066,102 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
 
     if (type == 0)
     {
-        printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", _preferences->getString(preference_mqtt_ca).c_str(), TLS_CA_MAX_SIZE, true, true);
+                bool found = false;
+
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/mqtt_ssl.ca");
+            if (!file || file.isDirectory()) {
+                Log->println("mqtt_ssl.ca not found");
+            }
+            else
+            {
+                Log->println("Reading mqtt_ssl.ca");
+                size_t filesize = file.size();
+                char ca[filesize + 1];
+
+                file.read((uint8_t *)ca, sizeof(ca));
+                file.close();
+                ca[filesize] = '\0';
+
+                printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", ca, 2200, true, true);
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", "", 2200, true, true);
+        }
     }
     else if (type == 1)
     {
-        printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", _preferences->getString(preference_mqtt_crt).c_str(), TLS_CERT_MAX_SIZE, true, true);
+        bool found = false;
+
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/mqtt_ssl.crt");
+            if (!file || file.isDirectory()) {
+                Log->println("mqtt_ssl.crt not found");
+            }
+            else
+            {
+                Log->println("Reading mqtt_ssl.crt");
+                size_t filesize = file.size();
+                char cert[filesize + 1];
+
+                file.read((uint8_t *)cert, sizeof(cert));
+                file.close();
+                cert[filesize] = '\0';
+
+                printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", cert, 2200, true, true);
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", "", 2200, true, true);
+        }
     }
     else
     {
-        printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", _preferences->getString(preference_mqtt_key).c_str(), TLS_KEY_MAX_SIZE, true, true);
+        bool found = false;
+
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/mqtt_ssl.key");
+            if (!file || file.isDirectory()) {
+                Log->println("mqtt_ssl.key not found");
+            }
+            else
+            {
+                Log->println("Reading mqtt_ssl.key");
+                size_t filesize = file.size();
+                char key[filesize + 1];
+
+                file.read((uint8_t *)key, sizeof(key));
+                file.close();
+                key[filesize] = '\0';
+
+                printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", key, 2200, true, true);
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", "", 2200, true, true);
+        }
     }
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -3891,8 +4184,8 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
 
     if (type == 1)
     {
-        char cert[4400] = {0};
-        
+        bool found = false;
+
         #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
@@ -3906,21 +4199,27 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
             else
             {
                 Log->println("Reading http_ssl.crt");
-                uint32_t i = 0;
-                while(file.available()){
-                     cert[i] = file.read();
-                     i++;
-                }
+                size_t filesize = file.size();
+                char cert[filesize + 1];
+
+                file.read((uint8_t *)cert, sizeof(cert));
                 file.close();
+                cert[filesize] = '\0';
+
+                printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", cert, 4400, true, true);
+                found = true;
             }
         }
         #endif
-        printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", cert, 4400, true, true);
+        if (!found)
+        {
+            printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "", 4400, true, true);
+        }
     }
     else
     {
-        char key[2200] = {0};
-        
+        bool found = false;
+
         #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
@@ -3934,16 +4233,22 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
             else
             {
                 Log->println("Reading http_ssl.key");
-                uint32_t i = 0;
-                while(file.available()){
-                     key[i] = file.read();
-                     i++;
-                }
+                size_t filesize = file.size();
+                char key[filesize + 1];
+
+                file.read((uint8_t *)key, sizeof(key));
                 file.close();
+                key[filesize] = '\0';
+
+                printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", key, 2200, true, true);
+                found = true;
             }
         }
         #endif
-        printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", key, 2200, true, true);
+        if (!found)
+        {
+            printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "", 2200, true, true);
+        }
     }
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -4528,10 +4833,29 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_cred_password, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
-    //response.print("\nHTTP SSL CRT: ");
-    //response.print(_preferences->getString(preference_http_crt, "").length() > 0 ? "***" : "Not set");
-    //response.print("\nHTTP SSL Key: ");
-    //response.print(_preferences->getString(preference_http_key, "").length() > 0 ? "***" : "Not set");
+    response.print("\nHTTP SSL: ");
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    if(esp_psram_get_size() > 0)
+    {
+        if (!SPIFFS.begin(true)) {
+            response.print("Disabled");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt");
+            File file2 = SPIFFS.open("/http_ssl.key");
+            response.print((!file || file.isDirectory() || !file2 || file2.isDirectory()) ? "Disabled" : "Enabled");
+            file.close();
+            file2.close();
+        }
+    }
+    else
+    {
+        response.print("Disabled");
+    }
+    #else
+    response.print("Disabled");
+    #endif
     response.print("\nPublish debug information enabled: ");
     response.print(_preferences->getBool(preference_publish_debug_info, false) ? "Yes" : "No");
     response.print("\nMQTT log enabled: ");
@@ -4628,12 +4952,38 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_mqtt_password, "").length() > 0 ? "***" : "Not set");
     response.print("\nMQTT base topic: ");
     response.print(_preferences->getString(preference_mqtt_lock_path, ""));
-    response.print("\nMQTT SSL CA: ");
-    response.print(_preferences->getString(preference_mqtt_ca, "").length() > 0 ? "***" : "Not set");
-    response.print("\nMQTT SSL CRT: ");
-    response.print(_preferences->getString(preference_mqtt_crt, "").length() > 0 ? "***" : "Not set");
-    response.print("\nMQTT SSL Key: ");
-    response.print(_preferences->getString(preference_mqtt_key, "").length() > 0 ? "***" : "Not set");
+    response.print("\nMQTT SSL: ");
+    if(_preferences->getBool(preference_mqtt_ssl_enabled, false))
+    {
+        if (!SPIFFS.begin(true)) {
+            response.print("Disabled");
+        }
+        else
+        {
+            File file = SPIFFS.open("/mqtt_ssl.ca");
+            if (!file || file.isDirectory()) {
+                response.print("Disabled");
+            }
+            else
+            {
+                response.print("Enabled");
+                response.print("\nMQTT SSL CA: ***");
+                File file2 = SPIFFS.open("/mqtt_ssl.crt");
+                File file3 = SPIFFS.open("/mqtt_ssl.key");
+                response.print("\nMQTT SSL CRT: ");
+                response.print((!file2 || file2.isDirectory()) ? "Not set" : "***");
+                response.print("\nMQTT SSL Key: ");
+                response.print((!file3 || file3.isDirectory()) ? "Not set" : "***");
+                file2.close();
+                file3.close();
+            }
+            file.close();
+        }
+    }
+    else
+    {
+        response.print("Disabled");
+    }
     response.print("\n\n------------ BLUETOOTH ------------");
     response.print("\nBluetooth TX power (dB): ");
     response.print(_preferences->getInt(preference_ble_tx_power, 9));

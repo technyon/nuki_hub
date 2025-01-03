@@ -64,9 +64,6 @@ protected:
     bool _useEncryption = false;
     bool _mqttEnabled = true;
     char* _path;
-    char _ca[TLS_CA_MAX_SIZE] = {0};
-    char _cert[TLS_CERT_MAX_SIZE] = {0};
-    char _key[TLS_KEY_MAX_SIZE] = {0};
     #endif
     
     const String _hostname;

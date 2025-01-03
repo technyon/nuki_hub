@@ -3,30 +3,71 @@
 #include "../Logger.h"
 
 #ifndef NUKI_HUB_UPDATER
+#include "FS.h"
+#include "SPIFFS.h"
 #include "../MqttTopics.h"
 #include "PreferencesKeys.h"
 
 void NetworkDevice::init()
 {
-    size_t caLength = _preferences->getString(preference_mqtt_ca, _ca, TLS_CA_MAX_SIZE);
-    size_t crtLength = _preferences->getString(preference_mqtt_crt, _cert, TLS_CERT_MAX_SIZE);
-    size_t keyLength = _preferences->getString(preference_mqtt_key, _key, TLS_KEY_MAX_SIZE);
-
-    _useEncryption = caLength > 1;  // length is 1 when empty
-
-    if(_useEncryption)
-    {
-        Log->println(F("MQTT over TLS."));
-        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
-        _mqttClientSecure->setCACert(_ca);
-        if(crtLength > 1 && keyLength > 1) // length is 1 when empty
+    if(_preferences->getBool(preference_mqtt_ssl_enabled, false)) {
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
         {
-            Log->println(F("MQTT with client certificate."));
-            _mqttClientSecure->setCertificate(_cert);
-            _mqttClientSecure->setPrivateKey(_key);
+            File file = SPIFFS.open("/mqtt_ssl.ca");
+            if (!file || file.isDirectory()) {
+                Log->println("mqtt_ssl.ca not found");
+            }
+            else
+            {
+                Log->println("Reading mqtt_ssl.ca");
+                String ca_cert = file.readString();
+                file.close();
+                char* caDest;
+                caDest = (char *)malloc(sizeof(char) * (ca_cert.length()+1));
+                strcpy(caDest, ca_cert.c_str());
+ 
+                if(ca_cert.length() > 1)
+                {
+                    _useEncryption = true;
+                    Log->println(F("MQTT over TLS."));
+                    _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
+                    _mqttClientSecure->setCACert(caDest);
+
+                    File file2 = SPIFFS.open("/mqtt_ssl.crt");
+                    File file3 = SPIFFS.open("/mqtt_ssl.key");
+                    if (!file2 || file2.isDirectory() || !file3 || file3.isDirectory()) {
+                        Log->println("mqtt_ssl.crt or mqtt_ssl.key not found");
+                    }
+                    else
+                    {
+                        String cert = file2.readString();
+                        file2.close();
+                        char* certDest;
+                        certDest = (char *)malloc(sizeof(char) * (cert.length()+1));
+                        strcpy(certDest, cert.c_str());
+                
+                        String key = file3.readString();
+                        file3.close();
+                        char* keyDest;
+                        keyDest = (char *)malloc(sizeof(char) * (key.length()+1));
+                        strcpy(keyDest, key.c_str());
+
+                        if(cert.length() > 1 && key.length() > 1)
+                        {
+                            Log->println(F("MQTT with client certificate."));
+                            _mqttClientSecure->setCertificate(certDest);
+                            _mqttClientSecure->setPrivateKey(keyDest);
+                        }
+                    }
+                }
+            }
         }
     }
-    else
+
+    if (!_useEncryption)
     {
         Log->println(F("MQTT without TLS."));
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
