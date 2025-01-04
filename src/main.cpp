@@ -89,6 +89,7 @@ RTC_NOINIT_ATTR bool disableNetwork;
 RTC_NOINIT_ATTR bool wifiFallback;
 RTC_NOINIT_ATTR bool ethCriticalFailure;
 
+int lastHTTPeventId = -1;
 bool doOta = false;
 bool restartReason_isValid;
 RestartReason currentRestartReason = RestartReason::NotApplicable;
@@ -252,7 +253,7 @@ void nukiTask(void *pvParameters)
     if (preferences->getBool(preference_mqtt_ssl_enabled, false))
     {
         #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-        if (esp_psram_get_size() <= 0) 
+        if (esp_psram_get_size() <= 0)
         {
             Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
             delay(20000);
@@ -351,34 +352,42 @@ void bootloopDetection()
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
-    switch (evt->event_id)
+    if (lastHTTPeventId != int(evt->event_id))
     {
-    case HTTP_EVENT_ERROR:
-        Log->println("HTTP_EVENT_ERROR");
-        break;
-    case HTTP_EVENT_ON_CONNECTED:
-        Log->println("HTTP_EVENT_ON_CONNECTED");
-        break;
-    case HTTP_EVENT_HEADER_SENT:
-        Log->println("HTTP_EVENT_HEADER_SENT");
-        break;
-    case HTTP_EVENT_ON_HEADER:
-        Log->println("HTTP_EVENT_ON_HEADER");
-        break;
-    case HTTP_EVENT_ON_DATA:
-        Log->println("HTTP_EVENT_ON_DATA");
-        break;
-    case HTTP_EVENT_ON_FINISH:
-        Log->println("HTTP_EVENT_ON_FINISH");
-        break;
-    case HTTP_EVENT_DISCONNECTED:
-        Log->println("HTTP_EVENT_DISCONNECTED");
-        break;
-    case HTTP_EVENT_REDIRECT:
-        Log->println("HTTP_EVENT_REDIRECT");
-        break;
+        Log->println("");
+        switch (evt->event_id)
+        {
+            case HTTP_EVENT_ERROR:
+                Log->println("HTTP_EVENT_ERROR");
+                break;
+            case HTTP_EVENT_ON_CONNECTED:
+                Log->print("HTTP_EVENT_ON_CONNECTED");
+                break;
+            case HTTP_EVENT_HEADER_SENT:
+                Log->print("HTTP_EVENT_HEADER_SENT");
+                break;
+            case HTTP_EVENT_ON_HEADER:
+                Log->print("HTTP_EVENT_ON_HEADER");
+                break;
+            case HTTP_EVENT_ON_DATA:
+                Log->print("HTTP_EVENT_ON_DATA");
+                break;
+            case HTTP_EVENT_ON_FINISH:
+                Log->println("HTTP_EVENT_ON_FINISH");
+                break;
+            case HTTP_EVENT_DISCONNECTED:
+                Log->println("HTTP_EVENT_DISCONNECTED");
+                break;
+            case HTTP_EVENT_REDIRECT:
+                Log->print("HTTP_EVENT_REDIRECT");
+                break;
+        }
     }
-
+    else
+    {
+        Log->print(".");
+    }
+    lastHTTPeventId = int(evt->event_id);
     wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_feed(&rtc_wdt_ctx);
