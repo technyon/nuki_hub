@@ -12,6 +12,7 @@
 #define mqtt_topic_lock_binary_ring (char*)"/binaryRing"
 #define mqtt_topic_lock_trigger (char*)"/trigger"
 #define mqtt_topic_lock_last_lock_action (char*)"/lastLockAction"
+#define mqtt_topic_lock_lock_action_context (char*)"/lockActionContext"
 #define mqtt_topic_lock_log (char*)"/log"
 #define mqtt_topic_lock_log_latest (char*)"/shortLog"
 #define mqtt_topic_lock_log_rolling (char*)"/rollingLog"

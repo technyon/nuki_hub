@@ -83,7 +83,7 @@
 #define preference_authlog_max_entries (char*)"authmaxentry"
 #define preference_keypad_max_entries (char*)"kpmaxentry"
 #define preference_timecontrol_max_entries (char*)"tcmaxentry"
-#define preference_register_as_app (char*)"regAsApp" // true = register as hub; false = register as app
+#define preference_register_as_app (char*)"regAsApp"
 #define preference_register_opener_as_app (char*)"regOpnAsApp"
 #define preference_acl (char*)"aclLckOpn"
 #define preference_conf_lock_basic_acl (char*)"confLckBasAcl"

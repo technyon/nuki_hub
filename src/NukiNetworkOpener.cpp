@@ -116,12 +116,6 @@ void NukiNetworkOpener::initialize()
     {
         _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
     }
-/*
-    _network->addReconnectedCallback([&]()
-    {
-        _reconnected = true;
-    });
-*/
 }
 
 void NukiNetworkOpener::update()
@@ -886,6 +880,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
         }
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
+        _authEntries[jsonEntry["codeId"]] = jsonEntry["name"].as<String>();
         char createdDT[20];
         sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateCreatedYear, entry.dateCreatedMonth, entry.dateCreatedDay, entry.dateCreatedHour, entry.dateCreatedMin, entry.dateCreatedSec);
         jsonEntry["dateCreated"] = createdDT;
@@ -1218,7 +1213,7 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
         auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["authId"] = entry.authId;
-        jsonEntry["idType"] = entry.idType; //CONSIDER INT TO STRING
+        jsonEntry["idType"] = entry.idType;
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
         _authEntries[jsonEntry["authId"]] = jsonEntry["name"].as<String>();

@@ -142,12 +142,6 @@ void NukiNetworkLock::initialize()
     {
         _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
     }
-/*
-    _network->addReconnectedCallback([&]()
-    {
-        _reconnected = true;
-    });
-*/
 }
 
 void NukiNetworkLock::update()
@@ -496,7 +490,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
 
     json["auth_id"] = getAuthId();
-    json["auth_name"] = _authName;
+    json["auth_name"] = getAuthName();
 
     serializeJson(json, _buffer, _bufferSize);
     _nukiPublisher->publishString(mqtt_topic_lock_json, _buffer, true);
@@ -697,10 +691,10 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
         _nukiPublisher->publishString(mqtt_topic_lock_log, _buffer, true);
     }
 
-    if(authIndex > 0)
+    if(authIndex > 0 || (_nukiOfficial->getOffConnected() && _nukiOfficial->hasAuthId()))
     {
         _nukiPublisher->publishUInt(mqtt_topic_lock_auth_id, getAuthId(), true);
-        _nukiPublisher->publishString(mqtt_topic_lock_auth_name, _authName, true);
+        _nukiPublisher->publishString(mqtt_topic_lock_auth_name, getAuthName(), true);
     }
 }
 
@@ -911,6 +905,7 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
         }
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
+        _authEntries[jsonEntry["codeId"]] = jsonEntry["name"].as<String>();
         char createdDT[20];
         sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateCreatedYear, entry.dateCreatedMonth, entry.dateCreatedDay, entry.dateCreatedHour, entry.dateCreatedMin, entry.dateCreatedSec);
         jsonEntry["dateCreated"] = createdDT;
@@ -1276,7 +1271,7 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
         auto jsonEntry = json.add<JsonVariant>();
 
         jsonEntry["authId"] = entry.authId;
-        jsonEntry["idType"] = entry.idType; //CONSIDER INT TO STRING
+        jsonEntry["idType"] = entry.idType;
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
         _authEntries[jsonEntry["authId"]] = jsonEntry["name"].as<String>();
@@ -1627,9 +1622,18 @@ void NukiNetworkLock::fobActionToString(const int fobact, char* str)
 
 const uint32_t NukiNetworkLock::getAuthId() const
 {
-    if(_nukiOfficial->hasAuthId())
+    if(_nukiOfficial->getOffConnected() && _nukiOfficial->hasAuthId())
     {
         return _nukiOfficial->getAuthId();
     }
     return _authId;
+}
+
+const char* NukiNetworkLock::getAuthName()
+{
+    if(_nukiOfficial->getOffConnected() && _nukiOfficial->hasAuthId())
+    {
+        return _authEntries[getAuthId()].c_str();
+    }
+    return _authName;
 }

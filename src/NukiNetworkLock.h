@@ -59,6 +59,7 @@ public:
     void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
 
     const uint32_t getAuthId() const;
+    const char* getAuthName();
     int mqttConnectionState();
     uint8_t queryCommands();
 
