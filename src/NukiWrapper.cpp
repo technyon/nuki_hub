@@ -1091,8 +1091,11 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
         {
             if(_preferences->getBool(preference_official_hybrid_actions, false))
             {
-                _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
-                _offCommand = action;
+                if(_preferences->getBool(preference_official_hybrid_retry, false))
+                {
+                    _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
+                    _offCommand = action;
+                }
                 _network->publishOffAction((int)action);
             }
             else
