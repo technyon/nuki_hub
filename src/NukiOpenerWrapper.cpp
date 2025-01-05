@@ -336,7 +336,7 @@ void NukiOpenerWrapper::update()
             }
             if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
             {
-                _network->setupHASS(2, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), false, _hasKeypad);
+                _network->setupHASS(2, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), false, hasKeypad());
                 _hassSetupCompleted = true;
             }
             if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
@@ -350,7 +350,7 @@ void NukiOpenerWrapper::update()
                     _lastRssi = rssi;
                 }
             }
-            if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
+            if(hasKeypad() && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
             {
                 _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
                 updateKeypad(false);
@@ -2469,7 +2469,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
         return;
     }
 
-    if(!_hasKeypad)
+    if(!hasKeypad())
     {
         if(_nukiConfigValid)
         {
@@ -2609,7 +2609,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
         return;
     }
 
-    if(!_hasKeypad)
+    if(!hasKeypad())
     {
         if(_nukiConfigValid)
         {
@@ -4013,7 +4013,7 @@ const bool NukiOpenerWrapper::isPaired() const
 
 const bool NukiOpenerWrapper::hasKeypad() const
 {
-    return _forceKeypad || _hasKeypad;
+    return (_forceKeypad || _hasKeypad);
 }
 
 const BLEAddress NukiOpenerWrapper::getBleAddress() const

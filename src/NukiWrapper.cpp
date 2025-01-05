@@ -351,7 +351,7 @@ void NukiWrapper::update(bool reboot)
             }
             if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
             {
-                _network->setupHASS(1, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), _hasKeypad);
+                _network->setupHASS(1, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), hasKeypad());
                 _hassSetupCompleted = true;
             }
             if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
@@ -365,7 +365,7 @@ void NukiWrapper::update(bool reboot)
                     _lastRssi = rssi;
                 }
             }
-            if(_hasKeypad && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
+            if(hasKeypad() && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
             {
                 Log->println("Updating Lock keypad based on timer or query");
                 _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
@@ -2502,7 +2502,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
         return;
     }
 
-    if(!_hasKeypad)
+    if(!hasKeypad())
     {
         if(_nukiConfigValid)
         {
@@ -2642,7 +2642,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
         return;
     }
 
-    if(!_hasKeypad)
+    if(!hasKeypad())
     {
         if(_nukiConfigValid)
         {
@@ -4052,7 +4052,7 @@ const bool NukiWrapper::isPaired() const
 
 const bool NukiWrapper::hasKeypad() const
 {
-    return _forceKeypad || _hasKeypad;
+    return (_forceKeypad || _hasKeypad);
 }
 
 void NukiWrapper::notify(Nuki::EventType eventType)
@@ -4153,10 +4153,10 @@ void NukiWrapper::readAdvancedConfig()
 
 bool NukiWrapper::hasDoorSensor() const
 {
-    return _forceDoorsensor ||
+    return (_forceDoorsensor ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
-           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating;
+           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating);
 }
 
 const BLEAddress NukiWrapper::getBleAddress() const
