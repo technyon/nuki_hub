@@ -4763,6 +4763,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     buildHtmlHeader(&response);
     response.print("<h3>System Information</h3><pre>");
     response.print("------------ NUKI HUB ------------");
+    response.print("\nDevice: ");
+    response.print(NUKI_HUB_HW);
     response.print("\nVersion: ");
     response.print(NUKI_HUB_VERSION);
     response.print("\nBuild: ");
@@ -4827,6 +4829,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_latest_version, ""));
     response.print("\nAllow update from MQTT: ");
     response.print(_preferences->getBool(preference_update_from_mqtt, false) ? "Yes" : "No");
+    response.print("\nUpdate NukiHub and Nuki devices time using NTP: ");
+    response.print(_preferences->getBool(preference_update_time, false) ? "Yes" : "No");
     response.print("\nWeb configurator username: ");
     response.print(_preferences->getString(preference_cred_user, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator password: ");
