@@ -757,6 +757,9 @@ bool NukiNetwork::reconnect()
 
                 initTopic(_maintenancePathPrefix, mqtt_topic_reset, "0");
                 subscribe(_maintenancePathPrefix, mqtt_topic_reset);
+                initTopic(_maintenancePathPrefix, mqtt_topic_freeheap, "");
+                initTopic(_maintenancePathPrefix, mqtt_topic_log, "");
+                initTopic(_maintenancePathPrefix, mqtt_topic_wifi_rssi, "");
 
                 if(_preferences->getBool(preference_update_from_mqtt, false))
                 {

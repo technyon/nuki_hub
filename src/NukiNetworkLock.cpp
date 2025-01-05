@@ -51,12 +51,28 @@ void NukiNetworkLock::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_config_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_config_action);
 
+    _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
+
+    _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_lock_retry, "0");
+
+    _network->removeTopic(_mqttPath, mqtt_topic_hybrid_state);
+    _network->removeTopic(_mqttPath, mqtt_topic_config_action_command_result);
+    _network->removeTopic(_mqttPath, mqtt_topic_keypad_command_result);
+    _network->removeTopic(_mqttPath, mqtt_topic_keypad_json_command_result);
+    _network->removeTopic(_mqttPath, mqtt_topic_timecontrol_command_result);
+    _network->removeTopic(_mqttPath, mqtt_topic_auth_command_result);
+    _network->removeTopic(_mqttPath, mqtt_topic_query_lockstate_command_result);
+    _network->removeTopic(_mqttPath, mqtt_topic_lock_completionStatus);
+    _network->removeTopic(_mqttPath, mqtt_topic_lock_action_command_result);
 
     if(_disableNonJSON)
     {
@@ -110,21 +126,17 @@ void NukiNetworkLock::initialize()
             _network->subscribe(_mqttPath, mqtt_topic_keypad_command_enabled);
         }
 
-        _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
-        _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
         _network->subscribe(_mqttPath, mqtt_topic_query_keypad);
         _network->subscribe(_mqttPath, mqtt_topic_keypad_json_action);
     }
 
     if(_preferences->getBool(preference_timecontrol_control_enabled))
     {
-        _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
         _network->subscribe(_mqttPath, mqtt_topic_timecontrol_action);
     }
 
     if(_preferences->getBool(preference_auth_control_enabled))
     {
-        _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
         _network->subscribe(_mqttPath, mqtt_topic_auth_action);
     }
 
