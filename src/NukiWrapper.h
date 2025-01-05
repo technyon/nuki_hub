@@ -19,7 +19,7 @@ public:
 
     void initialize();
     void readSettings();
-    void update();
+    void update(bool reboot = false);
 
     void lock();
     void unlock();

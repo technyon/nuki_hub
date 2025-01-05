@@ -34,6 +34,7 @@ public:
     const uint8_t getOffState() const;
     const uint8_t getOffLockAction() const;
     const uint8_t getOffTrigger() const;
+    const uint8_t getOffContext() const;
     const std::vector<char*> getOffTopics() const;
 
     const int64_t getOffCommandExecutedTs() const;
@@ -69,7 +70,7 @@ private:
     uint8_t offTrigger = 0;
     uint32_t offAuthId = 0;
     uint32_t offCodeId = 0;
-    //uint8_t offContext = 0;
+    uint8_t offContext = 0;
     bool offEnabled = false;
 };
 

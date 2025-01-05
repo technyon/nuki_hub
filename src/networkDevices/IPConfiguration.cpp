@@ -16,20 +16,20 @@ IPConfiguration::IPConfiguration(Preferences *preferences)
     _gateway.fromString(_preferences->getString(preference_ip_gateway, ""));
     _dnsServer.fromString(_preferences->getString(preference_ip_dns_server, ""));
 
-    Log->print(F("IP configuration: "));
+    Log->print(("IP configuration: "));
     if(dhcpEnabled())
     {
-        Log->println(F("DHCP"));
+        Log->println(("DHCP"));
     }
     else
     {
-        Log->print(F("IP address: "));
+        Log->print(("IP address: "));
         Log->print(ipAddress());
-        Log->print(F(", Subnet: "));
+        Log->print((", Subnet: "));
         Log->print(subnet());
-        Log->print(F(", Gateway: "));
+        Log->print((", Gateway: "));
         Log->print(defaultGateway());
-        Log->print(F(", DNS: "));
+        Log->print((", DNS: "));
         Log->println(dnsServer());
     }
 }

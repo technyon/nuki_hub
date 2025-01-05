@@ -72,7 +72,7 @@ void NukiNetwork::setupDevice()
 {
     _ipConfiguration = new IPConfiguration(_preferences);
     int hardwareDetect = _preferences->getInt(preference_network_hardware, 0);
-    Log->print(F("Hardware detect: "));
+    Log->print(("Hardware detect: "));
     Log->println(hardwareDetect);
 
     _firstBootAfterDeviceChange = _preferences->getBool(preference_ntw_reconfigure, false);
@@ -100,13 +100,13 @@ void NukiNetwork::setupDevice()
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         if(!_firstBootAfterDeviceChange)
         {
-            Log->println(F("Failed to connect to network. Wi-Fi fallback is disabled, rebooting."));
+            Log->println(("Failed to connect to network. Wi-Fi fallback is disabled, rebooting."));
             wifiFallback = false;
             sleep(5);
             restartEsp(RestartReason::NetworkDeviceCriticalFailureNoWifiFallback);
         }
 
-        Log->println(F("Switching to Wi-Fi device as fallback."));
+        Log->println(("Switching to Wi-Fi device as fallback."));
         _networkDeviceType = NetworkDeviceType::WiFi;
 #else
         int custEth = _preferences->getInt(preference_network_custom_phy, 0);
@@ -130,7 +130,7 @@ void NukiNetwork::setupDevice()
 
     _device = NetworkDeviceInstantiator::Create(_networkDeviceType, _hostname, _preferences, _ipConfiguration);
 
-    Log->print(F("Network device: "));
+    Log->print(("Network device: "));
     Log->println(_device->deviceName());
 
 #ifndef NUKI_HUB_UPDATER
@@ -194,6 +194,15 @@ bool NukiNetwork::isConnected()
     return _device->isConnected();
 }
 
+bool NukiNetwork::mqttConnected()
+{
+    #ifndef NUKI_HUB_UPDATER
+    return _device->mqttConnected();
+    #else
+    return false;
+    #endif
+}
+
 bool NukiNetwork::wifiConnected()
 {
     if(_networkDeviceType != NetworkDeviceType::WiFi)
@@ -220,7 +229,7 @@ void NukiNetwork::initialize()
     strcpy(_hostnameArr, _hostname.c_str());
     _device->initialize();
 
-    Log->print(F("Host name: "));
+    Log->print(("Host name: "));
     Log->println(_hostname);
 }
 
@@ -270,7 +279,7 @@ void NukiNetwork::initialize()
         strcpy(_hostnameArr, _hostname.c_str());
         _device->initialize();
 
-        Log->print(F("Host name: "));
+        Log->print(("Host name: "));
         Log->println(_hostname);
 
         String brokerAddr = _preferences->getString(preference_mqtt_broker);
@@ -297,9 +306,9 @@ void NukiNetwork::initialize()
             }
         }
 
-        Log->print(F("MQTT Broker: "));
+        Log->print(("MQTT Broker: "));
         Log->print(_mqttBrokerAddr);
-        Log->print(F(":"));
+        Log->print((":"));
         Log->println(_mqttPort);
 
         _device->mqttSetClientId(_hostnameArr);
@@ -311,7 +320,7 @@ void NukiNetwork::initialize()
 
         if(rebGpio)
         {
-            Log->println(F("Rebuild MQTT GPIO structure"));
+            Log->println(("Rebuild MQTT GPIO structure"));
         }
         for (const auto &pinEntry: _gpio->pinConfiguration())
         {
@@ -413,7 +422,7 @@ bool NukiNetwork::update()
     if(_logIp && _device->isConnected() && !_device->localIP().equals("0.0.0.0"))
     {
         _logIp = false;
-        Log->print(F("IP: "));
+        Log->print(("IP: "));
         Log->println(_device->localIP());
         _firstDisconnected = true;
     }
@@ -576,9 +585,9 @@ bool NukiNetwork::update()
             buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pin)).c_str(), mqtt_topic_gpio_state});
             publishInt(_lockPath.c_str(), gpioPath, pinState, _retainGpio);
 
-            Log->print(F("GPIO "));
+            Log->print(("GPIO "));
             Log->print(pin);
-            Log->print(F(" (Input) --> "));
+            Log->print((" (Input) --> "));
             Log->println(pinState);
         }
     }
@@ -598,31 +607,31 @@ void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &r
     switch(reason)
     {
     case espMqttClientTypes::DisconnectReason::USER_OK:
-        Log->println(F("USER_OK"));
+        Log->println(("USER_OK"));
         break;
     case espMqttClientTypes::DisconnectReason::MQTT_UNACCEPTABLE_PROTOCOL_VERSION:
-        Log->println(F("MQTT_UNACCEPTABLE_PROTOCOL_VERSION"));
+        Log->println(("MQTT_UNACCEPTABLE_PROTOCOL_VERSION"));
         break;
     case espMqttClientTypes::DisconnectReason::MQTT_IDENTIFIER_REJECTED:
-        Log->println(F("MQTT_IDENTIFIER_REJECTED"));
+        Log->println(("MQTT_IDENTIFIER_REJECTED"));
         break;
     case espMqttClientTypes::DisconnectReason::MQTT_SERVER_UNAVAILABLE:
-        Log->println(F("MQTT_SERVER_UNAVAILABLE"));
+        Log->println(("MQTT_SERVER_UNAVAILABLE"));
         break;
     case espMqttClientTypes::DisconnectReason::MQTT_MALFORMED_CREDENTIALS:
-        Log->println(F("MQTT_MALFORMED_CREDENTIALS"));
+        Log->println(("MQTT_MALFORMED_CREDENTIALS"));
         break;
     case espMqttClientTypes::DisconnectReason::MQTT_NOT_AUTHORIZED:
-        Log->println(F("MQTT_NOT_AUTHORIZED"));
+        Log->println(("MQTT_NOT_AUTHORIZED"));
         break;
     case espMqttClientTypes::DisconnectReason::TLS_BAD_FINGERPRINT:
-        Log->println(F("TLS_BAD_FINGERPRINT"));
+        Log->println(("TLS_BAD_FINGERPRINT"));
         break;
     case espMqttClientTypes::DisconnectReason::TCP_DISCONNECTED:
-        Log->println(F("TCP_DISCONNECTED"));
+        Log->println(("TCP_DISCONNECTED"));
         break;
     default:
-        Log->println(F("Unknown"));
+        Log->println(("Unknown"));
         break;
     }
 }
@@ -635,7 +644,7 @@ bool NukiNetwork::reconnect()
     {
         if(strcmp(_mqttBrokerAddr, "") == 0)
         {
-            Log->println(F("MQTT Broker not configured, aborting connection attempt."));
+            Log->println(("MQTT Broker not configured, aborting connection attempt."));
             _nextReconnect = espMillis() + 5000;
             
             if(_device->isConnected())
@@ -645,17 +654,17 @@ bool NukiNetwork::reconnect()
             return false;
         }
 
-        Log->println(F("Attempting MQTT connection"));
+        Log->println(("Attempting MQTT connection"));
 
         _connectReplyReceived = false;
 
         if(strlen(_mqttUser) == 0)
         {
-            Log->println(F("MQTT: Connecting without credentials"));
+            Log->println(("MQTT: Connecting without credentials"));
         }
         else
         {
-            Log->print(F("MQTT: Connecting with user: "));
+            Log->print(("MQTT: Connecting with user: "));
             Log->println(_mqttUser);
             _device->mqttSetCredentials(_mqttUser, _mqttPass);
         }
@@ -678,7 +687,7 @@ bool NukiNetwork::reconnect()
 
         if (_device->mqttConnected())
         {
-            Log->println(F("MQTT connected"));
+            Log->println(("MQTT connected"));
             _mqttConnectedTs = millis();
             _mqttConnectionState = 1;
             delay(100);
@@ -757,6 +766,9 @@ bool NukiNetwork::reconnect()
 
                 initTopic(_maintenancePathPrefix, mqtt_topic_reset, "0");
                 subscribe(_maintenancePathPrefix, mqtt_topic_reset);
+                initTopic(_maintenancePathPrefix, mqtt_topic_freeheap, "");
+                initTopic(_maintenancePathPrefix, mqtt_topic_log, "");
+                initTopic(_maintenancePathPrefix, mqtt_topic_wifi_rssi, "");
 
                 if(_preferences->getBool(preference_update_from_mqtt, false))
                 {
@@ -790,7 +802,7 @@ bool NukiNetwork::reconnect()
         }
         else
         {
-            Log->print(F("MQTT connect failed"));
+            Log->print(("MQTT connect failed"));
             _mqttConnectionState = 0;
             _nextReconnect = espMillis() + 5000;
             //_device->mqttDisconnect(true);
@@ -909,14 +921,14 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
 
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(data, "1") == 0 && !mqttRecentlyConnected())
     {
-        Log->println(F("Restart requested via MQTT."));
+        Log->println(("Restart requested via MQTT."));
         clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
     {
-        Log->println(F("Update requested via MQTT."));
+        Log->println(("Update requested via MQTT."));
 
         bool otaManifestSuccess = false;
         JsonDocument doc;
@@ -957,13 +969,13 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
                 {
-                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
+                    Log->println(("Nuki Hub is already on the latest release version, OTA update aborted."));
                 }
                 else
                 {
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-                    Log->println(F("Updating to latest release version."));
+                    Log->println(("Updating to latest release version."));
                     delay(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
@@ -972,13 +984,13 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 if(strcmp(NUKI_HUB_VERSION, doc["beta"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["beta"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["beta"]["time"].as<const char*>()) == 0)
                 {
-                    Log->println(F("Nuki Hub is already on the latest beta version, OTA update aborted."));
+                    Log->println(("Nuki Hub is already on the latest beta version, OTA update aborted."));
                 }
                 else
                 {
                     _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
-                    Log->println(F("Updating to latest beta version."));
+                    Log->println(("Updating to latest beta version."));
                     delay(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
@@ -987,13 +999,13 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 if(strcmp(NUKI_HUB_VERSION, doc["master"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["master"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["master"]["time"].as<const char*>()) == 0)
                 {
-                    Log->println(F("Nuki Hub is already on the latest development version, OTA update aborted."));
+                    Log->println(("Nuki Hub is already on the latest development version, OTA update aborted."));
                 }
                 else
                 {
                     _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-                    Log->println(F("Updating to latest developmemt version."));
+                    Log->println(("Updating to latest developmemt version."));
                     delay(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
@@ -1002,13 +1014,13 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
                 {
-                    Log->println(F("Nuki Hub is already on the latest release version, OTA update aborted."));
+                    Log->println(("Nuki Hub is already on the latest release version, OTA update aborted."));
                 }
                 else
                 {
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-                    Log->println(F("Updating to latest release version."));
+                    Log->println(("Updating to latest release version."));
                     delay(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
@@ -1016,7 +1028,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
         }
         else
         {
-            Log->println(F("Failed to retrieve OTA manifest, OTA update aborted."));
+            Log->println(("Failed to retrieve OTA manifest, OTA update aborted."));
         }
     }
     else if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
@@ -1033,7 +1045,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 return;
             }
-            Log->println(F("Webserver enabled, restarting."));
+            Log->println(("Webserver enabled, restarting."));
             _preferences->putBool(preference_webserver_enabled, true);
 
         }
@@ -1043,7 +1055,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 return;
             }
-            Log->println(F("Webserver disabled, restarting."));
+            Log->println(("Webserver disabled, restarting."));
             _preferences->putBool(preference_webserver_enabled, false);
         }
 
@@ -1073,9 +1085,9 @@ void NukiNetwork::parseGpioTopics(const espMqttClientTypes::MessageProperties &p
         if(_gpio->getPinRole(pin) == PinRole::GeneralOutput)
         {
             const uint8_t pinState = strcmp((const char*)payload, "1") == 0 ? HIGH : LOW;
-            Log->print(F("GPIO "));
+            Log->print(("GPIO "));
             Log->print(pin);
-            Log->print(F(" (Output) --> "));
+            Log->print((" (Output) --> "));
             Log->println(pinState);
             digitalWrite(pin, pinState);
         }
@@ -1177,7 +1189,7 @@ void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)
     publish(path.c_str(), "", true);
 
 #ifdef DEBUG_NUKIHUB
-    Log->print(F("Removing MQTT topic: "));
+    Log->print(("Removing MQTT topic: "));
     Log->println(path.c_str());
 #endif
 }

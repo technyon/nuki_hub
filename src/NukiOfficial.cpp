@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-
 NukiOfficial::NukiOfficial(Preferences *preferences)
 {
     offEnabled = preferences->getBool(preference_official_hybrid_enabled, false);
@@ -87,14 +86,14 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     memset(&str, 0, sizeof(str));
 
     Log->println("Official Nuki change received");
-    Log->print(F("Topic: "));
+    Log->print(("Topic: "));
     Log->println(topic);
-    Log->print(F("Value: "));
+    Log->print(("Value: "));
     Log->println(value);
 
     if(strcmp(topic, mqtt_topic_official_connected) == 0)
     {
-        Log->print(F("Connected: "));
+        Log->print(("Connected: "));
         Log->println((strcmp(value, "true") == 0 ? 1 : 0));
         offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
         _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
@@ -103,12 +102,12 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offState = atoi(value);
         _statusUpdated = true;
-        Log->println(F("Lock: Updating status on Hybrid state change"));
+        Log->println(("Lock: Updating status on Hybrid state change"));
         _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
         NukiLock::lockstateToString((NukiLock::LockState)offState, str);
         _publisher->publishString(mqtt_topic_lock_state, str, true);
 
-        Log->print(F("Lockstate: "));
+        Log->print(("Lockstate: "));
         Log->println(str);
 
         _offStateToPublish = (NukiLock::LockState)offState;
@@ -118,11 +117,11 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offDoorsensorState = atoi(value);
         _statusUpdated = true;
-        Log->println(F("Lock: Updating status on Hybrid door sensor state change"));
+        Log->println(("Lock: Updating status on Hybrid door sensor state change"));
         _publisher->publishBool(mqtt_topic_lock_status_updated, _statusUpdated, true);
         NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)offDoorsensorState, str);
 
-        Log->print(F("Doorsensor state: "));
+        Log->print(("Doorsensor state: "));
         Log->println(str);
 
         _publisher->publishString(mqtt_topic_lock_door_sensor_state, str, true);
@@ -131,7 +130,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offCritical = (strcmp(value, "true") == 0 ? 1 : 0);
 
-        Log->print(F("Battery critical: "));
+        Log->print(("Battery critical: "));
         Log->println(offCritical);
 
         if(!_disableNonJSON)
@@ -144,7 +143,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offCharging = (strcmp(value, "true") == 0 ? 1 : 0);
 
-        Log->print(F("Battery charging: "));
+        Log->print(("Battery charging: "));
         Log->println(offCharging);
 
         if(!_disableNonJSON)
@@ -157,7 +156,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offChargeState = atoi(value);
 
-        Log->print(F("Battery level: "));
+        Log->print(("Battery level: "));
         Log->println(offChargeState);
 
         if(!_disableNonJSON)
@@ -197,6 +196,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     }
     else if(strcmp(topic, mqtt_topic_official_lockActionEvent) == 0)
     {
+        clearAuthId();
         clearOffCommandExecutedTs();
         offLockActionEvent = (char*)value;
         String LockActionEvent = offLockActionEvent;
@@ -210,7 +210,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
         offTrigger = atoi(LockActionEvent.substring(ind1 + 1, ind2 + 1).c_str());
         offAuthId = atoi(LockActionEvent.substring(ind2 + 1, ind3 + 1).c_str());
         offCodeId = atoi(LockActionEvent.substring(ind3 + 1, ind4 + 1).c_str());
-//        offContext = atoi(LockActionEvent.substring(ind4 + 1, ind5 + 1).c_str());
+        offContext = atoi(LockActionEvent.substring(ind4 + 1, ind5 + 1).c_str());
 
         memset(&str, 0, sizeof(str));
         lockactionToString((NukiLock::LockAction)offLockAction, str);
@@ -225,17 +225,69 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
             if(offCodeId > 0)
             {
                 _authId = offCodeId;
+
+                switch(offContext)
+                {
+                    case 0:
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadBackKey", true);
+                        break;
+                    case 1:
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadCode", true);
+                        break;
+                    case 2:
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadFingerprint", true);
+                        break;
+                    default:
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                        break;
+                }
             }
             else
             {
                 _authId = offAuthId;
+                
+                switch(offTrigger)
+                {
+                    case 0:
+                        if (offContext == 1)
+                        {
+                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "autoUnlock", true);
+                        }
+                        else
+                        {
+                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                        }
+                        break;
+                    case 2:
+                        if (offContext > 0)
+                        {
+                            _publisher->publishString(mqtt_topic_lock_lock_action_context, String("button") + String(offContext) + "press", true);
+                        }
+                        else
+                        {
+                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                        }
+                        break;
+                    case 3:
+                        if (offContext > 0)
+                        {
+                            _publisher->publishString(mqtt_topic_lock_lock_action_context, String("fob") + String(offContext) + "press", true);
+                        }
+                        else
+                        {
+                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                        }
+                        break;
+                    default:
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                        break;
+                }
             }
             _hasAuthId = true;
-
-            /*
-            _network->_authName = RETRIEVE FROM VECTOR AFTER AUTHORIZATION ENTRIES ARE IMPLEMENTED;
-            _offContext = BASE ON CONTEXT OF TRIGGER AND PUBLISH TO MQTT;
-            */
+        }
+        else
+        {
+            _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
         }
     }
 
@@ -285,6 +337,7 @@ const bool NukiOfficial::hasAuthId() const
 void NukiOfficial::clearAuthId()
 {
     _hasAuthId = false;
+    _authId = 0;
 }
 
 const bool NukiOfficial::getOffConnected() const
@@ -315,6 +368,11 @@ const uint8_t NukiOfficial::getOffLockAction() const
 const uint8_t NukiOfficial::getOffTrigger() const
 {
     return offTrigger;
+}
+
+const uint8_t NukiOfficial::getOffContext() const
+{
+    return offContext;
 }
 
 const int64_t NukiOfficial::getOffCommandExecutedTs() const

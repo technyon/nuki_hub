@@ -244,6 +244,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Enable hybrid official MQTT and Nuki Hub setup: Enable to combine the official MQTT over Thread/Wi-Fi with BLE. Improves speed of state changes. Needs the official MQTT to be setup first. Also requires Nuki Hub to be paired as app and unregistered as a bridge using the Nuki app. See [hybrid mode](/HYBRID.md)
 - Enable sending actions through official MQTT: Enable to sent lock actions through the official MQTT topics (e.g. over Thread/Wi-Fi) instead of using BLE. Needs "Enable hybrid official MQTT and Nuki Hub setup" to be enabled. See [hybrid mode](/HYBRID.md)
 - Time between status updates when official MQTT is offline (seconds): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki lock for the current lock state when the official MQTT is offline, default 600.
+- Retry command sent using official MQTT over BLE if failed: Enable to publish lock commands over BLE if NukiHub fails to use Hybrid mode to execute the command over MQTT
+- Reboot Nuki lock on official MQTT failure: Enable to reboot the Nuki Lock if official MQTT over WiFi/Thread is offline for more than 180 seconds
 
 ### Nuki Configuration
 

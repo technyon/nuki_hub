@@ -32,7 +32,7 @@ void NetworkDevice::init()
                 if(ca_cert.length() > 1)
                 {
                     _useEncryption = true;
-                    Log->println(F("MQTT over TLS."));
+                    Log->println(("MQTT over TLS."));
                     _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
                     _mqttClientSecure->setCACert(caDest);
 
@@ -57,7 +57,7 @@ void NetworkDevice::init()
 
                         if(cert.length() > 1 && key.length() > 1)
                         {
-                            Log->println(F("MQTT with client certificate."));
+                            Log->println(("MQTT with client certificate."));
                             _mqttClientSecure->setCertificate(certDest);
                             _mqttClientSecure->setPrivateKey(keyDest);
                         }
@@ -69,7 +69,7 @@ void NetworkDevice::init()
 
     if (!_useEncryption)
     {
-        Log->println(F("MQTT without TLS."));
+        Log->println(("MQTT without TLS."));
         _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
     }
 

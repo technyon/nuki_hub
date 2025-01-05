@@ -28,6 +28,7 @@ public:
     void scan(bool passive = false, bool async = true);
     bool isApOpen();
     bool isConnected();
+    bool mqttConnected();
     bool wifiConnected();
     void clearWifiFallback();
 

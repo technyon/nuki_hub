@@ -47,7 +47,7 @@ NetworkDeviceType NetworkUtil::GetDeviceTypeFromPreference(int hardwareDetect, i
         }
         break;
     default:
-        Log->println(F("Unknown hardware selected, falling back to Wi-Fi."));
+        Log->println(("Unknown hardware selected, falling back to Wi-Fi."));
         return NetworkDeviceType::WiFi;
         break;
     }
