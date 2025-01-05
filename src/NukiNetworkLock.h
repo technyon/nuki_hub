@@ -23,7 +23,7 @@ public:
     virtual ~NukiNetworkLock();
 
     void initialize();
-    void update();
+    bool update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
     void publishState(NukiLock::LockState lockState);
@@ -88,6 +88,8 @@ private:
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
     bool _disableNonJSON = false;
+    bool _offConnected = false;
+    bool _hybridRebootOnDisconnect = false;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";
@@ -96,6 +98,7 @@ private:
     uint8_t _queryCommands = 0;
     uint32_t _lastRollingLog = 0;
     uint32_t _authId = 0;
+    int64_t _offLastConnected = 0;
 
     char _nukiName[33];
     char _authName[33];

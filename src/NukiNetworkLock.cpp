@@ -45,6 +45,7 @@ void NukiNetworkLock::initialize()
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
+    _hybridRebootOnDisconnect = _preferences->getBool(preference_hybrid_reboot_on_disconnect, false);
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
@@ -156,12 +157,33 @@ void NukiNetworkLock::initialize()
     }
 }
 
-void NukiNetworkLock::update()
+bool NukiNetworkLock::update()
 {
+    bool ret = false;
+    
     if(_nukiOfficial->hasOffStateToPublish())
     {
         publishState(_nukiOfficial->getOffStateToPublish());
     }
+
+    if(_hybridRebootOnDisconnect && _network->mqttConnected())
+    {
+        int64_t ts = espMillis();
+
+        if(_offConnected && !_nukiOfficial->getOffConnected())
+        {
+            _offLastConnected = ts;
+        }
+        else if(!_offConnected && _offLastConnected > 0 && _offLastConnected < (ts - (180 * 1000)))
+        {
+            _offLastConnected = 0;
+            ret = true;
+        }
+
+        _offConnected = _nukiOfficial->getOffConnected();
+    }
+    
+    return ret;
 }
 
 void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
@@ -214,7 +236,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
             return;
         }
 
-        Log->print(F("Lock action received: "));
+        Log->print(("Lock action received: "));
         Log->println(data);
         LockActionResult lockActionResult = LockActionResult::Failed;
         if(_lockActionReceivedCallback != NULL)

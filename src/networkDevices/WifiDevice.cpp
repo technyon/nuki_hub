@@ -110,7 +110,7 @@ bool WifiDevice::connect()
             if (ssid == WiFi.SSID(i))
             {
                 Log->println(String("Saved SSID ") + ssid + String(" found with RSSI: ") +
-                             String(WiFi.RSSI(i)) + String(F("(")) +
+                             String(WiFi.RSSI(i)) + String(("(")) +
                              String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
                              String(" %) and BSSID: ") + WiFi.BSSIDstr(i) +
                              String(" and channel: ") + String(WiFi.channel(i)));
@@ -136,7 +136,7 @@ bool WifiDevice::connect()
         else
         {
             Log->println(String("Trying to connect to SSID ") + ssid + String(" found with RSSI: ") +
-                         String(WiFi.RSSI(bestConnection)) + String(F("(")) +
+                         String(WiFi.RSSI(bestConnection)) + String(("(")) +
                          String(constrain((100.0 + WiFi.RSSI(bestConnection)) * 2, 0, 100)) +
                          String(" %) and BSSID: ") + WiFi.BSSIDstr(bestConnection) +
                          String(" and channel: ") + String(WiFi.channel(bestConnection)));
@@ -253,7 +253,7 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
         for (int i = 0; i < _foundNetworks; i++)
         {
             Log->println(String("SSID ") + WiFi.SSID(i) + String(" found with RSSI: ") +
-                         String(WiFi.RSSI(i)) + String(F("(")) +
+                         String(WiFi.RSSI(i)) + String(("(")) +
                          String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
                          String(" %) and BSSID: ") + WiFi.BSSIDstr(i) +
                          String(" and channel: ") + String(WiFi.channel(i)));

@@ -54,6 +54,7 @@ Gpio* gpio = nullptr;
 bool lockEnabled = false;
 bool openerEnabled = false;
 bool wifiConnected = false;
+bool rebootLock = false;
 
 TaskHandle_t nukiTaskHandle = nullptr;
 
@@ -162,9 +163,9 @@ void setReroute()
 uint8_t checkPartition()
 {
     const esp_partition_t* running_partition = esp_ota_get_running_partition();
-    Log->print(F("Partition size: "));
+    Log->print(("Partition size: "));
     Log->println(running_partition->size);
-    Log->print(F("Partition subtype: "));
+    Log->print(("Partition subtype: "));
     Log->println(running_partition->subtype);
 
     if(running_partition->size == 1966080)
@@ -197,7 +198,7 @@ void networkTask(void *pvParameters)
             if(bootloopCounter > 0)
             {
                 bootloopCounter = (int8_t)0;
-                Log->println(F("Bootloop counter reset"));
+                Log->println(("Bootloop counter reset"));
             }
         }
 
@@ -217,7 +218,7 @@ void networkTask(void *pvParameters)
 
         if(connected && lockEnabled)
         {
-            networkLock->update();
+            rebootLock = networkLock->update();
         }
 
         if(connected && openerEnabled)
@@ -293,7 +294,8 @@ void nukiTask(void *pvParameters)
 
             if(lockEnabled)
             {
-                nuki->update();
+                nuki->update(rebootLock);
+                rebootLock = false;
             }
             if(openerEnabled)
             {
@@ -330,12 +332,12 @@ void bootloopDetection()
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         bootloopCounter++;
-        Log->print(F("Bootloop counter incremented: "));
+        Log->print(("Bootloop counter incremented: "));
         Log->println(bootloopCounter);
 
         if(bootloopCounter == 10)
         {
-            Log->print(F("Bootloop detected."));
+            Log->print(("Bootloop detected."));
 
             preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
             preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
@@ -431,7 +433,7 @@ void otaTask(void *pvParameter)
     {
         .http_config = &config,
     };
-    Log->print(F("Attempting to download update from "));
+    Log->print(("Attempting to download update from "));
     Log->println(config.url);
 
     int retryMax = 3;
@@ -503,7 +505,7 @@ void setupTasks(bool ota)
 }
 
 void cbSyncTime(struct timeval *tv)  {
-  Log->println(F("NTP time synched"));
+  Log->println(("NTP time synched"));
 }
 
 void setup()
@@ -549,9 +551,9 @@ void setup()
     }
 
 #ifdef NUKI_HUB_UPDATER
-    Log->print(F("Nuki Hub OTA version "));
+    Log->print(("Nuki Hub OTA version "));
     Log->println(NUKI_HUB_VERSION);
-    Log->print(F("Nuki Hub OTA build "));
+    Log->print(("Nuki Hub OTA build "));
     Log->println();
 
     if(preferences->getString(preference_updater_version, "") != NUKI_HUB_VERSION)
@@ -653,9 +655,9 @@ void setup()
         bootloopDetection();
     }
 
-    Log->print(F("Nuki Hub version "));
+    Log->print(("Nuki Hub version "));
     Log->println(NUKI_HUB_VERSION);
-    Log->print(F("Nuki Hub build "));
+    Log->print(("Nuki Hub build "));
     Log->println(NUKI_HUB_BUILD);
 
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);

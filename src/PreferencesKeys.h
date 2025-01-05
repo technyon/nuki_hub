@@ -124,6 +124,7 @@
 #define preference_lock_force_keypad (char*)"lckForceKp"
 #define preference_opener_force_id (char*)"opForceId"
 #define preference_opener_force_keypad (char*)"opForceKp"
+#define preference_hybrid_reboot_on_disconnect (char*)"hybridRbtLck"
 
 //NOT USER CHANGABLE
 #define preference_updater_version (char*)"updVer"
@@ -185,6 +186,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_official_hybrid_enabled, false);
         preferences->putBool(preference_official_hybrid_actions, false);
         preferences->putBool(preference_official_hybrid_retry, false);
+        preferences->putBool(preference_hybrid_reboot_on_disconnect, false);
         preferences->putBool(preference_disable_non_json, false);
         preferences->putBool(preference_update_from_mqtt, false);
         preferences->putBool(preference_ip_dhcp_enabled, true);
@@ -472,7 +474,7 @@ private:
         preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt,
         preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
         preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_http_auth_type,
-        preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect,
+        preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_hybrid_reboot_on_disconnect,
         preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry,
         preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
         preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
@@ -505,7 +507,8 @@ private:
         preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled, preference_hass_device_discovery,
         preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi, preference_http_auth_type,
         preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
-        preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled
+        preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled,
+        preference_hybrid_reboot_on_disconnect
     };
     std::vector<char*> _bytePrefs =
     {
