@@ -1,10 +1,10 @@
 dependencies:
   # Required IDF version
-  idf: ">=4.4"
+  idf: ">=5.2"
 
   esp-nimble-cpp:
     git: https://github.com/h2zero/esp-nimble-cpp.git
-    version: b50a1b50b1a66e872e7d3dbff653e20f9a40e102
+    version: fa468d360a56712f3f39a1fba74b97340ebca8a9
     
   espressif/libsodium: "^1.0.20~2"
 
