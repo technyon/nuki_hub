@@ -7,14 +7,8 @@
 #include <catch.hpp>
 #include <limits>
 
-template <typename T>
-void checkValue(T expected) {
-  JsonDocument doc;
-  JsonVariant variant = doc.to<JsonVariant>();
-
-  variant.set(expected);
-  REQUIRE(expected == variant.as<T>());
-}
+#include "Allocators.hpp"
+#include "Literals.hpp"
 
 template <typename T>
 void checkReference(T& expected) {
@@ -39,27 +33,29 @@ void checkNumericType() {
 }
 
 TEST_CASE("JsonVariant set()/get()") {
+  SpyingAllocator spy;
+  JsonDocument doc(&spy);
+  JsonVariant variant = doc.to<JsonVariant>();
+
 #if ARDUINOJSON_USE_LONG_LONG
   SECTION("SizeOfJsonInteger") {
     REQUIRE(8 == sizeof(JsonInteger));
   }
 #endif
 
-  SECTION("Null") {
-    checkValue<const char*>(NULL);
-  }
-  SECTION("const char*") {
-    checkValue<const char*>("hello");
-  }
-  SECTION("std::string") {
-    checkValue<std::string>("hello");
-  }
+  // /!\ Most test were moved to `JsonVariant/set.cpp`
+  // TODO: move the remaining tests too
 
   SECTION("False") {
-    checkValue<bool>(false);
+    variant.set(false);
+    REQUIRE(variant.as<bool>() == false);
+    REQUIRE(spy.log() == AllocatorLog{});
   }
+
   SECTION("True") {
-    checkValue<bool>(true);
+    variant.set(true);
+    REQUIRE(variant.as<bool>() == true);
+    REQUIRE(spy.log() == AllocatorLog{});
   }
 
   SECTION("Double") {
@@ -129,10 +125,12 @@ TEST_CASE("JsonVariant set()/get()") {
 #endif
 
   SECTION("CanStoreObject") {
-    JsonDocument doc;
-    JsonObject object = doc.to<JsonObject>();
+    JsonDocument doc2;
+    JsonObject object = doc2.to<JsonObject>();
 
-    checkValue<JsonObject>(object);
+    variant.set(object);
+    REQUIRE(variant.is<JsonObject>());
+    REQUIRE(variant.as<JsonObject>() == object);
   }
 }
 

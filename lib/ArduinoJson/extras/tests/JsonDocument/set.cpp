@@ -11,6 +11,21 @@ TEST_CASE("JsonDocument::set()") {
   SpyingAllocator spy;
   JsonDocument doc(&spy);
 
+  SECTION("nullptr") {
+    doc.set(nullptr);
+
+    REQUIRE(doc.isNull());
+    REQUIRE(spy.log() == AllocatorLog{});
+  }
+
+  SECTION("integer&") {
+    int toto = 42;
+    doc.set(toto);
+
+    REQUIRE(doc.as<std::string>() == "42");
+    REQUIRE(spy.log() == AllocatorLog{});
+  }
+
   SECTION("integer") {
     doc.set(42);
 
@@ -18,11 +33,21 @@ TEST_CASE("JsonDocument::set()") {
     REQUIRE(spy.log() == AllocatorLog{});
   }
 
-  SECTION("const char*") {
+  SECTION("string literal") {
     doc.set("example");
 
     REQUIRE(doc.as<const char*>() == "example"_s);
     REQUIRE(spy.log() == AllocatorLog{});
+  }
+
+  SECTION("const char*") {
+    const char* value = "example";
+    doc.set(value);
+
+    REQUIRE(doc.as<const char*>() == "example"_s);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofString("example")),
+                         });
   }
 
   SECTION("std::string") {

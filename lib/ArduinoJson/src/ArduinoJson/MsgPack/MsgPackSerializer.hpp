@@ -96,7 +96,7 @@ class MsgPackSerializer : public VariantDataVisitor<size_t> {
   }
 
   size_t visit(JsonString value) {
-    ARDUINOJSON_ASSERT(value != NULL);
+    ARDUINOJSON_ASSERT(!value.isNull());
 
     auto n = value.size();
 
@@ -218,9 +218,10 @@ ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE
 
 // Produces a MessagePack document.
 // https://arduinojson.org/v7/api/msgpack/serializemsgpack/
-template <typename TDestination>
-detail::enable_if_t<!detail::is_pointer<TDestination>::value, size_t>
-serializeMsgPack(JsonVariantConst source, TDestination& output) {
+template <
+    typename TDestination,
+    detail::enable_if_t<!detail::is_pointer<TDestination>::value, int> = 0>
+inline size_t serializeMsgPack(JsonVariantConst source, TDestination& output) {
   using namespace ArduinoJson::detail;
   return serialize<MsgPackSerializer>(source, output);
 }

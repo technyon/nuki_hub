@@ -6,6 +6,7 @@
 #include <catch.hpp>
 
 #include "Allocators.hpp"
+#include "Literals.hpp"
 
 using ArduinoJson::detail::sizeofObject;
 
@@ -322,10 +323,11 @@ TEST_CASE("deserialize JSON object") {
 
     SECTION("NUL in keys") {
       DeserializationError err =
-          deserializeJson(doc, "{\"x\\u0000a\":1,\"x\\u0000b\":2}");
+          deserializeJson(doc, "{\"x\":0,\"x\\u0000a\":1,\"x\\u0000b\":2}");
 
       REQUIRE(err == DeserializationError::Ok);
-      REQUIRE(doc.as<std::string>() == "{\"x\\u0000a\":1,\"x\\u0000b\":2}");
+      REQUIRE(doc.as<std::string>() ==
+              "{\"x\":0,\"x\\u0000a\":1,\"x\\u0000b\":2}");
     }
   }
 

@@ -67,7 +67,7 @@ TEST_CASE("JsonDocument::containsKey()") {
 
 TEST_CASE("MemberProxy::containsKey()") {
   JsonDocument doc;
-  auto mp = doc["hello"];
+  const auto& mp = doc["hello"];
 
   SECTION("containsKey(const char*)") {
     mp["key"] = "value";

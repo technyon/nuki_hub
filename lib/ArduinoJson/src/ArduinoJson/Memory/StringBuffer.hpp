@@ -55,7 +55,7 @@ class StringBuffer {
   JsonString str() const {
     ARDUINOJSON_ASSERT(node_ != nullptr);
 
-    return JsonString(node_->data, node_->length, JsonString::Copied);
+    return JsonString(node_->data, node_->length);
   }
 
  private:

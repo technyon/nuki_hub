@@ -15,12 +15,17 @@ class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
                      public VariantOperators<ElementProxy<TUpstream>> {
   friend class VariantAttorney;
 
+  friend class VariantRefBase<ElementProxy<TUpstream>>;
+
+  template <typename, typename>
+  friend class MemberProxy;
+
+  template <typename>
+  friend class ElementProxy;
+
  public:
   ElementProxy(TUpstream upstream, size_t index)
       : upstream_(upstream), index_(index) {}
-
-  ElementProxy(const ElementProxy& src)
-      : upstream_(src.upstream_), index_(src.index_) {}
 
   ElementProxy& operator=(const ElementProxy& src) {
     this->set(src);
@@ -40,6 +45,11 @@ class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
   }
 
  private:
+  // clang-format off
+  ElementProxy(const ElementProxy& src)  // Error here? See https://arduinojson.org/v7/proxy-non-copyable/
+      : upstream_(src.upstream_), index_(src.index_) {}
+  // clang-format on
+
   ResourceManager* getResourceManager() const {
     return VariantAttorney::getResourceManager(upstream_);
   }

@@ -17,79 +17,19 @@ template <typename T>
 struct IsChar
     : integral_constant<bool, is_integral<T>::value && sizeof(T) == 1> {};
 
-class ZeroTerminatedRamString {
- public:
-  static const size_t typeSortKey = 3;
-
-  ZeroTerminatedRamString(const char* str) : str_(str) {}
-
-  bool isNull() const {
-    return !str_;
-  }
-
-  FORCE_INLINE size_t size() const {
-    return str_ ? ::strlen(str_) : 0;
-  }
-
-  char operator[](size_t i) const {
-    ARDUINOJSON_ASSERT(str_ != 0);
-    ARDUINOJSON_ASSERT(i <= size());
-    return str_[i];
-  }
-
-  const char* data() const {
-    return str_;
-  }
-
-  bool isLinked() const {
-    return false;
-  }
-
- protected:
-  const char* str_;
-};
-
-template <typename TChar>
-struct StringAdapter<TChar*, enable_if_t<IsChar<TChar>::value>> {
-  using AdaptedString = ZeroTerminatedRamString;
-
-  static AdaptedString adapt(const TChar* p) {
-    return AdaptedString(reinterpret_cast<const char*>(p));
-  }
-};
-
-template <typename TChar, size_t N>
-struct StringAdapter<TChar[N], enable_if_t<IsChar<TChar>::value>> {
-  using AdaptedString = ZeroTerminatedRamString;
-
-  static AdaptedString adapt(const TChar* p) {
-    return AdaptedString(reinterpret_cast<const char*>(p));
-  }
-};
-
-class StaticStringAdapter : public ZeroTerminatedRamString {
- public:
-  StaticStringAdapter(const char* str) : ZeroTerminatedRamString(str) {}
-
-  bool isLinked() const {
-    return true;
-  }
-};
-
-template <>
-struct StringAdapter<const char*, void> {
-  using AdaptedString = StaticStringAdapter;
-
-  static AdaptedString adapt(const char* p) {
-    return AdaptedString(p);
-  }
-};
-
-class SizedRamString {
+class RamString {
  public:
   static const size_t typeSortKey = 2;
+#if ARDUINOJSON_SIZEOF_POINTER <= 2
+  static constexpr size_t sizeMask = size_t(-1) >> 1;
+#else
+  static constexpr size_t sizeMask = size_t(-1);
+#endif
 
-  SizedRamString(const char* str, size_t sz) : str_(str), size_(sz) {}
+  RamString(const char* str, size_t sz, bool isStatic = false)
+      : str_(str), size_(sz & sizeMask), static_(isStatic) {
+    ARDUINOJSON_ASSERT(size_ == sz);
+  }
 
   bool isNull() const {
     return !str_;
@@ -109,18 +49,55 @@ class SizedRamString {
     return str_;
   }
 
-  bool isLinked() const {
-    return false;
+  bool isStatic() const {
+    return static_;
   }
 
  protected:
   const char* str_;
+
+#if ARDUINOJSON_SIZEOF_POINTER <= 2
+  // Use a bitfield only on 8-bit microcontrollers
+  size_t size_ : sizeof(size_t) * 8 - 1;
+  bool static_ : 1;
+#else
   size_t size_;
+  bool static_;
+#endif
+};
+
+template <typename TChar>
+struct StringAdapter<TChar*, enable_if_t<IsChar<TChar>::value>> {
+  using AdaptedString = RamString;
+
+  static AdaptedString adapt(const TChar* p) {
+    auto str = reinterpret_cast<const char*>(p);
+    return AdaptedString(str, str ? ::strlen(str) : 0);
+  }
+};
+
+template <size_t N>
+struct StringAdapter<const char (&)[N]> {
+  using AdaptedString = RamString;
+
+  static AdaptedString adapt(const char (&p)[N]) {
+    return RamString(p, N - 1, true);
+  }
+};
+
+template <typename TChar, size_t N>
+struct StringAdapter<TChar[N], enable_if_t<IsChar<TChar>::value>> {
+  using AdaptedString = RamString;
+
+  static AdaptedString adapt(const TChar* p) {
+    auto str = reinterpret_cast<const char*>(p);
+    return AdaptedString(str, str ? ::strlen(str) : 0);
+  }
 };
 
 template <typename TChar>
 struct SizedStringAdapter<TChar*, enable_if_t<IsChar<TChar>::value>> {
-  using AdaptedString = SizedRamString;
+  using AdaptedString = RamString;
 
   static AdaptedString adapt(const TChar* p, size_t n) {
     return AdaptedString(reinterpret_cast<const char*>(p), n);

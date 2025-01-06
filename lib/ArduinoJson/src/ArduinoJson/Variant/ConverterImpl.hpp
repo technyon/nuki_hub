@@ -31,7 +31,7 @@ struct Converter {
     // clang-format on
   }
 
-  static T fromJson(JsonVariantConst src) {
+  static detail::decay_t<T> fromJson(JsonVariantConst src) {
     static_assert(!detail::is_same<T, char*>::value,
                   "type 'char*' is not supported, use 'const char*' instead");
 
@@ -178,7 +178,7 @@ struct Converter<JsonString> : private detail::VariantAttorney {
 
   static JsonString fromJson(JsonVariantConst src) {
     auto data = getData(src);
-    return data ? data->asString() : 0;
+    return data ? data->asString() : JsonString();
   }
 
   static bool checkJson(JsonVariantConst src) {

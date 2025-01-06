@@ -1,6 +1,46 @@
 ArduinoJson: change log
 =======================
 
+v7.3.0 (2024-12-29)
+------
+
+* Fix support for NUL characters in `deserializeJson()`
+* Make `ElementProxy` and `MemberProxy` non-copyable
+* Change string copy policy: only string literal are stored by pointer
+* `JsonString` is now stored by copy, unless specified otherwise
+* Replace undocumented `JsonString::Ownership` with `bool`
+* Rename undocumented `JsonString::isLinked()` to `isStatic()`
+* Move public facing SFINAEs to template declarations
+
+> ### BREAKING CHANGES
+>
+> In previous versions, `MemberProxy` (the class returned by `operator[]`) could lead to dangling pointers when used with a temporary string.
+> To prevent this issue, `MemberProxy` and `ElementProxy` are now non-copyable.
+>
+> Your code is likely to be affected if you use `auto` to store the result of `operator[]`. For example, the following line won't compile anymore:
+>
+> ```cpp
+> auto value = doc["key"];
+> ```
+>
+> To fix the issue, you must append either `.as<T>()` or `.to<T>()`, depending on the situation.
+>
+> For example, if you are extracting values from a JSON document, you should update like this:
+>
+> ```diff
+> - auto config = doc["config"];
+> + auto config = doc["config"].as<JsonObject>();
+> const char* name = config["name"];
+> ```
+>
+> However, if you are building a JSON document, you should update like this:
+>
+> ```diff
+> - auto config = doc["config"];
+> + auto config = doc["config"].to<JsonObject>();
+> config["name"] = "ArduinoJson";
+> ```
+
 v7.2.1 (2024-11-15)
 ------
 

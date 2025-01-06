@@ -5,6 +5,7 @@
 #include <Arduino.h>
 
 #include <ArduinoJson/Strings/IsString.hpp>
+#include <ArduinoJson/Strings/JsonString.hpp>
 #include <ArduinoJson/Strings/StringAdapters.hpp>
 
 #include <catch.hpp>
@@ -16,27 +17,36 @@ using ArduinoJson::JsonString;
 using namespace ArduinoJson::detail;
 
 TEST_CASE("adaptString()") {
+  SECTION("string literal") {
+    auto s = adaptString("bravo\0alpha");
+
+    CHECK(s.isNull() == false);
+    CHECK(s.size() == 11);
+    CHECK(s.isStatic() == true);
+  }
+
   SECTION("null const char*") {
     auto s = adaptString(static_cast<const char*>(0));
 
     CHECK(s.isNull() == true);
     CHECK(s.size() == 0);
-    CHECK(s.isLinked() == true);
   }
 
   SECTION("non-null const char*") {
-    auto s = adaptString("bravo");
+    const char* p = "bravo";
+    auto s = adaptString(p);
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == true);
+    CHECK(s.isStatic() == false);
+    CHECK(s.data() == p);
   }
 
   SECTION("null const char* + size") {
     auto s = adaptString(static_cast<const char*>(0), 10);
 
     CHECK(s.isNull() == true);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 
   SECTION("non-null const char* + size") {
@@ -44,7 +54,7 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 
   SECTION("null Flash string") {
@@ -52,7 +62,7 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == true);
     CHECK(s.size() == 0);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 
   SECTION("non-null Flash string") {
@@ -60,7 +70,7 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 
   SECTION("std::string") {
@@ -69,7 +79,7 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 
   SECTION("Arduino String") {
@@ -78,7 +88,7 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 
   SECTION("custom_string") {
@@ -87,25 +97,25 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 
   SECTION("JsonString linked") {
-    JsonString orig("hello", JsonString::Ownership::Linked);
+    JsonString orig("hello", true);
     auto s = adaptString(orig);
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == true);
+    CHECK(s.isStatic() == true);
   }
 
   SECTION("JsonString copied") {
-    JsonString orig("hello", JsonString::Ownership::Copied);
+    JsonString orig("hello", false);
     auto s = adaptString(orig);
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == false);
+    CHECK(s.isStatic() == false);
   }
 }
 

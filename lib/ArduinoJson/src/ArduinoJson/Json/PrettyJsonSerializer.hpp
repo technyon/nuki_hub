@@ -83,9 +83,11 @@ ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE
 
 // Produces JsonDocument to create a prettified JSON document.
 // https://arduinojson.org/v7/api/json/serializejsonpretty/
-template <typename TDestination>
-detail::enable_if_t<!detail::is_pointer<TDestination>::value, size_t>
-serializeJsonPretty(JsonVariantConst source, TDestination& destination) {
+template <
+    typename TDestination,
+    detail::enable_if_t<!detail::is_pointer<TDestination>::value, int> = 0>
+inline size_t serializeJsonPretty(JsonVariantConst source,
+                                  TDestination& destination) {
   using namespace ArduinoJson::detail;
   return serialize<PrettyJsonSerializer>(source, destination);
 }

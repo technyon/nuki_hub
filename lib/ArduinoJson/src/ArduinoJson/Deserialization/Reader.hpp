@@ -11,7 +11,7 @@
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-// The default reader is a simple wrapper for Readers that are not copiable
+// The default reader is a simple wrapper for Readers that are not copyable
 template <typename TSource, typename Enable = void>
 struct Reader {
  public:

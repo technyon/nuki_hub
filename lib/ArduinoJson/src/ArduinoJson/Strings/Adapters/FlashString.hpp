@@ -34,7 +34,7 @@ class FlashString {
     return size_;
   }
 
-  friend bool stringEquals(FlashString a, SizedRamString b) {
+  friend bool stringEquals(FlashString a, RamString b) {
     ARDUINOJSON_ASSERT(a.typeSortKey < b.typeSortKey);
     ARDUINOJSON_ASSERT(!a.isNull());
     ARDUINOJSON_ASSERT(!b.isNull());
@@ -43,7 +43,7 @@ class FlashString {
     return ::memcmp_P(b.data(), a.str_, a.size_) == 0;
   }
 
-  friend int stringCompare(FlashString a, SizedRamString b) {
+  friend int stringCompare(FlashString a, RamString b) {
     ARDUINOJSON_ASSERT(a.typeSortKey < b.typeSortKey);
     ARDUINOJSON_ASSERT(!a.isNull());
     ARDUINOJSON_ASSERT(!b.isNull());
@@ -63,7 +63,7 @@ class FlashString {
     ::memcpy_P(p, s.str_, n);
   }
 
-  bool isLinked() const {
+  bool isStatic() const {
     return false;
   }
 

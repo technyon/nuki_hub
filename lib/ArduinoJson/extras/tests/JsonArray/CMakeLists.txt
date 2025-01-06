@@ -13,7 +13,6 @@ add_executable(JsonArrayTests
 	nesting.cpp
 	remove.cpp
 	size.cpp
-	std_string.cpp
 	subscript.cpp
 	unbound.cpp
 )

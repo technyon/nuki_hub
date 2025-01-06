@@ -15,7 +15,7 @@ struct StringAdapter<
     T,
     enable_if_t<(string_traits<T>::has_cstr || string_traits<T>::has_data) &&
                 (string_traits<T>::has_length || string_traits<T>::has_size)>> {
-  using AdaptedString = SizedRamString;
+  using AdaptedString = RamString;
 
   static AdaptedString adapt(const T& s) {
     return AdaptedString(get_data(s), get_size(s));

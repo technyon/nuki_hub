@@ -17,6 +17,15 @@ TEST_CASE("JsonVariant::set() when there is enough memory") {
   JsonDocument doc(&spy);
   JsonVariant variant = doc.to<JsonVariant>();
 
+  SECTION("string literal") {
+    bool result = variant.set("hello\0world");
+
+    REQUIRE(result == true);
+    CHECK(variant ==
+          "hello"_s);  // linked string cannot contain '\0' at the moment
+    CHECK(spy.log() == AllocatorLog{});
+  }
+
   SECTION("const char*") {
     char str[16];
 
@@ -25,8 +34,10 @@ TEST_CASE("JsonVariant::set() when there is enough memory") {
     strcpy(str, "world");
 
     REQUIRE(result == true);
-    REQUIRE(variant == "world");  // stores by pointer
-    REQUIRE(spy.log() == AllocatorLog{});
+    REQUIRE(variant == "hello");  // stores by copy
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofString("hello")),
+                         });
   }
 
   SECTION("(const char*)0") {
@@ -34,6 +45,7 @@ TEST_CASE("JsonVariant::set() when there is enough memory") {
 
     REQUIRE(result == true);
     REQUIRE(variant.isNull());
+    REQUIRE(variant.as<const char*>() == nullptr);
     REQUIRE(spy.log() == AllocatorLog{});
   }
 
@@ -105,16 +117,14 @@ TEST_CASE("JsonVariant::set() when there is enough memory") {
 #endif
 
   SECTION("std::string") {
-    std::string str;
-
-    str = "hello";
+    std::string str = "hello\0world"_s;
     bool result = variant.set(str);
     str.replace(0, 5, "world");
 
     REQUIRE(result == true);
-    REQUIRE(variant == "hello");  // stores by copy
+    REQUIRE(variant == "hello\0world"_s);  // stores by copy
     REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofString("hello")),
+                             Allocate(sizeofString("hello?world")),
                          });
   }
 
@@ -122,7 +132,7 @@ TEST_CASE("JsonVariant::set() when there is enough memory") {
     char str[16];
 
     strcpy(str, "hello");
-    bool result = variant.set(JsonString(str, JsonString::Linked));
+    bool result = variant.set(JsonString(str, true));
     strcpy(str, "world");
 
     REQUIRE(result == true);
@@ -134,7 +144,7 @@ TEST_CASE("JsonVariant::set() when there is enough memory") {
     char str[16];
 
     strcpy(str, "hello");
-    bool result = variant.set(JsonString(str, JsonString::Copied));
+    bool result = variant.set(JsonString(str));
     strcpy(str, "world");
 
     REQUIRE(result == true);

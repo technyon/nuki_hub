@@ -5,6 +5,7 @@
 #pragma once
 
 #include "type_traits/conditional.hpp"
+#include "type_traits/decay.hpp"
 #include "type_traits/enable_if.hpp"
 #include "type_traits/function_traits.hpp"
 #include "type_traits/integral_constant.hpp"

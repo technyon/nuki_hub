@@ -20,11 +20,21 @@ TEST_CASE("JsonDocument::remove()") {
     REQUIRE(doc.as<std::string>() == "[1,3]");
   }
 
+  SECTION("string literal") {
+    doc["a"] = 1;
+    doc["a\0b"_s] = 2;
+    doc["b"] = 3;
+
+    doc.remove("a\0b");
+
+    REQUIRE(doc.as<std::string>() == "{\"a\":1,\"b\":3}");
+  }
+
   SECTION("remove(const char *)") {
     doc["a"] = 1;
     doc["b"] = 2;
 
-    doc.remove("a");
+    doc.remove(static_cast<const char*>("a"));
 
     REQUIRE(doc.as<std::string>() == "{\"b\":2}");
   }
