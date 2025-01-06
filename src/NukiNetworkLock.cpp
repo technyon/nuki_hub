@@ -829,6 +829,12 @@ void NukiNetworkLock::publishConfig(const NukiLock::Config &config)
     memset(str, 0, sizeof(str));
     _network->timeZoneIdToString(config.timeZoneId, str);
     json["timeZone"] = str;
+    json["deviceType"] = config.deviceType;
+    json["channel"] = config.network;
+    json["wifiCapable"] = config.network & 1;
+    json["threadCapable"] = (((unsigned int)config.network & 2) != 0 ? 1 : 0);
+    json["matterStatus"] = config.matterStatus;
+    json["productVariant"] = config.productVariant;
 
     serializeJson(json, _buffer, _bufferSize);
     _nukiPublisher->publishString(mqtt_topic_config_basic_json, _buffer, true);
