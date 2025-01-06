@@ -693,6 +693,15 @@ TEST_CASE("Filtering") {
           "null",
           0,
       },
+      {
+          "NUL character in key",
+          "{\"x\":0,\"x\\u0000a\":1,\"x\\u0000b\":2}",
+          "{\"x\\u0000a\":true}",
+          10,
+          DeserializationError::Ok,
+          "{\"x\\u0000a\":1}",
+          sizeofObject(1) + sizeofString("x?a"),
+      },
   };
 
   for (auto& tc : testCases) {

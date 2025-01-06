@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+#include "Allocators.hpp"
 #include "Literals.hpp"
 
 TEST_CASE("JsonDocument::operator[]") {
@@ -16,8 +17,16 @@ TEST_CASE("JsonDocument::operator[]") {
     doc["abc\0d"_s] = "ABCD";
 
     SECTION("const char*") {
+      const char* key = "abc";
+      REQUIRE(doc[key] == "ABC");
+      REQUIRE(cdoc[key] == "ABC");
+    }
+
+    SECTION("string literal") {
       REQUIRE(doc["abc"] == "ABC");
       REQUIRE(cdoc["abc"] == "ABC");
+      REQUIRE(doc["abc\0d"] == "ABCD");
+      REQUIRE(cdoc["abc\0d"] == "ABCD");
     }
 
     SECTION("std::string") {
@@ -93,4 +102,66 @@ TEST_CASE("JsonDocument automatically promotes to array") {
   doc[2] = 2;
 
   REQUIRE(doc.as<std::string>() == "[null,null,2]");
+}
+
+TEST_CASE("JsonDocument::operator[] key storage") {
+  SpyingAllocator spy;
+  JsonDocument doc(&spy);
+
+  SECTION("string literal") {
+    doc["hello"] = 0;
+
+    REQUIRE(doc.as<std::string>() == "{\"hello\":0}");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                         });
+  }
+
+  SECTION("const char*") {
+    const char* key = "hello";
+    doc[key] = 0;
+
+    REQUIRE(doc.as<std::string>() == "{\"hello\":0}");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                         });
+  }
+
+  SECTION("char[]") {
+    char key[] = "hello";
+    doc[key] = 0;
+
+    REQUIRE(doc.as<std::string>() == "{\"hello\":0}");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                         });
+  }
+
+  SECTION("std::string") {
+    doc["hello"_s] = 0;
+
+    REQUIRE(doc.as<std::string>() == "{\"hello\":0}");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                         });
+  }
+#if defined(HAS_VARIABLE_LENGTH_ARRAY) && \
+    !defined(SUBSCRIPT_CONFLICTS_WITH_BUILTIN_OPERATOR)
+  SECTION("VLA") {
+    size_t i = 16;
+    char vla[i];
+    strcpy(vla, "hello");
+
+    doc[vla] = 0;
+
+    REQUIRE(doc.as<std::string>() == "{\"hello\":0}");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                         });
+  }
+#endif
 }

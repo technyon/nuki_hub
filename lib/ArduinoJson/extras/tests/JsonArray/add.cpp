@@ -17,31 +17,112 @@ TEST_CASE("JsonArray::add(T)") {
 
   SECTION("int") {
     array.add(123);
+
     REQUIRE(123 == array[0].as<int>());
     REQUIRE(array[0].is<int>());
     REQUIRE(array[0].is<double>());
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                         });
   }
 
   SECTION("double") {
     array.add(123.45);
+
     REQUIRE(123.45 == array[0].as<double>());
     REQUIRE(array[0].is<double>());
     REQUIRE_FALSE(array[0].is<bool>());
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                         });
   }
 
   SECTION("bool") {
     array.add(true);
-    REQUIRE(true == array[0].as<bool>());
+
+    REQUIRE(array[0].as<bool>() == true);
     REQUIRE(array[0].is<bool>());
     REQUIRE_FALSE(array[0].is<int>());
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                         });
+  }
+
+  SECTION("string literal") {
+    array.add("hello");
+
+    REQUIRE(array[0].as<std::string>() == "hello");
+    REQUIRE(array[0].is<const char*>());
+    REQUIRE(array[0].is<int>() == false);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                         });
+  }
+
+  SECTION("std::string") {
+    array.add("hello"_s);
+
+    REQUIRE(array[0].as<std::string>() == "hello");
+    REQUIRE(array[0].is<const char*>() == true);
+    REQUIRE(array[0].is<int>() == false);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                         });
   }
 
   SECTION("const char*") {
     const char* str = "hello";
     array.add(str);
-    REQUIRE(str == array[0].as<std::string>());
-    REQUIRE(array[0].is<const char*>());
-    REQUIRE_FALSE(array[0].is<int>());
+
+    REQUIRE(array[0].as<std::string>() == "hello");
+    REQUIRE(array[0].as<const char*>() != str);
+    REQUIRE(array[0].is<const char*>() == true);
+    REQUIRE(array[0].is<int>() == false);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                         });
+  }
+
+  SECTION("serialized(const char*)") {
+    array.add(serialized("{}"));
+
+    REQUIRE(doc.as<std::string>() == "[{}]");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("{}")),
+                         });
+  }
+
+  SECTION("serialized(char*)") {
+    array.add(serialized(const_cast<char*>("{}")));
+
+    REQUIRE(doc.as<std::string>() == "[{}]");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("{}")),
+                         });
+  }
+
+  SECTION("serialized(std::string)") {
+    array.add(serialized("{}"_s));
+
+    REQUIRE(doc.as<std::string>() == "[{}]");
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("{}")),
+                         });
+  }
+
+  SECTION("serialized(std::string)") {
+    array.add(serialized("\0XX"_s));
+
+    REQUIRE(doc.as<std::string>() == "[\0XX]"_s);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString(" XX")),
+                         });
   }
 
 #ifdef HAS_VARIABLE_LENGTH_ARRAY
@@ -52,7 +133,12 @@ TEST_CASE("JsonArray::add(T)") {
 
     array.add(vla);
 
-    REQUIRE("world"_s == array[0]);
+    strcpy(vla, "hello");
+    REQUIRE(array[0] == "world"_s);
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                         });
   }
 #endif
 
@@ -98,61 +184,6 @@ TEST_CASE("JsonArray::add(T)") {
     array.add(obj["x"]);
 
     REQUIRE(str == array[0]);
-  }
-
-  SECTION("should not duplicate const char*") {
-    array.add("world");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                         });
-  }
-
-  SECTION("should duplicate char*") {
-    array.add(const_cast<char*>("world"));
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("should duplicate std::string") {
-    array.add("world"_s);
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("should duplicate serialized(const char*)") {
-    array.add(serialized("{}"));
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("{}")),
-                         });
-  }
-
-  SECTION("should duplicate serialized(char*)") {
-    array.add(serialized(const_cast<char*>("{}")));
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("{}")),
-                         });
-  }
-
-  SECTION("should duplicate serialized(std::string)") {
-    array.add(serialized("{}"_s));
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("{}")),
-                         });
-  }
-
-  SECTION("should duplicate serialized(std::string)") {
-    array.add(serialized("\0XX"_s));
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString(" XX")),
-                         });
   }
 }
 

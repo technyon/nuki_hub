@@ -5,7 +5,6 @@
 #pragma once
 
 #include <ArduinoJson/Polyfills/type_traits.hpp>
-#include <ArduinoJson/Strings/Adapters/JsonString.hpp>
 #include <ArduinoJson/Strings/Adapters/RamString.hpp>
 #include <ArduinoJson/Strings/Adapters/StringObject.hpp>
 

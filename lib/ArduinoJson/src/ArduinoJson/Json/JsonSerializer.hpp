@@ -129,9 +129,10 @@ ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE
 
 // Produces a minified JSON document.
 // https://arduinojson.org/v7/api/json/serializejson/
-template <typename TDestination>
-detail::enable_if_t<!detail::is_pointer<TDestination>::value, size_t>
-serializeJson(JsonVariantConst source, TDestination& destination) {
+template <
+    typename TDestination,
+    detail::enable_if_t<!detail::is_pointer<TDestination>::value, int> = 0>
+size_t serializeJson(JsonVariantConst source, TDestination& destination) {
   using namespace detail;
   return serialize<JsonSerializer>(source, destination);
 }
@@ -152,10 +153,10 @@ inline size_t measureJson(JsonVariantConst source) {
 }
 
 #if ARDUINOJSON_ENABLE_STD_STREAM
-template <typename T>
-inline detail::enable_if_t<detail::is_convertible<T, JsonVariantConst>::value,
-                           std::ostream&>
-operator<<(std::ostream& os, const T& source) {
+template <typename T,
+          detail::enable_if_t<
+              detail::is_convertible<T, JsonVariantConst>::value, int> = 0>
+inline std::ostream& operator<<(std::ostream& os, const T& source) {
   serializeJson(source, os);
   return os;
 }

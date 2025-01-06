@@ -8,7 +8,7 @@
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-// The default writer is a simple wrapper for Writers that are not copiable
+// The default writer is a simple wrapper for Writers that are not copyable
 template <typename TDestination, typename Enable = void>
 class Writer {
  public:

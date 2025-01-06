@@ -13,7 +13,7 @@ TEST_CASE("JsonString") {
 
     CHECK(s.isNull() == true);
     CHECK(s.c_str() == 0);
-    CHECK(s.isLinked() == true);
+    CHECK(s.isStatic() == true);
     CHECK(s == JsonString());
     CHECK(s != "");
   }
@@ -96,7 +96,7 @@ TEST_CASE("JsonString") {
     JsonString s("hello world", 5);
 
     CHECK(s.size() == 5);
-    CHECK(s.isLinked() == true);
+    CHECK(s.isStatic() == false);
     CHECK(s == "hello");
     CHECK(s != "hello world");
   }

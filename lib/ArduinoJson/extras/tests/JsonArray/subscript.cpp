@@ -59,14 +59,55 @@ TEST_CASE("JsonArray::operator[]") {
     REQUIRE(false == array[0].is<int>());
   }
 
-  SECTION("const char*") {
-    const char* str = "hello";
+  SECTION("string literal") {
+    array[0] = "hello";
 
-    array[0] = str;
-    REQUIRE(str == array[0].as<const char*>());
+    REQUIRE(array[0].as<std::string>() == "hello");
     REQUIRE(true == array[0].is<const char*>());
     REQUIRE(false == array[0].is<int>());
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("world")),
+                         });
   }
+
+  SECTION("const char*") {
+    const char* str = "hello";
+    array[0] = str;
+
+    REQUIRE(array[0].as<std::string>() == "hello");
+    REQUIRE(true == array[0].is<const char*>());
+    REQUIRE(false == array[0].is<int>());
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("world")),
+                         });
+  }
+
+  SECTION("std::string") {
+    array[0] = "hello"_s;
+
+    REQUIRE(array[0].as<std::string>() == "hello");
+    REQUIRE(true == array[0].is<const char*>());
+    REQUIRE(false == array[0].is<int>());
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofPool()),
+                             Allocate(sizeofString("world")),
+                         });
+  }
+
+#ifdef HAS_VARIABLE_LENGTH_ARRAY
+  SECTION("VLA") {
+    size_t i = 16;
+    char vla[i];
+    strcpy(vla, "world");
+
+    array.add("hello");
+    array[0] = vla;
+
+    REQUIRE(array[0] == "world"_s);
+  }
+#endif
 
   SECTION("nested array") {
     JsonDocument doc2;
@@ -114,57 +155,10 @@ TEST_CASE("JsonArray::operator[]") {
     REQUIRE(str == array[0]);
   }
 
-  SECTION("should not duplicate const char*") {
-    array[0] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                         });
-  }
-
-  SECTION("should duplicate char*") {
-    array[0] = const_cast<char*>("world");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("should duplicate std::string") {
-    array[0] = "world"_s;
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
   SECTION("array[0].to<JsonObject>()") {
     JsonObject obj = array[0].to<JsonObject>();
     REQUIRE(obj.isNull() == false);
   }
-
-#ifdef HAS_VARIABLE_LENGTH_ARRAY
-  SECTION("set(VLA)") {
-    size_t i = 16;
-    char vla[i];
-    strcpy(vla, "world");
-
-    array.add("hello");
-    array[0].set(vla);
-
-    REQUIRE("world"_s == array[0]);
-  }
-
-  SECTION("operator=(VLA)") {
-    size_t i = 16;
-    char vla[i];
-    strcpy(vla, "world");
-
-    array.add("hello");
-    array[0] = vla;
-
-    REQUIRE("world"_s == array[0]);
-  }
-#endif
 
   SECTION("Use a JsonVariant as index") {
     array[0] = 1;

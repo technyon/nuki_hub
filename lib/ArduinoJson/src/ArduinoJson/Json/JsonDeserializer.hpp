@@ -270,10 +270,10 @@ class JsonDeserializer {
 
       JsonString key = stringBuilder_.str();
 
-      TFilter memberFilter = filter[key.c_str()];
+      TFilter memberFilter = filter[key];
 
       if (memberFilter.allow()) {
-        auto member = object.getMember(adaptString(key.c_str()), resources_);
+        auto member = object.getMember(adaptString(key), resources_);
         if (!member) {
           // Save key in memory pool.
           auto savedKey = stringBuilder_.save();
@@ -697,10 +697,11 @@ ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE
 
 // Parses a JSON input, filters, and puts the result in a JsonDocument.
 // https://arduinojson.org/v7/api/json/deserializejson/
-template <typename TDestination, typename... Args>
-detail::enable_if_t<detail::is_deserialize_destination<TDestination>::value,
-                    DeserializationError>
-deserializeJson(TDestination&& dst, Args&&... args) {
+template <typename TDestination, typename... Args,
+          detail::enable_if_t<
+              detail::is_deserialize_destination<TDestination>::value, int> = 0>
+inline DeserializationError deserializeJson(TDestination&& dst,
+                                            Args&&... args) {
   using namespace detail;
   return deserialize<JsonDeserializer>(detail::forward<TDestination>(dst),
                                        detail::forward<Args>(args)...);
@@ -708,10 +709,11 @@ deserializeJson(TDestination&& dst, Args&&... args) {
 
 // Parses a JSON input, filters, and puts the result in a JsonDocument.
 // https://arduinojson.org/v7/api/json/deserializejson/
-template <typename TDestination, typename TChar, typename... Args>
-detail::enable_if_t<detail::is_deserialize_destination<TDestination>::value,
-                    DeserializationError>
-deserializeJson(TDestination&& dst, TChar* input, Args&&... args) {
+template <typename TDestination, typename TChar, typename... Args,
+          detail::enable_if_t<
+              detail::is_deserialize_destination<TDestination>::value, int> = 0>
+inline DeserializationError deserializeJson(TDestination&& dst, TChar* input,
+                                            Args&&... args) {
   using namespace detail;
   return deserialize<JsonDeserializer>(detail::forward<TDestination>(dst),
                                        input, detail::forward<Args>(args)...);

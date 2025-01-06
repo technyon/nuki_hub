@@ -54,11 +54,20 @@ TEST_CASE("JsonVariantConst::operator[]") {
     object["abc"_s] = "ABC";
     object["abc\0d"_s] = "ABCD";
 
-    SECTION("supports const char*") {
+    SECTION("string literal") {
       REQUIRE(var["ab"] == "AB"_s);
       REQUIRE(var["abc"] == "ABC"_s);
+      REQUIRE(var["abc\0d"] == "ABCD"_s);
       REQUIRE(var["def"].isNull());
       REQUIRE(var[0].isNull());
+    }
+
+    SECTION("const char*") {
+      REQUIRE(var[static_cast<const char*>("ab")] == "AB"_s);
+      REQUIRE(var[static_cast<const char*>("abc")] == "ABC"_s);
+      REQUIRE(var[static_cast<const char*>("abc\0d")] == "ABC"_s);
+      REQUIRE(var[static_cast<const char*>("def")].isNull());
+      REQUIRE(var[static_cast<const char*>(0)].isNull());
     }
 
     SECTION("supports std::string") {

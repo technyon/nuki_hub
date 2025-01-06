@@ -55,10 +55,11 @@ DeserializationError doDeserialize(TDestination&& dst, TReader reader,
   return err;
 }
 
-template <template <typename> class TDeserializer, typename TDestination,
-          typename TStream, typename... Args,
-          typename = enable_if_t<  // issue #1897
-              !is_integral<typename first_or_void<Args...>::type>::value>>
+template <
+    template <typename> class TDeserializer, typename TDestination,
+    typename TStream, typename... Args,
+    enable_if_t<  // issue #1897
+        !is_integral<typename first_or_void<Args...>::type>::value, int> = 0>
 DeserializationError deserialize(TDestination&& dst, TStream&& input,
                                  Args... args) {
   return doDeserialize<TDeserializer>(
@@ -68,7 +69,7 @@ DeserializationError deserialize(TDestination&& dst, TStream&& input,
 
 template <template <typename> class TDeserializer, typename TDestination,
           typename TChar, typename Size, typename... Args,
-          typename = enable_if_t<is_integral<Size>::value>>
+          enable_if_t<is_integral<Size>::value, int> = 0>
 DeserializationError deserialize(TDestination&& dst, TChar* input,
                                  Size inputSize, Args... args) {
   return doDeserialize<TDeserializer>(dst, makeReader(input, size_t(inputSize)),
