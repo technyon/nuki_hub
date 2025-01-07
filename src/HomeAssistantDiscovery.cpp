@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
+#include "esp_mac.h"
 
 HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preferences *preferences, char* buffer, size_t bufferSize)
     : _device(device),
@@ -16,12 +17,15 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
     _checkUpdates = _preferences->getBool(preference_check_updates, false);
     _updateFromMQTT = _preferences->getBool(preference_update_from_mqtt, false);
     _hostname = _preferences->getString(preference_hostname, "");
-    uint32_t savedDevId = _preferences->getUInt(preference_nukihub_id, 0);
-    uint32_t curDevId = ESP.getEfuseMac() & 0xFFFFFFFF;
+    uint64_t savedDevId = _preferences->getULong64(preference_nukihub_id, 0);
+    uint8_t mac[8];
+    esp_efuse_mac_get_default(mac);
+    uint64_t curDevId;
+    memcpy(&curDevId, &mac, 8);
 
     if (savedDevId == 0)
     {
-        _preferences->putUInt(preference_nukihub_id, curDevId);
+        _preferences->putULong64(preference_nukihub_id, curDevId);
         char uidString[20];
         itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
         removeHASSConfig(uidString);
@@ -29,7 +33,7 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
     }
     else if(savedDevId != curDevId)
     {
-        _preferences->putUInt(preference_nukihub_id, curDevId);
+        _preferences->putULong64(preference_nukihub_id, curDevId);
         Log->print("Efuse ID: ");
         Log->println(curDevId);
         Log->print("Saved ID: ");

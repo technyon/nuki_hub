@@ -48,7 +48,7 @@ void NukiNetworkOpener::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
-    
+
     _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
@@ -371,7 +371,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
 
     json["trigger"] = str;
 
-    json["ringToOpenTimer"] = keyTurnerState.ringToOpenTimer;
+    json["ringToOpenTimer"] = keyTurnerState.ringToOpenTimer != 255 ? keyTurnerState.ringToOpenTimer : 0;
     char curTime[20];
     sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
     json["currentTime"] = curTime;
@@ -400,22 +400,20 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
 
     json["lock_completion_status"] = str;
 
-    memset(&str, 0, sizeof(str));
-    NukiOpener::doorSensorStateToString(keyTurnerState.doorSensorState, str);
-
-    if(_firstTunerStatePublish || keyTurnerState.doorSensorState != lastKeyTurnerState.doorSensorState)
-    {
-        _nukiPublisher->publishString(mqtt_topic_lock_door_sensor_state, str, true);
-    }
-
-    json["door_sensor_state"] = str;
-
-    bool critical = (keyTurnerState.criticalBatteryState & 0b00000001) > 0;
+    bool critical = (keyTurnerState.criticalBatteryState & 1);
     jsonBattery["critical"] = critical ? "1" : "0";
 
     if((_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState) && !_disableNonJSON)
     {
         _nukiPublisher->publishBool(mqtt_topic_battery_critical, critical, true);
+    }
+
+    bool keypadCritical = keyTurnerState.accessoryBatteryState != 255 ? ((keyTurnerState.accessoryBatteryState & 1) == 1 ? (keyTurnerState.accessoryBatteryState & 3) == 3 : false) : false;
+    jsonBattery["keypadCritical"] = keypadCritical ? "1" : "0";
+
+    if((_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState) && !_disableNonJSON)
+    {
+        _nukiPublisher->publishBool(mqtt_topic_battery_keypad_critical, keypadCritical, true);
     }
 
     json["auth_id"] = _authId;
@@ -775,7 +773,7 @@ void NukiNetworkOpener::publishConfig(const NukiOpener::Config &config)
     _network->advertisingModeToString(config.advertisingMode, str);
     json["advertisingMode"] = str;
     json["hasKeypad"] = config.hasKeypad;
-    json["hasKeypadV2"] = config.hasKeypadV2;
+    json["hasKeypadV2"] = (config.hasKeypadV2 == 255 ? 0 : config.hasKeypadV2);
     json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
     json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
     memset(str, 0, sizeof(str));

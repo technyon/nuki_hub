@@ -589,7 +589,7 @@ void NukiOpenerWrapper::updateConfig()
 
         if(_preferences->getUInt(preference_nuki_id_opener, 0) == _nukiConfig.nukiId)
         {
-            _hasKeypad = _nukiConfig.hasKeypad == 1 || (_nukiConfig.hasKeypadV2 > 0 &&  _nukiConfig.hasKeypadV2 != 252);
+            _hasKeypad = _nukiConfig.hasKeypad == 1 || _nukiConfig.hasKeypadV2 == 1;
             _firmwareVersion = std::to_string(_nukiConfig.firmwareVersion[0]) + "." + std::to_string(_nukiConfig.firmwareVersion[1]) + "." + std::to_string(_nukiConfig.firmwareVersion[2]);
             _hardwareVersion = std::to_string(_nukiConfig.hardwareRevision[0]) + "." + std::to_string(_nukiConfig.hardwareRevision[1]);
             if(_preferences->getBool(preference_conf_info_enabled, true))
