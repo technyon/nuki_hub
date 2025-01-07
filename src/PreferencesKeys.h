@@ -367,22 +367,22 @@ inline void initPreferences(Preferences* preferences)
         if (lastConfigVer < 907)
         {
             Log->println("Migration 9.07");
-            
+
             char ca[2200] = {0};
             char cert[2200] = {0};
             char key[2200] = {0};
-            
+
             size_t caLength = preferences->getString(preference_mqtt_ca, ca, 2200);
             size_t crtLength = preferences->getString(preference_mqtt_crt, cert, 2200);
             size_t keyLength = preferences->getString(preference_mqtt_key, key, 2200);
-            
+
             if (caLength > 1)
             {
                 if (!SPIFFS.begin(true)) {
                     Log->println("SPIFFS Mount Failed");
                 }
                 else
-                {                    
+                {
                     File file = SPIFFS.open("/mqtt_ssl.ca", FILE_WRITE);
                     if (!file) {
                         Log->println("Failed to open /mqtt_ssl.ca for writing");
@@ -396,9 +396,9 @@ inline void initPreferences(Preferences* preferences)
                         file.close();
                     }
                 }
-                
+
                 rebootOnMigrate = true;
-                preferences->putBool(preference_mqtt_ssl_enabled, true);                
+                preferences->putBool(preference_mqtt_ssl_enabled, true);
                 preferences->putString(preference_mqtt_ca, "");
             }
 
@@ -408,7 +408,7 @@ inline void initPreferences(Preferences* preferences)
                     Log->println("SPIFFS Mount Failed");
                 }
                 else
-                {                    
+                {
                     File file = SPIFFS.open("/mqtt_ssl.crt", FILE_WRITE);
                     if (!file) {
                         Log->println("Failed to open /mqtt_ssl.crt for writing");
@@ -422,18 +422,18 @@ inline void initPreferences(Preferences* preferences)
                         file.close();
                     }
                 }
-                
+
                 rebootOnMigrate = true;
                 preferences->putString(preference_mqtt_crt, "");
             }
-            
+
             if (keyLength > 1)
             {
                 if (!SPIFFS.begin(true)) {
                     Log->println("SPIFFS Mount Failed");
                 }
                 else
-                {                    
+                {
                     File file = SPIFFS.open("/mqtt_ssl.key", FILE_WRITE);
                     if (!file) {
                         Log->println("Failed to open /mqtt_ssl.key for writing");
@@ -447,13 +447,13 @@ inline void initPreferences(Preferences* preferences)
                         file.close();
                     }
                 }
-                                
+
                 rebootOnMigrate = true;
                 preferences->putString(preference_mqtt_key, "");
             }
         }
         preferences->putInt(preference_config_version, NUKI_HUB_VERSION_INT);
-        
+
         if (rebootOnMigrate)
         {
             restartEsp(RestartReason::OTACompleted);
@@ -493,8 +493,7 @@ private:
     };
     std::vector<char*> _redact =
     {
-        preference_mqtt_user, preference_mqtt_password, preference_mqtt_ca, preference_mqtt_crt, preference_mqtt_key, preference_cred_user, preference_cred_password,
-        preference_nuki_id_lock, preference_nuki_id_opener, preference_wifi_pass
+        preference_mqtt_user, preference_mqtt_password, preference_cred_user, preference_cred_password, preference_nuki_id_lock, preference_nuki_id_opener, preference_wifi_pass
     };
     std::vector<char*> _boolPrefs =
     {
@@ -517,16 +516,23 @@ private:
     };
     std::vector<char*> _intPrefs =
     {
-        preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_nuki_id_lock, preference_nuki_id_opener, preference_mqtt_broker_port,
+        preference_config_version, preference_mqtt_broker_port, preference_command_retry_delay, preference_query_interval_hybrid_lockstate,
         preference_lock_pin_status, preference_opener_pin_status, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
         preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_buffer_size, preference_network_hardware,
         preference_rssi_publish_interval, preference_network_timeout, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
         preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_command_nr_of_retries,
-        preference_command_retry_delay, preference_query_interval_hybrid_lockstate,
         preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
         preference_ble_tx_power, preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr,
         preference_network_custom_irq, preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso,
         preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio
+    };
+    std::vector<char*> _uintPrefs =
+    {
+        preference_device_id_lock, preference_device_id_opener, preference_nuki_id_lock, preference_nuki_id_opener
+    };
+    std::vector<char*> _uint64Prefs =
+    {
+        preference_nukihub_id
     };
 public:
     const std::vector<char*> getPreferencesKeys()
@@ -548,5 +554,13 @@ public:
     const std::vector<char*> getPreferencesIntKeys()
     {
         return _intPrefs;
+    }
+    const std::vector<char*> getPreferencesUIntKeys()
+    {
+        return _uintPrefs;
+    }
+    const std::vector<char*> getPreferencesUInt64Keys()
+    {
+        return _uint64Prefs;
     }
 };

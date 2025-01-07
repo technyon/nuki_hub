@@ -3512,6 +3512,8 @@ bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp,
             const std::vector<char*> boolPrefs = debugPreferences.getPreferencesBoolKeys();
             const std::vector<char*> bytePrefs = debugPreferences.getPreferencesByteKeys();
             const std::vector<char*> intPrefs = debugPreferences.getPreferencesIntKeys();
+            const std::vector<char*> uintPrefs = debugPreferences.getPreferencesUIntKeys();
+            const std::vector<char*> uint64Prefs = debugPreferences.getPreferencesUInt64Keys();
 
             for(const auto& key : keysPrefs)
             {
@@ -3524,14 +3526,6 @@ bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp,
                     continue;
                 }
                 if(strcmp(key, preference_latest_version) == 0)
-                {
-                    continue;
-                }
-                if(strcmp(key, preference_device_id_lock) == 0)
-                {
-                    continue;
-                }
-                if(strcmp(key, preference_device_id_opener) == 0)
                 {
                     continue;
                 }
@@ -3559,7 +3553,30 @@ bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp,
                     }
                     continue;
                 }
-
+                if(std::find(uintPrefs.begin(), uintPrefs.end(), key) != uintPrefs.end())
+                {
+                    if (doc[key].as<String>().length() > 0)
+                    {
+                        _preferences->putUInt(key, doc[key].as<uint32_t>());
+                    }
+                    else
+                    {
+                        _preferences->remove(key);
+                    }
+                    continue;
+                }
+                if(std::find(uint64Prefs.begin(), uint64Prefs.end(), key) != uint64Prefs.end())
+                {
+                    if (doc[key].as<String>().length() > 0)
+                    {
+                        _preferences->putULong64(key, doc[key].as<uint64_t>());
+                    }
+                    else
+                    {
+                        _preferences->remove(key);
+                    }
+                    continue;
+                }
                 if (doc[key].as<String>().length() > 0)
                 {
                     _preferences->putString(key, doc[key].as<String>());
@@ -5057,7 +5074,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("\nNuki Hub configuration URL for HA: ");
         response.print(_preferences->getString(preference_mqtt_hass_cu_url, "").length() > 0 ? _preferences->getString(preference_mqtt_hass_cu_url, "") : "http://" + _network->localIP());
         response.print("\nNuki Hub ID: ");
-        response.print(_preferences->getUInt(preference_nukihub_id, 0));
+        response.print(_preferences->getULong64(preference_nukihub_id, 0));
     }
     else
     {

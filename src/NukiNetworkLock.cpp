@@ -420,7 +420,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
         json["lock_state"] = str;
     }
 
-    json["lockngo_state"] = keyTurnerState.lockNgoTimer;
+    json["lockngo_state"] = keyTurnerState.lockNgoTimer != 255 ? keyTurnerState.lockNgoTimer : 0;
 
     memset(&str, 0, sizeof(str));
 
@@ -445,7 +445,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
     json["currentTime"] = curTime;
     json["timeZoneOffset"] = keyTurnerState.timeZoneOffset;
-    json["nightModeActive"] = keyTurnerState.nightModeActive;
+    json["nightModeActive"] = keyTurnerState.nightModeActive != 255 ? keyTurnerState.nightModeActive : 0;
 
     memset(&str, 0, sizeof(str));
 
@@ -495,7 +495,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
         bool critical = (keyTurnerState.criticalBatteryState & 1) == 1;
         bool charging = (keyTurnerState.criticalBatteryState & 2) == 2;
         uint8_t level = ((keyTurnerState.criticalBatteryState & 0b11111100) >> 1);
-        bool keypadCritical = (keyTurnerState.accessoryBatteryState & 1) == 1 ? (keyTurnerState.accessoryBatteryState & 3) == 3 : false;
+        bool keypadCritical = keyTurnerState.accessoryBatteryState != 255 ? ((keyTurnerState.accessoryBatteryState & 1) == 1 ? (keyTurnerState.accessoryBatteryState & 3) == 3 : false) : false;
 
         jsonBattery["critical"] = critical ? "1" : "0";
         jsonBattery["charging"] = charging ? "1" : "0";
@@ -514,7 +514,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
             _nukiPublisher->publishBool(mqtt_topic_battery_keypad_critical, keypadCritical, true);
         }
 
-        bool doorSensorCritical = (keyTurnerState.accessoryBatteryState & 4) == 4 ? (keyTurnerState.accessoryBatteryState & 12) == 12 : false;
+        bool doorSensorCritical = keyTurnerState.accessoryBatteryState != 255 ? ((keyTurnerState.accessoryBatteryState & 4) == 4 ? (keyTurnerState.accessoryBatteryState & 12) == 12 : false) : false;
 
         jsonBattery["doorSensorCritical"] = doorSensorCritical ? "1" : "0";
 
@@ -532,7 +532,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
         json["door_sensor_state"] = str;
     }
 
-    if (keyTurnerState.network > -1)
+    if (keyTurnerState.network != 255)
     {
         json["remoteAccessEnabled"] = ((keyTurnerState.network & 1) == 1) ? 1 : 0;
         json["bridgePaired"] = (((keyTurnerState.network >> 1) & 1) == 1) ? 1 : 0;
@@ -542,26 +542,26 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
         json["threadSseUplinkEnabledByUser"] = (((keyTurnerState.network >> 5) & 1) == 1) ? 1 : 0;
         json["nat64AvailableViaThread"] = (((keyTurnerState.network >> 6) & 1) == 1) ? 1 : 0;
     }
-    if (keyTurnerState.bleConnectionStrength > -1)
+    if (keyTurnerState.bleConnectionStrength != 255)
     {
         json["bleConnectionStrength"] = keyTurnerState.bleConnectionStrength;
     }
-    if (keyTurnerState.wifiConnectionStrength > -1)
+    if (keyTurnerState.wifiConnectionStrength != 255)
     {
         json["wifiConnectionStrength"] = keyTurnerState.wifiConnectionStrength;
     }
-    if (keyTurnerState.wifi > -1)
+    if (keyTurnerState.wifi != 255)
     {
         json["wifiStatus"] = (keyTurnerState.wifi & 3);
         json["sseStatus"] = ((keyTurnerState.wifi >> 2) & 3);
         json["wifiQuality"] = ((keyTurnerState.wifi >> 4) & 15);
     }
-    if (keyTurnerState.mqtt > -1)
+    if (keyTurnerState.mqtt != 255)
     {
         json["mqttStatus"] = (keyTurnerState.mqtt & 3);
         json["mqttConnectionChannel"] = ((keyTurnerState.mqtt >> 2) & 1);
     }
-    if (keyTurnerState.thread > -1)
+    if (keyTurnerState.thread != 255)
     {
         json["threadConnectionStatus"] = (keyTurnerState.thread & 3);
         json["threadSseStatus"] = ((keyTurnerState.thread >> 2) & 3);
@@ -866,7 +866,7 @@ void NukiNetworkLock::publishConfig(const NukiLock::Config &config)
     _network->advertisingModeToString(config.advertisingMode, str);
     json["advertisingMode"] = str;
     json["hasKeypad"] = config.hasKeypad;
-    json["hasKeypadV2"] = config.hasKeypadV2;
+    json["hasKeypadV2"] = (config.hasKeypadV2 == 255 ? 0 : config.hasKeypadV2);
     json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
     json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
     memset(str, 0, sizeof(str));
@@ -875,12 +875,12 @@ void NukiNetworkLock::publishConfig(const NukiLock::Config &config)
     memset(str, 0, sizeof(str));
     _network->timeZoneIdToString(config.timeZoneId, str);
     json["timeZone"] = str;
-    json["deviceType"] = config.deviceType;
-    json["channel"] = config.network;
-    json["wifiCapable"] = config.network & 1;
-    json["threadCapable"] = (((unsigned int)config.network & 2) != 0 ? 1 : 0);
-    json["matterStatus"] = config.matterStatus;
-    json["productVariant"] = config.productVariant;
+    json["deviceType"] = (config.deviceType == 255 ? 0 : config.deviceType);
+    json["channel"] = (config.network == 255 ? 0 : config.network);
+    json["wifiCapable"] = (config.network == 255 ? 0 : config.network & 1);
+    json["threadCapable"] = (config.network == 255 ? 0 : ((config.network & 2) != 0 ? 1 : 0));
+    json["matterStatus"] = (config.matterStatus == 255 ? 0 : config.matterStatus);
+    json["productVariant"] = (config.productVariant == 255 ? 0 : config.productVariant);
 
     serializeJson(json, _buffer, _bufferSize);
     _nukiPublisher->publishString(mqtt_topic_config_basic_json, _buffer, true);

@@ -371,7 +371,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
 
     json["trigger"] = str;
 
-    json["ringToOpenTimer"] = keyTurnerState.ringToOpenTimer;
+    json["ringToOpenTimer"] = keyTurnerState.ringToOpenTimer != 255 ? keyTurnerState.ringToOpenTimer : 0;
     char curTime[20];
     sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
     json["currentTime"] = curTime;
@@ -408,7 +408,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
         _nukiPublisher->publishBool(mqtt_topic_battery_critical, critical, true);
     }
 
-    bool keypadCritical = (keyTurnerState.accessoryBatteryState & 1) == 1 ? (keyTurnerState.accessoryBatteryState & 3) == 3 : false;
+    bool keypadCritical = keyTurnerState.accessoryBatteryState != 255 ? ((keyTurnerState.accessoryBatteryState & 1) == 1 ? (keyTurnerState.accessoryBatteryState & 3) == 3 : false) : false;
     jsonBattery["keypadCritical"] = keypadCritical ? "1" : "0";
 
     if((_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState) && !_disableNonJSON)
@@ -773,7 +773,7 @@ void NukiNetworkOpener::publishConfig(const NukiOpener::Config &config)
     _network->advertisingModeToString(config.advertisingMode, str);
     json["advertisingMode"] = str;
     json["hasKeypad"] = config.hasKeypad;
-    json["hasKeypadV2"] = config.hasKeypadV2;
+    json["hasKeypadV2"] = (config.hasKeypadV2 == 255 ? 0 : config.hasKeypadV2);
     json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
     json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
     memset(str, 0, sizeof(str));
