@@ -48,7 +48,7 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
         delay(3000);
     }
 
-    sprintf(_nukiHubUidString, "%u", curDevId);
+    sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
 }
 
 void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
