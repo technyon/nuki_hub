@@ -404,10 +404,6 @@ bool NukiNetwork::update()
             _device->mqttDisconnect(true);
         }
 
-        if(!_webEnabled)
-        {
-            forceEnableWebServer = true;
-        }
         if(_restartOnDisconnect && espMillis() > 60000)
         {
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
@@ -926,7 +922,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
         delay(200);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
+    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false) && !mqttRecentlyConnected())
     {
         Log->println(("Update requested via MQTT."));
 
@@ -1031,7 +1027,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             Log->println(("Failed to retrieve OTA manifest, OTA update aborted."));
         }
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_webserver_action))
+    else if(comparePrefixedPath(topic, mqtt_topic_webserver_action) && !mqttRecentlyConnected())
     {
         if(strcmp(data, "") == 0 ||
                 strcmp(data, "--") == 0)
@@ -1046,8 +1042,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                 return;
             }
             Log->println(("Webserver enabled, restarting."));
-            _preferences->putBool(preference_webserver_enabled, true);
-
+            _preferences->putBool(preference_webserver_enabled, true);            
         }
         else if (strcmp(data, "0") == 0)
         {
@@ -1058,7 +1053,6 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             Log->println(("Webserver disabled, restarting."));
             _preferences->putBool(preference_webserver_enabled, false);
         }
-
         clearWifiFallback();
         delay(200);
         restartEsp(RestartReason::ReconfigureWebServer);
