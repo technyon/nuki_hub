@@ -59,6 +59,11 @@ void NukiWrapper::initialize()
     _nukiLock.setDebugHexData(_preferences->getBool(preference_debug_hex_data, false));
     _nukiLock.setDebugCommand(_preferences->getBool(preference_debug_command, false));
     _nukiLock.registerLogger(Log);
+    
+    if (_preferences->getInt(preference_lock_gemini_pin, 0) > 0)
+    {
+        _nukiLock.saveUltraPincode(_preferences->getInt(preference_lock_gemini_pin, 0), false);
+    }
 
     _nukiLock.initialize(_preferences->getBool(preference_connect_mode, true));
     _nukiLock.registerBleScanner(_bleScanner);

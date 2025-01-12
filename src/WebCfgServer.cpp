@@ -1482,12 +1482,16 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* r
                 unsigned char authorizationId[4] = {0x00};
                 unsigned char secretKeyK[32] = {0x00};
                 uint16_t storedPincode = 0000;
+                uint32_t storedUltraPincode = 000000;
+                bool isUltra = false;
                 Preferences nukiBlePref;
                 nukiBlePref.begin("NukiHub", false);
                 nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
                 nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
                 nukiBlePref.getBytes("authorizationId", authorizationId, 4);
                 nukiBlePref.getBytes("securityPinCode", &storedPincode, 2);
+                nukiBlePref.getBytes("ultraPinCode", &storedUltraPincode, 4);
+                isUltra = nukiBlePref.getBool("isUltra", false);
                 nukiBlePref.end();
                 char text[255];
                 text[0] = '\0';
@@ -1515,6 +1519,8 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* r
                 json["authorizationIdLock"] = text;
                 memset(text, 0, sizeof(text));
                 json["securityPinCodeLock"] = storedPincode;
+                json["ultraPinCodeLock"] = storedUltraPincode;
+                json["isUltra"] = isUltra ? "1" : "0";
             }
             if(_nukiOpener != nullptr)
             {
@@ -1607,6 +1613,8 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     unsigned char authorizationId[4] = {0x00};
     unsigned char secretKeyK[32] = {0x00};
     unsigned char pincode[2] = {0x00};
+    unsigned char ultraPincode[4] = {0x00};    
+    bool isUltra = false;
     unsigned char currentBleAddressOpn[6];
     unsigned char authorizationIdOpn[4] = {0x00};
     unsigned char secretKeyKOpn[32] = {0x00};
@@ -2579,6 +2587,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 configChanged = true;
             }
         }
+        else if(key == "GEMINIPIN")
+        {
+            if(_preferences->getInt(preference_lock_gemini_pin, 0) != value.toInt())
+            {
+                _preferences->putInt(preference_lock_gemini_pin, value.toInt());
+                Log->print(F("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "LCKFORCEID")
         {
             if(_preferences->getBool(preference_lock_force_id, false) != (value == "1"))
@@ -3317,6 +3335,9 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
         nukiBlePref.putBytes("authorizationId", authorizationId, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
+        nukiBlePref.putBytes("ultraPinCode", ultraPincode, 4);
+        nukiBlePref.putBool("isUltra", isUltra);
+
         nukiBlePref.end();
         Log->print(("Setting changed: "));
         Log->println("Lock pairing data");
@@ -4356,6 +4377,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printCheckBox(&response, "DBGREAD", "Enable Nuki readable data debug logging", _preferences->getBool(preference_debug_readable_data, false), "");
     printCheckBox(&response, "DBGHEX", "Enable Nuki hex data debug logging", _preferences->getBool(preference_debug_hex_data, false), "");
     printCheckBox(&response, "DBGCOMM", "Enable Nuki command debug logging", _preferences->getBool(preference_debug_command, false), "");
+    printInputField(&response, "GEMINIPIN", "SmartLock Ultra PIN", _preferences->getInt(preference_lock_gemini_pin, 0), 6, "");
 
     response.print("</table>");
 

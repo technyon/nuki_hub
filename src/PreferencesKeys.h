@@ -73,6 +73,7 @@
 #define preference_http_auth_type (char*)"httpdAuthType"
 #define preference_update_time (char*)"updateTime"
 #define preference_mqtt_ssl_enabled (char*)"mqttSSLena"
+#define preference_lock_gemini_pin (char*)"geminiPin"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
@@ -473,7 +474,7 @@ private:
         preference_opener_continuous_mode, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_update_time,
         preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt,
         preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
-        preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_http_auth_type,
+        preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_http_auth_type, preference_lock_gemini_pin,
         preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_hybrid_reboot_on_disconnect,
         preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry,
         preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
@@ -493,7 +494,8 @@ private:
     };
     std::vector<char*> _redact =
     {
-        preference_mqtt_user, preference_mqtt_password, preference_cred_user, preference_cred_password, preference_nuki_id_lock, preference_nuki_id_opener, preference_wifi_pass
+        preference_mqtt_user, preference_mqtt_password, preference_cred_user, preference_cred_password, preference_nuki_id_lock, preference_nuki_id_opener, preference_wifi_pass,
+        preference_lock_gemini_pin
     };
     std::vector<char*> _boolPrefs =
     {
