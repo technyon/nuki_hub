@@ -68,6 +68,7 @@ private:
 
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
+    void motorSpeedToString(const NukiLock::MotorSpeed speed, char* str);
     void homeKitStatusToString(const int hkstatus, char* str);
     void fobActionToString(const int fobact, char* str);
 
@@ -90,6 +91,7 @@ private:
     bool _disableNonJSON = false;
     bool _offConnected = false;
     bool _hybridRebootOnDisconnect = false;
+    bool _isUltra = false;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";

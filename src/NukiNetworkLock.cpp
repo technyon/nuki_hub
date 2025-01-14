@@ -46,6 +46,7 @@ void NukiNetworkLock::initialize()
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
     _hybridRebootOnDisconnect = _preferences->getBool(preference_hybrid_reboot_on_disconnect, false);
+    _isUltra = _preferences->getBool(preference_lock_gemini_enabled, false);
 
     _network->initTopic(_mqttPath, mqtt_topic_lock_action, "--");
     _network->subscribe(_mqttPath, mqtt_topic_lock_action);
@@ -532,41 +533,41 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
         json["door_sensor_state"] = str;
     }
 
-    if (keyTurnerState.network != 255)
+    if (keyTurnerState.remoteAccessStatus != 255)
     {
-        json["remoteAccessEnabled"] = ((keyTurnerState.network & 1) == 1) ? 1 : 0;
-        json["bridgePaired"] = (((keyTurnerState.network >> 1) & 1) == 1) ? 1 : 0;
-        json["sseConnectedViaWifi"] = (((keyTurnerState.network >> 2) & 1) == 1) ? 1 : 0;
-        json["sseConnectionEstablished"] = (((keyTurnerState.network >> 3) & 1) == 1) ? 1 : 0;
-        json["isSseConnectedViaThread"] = (((keyTurnerState.network >> 4) & 1) == 1) ? 1 : 0;
-        json["threadSseUplinkEnabledByUser"] = (((keyTurnerState.network >> 5) & 1) == 1) ? 1 : 0;
-        json["nat64AvailableViaThread"] = (((keyTurnerState.network >> 6) & 1) == 1) ? 1 : 0;
+        json["remoteAccessEnabled"] = ((keyTurnerState.remoteAccessStatus & 1) == 1) ? 1 : 0;
+        json["bridgePaired"] = (((keyTurnerState.remoteAccessStatus >> 1) & 1) == 1) ? 1 : 0;
+        json["sseConnectedViaWifi"] = (((keyTurnerState.remoteAccessStatus >> 2) & 1) == 1) ? 1 : 0;
+        json["sseConnectionEstablished"] = (((keyTurnerState.remoteAccessStatus >> 3) & 1) == 1) ? 1 : 0;
+        json["isSseConnectedViaThread"] = (((keyTurnerState.remoteAccessStatus >> 4) & 1) == 1) ? 1 : 0;
+        json["threadSseUplinkEnabledByUser"] = (((keyTurnerState.remoteAccessStatus >> 5) & 1) == 1) ? 1 : 0;
+        json["nat64AvailableViaThread"] = (((keyTurnerState.remoteAccessStatus >> 6) & 1) == 1) ? 1 : 0;
     }
-    if (keyTurnerState.bleConnectionStrength != 255)
+    if (keyTurnerState.bleConnectionStrength != 1)
     {
         json["bleConnectionStrength"] = keyTurnerState.bleConnectionStrength;
     }
-    if (keyTurnerState.wifiConnectionStrength != 255)
+    if (keyTurnerState.wifiConnectionStrength != 1)
     {
         json["wifiConnectionStrength"] = keyTurnerState.wifiConnectionStrength;
     }
-    if (keyTurnerState.wifi != 255)
+    if (keyTurnerState.wifiConnectionStatus != 255)
     {
-        json["wifiStatus"] = (keyTurnerState.wifi & 3);
-        json["sseStatus"] = ((keyTurnerState.wifi >> 2) & 3);
-        json["wifiQuality"] = ((keyTurnerState.wifi >> 4) & 15);
+        json["wifiStatus"] = (keyTurnerState.wifiConnectionStatus & 3);
+        json["sseStatus"] = ((keyTurnerState.wifiConnectionStatus >> 2) & 3);
+        json["wifiQuality"] = ((keyTurnerState.wifiConnectionStatus >> 4) & 15);
     }
-    if (keyTurnerState.mqtt != 255)
+    if (keyTurnerState.mqttConnectionStatus != 255)
     {
-        json["mqttStatus"] = (keyTurnerState.mqtt & 3);
-        json["mqttConnectionChannel"] = ((keyTurnerState.mqtt >> 2) & 1);
+        json["mqttStatus"] = (keyTurnerState.mqttConnectionStatus & 3);
+        json["mqttConnectionChannel"] = ((keyTurnerState.mqttConnectionStatus >> 2) & 1);
     }
-    if (keyTurnerState.thread != 255)
+    if (keyTurnerState.threadConnectionStatus != 255)
     {
-        json["threadConnectionStatus"] = (keyTurnerState.thread & 3);
-        json["threadSseStatus"] = ((keyTurnerState.thread >> 2) & 3);
-        json["isCommissioningModeActive"] = (keyTurnerState.thread & 16) != 0 ? 1 : 0;
-        json["isWifiDisabledBecauseOfThread"] = (keyTurnerState.thread & 32) != 0 ? 1 : 0;
+        json["threadConnectionStatus"] = (keyTurnerState.threadConnectionStatus & 3);
+        json["threadSseStatus"] = ((keyTurnerState.threadConnectionStatus >> 2) & 3);
+        json["isCommissioningModeActive"] = (keyTurnerState.threadConnectionStatus & 16) != 0 ? 1 : 0;
+        json["isWifiDisabledBecauseOfThread"] = (keyTurnerState.threadConnectionStatus & 32) != 0 ? 1 : 0;
     }
 
     json["auth_id"] = getAuthId();
@@ -876,9 +877,8 @@ void NukiNetworkLock::publishConfig(const NukiLock::Config &config)
     _network->timeZoneIdToString(config.timeZoneId, str);
     json["timeZone"] = str;
     json["deviceType"] = (config.deviceType == 255 ? 0 : config.deviceType);
-    json["channel"] = (config.network == 255 ? 0 : config.network);
-    json["wifiCapable"] = (config.network == 255 ? 0 : config.network & 1);
-    json["threadCapable"] = (config.network == 255 ? 0 : ((config.network & 2) != 0 ? 1 : 0));
+    json["wifiCapable"] = (config.capabilities == 255 ? 0 : config.capabilities & 1);
+    json["threadCapable"] = (config.capabilities == 255 ? 0 : ((config.capabilities & 2) != 0 ? 1 : 0));
     json["matterStatus"] = (config.matterStatus == 255 ? 0 : config.matterStatus);
     json["productVariant"] = (config.productVariant == 255 ? 0 : config.productVariant);
 
@@ -936,6 +936,13 @@ void NukiNetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &conf
     json["autoLockEnabled"] = config.autoLockEnabled;
     json["immediateAutoLockEnabled"] = config.immediateAutoLockEnabled;
     json["autoUpdateEnabled"] = config.autoUpdateEnabled;
+    if (_isUltra)
+    {
+        memset(str, 0, sizeof(str));
+        motorSpeedToString(config.motorSpeed, str);
+        json["motorSpeed"] = str;
+        json["enableSlowSpeedDuringNightMode"] = config.enableSlowSpeedDuringNightMode;
+    }
     json["rebootNuki"] = 0;
 
     serializeJson(json, _buffer, _bufferSize);
@@ -1652,6 +1659,25 @@ void NukiNetworkLock::buttonPressActionToString(const NukiLock::ButtonPressActio
         break;
     case NukiLock::ButtonPressAction::ShowStatus:
         strcpy(str, "Show Status");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiNetworkLock::motorSpeedToString(const NukiLock::MotorSpeed speed, char* str)
+{
+    switch (speed)
+    {
+    case NukiLock::MotorSpeed::Standard:
+        strcpy(str, "Standard");
+        break;
+    case NukiLock::MotorSpeed::Insane:
+        strcpy(str, "Insane");
+        break;
+    case NukiLock::MotorSpeed::Gentle:
+        strcpy(str, "Gentle");
         break;
     default:
         strcpy(str, "undefined");

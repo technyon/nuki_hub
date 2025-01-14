@@ -31,12 +31,6 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
     : _preferences(preferences)
 #endif
 {
-    // Remove obsolete W5500 hardware detection configuration
-    if(_preferences->getInt(preference_network_hardware_gpio) != 0)
-    {
-        _preferences->remove(preference_network_hardware_gpio);
-    }
-
     _inst = this;
     _webEnabled = _preferences->getBool(preference_webserver_enabled, true);
 
