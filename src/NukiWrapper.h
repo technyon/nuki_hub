@@ -30,7 +30,9 @@ public:
     bool isPinSet();
     bool isPinValid();
     void setPin(const uint16_t pin);
+    void setUltraPin(const uint32_t pin);
     uint16_t getPin();
+    uint32_t getUltraPin();
     void unpair();
 
     void disableWatchdog();
@@ -88,6 +90,7 @@ private:
     uint8_t fobActionToInt(const char *str);
     NukiLock::ButtonPressAction buttonPressActionToEnum(const char* str);
     Nuki::BatteryType batteryTypeToEnum(const char* str);
+    NukiLock::MotorSpeed motorSpeedToEnum(const char* str);
 
     std::string _deviceName;
     NukiDeviceId* _deviceId = nullptr;
@@ -137,6 +140,7 @@ private:
     bool _forceKeypad = false;
     bool _keypadEnabled = false;
     bool _forceId = false;
+    bool _isUltra = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;
@@ -160,7 +164,7 @@ private:
     int64_t _lastRssi = 0;
     int64_t _disableBleWatchdogTs = 0;
     uint32_t _basicLockConfigaclPrefs[16];
-    uint32_t _advancedLockConfigaclPrefs[23];
+    uint32_t _advancedLockConfigaclPrefs[25];
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;

@@ -59,8 +59,6 @@ public:
     Gpio(Preferences* preferences);
     static void init();
 
-    void migrateObsoleteSetting();
-
     void addCallback(std::function<void(const GpioAction&, const int&)> callback);
 
     void loadPinConfiguration();

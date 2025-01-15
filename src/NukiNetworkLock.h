@@ -68,6 +68,7 @@ private:
 
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
+    void motorSpeedToString(const NukiLock::MotorSpeed speed, char* str);
     void homeKitStatusToString(const int hkstatus, char* str);
     void fobActionToString(const int fobact, char* str);
 
@@ -88,8 +89,10 @@ private:
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
     bool _disableNonJSON = false;
+    bool _clearNonJsonKeypad = true;
     bool _offConnected = false;
     bool _hybridRebootOnDisconnect = false;
+    bool _isUltra = false;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";

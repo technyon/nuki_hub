@@ -28,14 +28,12 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Smart Lock 2.0
 - Nuki Smart Lock 3.0
 - Nuki Smart Lock 3.0 Pro (read FAQ below)
-- Nuki Smart Lock 4.0
+- Nuki Smart Lock 4.0 (read FAQ below)
 - Nuki Smart Lock 4.0 Pro (read FAQ below)
+- Nuki Smart Lock Ultra (read FAQ below)
 - Nuki Opener
 - Nuki Keypad 1.0
 - Nuki Keypad 2.0
-
-<b>Not (yet?) supported:</b>
-- Nuki Smart Lock Ultra
 
 <b>Supported Ethernet devices:</b><br>
 As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with built-in wired ethernet are supported:
@@ -147,7 +145,7 @@ Next click on "MQTT Configuration" and enter the address and port (usually 1883)
 The firmware supports SSL encryption for MQTT, however most people don't use this.<br>
 See the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 
-## Pairing with a Nuki Lock or Opener
+## Pairing with a Nuki Lock (1.0-4.0) or Opener
 
 Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
 After enabling the setting press the button on the Nuki device for a few seconds.<br>
@@ -161,9 +159,22 @@ MQTT nodes like lock state and battery level should now reflect the reported val
 This is not recommended (unless when using [hybrid mode](/HYBRID.md)) and will lead to excessive battery drain and can lead to either device missing updates.
 Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
 
+## Pairing with a Nuki Lock Ultra
+
+Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
+
+Before enabling pairing mode using the button on the Lock Ultra first setup NukiHub as follows:
+- Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra enabled" will change multiple other NukiHub settings.
+- Input your 6-digit Nuki Lock Ultra PIN on the "Credentials" page and Save
+- Press the button on the Nuki device for a few seconds
+- It is **strongly** recommended to setup and enable Hybrid mode over Thread/WiFi + official MQTT as NukiHub works best in Hybrid or Bridge mode and the Ultra does not support Bridge mode
+
+Pairing should be automatic if no lock is paired.<br>
+When pairing is successful, the web interface should show "Paired: Yes".<br>
+
 ## Hybrid mode
 
-Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0 or Nuki Lock 4.0 Pro in conjunction with Nuki Hub.<br>
+Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0, Nuki Lock 4.0 Pro or Nuki Lock Ultra in conjunction with NukiHub.<br>
 See [hybrid mode](/HYBRID.md) for more information.
 
 ## Memory constraints
@@ -251,7 +262,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Basic Nuki Configuration
 
-- Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0)
+- Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0 and Ultra)
+- Nuki Smartlock Ultra enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
 - New Nuki Bluetooth connection mode (disable if there are connection issues): Enable to use the latest Nuki BLE connection mode (recommended). Disable if you have issues communicating with the lock/opener
 
@@ -267,6 +279,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 - BLE transmit power in dB: Set to a integer between -12 and 9 to set the Bluetooth transmit power, default 9.
+- Update Nuki Hub and Lock/Opener time using NTP: Enable to update the ESP32 time and Nuki Lock and/or Nuki Opener time every 12 hours using a NTP time server
+- NTP server: Set to the NTP server you want to use, defaults to "pool.ntp.org". If DHCP is used and NTP servers are provided using DHCP these will take precedence over the specified NTP server.
+
 ### Access Level Configuration
 
 #### Nuki General Access Control
@@ -299,6 +314,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 #### Nuki Lock PIN / Nuki Opener PIN
 
 - PIN Code: Fill with the Nuki Security Code of the Nuki Lock and/or Nuki Opener. Required for functions that require the security code to be sent to the lock/opener such as setting lock permissions/adding keypad codes, viewing the activity log or changing the Nuki device configuration. Set to "#" to remove the security code from the Nuki Hub configuration.
+- PIN Code Ultra: Fill with the 6-digit Nuki Security Code of the Nuki Lock Ultra. Required for pairing (and many other functions)
 
 #### Unpair Nuki Lock / Unpair Nuki Opener
 
@@ -326,6 +342,39 @@ Both of the above options will not backup pairing data, so you will have to manu
 <br>
 To import settings copy and paste the contents of the JSON file that is created by any of the above export options and select "Import".
 After importing the device will reboot.
+
+### Advanced Configuration
+
+The advanced configuration menu is not reachable from the main menu of the web configurator by default.<br>
+You can reach the menu directly by browsing to http://NUKIHUBIP/?get=advanced or enable showing it in the main menu by browsing to http://NUKIHUBIP/?get=debugon once (http://NUKIHUBIP/?get=debugoff to disable).
+
+Note that the following options can break NukiHub and cause bootloops that will require you to erase your ESP and reflash following the instructions for first-time flashing.
+
+- Disable Network if not connected within 60s: Enable to allow NukiHub to function without a network connection (for example when only using NukiHub with GPIO)
+- Enable Bootloop prevention: Enable to reset the following stack size and max entry settings to default if NukiHub detects a bootloop.
+- Char buffer size (min 4096, max 65536): Set the character buffer size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 4096.
+- Task size Network (min 12288, max 65536): Set the Network task stack size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 12288.
+- Task size Nuki (min 8192, max 65536): Set the Nuki task stack size. Default 8192.
+- Max auth log entries (min 1, max 100): The maximum amount of log entries that will be requested from the lock/opener, default 5.
+- Max keypad entries (min 1, max 200): The maximum amount of keypad codes that will be requested from the lock/opener, default 10.
+- Max timecontrol entries (min 1, max 100): The maximum amount of timecontrol entries that will be requested from the lock/opener, default 10.
+- Max authorization entries (min 1, max 100): The maximum amount of authorization entries that will be requested from the lock/opener, default 10.
+- Show Pairing secrets on Info page: Enable to show the pairing secrets on the info page. Will be disabled on reboot.
+- Manually set lock pairing data: Enable to save the pairing data fields and manually set pairing info for the lock.
+- Manually set opener pairing data: Enable to save the pairing data fields and manually set pairing info for the opener.
+- Custom URL to update Nuki Hub updater: Set to a HTTPS address to update to a custom NukiHub updater binary on next boot of the NukiHub partition.
+- Custom URL to update Nuki Hub: Set to a HTTPS address to update to a custom NukiHub binary on next boot of the NukiHub updater partition.
+- Force Lock ID to current ID: Enable to force the current Lock ID, irrespective of the config received from the lock.
+- Force Lock Keypad connected: Enable to force NukiHub to function as if a keypad was connected, irrespective of the config received from the lock.
+- Force Lock Doorsensor connected: Enable to force NukiHub to function as if a doorsensor was connected, irrespective of the config received from the lock.
+- Force Opener ID to current ID: Enable to force the current Opener ID, irrespective of the config received from the opener.
+- Force Opener Keypad: Enable to force NukiHub to function as if a keypad was connected, irrespective of the config received from the opener.
+- Enable Nuki connect debug logging: Enable to log debug information regarding Nuki BLE connection to MQTT and/or Serial.
+- Enable Nuki communication debug logging: Enable to log debug information regarding Nuki BLE communication to MQTT and/or Serial.
+- Enable Nuki readable data debug logging: Enable to log human readable debug information regarding Nuki BLE to MQTT and/or Serial.
+- Enable Nuki hex data debug logging: Enable to log hex debug information regarding Nuki BLE to MQTT and/or Serial.
+- Enable Nuki command debug logging: Enable to log debug information regarding Nuki BLE commands to MQTT and/or Serial.
+- Pubish free heap over MQTT: Enable to publish free heap to MQTT.
 
 ## Exposed MQTT Topics
 
@@ -484,6 +533,8 @@ Changing settings has to enabled first in the configuration portal. Check the se
 | autoLockEnabled                         | Whether auto lock is enabled.                                                                    | 1 = enabled, 0 = disabled                                         |`{ "autoLockEnabled": "1" }`        |
 | immediateAutoLockEnabled                | Whether auto lock should be performed immediately after the door has been closed.                | 1 = enabled, 0 = disabled                                        |`{ "immediateAutoLockEnabled": "1" }`|
 | autoUpdateEnabled                       | Whether automatic firmware updates should be enabled.                                            | 1 = enabled, 0 = disabled                                         |`{ "autoUpdateEnabled": "1" }`      |
+| motorSpeed                              | The desired motor speed (Ultra only)                                                             | "Standard", "Insane", "Gentle"                                    |`{ "motorSpeed": "Standard" }`      |
+| enableSlowSpeedDuringNightMode          | Whether the slow speed should be applied during Night Mode (Ultra only)                          | 1 = enabled, 0 = disabled                            |`{ "enableSlowSpeedDuringNightMode": "1" }`      |
 | rebootNuki                              | Reboot the Nuki device immediately                                                               | 1 = reboot nuki                                                   |`{ "rebootNuki": "1" }`             |
 
 ### Nuki Opener Configuration

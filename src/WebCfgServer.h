@@ -128,5 +128,6 @@ private:
     bool _allowRestartToPortal = false;
     uint8_t _partitionType = 0;
     size_t _otaContentLen = 0;
+    uint32_t _randomInt = 0;
     String _hostname;
 };

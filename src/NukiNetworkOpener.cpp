@@ -1043,24 +1043,28 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
     }
     else
     {
-        for(int i=0; i<maxKeypadCodeCount; i++)
+        if (_clearNonJsonKeypad)
         {
-            String codeTopic = _mqttPath;
-            codeTopic.concat(mqtt_topic_keypad);
-            codeTopic.concat("/code_");
-            codeTopic.concat(std::to_string(i).c_str());
-            codeTopic.concat("/");
-            _network->removeTopic(codeTopic, "id");
-            _network->removeTopic(codeTopic, "enabled");
-            _network->removeTopic(codeTopic, "code");
-            _network->removeTopic(codeTopic, "name");
-            _network->removeTopic(codeTopic, "createdYear");
-            _network->removeTopic(codeTopic, "createdMonth");
-            _network->removeTopic(codeTopic, "createdDay");
-            _network->removeTopic(codeTopic, "createdHour");
-            _network->removeTopic(codeTopic, "createdMin");
-            _network->removeTopic(codeTopic, "createdSec");
-            _network->removeTopic(codeTopic, "lockCount");
+            _clearNonJsonKeypad = false;
+            for(int i=0; i<maxKeypadCodeCount; i++)
+            {
+                String codeTopic = _mqttPath;
+                codeTopic.concat(mqtt_topic_keypad);
+                codeTopic.concat("/code_");
+                codeTopic.concat(std::to_string(i).c_str());
+                codeTopic.concat("/");
+                _network->removeTopic(codeTopic, "id");
+                _network->removeTopic(codeTopic, "enabled");
+                _network->removeTopic(codeTopic, "code");
+                _network->removeTopic(codeTopic, "name");
+                _network->removeTopic(codeTopic, "createdYear");
+                _network->removeTopic(codeTopic, "createdMonth");
+                _network->removeTopic(codeTopic, "createdDay");
+                _network->removeTopic(codeTopic, "createdHour");
+                _network->removeTopic(codeTopic, "createdMin");
+                _network->removeTopic(codeTopic, "createdSec");
+                _network->removeTopic(codeTopic, "lockCount");
+            }
         }
 
         for(int j=entries.size(); j<maxKeypadCodeCount; j++)

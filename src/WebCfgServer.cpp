@@ -6,6 +6,7 @@
 #include <esp_task_wdt.h>
 #include "FS.h"
 #include "SPIFFS.h"
+#include "esp_random.h"
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
 #endif
@@ -124,11 +125,6 @@ void WebCfgServer::initialize()
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         _psychicServer->on("/ssidlist", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-            {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-            }
-
             return buildSSIDListHtml(request, resp);
         });
         _psychicServer->on("/savewifi", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
@@ -186,11 +182,6 @@ void WebCfgServer::initialize()
     {
         _psychicServer->on("/get", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-            {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-            }
-
             String value = "";
             if(request->hasParam("page"))
             {
@@ -198,6 +189,14 @@ void WebCfgServer::initialize()
                 if(p->value() != "")
                 {
                     value = p->value();
+                }
+            }
+            
+            if (value != "status")
+            {
+                if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
+                {
+                    return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
                 }
             }
 
@@ -233,12 +232,12 @@ void WebCfgServer::initialize()
             }
             else if (value == "debugon")
             {
-                _preferences->putBool(preference_publish_debug_info, true);
+                _preferences->putBool(preference_enable_debug_mode, true);
                 return buildConfirmHtml(request, resp, "Debug On", 3, true);
             }
             else if (value == "debugoff")
             {
-                _preferences->putBool(preference_publish_debug_info, false);
+                _preferences->putBool(preference_enable_debug_mode, false);
                 return buildConfirmHtml(request, resp, "Debug Off", 3, true);
             }
             else if (value == "export")
@@ -251,7 +250,18 @@ void WebCfgServer::initialize()
             }
             else if (value == "status")
             {
-                return buildStatusHtml(request, resp);
+                if(request->hasParam("token"))
+                {
+                    const PsychicWebParameter* p2 = request->getParam("token");
+                    if(p2->value().toInt() == _randomInt)
+                    {
+                        return buildStatusHtml(request, resp);
+                    }
+                }
+                resp->setCode(200);
+                resp->setContentType("text/html");
+                resp->setContent("");
+                return resp->send();
             }
             else if (value == "acclvl")
             {
@@ -1482,12 +1492,16 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* r
                 unsigned char authorizationId[4] = {0x00};
                 unsigned char secretKeyK[32] = {0x00};
                 uint16_t storedPincode = 0000;
+                uint32_t storedUltraPincode = 000000;
+                bool isUltra = false;
                 Preferences nukiBlePref;
                 nukiBlePref.begin("NukiHub", false);
                 nukiBlePref.getBytes("bleAddress", currentBleAddress, 6);
                 nukiBlePref.getBytes("secretKeyK", secretKeyK, 32);
                 nukiBlePref.getBytes("authorizationId", authorizationId, 4);
                 nukiBlePref.getBytes("securityPinCode", &storedPincode, 2);
+                nukiBlePref.getBytes("ultraPinCode", &storedUltraPincode, 4);
+                isUltra = nukiBlePref.getBool("isUltra", false);
                 nukiBlePref.end();
                 char text[255];
                 text[0] = '\0';
@@ -1515,6 +1529,8 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* r
                 json["authorizationIdLock"] = text;
                 memset(text, 0, sizeof(text));
                 json["securityPinCodeLock"] = storedPincode;
+                json["ultraPinCodeLock"] = storedUltraPincode;
+                json["isUltra"] = isUltra ? "1" : "0";
             }
             if(_nukiOpener != nullptr)
             {
@@ -1607,6 +1623,8 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     unsigned char authorizationId[4] = {0x00};
     unsigned char secretKeyK[32] = {0x00};
     unsigned char pincode[2] = {0x00};
+    unsigned char ultraPincode[4] = {0x00};
+    bool isUltra = false;
     unsigned char currentBleAddressOpn[6];
     unsigned char authorizationIdOpn[4] = {0x00};
     unsigned char secretKeyKOpn[32] = {0x00};
@@ -1614,7 +1632,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     uint32_t aclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedLockConfigAclPrefs[23] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedLockConfigAclPrefs[25] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t advancedOpenerConfigAclPrefs[21] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     int params = request->params();
@@ -1874,6 +1892,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 configChanged = true;
             }
         }
+        else if(key == "TIMESRV")
+        {
+            if(_preferences->getString(preference_time_server, "pool.ntp.org") != value)
+            {
+                _preferences->putString(preference_time_server, value);
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "NWHW")
         {
             if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
@@ -2022,16 +2050,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 Log->print(("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
-            }
-        }
-        else if(key == "NWHWWIFIFB")
-        {
-            if(_preferences->getBool(preference_network_wifi_fallback_disabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_network_wifi_fallback_disabled, (value == "1"));
-                Log->print(("Setting changed: "));
-                Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "RSSI")
@@ -2390,7 +2408,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "TSKNTWK")
         {
-            if(value.toInt() > 12287 && value.toInt() < 32769)
+            if(value.toInt() > 12287 && value.toInt() < 65537)
             {
                 if(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE) != value.toInt())
                 {
@@ -2403,7 +2421,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "TSKNUKI")
         {
-            if(value.toInt() > 8191 && value.toInt() < 32769)
+            if(value.toInt() > 8191 && value.toInt() < 65537)
             {
                 if(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE) != value.toInt())
                 {
@@ -2416,7 +2434,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "ALMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 51)
+            if(value.toInt() > 0 && value.toInt() < 101)
             {
                 if(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG) != value.toInt())
                 {
@@ -2429,7 +2447,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "KPMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 101)
+            if(value.toInt() > 0 && value.toInt() < 201)
             {
                 if(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD) != value.toInt())
                 {
@@ -2442,7 +2460,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "TCMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 51)
+            if(value.toInt() > 0 && value.toInt() < 101)
             {
                 if(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL) != value.toInt())
                 {
@@ -2455,7 +2473,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "AUTHMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 51)
+            if(value.toInt() > 0 && value.toInt() < 101)
             {
                 if(_preferences->getInt(preference_auth_max_entries, MAX_AUTH) != value.toInt())
                 {
@@ -2468,7 +2486,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "BUFFSIZE")
         {
-            if(value.toInt() > 4095 && value.toInt() < 32769)
+            if(value.toInt() > 4095 && value.toInt() < 65537)
             {
                 if(_preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) != value.toInt())
                 {
@@ -2544,6 +2562,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             if(_preferences->getBool(preference_debug_communication, false) != (value == "1"))
             {
                 _preferences->putBool(preference_debug_communication, (value == "1"));
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DBGHEAP")
+        {
+            if(_preferences->getBool(preference_publish_debug_info, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_publish_debug_info, (value == "1"));
                 Log->print(("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -2992,6 +3020,14 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         {
             advancedLockConfigAclPrefs[22] = ((value == "1") ? 1 : 0);
         }
+        else if(key == "CONFLCKMTRSPD")
+        {
+            advancedLockConfigAclPrefs[23] = ((value == "1") ? 1 : 0);
+        }
+        else if(key == "CONFLCKESSDNM")
+        {
+            advancedLockConfigAclPrefs[24] = ((value == "1") ? 1 : 0);
+        }
         else if(key == "CONFOPNNAME")
         {
             basicOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
@@ -3162,6 +3198,23 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 configChanged = true;
             }
         }
+        else if(key == "GEMINIENA")
+        {
+            if(_preferences->getBool(preference_lock_gemini_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_lock_gemini_enabled, (value == "1"));
+                if (value == "1")
+                {
+                    _preferences->putBool(preference_register_as_app, true);
+                    _preferences->putBool(preference_lock_enabled, true);
+                    _preferences->putBool(preference_official_hybrid_enabled, true);
+                    _preferences->putBool(preference_official_hybrid_actions, true);
+                }
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "OPENA")
         {
             if(_preferences->getBool(preference_opener_enabled, false) != (value == "1"))
@@ -3211,21 +3264,45 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         {
             if(value == "#")
             {
-                message = "Nuki Lock PIN cleared";
-                _nuki->setPin(0xffff);
+                if (_preferences->getBool(preference_lock_gemini_enabled, false))
+                {
+                    message = "Nuki Lock Ultra PIN cleared";
+                    _nuki->setUltraPin(0xffffffff);
+                    _preferences->putInt(preference_lock_gemini_pin, 0);
+                }
+                else
+                {
+                    message = "Nuki Lock PIN cleared";
+                    _nuki->setPin(0xffff);
+                }
                 Log->print(("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
             }
             else
             {
-                if(_nuki->getPin() != value.toInt())
+                if (_preferences->getBool(preference_lock_gemini_enabled, false))
                 {
-                    message = "Nuki Lock PIN saved";
-                    _nuki->setPin(value.toInt());
-                    Log->print(("Setting changed: "));
-                    Log->println(key);
-                    configChanged = true;
+                    if(_nuki->getUltraPin() != value.toInt())
+                    {
+                        message = "Nuki Lock Ultra PIN saved";
+                        _nuki->setUltraPin(value.toInt());
+                        _preferences->putInt(preference_lock_gemini_pin, value.toInt());
+                        Log->print(("Setting changed: "));
+                        Log->println(key);
+                        configChanged = true;
+                    }
+                }
+                else
+                {
+                    if(_nuki->getPin() != value.toInt())
+                    {
+                        message = "Nuki Lock PIN saved";
+                        _nuki->setPin(value.toInt());
+                        Log->print(("Setting changed: "));
+                        Log->println(key);
+                        configChanged = true;
+                    }
                 }
             }
         }
@@ -3280,6 +3357,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     authorizationId[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
                 }
         }
+        else if(key == "LCKISULTRA" && (value == "1"))
+        {
+            isUltra = true;
+        }
         else if(key == "OPNBLEADDR")
         {
             if(value.length() == 12) for(int i=0; i<value.length(); i+=2)
@@ -3317,6 +3398,9 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         nukiBlePref.putBytes("secretKeyK", secretKeyK, 32);
         nukiBlePref.putBytes("authorizationId", authorizationId, 4);
         nukiBlePref.putBytes("securityPinCode", pincode, 2);
+        nukiBlePref.putBytes("ultraPinCode", ultraPincode, 4);
+        nukiBlePref.putBool("isUltra", isUltra);
+
         nukiBlePref.end();
         Log->print(("Setting changed: "));
         Log->println("Lock pairing data");
@@ -3389,7 +3473,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     {
         uint32_t curAclPrefs[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         uint32_t curBasicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        uint32_t curAdvancedLockConfigAclPrefs[23] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t curAdvancedLockConfigAclPrefs[25] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         uint32_t curBasicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         uint32_t curAdvancedOpenerConfigAclPrefs[21] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         _preferences->getBytes(preference_acl, &curAclPrefs, sizeof(curAclPrefs));
@@ -3420,7 +3504,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 break;
             }
         }
-        for(int i=0; i < 23; i++)
+        for(int i=0; i < 25; i++)
         {
             if(curAdvancedLockConfigAclPrefs[i] != advancedLockConfigAclPrefs[i])
             {
@@ -3641,6 +3725,13 @@ bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp,
                     nukiBlePref.putBytes("authorizationId", authorizationId, 4);
                 }
             }
+            if(!doc["isUltra"].isNull())
+            {
+                if (doc["isUltra"].as<String>().length() >0)
+                {
+                    nukiBlePref.putBool("isUltra", (doc["isUltra"].as<String>() == "1" ? true : false));
+                }
+            }
             nukiBlePref.end();
             if(!doc["securityPinCodeLock"].isNull() && _nuki != nullptr)
             {
@@ -3651,6 +3742,19 @@ bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp,
                 else
                 {
                     _nuki->setPin(0xffff);
+                }
+            }
+            if(!doc["ultraPinCodeLock"].isNull() && _nuki != nullptr)
+            {
+                if(doc["ultraPinCodeLock"].as<String>().length() > 0)
+                {
+                    _nuki->setUltraPin(doc["ultraPinCodeLock"].as<int>());
+                    _preferences->putInt(preference_lock_gemini_pin, doc["ultraPinCodeLock"].as<int>());
+                }
+                else
+                {
+                    _nuki->setUltraPin(0xffffffff);
+                    _preferences->putInt(preference_lock_gemini_pin, 0);
                 }
             }
             nukiBlePref.begin("NukiHubopener", false);
@@ -3810,7 +3914,8 @@ esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, Ps
 
 esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    String header = "<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
+    _randomInt = esp_random();
+    String header = (String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status&token=" + _randomInt + "', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
@@ -3887,7 +3992,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     {
         buildNavigationMenuEntry(&response, "Custom Ethernet Configuration", "/get?page=custntw");
     }
-    if (_preferences->getBool(preference_publish_debug_info, false))
+    if (_preferences->getBool(preference_enable_debug_mode, false))
     {
         buildNavigationMenuEntry(&response, "Advanced Configuration", "/get?page=advanced");
     }
@@ -4302,15 +4407,15 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
     //printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
-    printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
+    printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 65536)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
     response.print("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
-    printInputField(&response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
+    printInputField(&response, "TSKNTWK", "Task size Network (min 12288, max 65536)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
     response.print("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
-    printInputField(&response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
-    printInputField(&response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
-    printInputField(&response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
-    printInputField(&response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "id=\"inputmaxtimecontrol\"");
-    printInputField(&response, "AUTHMAX", "Max authorization entries (min 1, max 50)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "id=\"inputmaxauth\"");
+    printInputField(&response, "TSKNUKI", "Task size Nuki (min 8192, max 65536)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
+    printInputField(&response, "ALMAX", "Max auth log entries (min 1, max 100)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
+    printInputField(&response, "KPMAX", "Max keypad entries (min 1, max 200)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
+    printInputField(&response, "TCMAX", "Max timecontrol entries (min 1, max 100)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "id=\"inputmaxtimecontrol\"");
+    printInputField(&response, "AUTHMAX", "Max authorization entries (min 1, max 100)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "id=\"inputmaxauth\"");
     printCheckBox(&response, "SHOWSECRETS", "Show Pairing secrets on Info page", _preferences->getBool(preference_show_secrets), "");
     if(_preferences->getBool(preference_lock_enabled, true))
     {
@@ -4318,6 +4423,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
         printInputField(&response, "LCKBLEADDR", "currentBleAddress", "", 12, "");
         printInputField(&response, "LCKSECRETK", "secretKeyK", "", 64, "");
         printInputField(&response, "LCKAUTHID", "authorizationId", "", 8, "");
+        printCheckBox(&response, "LCKISULTRA", "isUltra", false, "");
     }
     if(_preferences->getBool(preference_opener_enabled, false))
     {
@@ -4328,11 +4434,6 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     }
     printInputField(&response, "OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
     printInputField(&response, "OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
-
-    std::vector<std::pair<String, String>> optionsForce;
-    optionsForce.push_back(std::make_pair("0", "Do not force"));
-    optionsForce.push_back(std::make_pair("1", "Force unavailable"));
-    optionsForce.push_back(std::make_pair("2", "Force available"));
 
     if(_nuki != nullptr)
     {
@@ -4356,12 +4457,12 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printCheckBox(&response, "DBGREAD", "Enable Nuki readable data debug logging", _preferences->getBool(preference_debug_readable_data, false), "");
     printCheckBox(&response, "DBGHEX", "Enable Nuki hex data debug logging", _preferences->getBool(preference_debug_hex_data, false), "");
     printCheckBox(&response, "DBGCOMM", "Enable Nuki command debug logging", _preferences->getBool(preference_debug_command, false), "");
-
+    printCheckBox(&response, "DBGHEAP", "Pubish free heap over MQTT", _preferences->getBool(preference_publish_debug_info, false), "");
     response.print("</table>");
 
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
-    response.print("</body><script>window.onload = function() { document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxauth\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var auth = document.getElementById(\"inputmaxauth\").value; var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var charbuf = 0; var networktask = 0; var sizeauth = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; if(auth > 0) { sizeauth = 300 * auth; } if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol && sizeauthlog>sizeauth) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol && sizekeypad>sizeauth) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} else if(sizeauth>sizeauthlog && sizeauth>sizetimecontrol && sizeauth>sizekeypad) { charbuf = sizeauth; networktask = 10240 + sizeauth;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>32768) { charbuf = 32768; } if(networktask<12288) { networktask = 12288; } else if (networktask>32768) { networktask = 32768; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
+    response.print("</body><script>window.onload = function() { document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxauth\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var auth = document.getElementById(\"inputmaxauth\").value; var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var charbuf = 0; var networktask = 0; var sizeauth = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; if(auth > 0) { sizeauth = 300 * auth; } if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol && sizeauthlog>sizeauth) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol && sizekeypad>sizeauth) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} else if(sizeauth>sizeauthlog && sizeauth>sizetimecontrol && sizeauth>sizekeypad) { charbuf = sizeauth; networktask = 10240 + sizeauth;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>65536) { charbuf = 65536; } if(networktask<12288) { networktask = 12288; } else if (networktask>65536) { networktask = 65536; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
     return response.endSend();
 }
 
@@ -4372,7 +4473,6 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse
     bool mqttDone = false;
     bool lockDone = false;
     bool openerDone = false;
-    bool latestDone = false;
 
     json["stop"] = 0;
 
@@ -4450,14 +4550,9 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse
     if(_preferences->getBool(preference_check_updates))
     {
         json["latestFirmware"] = _preferences->getString(preference_latest_version);
-        latestDone = true;
-    }
-    else
-    {
-        latestDone = true;
     }
 
-    if(mqttDone && lockDone && openerDone && latestDone)
+    if(mqttDone && lockDone && openerDone)
     {
         json["stop"] = 1;
     }
@@ -4522,7 +4617,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
     {
         uint32_t basicLockConfigAclPrefs[16];
         _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
-        uint32_t advancedLockConfigAclPrefs[23];
+        uint32_t advancedLockConfigAclPrefs[25];
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
 
         response.print("<h3>Nuki Lock Access Control</h3>");
@@ -4590,6 +4685,8 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
         printCheckBox(&response, "CONFLCKIALENA", "Immediate auto lock enabled", ((int)advancedLockConfigAclPrefs[20] == 1), "chk_config_lock");
         printCheckBox(&response, "CONFLCKAUENA", "Auto update enabled", ((int)advancedLockConfigAclPrefs[21] == 1), "chk_config_lock");
         printCheckBox(&response, "CONFLCKRBTNUKI", "Reboot Nuki", ((int)advancedLockConfigAclPrefs[22] == 1), "chk_config_lock");
+        printCheckBox(&response, "CONFLCKMTRSPD", "Motor speed", ((int)advancedLockConfigAclPrefs[23] == 1), "chk_config_lock");
+        printCheckBox(&response, "CONFLCKESSDNM", "Enable slow speed during nightmode", ((int)advancedLockConfigAclPrefs[24] == 1), "chk_config_lock");
         response.print("</table><br>");
         response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     }
@@ -4677,8 +4774,9 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Basic Nuki Configuration</h3>");
     response.print("<table>");
-    printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled), "");
-    printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled), "");
+    printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled, true), "");
+    printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
+    printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled, false), "");
     printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, true), "");
     response.print("</table><br>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
@@ -4693,7 +4791,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     }
     printInputField(&response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10, "");
     printInputField(&response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
-    if(_preferences->getBool(preference_lock_enabled, true))
+    if(_preferences->getBool(preference_lock_enabled, true) && !_preferences->getBool(preference_lock_gemini_enabled, false))
     {
         printCheckBox(&response, "REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
     }
@@ -4704,6 +4802,8 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     printInputField(&response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
     printCheckBox(&response, "UPTIME", "Update Nuki Hub and Lock/Opener time using NTP", _preferences->getBool(preference_update_time, false), "");
+    printInputField(&response, "TIMESRV", "NTP server", _preferences->getString(preference_time_server, "pool.ntp.org").c_str(), 255, "");
+
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
@@ -4863,6 +4963,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_cred_user, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator password: ");
     response.print(_preferences->getString(preference_cred_password, "").length() > 0 ? "***" : "Not set");
+    response.print("\nWeb configurator authentication: ");
+    response.print(_preferences->getBool(preference_http_auth_type, false) ? "Digest" : "Basic");
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
     response.print("\nHTTP SSL: ");
@@ -4888,8 +4990,20 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     #else
     response.print("Disabled");
     #endif
-    response.print("\nPublish debug information enabled: ");
+    response.print("\nAdvanced menu enabled: ");
+    response.print(_preferences->getBool(preference_enable_debug_mode, false) ? "Yes" : "No");
+    response.print("\nPublish free heap over MQTT: ");
     response.print(_preferences->getBool(preference_publish_debug_info, false) ? "Yes" : "No");
+    response.print("\nNuki connect debug logging enabled: ");
+    response.print(_preferences->getBool(preference_debug_connect, false) ? "Yes" : "No");
+    response.print("\nNuki communication debug logging enabled: ");
+    response.print(_preferences->getBool(preference_debug_communication, false) ? "Yes" : "No");
+    response.print("\nNuki readable data debug logging enabled: ");
+    response.print(_preferences->getBool(preference_debug_readable_data, false) ? "Yes" : "No");
+    response.print("\nNuki hex data debug logging enabled: ");
+    response.print(_preferences->getBool(preference_debug_hex_data, false) ? "Yes" : "No");
+    response.print("\nNuki command debug logging enabled: ");
+    response.print(_preferences->getBool(preference_debug_command, false) ? "Yes" : "No");
     response.print("\nMQTT log enabled: ");
     response.print(_preferences->getBool(preference_mqtt_log_enabled, false) ? "Yes" : "No");
     response.print("\nWebserial enabled: ");
@@ -4941,8 +5055,6 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("\nStatic IP DNS server: ");
         response.print(_preferences->getString(preference_ip_dns_server, ""));
     }
-
-#ifndef CONFIG_IDF_TARGET_ESP32H2
     if(_network->networkDeviceName() == "Built-in Wi-Fi")
     {
         response.print("\nRSSI Publish interval (s): ");
@@ -4959,9 +5071,16 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("\nFind WiFi AP with strongest signal: ");
         response.print(_preferences->getBool(preference_find_best_rssi, false) ? "Yes" : "No");
     }
-#endif
+    /*
+    else if(network->networkDeviceType() == NetworkDeviceType::CUSTOM)
+    {
+
+    }
+    */
     response.print("\nRestart ESP32 on network disconnect enabled: ");
     response.print(_preferences->getBool(preference_restart_on_disconnect, false) ? "Yes" : "No");
+    response.print("\nDisable Network if not connected within 60s: ");
+    response.print(_preferences->getBool(preference_disable_network_not_connected, false) ? "Yes" : "No");
     response.print("\nMQTT Timeout until restart (s): ");
     if(_preferences->getInt(preference_network_timeout, 60) < 0)
     {
@@ -5017,6 +5136,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("Disabled");
     }
     response.print("\n\n------------ BLUETOOTH ------------");
+    response.print("\nBluetooth connection mode: ");
+    response.print(_preferences->getBool(preference_connect_mode, true) ? "New" : "Old");
     response.print("\nBluetooth TX power (dB): ");
     response.print(_preferences->getInt(preference_ble_tx_power, 9));
     response.print("\nBluetooth command nr of retries: ");
@@ -5064,6 +5185,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getBool(preference_timecontrol_topic_per_entry, false) ? "Yes" : "No");
     response.print("\nMax timecontrol entries to retrieve: ");
     response.print(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL));
+    response.print("\nEnable authorization control: ");
+    response.print(_preferences->getBool(preference_auth_info_enabled, false) ? "Yes" : "No");
+    response.print("\nPublish authorization topic per entry: ");
+    response.print(_preferences->getBool(preference_auth_topic_per_entry, false) ? "Yes" : "No");
+    response.print("\nMax authorization entries to retrieve: ");
+    response.print(_preferences->getInt(preference_auth_max_entries, MAX_AUTH));
     response.print("\n\n------------ HOME ASSISTANT ------------");
     response.print("\nHome Assistant auto discovery enabled: ");
     if(_preferences->getString(preference_mqtt_hass_discovery, "").length() > 0)
@@ -5088,6 +5215,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     else
     {
         response.print("\nLock enabled: Yes");
+        response.print("\nLock Ultra enabled: ");
+        response.print(_preferences->getBool(preference_lock_gemini_enabled, false) ? "Yes" : "No");
         response.print("\nPaired: ");
         response.print(_nuki->isPaired() ? "Yes" : "No");
         response.print("\nNuki Hub device ID: ");
@@ -5111,6 +5240,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         }
         response.print("\nTimecontrol highest entries count: ");
         response.print(_preferences->getInt(preference_lock_max_timecontrol_entry_count, 0));
+        response.print("\nAuthorizations highest entries count: ");
+        response.print(_preferences->getInt(preference_lock_max_auth_entry_count, 0));
         response.print("\nRegister as: ");
         response.print(_preferences->getBool(preference_register_as_app, false) ? "App" : "Bridge");
         response.print("\n\n------------ HYBRID MODE ------------");
@@ -5123,21 +5254,27 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             response.print("\nHybrid mode enabled: Yes");
             response.print("\nHybrid mode connected: ");
             response.print(_nuki->offConnected() ? "Yes": "No");
+            response.print("\nReboot Nuki lock on official MQTT failure: ");
+            response.print(_preferences->getBool(preference_hybrid_reboot_on_disconnect, false) ? "Yes" : "No");
             response.print("\nSending actions through official MQTT enabled: ");
             response.print(_preferences->getBool(preference_official_hybrid_actions, false) ? "Yes" : "No");
-            /* NOT IMPLEMENTED (YET?)
             if(_preferences->getBool(preference_official_hybrid_actions, false))
             {
                 response.print("\nRetry actions through BLE enabled: ");
                 response.print(_preferences->getBool(preference_official_hybrid_retry, false) ? "Yes" : "No");
             }
-            */
             response.print("\nTime between status updates when official MQTT is offline (s): ");
             response.print(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600));
         }
+        response.print("\nForce Lock ID: ");
+        response.print(_preferences->getBool(preference_lock_force_id, false) ? "Yes" : "No");
+        response.print("\nForce Lock Keypad: ");
+        response.print(_preferences->getBool(preference_lock_force_keypad, false) ? "Yes" : "No");
+        response.print("\nForce Lock Doorsensor: ");
+        response.print(_preferences->getBool(preference_lock_force_doorsensor, false) ? "Yes" : "No");
         uint32_t basicLockConfigAclPrefs[16];
         _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
-        uint32_t advancedLockConfigAclPrefs[23];
+        uint32_t advancedLockConfigAclPrefs[25];
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
         response.print("\n\n------------ NUKI LOCK ACL ------------");
         response.print("\nLock: ");
@@ -5237,6 +5374,10 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print((int)advancedLockConfigAclPrefs[21] ? "Allowed" : "Disallowed");
         response.print("\nReboot Nuki: ");
         response.print((int)advancedLockConfigAclPrefs[22] ? "Allowed" : "Disallowed");
+        response.print("\nMotor speed: ");
+        response.print((int)advancedLockConfigAclPrefs[23] ? "Allowed" : "Disallowed");
+        response.print("\nEnable slow speed during nightmode: ");
+        response.print((int)advancedLockConfigAclPrefs[24] ? "Allowed" : "Disallowed");
 
         if(_preferences->getBool(preference_show_secrets))
         {
@@ -5272,6 +5413,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             uint32_t authorizationIdInt = authorizationId[0] + 256U*authorizationId[1] + 65536U*authorizationId[2] + 16777216U*authorizationId[3];
             response.print("\nAuthorizationId (UINT32_T): ");
             response.print(authorizationIdInt);
+            response.print("\nPaired to Nuki Lock Ultra: ");
+            response.print(nukiBlePref.getBool("isUltra", false) ? "Yes" : "No");
         }
     }
 
@@ -5304,10 +5447,16 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         }
         response.print("\nTimecontrol highest entries count: ");
         response.print(_preferences->getInt(preference_opener_max_timecontrol_entry_count, 0));
+        response.print("\nAuthorizations highest entries count: ");
+        response.print(_preferences->getInt(preference_opener_max_auth_entry_count, 0));
         response.print("\nRegister as: ");
         response.print(_preferences->getBool(preference_register_opener_as_app, false) ? "App" : "Bridge");
         response.print("\nNuki Opener Lock/Unlock action set to Continuous mode in Home Assistant: ");
         response.print(_preferences->getBool(preference_opener_continuous_mode, false) ? "Yes" : "No");
+        response.print("\nForce Opener ID: ");
+        response.print(_preferences->getBool(preference_opener_force_id, false) ? "Yes" : "No");
+        response.print("\nForce Opener Keypad: ");
+        response.print(_preferences->getBool(preference_opener_force_keypad, false) ? "Yes" : "No");
         uint32_t basicOpenerConfigAclPrefs[14];
         _preferences->getBytes(preference_conf_opener_basic_acl, &basicOpenerConfigAclPrefs, sizeof(basicOpenerConfigAclPrefs));
         uint32_t advancedOpenerConfigAclPrefs[21];
@@ -5431,10 +5580,15 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
                 sprintf(tmp, "%02x", authorizationIdOpn[i]);
                 response.print(tmp);
             }
+            uint32_t authorizationIdOpnInt = authorizationIdOpn[0] + 256U*authorizationIdOpn[1] + 65536U*authorizationIdOpn[2] + 16777216U*authorizationIdOpn[3];
+            response.print("\nAuthorizationId (UINT32_T): ");
+            response.print(authorizationIdOpnInt);
         }
     }
 
     response.print("\n\n------------ GPIO ------------\n");
+    response.print("\nRetain Input GPIO MQTT state: ");
+    response.print(_preferences->getBool(preference_retain_gpio, false) ? "Yes" : "No");
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response.print(gpioStr);

@@ -4,9 +4,9 @@ The purpose of this mode is to have Nuki Hub work in conjunction with the offici
 
 ### Requirements ###
 
-- ESP32 running Nuki Hub 8.35 or higher
-- For WiFi: Nuki lock 3.0 Pro or Nuki Lock 4.0 Pro
-- For Thread: Nuki Lock 4.0 or Nuki Lock 4.0 Pro. Note that you do ***NOT*** need to buy the remote access addon for the Nuki Lock 4.0
+- ESP32 running Nuki Hub 9.08 or higher
+- For WiFi: Nuki lock 3.0 Pro, Nuki Lock 4.0 Pro or Nuki Lock Ultra
+- For Thread: Nuki Lock 4.0, Nuki Lock 4.0 Pro or Nuki Lock Ultra. Note that you do ***NOT*** need to buy the remote access addon for the Nuki Lock 4.0
 - For Thread: The Nuki Lock needs to have network access to the same MQTT server as the one that Nuki Hub is conected to. Depending if the MQTT server is reachable over IPv6 you might need an OpenThread Border router that supports NAT64 and has this enabled. Currently this means an Apple Device or Home Assistant with the Matter server and OpenThread Border Router
 - The Nuki Opener does not have WiFI or Thread and thus doesn't benefit from the hybrid solutions added speed. You can however use and connect a Nuki Opener as usual which will function over regular BLE and can still connect Nuki Hub as a bridge to an Opener.
 
@@ -38,7 +38,7 @@ The Hybrid Official MQTT over Thread + Nuki Hub solution allows for the best com
   - Optionally enable `Allow locking`. Note that if you enable this setting it is preferred to set ACL on your MQTT broker to only allow the Nuki lock and Nuki Hub MQTT user access to the topic `nuki/NUKI-ID/lockAction` to make sure that only Nuki Hub can execute commands on the lock (otherwise ACL settings through Nuki Hub can not be 100% enforced)
   - Make sure that MQTT is setup correctly by checking if you get a green check mark in the Nuki app
  
-- Install Nuki Hub 8.35 or higher on a supported ESP32 device
+- Install Nuki Hub 9.08 or higher on a supported ESP32 device
 - Make sure you are not paired as a bridge. Unpair your Nuki lock in Nuki Hub if Nuki Hub was paired as a bridge (this is mandatory even if you removed the bridge connection from the Nuki lock).
 - Enable `Enable hybrid official MQTT and Nuki Hub setup`. The `Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)` setting will be automatically be enabled.
 - Optionally enable `Enable sending actions through official MQTT`, if not enabled lock actions will be sent over BLE as usual (slower)

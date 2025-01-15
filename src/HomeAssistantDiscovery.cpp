@@ -772,7 +772,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
     uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedLockConfigAclPrefs[23] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedLockConfigAclPrefs[25] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     if(_preferences->getBool(preference_conf_info_enabled, true))
     {
@@ -1537,7 +1537,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         removeHassTopic((char*)"switch", (char*)"detached_cylinder", uidString);
     }
 
-    if((int)advancedLockConfigAclPrefs[8] == 1)
+    if((int)advancedLockConfigAclPrefs[8] == 1 && !_preferences->getBool(preference_lock_gemini_enabled, false))
     {
         JsonDocument json;
         json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ (char*)"val_tpl", (char*)"{{value_json.batteryType}}" }, { (char*)"en", (char*)"true" }, { (char*)"cmd_tpl", (char*)"{ \"batteryType\": \"{{ value }}\" }" }});
@@ -1553,7 +1553,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         removeHassTopic((char*)"select", (char*)"battery_type", uidString);
     }
 
-    if((int)advancedLockConfigAclPrefs[9] == 1)
+    if((int)advancedLockConfigAclPrefs[9] == 1 && !_preferences->getBool(preference_lock_gemini_enabled, false))
     {
         // Automatic battery type detection
         publishHassTopic("switch",
@@ -1877,6 +1877,53 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     else
     {
         removeHassTopic((char*)"switch", (char*)"auto_update_enabled", uidString);
+    }
+    
+    // Motor speed
+    if((int)advancedLockConfigAclPrefs[23] == 1)
+    {
+        JsonDocument json;
+        json = createHassJson(uidString, "_motor_speed", "Motor speed", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ (char*)"val_tpl", (char*)"{{value_json.motorSpeed}}" }, { (char*)"en", (char*)"true" }, { (char*)"cmd_tpl", (char*)"{ \"motorSpeed\": \"{{ value }}\" }" }});
+        json["options"][0] = "Standard";
+        json["options"][1] = "Insane";
+        json["options"][2] = "Gentle";
+        serializeJson(json, _buffer, _bufferSize);
+        String path = createHassTopicPath("select", "motor_speed", uidString);
+        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    }
+    else
+    {
+        removeHassTopic((char*)"select", (char*)"motor_speed", uidString);
+    }
+    
+    if((int)advancedLockConfigAclPrefs[24] == 1)
+    {
+        // Slow speed during night mode enabled
+        publishHassTopic("switch",
+                         "enable_slow_speed_during_nightmode",
+                         uidString,
+                         "_enable_slow_speed_during_nightmode",
+                         "Enable slow speed during nightmode",
+                         name,
+                         baseTopic,
+                         String("~") + mqtt_topic_config_advanced_json,
+                         deviceType,
+                         "",
+                         "",
+                         "config",
+                         String("~") + mqtt_topic_config_action,
+        {
+            { (char*)"en", (char*)"true" },
+            { (char*)"pl_on", (char*)"{ \"enableSlowSpeedDuringNightMode\": \"1\"}" },
+            { (char*)"pl_off", (char*)"{ \"enableSlowSpeedDuringNightMode\": \"0\"}" },
+            { (char*)"val_tpl", (char*)"{{value_json.enableSlowSpeedDuringNightMode}}" },
+            { (char*)"stat_on", (char*)"1" },
+            { (char*)"stat_off", (char*)"0" }
+        });
+    }
+    else
+    {
+        removeHassTopic((char*)"switch", (char*)"enable_slow_speed_during_nightmode", uidString);
     }
 
     if((int)advancedLockConfigAclPrefs[22] == 1)

@@ -79,6 +79,7 @@ private:
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
     bool _disableNonJSON = false;
+    bool _clearNonJsonKeypad = true;
 
     String _keypadCommandName = "";
     String _keypadCommandCode = "";
