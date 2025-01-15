@@ -5112,7 +5112,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     }
     response.print("\n\n------------ BLUETOOTH ------------");
     response.print("\nBluetooth connection mode: ");
-    response.print(_preferences->getBool(preference_connect_mode, false) ? "New" : "Old");
+    response.print(_preferences->getBool(preference_connect_mode, true) ? "New" : "Old");
     response.print("\nBluetooth TX power (dB): ");
     response.print(_preferences->getInt(preference_ble_tx_power, 9));
     response.print("\nBluetooth command nr of retries: ");

@@ -1537,7 +1537,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         removeHassTopic((char*)"switch", (char*)"detached_cylinder", uidString);
     }
 
-    if((int)advancedLockConfigAclPrefs[8] == 1)
+    if((int)advancedLockConfigAclPrefs[8] == 1 && !_preferences->getBool(preference_lock_gemini_enabled, false))
     {
         JsonDocument json;
         json = createHassJson(uidString, "_battery_type", "Battery type", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ (char*)"val_tpl", (char*)"{{value_json.batteryType}}" }, { (char*)"en", (char*)"true" }, { (char*)"cmd_tpl", (char*)"{ \"batteryType\": \"{{ value }}\" }" }});
@@ -1553,7 +1553,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         removeHassTopic((char*)"select", (char*)"battery_type", uidString);
     }
 
-    if((int)advancedLockConfigAclPrefs[9] == 1)
+    if((int)advancedLockConfigAclPrefs[9] == 1 && !_preferences->getBool(preference_lock_gemini_enabled, false))
     {
         // Automatic battery type detection
         publishHassTopic("switch",

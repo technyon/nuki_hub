@@ -2096,7 +2096,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     {
                         Nuki::BatteryType battype = nukiInst->batteryTypeToEnum(jsonchar);
 
-                        if((int)battype != 0xff)
+                        if((int)battype != 0xff && !_isUltra)
                         {
                             if(_nukiAdvancedConfig.batteryType == battype)
                             {
@@ -2116,7 +2116,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     {
                         const uint8_t keyvalue = atoi(jsonchar);
 
-                        if(keyvalue == 0 || keyvalue == 1)
+                        if((keyvalue == 0 || keyvalue == 1) && !_isUltra)
                         {
                             if(_nukiAdvancedConfig.automaticBatteryTypeDetection == keyvalue)
                             {

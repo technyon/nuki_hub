@@ -920,10 +920,14 @@ void NukiNetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &conf
     buttonPressActionToString(config.doubleButtonPressAction, str);
     json["doubleButtonPressAction"] = str;
     json["detachedCylinder"] = config.detachedCylinder;
-    memset(str, 0, sizeof(str));
-    _network->batteryTypeToString(config.batteryType, str);
-    json["batteryType"] = str;
-    json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
+
+    if (!_isUltra)
+    {
+        memset(str, 0, sizeof(str));
+        _network->batteryTypeToString(config.batteryType, str);
+        json["batteryType"] = str;
+        json["automaticBatteryTypeDetection"] = config.automaticBatteryTypeDetection;
+    }
     json["unlatchDuration"] = config.unlatchDuration;
     json["autoLockTimeOut"] = config.autoLockTimeOut;
     json["autoUnLockDisabled"] = config.autoUnLockDisabled;
@@ -1152,24 +1156,28 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
     }
     else
     {
-        for(int i=0; i<maxKeypadCodeCount; i++)
+        if (_clearNonJsonKeypad)
         {
-            String codeTopic = _mqttPath;
-            codeTopic.concat(mqtt_topic_keypad);
-            codeTopic.concat("/code_");
-            codeTopic.concat(std::to_string(i).c_str());
-            codeTopic.concat("/");
-            _network->removeTopic(codeTopic, "id");
-            _network->removeTopic(codeTopic, "enabled");
-            _network->removeTopic(codeTopic, "code");
-            _network->removeTopic(codeTopic, "name");
-            _network->removeTopic(codeTopic, "createdYear");
-            _network->removeTopic(codeTopic, "createdMonth");
-            _network->removeTopic(codeTopic, "createdDay");
-            _network->removeTopic(codeTopic, "createdHour");
-            _network->removeTopic(codeTopic, "createdMin");
-            _network->removeTopic(codeTopic, "createdSec");
-            _network->removeTopic(codeTopic, "lockCount");
+            _clearNonJsonKeypad = false;
+            for(int i=0; i<maxKeypadCodeCount; i++)
+            {
+                String codeTopic = _mqttPath;
+                codeTopic.concat(mqtt_topic_keypad);
+                codeTopic.concat("/code_");
+                codeTopic.concat(std::to_string(i).c_str());
+                codeTopic.concat("/");
+                _network->removeTopic(codeTopic, "id");
+                _network->removeTopic(codeTopic, "enabled");
+                _network->removeTopic(codeTopic, "code");
+                _network->removeTopic(codeTopic, "name");
+                _network->removeTopic(codeTopic, "createdYear");
+                _network->removeTopic(codeTopic, "createdMonth");
+                _network->removeTopic(codeTopic, "createdDay");
+                _network->removeTopic(codeTopic, "createdHour");
+                _network->removeTopic(codeTopic, "createdMin");
+                _network->removeTopic(codeTopic, "createdSec");
+                _network->removeTopic(codeTopic, "lockCount");
+            }
         }
 
         for(int j=entries.size(); j<maxKeypadCodeCount; j++)
