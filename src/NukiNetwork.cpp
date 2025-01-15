@@ -306,8 +306,8 @@ void NukiNetwork::initialize()
         Log->println(_mqttPort);
 
         _device->mqttSetClientId(_hostnameArr);
-        _device->mqttSetCleanSession(MQTT_CLEAN_SESSIONS);
-        _device->mqttSetKeepAlive(MQTT_KEEP_ALIVE);
+        _device->mqttSetCleanSession(false);
+        _device->mqttSetKeepAlive(60);
 
         char gpioPath[250];
         bool rebGpio = rebuildGpio();

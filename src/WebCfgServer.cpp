@@ -6,6 +6,7 @@
 #include <esp_task_wdt.h>
 #include "FS.h"
 #include "SPIFFS.h"
+#include "esp_random.h"
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
 #endif
@@ -124,11 +125,6 @@ void WebCfgServer::initialize()
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         _psychicServer->on("/ssidlist", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-            {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-            }
-
             return buildSSIDListHtml(request, resp);
         });
         _psychicServer->on("/savewifi", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
@@ -186,11 +182,6 @@ void WebCfgServer::initialize()
     {
         _psychicServer->on("/get", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-            {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-            }
-
             String value = "";
             if(request->hasParam("page"))
             {
@@ -198,6 +189,14 @@ void WebCfgServer::initialize()
                 if(p->value() != "")
                 {
                     value = p->value();
+                }
+            }
+            
+            if (value != "status")
+            {
+                if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
+                {
+                    return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
                 }
             }
 
@@ -251,7 +250,18 @@ void WebCfgServer::initialize()
             }
             else if (value == "status")
             {
-                return buildStatusHtml(request, resp);
+                if(request->hasParam("token"))
+                {
+                    const PsychicWebParameter* p2 = request->getParam("token");
+                    if(p2->value().toInt() == _randomInt)
+                    {
+                        return buildStatusHtml(request, resp);
+                    }
+                }
+                resp->setCode(200);
+                resp->setContentType("text/html");
+                resp->setContent("");
+                return resp->send();
             }
             else if (value == "acclvl")
             {
@@ -2398,7 +2408,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "TSKNTWK")
         {
-            if(value.toInt() > 12287 && value.toInt() < 32769)
+            if(value.toInt() > 12287 && value.toInt() < 65537)
             {
                 if(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE) != value.toInt())
                 {
@@ -2411,7 +2421,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "TSKNUKI")
         {
-            if(value.toInt() > 8191 && value.toInt() < 32769)
+            if(value.toInt() > 8191 && value.toInt() < 65537)
             {
                 if(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE) != value.toInt())
                 {
@@ -2424,7 +2434,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "ALMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 51)
+            if(value.toInt() > 0 && value.toInt() < 101)
             {
                 if(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG) != value.toInt())
                 {
@@ -2437,7 +2447,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "KPMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 101)
+            if(value.toInt() > 0 && value.toInt() < 201)
             {
                 if(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD) != value.toInt())
                 {
@@ -2450,7 +2460,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "TCMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 51)
+            if(value.toInt() > 0 && value.toInt() < 101)
             {
                 if(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL) != value.toInt())
                 {
@@ -2463,7 +2473,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "AUTHMAX")
         {
-            if(value.toInt() > 0 && value.toInt() < 51)
+            if(value.toInt() > 0 && value.toInt() < 101)
             {
                 if(_preferences->getInt(preference_auth_max_entries, MAX_AUTH) != value.toInt())
                 {
@@ -2476,7 +2486,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "BUFFSIZE")
         {
-            if(value.toInt() > 4095 && value.toInt() < 32769)
+            if(value.toInt() > 4095 && value.toInt() < 65537)
             {
                 if(_preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) != value.toInt())
                 {
@@ -2566,7 +2576,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 Log->println(key);
                 configChanged = true;
             }
-        }        
+        }
         else if(key == "DBGREAD")
         {
             if(_preferences->getBool(preference_debug_readable_data, false) != (value == "1"))
@@ -3904,7 +3914,8 @@ esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, Ps
 
 esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    String header = "<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
+    _randomInt = esp_random();
+    String header = (String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status&token=" + _randomInt + "', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
@@ -4396,15 +4407,15 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
     //printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
-    printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 32768)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
+    printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 65536)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
     response.print("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
-    printInputField(&response, "TSKNTWK", "Task size Network (min 12288, max 32768)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
+    printInputField(&response, "TSKNTWK", "Task size Network (min 12288, max 65536)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
     response.print("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
-    printInputField(&response, "TSKNUKI", "Task size Nuki (min 8192, max 32768)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
-    printInputField(&response, "ALMAX", "Max auth log entries (min 1, max 50)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
-    printInputField(&response, "KPMAX", "Max keypad entries (min 1, max 100)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
-    printInputField(&response, "TCMAX", "Max timecontrol entries (min 1, max 50)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "id=\"inputmaxtimecontrol\"");
-    printInputField(&response, "AUTHMAX", "Max authorization entries (min 1, max 50)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "id=\"inputmaxauth\"");
+    printInputField(&response, "TSKNUKI", "Task size Nuki (min 8192, max 65536)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
+    printInputField(&response, "ALMAX", "Max auth log entries (min 1, max 100)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
+    printInputField(&response, "KPMAX", "Max keypad entries (min 1, max 200)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
+    printInputField(&response, "TCMAX", "Max timecontrol entries (min 1, max 100)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "id=\"inputmaxtimecontrol\"");
+    printInputField(&response, "AUTHMAX", "Max authorization entries (min 1, max 100)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "id=\"inputmaxauth\"");
     printCheckBox(&response, "SHOWSECRETS", "Show Pairing secrets on Info page", _preferences->getBool(preference_show_secrets), "");
     if(_preferences->getBool(preference_lock_enabled, true))
     {
@@ -4423,11 +4434,6 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     }
     printInputField(&response, "OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
     printInputField(&response, "OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
-
-    std::vector<std::pair<String, String>> optionsForce;
-    optionsForce.push_back(std::make_pair("0", "Do not force"));
-    optionsForce.push_back(std::make_pair("1", "Force unavailable"));
-    optionsForce.push_back(std::make_pair("2", "Force available"));
 
     if(_nuki != nullptr)
     {
@@ -4456,7 +4462,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
 
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
-    response.print("</body><script>window.onload = function() { document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxauth\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var auth = document.getElementById(\"inputmaxauth\").value; var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var charbuf = 0; var networktask = 0; var sizeauth = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; if(auth > 0) { sizeauth = 300 * auth; } if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol && sizeauthlog>sizeauth) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol && sizekeypad>sizeauth) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} else if(sizeauth>sizeauthlog && sizeauth>sizetimecontrol && sizeauth>sizekeypad) { charbuf = sizeauth; networktask = 10240 + sizeauth;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>32768) { charbuf = 32768; } if(networktask<12288) { networktask = 12288; } else if (networktask>32768) { networktask = 32768; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
+    response.print("</body><script>window.onload = function() { document.getElementById(\"inputmaxauthlog\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxkeypad\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxtimecontrol\").addEventListener(\"keyup\", calculate);document.getElementById(\"inputmaxauth\").addEventListener(\"keyup\", calculate); calculate(); }; function calculate() { var auth = document.getElementById(\"inputmaxauth\").value; var authlog = document.getElementById(\"inputmaxauthlog\").value; var keypad = document.getElementById(\"inputmaxkeypad\").value; var timecontrol = document.getElementById(\"inputmaxtimecontrol\").value; var charbuf = 0; var networktask = 0; var sizeauth = 0; var sizeauthlog = 0; var sizekeypad = 0; var sizetimecontrol = 0; if(auth > 0) { sizeauth = 300 * auth; } if(authlog > 0) { sizeauthlog = 280 * authlog; } if(keypad > 0) { sizekeypad = 350 * keypad; } if(timecontrol > 0) { sizetimecontrol = 120 * timecontrol; } charbuf = sizetimecontrol; networktask = 10240 + sizetimecontrol; if(sizeauthlog>sizekeypad && sizeauthlog>sizetimecontrol && sizeauthlog>sizeauth) { charbuf = sizeauthlog; networktask = 10240 + sizeauthlog;} else if(sizekeypad>sizeauthlog && sizekeypad>sizetimecontrol && sizekeypad>sizeauth) { charbuf = sizekeypad; networktask = 10240 + sizekeypad;} else if(sizeauth>sizeauthlog && sizeauth>sizetimecontrol && sizeauth>sizekeypad) { charbuf = sizeauth; networktask = 10240 + sizeauth;} if(charbuf<4096) { charbuf = 4096; } else if (charbuf>65536) { charbuf = 65536; } if(networktask<12288) { networktask = 12288; } else if (networktask>65536) { networktask = 65536; } document.getElementById(\"mincharbuffer\").innerHTML = charbuf; document.getElementById(\"minnetworktask\").innerHTML = networktask; }</script></html>");
     return response.endSend();
 }
 
@@ -4467,7 +4473,6 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse
     bool mqttDone = false;
     bool lockDone = false;
     bool openerDone = false;
-    bool latestDone = false;
 
     json["stop"] = 0;
 
@@ -4545,14 +4550,9 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse
     if(_preferences->getBool(preference_check_updates))
     {
         json["latestFirmware"] = _preferences->getString(preference_latest_version);
-        latestDone = true;
-    }
-    else
-    {
-        latestDone = true;
     }
 
-    if(mqttDone && lockDone && openerDone && latestDone)
+    if(mqttDone && lockDone && openerDone)
     {
         json["stop"] = 1;
     }
@@ -4803,7 +4803,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
     printCheckBox(&response, "UPTIME", "Update Nuki Hub and Lock/Opener time using NTP", _preferences->getBool(preference_update_time, false), "");
     printInputField(&response, "TIMESRV", "NTP server", _preferences->getString(preference_time_server, "pool.ntp.org").c_str(), 255, "");
-    
+
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");

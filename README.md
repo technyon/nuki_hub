@@ -343,6 +343,39 @@ Both of the above options will not backup pairing data, so you will have to manu
 To import settings copy and paste the contents of the JSON file that is created by any of the above export options and select "Import".
 After importing the device will reboot.
 
+### Advanced Configuration
+
+The advanced configuration menu is not reachable from the main menu of the web configurator by default.<br>
+You can reach the menu directly by browsing to http://NUKIHUBIP/?get=advanced or enable showing it in the main menu by browsing to http://NUKIHUBIP/?get=debugon once (http://NUKIHUBIP/?get=debugoff to disable).
+
+Note that the following options can break NukiHub and cause bootloops that will require you to erase your ESP and reflash following the instructions for first-time flashing.
+
+- Disable Network if not connected within 60s: Enable to allow NukiHub to function without a network connection (for example when only using NukiHub with GPIO)
+- Enable Bootloop prevention: Enable to reset the following stack size and max entry settings to default if NukiHub detects a bootloop.
+- Char buffer size (min 4096, max 65536): Set the character buffer size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 4096.
+- Task size Network (min 12288, max 65536): Set the Network task stack size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 12288.
+- Task size Nuki (min 8192, max 65536): Set the Nuki task stack size. Default 8192.
+- Max auth log entries (min 1, max 100): The maximum amount of log entries that will be requested from the lock/opener, default 5.
+- Max keypad entries (min 1, max 200): The maximum amount of keypad codes that will be requested from the lock/opener, default 10.
+- Max timecontrol entries (min 1, max 100): The maximum amount of timecontrol entries that will be requested from the lock/opener, default 10.
+- Max authorization entries (min 1, max 100): The maximum amount of authorization entries that will be requested from the lock/opener, default 10.
+- Show Pairing secrets on Info page: Enable to show the pairing secrets on the info page. Will be disabled on reboot.
+- Manually set lock pairing data: Enable to save the pairing data fields and manually set pairing info for the lock.
+- Manually set opener pairing data: Enable to save the pairing data fields and manually set pairing info for the opener.
+- Custom URL to update Nuki Hub updater: Set to a HTTPS address to update to a custom NukiHub updater binary on next boot of the NukiHub partition.
+- Custom URL to update Nuki Hub: Set to a HTTPS address to update to a custom NukiHub binary on next boot of the NukiHub updater partition.
+- Force Lock ID to current ID: Enable to force the current Lock ID, irrespective of the config received from the lock.
+- Force Lock Keypad connected: Enable to force NukiHub to function as if a keypad was connected, irrespective of the config received from the lock.
+- Force Lock Doorsensor connected: Enable to force NukiHub to function as if a doorsensor was connected, irrespective of the config received from the lock.
+- Force Opener ID to current ID: Enable to force the current Opener ID, irrespective of the config received from the opener.
+- Force Opener Keypad: Enable to force NukiHub to function as if a keypad was connected, irrespective of the config received from the opener.
+- Enable Nuki connect debug logging: Enable to log debug information regarding Nuki BLE connection to MQTT and/or Serial.
+- Enable Nuki communication debug logging: Enable to log debug information regarding Nuki BLE communication to MQTT and/or Serial.
+- Enable Nuki readable data debug logging: Enable to log human readable debug information regarding Nuki BLE to MQTT and/or Serial.
+- Enable Nuki hex data debug logging: Enable to log hex debug information regarding Nuki BLE to MQTT and/or Serial.
+- Enable Nuki command debug logging: Enable to log debug information regarding Nuki BLE commands to MQTT and/or Serial.
+- Pubish free heap over MQTT: Enable to publish free heap to MQTT.
+
 ## Exposed MQTT Topics
 
 ### Lock
