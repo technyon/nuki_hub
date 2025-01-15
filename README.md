@@ -279,6 +279,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 - BLE transmit power in dB: Set to a integer between -12 and 9 to set the Bluetooth transmit power, default 9.
+- Update Nuki Hub and Lock/Opener time using NTP: Enable to update the ESP32 time and Nuki Lock and/or Nuki Opener time every 12 hours using a NTP time server
+- NTP server: Set to the NTP server you want to use, defaults to "pool.ntp.org". If DHCP is used and NTP servers are provided using DHCP these will take precedence over the specified NTP server.
 
 ### Access Level Configuration
 

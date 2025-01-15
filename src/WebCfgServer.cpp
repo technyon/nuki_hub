@@ -233,12 +233,12 @@ void WebCfgServer::initialize()
             }
             else if (value == "debugon")
             {
-                _preferences->putBool(preference_publish_debug_info, true);
+                _preferences->putBool(preference_enable_debug_mode, true);
                 return buildConfirmHtml(request, resp, "Debug On", 3, true);
             }
             else if (value == "debugoff")
             {
-                _preferences->putBool(preference_publish_debug_info, false);
+                _preferences->putBool(preference_enable_debug_mode, false);
                 return buildConfirmHtml(request, resp, "Debug Off", 3, true);
             }
             else if (value == "export")
@@ -1882,6 +1882,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 configChanged = true;
             }
         }
+        else if(key == "TIMESRV")
+        {
+            if(_preferences->getString(preference_time_server, "pool.ntp.org") != value)
+            {
+                _preferences->putString(preference_time_server, value);
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "NWHW")
         {
             if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
@@ -2547,6 +2557,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 configChanged = true;
             }
         }
+        else if(key == "DBGHEAP")
+        {
+            if(_preferences->getBool(preference_publish_debug_info, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_publish_debug_info, (value == "1"));
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }        
         else if(key == "DBGREAD")
         {
             if(_preferences->getBool(preference_debug_readable_data, false) != (value == "1"))
@@ -3961,7 +3981,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     {
         buildNavigationMenuEntry(&response, "Custom Ethernet Configuration", "/get?page=custntw");
     }
-    if (_preferences->getBool(preference_publish_debug_info, false))
+    if (_preferences->getBool(preference_enable_debug_mode, false))
     {
         buildNavigationMenuEntry(&response, "Advanced Configuration", "/get?page=advanced");
     }
@@ -4431,6 +4451,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printCheckBox(&response, "DBGREAD", "Enable Nuki readable data debug logging", _preferences->getBool(preference_debug_readable_data, false), "");
     printCheckBox(&response, "DBGHEX", "Enable Nuki hex data debug logging", _preferences->getBool(preference_debug_hex_data, false), "");
     printCheckBox(&response, "DBGCOMM", "Enable Nuki command debug logging", _preferences->getBool(preference_debug_command, false), "");
+    printCheckBox(&response, "DBGHEAP", "Pubish free heap over MQTT", _preferences->getBool(preference_publish_debug_info, false), "");
     response.print("</table>");
 
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -4781,6 +4802,8 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     printInputField(&response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
     printCheckBox(&response, "UPTIME", "Update Nuki Hub and Lock/Opener time using NTP", _preferences->getBool(preference_update_time, false), "");
+    printInputField(&response, "TIMESRV", "NTP server", _preferences->getString(preference_time_server, "pool.ntp.org").c_str(), 255, "");
+    
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
@@ -4967,7 +4990,9 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     #else
     response.print("Disabled");
     #endif
-    response.print("\nPublish debug information enabled: ");
+    response.print("\nAdvanced menu enabled: ");
+    response.print(_preferences->getBool(preference_enable_debug_mode, false) ? "Yes" : "No");
+    response.print("\nPublish free heap over MQTT: ");
     response.print(_preferences->getBool(preference_publish_debug_info, false) ? "Yes" : "No");
     response.print("\nNuki connect debug logging enabled: ");
     response.print(_preferences->getBool(preference_debug_connect, false) ? "Yes" : "No");

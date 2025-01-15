@@ -72,6 +72,7 @@
 #define preference_connect_mode (char*)"nukiConnMode"
 #define preference_http_auth_type (char*)"httpdAuthType"
 #define preference_update_time (char*)"updateTime"
+#define preference_time_server (char*)"timeServer"
 #define preference_mqtt_ssl_enabled (char*)"mqttSSLena"
 #define preference_lock_gemini_pin (char*)"geminiPin"
 #define preference_lock_gemini_enabled (char*)"geminiena"
@@ -116,6 +117,7 @@
 #define preference_network_timeout (char*)"nettmout"
 #define preference_restart_on_disconnect (char*)"restdisc"
 #define preference_publish_debug_info (char*)"pubdbg"
+#define preference_enable_debug_mode (char*)"enadbg"
 #define preference_official_hybrid_actions (char*)"hybridAct"
 #define preference_official_hybrid_retry (char*)"hybridRtry"
 #define preference_keypad_check_code_enabled (char*)"kpChkEna"
@@ -178,6 +180,7 @@ inline void initPreferences(Preferences* preferences)
         uint32_t advancedOpenerConfigAclPrefs[21] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
         preferences->putString(preference_mqtt_lock_path, "nukihub");
+        preferences->putString(preference_time_server, "pool.ntp.org");
 
         preferences->putBool(preference_check_updates, true);
         preferences->putBool(preference_opener_continuous_mode, false);
@@ -232,6 +235,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_connect_mode, true);
         preferences->putBool(preference_http_auth_type, false);
         preferences->putBool(preference_retain_gpio, false);
+        preferences->putBool(preference_enable_debug_mode, false);
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         WiFi.begin();
@@ -469,7 +473,7 @@ private:
         preference_started_before, preference_config_version, preference_device_id_lock, preference_device_id_opener, preference_nuki_id_lock, preference_nuki_id_opener,
         preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates,
         preference_webserver_enabled, preference_lock_enabled, preference_lock_pin_status, preference_mqtt_lock_path, preference_opener_enabled, preference_opener_pin_status,
-        preference_opener_continuous_mode, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_update_time,
+        preference_opener_continuous_mode, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_update_time, preference_time_server,
         preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt,
         preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
         preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_http_auth_type, preference_lock_gemini_pin,
@@ -478,7 +482,7 @@ private:
         preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
         preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
         preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
-        preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_mqtt_ssl_enabled,
+        preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_mqtt_ssl_enabled, preference_enable_debug_mode,
         preference_official_hybrid_enabled, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry,
         preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
         preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_webserial_enabled, preference_find_best_rssi, preference_lock_gemini_enabled,
@@ -507,7 +511,7 @@ private:
         preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi, preference_http_auth_type,
         preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled,
-        preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled
+        preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled, preference_enable_debug_mode
     };
     std::vector<char*> _bytePrefs =
     {
