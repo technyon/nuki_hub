@@ -56,8 +56,12 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
         str = _preferences->getString(preference_cred_password, "");
         const char *pass = str.c_str();
         memcpy(&_credPassword, pass, str.length());
-    }
 
+        if (_preferences->getInt(preference_http_auth_type, 0) == 2)
+        {
+            loadSessions();
+        }
+    }
     _confirmCode = generateConfirmCode();
 
 #ifndef NUKI_HUB_UPDATER
@@ -76,41 +80,115 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
 #endif
 }
 
-void WebCfgServer::initialize()
+bool WebCfgServer::isAuthenticated(PsychicRequest *request)
 {
-    _psychicServer->onOpen([&](PsychicClient* client) { Log->printf("[http] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str()); });
-    _psychicServer->onClose([&](PsychicClient* client) { Log->printf("[http] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str()); });
+    if (request->hasCookie("sessionId")) {
+        String cookie = request->getCookie("sessionId");
 
-    HTTPAuthMethod auth_type = BASIC_AUTH;
-    if (_preferences->getBool(preference_http_auth_type, false))
+        if (_httpSessions[cookie].is<JsonVariant>())
+        {
+            struct timeval time;
+            gettimeofday(&time, NULL);
+            int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+
+            if (_httpSessions[cookie].as<signed long long>() > time_us)
+            {
+                return true;
+            }
+            else
+            {
+                Log->println("Cookie found, but not valid anymore");
+            }
+        }
+    }
+    Log->println("Authentication Failed");
+    return false;
+}
+
+esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* resp)
+{
+    Log->print("Logging out");
+    resp->setCookie("sessionId", "", 0, "HttpOnly");
+
+    if (request->hasCookie("sessionId")) {
+        String cookie = request->getCookie("sessionId");
+        _httpSessions.remove(cookie);
+        saveSessions();
+    }
+    else
     {
-        auth_type = DIGEST_AUTH;
+        Log->print("No session cookie found");
     }
 
-    _psychicServer->on("/", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
-    {
-        if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-        {
-            return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-        }
+    return buildConfirmHtml(request, resp, "Logging out", 3, true);
+}
 
-#ifndef CONFIG_IDF_TARGET_ESP32H2
-        if(!_network->isApOpen())
-        {
-#endif
-#ifndef NUKI_HUB_UPDATER
-            return buildHtml(request, resp);
-#else
-            return buildOtaHtml(request, resp);
-#endif
-#ifndef CONFIG_IDF_TARGET_ESP32H2
+void WebCfgServer::saveSessions()
+{
+    if(_preferences->getBool(preference_update_time, false))
+    {
+            if (!SPIFFS.begin(true)) {
+                Log->println("SPIFFS Mount Failed");
+            }
+            else
+            {
+                File file = SPIFFS.open("/sessions.json", "w");
+                serializeJson(_httpSessions, file);
+                file.close();
+            }
+    }
+}
+void WebCfgServer::loadSessions()
+{
+    if(_preferences->getBool(preference_update_time, false))
+    {
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
         }
         else
         {
-            return buildWifiConnectHtml(request, resp);
+            File file = SPIFFS.open("/sessions.json", "r");
+
+            if (!file || file.isDirectory()) {
+                Log->println("sessions.json not found");
+            }
+            else
+            {
+                deserializeJson(_httpSessions, file);
+            }
+            file.close();
         }
-#endif
-    });
+    }
+}
+
+int WebCfgServer::doAuthentication(PsychicRequest *request)
+{
+    if(strlen(_credUser) > 0 && strlen(_credPassword) > 0)
+    {
+        int savedAuthType = _preferences->getInt(preference_http_auth_type, 0);
+        if (savedAuthType == 2)
+        {
+            if (!isAuthenticated(request)) {
+                return savedAuthType;
+            }
+        }
+        else
+        {
+            if (!request->authenticate(_credUser, _credPassword))
+            {
+                return savedAuthType;
+            }
+        }
+    }
+
+    return 4;
+}
+
+void WebCfgServer::initialize()
+{
+    //_psychicServer->onOpen([&](PsychicClient* client) { Log->printf("[http] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str()); });
+    //_psychicServer->onClose([&](PsychicClient* client) { Log->printf("[http] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str()); });
+
     _psychicServer->on("/style.css", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
         return sendCss(request, resp);
@@ -129,9 +207,23 @@ void WebCfgServer::initialize()
         });
         _psychicServer->on("/savewifi", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
+            int authReq = doAuthentication(request);
+
+            switch (authReq)
             {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
+                case 0:
+                    return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 1:
+                    return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 2:
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=login");
+                case 4:
+                default:
+                    break;
             }
 
             String message = "";
@@ -148,9 +240,23 @@ void WebCfgServer::initialize()
         });
         _psychicServer->on("/reboot", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
+            int authReq = doAuthentication(request);
+
+            switch (authReq)
             {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
+                case 0:
+                    return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 1:
+                    return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 2:
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=login");
+                case 4:
+                default:
+                    break;
             }
 
             String value = "";
@@ -169,6 +275,8 @@ void WebCfgServer::initialize()
 
             if(value != _confirmCode)
             {
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
                 return resp->redirect("/");
             }
             esp_err_t res = buildConfirmHtml(request, resp, "Rebooting...", 2, true);
@@ -191,16 +299,44 @@ void WebCfgServer::initialize()
                     value = p->value();
                 }
             }
-            
-            if (value != "status")
+            int authReq = doAuthentication(request);
+
+            if (value != "status" && value != "login" && value != "logout")
             {
-                if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
+                switch (authReq)
                 {
-                    return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
+                    case 0:
+                        return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 1:
+                        return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 2:
+                        resp->setCode(302);
+                        resp->addHeader("Cache-Control", "no-cache");
+                        return resp->redirect("/get?page=login");
+                    case 4:
+                    default:
+                        break;
                 }
             }
+            else if (value == "status" && authReq != 4)
+            {
+                resp->setCode(200);
+                resp->setContentType("application/json");
+                resp->setContent("{}");
+                return resp->send();
+            }
 
-            if (value == "reboot")
+            if (value == "login")
+            {
+                return buildLoginHtml(request, resp);
+            }
+            else if (value == "logout")
+            {
+                return logoutSession(request, resp);
+            }
+            else if (value == "reboot")
             {
                 String value = "";
                 if(request->hasParam("CONFIRMTOKEN"))
@@ -218,6 +354,8 @@ void WebCfgServer::initialize()
 
                 if(value != _confirmCode)
                 {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/");
                 }
                 esp_err_t res = buildConfirmHtml(request, resp, "Rebooting...", 2, true);
@@ -250,18 +388,7 @@ void WebCfgServer::initialize()
             }
             else if (value == "status")
             {
-                if(request->hasParam("token"))
-                {
-                    const PsychicWebParameter* p2 = request->getParam("token");
-                    if(p2->value().toInt() == _randomInt)
-                    {
-                        return buildStatusHtml(request, resp);
-                    }
-                }
-                resp->setCode(200);
-                resp->setContentType("text/html");
-                resp->setContent("");
-                return resp->send();
+                return buildStatusHtml(request, resp);
             }
             else if (value == "acclvl")
             {
@@ -337,6 +464,8 @@ void WebCfgServer::initialize()
                 }
                 if(value != _confirmCode)
                 {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/");
                 }
                 if(!_allowRestartToPortal)
@@ -376,6 +505,8 @@ void WebCfgServer::initialize()
 
                 if(value != _confirmCode)
                 {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/");
                 }
                 esp_err_t res = buildConfirmHtml(request, resp, "Rebooting to other partition...", 2, true);
@@ -389,36 +520,21 @@ void WebCfgServer::initialize()
                 #ifndef NUKI_HUB_UPDATER
                 return processUpdate(request, resp);
                 #else
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
                 return resp->redirect("/");
                 #endif
             }
             else
             {
-                #ifndef CONFIG_IDF_TARGET_ESP32H2
-                if(!_network->isApOpen())
-                {
-                #endif
-                    #ifndef NUKI_HUB_UPDATER
-                    return buildHtml(request, resp);
-                    #else
-                    return buildOtaHtml(request, resp);
-                    #endif
-                #ifndef CONFIG_IDF_TARGET_ESP32H2
-                }
-                else
-                {
-                    return buildWifiConnectHtml(request, resp);
-                }
-                #endif
+                Log->println("Page not found, loading index");
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/");
             }
         });
         _psychicServer->on("/post", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-            {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-            }
-
             String value = "";
             if(request->hasParam("page"))
             {
@@ -429,8 +545,46 @@ void WebCfgServer::initialize()
                 }
             }
 
+            if (value != "login")
+            {
+                int authReq = doAuthentication(request);
+
+                switch (authReq)
+                {
+                    case 0:
+                        return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 1:
+                        return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 2:
+                        resp->setCode(302);
+                        resp->addHeader("Cache-Control", "no-cache");
+                        return resp->redirect("/get?page=login");
+                    case 4:
+                    default:
+                        break;
+                }
+            }
+
+            if (value == "login")
+            {
+                bool loggedIn = processLogin(request, resp);
+                if (loggedIn)
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/");
+                }
+                else
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=login");
+                }
+            }
             #ifndef NUKI_HUB_UPDATER
-            if (value == "savecfg")
+            else if (value == "savecfg")
             {
                 String message = "";
                 bool restart = processArgs(request, resp, message);
@@ -474,10 +628,8 @@ void WebCfgServer::initialize()
                 bool restart = processImport(request, resp, message);
                 return buildConfirmHtml(request, resp, message, 3, true);
             }
-            else
-            #else
-            if (1 == 1)
             #endif
+            else
             {
                 #ifndef CONFIG_IDF_TARGET_ESP32H2
                 if(!_network->isApOpen())
@@ -501,19 +653,44 @@ void WebCfgServer::initialize()
         PsychicUploadHandler *updateHandler = new PsychicUploadHandler();
         updateHandler->onUpload([&](PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool last)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
-            {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
-            }
+            int authReq = doAuthentication(request);
 
+            switch (authReq)
+            {
+                case 0:
+                    return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 1:
+                    return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 2:
+                    return ESP_FAIL;
+                case 4:
+                default:
+                    break;
+            }
             return handleOtaUpload(request, filename, index, data, len, last);
         });
 
         updateHandler->onRequest([&](PsychicRequest* request, PsychicResponse* resp)
         {
-            if(strlen(_credUser) > 0 && strlen(_credPassword) > 0 && !request->authenticate(_credUser, _credPassword))
+            int authReq = doAuthentication(request);
+
+            switch (authReq)
             {
-                return request->requestAuthentication(auth_type, "Nuki Hub", "You must log in.");
+                case 0:
+                    return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 1:
+                    return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 2:
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=login");
+                case 4:
+                default:
+                    break;
             }
 
             String result;
@@ -546,6 +723,47 @@ void WebCfgServer::initialize()
         _psychicServer->on("/uploadota", HTTP_POST, updateHandler);
         //Update.onProgress(printProgress);
     }
+
+    _psychicServer->on("/", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        int authReq = doAuthentication(request);
+
+        switch (authReq)
+        {
+            case 0:
+                return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                break;
+            case 1:
+                return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                break;
+            case 2:
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/get?page=login");
+                break;
+            case 4:
+            default:
+                break;
+        }
+
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+        if(!_network->isApOpen())
+        {
+#endif
+#ifndef NUKI_HUB_UPDATER
+            return buildHtml(request, resp);
+#else
+            return buildOtaHtml(request, resp);
+#endif
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+        }
+        else
+        {
+            return buildWifiConnectHtml(request, resp);
+        }
+#endif
+    });
+
 }
 
 void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *token, const char *description, const bool value, const char *htmlClass)
@@ -1264,6 +1482,54 @@ void WebCfgServer::printInputField(PsychicStreamResponse *response,
     char valueStr[20];
     itoa(value, valueStr, 10);
     printInputField(response, token, description, valueStr, maxLength, args);
+}
+
+esp_err_t WebCfgServer::buildLoginHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
+    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    response.print("</head><body><center><h2>NukiHub login</h2><form action=\"/post?page=login\" method=\"post\">");
+    response.print("<div class=\"container\"><label for=\"username\"><b>Username</b></label><input type=\"text\" placeholder=\"Enter Username\" name=\"username\" required>");
+    response.print("<label for=\"password\"><b>Password</b></label><input type=\"password\" placeholder=\"Enter Password\" name=\"password\" required>");
+    response.print("<button type=\"submit\">Login</button><label><input type=\"checkbox\" checked=\"checked\" name=\"remember\"> Remember me</label></div>");
+    response.print("</form></center></body></html>");
+    return response.endSend();
+}
+
+bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
+{
+    if(request->hasParam("username") && request->hasParam("password"))
+    {
+        const PsychicWebParameter* user = request->getParam("username");
+        const PsychicWebParameter* pass = request->getParam("password");
+        if(user->value() != "" && pass->value() != "")
+        {
+            if (user->value() == _preferences->getString(preference_cred_user, "") && pass->value() == _preferences->getString(preference_cred_password, ""))
+            {
+                char buffer[33];
+                int i;
+                int64_t durationLength = 60*60*24*30;
+                for (i = 0; i < 4; i++) {
+                    sprintf(buffer + (i * 8), "%08lx", (unsigned long int)esp_random());
+                }
+                if(!request->hasParam("remember")) {
+                    durationLength = 60*60;
+                }
+                resp->setCookie("sessionId", buffer, durationLength, "HttpOnly");
+
+                struct timeval time;
+                gettimeofday(&time, NULL);
+                int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+                _httpSessions[buffer] = time_us + (durationLength*1000000L);
+                saveSessions();
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 #ifndef NUKI_HUB_UPDATER
@@ -2788,9 +3054,9 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "CREDDIGEST")
         {
-            if(_preferences->getBool(preference_http_auth_type, false) != (value == "1"))
+            if(_preferences->getInt(preference_http_auth_type, 0) != value.toInt())
             {
-                _preferences->putBool(preference_http_auth_type, (value == "1"));
+                _preferences->putInt(preference_http_auth_type, value.toInt());
                 Log->print(("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
@@ -3914,8 +4180,7 @@ esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, Ps
 
 esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    _randomInt = esp_random();
-    String header = (String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status&token=" + _randomInt + "', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
+    String header = (String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response, header);
@@ -4008,6 +4273,10 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
 #endif
     String rebooturl = "/get?page=reboot&CONFIRMTOKEN=" + _confirmCode;
     buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebooturl.c_str());
+    if (_preferences->getInt(preference_http_auth_type, 0) == 2)
+    {
+        buildNavigationMenuEntry(&response, "Logout", "/get?page=logout");
+    }
     response.print("</ul></body></html>");
     return response.endSend();
 }
@@ -4024,7 +4293,13 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "id=\"inputuser\"", false, true);
     printInputField(&response, "CREDPASS", "Password", "*", 30, "id=\"inputpass\"", true, true);
     printInputField(&response, "CREDPASSRE", "Retype password", "*", 30, "id=\"inputpass2\"", true);
-    printCheckBox(&response, "CREDDIGEST", "Use Digest Authentication (more secure)", _preferences->getBool(preference_http_auth_type, false), "");
+
+    std::vector<std::pair<String, String>> httpAuthOptions;
+    httpAuthOptions.push_back(std::make_pair("0", "Basic"));
+    httpAuthOptions.push_back(std::make_pair("1", "Digest"));
+    httpAuthOptions.push_back(std::make_pair("2", "Form"));
+
+    printDropDown(&response, "CREDDIGEST", "HTTP Authentication type", String(_preferences->getInt(preference_http_auth_type, 0)), httpAuthOptions, "");
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var input_pass2 = document.getElementById(\"inputpass2\").value; var pattern = /^[ -~]*$/; if(input_user == '#' || input_user == '') { return true; } if (input_pass != input_pass2) { alert('Passwords do not match'); return false;} if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
@@ -4964,7 +5239,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print("\nWeb configurator password: ");
     response.print(_preferences->getString(preference_cred_password, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator authentication: ");
-    response.print(_preferences->getBool(preference_http_auth_type, false) ? "Digest" : "Basic");
+    response.print(_preferences->getInt(preference_http_auth_type, 0) == 0 ? "Basic" : _preferences->getInt(preference_http_auth_type, 0) == 1 ? "Digest" : "Form");
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
     response.print("\nHTTP SSL: ");

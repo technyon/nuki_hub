@@ -303,7 +303,7 @@ String PsychicRequest::getCookie(const char* key)
 
   // how big is our cookie?
   size_t size;
-  if (!hasCookie("counter", &size))
+  if (!hasCookie(key, &size))
     return cookie;
 
   // allocate cookie buffer... keep it on the stack

@@ -226,6 +226,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putInt(preference_query_interval_configuration, 3600);
         preferences->putInt(preference_query_interval_battery, 1800);
         preferences->putInt(preference_query_interval_keypad, 1800);
+        preferences->putInt(preference_http_auth_type, 0);
 
         preferences->putBool(preference_debug_connect, false);
         preferences->putBool(preference_debug_communication, false);
@@ -233,7 +234,6 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_debug_hex_data, false);
         preferences->putBool(preference_debug_command, false);
         preferences->putBool(preference_connect_mode, true);
-        preferences->putBool(preference_http_auth_type, false);
         preferences->putBool(preference_retain_gpio, false);
         preferences->putBool(preference_enable_debug_mode, false);
 
@@ -508,7 +508,7 @@ private:
         preference_publish_authdata, preference_publish_debug_info, preference_official_hybrid_enabled, preference_mqtt_hass_enabled, preference_retain_gpio,
         preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
         preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled, preference_hass_device_discovery,
-        preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi, preference_http_auth_type,
+        preference_ntw_reconfigure, preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi,
         preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled,
         preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled, preference_enable_debug_mode
@@ -528,7 +528,7 @@ private:
         preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
         preference_ble_tx_power, preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr,
         preference_network_custom_irq, preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso,
-        preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio
+        preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio, preference_http_auth_type
     };
     std::vector<char*> _uintPrefs =
     {
