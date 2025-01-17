@@ -43,6 +43,8 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 - [M5Stack Atom POE](https://docs.m5stack.com/en/atom/atom_poe)
 - [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)
 - [LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)
+- [LilyGO-T-ETH-Lite](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
+- [LilyGO-T-ETH-Lite-ESP32S3](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
 - [LilyGO-T-ETH ELite](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
 - [GL-S10 (Revisions 2.1, 2.3 / 1.0 is not supported)](https://www.gl-inet.com/products/gl-s10/)
 
@@ -59,7 +61,7 @@ The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using P
 The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
 
 Other considerations:
-- If Ethernet/PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the M5stack Atom S3R with the M5stack AtomPoe W5500 module
+- If Ethernet/PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
 - If WIFI6 is absolutely required (it probably isn't): ESP32-C6
 
 Devices ranked best-to-worst:
