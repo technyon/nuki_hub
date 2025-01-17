@@ -100,7 +100,14 @@ private:
     std::vector<int> _rssiList;
     String generateConfirmCode();
     String _confirmCode = "----";
-
+    
+    void saveSessions();
+    void loadSessions();
+    esp_err_t logoutSession(PsychicRequest *request, PsychicResponse* resp);
+    bool isAuthenticated(PsychicRequest *request);
+    bool processLogin(PsychicRequest *request, PsychicResponse* resp);
+    int doAuthentication(PsychicRequest *request);
+    esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);    
     esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
@@ -128,6 +135,6 @@ private:
     bool _allowRestartToPortal = false;
     uint8_t _partitionType = 0;
     size_t _otaContentLen = 0;
-    uint32_t _randomInt = 0;
     String _hostname;
+    JsonDocument _httpSessions;
 };

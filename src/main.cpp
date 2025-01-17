@@ -10,6 +10,7 @@
 #include "esp32-hal-log.h"
 #include "hal/wdt_hal.h"
 #include "esp_chip_info.h"
+#include "esp_netif_sntp.h"
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
 #include "FS.h"
@@ -29,7 +30,6 @@
 #include "RestartReason.h"
 #include "EspMillis.h"
 #include "NimBLEDevice.h"
-#include "esp_netif_sntp.h"
 
 /*
 #ifdef DEBUG_NUKIHUB
@@ -37,8 +37,6 @@
 #include <MycilaWebSerial.h>
 #endif
 */
-
-char log_print_buffer[1024];
 
 NukiNetworkLock* networkLock = nullptr;
 NukiNetworkOpener* networkOpener = nullptr;
@@ -71,6 +69,8 @@ int64_t restartTs = 10 * 60 * 1000;
 
 #endif
 
+char log_print_buffer[1024];
+
 PsychicHttpServer* psychicServer = nullptr;
 PsychicHttpsServer* psychicSSLServer = nullptr;
 NukiNetwork* network = nullptr;
@@ -97,7 +97,6 @@ RestartReason currentRestartReason = RestartReason::NotApplicable;
 TaskHandle_t otaTaskHandle = nullptr;
 TaskHandle_t networkTaskHandle = nullptr;
 
-#ifndef NUKI_HUB_UPDATER
 ssize_t write_fn(void* cookie, const char* buf, ssize_t size)
 {
     Log->write((uint8_t *)buf, (size_t)size);
@@ -157,7 +156,6 @@ void setReroute()
     }
 
 }
-#endif
 
 uint8_t checkPartition()
 {
@@ -179,6 +177,10 @@ uint8_t checkPartition()
     {
         return 2;    //NEW PARTITION TABLE, RUNNING UPDATER APP
     }
+}
+
+void cbSyncTime(struct timeval *tv)  {
+  Log->println("NTP time synched");
 }
 
 void networkTask(void *pvParameters)
@@ -204,13 +206,15 @@ void networkTask(void *pvParameters)
         network->update();
         bool connected = network->isConnected();
 
-        #ifndef NUKI_HUB_UPDATER
         if(connected && reroute)
         {
+            if(preferences->getBool(preference_update_time, false))
+            {
+                esp_netif_sntp_start();
+            }
             reroute = false;
             setReroute();
         }
-        #endif
 
 #ifndef NUKI_HUB_UPDATER
         wifiConnected = network->wifiConnected();
@@ -501,10 +505,6 @@ void setupTasks(bool ota)
         }
 #endif
     }
-}
-
-void cbSyncTime(struct timeval *tv)  {
-  Log->println(("NTP time synched"));
 }
 
 void setup()
@@ -822,16 +822,14 @@ void setup()
         }
 #endif
         */
-    }
 
-    if(preferences->getBool(preference_update_time, false))
-    {
-        esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(preferences->getString(preference_time_server, "pool.ntp.org").c_str());
+        String timeserver = preferences->getString(preference_time_server, "pool.ntp.org");
+        esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(timeserver.c_str());
         config.start = false;
         config.server_from_dhcp = true;
         config.renew_servers_after_new_IP = true;
         config.index_of_first_server = 1;
-        
+
         if (network->networkDeviceType() == NetworkDeviceType::WiFi)
         {
             config.ip_event_to_renew = IP_EVENT_STA_GOT_IP;
