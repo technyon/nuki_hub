@@ -68,6 +68,17 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
                                     ETH_PHY_SPI_MOSI_M5_W5500,
                                     ETH_PHY_W5500);
         break;
+    case NetworkDeviceType::LilyGO_T_ETH_ELite:
+        device = new EthernetDevice(hostname, preferences, ipConfiguration, "LilyGO T-ETH ELite",
+                                    ETH_PHY_ADDR_W5500,
+                                    ETH_PHY_CS_ELITE_W5500,
+                                    ETH_PHY_IRQ_ELITE_W5500,
+                                    ETH_PHY_RST_ELITE_W5500,
+                                    ETH_PHY_SPI_SCK_ELITE_W5500,
+                                    ETH_PHY_SPI_MISO_ELITE_W5500,
+                                    ETH_PHY_SPI_MOSI_ELITE_W5500,
+                                    ETH_PHY_W5500);
+        break;
     case NetworkDeviceType::CUSTOM:
     {
         int custPHY = preferences->getInt(preference_network_custom_phy, 0);
