@@ -309,7 +309,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 - User: Pick a username to enable HTTP authentication for the Web Configuration, Set to "#" to disable authentication.
 - Password/Retype password: Pick a password to enable HTTP authentication for the Web Configuration.
-- Use Digest Authentication (more secure): Enable to use HTTP Digest Authentication instead of HTTP Basic Authentication. Digest authentication is more secure, especially over unencrypted (HTTP) connections.
+- HTTP Authentication type: Select from Basic, Digest or Form based authentication. Digest authentication is more secure than Basic or Form based authentication, especially over unencrypted (HTTP) connections. Form based authentication works best with password managers. Note: Firefox seems to have issues with basic authentication.
 
 #### Nuki Lock PIN / Nuki Opener PIN
 

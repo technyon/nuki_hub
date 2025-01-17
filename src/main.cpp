@@ -10,9 +10,6 @@
 #include "esp32-hal-log.h"
 #include "hal/wdt_hal.h"
 #include "esp_chip_info.h"
-#include <time.h>
-#include <esp_sntp.h>
-#include "esp_netif.h"
 #include "esp_netif_sntp.h"
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"

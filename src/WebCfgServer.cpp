@@ -485,7 +485,8 @@ void WebCfgServer::initialize()
             }
             else if (value == "otadebug")
             {
-                return buildOtaHtml(request, resp, true);
+                return buildOtaHtml(request, resp);
+                //return buildOtaHtml(request, resp, true);
             }
             else if (value == "reboottoota")
             {
@@ -5927,6 +5928,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
 
     if(request->hasParam("beta"))
     {
+        /*
         if(request->hasParam("debug"))
         {
             res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG BETA version", 2, true);
@@ -5935,13 +5937,15 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         }
         else
         {
-            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
-            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
-        }
+        */
+        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
+        _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
+        _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
+        //}
     }
     else if(request->hasParam("master"))
     {
+        /*
         if(request->hasParam("debug"))
         {
             res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG DEVELOPMENT version", 2, true);
@@ -5950,10 +5954,11 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         }
         else
         {
-            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
-            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-        }
+        */
+        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
+        _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
+        _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
+        //}
     }
     #if defined(CONFIG_IDF_TARGET_ESP32S3)
     else if(request->hasParam("other"))
@@ -5965,6 +5970,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
     #endif
     else
     {
+        /*
         if(request->hasParam("debug"))
         {
             res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG RELEASE version", 2, true);
@@ -5973,10 +5979,11 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         }
         else
         {
-            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
-            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-        }
+        */
+        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
+        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
+        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
+        //}
     }
     waitAndProcess(true, 1000);
     restartEsp(RestartReason::OTAReboot);
