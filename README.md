@@ -346,7 +346,7 @@ After importing the device will reboot.
 ### Advanced Configuration
 
 The advanced configuration menu is not reachable from the main menu of the web configurator by default.<br>
-You can reach the menu directly by browsing to http://NUKIHUBIP/?get=advanced or enable showing it in the main menu by browsing to http://NUKIHUBIP/?get=debugon once (http://NUKIHUBIP/?get=debugoff to disable).
+You can reach the menu directly by browsing to http://NUKIHUBIP/get?page=advanced or enable showing it in the main menu by browsing to http://NUKIHUBIP/get?page=debugon once (http://NUKIHUBIP/get?page=debugoff to disable).
 
 Note that the following options can break NukiHub and cause bootloops that will require you to erase your ESP and reflash following the instructions for first-time flashing.
 
