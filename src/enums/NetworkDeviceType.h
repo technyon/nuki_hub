@@ -10,6 +10,7 @@ enum class NetworkDeviceType
     WT32_LAN8720,
     M5STACK_PoESP32_Unit,
     LilyGO_T_ETH_POE,
+    LilyGO_T_ETH_ELite,
     GL_S10,
     ETH01_Evo,
     CUSTOM

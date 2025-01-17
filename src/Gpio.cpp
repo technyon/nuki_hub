@@ -284,6 +284,14 @@ const  std::vector<int> Gpio::getDisabledPins() const
         disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
         disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
         break;
+    case 12:
+        disabledPins.push_back(ETH_PHY_CS_ELITE_W5500);
+        disabledPins.push_back(ETH_PHY_IRQ_ELITE_W5500);
+        disabledPins.push_back(ETH_PHY_RST_ELITE_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_ELITE_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_ELITE_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_ELITE_W5500);
+        break;
     case 11:
         disabledPins.push_back(_preferences->getInt(preference_network_custom_cs, -1));
         disabledPins.push_back(_preferences->getInt(preference_network_custom_irq, -1));
