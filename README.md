@@ -75,7 +75,7 @@ Devices ranked best-to-worst:
 - ESP32-S3 without PSRAM
 - ESP32 without PSRAM
 - ...... <br>
-(Devices below will not support many NukiHub functions)
+(Devices below will not support more NukiHub functions)
 - ...... 
 - ESP32-C6
 - ESP32-solo1
