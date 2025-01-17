@@ -15,7 +15,7 @@
 #define ETH_PHY_SPI_MISO_M5_W5500_S3    7
 #define ETH_PHY_SPI_MOSI_M5_W5500_S3    8
 #define ETH_PHY_IRQ_ELITE_W5500         14
-#define ETH_PHY_RST_ELITE_W5500         13
+#define ETH_PHY_RST_ELITE_W5500         -1
 #define ETH_PHY_CS_ELITE_W5500          45
 #define ETH_PHY_SPI_SCK_ELITE_W5500     48
 #define ETH_PHY_SPI_MISO_ELITE_W5500    47
