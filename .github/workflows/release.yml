@@ -129,20 +129,7 @@ jobs:
 
             cd ../..
           done
-
-          for FOLDER in debug/*; do
-            MODEL=`echo "${FOLDER}" | cut -d '/' -f2 | cut -d '-' -f1 | tr '[:lower:]' '[:upper:]'`
-            ZIPFILE="${NUKI}-${MODEL}-DEBUG.zip"
-
-            echo "${FOLDER} -- ${ZIPFILE}"
-            cd $FOLDER
-
-            zip -9r ../../${ZIPFILE} *
-            ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
-
-            cd ../..
-          done
-
+          
           # remove last character
           ARTIFACTS="${ARTIFACTS%?}"
           echo "artifacts=${ARTIFACTS}" | tee -a ${GITHUB_OUTPUT}
