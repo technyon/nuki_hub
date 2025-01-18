@@ -38,7 +38,7 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
         Log->println(curDevId);
         Log->print("Saved ID: ");
         Log->println(savedDevId);
-        Log->println("Efuse ID and NukiHub device ID do not match, removing HASS setup for incorrect NukiHub device ID.");
+        Log->println("Efuse ID and Nuki Hub device ID do not match, removing HomeAssistant setup for incorrect Nuki Hub device ID.");
         char uidString[20];
         itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
         removeHASSConfig(uidString);
@@ -60,7 +60,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
     if(type == 0)
     {
         publishHASSNukiHubConfig();
-        Log->println("HASS setup for NukiHub completed.");
+        Log->println("HomeAssistant setup for Nuki Hub completed.");
     }
     else if(type == 1)
     {
@@ -71,7 +71,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
         String lockTopic = _baseTopic;
         lockTopic.concat("/lock");
         publishHASSConfig((char*)"SmartLock", lockTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
-        Log->println("HASS setup for lock completed.");
+        Log->println("HomeAssistant setup for lock completed.");
     }
     else if(type == 2)
     {
@@ -90,7 +90,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
             publishHASSConfig((char*)"Opener", openerTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
         }
 
-        Log->println("HASS setup for opener completed.");
+        Log->println("HomeAssistant setup for opener completed.");
     }
 }
 
@@ -123,7 +123,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
     JsonArray ids = dev["ids"].to<JsonArray>();
     ids.add(String("nuki_") + _nukiHubUidString);
     json["dev"]["mf"] = "Technyon";
-    json["dev"]["mdl"] = "NukiHub";
+    json["dev"]["mdl"] = "Nuki Hub";
     json["dev"]["name"] = _hostname.c_str();
     json["dev"]["sw"] = NUKI_HUB_VERSION;
     json["dev"]["hw"] = NUKI_HUB_HW;

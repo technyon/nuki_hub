@@ -1,0 +1,50 @@
+#######################################
+# Syntax Coloring Map For Test
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+DuoAuthLib	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+
+ping	KEYWORD2
+checkApiKey	KEYWORD2
+
+authStatus	KEYWORD2
+pushAuth	KEYWORD2
+passcodeAuth	KEYWORD2
+
+authSuccessful	KEYWORD2
+pushWaiting	KEYWORD2
+
+setHttpTimeout	KEYWORD2
+setIPAddress	KEYWORD2
+setPushType	KEYWORD2
+
+getHttpCode	KEYWORD2
+getHttpResponse	KEYWORD2
+getApiStat	KEYWORD2
+getAuthResponseResult	KEYWORD2
+getAuthResponseStatus	KEYWORD2
+getAuthResponseStatusMessage	KEYWORD2
+
+getAuthTxId	KEYWORD2
+
+getApiFailureCode	KEYWORD2
+getApiFailureMessage	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+

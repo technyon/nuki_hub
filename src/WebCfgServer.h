@@ -100,14 +100,19 @@ private:
     std::vector<int> _rssiList;
     String generateConfirmCode();
     String _confirmCode = "----";
-    
-    void saveSessions();
-    void loadSessions();
+
+    int checkDuoAuth(PsychicRequest *request);
+    bool startDuoAuth();
+    void saveSessions(bool duo = false);
+    void loadSessions(bool duo = false);
+    void clearSessions();
     esp_err_t logoutSession(PsychicRequest *request, PsychicResponse* resp);
-    bool isAuthenticated(PsychicRequest *request);
+    bool isAuthenticated(PsychicRequest *request, bool duo = false);
     bool processLogin(PsychicRequest *request, PsychicResponse* resp);
     int doAuthentication(PsychicRequest *request);
-    esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);    
+    esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
@@ -133,8 +138,21 @@ private:
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;
+    bool _isSSL = false;
     uint8_t _partitionType = 0;
     size_t _otaContentLen = 0;
     String _hostname;
     JsonDocument _httpSessions;
+    JsonDocument _duoSessions;
+    JsonDocument _sessionsOpts;
+    struct tm timeinfo;
+    bool _duoActiveRequest;
+    bool _duoEnabled = false;
+    String _duoTransactionId;
+    String _duoHost;
+    String _duoSkey;
+    String _duoIkey;
+    String _duoUser;
+    String _duoCheckId;
+    String _duoCheckIP;    
 };

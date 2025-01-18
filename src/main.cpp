@@ -618,6 +618,18 @@ void setup()
                         file2.close();
                         key[filesize2] = '\0';
 
+                        psychicServer = new PsychicHttpServer();
+                        psychicServer->config.ctrl_port = 20424;
+                        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                              String url = "https://" + request->host() + request->url();
+                              if (preferences->getString(preference_https_fqdn, "") != "")
+                              {
+                                  url = "https://" + preferences->getString(preference_https_fqdn) + request->url();
+                              }
+                              response->setCode(301);
+                              response->addHeader("Cache-Control", "no-cache");
+                              return response->redirect(url.c_str()); });
+
                         psychicSSLServer = new PsychicHttpsServer;
                         psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
                         psychicSSLServer->setCertificate(cert, key);
@@ -780,6 +792,18 @@ void setup()
                             file2.close();
                             key[filesize2] = '\0';
 
+                            psychicServer = new PsychicHttpServer();
+                            psychicServer->config.ctrl_port = 20424;
+                            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                                  String url = "https://" + request->host() + request->url();
+                                  if (preferences->getString(preference_https_fqdn, "") != "")
+                                  {
+                                      url = "https://" + preferences->getString(preference_https_fqdn) + request->url();
+                                  }
+
+                                  response->setCode(301);
+                                  response->addHeader("Cache-Control", "no-cache");
+                                  return response->redirect(url.c_str()); });
                             psychicSSLServer = new PsychicHttpsServer;
                             psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
                             psychicSSLServer->setCertificate(cert, key);

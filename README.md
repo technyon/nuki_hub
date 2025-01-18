@@ -54,11 +54,13 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 ## Recommended ESP32 devices
 
 We don't recommend using single-core ESP32 devices (ESP32-C3, ESP32-C6, ESP32-H2, ESP32-Solo1).<br>
-Although NukiHub supports single-core devices, NukiHub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs much better on dual-core devices.<br>
+Although Nuki Hub supports single-core devices, Nuki Hub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs much better on dual-core devices.<br>
 
 When buying a new device in 2025 we can only recommend the ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter.<br>
 The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
+
+If/When the ESP32-P4 with ESP32-C6-MINI-1 module for BLE/WiFi is supported this will probably become the preferred device for Nuki Hub.
 
 Other considerations:
 - If Ethernet/PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
@@ -70,12 +72,12 @@ Devices ranked best-to-worst:
 - ......
 - ESP32 with PSRAM
 - ......<br>
-(Devices below will not support some NukiHub functions)
+(Devices below will not support some Nuki Hub functions)
 - ......
 - ESP32-S3 without PSRAM
 - ESP32 without PSRAM
 - ...... <br>
-(Devices below will not support more NukiHub functions)
+(Devices below will not support more Nuki Hub functions)
 - ...... 
 - ESP32-C6
 - ESP32-solo1
@@ -153,7 +155,7 @@ See the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
 After enabling the setting press the button on the Nuki device for a few seconds.<br>
 Pairing should be automatic whenever the ESP32 is powered on and no lock is paired.<br>
-To pair with an opener you need to first enable the opener on the "Nuki configuration" page of NukiHub.<br>
+To pair with an opener you need to first enable the opener on the "Nuki configuration" page of Nuki Hub.<br>
 <br>
 When pairing is successful, the web interface should show "Paired: Yes".<br>
 MQTT nodes like lock state and battery level should now reflect the reported values from the lock.<br>
@@ -166,18 +168,18 @@ Enable "Register as app" before pairing to allow this. Otherwise the Bridge will
 
 Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
 
-Before enabling pairing mode using the button on the Lock Ultra first setup NukiHub as follows:
+Before enabling pairing mode using the button on the Lock Ultra first setup Nuki Hub as follows:
 - Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra enabled" will change multiple other NukiHub settings.
 - Input your 6-digit Nuki Lock Ultra PIN on the "Credentials" page and Save
 - Press the button on the Nuki device for a few seconds
-- It is **strongly** recommended to setup and enable Hybrid mode over Thread/WiFi + official MQTT as NukiHub works best in Hybrid or Bridge mode and the Ultra does not support Bridge mode
+- It is **strongly** recommended to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra does not support Bridge mode
 
 Pairing should be automatic if no lock is paired.<br>
 When pairing is successful, the web interface should show "Paired: Yes".<br>
 
 ## Hybrid mode
 
-Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0, Nuki Lock 4.0 Pro or Nuki Lock Ultra in conjunction with NukiHub.<br>
+Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0, Nuki Lock 4.0 Pro or Nuki Lock Ultra in conjunction with Nuki Hub.<br>
 See [hybrid mode](/HYBRID.md) for more information.
 
 ## Memory constraints
@@ -206,7 +208,9 @@ You can check on the info page of the Web configurator if PSRAM is available.
 
 Note that there are two builds of Nuki Hub for the ESP32-S3 available.<br>
 One for devices with no or Quad SPI PSRAM and one for devices with Octal SPI PSRAM.<br>
-If your ESP32-S3 device has PSRAM but it is not detected please flash the other S3 binary.
+Webflash will automatically flash the no/Quad SPI PSRAM build when an ESP32-S3 is connected.<br>
+If your ESP32-S3 device has PSRAM but it is not detected please switch to the other S3 binary.<br>
+You can do this by flashing the correct binaries manually or by selecting the option to switch S3 binary build from the Firmware Update page of the Web Configurator.
 
 ## Configuration
 
@@ -241,8 +245,8 @@ In a browser navigate to the IP address assigned to the ESP32.
 - MQTT Broker port: Set to the Port of the MQTT broker (usually 1883)
 - MQTT User: If using authentication on the MQTT broker set to a username with read/write rights on the MQTT broker, set to # to clear
 - MQTT Password : If using authentication on the MQTT broker set to the password belonging to a username with read/write rights on the MQTT broker, set to # to clear
-- MQTT NukiHub Path: Set to the preferred MQTT root topic for NukiHub, defaults to "nukihub". Make sure this topic is unique when using multiple ESP32 NukiHub devices
-- Enable Home Assistant auto discovery: Enable Home Assistant MQTT auto discovery. Will automatically create entities in Home Assistant for NukiHub and connected Nuki Lock and/or Opener when enabled.
+- MQTT Nuki Hub Path: Set to the preferred MQTT root topic for Nuki Hub, defaults to "nukihub". Make sure this topic is unique when using multiple ESP32 Nuki Hub devices
+- Enable Home Assistant auto discovery: Enable Home Assistant MQTT auto discovery. Will automatically create entities in Home Assistant for Nuki Hub and connected Nuki Lock and/or Opener when enabled.
 
 #### Advanced MQTT Configuration
 
@@ -258,7 +262,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Enable hybrid official MQTT and Nuki Hub setup: Enable to combine the official MQTT over Thread/Wi-Fi with BLE. Improves speed of state changes. Needs the official MQTT to be setup first. Also requires Nuki Hub to be paired as app and unregistered as a bridge using the Nuki app. See [hybrid mode](/HYBRID.md)
 - Enable sending actions through official MQTT: Enable to sent lock actions through the official MQTT topics (e.g. over Thread/Wi-Fi) instead of using BLE. Needs "Enable hybrid official MQTT and Nuki Hub setup" to be enabled. See [hybrid mode](/HYBRID.md)
 - Time between status updates when official MQTT is offline (seconds): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki lock for the current lock state when the official MQTT is offline, default 600.
-- Retry command sent using official MQTT over BLE if failed: Enable to publish lock commands over BLE if NukiHub fails to use Hybrid mode to execute the command over MQTT
+- Retry command sent using official MQTT over BLE if failed: Enable to publish lock commands over BLE if Nuki Hub fails to use Hybrid mode to execute the command over MQTT
 - Reboot Nuki lock on official MQTT failure: Enable to reboot the Nuki Lock if official MQTT over WiFi/Thread is offline for more than 180 seconds
 
 ### Nuki Configuration
@@ -333,9 +337,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### Import/Export Configuration
 
-The "Import/Export Configuration" menu option allows the importing and exporting of the NukiHub settings in JSON format.<br>
+The "Import/Export Configuration" menu option allows the importing and exporting of the Nuki Hub settings in JSON format.<br>
 <br>
-Create a (partial) backup of the current NukiHub settings by selecting any of the following:<br>
+Create a (partial) backup of the current Nuki Hub settings by selecting any of the following:<br>
 - Basic export: Will backup all settings that are not considered confidential (as such passwords and pincodes are not included in this export).
 - Export with redacted settings: Will backup basic settings and redacted settings such as passwords and pincodes.
 
@@ -351,10 +355,10 @@ After importing the device will reboot.
 The advanced configuration menu is not reachable from the main menu of the web configurator by default.<br>
 You can reach the menu directly by browsing to http://NUKIHUBIP/get?page=advanced or enable showing it in the main menu by browsing to http://NUKIHUBIP/get?page=debugon once (http://NUKIHUBIP/get?page=debugoff to disable).
 
-Note that the following options can break NukiHub and cause bootloops that will require you to erase your ESP and reflash following the instructions for first-time flashing.
+Note that the following options can break Nuki Hub and cause bootloops that will require you to erase your ESP and reflash following the instructions for first-time flashing.
 
-- Disable Network if not connected within 60s: Enable to allow NukiHub to function without a network connection (for example when only using NukiHub with GPIO)
-- Enable Bootloop prevention: Enable to reset the following stack size and max entry settings to default if NukiHub detects a bootloop.
+- Disable Network if not connected within 60s: Enable to allow Nuki Hub to function without a network connection (for example when only using Nuki Hub with GPIO)
+- Enable Bootloop prevention: Enable to reset the following stack size and max entry settings to default if Nuki Hub detects a bootloop.
 - Char buffer size (min 4096, max 65536): Set the character buffer size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 4096.
 - Task size Network (min 12288, max 65536): Set the Network task stack size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 12288.
 - Task size Nuki (min 8192, max 65536): Set the Nuki task stack size. Default 8192.
@@ -365,13 +369,13 @@ Note that the following options can break NukiHub and cause bootloops that will 
 - Show Pairing secrets on Info page: Enable to show the pairing secrets on the info page. Will be disabled on reboot.
 - Manually set lock pairing data: Enable to save the pairing data fields and manually set pairing info for the lock.
 - Manually set opener pairing data: Enable to save the pairing data fields and manually set pairing info for the opener.
-- Custom URL to update Nuki Hub updater: Set to a HTTPS address to update to a custom NukiHub updater binary on next boot of the NukiHub partition.
-- Custom URL to update Nuki Hub: Set to a HTTPS address to update to a custom NukiHub binary on next boot of the NukiHub updater partition.
+- Custom URL to update Nuki Hub updater: Set to a HTTPS address to update to a custom Nuki Hub updater binary on next boot of the Nuki Hub partition.
+- Custom URL to update Nuki Hub: Set to a HTTPS address to update to a custom Nuki Hub binary on next boot of the Nuki Hub updater partition.
 - Force Lock ID to current ID: Enable to force the current Lock ID, irrespective of the config received from the lock.
-- Force Lock Keypad connected: Enable to force NukiHub to function as if a keypad was connected, irrespective of the config received from the lock.
-- Force Lock Doorsensor connected: Enable to force NukiHub to function as if a doorsensor was connected, irrespective of the config received from the lock.
+- Force Lock Keypad connected: Enable to force Nuki Hub to function as if a keypad was connected, irrespective of the config received from the lock.
+- Force Lock Doorsensor connected: Enable to force Nuki Hub to function as if a doorsensor was connected, irrespective of the config received from the lock.
 - Force Opener ID to current ID: Enable to force the current Opener ID, irrespective of the config received from the opener.
-- Force Opener Keypad: Enable to force NukiHub to function as if a keypad was connected, irrespective of the config received from the opener.
+- Force Opener Keypad: Enable to force Nuki Hub to function as if a keypad was connected, irrespective of the config received from the opener.
 - Enable Nuki connect debug logging: Enable to log debug information regarding Nuki BLE connection to MQTT and/or Serial.
 - Enable Nuki communication debug logging: Enable to log debug information regarding Nuki BLE communication to MQTT and/or Serial.
 - Enable Nuki readable data debug logging: Enable to log human readable debug information regarding Nuki BLE to MQTT and/or Serial.
@@ -651,18 +655,18 @@ openssl req -new -key server.key -out server.csr -subj "/C=US/ST=YourState/L=You
 ## HTTPS Server (optional, PSRAM enabled devices only)
 
 The Webconfigurator can use/force HTTPS on PSRAM enabled devices.<br>
-To enable SSL encryption, supply the certificate and key in the Network configuration page and reboot NukiHub.<br>
+To enable SSL encryption, supply the certificate and key in the Network configuration page and reboot Nuki Hub.<br>
 
 Example self-signed certificate creation for your HTTPS server:
 ```console
 
-# make a Certificate and key pair, MAKE SURE THE CN MATCHES THE DOMAIN AT WHICH NUKIHUB IS AVAILABLE
+# make a Certificate and key pair, MAKE SURE THE CN MATCHES THE DOMAIN AT WHICH NUKI HUB IS AVAILABLE
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout nukihub.key -out nukihub.crt -subj "/C=US/ST=YourState/L=YourCity/O=YourOrganization/OU=YourUnit/CN=YourCAName"
 
 ```
 
 Although you can use the HTTPS server in this way your client device will not trust the certificate by default.
-An option would be to configure a proxy SSL server (such as Caddy, Traefik, nginx) with a non-self signed (e.g. let's encrypt) SSL certificate and have this proxy server connect to NukiHub over SSL and trust the self-signed NukiHub certificate for this connection.
+An option would be to configure a proxy SSL server (such as Caddy, Traefik, nginx) with a non-self signed (e.g. let's encrypt) SSL certificate and have this proxy server connect to Nuki Hub over SSL and trust the self-signed NukiHub certificate for this connection.
 
 ## Home Assistant Discovery (optional)
 
@@ -680,7 +684,7 @@ The following mapping between Home Assistant services and Nuki commands is setup
 NOTE: MQTT Discovery uses retained MQTT messages to store devices configurations.<br>
 In order to avoid orphan configurations on your broker please disable autodiscovery first if you no longer want to use this software.<br>
 Retained messages are automatically cleared when unpairing and when changing/disabling autodiscovery topic in MQTT Configuration page.<br>
-If you experience "ghost" entities/devices related to NukiHub you can completely purge NukiHub related Home Assistant discovery topics from your MQTT broker by following the instructions [here](#purging-home-assistant-discovery-mqtt-topics)
+If you experience "ghost" entities/devices related to Nuki Hub you can completely purge Nuki Hub related Home Assistant discovery topics from your MQTT broker by following the instructions [here](#purging-home-assistant-discovery-mqtt-topics)
 
 ## Keypad control using JSON (optional)
 
@@ -883,7 +887,7 @@ This unfortunately means that older versions of Home Assistant are not supported
 - Click on the root `homeassistant` topic
 - Press delete on your keyboard
 - Click Yes to confirm deletion
-- Reboot all NukiHub devices connected to the MQTT broker to recreate the correct topics for Home Assistant
+- Reboot all Nuki Hub devices connected to the MQTT broker to recreate the correct topics for Home Assistant
 
 ### Nuki Hub in bridge mode doesn't work when Thread or Wi-Fi on a Nuki Smartlock (3.0 Pro / 4.0 / 4.0 Pro) is turned on.
 
@@ -898,7 +902,7 @@ When first setting up the lock (or opener), you have to set a PIN in the Nuki sm
 Navigate to the Nuki Hub Credentials page, enter this PIN, click save and reboot.<br>
 Check the main page of the configurator to see if the entered PIN is valid.
 
-Also make sure that the you have enabled the specific functionality on the "Access Level Configuration" page of NukiHub.
+Also make sure that the you have enabled the specific functionality on the "Access Level Configuration" page of Nuki Hub.
 
 ### Authorization data isn't published
 
@@ -916,7 +920,7 @@ This button is disabled by default, but can be enabled in the Home Assistant UI.
 ### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
 
 When using multiple Nuki devices, different paths for each device have to be configured.<br>
-Navigate to "MQTT Configuration" and change the "MQTT NukiHub Path" under "Basic MQTT Configuration" for at least one of the devices.<br>
+Navigate to "MQTT Configuration" and change the "MQTT Nuki Hub Path" under "Basic MQTT Configuration" for at least one of the devices.<br>
 
 ### The Nuki battery is draining quickly.
 
