@@ -75,8 +75,6 @@ env.AddPostAction("$PROJECT_DIR/updater/release/" + get_board_name(env) + "/upda
 env.AddPostAction("$BUILD_DIR/firmware.bin", package_last_files)
 env.AddPostAction("$BUILD_DIR/partitions.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/bootloader.bin", copy_files)
-
-if env.GetProjectOption("custom_build") == 'debug':
-    env.AddPostAction("$BUILD_DIR/firmware.elf", copy_files)
+env.AddPostAction("$BUILD_DIR/firmware.elf", copy_files)
 
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)
