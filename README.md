@@ -171,10 +171,9 @@ Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this se
 Before enabling pairing mode using the button on the Lock Ultra first setup Nuki Hub as follows:
 - Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra enabled" will change multiple other NukiHub settings.
 - Input your 6-digit Nuki Lock Ultra PIN on the "Credentials" page and Save
-- Press the button on the Nuki device for a few seconds
-- It is **strongly** recommended to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra does not support Bridge mode
+- Press the button on the Nuki device for a few seconds until the LED ring lights up and remains lit.
+- It is **strongly** recommended(/mandatory) to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra does not support Bridge mode
 
-Pairing should be automatic if no lock is paired.<br>
 When pairing is successful, the web interface should show "Paired: Yes".<br>
 
 ## Hybrid mode
@@ -318,13 +317,16 @@ In a browser navigate to the IP address assigned to the ESP32.
 - User: Pick a username to enable HTTP authentication for the Web Configuration, Set to "#" to disable authentication.
 - Password/Retype password: Pick a password to enable HTTP authentication for the Web Configuration.
 - HTTP Authentication type: Select from Basic, Digest or Form based authentication. Digest authentication is more secure than Basic or Form based authentication, especially over unencrypted (HTTP) connections. Form based authentication works best with password managers. Note: Firefox seems to have issues with basic authentication.
-- Bypass authentication for reverse proxy with IP: IP for which authentication is bypassed. Use in conjunction with a reverse proxy server with seperate authentication.
-- Duo Push authentication enabled: Enable to use Duo Push Multi Factor Authentication (MFA)
+- Bypass authentication for reverse proxy with IP: IP for which authentication is bypassed. Use in conjunction with a reverse proxy server with separate authentication.
+- Duo Push authentication enabled: Enable to use Duo Push Multi Factor Authentication (MFA). See [Duo Push authentication](/DUOAUTH.md) for instructions on how to setup Duo Push authentication.
 - Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings): Enable to require Duo Push approval on all sensitive operations.
+- Bypass Duo Push authentication by pressing the BOOT button during login: Enable to allow bypassing Duo Push authentication by pressing the BOOT button on the ESP during login. Note that this does not work on all ESP's (nor do all ESP's have a boot button to begin with). Test before relying on this function.
+- Bypass Duo Push authentication by pulling GPIO High: Set to a GPIO pin to allow bypassing Duo Push authentication by pulling the GPIO high during login.
+- Bypass Duo Push authentication by pulling GPIO Low: Set to a GPIO pin to allow bypassing Duo Push authentication by pulling the GPIO low during login.
 - Duo API hostname: Set to the Duo API hostname
 - Duo integration key: Set to the Duo integration key
 - Duo secret key: Set to the Duo secret key
-- Duo user: Set to the Duo user key
+- Duo user: Set to the Duo user that you want to receive the push notification
 - Session validity (in seconds): Session validity to use with form authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
 - Session validity remember (in hours): Session validity to use with form authentication when the "Remember me" checkbox is enabled, default 720 hours.
 - Duo Session validity (in seconds): Session validity to use with Duo authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
@@ -358,6 +360,11 @@ Create a (partial) backup of the current Nuki Hub settings by selecting any of t
 Both of the above options will not backup pairing data, so you will have to manually pair Nuki devices when importing this export on a factory reset or new device.
 
 - Export with redacted settings and pairing data: Will backup all settings and pairing data. Can be used to completely restore a factory reset or new device based on the settings of this device. (Re)pairing Nuki devices will not be needed when importing this export.
+
+- Export HTTP SSL certificate and key (PSRAM devices only): Export your HTTP server SSL certificate and key
+- Export MQTT SSL CA, client certificate and client key: Export your MQTT SSL CA and client certificate and client key
+- Export Coredump: Export the complete log gathered from the last ESP crash
+
 <br>
 To import settings copy and paste the contents of the JSON file that is created by any of the above export options and select "Import".
 After importing the device will reboot.

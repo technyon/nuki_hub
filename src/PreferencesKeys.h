@@ -88,6 +88,9 @@
 #define preference_cred_session_lifetime_duo (char*)"credLfDuo"
 #define preference_cred_session_lifetime_duo_remember (char*)"credLfDuoRmbr"
 #define preference_cred_duo_approval (char*)"duoApprove"
+#define preference_cred_bypass_boot_btn_enabled (char*)"bypassBtBtn"
+#define preference_cred_bypass_gpio_high (char*)"bypassHigh"
+#define preference_cred_bypass_gpio_low (char*)"bypassLow"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
@@ -237,6 +240,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_enable_debug_mode, false);
         preferences->putBool(preference_cred_duo_enabled, false);
         preferences->putBool(preference_cred_duo_approval, false);
+        preferences->putBool(preference_cred_bypass_boot_btn_enabled, false);
 
         preferences->putInt(preference_mqtt_broker_port, 1883);
         preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
@@ -260,6 +264,8 @@ inline void initPreferences(Preferences* preferences)
         preferences->putInt(preference_cred_session_lifetime_remember, 720);
         preferences->putInt(preference_cred_session_lifetime_duo, 3600);
         preferences->putInt(preference_cred_session_lifetime_duo_remember, 720);
+        preferences->putInt(preference_cred_bypass_gpio_high, -1);
+        preferences->putInt(preference_cred_bypass_gpio_low, -1); 
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         WiFi.begin();
@@ -519,7 +525,7 @@ private:
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_nukihub_id,
         preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_cred_duo_enabled, preference_https_fqdn, preference_bypass_proxy,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
-        preference_cred_duo_approval
+        preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low
     };
     std::vector<char*> _redact =
     {
@@ -535,7 +541,7 @@ private:
         preference_publish_authdata, preference_publish_debug_info, preference_official_hybrid_enabled, preference_mqtt_hass_enabled, preference_retain_gpio,
         preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
         preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled, preference_hass_device_discovery,
-        preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi,
+        preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi, preference_cred_bypass_boot_btn_enabled,
         preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled,
         preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled, preference_enable_debug_mode, preference_cred_duo_enabled, preference_cred_duo_approval
@@ -556,7 +562,8 @@ private:
         preference_ble_tx_power, preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr,
         preference_network_custom_irq, preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso,
         preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio, preference_http_auth_type,
-        preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember
+        preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
+        preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low
     };
     std::vector<char*> _uintPrefs =
     {

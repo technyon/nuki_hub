@@ -16,6 +16,7 @@
 #endif
 #include <Update.h>
 #include <DuoAuthLib.h>
+#include "driver/gpio.h"
 
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
@@ -59,6 +60,15 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
         if (_duoHost == "" || _duoIkey == "" || _duoSkey == "" || _duoUser == "" || !_preferences->getBool(preference_update_time, false))
         {
             _duoEnabled = false;
+        }
+        else if (_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) || _preferences->getInt(preference_cred_bypass_gpio_high, -1) > -1  || _preferences->getInt(preference_cred_bypass_gpio_low, -1) > -1)
+        {
+            if (_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false))
+            {
+                _bypassGPIO = true;
+            }
+            _bypassGPIOHigh = _preferences->getInt(preference_cred_bypass_gpio_high, -1);
+            _bypassGPIOLow = _preferences->getInt(preference_cred_bypass_gpio_low, -1);
         }
     }
 
@@ -288,6 +298,30 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
             }
             else if (_duoEnabled && !isAuthenticated(request, true))
             {
+                if (_bypassGPIO)
+                {
+                    if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
+                    {
+                        Log->print("Duo bypassed because boot button pressed");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOHigh > -1)
+                {
+                    if (digitalRead(_bypassGPIOHigh) == HIGH)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled high");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOLow > -1)
+                {
+                    if (digitalRead(_bypassGPIOLow) == LOW)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled low");
+                        return 4;
+                    }
+                }
                 return 3;
             }
         }
@@ -299,6 +333,30 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
             }
             else if (_duoEnabled && !isAuthenticated(request, true))
             {
+                if (_bypassGPIO)
+                {
+                    if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
+                    {
+                        Log->print("Duo bypassed because boot button pressed");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOHigh > -1)
+                {
+                    if (digitalRead(_bypassGPIOHigh) == HIGH)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled high");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOLow > -1)
+                {
+                    if (digitalRead(_bypassGPIOLow) == LOW)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled low");
+                        return 4;
+                    }
+                }
                 return 3;
             }
         }
@@ -307,7 +365,7 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
     return 4;
 }
 
-bool WebCfgServer::startDuoAuth()
+bool WebCfgServer::startDuoAuth(char* pushType)
 {
     int64_t timeout = esp_timer_get_time() - (30 * 1000 * 1000L);
     if(!_duoActiveRequest || timeout > _duoRequestTS)
@@ -320,6 +378,7 @@ bool WebCfgServer::startDuoAuth()
         DuoAuthLib duoAuth;
         bool duoRequestResult;
         duoAuth.begin(duo_host, duo_ikey, duo_skey, &timeinfo);
+        duoAuth.setPushType(pushType);
         duoRequestResult = duoAuth.pushAuth((char*)duo_user, true);
 
         if(duoRequestResult == true)
@@ -345,25 +404,10 @@ int WebCfgServer::checkDuoAuth(PsychicRequest *request)
     const char* duo_ikey = _duoIkey.c_str();
     const char* duo_skey = _duoSkey.c_str();
     const char* duo_user = _duoUser.c_str();
-    
-    Log->println("Checking Duo auth");
 
     if (request->hasParam("id")) {
-        Log->println("Found Duo ID");
-        
         const PsychicWebParameter* p = request->getParam("id");
         String cookie2 = p->value();
-        Log->print("_duoActiveRequest: ");
-        Log->println(_duoActiveRequest ? "Yes" : "No");
-        Log->print("_duoCheckIP: ");
-        Log->println(_duoCheckIP);
-        Log->print("clientIP: ");
-        Log->println(request->client()->localIP().toString());
-        Log->print("cookie2: ");
-        Log->println(cookie2);
-        Log->print("_duoCheckId: ");
-        Log->println(_duoCheckId);
-        
         DuoAuthLib duoAuth;
         if(_duoActiveRequest && _duoCheckIP == request->client()->localIP().toString() && cookie2 == _duoCheckId)
         {
@@ -642,6 +686,10 @@ void WebCfgServer::initialize()
             {
                 return buildDuoCheckHtml(request, resp);
             }
+            else if (value == "coredump")
+            {
+                return buildCoredumpHtml(request, resp);
+            }
             else if (value == "reboot")
             {
                 String value = "";
@@ -686,6 +734,26 @@ void WebCfgServer::initialize()
             }
             else if (value == "export")
             {
+                if(_preferences->getBool(preference_cred_duo_approval, false))
+                {
+                    if (startDuoAuth((char*)"Approve Nuki Hub export"))
+                    {
+                        int duoResult = 2;
+
+                        while (duoResult == 2)
+                        {
+                            duoResult = checkDuoApprove();
+                            delay(2000);
+                            esp_task_wdt_reset();
+                        }
+
+                        if (duoResult != 1)
+                        {
+                            return buildConfirmHtml(request, resp, "Duo approval failed, redirecting to main menu", 3, true);
+                        }
+                    }
+                }
+
                 return sendSettings(request, resp);
             }
             else if (value == "impexpcfg")
@@ -881,22 +949,20 @@ void WebCfgServer::initialize()
 
                 if(_preferences->getBool(preference_cred_duo_approval, false))
                 {
-                    if (startDuoAuth())
+                    if (startDuoAuth((char*)"Approve Nuki Hub setting change"))
                     {
                         int duoResult = 2;
-                        
+
                         while (duoResult == 2)
                         {
                             duoResult = checkDuoApprove();
                             delay(2000);
                             esp_task_wdt_reset();
                         }
-                        
+
                         if (duoResult != 1)
                         {
-                            resp->setCode(302);
-                            resp->addHeader("Cache-Control", "no-cache");
-                            return resp->redirect("/");
+                            return buildConfirmHtml(request, resp, "Duo approval failed, redirecting to main menu", 3, true);
                         }
                     }
                 }
@@ -1856,9 +1922,38 @@ esp_err_t WebCfgServer::buildDuoCheckHtml(PsychicRequest *request, PsychicRespon
     return resp->send();
 }
 
+esp_err_t WebCfgServer::buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    if (!SPIFFS.begin(true))
+    {
+        Log->println("SPIFFS Mount Failed");
+    }
+    else
+    {
+        File file = SPIFFS.open("/coredump.hex", "r");
+
+        if (!file || file.isDirectory()) {
+            Log->println("coredump.hex not found");
+        }
+        else
+        {            
+            PsychicFileResponse response(resp, file, "coredump.hex");
+            String name = "coredump.txt";
+            char buf[26 + name.length()];
+            snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", name.c_str());
+            response.addHeader("Content-Disposition", buf);
+            return response.send();            
+        }
+    }
+    
+    resp->setCode(302);
+    resp->addHeader("Cache-Control", "no-cache");
+    return resp->redirect("/");
+}
+
 esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    bool duo = startDuoAuth();
+    bool duo = startDuoAuth((char*)"Approve Nuki Hub login");
 
     if (!duo)
     {
@@ -1891,14 +1986,14 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
 
         _duoCheckIP = request->client()->localIP().toString();
         _duoCheckId = buffer;
-        
+
         response.beginSend();
         response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         response.print("<style>.container{border:3px solid #f1f1f1; max-width: 400px; padding:16px}</style>");
-        response.print((String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + _duoCheckId + "', true); request.onload = () => { const obj = request.responseText; if (obj == \"1\" || obj == \"0\") { clearInterval(intervalId); window.location.href = \"/\";  } }; request.send(); }</script>");
+        response.print((String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + _duoCheckId + "', true); request.onload = () => { const obj = request.responseText; if (obj == \"1\" || obj == \"0\") { clearInterval(intervalId); if (obj == \"1\") { document.getElementById('duoresult').innerHTML = 'Login approved<br>Redirecting...'; setTimeout(function() { window.location.href = \"/\"; }, 2000); } else { document.getElementById('duoresult').innerHTML = 'Login failed<br>Refresh to retry'; } } }; request.send(); }</script>");
         response.print("</head><body><center><h2>Nuki Hub login</h2>");
         response.print("<div class=\"container\">Duo Push sent<br><br>");
-        response.print("Please confirm login in the Duo app<br><br></div>");
+        response.print("Please confirm login in the Duo app<br><br><div id=\"duoresult\"></div></div>");
         response.print("</div>");
         response.print("</center></body></html>");
 
@@ -2845,6 +2940,36 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 configChanged = true;
                 clearSession = true;
                 newMFA = true;
+            }
+        }
+        else if(key == "DUOBYPASS")
+        {
+            if(_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_cred_bypass_boot_btn_enabled, (value == "1"));
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DUOBYPASSHIGH")
+        {
+            if(_preferences->getInt(preference_cred_bypass_gpio_high, -1) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_bypass_gpio_high, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DUOBYPASSLOW")
+        {
+            if(_preferences->getInt(preference_cred_bypass_gpio_low, -1) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_bypass_gpio_low, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
             }
         }
         else if(key == "DUOAPPROVAL")
@@ -4761,6 +4886,7 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     }
     #endif
     response.print("<br><br><button title=\"Export MQTT SSL CA, client certificate and client key\" onclick=\" window.open('/get?page=export&type=mqtts'); return false;\">Export MQTT SSL CA, client certificate and client key</button>");
+    response.print("<br><br><button title=\"Export Coredump\" onclick=\" window.open('/get?page=coredump'); return false;\">Export Coredump</button>");
     response.print("</div></body></html>");
     return response.endSend();
 }
@@ -4919,6 +5045,9 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "CREDTRUSTPROXY", "Bypass authentication for reverse proxy with IP", _preferences->getString(preference_bypass_proxy, "").c_str(), 255, "");
     printCheckBox(&response, "DUOENA", "Duo Push authentication enabled", _preferences->getBool(preference_cred_duo_enabled, false), "");
     printCheckBox(&response, "DUOAPPROVAL", "Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings)", _preferences->getBool(preference_cred_duo_approval, false), "");
+    printCheckBox(&response, "DUOBYPASS", "Bypass Duo Push authentication by pressing the BOOT button while logging in", _preferences->getBool(preference_cred_bypass_boot_btn_enabled, false), "");
+    printInputField(&response, "DUOBYPASSHIGH", "Bypass Duo Push authentication by pulling GPIO High", _preferences->getInt(preference_cred_bypass_gpio_high, -1), 2, "");
+    printInputField(&response, "DUOBYPASSLOW", "Bypass Duo Push authentication by pulling GPIO Low", _preferences->getInt(preference_cred_bypass_gpio_low, -1), 2, "");
     printInputField(&response, "DUOHOST", "Duo API hostname", "*", 255, "", true, false);
     printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
     printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);

@@ -103,7 +103,7 @@ private:
 
     int checkDuoAuth(PsychicRequest *request);
     int checkDuoApprove();
-    bool startDuoAuth();
+    bool startDuoAuth(char* pushType = (char*)"");
     void saveSessions(bool duo = false);
     void loadSessions(bool duo = false);
     void clearSessions();
@@ -111,6 +111,7 @@ private:
     bool isAuthenticated(PsychicRequest *request, bool duo = false);
     bool processLogin(PsychicRequest *request, PsychicResponse* resp);
     int doAuthentication(PsychicRequest *request);
+    esp_err_t buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp);
@@ -149,6 +150,9 @@ private:
     struct tm timeinfo;
     bool _duoActiveRequest;
     bool _duoEnabled = false;
+    bool _bypassGPIO = false;
+    int _bypassGPIOHigh = -1;
+    int _bypassGPIOLow = -1;
     int64_t _duoRequestTS = 0;
     String _duoTransactionId;
     String _duoHost;

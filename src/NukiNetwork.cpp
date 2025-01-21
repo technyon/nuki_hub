@@ -636,7 +636,7 @@ bool NukiNetwork::reconnect()
         {
             Log->println(("MQTT Broker not configured, aborting connection attempt."));
             _nextReconnect = espMillis() + 5000;
-            
+
             if(_device->isConnected())
             {
                 _lastConnectedTs = espMillis();
@@ -1036,7 +1036,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                 return;
             }
             Log->println(("Webserver enabled, restarting."));
-            _preferences->putBool(preference_webserver_enabled, true);            
+            _preferences->putBool(preference_webserver_enabled, true);
         }
         else if (strcmp(data, "0") == 0)
         {

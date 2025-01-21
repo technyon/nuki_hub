@@ -83,7 +83,7 @@ void MqttLogger::sendBuffer()
         {
             doSerial = true;
         }
-        if (doSerial)
+        if (doSerial && coredumpPrinted)
         {
             Serial.write(this->buffer, this->bufferCnt);
             Serial.println();

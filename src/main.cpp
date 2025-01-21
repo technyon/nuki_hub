@@ -11,10 +11,11 @@
 #include "hal/wdt_hal.h"
 #include "esp_chip_info.h"
 #include "esp_netif_sntp.h"
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-#include "esp_psram.h"
+#include "esp_core_dump.h"
 #include "FS.h"
 #include "SPIFFS.h"
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#include "esp_psram.h"
 #endif
 
 #ifndef NUKI_HUB_UPDATER
@@ -88,6 +89,7 @@ RTC_NOINIT_ATTR bool forceEnableWebServer;
 RTC_NOINIT_ATTR bool disableNetwork;
 RTC_NOINIT_ATTR bool wifiFallback;
 RTC_NOINIT_ATTR bool ethCriticalFailure;
+bool coredumpPrinted = true;
 
 int lastHTTPeventId = -1;
 bool doOta = false;
@@ -507,6 +509,93 @@ void setupTasks(bool ota)
     }
 }
 
+void logCoreDump()
+{
+    coredumpPrinted = false;
+    delay(500);
+    Serial.println("Printing coredump and saving to coredump.hex on SPIFFS");
+    size_t size = 0;
+    size_t address = 0;
+    if (esp_core_dump_image_get(&address, &size) == ESP_OK)
+    {
+        const esp_partition_t *pt = NULL;
+        pt = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, "coredump");
+
+        if (pt != NULL)
+        {
+            uint8_t bf[256];
+            char str_dst[640];
+            int16_t toRead;
+
+            if (!SPIFFS.begin(true))
+            {
+                Log->println("SPIFFS Mount Failed");
+            }
+
+            File file = SPIFFS.open("/coredump.hex", FILE_WRITE);
+            if (!file) {
+                Log->println("Failed to open /coredump.hex for writing");
+            }
+            else
+            {
+                file.printf("%s\r\n", NUKI_HUB_HW);
+                file.printf("%s\r\n", NUKI_HUB_BUILD);
+            }
+            
+            Serial.printf("%s\r\n", NUKI_HUB_HW);
+            Serial.printf("%s\r\n", NUKI_HUB_BUILD);
+
+            for (int16_t i = 0; i < (size/256)+1; i++)
+            {
+                strcpy(str_dst, "");
+                toRead = (size - i*256) > 256 ? 256 : (size - i*256);
+
+                esp_err_t er = esp_partition_read(pt, i*256, bf, toRead);
+                if (er != ESP_OK)
+                {
+                    Serial.printf("FAIL [%x]", er);
+                    break;
+                }
+
+                for (int16_t j = 0; j < 256; j++)
+                {
+                    char str_tmp[2];
+                    if (bf[j] <= 0x0F)
+                    {
+                        sprintf(str_tmp, "0%x", bf[j]);
+                    }
+                    else
+                    {
+                        sprintf(str_tmp, "%x", bf[j]);
+                    }
+                    strcat(str_dst, str_tmp);
+                }
+                Serial.printf("%s", str_dst);
+
+                if (file) {
+                    file.printf("%s", str_dst);
+                }
+            }
+            
+            Serial.println("");
+
+            if (file) {
+                file.println("");
+                file.close();
+            }
+        }
+        else
+        {
+            Serial.println("Partition NULL");
+        }
+    }
+    else
+    {
+        Serial.println("esp_core_dump_image_get() FAIL");
+    }
+    coredumpPrinted = true;
+}
+
 void setup()
 {
     //Set Log level to error for all TAGS
@@ -529,9 +618,17 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     initPreferences(preferences);
-    uint8_t partitionType = checkPartition();
-
     initializeRestartReason();
+
+    if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
+    {
+        logCoreDump();
+    }
+
+    uint8_t partitionType = checkPartition();
 
     //default disableNetwork RTC_ATTR to false on power-on
     if(espRunning != 1)
@@ -629,7 +726,7 @@ void setup()
 
                             response->setCode(301);
                             response->addHeader("Cache-Control", "no-cache");
-                            return response->redirect(url.c_str()); 
+                            return response->redirect(url.c_str());
                         });
                         psychicServer->begin();
                         psychicSSLServer = new PsychicHttpsServer;
@@ -805,7 +902,7 @@ void setup()
 
                                 response->setCode(301);
                                 response->addHeader("Cache-Control", "no-cache");
-                                return response->redirect(url.c_str()); 
+                                return response->redirect(url.c_str());
                             });
                             psychicServer->begin();
                             psychicSSLServer = new PsychicHttpsServer;

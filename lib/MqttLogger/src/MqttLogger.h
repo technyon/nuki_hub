@@ -16,6 +16,8 @@
 
 #define MQTT_MAX_PACKET_SIZE 1024
 
+extern bool coredumpPrinted;
+
 enum MqttLoggerMode {
     MqttAndSerialFallback = 0,
     SerialOnly = 1,
