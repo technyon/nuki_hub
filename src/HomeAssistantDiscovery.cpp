@@ -472,19 +472,19 @@ void HomeAssistantDiscovery::publishHASSConfig(char *deviceType, const char *bas
     if(publishAuthData)
     {
         publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
+        removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
     }
     else
-    {
-        removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
+    {        
         removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
     }
     if(hasKeypad)
     {
         publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
+        removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
     }
     else
     {
-        removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
         removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
     }
 }
@@ -2903,24 +2903,6 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
 
 void HomeAssistantDiscovery::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
-    publishHassTopic("sensor",
-                     "last_action_authorization",
-                     uidString,
-                     "_last_action_authorization",
-                     "Last action authorization",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_lock_log,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"ic", (char*)"mdi:format-list-bulleted" },
-        { (char*)"val_tpl", (char*)"{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first|default).authorizationName|default }}" }
-    });
-
     String rollingSate = "~";
     rollingSate.concat(mqtt_topic_lock_log_rolling);
 
@@ -2983,24 +2965,6 @@ void HomeAssistantDiscovery::publishHASSConfigKeypad(char *deviceType, const cha
     {
         { (char*)"en", (char*)"false" },
         { (char*)"pl_prs", (char*)"1" }
-    });
-
-    publishHassTopic("sensor",
-                     "keypad_status",
-                     uidString,
-                     "_keypad_stats",
-                     "Keypad status",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_lock_log,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"ic", (char*)"mdi:drag-vertical" },
-        { (char*)"val_tpl", (char*)"{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first|default).completionStatus|default }}" }
     });
 }
 
