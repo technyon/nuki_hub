@@ -38,7 +38,7 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
         Log->println(curDevId);
         Log->print("Saved ID: ");
         Log->println(savedDevId);
-        Log->println("Efuse ID and NukiHub device ID do not match, removing HASS setup for incorrect NukiHub device ID.");
+        Log->println("Efuse ID and Nuki Hub device ID do not match, removing HomeAssistant setup for incorrect Nuki Hub device ID.");
         char uidString[20];
         itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
         removeHASSConfig(uidString);
@@ -60,7 +60,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
     if(type == 0)
     {
         publishHASSNukiHubConfig();
-        Log->println("HASS setup for NukiHub completed.");
+        Log->println("HomeAssistant setup for Nuki Hub completed.");
     }
     else if(type == 1)
     {
@@ -71,7 +71,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
         String lockTopic = _baseTopic;
         lockTopic.concat("/lock");
         publishHASSConfig((char*)"SmartLock", lockTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
-        Log->println("HASS setup for lock completed.");
+        Log->println("HomeAssistant setup for lock completed.");
     }
     else if(type == 2)
     {
@@ -90,7 +90,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
             publishHASSConfig((char*)"Opener", openerTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
         }
 
-        Log->println("HASS setup for opener completed.");
+        Log->println("HomeAssistant setup for opener completed.");
     }
 }
 
@@ -123,7 +123,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
     JsonArray ids = dev["ids"].to<JsonArray>();
     ids.add(String("nuki_") + _nukiHubUidString);
     json["dev"]["mf"] = "Technyon";
-    json["dev"]["mdl"] = "NukiHub";
+    json["dev"]["mdl"] = "Nuki Hub";
     json["dev"]["name"] = _hostname.c_str();
     json["dev"]["sw"] = NUKI_HUB_VERSION;
     json["dev"]["hw"] = NUKI_HUB_HW;
@@ -472,19 +472,19 @@ void HomeAssistantDiscovery::publishHASSConfig(char *deviceType, const char *bas
     if(publishAuthData)
     {
         publishHASSConfigAccessLog(deviceType, baseTopic, name, uidString);
+        removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
     }
     else
     {
-        removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
         removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
     }
     if(hasKeypad)
     {
         publishHASSConfigKeypad(deviceType, baseTopic, name, uidString);
+        removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
     }
     else
     {
-        removeHASSConfigTopic((char*)"sensor", (char*)"keypad_status", uidString);
         removeHASSConfigTopic((char*)"binary_sensor", (char*)"keypad_battery_low", uidString);
     }
 }
@@ -519,6 +519,8 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
     json["unique_id"] = String(uidString) + "_lock";
     json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
     json["avty"][0]["t"] = availabilityTopic;
+    json["avty"][1]["t"] = String("~") + String(mqtt_topic_lock_availability);
+    json["avty_mode"] = "all";
     json["pl_lock"] = lockAction;
     json["pl_unlk"] = unlockAction;
 
@@ -1878,7 +1880,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     {
         removeHassTopic((char*)"switch", (char*)"auto_update_enabled", uidString);
     }
-    
+
     // Motor speed
     if((int)advancedLockConfigAclPrefs[23] == 1)
     {
@@ -1895,7 +1897,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     {
         removeHassTopic((char*)"select", (char*)"motor_speed", uidString);
     }
-    
+
     if((int)advancedLockConfigAclPrefs[24] == 1)
     {
         // Slow speed during night mode enabled
@@ -2903,24 +2905,6 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
 
 void HomeAssistantDiscovery::publishHASSConfigAccessLog(char *deviceType, const char *baseTopic, char *name, char *uidString)
 {
-    publishHassTopic("sensor",
-                     "last_action_authorization",
-                     uidString,
-                     "_last_action_authorization",
-                     "Last action authorization",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_lock_log,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"ic", (char*)"mdi:format-list-bulleted" },
-        { (char*)"val_tpl", (char*)"{{ (value_json|selectattr('type', 'eq', 'LockAction')|selectattr('action', 'in', ['Lock', 'Unlock', 'Unlatch'])|first|default).authorizationName|default }}" }
-    });
-
     String rollingSate = "~";
     rollingSate.concat(mqtt_topic_lock_log_rolling);
 
@@ -2983,24 +2967,6 @@ void HomeAssistantDiscovery::publishHASSConfigKeypad(char *deviceType, const cha
     {
         { (char*)"en", (char*)"false" },
         { (char*)"pl_prs", (char*)"1" }
-    });
-
-    publishHassTopic("sensor",
-                     "keypad_status",
-                     uidString,
-                     "_keypad_stats",
-                     "Keypad status",
-                     name,
-                     baseTopic,
-                     String("~") + mqtt_topic_lock_log,
-                     deviceType,
-                     "",
-                     "",
-                     "diagnostic",
-                     "",
-    {
-        { (char*)"ic", (char*)"mdi:drag-vertical" },
-        { (char*)"val_tpl", (char*)"{{ (value_json|selectattr('type', 'eq', 'KeypadAction')|first|default).completionStatus|default }}" }
     });
 }
 
@@ -3208,7 +3174,13 @@ JsonDocument HomeAssistantDiscovery::createHassJson(const String& uidString,
         json["cmd_t"] = commandTopic;
     }
 
-    json["avty"]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
+    json["avty"][0]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
+
+    if (uidString != "query_lockstate")
+    {
+        json["avty"][1]["t"] = String("~") + String(mqtt_topic_lock_availability);
+        json["avty_mode"] = "all";
+    }
 
     for(const auto& entry : additionalEntries)
     {

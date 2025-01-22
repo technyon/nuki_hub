@@ -347,6 +347,15 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
             publishState(keyTurnerState);
         }
     }
+    
+    if(strcmp(str, "undefined") == 0)
+    {
+        _nukiPublisher->publishString(mqtt_topic_lock_availability, "offline", true);
+    }
+    else
+    {
+        _nukiPublisher->publishString(mqtt_topic_lock_availability, "online", true);
+    }
 
     json["lock_state"] = str;
 

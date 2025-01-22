@@ -15,9 +15,12 @@
 #include <WiFi.h>
 #endif
 #include <Update.h>
+#include <DuoAuthLib.h>
+#include "driver/gpio.h"
 
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
+extern bool timeSynced;
 
 #ifndef NUKI_HUB_UPDATER
 #include <HTTPClient.h>
@@ -44,6 +47,31 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
 {
     _hostname = _preferences->getString(preference_hostname, "");
     String str = _preferences->getString(preference_cred_user, "");
+    str = _preferences->getString(preference_cred_user, "");
+    _isSSL = (psychicServer->getPort() == 443);
+
+    if (_preferences->getBool(preference_cred_duo_enabled, false))
+    {
+        _duoEnabled = true;
+        _duoHost = _preferences->getString(preference_cred_duo_host, "");
+        _duoIkey = _preferences->getString(preference_cred_duo_ikey, "");
+        _duoSkey = _preferences->getString(preference_cred_duo_skey, "");
+        _duoUser = _preferences->getString(preference_cred_duo_user, "");
+
+        if (_duoHost == "" || _duoIkey == "" || _duoSkey == "" || _duoUser == "" || !_preferences->getBool(preference_update_time, false))
+        {
+            _duoEnabled = false;
+        }
+        else if (_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) || _preferences->getInt(preference_cred_bypass_gpio_high, -1) > -1  || _preferences->getInt(preference_cred_bypass_gpio_low, -1) > -1)
+        {
+            if (_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false))
+            {
+                _bypassGPIO = true;
+            }
+            _bypassGPIOHigh = _preferences->getInt(preference_cred_bypass_gpio_high, -1);
+            _bypassGPIOLow = _preferences->getInt(preference_cred_bypass_gpio_low, -1);
+        }
+    }
 
     if(str.length() > 0)
     {
@@ -60,6 +88,11 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
         if (_preferences->getInt(preference_http_auth_type, 0) == 2)
         {
             loadSessions();
+        }
+
+        if (_duoEnabled)
+        {
+            loadSessions(true);
         }
     }
     _confirmCode = generateConfirmCode();
@@ -80,18 +113,26 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
 #endif
 }
 
-bool WebCfgServer::isAuthenticated(PsychicRequest *request)
+bool WebCfgServer::isAuthenticated(PsychicRequest *request, bool duo)
 {
-    if (request->hasCookie("sessionId")) {
-        String cookie = request->getCookie("sessionId");
+    String cookieKey = "sessionId";
 
-        if (_httpSessions[cookie].is<JsonVariant>())
+    if (duo)
+    {
+        cookieKey = "duoId";
+    }
+
+    if (request->hasCookie(cookieKey.c_str()))
+    {
+        String cookie = request->getCookie(cookieKey.c_str());
+
+        if ((!duo && _httpSessions[cookie].is<JsonVariant>()) || (duo && _duoSessions[cookie].is<JsonVariant>()))
         {
             struct timeval time;
             gettimeofday(&time, NULL);
             int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
 
-            if (_httpSessions[cookie].as<signed long long>() > time_us)
+            if ((!duo && _httpSessions[cookie].as<signed long long>() > time_us) || (duo && _duoSessions[cookie].as<signed long long>() > time_us))
             {
                 return true;
             }
@@ -108,9 +149,18 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request)
 esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* resp)
 {
     Log->print("Logging out");
-    resp->setCookie("sessionId", "", 0, "HttpOnly");
 
-    if (request->hasCookie("sessionId")) {
+    if (!_isSSL)
+    {
+        resp->setCookie("sessionId", "", 0, "HttpOnly");
+    }
+    else
+    {
+        resp->setCookie("sessionId", "", 0, "Secure; HttpOnly");
+    }
+
+    if (request->hasCookie("sessionId"))
+    {
         String cookie = request->getCookie("sessionId");
         _httpSessions.remove(cookie);
         saveSessions();
@@ -120,56 +170,160 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         Log->print("No session cookie found");
     }
 
+    if (_duoEnabled)
+    {
+        if (!_isSSL)
+        {
+            resp->setCookie("duoId", "", 0, "HttpOnly");
+        }
+        else
+        {
+            resp->setCookie("duoId", "", 0, "Secure; HttpOnly");
+        }
+
+        if (request->hasCookie("duoId")) {
+            String cookie2 = request->getCookie("duoId");
+            _duoSessions.remove(cookie2);
+            saveSessions(true);
+        }
+        else
+        {
+            Log->print("No session cookie found");
+        }
+    }
+
     return buildConfirmHtml(request, resp, "Logging out", 3, true);
 }
 
-void WebCfgServer::saveSessions()
+void WebCfgServer::saveSessions(bool duo)
 {
     if(_preferences->getBool(preference_update_time, false))
     {
-            if (!SPIFFS.begin(true)) {
-                Log->println("SPIFFS Mount Failed");
-            }
-            else
-            {
-                File file = SPIFFS.open("/sessions.json", "w");
-                serializeJson(_httpSessions, file);
-                file.close();
-            }
-    }
-}
-void WebCfgServer::loadSessions()
-{
-    if(_preferences->getBool(preference_update_time, false))
-    {
-        if (!SPIFFS.begin(true)) {
+        if (!SPIFFS.begin(true))
+        {
             Log->println("SPIFFS Mount Failed");
         }
         else
         {
-            File file = SPIFFS.open("/sessions.json", "r");
+            File file;
 
-            if (!file || file.isDirectory()) {
-                Log->println("sessions.json not found");
+            if (!duo)
+            {
+                file = SPIFFS.open("/sessions.json", "w");
+                serializeJson(_httpSessions, file);
             }
             else
             {
-                deserializeJson(_httpSessions, file);
+                file = SPIFFS.open("/duosessions.json", "w");
+                serializeJson(_duoSessions, file);
+            }
+            file.close();
+        }
+    }
+}
+void WebCfgServer::loadSessions(bool duo)
+{
+    if(_preferences->getBool(preference_update_time, false))
+    {
+        if (!SPIFFS.begin(true))
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file;
+
+            if (!duo)
+            {
+                file = SPIFFS.open("/sessions.json", "r");
+
+                if (!file || file.isDirectory()) {
+                    Log->println("sessions.json not found");
+                }
+                else
+                {
+                    deserializeJson(_httpSessions, file);
+                }
+            }
+            else
+            {
+                file = SPIFFS.open("/duosessions.json", "r");
+
+                if (!file || file.isDirectory()) {
+                    Log->println("duosessions.json not found");
+                }
+                else
+                {
+                    deserializeJson(_duoSessions, file);
+                }
             }
             file.close();
         }
     }
 }
 
+void WebCfgServer::clearSessions()
+{
+    if (!SPIFFS.begin(true))
+    {
+        Log->println("SPIFFS Mount Failed");
+    }
+    else
+    {
+        _httpSessions.clear();
+        _duoSessions.clear();
+        File file;
+        file = SPIFFS.open("/sessions.json", "w");
+        serializeJson(_httpSessions, file);
+        file.close();
+        file = SPIFFS.open("/duosessions.json", "w");
+        serializeJson(_duoSessions, file);
+        file.close();
+    }
+}
+
 int WebCfgServer::doAuthentication(PsychicRequest *request)
 {
-    if(strlen(_credUser) > 0 && strlen(_credPassword) > 0)
+    if (!_network->isApOpen() && _preferences->getString(preference_bypass_proxy, "") != "" && request->client()->localIP().toString() == _preferences->getString(preference_bypass_proxy, ""))
+    {
+        return 4;
+    }
+    else if(strlen(_credUser) > 0 && strlen(_credPassword) > 0)
     {
         int savedAuthType = _preferences->getInt(preference_http_auth_type, 0);
         if (savedAuthType == 2)
         {
-            if (!isAuthenticated(request)) {
+            if (!isAuthenticated(request))
+            {
                 return savedAuthType;
+            }
+            else if (_duoEnabled && !isAuthenticated(request, true))
+            {
+                if (_bypassGPIO)
+                {
+                    if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
+                    {
+                        Log->print("Duo bypassed because boot button pressed");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOHigh > -1)
+                {
+                    if (digitalRead(_bypassGPIOHigh) == HIGH)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled high");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOLow > -1)
+                {
+                    if (digitalRead(_bypassGPIOLow) == LOW)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled low");
+                        return 4;
+                    }
+                }
+                return 3;
             }
         }
         else
@@ -178,10 +332,186 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
             {
                 return savedAuthType;
             }
+            else if (_duoEnabled && !isAuthenticated(request, true))
+            {
+                if (_bypassGPIO)
+                {
+                    if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
+                    {
+                        Log->print("Duo bypassed because boot button pressed");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOHigh > -1)
+                {
+                    if (digitalRead(_bypassGPIOHigh) == HIGH)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled high");
+                        return 4;
+                    }
+                }
+                if (_bypassGPIOLow > -1)
+                {
+                    if (digitalRead(_bypassGPIOLow) == LOW)
+                    {
+                        Log->print("Duo bypassed because bypass GPIO pin pulled low");
+                        return 4;
+                    }
+                }
+                return 3;
+            }
         }
     }
 
     return 4;
+}
+
+bool WebCfgServer::startDuoAuth(char* pushType)
+{
+    int64_t timeout = esp_timer_get_time() - (30 * 1000 * 1000L);
+    if(!_duoActiveRequest || timeout > _duoRequestTS)
+    {
+        const char* duo_host = _duoHost.c_str();
+        const char* duo_ikey = _duoIkey.c_str();
+        const char* duo_skey = _duoSkey.c_str();
+        const char* duo_user = _duoUser.c_str();
+
+        DuoAuthLib duoAuth;
+        bool duoRequestResult;
+        duoAuth.begin(duo_host, duo_ikey, duo_skey, &timeinfo);
+        duoAuth.setPushType(pushType);
+        duoRequestResult = duoAuth.pushAuth((char*)duo_user, true);
+
+        if(duoRequestResult == true)
+        {
+            _duoTransactionId = duoAuth.getAuthTxId();
+            _duoActiveRequest = true;
+            _duoRequestTS = esp_timer_get_time();
+            Log->println("Duo MFA Auth sent");
+            return true;
+        }
+        else
+        {
+            Log->println("Failed Duo MFA Auth");
+            return false;
+        }
+    }
+    return true;
+}
+
+int WebCfgServer::checkDuoAuth(PsychicRequest *request)
+{
+    const char* duo_host = _duoHost.c_str();
+    const char* duo_ikey = _duoIkey.c_str();
+    const char* duo_skey = _duoSkey.c_str();
+    const char* duo_user = _duoUser.c_str();
+
+    if (request->hasParam("id")) {
+        const PsychicWebParameter* p = request->getParam("id");
+        String cookie2 = p->value();
+        DuoAuthLib duoAuth;
+        if(_duoActiveRequest && _duoCheckIP == request->client()->localIP().toString() && cookie2 == _duoCheckId)
+        {
+            duoAuth.begin(duo_host, duo_ikey, duo_skey, &timeinfo);
+
+            Log->println("Checking Duo Push Status...");
+            duoAuth.authStatus(_duoTransactionId);
+
+            if(duoAuth.pushWaiting())
+            {
+                Log->println("Duo Push Waiting...");
+                return 2;
+            }
+            else
+            {
+                if (duoAuth.authSuccessful())
+                {
+                    Log->println("Successful Duo MFA Auth");
+                    _duoActiveRequest = false;
+                    _duoTransactionId = "";
+                    _duoCheckIP = "";
+                    _duoCheckId = "";
+                    int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720);
+
+                    if (!_sessionsOpts[request->client()->localIP().toString()])
+                    {
+                        durationLength = _preferences->getInt(preference_cred_session_lifetime_duo, 3600);
+                    }
+                    struct timeval time;
+                    gettimeofday(&time, NULL);
+                    int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+                    _duoSessions[cookie2] = time_us + (durationLength*1000000L);
+                    saveSessions(true);
+                    if (_preferences->getBool(preference_mfa_reconfigure, false))
+                    {
+                        _preferences->putBool(preference_mfa_reconfigure, false);
+                    }
+                    return 1;
+                }
+                else
+                {
+                    Log->println("Failed Duo MFA Auth");
+                    _duoActiveRequest = false;
+                    _duoTransactionId = "";
+                    _duoCheckIP = "";
+                    _duoCheckId = "";
+                    if (_preferences->getBool(preference_mfa_reconfigure, false))
+                    {
+                        _preferences->putBool(preference_cred_duo_enabled, false);
+                        _duoEnabled = false;
+                        _preferences->putBool(preference_mfa_reconfigure, false);
+                    }
+                    return 0;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int WebCfgServer::checkDuoApprove()
+{
+    const char* duo_host = _duoHost.c_str();
+    const char* duo_ikey = _duoIkey.c_str();
+    const char* duo_skey = _duoSkey.c_str();
+    const char* duo_user = _duoUser.c_str();
+
+    DuoAuthLib duoAuth;
+    if(_duoActiveRequest)
+    {
+        duoAuth.begin(duo_host, duo_ikey, duo_skey, &timeinfo);
+
+        Log->println("Checking Duo Push Status...");
+        duoAuth.authStatus(_duoTransactionId);
+
+        if(duoAuth.pushWaiting())
+        {
+            Log->println("Duo Push Waiting...");
+            return 2;
+        }
+        else
+        {
+            if (duoAuth.authSuccessful())
+            {
+                Log->println("Successful Duo MFA Auth");
+                _duoActiveRequest = false;
+                _duoTransactionId = "";
+                _duoCheckIP = "";
+                _duoCheckId = "";
+                return 1;
+            }
+            else
+            {
+                Log->println("Failed Duo MFA Auth");
+                _duoActiveRequest = false;
+                _duoTransactionId = "";
+                _duoCheckIP = "";
+                _duoCheckId = "";
+                return 0;
+            }
+        }
+    }
+    return 0;
 }
 
 void WebCfgServer::initialize()
@@ -221,6 +551,8 @@ void WebCfgServer::initialize()
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/get?page=login");
+                    break;
+                case 3:
                 case 4:
                 default:
                     break;
@@ -254,6 +586,8 @@ void WebCfgServer::initialize()
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/get?page=login");
+                    break;
+                case 3:
                 case 4:
                 default:
                     break;
@@ -301,7 +635,7 @@ void WebCfgServer::initialize()
             }
             int authReq = doAuthentication(request);
 
-            if (value != "status" && value != "login" && value != "logout")
+            if (value != "status" && value != "login" && value != "duocheck")
             {
                 switch (authReq)
                 {
@@ -315,6 +649,15 @@ void WebCfgServer::initialize()
                         resp->setCode(302);
                         resp->addHeader("Cache-Control", "no-cache");
                         return resp->redirect("/get?page=login");
+                        break;
+                    case 3:
+                        if (value != "duoauth")
+                        {
+                            resp->setCode(302);
+                            resp->addHeader("Cache-Control", "no-cache");
+                            return resp->redirect("/get?page=duoauth");
+                        }
+                        break;
                     case 4:
                     default:
                         break;
@@ -335,6 +678,18 @@ void WebCfgServer::initialize()
             else if (value == "logout")
             {
                 return logoutSession(request, resp);
+            }
+            else if (value == "duoauth")
+            {
+                return buildDuoHtml(request, resp);
+            }
+            else if (value == "duocheck")
+            {
+                return buildDuoCheckHtml(request, resp);
+            }
+            else if (value == "coredump")
+            {
+                return buildCoredumpHtml(request, resp);
             }
             else if (value == "reboot")
             {
@@ -380,6 +735,30 @@ void WebCfgServer::initialize()
             }
             else if (value == "export")
             {
+                if(_preferences->getBool(preference_cred_duo_approval, false))
+                {
+                    if (!timeSynced)
+                    {
+                        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+                    }
+                    else if (startDuoAuth((char*)"Approve Nuki Hub export"))
+                    {
+                        int duoResult = 2;
+
+                        while (duoResult == 2)
+                        {
+                            duoResult = checkDuoApprove();
+                            delay(2000);
+                            esp_task_wdt_reset();
+                        }
+
+                        if (duoResult != 1)
+                        {
+                            return buildConfirmHtml(request, resp, "Duo approval failed, redirecting to main menu", 3, true);
+                        }
+                    }
+                }
+
                 return sendSettings(request, resp);
             }
             else if (value == "impexpcfg")
@@ -562,9 +941,39 @@ void WebCfgServer::initialize()
                         resp->setCode(302);
                         resp->addHeader("Cache-Control", "no-cache");
                         return resp->redirect("/get?page=login");
+                        break;
+                    case 3:
+                        resp->setCode(302);
+                        resp->addHeader("Cache-Control", "no-cache");
+                        return resp->redirect("/get?page=duoauth");
+                        break;
                     case 4:
                     default:
                         break;
+                }
+
+                if(_preferences->getBool(preference_cred_duo_approval, false))
+                {
+                    if (!timeSynced)
+                    {
+                        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+                    }
+                    else if (startDuoAuth((char*)"Approve Nuki Hub setting change"))
+                    {
+                        int duoResult = 2;
+
+                        while (duoResult == 2)
+                        {
+                            duoResult = checkDuoApprove();
+                            delay(2000);
+                            esp_task_wdt_reset();
+                        }
+
+                        if (duoResult != 1)
+                        {
+                            return buildConfirmHtml(request, resp, "Duo approval failed, redirecting to main menu", 3, true);
+                        }
+                    }
                 }
             }
 
@@ -666,6 +1075,8 @@ void WebCfgServer::initialize()
                     break;
                 case 2:
                     return ESP_FAIL;
+                case 3:
+                    return ESP_FAIL;
                 case 4:
                 default:
                     break;
@@ -689,6 +1100,12 @@ void WebCfgServer::initialize()
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/get?page=login");
+                    break;
+                case 3:
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=duoauth");
+                    break;
                 case 4:
                 default:
                     break;
@@ -741,6 +1158,11 @@ void WebCfgServer::initialize()
                 resp->setCode(302);
                 resp->addHeader("Cache-Control", "no-cache");
                 return resp->redirect("/get?page=login");
+                break;
+            case 3:
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/get?page=duoauth");
                 break;
             case 4:
             default:
@@ -1491,13 +1913,106 @@ esp_err_t WebCfgServer::buildLoginHtml(PsychicRequest *request, PsychicResponse*
     response.beginSend();
     response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
     response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
-    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-    response.print("</head><body><center><h2>NukiHub login</h2><form action=\"/post?page=login\" method=\"post\">");
+    response.print("</head><body><center><h2>Nuki Hub login</h2><form action=\"/post?page=login\" method=\"post\">");
     response.print("<div class=\"container\"><label for=\"username\"><b>Username</b></label><input type=\"text\" placeholder=\"Enter Username\" name=\"username\" required>");
     response.print("<label for=\"password\"><b>Password</b></label><input type=\"password\" placeholder=\"Enter Password\" name=\"password\" required>");
-    response.print("<button type=\"submit\">Login</button><label><input type=\"checkbox\" checked=\"checked\" name=\"remember\"> Remember me</label></div>");
+    response.print("<button type=\"submit\">Login</button><label><input type=\"checkbox\" name=\"remember\"> Remember me</label></div>");
     response.print("</form></center></body></html>");
     return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    char valueStr[2];
+    itoa(checkDuoAuth(request), valueStr, 10);
+    resp->setCode(200);
+    resp->setContentType("text/plain");
+    resp->setContent(valueStr);
+    return resp->send();
+}
+
+esp_err_t WebCfgServer::buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    if (!SPIFFS.begin(true))
+    {
+        Log->println("SPIFFS Mount Failed");
+    }
+    else
+    {
+        File file = SPIFFS.open("/coredump.hex", "r");
+
+        if (!file || file.isDirectory()) {
+            Log->println("coredump.hex not found");
+        }
+        else
+        {            
+            PsychicFileResponse response(resp, file, "coredump.hex");
+            String name = "coredump.txt";
+            char buf[26 + name.length()];
+            snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", name.c_str());
+            response.addHeader("Content-Disposition", buf);
+            return response.send();            
+        }
+    }
+    
+    resp->setCode(302);
+    resp->addHeader("Cache-Control", "no-cache");
+    return resp->redirect("/");
+}
+
+esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    if (!timeSynced)
+    {
+        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+    }
+    
+    bool duo = startDuoAuth((char*)"Approve Nuki Hub login");
+
+    if (!duo)
+    {
+        return buildConfirmHtml(request, resp, "Duo check failed", 3, true);
+    }
+    else
+    {
+        PsychicStreamResponse response(resp, "text/html");
+        char buffer[33];
+        int i;
+        for (i = 0; i < 4; i++) {
+            sprintf(buffer + (i * 8), "%08lx", (unsigned long int)esp_random());
+        }
+
+        int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720);
+
+        if (!_sessionsOpts[request->client()->localIP().toString()])
+        {
+            durationLength = _preferences->getInt(preference_cred_session_lifetime_duo, 3600);
+        }
+
+        if (!_isSSL)
+        {
+            response.setCookie("duoId", buffer, durationLength, "HttpOnly");
+        }
+        else
+        {
+            response.setCookie("duoId", buffer, durationLength, "Secure; HttpOnly");
+        }
+
+        _duoCheckIP = request->client()->localIP().toString();
+        _duoCheckId = buffer;
+
+        response.beginSend();
+        response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        response.print("<style>.container{border:3px solid #f1f1f1; max-width: 400px; padding:16px}</style>");
+        response.print((String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + _duoCheckId + "', true); request.onload = () => { const obj = request.responseText; if (obj == \"1\" || obj == \"0\") { clearInterval(intervalId); if (obj == \"1\") { document.getElementById('duoresult').innerHTML = 'Login approved<br>Redirecting...'; setTimeout(function() { window.location.href = \"/\"; }, 2000); } else { document.getElementById('duoresult').innerHTML = 'Login failed<br>Refresh to retry'; } } }; request.send(); }</script>");
+        response.print("</head><body><center><h2>Nuki Hub login</h2>");
+        response.print("<div class=\"container\">Duo Push sent<br><br>");
+        response.print("Please confirm login in the Duo app<br><br><div id=\"duoresult\"></div></div>");
+        response.print("</div>");
+        response.print("</center></body></html>");
+
+        return response.endSend();
+    }
 }
 
 bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
@@ -1512,14 +2027,24 @@ bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
             {
                 char buffer[33];
                 int i;
-                int64_t durationLength = 60*60*24*30;
+                int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_remember, 720);
                 for (i = 0; i < 4; i++) {
                     sprintf(buffer + (i * 8), "%08lx", (unsigned long int)esp_random());
                 }
                 if(!request->hasParam("remember")) {
-                    durationLength = 60*60;
+                    durationLength = _preferences->getInt(preference_cred_session_lifetime, 3600);
                 }
-                resp->setCookie("sessionId", buffer, durationLength, "HttpOnly");
+
+                _sessionsOpts[request->client()->localIP().toString()] = request->hasParam("remember");
+
+                if (!_isSSL)
+                {
+                    resp->setCookie("sessionId", buffer, durationLength, "HttpOnly");
+                }
+                else
+                {
+                    resp->setCookie("sessionId", buffer, durationLength, "Secure; HttpOnly");
+                }
 
                 struct timeval time;
                 gettimeofday(&time, NULL);
@@ -1886,6 +2411,8 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     bool manPairLck = false;
     bool manPairOpn = false;
     bool networkReconfigure = false;
+    bool clearSession = false;
+    bool newMFA = false;
     unsigned char currentBleAddress[6];
     unsigned char authorizationId[4] = {0x00};
     unsigned char secretKeyK[32] = {0x00};
@@ -1989,30 +2516,33 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             }
             else
             {
-                if(value != "")
+                if(value != "*")
                 {
-                    File file = SPIFFS.open("/mqtt_ssl.ca", FILE_WRITE);
-                    if (!file) {
-                        Log->println("Failed to open /mqtt_ssl.ca for writing");
+                    if(value != "")
+                    {
+                        File file = SPIFFS.open("/mqtt_ssl.ca", FILE_WRITE);
+                        if (!file) {
+                            Log->println("Failed to open /mqtt_ssl.ca for writing");
+                        }
+                        else
+                        {
+                            if (!file.print(value))
+                            {
+                                Log->println("Failed to write /mqtt_ssl.ca");
+                            }
+                            file.close();
+                        }
                     }
                     else
                     {
-                        if (!file.print(value))
-                        {
-                            Log->println("Failed to write /mqtt_ssl.ca");
+                        if (!SPIFFS.remove("/mqtt_ssl.ca")) {
+                            Serial.println("Failed to delete /mqtt_ssl.ca");
                         }
-                        file.close();
                     }
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
                 }
-                else
-                {
-                    if (!SPIFFS.remove("/mqtt_ssl.ca")) {
-                        Serial.println("Failed to delete /mqtt_ssl.ca");
-                    }
-                }
-                Log->print(("Setting changed: "));
-                Log->println(key);
-                configChanged = true;
             }
         }
         else if(key == "MQTTCRT")
@@ -2022,30 +2552,33 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             }
             else
             {
-                if(value != "")
+                if(value != "*")
                 {
-                    File file = SPIFFS.open("/mqtt_ssl.crt", FILE_WRITE);
-                    if (!file) {
-                        Log->println("Failed to open /mqtt_ssl.crt for writing");
+                    if(value != "")
+                    {
+                        File file = SPIFFS.open("/mqtt_ssl.crt", FILE_WRITE);
+                        if (!file) {
+                            Log->println("Failed to open /mqtt_ssl.crt for writing");
+                        }
+                        else
+                        {
+                            if (!file.print(value))
+                            {
+                                Log->println("Failed to write /mqtt_ssl.crt");
+                            }
+                            file.close();
+                        }
                     }
                     else
                     {
-                        if (!file.print(value))
-                        {
-                            Log->println("Failed to write /mqtt_ssl.crt");
+                        if (!SPIFFS.remove("/mqtt_ssl.crt")) {
+                            Serial.println("Failed to delete /mqtt_ssl.crt");
                         }
-                        file.close();
                     }
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
                 }
-                else
-                {
-                    if (!SPIFFS.remove("/mqtt_ssl.crt")) {
-                        Serial.println("Failed to delete /mqtt_ssl.crt");
-                    }
-                }
-                Log->print(("Setting changed: "));
-                Log->println(key);
-                configChanged = true;
             }
         }
         else if(key == "MQTTKEY")
@@ -2055,30 +2588,33 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             }
             else
             {
-                if(value != "")
+                if(value != "*")
                 {
-                    File file = SPIFFS.open("/mqtt_ssl.key", FILE_WRITE);
-                    if (!file) {
-                        Log->println("Failed to open /mqtt_ssl.key for writing");
+                    if(value != "")
+                    {
+                        File file = SPIFFS.open("/mqtt_ssl.key", FILE_WRITE);
+                        if (!file) {
+                            Log->println("Failed to open /mqtt_ssl.key for writing");
+                        }
+                        else
+                        {
+                            if (!file.print(value))
+                            {
+                                Log->println("Failed to write /mqtt_ssl.key");
+                            }
+                            file.close();
+                        }
                     }
                     else
                     {
-                        if (!file.print(value))
-                        {
-                            Log->println("Failed to write /mqtt_ssl.key");
+                        if (!SPIFFS.remove("/mqtt_ssl.key")) {
+                            Serial.println("Failed to delete /mqtt_ssl.key");
                         }
-                        file.close();
                     }
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
                 }
-                else
-                {
-                    if (!SPIFFS.remove("/mqtt_ssl.key")) {
-                        Serial.println("Failed to delete /mqtt_ssl.key");
-                    }
-                }
-                Log->print(("Setting changed: "));
-                Log->println(key);
-                configChanged = true;
             }
         }
         #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
@@ -2089,30 +2625,33 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             }
             else
             {
-                if(value != "")
+                if(value != "*")
                 {
-                    File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
-                    if (!file) {
-                        Log->println("Failed to open /http_ssl.crt for writing");
+                    if(value != "")
+                    {
+                        File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+                        if (!file) {
+                            Log->println("Failed to open /http_ssl.crt for writing");
+                        }
+                        else
+                        {
+                            if (!file.print(value))
+                            {
+                                Log->println("Failed to write /http_ssl.crt");
+                            }
+                            file.close();
+                        }
                     }
                     else
                     {
-                        if (!file.print(value))
-                        {
-                            Log->println("Failed to write /http_ssl.crt");
+                        if (!SPIFFS.remove("/http_ssl.crt")) {
+                            Serial.println("Failed to delete /http_ssl.crt");
                         }
-                        file.close();
                     }
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
                 }
-                else
-                {
-                    if (!SPIFFS.remove("/http_ssl.crt")) {
-                        Serial.println("Failed to delete /http_ssl.crt");
-                    }
-                }
-                Log->print(("Setting changed: "));
-                Log->println(key);
-                configChanged = true;
             }
         }
         else if(key == "HTTPKEY")
@@ -2122,30 +2661,33 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             }
             else
             {
-                if(value != "")
+                if(value != "*")
                 {
-                    File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
-                    if (!file) {
-                        Log->println("Failed to open /http_ssl.key for writing");
+                    if(value != "")
+                    {
+                        File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+                        if (!file) {
+                            Log->println("Failed to open /http_ssl.key for writing");
+                        }
+                        else
+                        {
+                            if (!file.print(value))
+                            {
+                                Log->println("Failed to write /http_ssl.key");
+                            }
+                            file.close();
+                        }
                     }
                     else
                     {
-                        if (!file.print(value))
-                        {
-                            Log->println("Failed to write /http_ssl.key");
+                        if (!SPIFFS.remove("/http_ssl.key")) {
+                            Serial.println("Failed to delete /http_ssl.key");
                         }
-                        file.close();
                     }
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
                 }
-                else
-                {
-                    if (!SPIFFS.remove("/http_ssl.key")) {
-                        Serial.println("Failed to delete /http_ssl.key");
-                    }
-                }
-                Log->print(("Setting changed: "));
-                Log->println(key);
-                configChanged = true;
             }
         }
         #endif
@@ -2327,6 +2869,175 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 Log->print(("Setting changed: "));
                 Log->println(key);
                 //configChanged = true;
+            }
+        }
+        else if(key == "HTTPSFQDN")
+        {
+            if(_preferences->getString(preference_https_fqdn, "") != value)
+            {
+                _preferences->putString(preference_https_fqdn, value);
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DUOHOST")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_cred_duo_host, "") != value)
+                {
+                    _preferences->putString(preference_cred_duo_host, value);
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                    clearSession = true;
+                    newMFA = true;
+                }
+            }
+        }
+        else if(key == "DUOIKEY")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_cred_duo_ikey, "") != value)
+                {
+                    _preferences->putString(preference_cred_duo_ikey, value);
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                    clearSession = true;
+                    newMFA = true;
+                }
+            }
+        }
+        else if(key == "DUOSKEY")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_cred_duo_skey, "") != value)
+                {
+                    _preferences->putString(preference_cred_duo_skey, value);
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                    clearSession = true;
+                    newMFA = true;
+                }
+            }
+        }
+        else if(key == "DUOUSER")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_cred_duo_user, "") != value)
+                {
+                    _preferences->putString(preference_cred_duo_user, value);
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                    clearSession = true;
+                    newMFA = true;
+                }
+            }
+        }
+        else if(key == "DUOENA")
+        {
+            if(_preferences->getBool(preference_cred_duo_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_cred_duo_enabled, (value == "1"));
+                if (value == "1") {
+                    _preferences->putBool(preference_update_time, true);
+                }
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+                clearSession = true;
+                newMFA = true;
+            }
+        }
+        else if(key == "DUOBYPASS")
+        {
+            if(_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_cred_bypass_boot_btn_enabled, (value == "1"));
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DUOBYPASSHIGH")
+        {
+            if(_preferences->getInt(preference_cred_bypass_gpio_high, -1) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_bypass_gpio_high, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DUOBYPASSLOW")
+        {
+            if(_preferences->getInt(preference_cred_bypass_gpio_low, -1) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_bypass_gpio_low, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "DUOAPPROVAL")
+        {
+            if(_preferences->getBool(preference_cred_duo_approval, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_cred_duo_approval, (value == "1"));
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+            }
+        }
+        else if(key == "CREDLFTM")
+        {
+            if(_preferences->getInt(preference_cred_session_lifetime, 3600) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_session_lifetime, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+                clearSession = true;
+            }
+        }
+        else if(key == "CREDLFTMRMBR")
+        {
+            if(_preferences->getInt(preference_cred_session_lifetime_remember, 720) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_session_lifetime_remember, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+                clearSession = true;
+            }
+        }
+        else if(key == "CREDDUOLFTM")
+        {
+            if(_preferences->getInt(preference_cred_session_lifetime_duo, 3600) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_session_lifetime_duo, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+                clearSession = true;
+            }
+        }
+        else if(key == "CREDDUOLFTMRMBR")
+        {
+            if(_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720) != value.toInt())
+            {
+                _preferences->putInt(preference_cred_session_lifetime_duo_remember, value.toInt());
+                Log->print(("Setting changed: "));
+                Log->println(key);
+                configChanged = true;
+                clearSession = true;
             }
         }
         else if(key == "HADEVDISC")
@@ -3061,6 +3772,21 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 Log->print(("Setting changed: "));
                 Log->println(key);
                 configChanged = true;
+                clearSession = true;
+            }
+        }
+        else if(key == "CREDTRUSTPROXY")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_bypass_proxy, "") != value)
+                {
+                    _preferences->putString(preference_bypass_proxy, value);
+                    Log->print(("Setting changed: "));
+                    Log->println(key);
+                    configChanged = true;
+                    clearSession = true;
+                }
             }
         }
         else if(key == "ACLLCKLCK")
@@ -3516,6 +4242,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     Log->print(("Setting changed: "));
                     Log->println(key);
                     configChanged = true;
+                    clearSession = true;
                 }
             }
         }
@@ -3697,6 +4424,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             Log->print(("Setting changed: "));
             Log->println("CREDPASS");
             configChanged = true;
+            clearSession = true;
         }
     }
 
@@ -3726,6 +4454,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             Log->print(("Setting changed: "));
             Log->println("CREDUSER");
             configChanged = true;
+            clearSession = true;
         }
         if(_preferences->getString(preference_cred_password, "") != "")
         {
@@ -3733,6 +4462,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             Log->print(("Setting changed: "));
             Log->println("CREDPASS");
             configChanged = true;
+            clearSession = true;
         }
     }
 
@@ -3807,6 +4537,32 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
     }
 
+    if(clearSession)
+    {
+        clearSessions();
+    }
+    if(newMFA)
+    {
+        _preferences->putBool(preference_mfa_reconfigure, true);
+
+        if (_preferences->getBool(preference_cred_duo_enabled, false))
+        {
+            _duoEnabled = true;
+            _duoHost = _preferences->getString(preference_cred_duo_host, "");
+            _duoIkey = _preferences->getString(preference_cred_duo_ikey, "");
+            _duoSkey = _preferences->getString(preference_cred_duo_skey, "");
+            _duoUser = _preferences->getString(preference_cred_duo_user, "");
+
+            if (_duoHost == "" || _duoIkey == "" || _duoSkey == "" || _duoUser == "" || !_preferences->getBool(preference_update_time, false))
+            {
+                _duoEnabled = false;
+            }
+        }
+        else
+        {
+            _duoEnabled = false;
+        }
+    }
     if(configChanged)
     {
         message = "Configuration saved, reboot required to apply";
@@ -4144,6 +4900,7 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     }
     #endif
     response.print("<br><br><button title=\"Export MQTT SSL CA, client certificate and client key\" onclick=\" window.open('/get?page=export&type=mqtts'); return false;\">Export MQTT SSL CA, client certificate and client key</button>");
+    response.print("<br><br><button title=\"Export Coredump\" onclick=\" window.open('/get?page=coredump'); return false;\">Export Coredump</button>");
     response.print("</div></body></html>");
     return response.endSend();
 }
@@ -4294,13 +5051,25 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "id=\"inputuser\"", false, true);
     printInputField(&response, "CREDPASS", "Password", "*", 30, "id=\"inputpass\"", true, true);
     printInputField(&response, "CREDPASSRE", "Retype password", "*", 30, "id=\"inputpass2\"", true);
-
     std::vector<std::pair<String, String>> httpAuthOptions;
     httpAuthOptions.push_back(std::make_pair("0", "Basic"));
     httpAuthOptions.push_back(std::make_pair("1", "Digest"));
     httpAuthOptions.push_back(std::make_pair("2", "Form"));
-
     printDropDown(&response, "CREDDIGEST", "HTTP Authentication type", String(_preferences->getInt(preference_http_auth_type, 0)), httpAuthOptions, "");
+    printInputField(&response, "CREDTRUSTPROXY", "Bypass authentication for reverse proxy with IP", _preferences->getString(preference_bypass_proxy, "").c_str(), 255, "");
+    printCheckBox(&response, "DUOENA", "Duo Push authentication enabled", _preferences->getBool(preference_cred_duo_enabled, false), "");
+    printCheckBox(&response, "DUOAPPROVAL", "Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings)", _preferences->getBool(preference_cred_duo_approval, false), "");
+    printCheckBox(&response, "DUOBYPASS", "Bypass Duo Push authentication by pressing the BOOT button while logging in", _preferences->getBool(preference_cred_bypass_boot_btn_enabled, false), "");
+    printInputField(&response, "DUOBYPASSHIGH", "Bypass Duo Push authentication by pulling GPIO High", _preferences->getInt(preference_cred_bypass_gpio_high, -1), 2, "");
+    printInputField(&response, "DUOBYPASSLOW", "Bypass Duo Push authentication by pulling GPIO Low", _preferences->getInt(preference_cred_bypass_gpio_low, -1), 2, "");
+    printInputField(&response, "DUOHOST", "Duo API hostname", "*", 255, "", true, false);
+    printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
+    printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
+    printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
+    printInputField(&response, "CREDLFTM", "Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime, 3600), 12, "");
+    printInputField(&response, "CREDLFTMRMBR", "Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_remember, 720), 12, "");
+    printInputField(&response, "CREDDUOLFTM", "Duo Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_duo, 3600), 12, "");
+    printInputField(&response, "CREDDUOLFTMRMBR", "Duo Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_duo_remember, 720), 12, "");
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var input_pass2 = document.getElementById(\"inputpass2\").value; var pattern = /^[ -~]*$/; if(input_user == '#' || input_user == '') { return true; } if (input_pass != input_pass2) { alert('Passwords do not match'); return false;} if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
@@ -4397,6 +5166,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
+        printInputField(&response, "HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", _preferences->getString(preference_https_fqdn, "").c_str(), 255, "");
     }
     #endif
     response.print("</table>");
@@ -4427,7 +5197,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     printInputField(&response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
     printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
-    printInputField(&response, "MQTTPATH", "MQTT NukiHub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
+    printInputField(&response, "MQTTPATH", "MQTT Nuki Hub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
     printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
     response.print("</table><br>");
 
@@ -4496,7 +5266,7 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 ca[filesize] = '\0';
 
-                printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", ca, 2200, true, true);
+                printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", "*", 2200, true, true);
                 found = true;
             }
         }
@@ -4529,7 +5299,7 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 cert[filesize] = '\0';
 
-                printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", cert, 2200, true, true);
+                printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", "*", 2200, true, true);
                 found = true;
             }
         }
@@ -4562,7 +5332,7 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 key[filesize] = '\0';
 
-                printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", key, 2200, true, true);
+                printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", "*", 2200, true, true);
                 found = true;
             }
         }
@@ -4615,7 +5385,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 cert[filesize] = '\0';
 
-                printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", cert, 4400, true, true);
+                printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "*", 4400, true, true);
                 found = true;
             }
         }
@@ -4649,7 +5419,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 key[filesize] = '\0';
 
-                printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", key, 2200, true, true);
+                printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "*", 2200, true, true);
                 found = true;
             }
         }
@@ -4675,7 +5445,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Advanced Configuration</h3>");
-    response.print("<h4 class=\"warning\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash nukihub using USB/serial</h4>");
+    response.print("<h4 class=\"warning\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash Nuki Hub using USB/serial</h4>");
     response.print("<table>");
     response.print("<tr><td>Current bootloop prevention state</td><td>");
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
@@ -5233,14 +6003,39 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_latest_version, ""));
     response.print("\nAllow update from MQTT: ");
     response.print(_preferences->getBool(preference_update_from_mqtt, false) ? "Yes" : "No");
-    response.print("\nUpdate NukiHub and Nuki devices time using NTP: ");
+    response.print("\nUpdate Nuki Hub and Nuki devices time using NTP: ");
     response.print(_preferences->getBool(preference_update_time, false) ? "Yes" : "No");
     response.print("\nWeb configurator username: ");
     response.print(_preferences->getString(preference_cred_user, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator password: ");
     response.print(_preferences->getString(preference_cred_password, "").length() > 0 ? "***" : "Not set");
+    response.print("\nWeb configurator bypass for proxy IP: ");
+    response.print(_preferences->getString(preference_bypass_proxy, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator authentication: ");
     response.print(_preferences->getInt(preference_http_auth_type, 0) == 0 ? "Basic" : _preferences->getInt(preference_http_auth_type, 0) == 1 ? "Digest" : "Form");
+    response.print("\nSession validity (in seconds): ");
+    response.print(_preferences->getInt(preference_cred_session_lifetime, 3600));
+    response.print("\nSession validity remember (in hours): ");
+    response.print(_preferences->getInt(preference_cred_session_lifetime_remember, 720));
+    response.print("\nDuo Push MFA enabled: ");
+    response.print(_preferences->getBool(preference_cred_duo_enabled, false) ? "Yes" : "No");
+
+    if (_preferences->getBool(preference_cred_duo_enabled, false))
+    {
+        response.print("\nDuo Host: ");
+        response.print(_preferences->getString(preference_cred_duo_host, "").length() > 0 ? "***" : "Not set");
+        response.print("\nDuo IKey: ");
+        response.print(_preferences->getString(preference_cred_duo_ikey, "").length() > 0 ? "***" : "Not set");
+        response.print("\nDuo SKey: ");
+        response.print(_preferences->getString(preference_cred_duo_skey, "").length() > 0 ? "***" : "Not set");
+        response.print("\nDuo User: ");
+        response.print(_preferences->getString(preference_cred_duo_user, "").length() > 0 ? "***" : "Not set");
+        response.print("\nDuo Session validity (in seconds): ");
+        response.print(_preferences->getInt(preference_cred_session_lifetime_duo, 3600));
+        response.print("\nDuo Session validity remember (in hours): ");
+        response.print(_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720));
+    }
+
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
     response.print("\nHTTP SSL: ");
@@ -5257,6 +6052,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             response.print((!file || file.isDirectory() || !file2 || file2.isDirectory()) ? "Disabled" : "Enabled");
             file.close();
             file2.close();
+            response.print("\nNuki Hub FQDN for HTTP redirect: ");
+            response.print(_preferences->getString(preference_https_fqdn, "").length() > 0 ? "***" : "Not set");
         }
     }
     else

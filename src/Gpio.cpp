@@ -122,6 +122,19 @@ void Gpio::init()
 
     bool hasInputPin = false;
 
+    if (_inst->_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false))
+    {
+        pinMode(BOOT_BUTTON_GPIO, INPUT);
+    }
+    if (_inst->_preferences->getInt(preference_cred_bypass_gpio_high, -1) > -1)
+    {
+        pinMode(_inst->_preferences->getInt(preference_cred_bypass_gpio_high, -1), INPUT);
+    }
+    if (_inst->_preferences->getInt(preference_cred_bypass_gpio_low, -1) > -1)
+    {
+        pinMode(_inst->_preferences->getInt(preference_cred_bypass_gpio_low, -1), INPUT);
+    }
+
     for(const auto& entry : _inst->_pinConfiguration)
     {
         const auto it = std::find(_inst->availablePins().begin(), _inst->availablePins().end(), entry.pin);
@@ -238,9 +251,22 @@ void Gpio::loadPinConfiguration()
     }
 }
 
-const  std::vector<int> Gpio::getDisabledPins() const
+const std::vector<int> Gpio::getDisabledPins() const
 {
     std::vector<int> disabledPins;
+
+    if (_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false))
+    {
+        disabledPins.push_back(BOOT_BUTTON_GPIO);
+    }
+    if (_preferences->getInt(preference_cred_bypass_gpio_high, -1) > -1)
+    {
+        disabledPins.push_back(_preferences->getInt(preference_cred_bypass_gpio_high, -1));
+    }
+    if (_preferences->getInt(preference_cred_bypass_gpio_low, -1) > -1)
+    {
+        disabledPins.push_back(_preferences->getInt(preference_cred_bypass_gpio_low, -1));
+    }
 
     switch(_preferences->getInt(preference_network_hardware, 0))
     {
@@ -333,7 +359,7 @@ const  std::vector<int> Gpio::getDisabledPins() const
         break;
     }
 
-    Log->print(("GPIO Ethernet disabled pins:"));
+    Log->print(("GPIO Boot button and Ethernet disabled pins:"));
     for_each_n(disabledPins.begin(), disabledPins.size(),
                [](int x)
     {
