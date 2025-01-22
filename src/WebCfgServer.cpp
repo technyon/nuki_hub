@@ -20,6 +20,7 @@
 
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
+extern bool timeSynced;
 
 #ifndef NUKI_HUB_UPDATER
 #include <HTTPClient.h>
@@ -736,7 +737,11 @@ void WebCfgServer::initialize()
             {
                 if(_preferences->getBool(preference_cred_duo_approval, false))
                 {
-                    if (startDuoAuth((char*)"Approve Nuki Hub export"))
+                    if (!timeSynced)
+                    {
+                        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+                    }
+                    else if (startDuoAuth((char*)"Approve Nuki Hub export"))
                     {
                         int duoResult = 2;
 
@@ -949,7 +954,11 @@ void WebCfgServer::initialize()
 
                 if(_preferences->getBool(preference_cred_duo_approval, false))
                 {
-                    if (startDuoAuth((char*)"Approve Nuki Hub setting change"))
+                    if (!timeSynced)
+                    {
+                        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+                    }
+                    else if (startDuoAuth((char*)"Approve Nuki Hub setting change"))
                     {
                         int duoResult = 2;
 
@@ -1953,6 +1962,11 @@ esp_err_t WebCfgServer::buildCoredumpHtml(PsychicRequest *request, PsychicRespon
 
 esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* resp)
 {
+    if (!timeSynced)
+    {
+        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+    }
+    
     bool duo = startDuoAuth((char*)"Approve Nuki Hub login");
 
     if (!duo)

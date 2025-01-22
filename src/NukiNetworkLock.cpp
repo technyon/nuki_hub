@@ -420,6 +420,15 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
         lockstateToString((NukiLock::LockState)_nukiOfficial->getOffState(), str);
         json["lock_state"] = str;
     }
+    
+    if(strcmp(str, "undefined") == 0)
+    {
+        _nukiPublisher->publishString(mqtt_topic_lock_availability, "offline", true);
+    }
+    else
+    {
+        _nukiPublisher->publishString(mqtt_topic_lock_availability, "online", true);
+    }
 
     json["lockngo_state"] = keyTurnerState.lockNgoTimer != 255 ? keyTurnerState.lockNgoTimer : 0;
 

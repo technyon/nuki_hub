@@ -475,7 +475,7 @@ void HomeAssistantDiscovery::publishHASSConfig(char *deviceType, const char *bas
         removeHASSConfigTopic((char*)"sensor", (char*)"last_action_authorization", uidString);
     }
     else
-    {        
+    {
         removeHASSConfigTopic((char*)"sensor", (char*)"rolling_log", uidString);
     }
     if(hasKeypad)
@@ -519,6 +519,8 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
     json["unique_id"] = String(uidString) + "_lock";
     json["cmd_t"] = String("~") + String(mqtt_topic_lock_action);
     json["avty"][0]["t"] = availabilityTopic;
+    json["avty"][1]["t"] = String("~") + String(mqtt_topic_lock_availability);
+    json["avty_mode"] = "all";
     json["pl_lock"] = lockAction;
     json["pl_unlk"] = unlockAction;
 
@@ -1878,7 +1880,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     {
         removeHassTopic((char*)"switch", (char*)"auto_update_enabled", uidString);
     }
-    
+
     // Motor speed
     if((int)advancedLockConfigAclPrefs[23] == 1)
     {
@@ -1895,7 +1897,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     {
         removeHassTopic((char*)"select", (char*)"motor_speed", uidString);
     }
-    
+
     if((int)advancedLockConfigAclPrefs[24] == 1)
     {
         // Slow speed during night mode enabled
@@ -3172,7 +3174,13 @@ JsonDocument HomeAssistantDiscovery::createHassJson(const String& uidString,
         json["cmd_t"] = commandTopic;
     }
 
-    json["avty"]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
+    json["avty"][0]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
+
+    if (uidString != "query_lockstate")
+    {
+        json["avty"][1]["t"] = String("~") + String(mqtt_topic_lock_availability);
+        json["avty_mode"] = "all";
+    }
 
     for(const auto& entry : additionalEntries)
     {

@@ -25,6 +25,7 @@
 #define mqtt_topic_lock_rssi (char*)"/rssi"
 #define mqtt_topic_lock_address (char*)"/address"
 #define mqtt_topic_lock_retry (char*)"/retry"
+#define mqtt_topic_lock_availability (char*)"/availability"
 
 #define mqtt_topic_official_lock_action (char*)"/lockAction"
 //#define mqtt_topic_official_mode (char*)"/mode"

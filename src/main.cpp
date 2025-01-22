@@ -90,6 +90,7 @@ RTC_NOINIT_ATTR bool disableNetwork;
 RTC_NOINIT_ATTR bool wifiFallback;
 RTC_NOINIT_ATTR bool ethCriticalFailure;
 bool coredumpPrinted = true;
+bool timeSynced = false;
 
 int lastHTTPeventId = -1;
 bool doOta = false;
@@ -182,7 +183,8 @@ uint8_t checkPartition()
 }
 
 void cbSyncTime(struct timeval *tv)  {
-  Log->println("NTP time synched");
+  Log->println("NTP time synced");
+  timeSynced = true;
 }
 
 void networkTask(void *pvParameters)
