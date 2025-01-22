@@ -32,7 +32,7 @@ _Make sure your have performed every step and checked the applicable boxes befor
 - [ ] Nuki Hub binary firmware version number used: _____
   - [ ] Pre-compiled
   - [ ] Self-compiled
-- [ ] Provide the output of http://nukihubIP/info:
+- [ ] Provide the output of http://nukihubIP/get?page=info:
 ```
 
 ```
