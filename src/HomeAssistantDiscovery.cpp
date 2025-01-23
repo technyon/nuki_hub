@@ -3176,7 +3176,7 @@ JsonDocument HomeAssistantDiscovery::createHassJson(const String& uidString,
 
     json["avty"][0]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
 
-    if (uidString != "query_lockstate")
+    if (displayName != "Query lock state" && uidString.length() < 10)
     {
         json["avty"][1]["t"] = String("~") + String(mqtt_topic_lock_availability);
         json["avty_mode"] = "all";
