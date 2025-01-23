@@ -476,6 +476,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
             Log->println("ms");
             _nextLockStateUpdateTs = espMillis() + _retryDelay;
         }
+        _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         return false;
     }
     _retryLockstateCount = 0;
@@ -512,6 +513,14 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
             Log->println(("Publishing auth data"));
             updateAuthData(false);
             Log->println(("Done publishing auth data"));
+        }
+        
+        if(_keyTurnerState.lockState == NukiOpener::LockState::Undefined)
+        {
+            if (_nextLockStateUpdateTs > espMillis() + 60000)
+            {
+                _nextLockStateUpdateTs = espMillis() + 60000;
+            }
         }
 
         updateGpioOutputs();

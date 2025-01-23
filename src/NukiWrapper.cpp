@@ -513,6 +513,7 @@ bool NukiWrapper::updateKeyTurnerState()
             Log->println("ms");
             _nextLockStateUpdateTs = espMillis() + _retryDelay;
         }
+        _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         return false;
     }
 
@@ -545,7 +546,13 @@ bool NukiWrapper::updateKeyTurnerState()
         updateStatus = true;
         Log->println(("Lock: Keep updating status on intermediate lock state"));
     }
-
+    else if(lockState == NukiLock::LockState::Undefined)
+    {
+        if (_nextLockStateUpdateTs > espMillis() + 60000)
+        {
+            _nextLockStateUpdateTs = espMillis() + 60000;
+        }
+    }
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
 
     char lockStateStr[20];
