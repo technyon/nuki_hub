@@ -5002,6 +5002,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
         printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/get?page=ota", "ota");
     }
     response.print("</table><br>");
+    
     response.print("<ul id=\"tblnav\">");
     buildNavigationMenuEntry(&response, "Network Configuration", "/get?page=ntwconfig");
     buildNavigationMenuEntry(&response, "MQTT Configuration", "/get?page=mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
@@ -6932,7 +6933,7 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
 
 void WebCfgServer::buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage)
 {
-    response->print("<a href=\"");
+    response->print("<a class=\"naventry\" href=\"");
     response->print(targetPath);
     response->print("\">");
     response->print("<li>");
