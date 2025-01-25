@@ -104,7 +104,7 @@ Devices ranked best-to-worst:
 
 | Feature | Nuki Hub | Nuki official MQTT API |
 |---|---|---|
-| Smart Lock/Opener (remote) control | :white_check_mark: | :white_check_mark: |
+| Smart Lock (remote) control | :white_check_mark: | :white_check_mark: |
 | Opener support | :white_check_mark: | :no_entry: |
 | Optional MQTT SSL support | :white_check_mark: | :no_entry: |
 | Wired LAN support, optionally with Power over Ethernet (PoE) | :white_check_mark: | :no_entry: |
