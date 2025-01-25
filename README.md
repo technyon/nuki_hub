@@ -454,11 +454,11 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 ### Configuration
 - [lock/opener/]configuration/buttonEnabled: 1 if the Nuki Lock/Opener button is enabled, otherwise 0.
 - [lock/opener/]configuration/ledEnabled: 1 if the Nuki Lock/Opener LED is enabled, otherwise 0.
-- [lock/opener/]configuration/ledBrightness: Set to the brightness of the LED on the Nuki Lock (0=min; 5=max) (Lock only).
-- [lock/opener/]configuration/singleLock: 0 if the Nuki Lock is set to double-lock the door, otherwise 1 (= single-lock) (Lock only).
-- [lock/opener/]configuration/autoLock:  1 if the Nuki Lock is set to Auto Lock, otherwise 0 (Lock only).
-- [lock/opener/]configuration/autoUnlock: 1 if the Nuki Lock is set to Auto Unlock, otherwise 0 (Lock only).
-- [lock/opener/]configuration/soundLevel: Set to the volume for sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
+- [lock/]configuration/ledBrightness: Set to the brightness of the LED on the Nuki Lock (0=min; 5=max) (Lock only).
+- [lock/]configuration/singleLock: 0 if the Nuki Lock is set to double-lock the door, otherwise 1 (= single-lock) (Lock only).
+- [lock/]configuration/autoLock:  1 if the Nuki Lock is set to Auto Lock, otherwise 0 (Lock only).
+- [lock/]configuration/autoUnlock: 1 if the Nuki Lock is set to Auto Unlock, otherwise 0 (Lock only).
+- [opener/]configuration/soundLevel: Set to the volume for sounds the Nuki Opener plays (0 = min; 255 = max) (Opener only).
 - [lock/opener/]configuration/action: Allows changing configuration settings of the Nuki Lock/Opener using a JSON formatted value. After receiving the action, the value is set to "--". See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible actions/values
 - [lock/opener/]configuration/commandResult: Result of the last configuration change action as JSON data. See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible values
 - [lock/opener/]configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings. Please note: Longitude and Latitude of the Lock/Opener are not published to MQTT by design. These values can still be changed though.
@@ -474,13 +474,13 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 
 ### Battery
 
-- [lock/opener/]battery/level: Battery level in percent (Lock only).
+- [lock/]battery/level: Battery level in percent (Lock only).
 - [lock/opener/]battery/critical: 1 if battery level is critical, otherwise 0.
-- [lock/opener/]battery/charging: 1 if charging, otherwise 0 (Lock only).
+- [lock/]battery/charging: 1 if charging, otherwise 0 (Lock only).
 - [lock/opener/]battery/voltage: Current Battery voltage (V).
-- [lock/opener/]battery/drain: The drain of the last lock action in Milliwattseconds (mWs) (Lock only).
-- [lock/opener/]battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
-- [lock/opener/]battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
+- [lock/]battery/drain: The drain of the last lock action in Milliwattseconds (mWs) (Lock only).
+- [lock/]battery/maxTurnCurrent: The highest current of the turn motor during the last lock action (A) (Lock only).
+- [lock/]battery/lockDistance: The total distance during the last lock action in centidegrees (Lock only).
 - [lock/opener/]battery/keypadCritical: 1 if the battery level of a connected keypad is critical, otherwise 0.
 - [lock/opener/]battery/doorSensorCritical (only available in hybrid mode): 1 if the battery level of a connected doorsensor is critical, otherwise 0.
 - [lock/opener/]battery/basicJson: The current battery state (critical, charging, level and keypad critical) of the Nuki Lock/Opener as JSON data.
@@ -512,8 +512,8 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - maintenance/wifiRssi: The Wi-Fi signal strength of the Wi-Fi Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - maintenance/log: If "Enable MQTT logging" is enabled in the web interface, this topic will be filled with debug log information.
 - maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
-- maintenance/restartReasonNukiHub: Only available when debug mode is enabled. Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/RestartReason.h) for possible values
-- maintenance/restartReasonNukiEsp: Only available when debug mode is enabled. Set to the last reason the ESP was restarted. See [RestartReason.h](/RestartReason.h) for possible values
+- maintenance/restartReasonNukiHub: Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/RestartReason.h) for possible values
+- maintenance/restartReasonNukiEsp: Set to the last reason the ESP was restarted. See [RestartReason.h](/RestartReason.h) for possible values
 
 ## Changing Nuki Lock/Opener Configuration
 
