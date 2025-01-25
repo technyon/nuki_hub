@@ -144,7 +144,7 @@ Use the web interface to connect the ESP to your preferred Wi-Fi network.<br>
 After configuring Wi-Fi, the ESP should automatically connect to your network.<br>
 <br>
 To configure the connection to the MQTT broker, first connect your client device to the same Wi-Fi network the ESP32 is connected to.<br>
-In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router).<br><br>
+In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router) or static IP.<br><br>
 Next click on "MQTT Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and password if required by your MQTT broker.<br>
 <br>
 The firmware supports SSL encryption for MQTT, however most people don't use this.<br>
