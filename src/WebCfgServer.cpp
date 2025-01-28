@@ -3363,7 +3363,11 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "TXPWR")
         {
+            #if defined(CONFIG_IDF_TARGET_ESP32)
             if(value.toInt() >= -12 && value.toInt() <= 9)
+            #else
+            if(value.toInt() >= -12 && value.toInt() <= 20)
+            #endif
             {
                 if(_preferences->getInt(preference_ble_tx_power, 9) != value.toInt())
                 {
@@ -5030,6 +5034,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
         buildNavigationMenuEntry(&response, "Configure Wi-Fi", "/get?page=wifi");
     }
 #endif
+    buildNavigationMenuEntry(&response, "Info page", "/get?page=info");
     String rebooturl = "/get?page=reboot&CONFIRMTOKEN=" + _confirmCode;
     buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebooturl.c_str());
     if (_preferences->getInt(preference_http_auth_type, 0) == 2)
@@ -5847,7 +5852,11 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
         printCheckBox(&response, "REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
     }
     printInputField(&response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
+    #if defined(CONFIG_IDF_TARGET_ESP32)
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
+    #else
+    printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 20)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
+    #endif
     printCheckBox(&response, "UPTIME", "Update Nuki Hub and Lock/Opener time using NTP", _preferences->getBool(preference_update_time, false), "");
     printInputField(&response, "TIMESRV", "NTP server", _preferences->getString(preference_time_server, "pool.ntp.org").c_str(), 255, "");
 

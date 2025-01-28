@@ -63,6 +63,7 @@ private:
     String _baseTopic;
     String _hostname;
     
+    JsonDocument _uidToName;
     char _nukiHubUidString[20];
     
     bool _offEnabled = false;
