@@ -127,6 +127,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
     json["dev"]["name"] = _hostname.c_str();
     json["dev"]["sw"] = NUKI_HUB_VERSION;
     json["dev"]["hw"] = NUKI_HUB_HW;
+    _uidToName[_nukiHubUidString] = _hostname.c_str();
 
     String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url, "");
 
@@ -502,6 +503,7 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
     json["dev"]["sw"] = softwareVersion;
     json["dev"]["hw"] = hardwareVersion;
     json["dev"]["via_device"] = String("nuki_") + _nukiHubUidString;
+    _uidToName[uidString] = name;
 
     String cuUrl = _preferences->getString(preference_mqtt_hass_cu_url, "");
 
@@ -3175,6 +3177,7 @@ JsonDocument HomeAssistantDiscovery::createHassJson(const String& uidString,
     }
 
     json["avty"][0]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
+    json["dev"]["name"] = _uidToName[uidString];
 
     if (displayName != "Query lock state" && uidString.length() < 10)
     {
