@@ -76,7 +76,30 @@ void NukiOpenerWrapper::readSettings()
 
     if(pwrLvl >= 9)
     {
+        #if defined(CONFIG_IDF_TARGET_ESP32)
         powerLevel = ESP_PWR_LVL_P9;
+        #else
+        if(pwrLvl >= 20)
+        {
+            powerLevel = ESP_PWR_LVL_P20;            
+        }
+        else if(pwrLvl >= 18)
+        {
+            powerLevel = ESP_PWR_LVL_P18;
+        }
+        else if(pwrLvl >= 15)
+        {
+            powerLevel = ESP_PWR_LVL_P15;
+        }
+        else if(pwrLvl >= 12)
+        {
+            powerLevel = ESP_PWR_LVL_P12;
+        }
+        else
+        {
+            powerLevel = ESP_PWR_LVL_P9;
+        }
+        #endif
     }
     else if(pwrLvl >= 6)
     {
