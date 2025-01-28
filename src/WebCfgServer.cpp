@@ -5030,6 +5030,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
         buildNavigationMenuEntry(&response, "Configure Wi-Fi", "/get?page=wifi");
     }
 #endif
+    buildNavigationMenuEntry(&response, "Info page", "/get?page=info");
     String rebooturl = "/get?page=reboot&CONFIRMTOKEN=" + _confirmCode;
     buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebooturl.c_str());
     if (_preferences->getInt(preference_http_auth_type, 0) == 2)
