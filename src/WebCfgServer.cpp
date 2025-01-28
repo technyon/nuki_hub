@@ -6276,7 +6276,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getInt(preference_auth_max_entries, MAX_AUTH));
     response.print("\n\n------------ HOME ASSISTANT ------------");
     response.print("\nHome Assistant auto discovery enabled: ");
-    if(_preferences->getString(preference_mqtt_hass_discovery, "").length() > 0)
+    if(_preferences->getBool(preference_mqtt_hass_enabled, false) && _preferences->getString(preference_mqtt_hass_discovery, "").length() > 0)
     {
         response.print("Yes");
         response.print("\nHome Assistant auto discovery topic: ");
