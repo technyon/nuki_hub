@@ -13,6 +13,7 @@
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
+#include "ImportExport.h"
 
 extern TaskHandle_t nukiTaskHandle;
 
@@ -30,6 +31,7 @@ enum class TokenType
 
 #else
 #include "NukiNetwork.h"
+#include "ImportExport.h"
 #endif
 
 extern TaskHandle_t networkTaskHandle;
@@ -38,9 +40,9 @@ class WebCfgServer
 {
 public:
     #ifndef NUKI_HUB_UPDATER
-    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer);
+    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     #else
-    WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer);
+    WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     #endif
     ~WebCfgServer() = default;
 
@@ -91,7 +93,6 @@ private:
     NukiWrapper* _nuki = nullptr;
     NukiOpenerWrapper* _nukiOpener = nullptr;
     Gpio* _gpio = nullptr;
-    bool _pinsConfigured = false;
     bool _brokerConfigured = false;
     bool _rebootRequired = false;
     #endif
@@ -101,9 +102,6 @@ private:
     String generateConfirmCode();
     String _confirmCode = "----";
 
-    int checkDuoAuth(PsychicRequest *request);
-    int checkDuoApprove();
-    bool startDuoAuth(char* pushType = (char*)"");
     void saveSessions(bool duo = false);
     void loadSessions(bool duo = false);
     void clearSessions();
@@ -136,6 +134,7 @@ private:
     PsychicHttpServer* _psychicServer = nullptr;
     NukiNetwork* _network = nullptr;
     Preferences* _preferences = nullptr;
+    ImportExport* _importExport;
 
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
@@ -145,20 +144,8 @@ private:
     size_t _otaContentLen = 0;
     String _hostname;
     JsonDocument _httpSessions;
-    JsonDocument _duoSessions;
-    JsonDocument _sessionsOpts;
-    struct tm timeinfo;
-    bool _duoActiveRequest;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
     int _bypassGPIOHigh = -1;
     int _bypassGPIOLow = -1;
-    int64_t _duoRequestTS = 0;
-    String _duoTransactionId;
-    String _duoHost;
-    String _duoSkey;
-    String _duoIkey;
-    String _duoUser;
-    String _duoCheckId;
-    String _duoCheckIP;    
 };

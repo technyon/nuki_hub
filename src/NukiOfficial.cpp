@@ -86,14 +86,14 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     memset(&str, 0, sizeof(str));
 
     Log->println("Official Nuki change received");
-    Log->print(("Topic: "));
+    Log->print("Topic: ");
     Log->println(topic);
-    Log->print(("Value: "));
+    Log->print("Value: ");
     Log->println(value);
 
     if(strcmp(topic, mqtt_topic_official_connected) == 0)
     {
-        Log->print(("Connected: "));
+        Log->print("Connected: ");
         Log->println((strcmp(value, "true") == 0 ? 1 : 0));
         offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
         _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
@@ -102,12 +102,12 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offState = atoi(value);
         _statusUpdated = true;
-        Log->println(("Lock: Updating status on Hybrid state change"));
+        Log->println("Lock: Updating status on Hybrid state change");
         _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
         NukiLock::lockstateToString((NukiLock::LockState)offState, str);
         _publisher->publishString(mqtt_topic_lock_state, str, true);
 
-        Log->print(("Lockstate: "));
+        Log->print("Lockstate: ");
         Log->println(str);
 
         _offStateToPublish = (NukiLock::LockState)offState;
@@ -117,11 +117,11 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offDoorsensorState = atoi(value);
         _statusUpdated = true;
-        Log->println(("Lock: Updating status on Hybrid door sensor state change"));
+        Log->println("Lock: Updating status on Hybrid door sensor state change");
         _publisher->publishBool(mqtt_topic_lock_status_updated, _statusUpdated, true);
         NukiLock::doorSensorStateToString((NukiLock::DoorSensorState)offDoorsensorState, str);
 
-        Log->print(("Doorsensor state: "));
+        Log->print("Doorsensor state: ");
         Log->println(str);
 
         _publisher->publishString(mqtt_topic_lock_door_sensor_state, str, true);
@@ -130,7 +130,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offCritical = (strcmp(value, "true") == 0 ? 1 : 0);
 
-        Log->print(("Battery critical: "));
+        Log->print("Battery critical: ");
         Log->println(offCritical);
 
         if(!_disableNonJSON)
@@ -143,7 +143,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offCharging = (strcmp(value, "true") == 0 ? 1 : 0);
 
-        Log->print(("Battery charging: "));
+        Log->print("Battery charging: ");
         Log->println(offCharging);
 
         if(!_disableNonJSON)
@@ -156,7 +156,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offChargeState = atoi(value);
 
-        Log->print(("Battery level: "));
+        Log->print("Battery level: ");
         Log->println(offChargeState);
 
         if(!_disableNonJSON)

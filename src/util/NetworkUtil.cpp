@@ -50,7 +50,7 @@ NetworkDeviceType NetworkUtil::GetDeviceTypeFromPreference(int hardwareDetect, i
         return NetworkDeviceType::LilyGO_T_ETH_ELite;
         break;
     default:
-        Log->println(("Unknown hardware selected, falling back to Wi-Fi."));
+        Log->println("Unknown hardware selected, falling back to Wi-Fi.");
         return NetworkDeviceType::WiFi;
         break;
     }

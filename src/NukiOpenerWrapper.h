@@ -11,7 +11,7 @@
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
-    NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkOpener* network, Gpio* gpio, Preferences* preferences);
+    NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkOpener* network, Gpio* gpio, Preferences* preferences, char* buffer, size_t bufferSize);
     virtual ~NukiOpenerWrapper();
 
     void initialize();
@@ -25,7 +25,6 @@ public:
     void deactivateRTO();
     void deactivateCM();
 
-    bool isPinSet();
     bool isPinValid();
     void setPin(const uint16_t pin);
     uint16_t getPin();
@@ -159,4 +158,7 @@ private:
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
+    
+    char* _buffer;
+    const size_t _bufferSize;
 };

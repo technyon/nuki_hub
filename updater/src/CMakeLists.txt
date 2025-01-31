@@ -6,10 +6,12 @@ list(APPEND app_sources ../../src/PreferencesKeys.h)
 list(APPEND app_sources ../../src/RestartReason.h)
 list(APPEND app_sources ../../src/WebCfgServer.h)
 list(APPEND app_sources ../../src/WebCfgServerConstants.h)
+list(APPEND app_sources ../../src/ImportExport.h)
 
 list(APPEND app_sources ../../src/Logger.cpp)
 list(APPEND app_sources ../../src/NukiNetwork.cpp)
 list(APPEND app_sources ../../src/WebCfgServer.cpp)
+list(APPEND app_sources ../../src/ImportExport.cpp)
 
 list(APPEND app_sources ../../src/enums/NetworkDeviceType.h)
 list(APPEND app_sources ../../src/networkDevices/EthernetDevice.h)

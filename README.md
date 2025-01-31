@@ -78,7 +78,7 @@ Devices ranked best-to-worst:
 - ESP32 without PSRAM
 - ...... <br>
 (Devices below will not support more Nuki Hub functions)
-- ...... 
+- ......
 - ESP32-C6
 - ESP32-solo1
 - ESP32-C3
@@ -292,7 +292,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 ### Access Level Configuration
 
 #### Nuki General Access Control
-- Publish Nuki configuration information: Enable to publish information about the configuration of the connected Nuki device(s) through MQTT. 
+- Publish Nuki Hub configuration information: Publish Nuki Hub settings over MQTT, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
+- Modify Nuki Hub configuration over MQTT: Allow changing Nuki Hub settings using MQTT, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
+- Publish Nuki configuration information: Enable to publish information about the configuration of the connected Nuki device(s) through MQTT.
 
 Note: All of the following requires the Nuki security code / PIN to be set, see "[Nuki Lock PIN / Nuki Opener PIN](#nuki-lock-pin--nuki-opener-pin)"
 
@@ -463,6 +465,9 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - [lock/opener/]configuration/commandResult: Result of the last configuration change action as JSON data. See the "[Changing Nuki Lock/Opener Configuration](#changing-nuki-lockopener-configuration)" section of this README for possible values
 - [lock/opener/]configuration/basicJson: The current basic configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--set-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--set-config) for available settings. Please note: Longitude and Latitude of the Lock/Opener are not published to MQTT by design. These values can still be changed though.
 - [lock/opener/]configuration/advancedJson: The current advanced configuration of the Nuki Lock/Opener as JSON data. See [Nuki Smart Lock API](https://developer.nuki.io/page/nuki-smart-lock-api-2/2/#heading--advanced-config) and [Nuki Opener API](https://developer.nuki.io/page/nuki-opener-api-1/7/#heading--advanced-config) for available settings.
+- configuration/action: Allows importing and exporting configuration settings of Nuki Hub using a JSON formatted value. After receiving the action, the value is set to "--", see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
+- configuration/commandResult: Result of the last Nuki Hub configuration import action as JSON data, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
+- configuration/json: Topic where you can export Nuki Hub configuration as JSON data to, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
 
 ### Query
 
@@ -512,8 +517,51 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - maintenance/wifiRssi: The Wi-Fi signal strength of the Wi-Fi Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - maintenance/log: If "Enable MQTT logging" is enabled in the web interface, this topic will be filled with debug log information.
 - maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
-- maintenance/restartReasonNukiHub: Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/RestartReason.h) for possible values
-- maintenance/restartReasonNukiEsp: Set to the last reason the ESP was restarted. See [RestartReason.h](/RestartReason.h) for possible values
+- maintenance/restartReasonNukiHub: Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/src/RestartReason.h) for possible values
+- maintenance/restartReasonNukiEsp: Set to the last reason the ESP was restarted. See [RestartReason.h](/src/RestartReason.h) for possible values
+
+## Import and Export Nuki Hub settings over MQTT
+
+Consider this when deciding if you want to enable the following functionality:
+
+- Any application/actor that has read access to `nukihub/configuration/action` and `nukihub/configuration/json` can view your changes and exports. 
+- If you have not enabled the setting to require MFA when changing settings any application/actor that has write access to `nukihub/configuration/action` can change Nuki Hub settings (including pairing data and credentials)
+
+### Export Nuki Hub settings over MQTT
+
+To allow Nuki Hub to export configuration over MQTT first enable "Publish Nuki Hub configuration information" in "Access Level Configuration" and save the configuration.
+You can export Nuki Hub settings in JSON format by sending the following JSON values to the `nukihub/configuration/action` topic:
+- Export Nuki Hub settings without redacted settings and without pairing settings:  `{"exportNH": 0}`
+
+NOTE: The following settings can only be exported if you have setup a secure MQTT connection (MQTT over SSL)
+
+- Export Nuki Hub settings with redacted settings and without pairing settings: `{"exportNH": 0, "redacted": 1}`
+- Export Nuki Hub settings without redacted settings and with pairing settings: `{"exportNH": 0, "pairing": 1}`
+- Export Nuki Hub settings with redacted settings and pairing settings: `{"exportNH": 0, "redacted": 1, "pairing": 1}`
+- Export Nuki Hub MQTTS certificates and key: `{"exportMQTTS": 0}`
+- Export Nuki Hub HTTPS certificate and key: `{"exportHTTPS": 0}`
+
+The exported values will be available in the `nukihub/configuration/json` topic in JSON format.
+A general explanation of the exported values can be found in the [PreferencesKeys.h](/src/PreferencesKeys.h) file
+
+If you set the value of `exportNH`/`exportMQTTS`/`exportHTTPS` to an integer value > 0 the `nukihub/configuration/json` will be cleared after the given amount of seconds (e.g. `{"exportMQTTS": 30}` will clear the JSON topic after 30 seconds)
+
+If you have enabled `Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will first need to approve the Duo Push before the settings will be exported.
+
+### Import/Change Nuki Hub settings over MQTT
+
+To allow Nuki Hub to import/change configuration over MQTT first enable "Modify Nuki Hub configuration over MQTT" in "Access Level Configuration" and save the configuration.
+You can import Nuki Hub settings in JSON format by sending the desired JSON values to be changed to the `nukihub/configuration/action` topic.
+The expected values and format is the same as the JSON files/values that can be exported over MQTT or through the Web Configurator.
+
+The result of the import will be available in the `nukihub/configuration/commandResult` topic in JSON format.
+After the import is complete the ESP32 will reboot.
+
+If you have enabled `Require Duo Push authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will first need to approve the Duo Push before the settings will be changed/imported.
+
+Note: When importing settings using MQTT there are less/no checks on the values entered. These checks are only available when changing settings through the WebConfigurator. 
+Consider testing your configuration values by changing them in the Web Configurator before trying to use MQTT to change configuration.
+A general explanation of the values that can be imported can be found in the [PreferencesKeys.h](/src/PreferencesKeys.h) file
 
 ## Changing Nuki Lock/Opener Configuration
 

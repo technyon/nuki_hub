@@ -113,6 +113,11 @@
 #define mqtt_topic_restart_reason_esp (char*)"/maintenance/restartReasonNukiEsp"
 #define mqtt_topic_mqtt_connection_state (char*)"/maintenance/mqttConnectionState"
 #define mqtt_topic_network_device (char*)"/maintenance/networkDevice"
+
+#define mqtt_topic_nuki_hub_config_action (char*)"/configuration/action"
+#define mqtt_topic_nuki_hub_config_action_command_result (char*)"/configuration/commandResult"
+#define mqtt_topic_nuki_hub_config_json (char*)"/configuration/json"
+
 #define mqtt_topic_hybrid_state (char*)"/hybridConnected"
 
 #define mqtt_topic_gpio_prefix (char*)"/gpio"

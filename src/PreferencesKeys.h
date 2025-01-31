@@ -91,6 +91,8 @@
 #define preference_cred_bypass_boot_btn_enabled (char*)"bypassBtBtn"
 #define preference_cred_bypass_gpio_high (char*)"bypassHigh"
 #define preference_cred_bypass_gpio_low (char*)"bypassLow"
+#define preference_publish_config (char*)"nhPubConfig"
+#define preference_config_from_mqtt (char*)"nhCntrlEnabled"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
@@ -241,6 +243,8 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_cred_duo_enabled, false);
         preferences->putBool(preference_cred_duo_approval, false);
         preferences->putBool(preference_cred_bypass_boot_btn_enabled, false);
+        preferences->putBool(preference_publish_config, false);
+        preferences->putBool(preference_config_from_mqtt, false);
 
         preferences->putInt(preference_mqtt_broker_port, 1883);
         preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
@@ -504,8 +508,8 @@ private:
         preference_mqtt_broker, preference_mqtt_broker_port, preference_mqtt_user, preference_mqtt_password, preference_mqtt_log_enabled, preference_check_updates,
         preference_webserver_enabled, preference_lock_enabled, preference_lock_pin_status, preference_mqtt_lock_path, preference_opener_enabled, preference_opener_pin_status,
         preference_opener_continuous_mode, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count, preference_update_time, preference_time_server,
-        preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset, preference_mqtt_ca, preference_mqtt_crt,
-        preference_mqtt_key, preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
+        preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset,
+        preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
         preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_http_auth_type, preference_lock_gemini_pin,
         preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_hybrid_reboot_on_disconnect,
         preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry,
@@ -525,7 +529,8 @@ private:
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_nukihub_id,
         preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_cred_duo_enabled, preference_https_fqdn, preference_bypass_proxy,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
-        preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low
+        preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_publish_config,
+        preference_config_from_mqtt
     };
     std::vector<char*> _redact =
     {
@@ -544,7 +549,8 @@ private:
         preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi, preference_cred_bypass_boot_btn_enabled,
         preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled,
-        preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled, preference_enable_debug_mode, preference_cred_duo_enabled, preference_cred_duo_approval
+        preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled, preference_enable_debug_mode, preference_cred_duo_enabled, preference_cred_duo_approval, 
+        preference_publish_config, preference_config_from_mqtt
     };
     std::vector<char*> _bytePrefs =
     {

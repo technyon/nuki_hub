@@ -175,7 +175,7 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
             return;
         }
 
-        Log->print(("Opener action received: "));
+        Log->print("Opener action received: ");
         Log->println(data);
         LockActionResult lockActionResult = LockActionResult::Failed;
         if(_lockActionReceivedCallback != NULL)
@@ -667,12 +667,12 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
             {
                 if((log.data[0] & 3) == 0)
                 {
-                    Log->println(("Nuki opener: Ring detected (Locked)"));
+                    Log->println("Nuki opener: Ring detected (Locked)");
                     publishRing(true);
                 }
                 else
                 {
-                    Log->println(("Nuki opener: Ring detected (Open)"));
+                    Log->println("Nuki opener: Ring detected (Open)");
                     publishRing(false);
                 }
             }

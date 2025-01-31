@@ -16,6 +16,7 @@
 #include <ArduinoJson.h>
 #include "NukiConstants.h"
 #include "HomeAssistantDiscovery.h"
+#include "ImportExport.h"
 #endif
 
 class NukiNetwork
@@ -42,7 +43,7 @@ public:
     #ifdef NUKI_HUB_UPDATER
     explicit NukiNetwork(Preferences* preferences);
     #else
-    explicit NukiNetwork(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize);
+    explicit NukiNetwork(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize, ImportExport* importExport);
 
     void registerMqttReceiver(MqttReceiver* receiver);
     void disableAutoRestarts(); // disable on OTA start
@@ -128,13 +129,14 @@ private:
     String _lockPath;
 
     HomeAssistantDiscovery* _hadiscovery = nullptr;
-
+    ImportExport* _importExport;
     Gpio* _gpio;
 
     int _mqttConnectionState = 0;
     int _mqttConnectCounter = 0;
     int _mqttPort = 1883;
     long _mqttConnectedTs = -1;
+    long _overwriteNukiHubConfigTS = -1;
     bool _connectReplyReceived = false;
     bool _firstDisconnected = true;
 
