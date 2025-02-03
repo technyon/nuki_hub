@@ -465,7 +465,7 @@ bool NukiWrapper::isPinSet()
 
 bool NukiWrapper::isPinValid()
 {
-    return _preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured) == 1;
+    return _preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured) == (int)NukiPinState::Valid;
 }
 
 void NukiWrapper::setPin(const uint16_t pin)

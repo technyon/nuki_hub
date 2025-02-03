@@ -441,7 +441,7 @@ bool NukiOpenerWrapper::isPinSet()
 
 bool NukiOpenerWrapper::isPinValid()
 {
-    return _preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured) == 1;
+    return _preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured) == (int)NukiPinState::Valid;
 }
 
 void NukiOpenerWrapper::setPin(const uint16_t pin)
