@@ -5,6 +5,8 @@
 #include "RestartReason.h"
 #include <NukiOpenerUtils.h>
 #include "Config.h"
+#include "enums/NukiPinState.h"
+#include "enums/NukiPinState.h"
 #include "hal/wdt_hal.h"
 #include <time.h>
 #include "esp_sntp.h"
@@ -439,7 +441,7 @@ bool NukiOpenerWrapper::isPinSet()
 
 bool NukiOpenerWrapper::isPinValid()
 {
-    return _preferences->getInt(preference_opener_pin_status, 4) == 1;
+    return _preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured) == 1;
 }
 
 void NukiOpenerWrapper::setPin(const uint16_t pin)
@@ -638,7 +640,7 @@ void NukiOpenerWrapper::updateConfig()
                 updateAuth(false);
             }
 
-            const int pinStatus = _preferences->getInt(preference_opener_pin_status, 4);
+            const int pinStatus = _preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured);
 
             if(isPinSet())
             {
@@ -665,7 +667,7 @@ void NukiOpenerWrapper::updateConfig()
                     Log->println(("Nuki opener PIN is invalid"));
                     if(pinStatus != 2)
                     {
-                        _preferences->putInt(preference_opener_pin_status, 2);
+                        _preferences->putInt(preference_opener_pin_status, (int)NukiPinState::Invalid);
                     }
                 }
                 else
@@ -673,7 +675,7 @@ void NukiOpenerWrapper::updateConfig()
                     Log->println(("Nuki opener PIN is valid"));
                     if(pinStatus != 1)
                     {
-                        _preferences->putInt(preference_opener_pin_status, 1);
+                        _preferences->putInt(preference_opener_pin_status, (int)NukiPinState::Valid);
                     }
                 }
             }
@@ -682,7 +684,7 @@ void NukiOpenerWrapper::updateConfig()
                 Log->println(("Nuki opener PIN is not set"));
                 if(pinStatus != 0)
                 {
-                    _preferences->putInt(preference_opener_pin_status, 0);
+                    _preferences->putInt(preference_opener_pin_status, (int)NukiPinState::NotSet);
                 }
             }
         }
@@ -4078,7 +4080,7 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
     }
     else if(eventType == Nuki::EventType::ERROR_BAD_PIN)
     {
-        _preferences->putInt(preference_lock_pin_status, 2);
+        _preferences->putInt(preference_lock_pin_status, (int)NukiPinState::Invalid);
     }
     else if(eventType == Nuki::EventType::BLE_ERROR_ON_DISCONNECT)
     {

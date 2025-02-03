@@ -2,6 +2,8 @@
 
 #include <Preferences.h>
 #include <PsychicHttp.h>
+#include "enums/NukiPinState.h"
+
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
 #include <PsychicHttpsServer.h>
 #endif
@@ -83,8 +85,8 @@ private:
     const std::vector<std::pair<String, String>> getNetworkCustomCLKOptions() const;
     #endif
 
-    String getPreselectionForGpio(const uint8_t& pin);
-    String pinStateToString(uint8_t value);
+    const String getPreselectionForGpio(const uint8_t& pin) const;
+    const String pinStateToString(const NukiPinState& value) const;
 
     void printParameter(PsychicStreamResponse *response, const char* description, const char* value, const char *link = "", const char *id = "");
 
