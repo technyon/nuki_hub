@@ -52,6 +52,7 @@ set(SRCFILES
         ../src/util/NetworkDeviceInstantiator.cpp
         ../src/HomeAssistantDiscovery.cpp
         ../src/NukiOfficial.cpp
+        ../src/ImportExport.cpp
         ../src/NukiPublisher.cpp
         ../src/EspMillis.h
         ../src/enums/NukiPinState.h
