@@ -732,7 +732,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
 
         while(retryCount < _nrOfRetries + 1)
         {
-            Log->print(("Retrieve log entries: "));
+            Log->print("Retrieve log entries: ");
             result = _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
 
             if(result != Nuki::CmdResult::Success)
@@ -786,7 +786,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
             return a.index < b.index;
         });
 
-        Log->print(("Log size: "));
+        Log->print("Log size: ");
         Log->println(log.size());
 
         if(log.size() > 0)
@@ -818,7 +818,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
 
         while(retryCount < _nrOfRetries + 1)
         {
-            Log->print(("Querying opener keypad: "));
+            Log->print("Querying opener keypad: ");
             result = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
 
             if(result != Nuki::CmdResult::Success)
@@ -842,7 +842,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         std::list<NukiOpener::KeypadEntry> entries;
         _nukiOpener.getKeypadEntries(&entries);
 
-        Log->print(("Opener keypad codes: "));
+        Log->print("Opener keypad codes: ");
         Log->println(entries.size());
 
         entries.sort([](const NukiOpener::KeypadEntry& a, const NukiOpener::KeypadEntry& b)
@@ -898,7 +898,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
 
         while(retryCount < _nrOfRetries + 1)
         {
-            Log->print(("Querying opener timecontrol: "));
+            Log->print("Querying opener timecontrol: ");
             result = _nukiOpener.retrieveTimeControlEntries();
 
             if(result != Nuki::CmdResult::Success)
@@ -922,7 +922,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         std::list<NukiOpener::TimeControlEntry> timeControlEntries;
         _nukiOpener.getTimeControlEntries(&timeControlEntries);
 
-        Log->print(("Opener timecontrol entries: "));
+        Log->print("Opener timecontrol entries: ");
         Log->println(timeControlEntries.size());
 
         timeControlEntries.sort([](const NukiOpener::TimeControlEntry& a, const NukiOpener::TimeControlEntry& b)
@@ -975,7 +975,7 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
 
         while(retryCount < _nrOfRetries)
         {
-            Log->print(("Querying opener authorization: "));
+            Log->print("Querying opener authorization: ");
             result = _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
             delay(250);
             if(result != Nuki::CmdResult::Success)
@@ -999,7 +999,7 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
         std::list<NukiOpener::AuthorizationEntry> authEntries;
         _nukiOpener.getAuthorizationEntries(&authEntries);
 
-        Log->print(("Opener authorization entries: "));
+        Log->print("Opener authorization entries: ");
         Log->println(authEntries.size());
 
         authEntries.sort([](const NukiOpener::AuthorizationEntry& a, const NukiOpener::AuthorizationEntry& b)
@@ -2748,7 +2748,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
             {
                 auto it1 = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId);
                 int index = it1 - _keypadCodeIds.begin();
-                Log->print(("Check keypad code: "));
+                Log->print("Check keypad code: ");
 
                 if(code == _keypadCodes[index])
                 {
@@ -2787,7 +2787,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     if(idExists)
                     {
                         result = _nukiOpener.deleteKeypadEntry(codeId);
-                        Log->print(("Delete keypad code: "));
+                        Log->print("Delete keypad code: ");
                         Log->println((int)result);
                     }
                     else
@@ -2994,7 +2994,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
 
                         result = _nukiOpener.addKeypadEntry(entry);
-                        Log->print(("Add keypad code: "));
+                        Log->print("Add keypad code: ");
                         Log->println((int)result);
                     }
                     else if (strcmp(action, "update") == 0)
@@ -3160,7 +3160,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
 
                         result = _nukiOpener.updateKeypadEntry(entry);
-                        Log->print(("Update keypad code: "));
+                        Log->print("Update keypad code: ");
                         Log->println((int)result);
                     }
                 }
@@ -3287,7 +3287,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiOpener.removeTimeControlEntry(entryId);
-                    Log->print(("Delete timecontrol: "));
+                    Log->print("Delete timecontrol: ");
                     Log->println((int)result);
                 }
                 else
@@ -3366,7 +3366,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.addTimeControlEntry(entry);
-                    Log->print(("Add timecontrol: "));
+                    Log->print("Add timecontrol: ");
                     Log->println((int)result);
                 }
                 else if (strcmp(action, "update") == 0)
@@ -3443,7 +3443,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.updateTimeControlEntry(entry);
-                    Log->print(("Update timecontrol: "));
+                    Log->print("Update timecontrol: ");
                     Log->println((int)result);
                 }
             }
@@ -3597,7 +3597,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiOpener.deleteAuthorizationEntry(authId);
-                    Log->print(("Delete authorization: "));
+                    Log->print("Delete authorization: ");
                     Log->println((int)result);
                 }
                 else
@@ -3816,7 +3816,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiOpener.addAuthorizationEntry(entry);
-                    Log->print(("Add authorization: "));
+                    Log->print("Add authorization: ");
                     Log->println((int)result);
                 }
                 else if (strcmp(action, "update") == 0)
@@ -3981,7 +3981,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiOpener.updateAuthorizationEntry(entry);
-                    Log->print(("Update authorization: "));
+                    Log->print("Update authorization: ");
                     Log->println((int)result);
                 }
             }
@@ -4094,7 +4094,7 @@ void NukiOpenerWrapper::readConfig()
 
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
-    Log->print(("Opener config result: "));
+    Log->print("Opener config result: ");
     Log->print(resultStr);
     Log->print("(");
     Log->print(result);
@@ -4124,7 +4124,7 @@ void NukiOpenerWrapper::readAdvancedConfig()
 
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
-    Log->print(("Opener advanced config result: "));
+    Log->print("Opener advanced config result: ");
     Log->println(resultStr);
     postponeBleWatchdog();
 }
@@ -4211,6 +4211,6 @@ void NukiOpenerWrapper::updateTime()
     char resultStr[15] = {0};
     NukiOpener::cmdResultToString(cmdResult, resultStr);
 
-    Log->print(("Opener time update result: "));
+    Log->print("Opener time update result: ");
     Log->println(resultStr);
 }

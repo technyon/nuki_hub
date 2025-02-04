@@ -215,11 +215,11 @@ void NukiWrapper::readSettings()
         _preferences->putInt(preference_restart_ble_beacon_lost, _restartBeaconTimeout);
     }
 
-    Log->print(("Lock state interval: "));
+    Log->print("Lock state interval: ");
     Log->print(_intervalLockstate);
-    Log->print((" | Battery interval: "));
+    Log->print(" | Battery interval: ");
     Log->print(_intervalBattery);
-    Log->print((" | Publish auth data: "));
+    Log->print(" | Publish auth data: ");
     Log->println(_publishAuthData ? "yes" : "no");
 
     if(!_publishAuthData)
@@ -293,7 +293,7 @@ void NukiWrapper::update(bool reboot)
             NukiLock::cmdResultToString(cmdResult, resultStr);
             _network->publishCommandResult(resultStr);
 
-            Log->print(("Lock action result: "));
+            Log->print("Lock action result: ");
             Log->println(resultStr);
 
             if(cmdResult != Nuki::CmdResult::Success)
@@ -505,7 +505,7 @@ bool NukiWrapper::updateKeyTurnerState()
     {
         Log->print("Result (attempt ");
         Log->print(retryCount + 1);
-        Log->print(("): "));
+        Log->print("): ");
         result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
         ++retryCount;
     }
@@ -587,7 +587,7 @@ void NukiWrapper::updateBatteryState()
 
     while(retryCount < _nrOfRetries + 1)
     {
-        Log->print(("Result (attempt "));
+        Log->print("Result (attempt ");
         Log->print(retryCount + 1);
         Log->print("): ");
         result = _nukiLock.requestBatteryReport(&_batteryReport);
@@ -743,7 +743,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
 
         while(retryCount < _nrOfRetries + 1)
         {
-            Log->print(("Retrieve log entries: "));
+            Log->print("Retrieve log entries: ");
             result = _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
             if(result != Nuki::CmdResult::Success)
             {
@@ -795,7 +795,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
             return a.index < b.index;
         });
 
-        Log->print(("Log size: "));
+        Log->print("Log size: ");
         Log->println(log.size());
 
         if(log.size() > 0)
@@ -827,7 +827,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
 
         while(retryCount < _nrOfRetries + 1)
         {
-            Log->print(("Querying lock keypad: "));
+            Log->print("Querying lock keypad: ");
             result = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
             if(result != Nuki::CmdResult::Success)
             {
@@ -850,7 +850,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
         std::list<NukiLock::KeypadEntry> entries;
         _nukiLock.getKeypadEntries(&entries);
 
-        Log->print(("Lock keypad codes: "));
+        Log->print("Lock keypad codes: ");
         Log->println(entries.size());
 
         entries.sort([](const NukiLock::KeypadEntry& a, const NukiLock::KeypadEntry& b)
@@ -906,7 +906,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
 
         while(retryCount < _nrOfRetries + 1)
         {
-            Log->print(("Querying lock timecontrol: "));
+            Log->print("Querying lock timecontrol: ");
             result = _nukiLock.retrieveTimeControlEntries();
             if(result != Nuki::CmdResult::Success)
             {
@@ -929,7 +929,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
         std::list<NukiLock::TimeControlEntry> timeControlEntries;
         _nukiLock.getTimeControlEntries(&timeControlEntries);
 
-        Log->print(("Lock timecontrol entries: "));
+        Log->print("Lock timecontrol entries: ");
         Log->println(timeControlEntries.size());
 
         timeControlEntries.sort([](const NukiLock::TimeControlEntry& a, const NukiLock::TimeControlEntry& b)
@@ -982,7 +982,7 @@ void NukiWrapper::updateAuth(bool retrieved)
 
         while(retryCount < _nrOfRetries)
         {
-            Log->print(("Querying lock authorization: "));
+            Log->print("Querying lock authorization: ");
             result = _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
             delay(250);
             if(result != Nuki::CmdResult::Success)
@@ -1006,7 +1006,7 @@ void NukiWrapper::updateAuth(bool retrieved)
         std::list<NukiLock::AuthorizationEntry> authEntries;
         _nukiLock.getAuthorizationEntries(&authEntries);
 
-        Log->print(("Lock authorization entries: "));
+        Log->print("Lock authorization entries: ");
         Log->println(authEntries.size());
 
         authEntries.sort([](const NukiLock::AuthorizationEntry& a, const NukiLock::AuthorizationEntry& b)
@@ -2848,7 +2848,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
             {
                 auto it1 = std::find(_keypadCodeIds.begin(), _keypadCodeIds.end(), codeId);
                 int index = it1 - _keypadCodeIds.begin();
-                Log->print(("Check keypad code: "));
+                Log->print("Check keypad code: ");
 
                 if(code == _keypadCodes[index])
                 {
@@ -2888,7 +2888,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                     if(idExists)
                     {
                         result = _nukiLock.deleteKeypadEntry(codeId);
-                        Log->print(("Delete keypad code: "));
+                        Log->print("Delete keypad code: ");
                         Log->println((int)result);
                     }
                     else
@@ -3095,7 +3095,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
 
                         result = _nukiLock.addKeypadEntry(entry);
-                        Log->print(("Add keypad code: "));
+                        Log->print("Add keypad code: ");
                         Log->println((int)result);
                     }
                     else if (strcmp(action, "update") == 0)
@@ -3261,7 +3261,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
 
                         result = _nukiLock.updateKeypadEntry(entry);
-                        Log->print(("Update keypad code: "));
+                        Log->print("Update keypad code: ");
                         Log->println((int)result);
                     }
                 }
@@ -3388,7 +3388,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiLock.removeTimeControlEntry(entryId);
-                    Log->print(("Delete timecontrol: "));
+                    Log->print("Delete timecontrol: ");
                     Log->println((int)result);
                 }
                 else
@@ -3468,7 +3468,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                     entry.lockAction = timeControlLockAction;
 
                     result = _nukiLock.addTimeControlEntry(entry);
-                    Log->print(("Add timecontrol: "));
+                    Log->print("Add timecontrol: ");
                     Log->println((int)result);
                 }
                 else if (strcmp(action, "update") == 0)
@@ -3546,7 +3546,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                     entry.lockAction = timeControlLockAction;
 
                     result = _nukiLock.updateTimeControlEntry(entry);
-                    Log->print(("Update timecontrol: "));
+                    Log->print("Update timecontrol: ");
                     Log->println((int)result);
                 }
             }
@@ -3701,7 +3701,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                 {
                     result = _nukiLock.deleteAuthorizationEntry(authId);
                     delay(250);
-                    Log->print(("Delete authorization: "));
+                    Log->print("Delete authorization: ");
                     Log->println((int)result);
                 }
                 else
@@ -3921,7 +3921,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
 
                     result = _nukiLock.addAuthorizationEntry(entry);
                     delay(250);
-                    Log->print(("Add authorization: "));
+                    Log->print("Add authorization: ");
                     Log->println((int)result);
                 }
                 else if (strcmp(action, "update") == 0)
@@ -4087,7 +4087,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
 
                     result = _nukiLock.updateAuthorizationEntry(entry);
                     delay(250);
-                    Log->print(("Update authorization: "));
+                    Log->print("Update authorization: ");
                     Log->println((int)result);
                 }
             }
@@ -4191,7 +4191,7 @@ void NukiWrapper::readConfig()
 
         char resultStr[20];
         NukiLock::cmdResultToString(result, resultStr);
-        Log->print(("Lock config result: "));
+        Log->print("Lock config result: ");
         Log->println(resultStr);
 
         if(result != Nuki::CmdResult::Success)
@@ -4219,7 +4219,7 @@ void NukiWrapper::readAdvancedConfig()
 
         char resultStr[20];
         NukiLock::cmdResultToString(result, resultStr);
-        Log->print(("Lock advanced config result: "));
+        Log->print("Lock advanced config result: ");
         Log->println(resultStr);
 
         if(result != Nuki::CmdResult::Success)
@@ -4327,6 +4327,6 @@ void NukiWrapper::updateTime()
     char resultStr[15] = {0};
     NukiLock::cmdResultToString(cmdResult, resultStr);
 
-    Log->print(("Lock time update result: "));
+    Log->print("Lock time update result: ");
     Log->println(resultStr);
 }

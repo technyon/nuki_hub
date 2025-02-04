@@ -94,7 +94,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     if(strcmp(topic, mqtt_topic_official_connected) == 0)
     {
         Log->print("Connected: ");
-        Log->println((strcmp(value, "true") == 0 ? 1 : 0));
+        Log->println(strcmp(value, "true") == 0 ? 1 : 0);
         offConnected = (strcmp(value, "true") == 0 ? 1 : 0);
         _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
     }
