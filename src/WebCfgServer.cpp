@@ -4297,12 +4297,12 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
 
         if(_nuki->isPaired())
         {
-            String lockState = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
+            const String lockState = pinStateToString((NukiPinState)_preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured));
             printParameter(&response, "Nuki Lock PIN status", lockState.c_str(), "", "lockPin");
 
             if(_preferences->getBool(preference_official_hybrid_enabled, false))
             {
-                String offConnected = _nuki->offConnected() ? "Yes": "No";
+                const String offConnected = _nuki->offConnected() ? "Yes": "No";
                 printParameter(&response, "Nuki Lock hybrid mode connected", offConnected.c_str(), "", "lockHybrid");
             }
         }
@@ -4323,7 +4323,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
         }
         if(_nukiOpener->isPaired())
         {
-            String openerState = pinStateToString(_preferences->getInt(preference_opener_pin_status, 4));
+            String openerState = pinStateToString((NukiPinState)_preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured));
             printParameter(&response, "Nuki Opener PIN status", openerState.c_str(), "", "openerPin");
         }
     }
@@ -4876,7 +4876,7 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse
 
         if(_nuki->isPaired())
         {
-            json["lockPin"] = pinStateToString(_preferences->getInt(preference_lock_pin_status, 4));
+            json["lockPin"] = pinStateToString((NukiPinState)_preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured));
             if(strcmp(lockStateArr, "undefined") != 0)
             {
                 lockDone = true;
@@ -4910,7 +4910,7 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse
 
         if(_nukiOpener->isPaired())
         {
-            json["openerPin"] = pinStateToString(_preferences->getInt(preference_opener_pin_status, 4));
+            json["openerPin"] = pinStateToString((NukiPinState)_preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured));
             if(strcmp(openerStateArr, "undefined") != 0)
             {
                 openerDone = true;
@@ -4943,18 +4943,19 @@ esp_err_t WebCfgServer::buildStatusHtml(PsychicRequest *request, PsychicResponse
     return resp->send();
 }
 
-String WebCfgServer::pinStateToString(uint8_t value)
+const String WebCfgServer::pinStateToString(const NukiPinState& value) const
 {
     switch(value)
     {
-    case 0:
-        return String("PIN not set");
-    case 1:
-        return String("PIN valid");
-    case 2:
-        return String("PIN invalid or not set");
-    default:
-        return String("Unknown");
+        case NukiPinState::NotSet:
+            return String("PIN not set");
+        case NukiPinState::Valid:
+            return String("PIN valid");
+        case NukiPinState::Invalid:
+            return String("PIN set but invalid");
+        case NukiPinState::NotConfigured:
+        default:
+            return String("Unknown");
     }
 }
 
@@ -6030,12 +6031,12 @@ esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, PsychicResponse* 
     if(!opener && _nuki != nullptr)
     {
         _nuki->unpair();
-        _preferences->putInt(preference_lock_pin_status, 4);
+        _preferences->putInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured);
     }
     if(opener && _nukiOpener != nullptr)
     {
         _nukiOpener->unpair();
-        _preferences->putInt(preference_opener_pin_status, 4);
+        _preferences->putInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured);
     }
 
     _network->disableHASS();
@@ -6381,7 +6382,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getGpioOptions() cons
     return options;
 }
 
-String WebCfgServer::getPreselectionForGpio(const uint8_t &pin)
+const String WebCfgServer::getPreselectionForGpio(const uint8_t &pin) const
 {
     const std::vector<PinEntry>& pinConfiguration = _gpio->pinConfiguration();
 

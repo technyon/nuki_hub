@@ -5,6 +5,7 @@
 #include "RestartReason.h"
 #include <NukiLockUtils.h>
 #include "Config.h"
+#include "enums/NukiPinState.h"
 #include "hal/wdt_hal.h"
 #include <time.h>
 #include "esp_sntp.h"
@@ -454,7 +455,7 @@ void NukiWrapper::lockngounlatch()
 
 bool NukiWrapper::isPinValid()
 {
-    return _preferences->getInt(preference_lock_pin_status, 4) == 1;
+    return _preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured) == (int)NukiPinState::Valid;
 }
 
 void NukiWrapper::setPin(const uint16_t pin)
@@ -648,7 +649,7 @@ void NukiWrapper::updateConfig()
                 updateAuth(false);
             }
 
-            const int pinStatus = _preferences->getInt(preference_lock_pin_status, 4);
+            const int pinStatus = _preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured);
 
             Nuki::CmdResult result = (Nuki::CmdResult)-1;
             int retryCount = 0;
@@ -671,7 +672,7 @@ void NukiWrapper::updateConfig()
                 Log->println("Nuki Lock PIN is invalid or not set");
                 if(pinStatus != 2)
                 {
-                    _preferences->putInt(preference_lock_pin_status, 2);
+                    _preferences->putInt(preference_lock_pin_status, (int)NukiPinState::Invalid);
                 }
             }
             else
@@ -679,7 +680,7 @@ void NukiWrapper::updateConfig()
                 Log->println("Nuki Lock PIN is valid");
                 if(pinStatus != 1)
                 {
-                    _preferences->putInt(preference_lock_pin_status, 1);
+                    _preferences->putInt(preference_lock_pin_status, (int)NukiPinState::Valid);
                 }
             }
         }
@@ -4167,7 +4168,7 @@ void NukiWrapper::notify(Nuki::EventType eventType)
             }
             else if(eventType == Nuki::EventType::ERROR_BAD_PIN)
             {
-                _preferences->putInt(preference_lock_pin_status, 2);
+                _preferences->putInt(preference_lock_pin_status, (int)NukiPinState::Invalid);
             }
             else if(eventType == Nuki::EventType::BLE_ERROR_ON_DISCONNECT)
             {

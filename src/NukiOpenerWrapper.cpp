@@ -5,6 +5,8 @@
 #include "RestartReason.h"
 #include <NukiOpenerUtils.h>
 #include "Config.h"
+#include "enums/NukiPinState.h"
+#include "enums/NukiPinState.h"
 #include "hal/wdt_hal.h"
 #include <time.h>
 #include "esp_sntp.h"
@@ -436,7 +438,7 @@ void NukiOpenerWrapper::deactivateCM()
 
 bool NukiOpenerWrapper::isPinValid()
 {
-    return _preferences->getInt(preference_opener_pin_status, 4) == 1;
+    return _preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured) == (int)NukiPinState::Valid;
 }
 
 void NukiOpenerWrapper::setPin(const uint16_t pin)
@@ -635,7 +637,7 @@ void NukiOpenerWrapper::updateConfig()
                 updateAuth(false);
             }
 
-            const int pinStatus = _preferences->getInt(preference_opener_pin_status, 4);
+            const int pinStatus = _preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured);
 
             Nuki::CmdResult result = (Nuki::CmdResult)-1;
             int retryCount = 0;
@@ -659,7 +661,7 @@ void NukiOpenerWrapper::updateConfig()
                 Log->println("Nuki opener PIN is invalid or not set");
                 if(pinStatus != 2)
                 {
-                    _preferences->putInt(preference_opener_pin_status, 2);
+                    _preferences->putInt(preference_opener_pin_status, (int)NukiPinState::Invalid);
                 }
             }
             else
@@ -667,7 +669,7 @@ void NukiOpenerWrapper::updateConfig()
                 Log->println("Nuki opener PIN is valid");
                 if(pinStatus != 1)
                 {
-                    _preferences->putInt(preference_opener_pin_status, 1);
+                    _preferences->putInt(preference_opener_pin_status, (int)NukiPinState::Valid);
                 }
             }
         }
@@ -4061,7 +4063,7 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
     }
     else if(eventType == Nuki::EventType::ERROR_BAD_PIN)
     {
-        _preferences->putInt(preference_lock_pin_status, 2);
+        _preferences->putInt(preference_lock_pin_status, (int)NukiPinState::Invalid);
     }
     else if(eventType == Nuki::EventType::BLE_ERROR_ON_DISCONNECT)
     {

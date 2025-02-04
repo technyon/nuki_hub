@@ -54,6 +54,7 @@ set(SRCFILES
         ../src/NukiOfficial.cpp
         ../src/NukiPublisher.cpp
         ../src/EspMillis.h
+        ../src/enums/NukiPinState.h
 )
 
 file(GLOB_RECURSE SRCFILESREC
