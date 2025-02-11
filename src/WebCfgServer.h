@@ -111,9 +111,11 @@ private:
     bool isAuthenticated(PsychicRequest *request, int type = 0);
     bool processLogin(PsychicRequest *request, PsychicResponse* resp);
     bool processTOTP(PsychicRequest *request, PsychicResponse* resp);
+    bool processBypass(PsychicRequest *request, PsychicResponse* resp);
     int doAuthentication(PsychicRequest *request);
     esp_err_t buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildBypassHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildTOTPHtml(PsychicRequest *request, PsychicResponse* resp, int type);
     esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp, int type);
     esp_err_t buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp);
@@ -150,6 +152,7 @@ private:
     JsonDocument _httpSessions;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
+    bool _newBypass = false;
     int _bypassGPIOHigh = -1;
     int _bypassGPIOLow = -1;
 };

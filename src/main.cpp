@@ -546,7 +546,7 @@ void logCoreDump()
                 file.printf("%s\r\n", NUKI_HUB_HW);
                 file.printf("%s\r\n", NUKI_HUB_BUILD);
             }
-            
+
             Serial.printf("%s\r\n", NUKI_HUB_HW);
             Serial.printf("%s\r\n", NUKI_HUB_BUILD);
 
@@ -581,7 +581,7 @@ void logCoreDump()
                     file.printf("%s", str_dst);
                 }
             }
-            
+
             Serial.println("");
 
             if (file) {
@@ -669,7 +669,7 @@ void setup()
     {
         preferences->putString(preference_updater_date, NUKI_HUB_DATE);
     }
-    
+
     importExport = new ImportExport(preferences);
 
     network = new NukiNetwork(preferences);
@@ -796,7 +796,7 @@ void setup()
     Log->print(gpioDesc.c_str());
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-    
+
     importExport = new ImportExport(preferences);
 
     network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size, importExport);

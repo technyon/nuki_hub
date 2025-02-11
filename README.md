@@ -527,7 +527,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 
 Consider this when deciding if you want to enable the following functionality:
 
-- Any application/actor that has read access to `nukihub/configuration/action` and `nukihub/configuration/json` can view your changes and exports. 
+- Any application/actor that has read access to `nukihub/configuration/action` and `nukihub/configuration/json` can view your changes and exports.
 - If you have not enabled the setting to require MFA when changing settings any application/actor that has write access to `nukihub/configuration/action` can change Nuki Hub settings (including pairing data and credentials)
 
 ### Export Nuki Hub settings over MQTT
@@ -562,7 +562,7 @@ After the import is complete the ESP32 will reboot.
 
 If you have enabled `Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will need to either provide a currently valid TOTP code as part of the sent JSON in the `totp` node or approve the Duo Push before the settings will be changed/imported.
 
-Note: When importing settings using MQTT there are less/no checks on the values entered. These checks are only available when changing settings through the WebConfigurator. 
+Note: When importing settings using MQTT there are less/no checks on the values entered. These checks are only available when changing settings through the WebConfigurator.
 Consider testing your configuration values by changing them in the Web Configurator before trying to use MQTT to change configuration.
 A general explanation of the values that can be imported can be found in the [PreferencesKeys.h](/src/PreferencesKeys.h) file
 

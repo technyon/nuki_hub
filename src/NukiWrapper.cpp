@@ -62,7 +62,7 @@ void NukiWrapper::initialize()
     _nukiLock.setDebugHexData(_preferences->getBool(preference_debug_hex_data, false));
     _nukiLock.setDebugCommand(_preferences->getBool(preference_debug_command, false));
     _nukiLock.registerLogger(Log);
-    
+
     if (_preferences->getInt(preference_lock_gemini_pin, 0) > 0 && _preferences->getBool(preference_lock_gemini_enabled, false))
     {
         _nukiLock.saveUltraPincode(_preferences->getInt(preference_lock_gemini_pin, 0), false);
@@ -90,7 +90,7 @@ void NukiWrapper::readSettings()
         #else
         if(pwrLvl >= 20)
         {
-            powerLevel = ESP_PWR_LVL_P20;            
+            powerLevel = ESP_PWR_LVL_P20;
         }
         else if(pwrLvl >= 18)
         {
@@ -486,7 +486,7 @@ void NukiWrapper::unpair()
     nukiBlePref.clear();
     nukiBlePref.end();
     _deviceId->assignNewId();
-    if (!_forceId) 
+    if (!_forceId)
     {
         _preferences->remove(preference_nuki_id_lock);
     }
@@ -4302,18 +4302,18 @@ void NukiWrapper::updateTime()
         Log->println("No valid PIN set");
         return;
     }
-    
+
     time_t now;
     tm tm;
     time(&now);
     localtime_r(&now, &tm);
-    
+
     if (int(tm.tm_year + 1900) < int(2025))
     {
         Log->println("NTP Time not valid, not updating Nuki device");
         return;
     }
-    
+
     Nuki::TimeValue nukiTime;
     nukiTime.year = tm.tm_year + 1900;
     nukiTime.month = tm.tm_mon + 1;
