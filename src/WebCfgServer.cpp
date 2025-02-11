@@ -629,7 +629,7 @@ void WebCfgServer::initialize()
                     _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
                     return sendSettings(request, resp);
                 }
-                else if(request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+                else if(timeSynced && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
                 {
                     const PsychicWebParameter* pass = request->getParam("totpkey");
                     if(pass->value() != "")
@@ -853,7 +853,7 @@ void WebCfgServer::initialize()
                     if(!_importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"])
                     {
                         bool approved = false;
-                        if(request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+                        if(timeSynced && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
                         {
                             const PsychicWebParameter* pass = request->getParam("totpkey");
                             if(pass->value() != "")
@@ -1880,18 +1880,15 @@ esp_err_t WebCfgServer::buildLoginHtml(PsychicRequest *request, PsychicResponse*
 
 esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* resp, int type)
 {
+    if (!timeSynced)
+    {
+        return buildConfirmHtml(request, resp, "NTP time not synced yet, TOTP not available, please wait for NTP to sync", 3, true);
+    }
+    
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
     response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
-    /*
-    if (!timeSynced)
-    {
-        char millis[20];
-        itoa(espMillis(), millis, 10);
-        response.print((String)"<script>window.onload = function() { var startTime = Date.now(); var interval = setInterval(function() { var elapsedTime = Date.now() - startTime; document.getElementById(\"timestamp\").innerHTML = (elapsedTime / 1000).toFixed(3) + " + millis + ";}, 100);  }</script>");
-    }
-    */
     response.print("</head><body><center><h2>Nuki Hub TOTP</h2>");
 
     String typeText = "Login";
@@ -1931,12 +1928,6 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
 
     response.print("<div class=\"container\">");
     response.print("<label for=\"totpkey\"><b>TOTP</b></label><input type=\"text\" placeholder=\"Enter TOTP code\" name=\"totpkey\">");
-    /*
-    if (!timeSynced)
-    {
-        response.print("<label for=\"timestamp\"><b>Timestamp</b></label><span type=\"text\" id=\"timestamp\"></span>");
-    }
-    */
     response.print("<button type=\"submit\" ");
     if(type == 1)
     {
@@ -2136,7 +2127,7 @@ bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
 
 bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
 {
-    if(request->hasParam("totpkey"))
+    if(timeSynced && request->hasParam("totpkey"))
     {
         const PsychicWebParameter* pass = request->getParam("totpkey");
         if(pass->value() != "")
@@ -4738,7 +4729,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
     printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
     printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
-    printInputField(&response, "CREDTOTP", "TOTP Secret Key (requires Form authentication)", "*", 16, "", true, false);
+    printInputField(&response, "CREDTOTP", "TOTP Secret Key", "*", 16, "", true, false);
     response.print("<tr id=\"totpgentr\" ><td><input type=\"button\" id=\"totpgen\" onclick=\"document.getElementsByName('CREDTOTP')[0].type='text'; document.getElementsByName('CREDTOTP')[0].value='");
     response.print(randomstr);
     response.print("'; document.getElementById('totpgentr').style.display='none';\" value=\"Generate new TOTP key\"></td></tr>");

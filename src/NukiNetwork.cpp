@@ -1093,7 +1093,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 if(_preferences->getBool(preference_cred_duo_approval, false) && (_importExport->getTOTPEnabled() || _importExport->getDuoEnabled()))
                 {
-                    if(_importExport->getTOTPEnabled() && !doc["totp"].isNull())
+                    if(timeSynced && _importExport->getTOTPEnabled() && !doc["totp"].isNull())
                     {
                         String jsonTotp = doc["totp"];
                         
