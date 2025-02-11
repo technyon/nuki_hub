@@ -29,6 +29,7 @@ public:
     virtual String BSSIDstr() = 0;
 
     #ifndef NUKI_HUB_UPDATER
+    virtual bool isEncrypted();
     virtual bool mqttConnect();
     virtual bool mqttDisconnect(bool force);
     virtual void mqttDisable();

@@ -15,6 +15,7 @@
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
+#include "ImportExport.h"
 
 extern TaskHandle_t nukiTaskHandle;
 
@@ -32,6 +33,7 @@ enum class TokenType
 
 #else
 #include "NukiNetwork.h"
+#include "ImportExport.h"
 #endif
 
 extern TaskHandle_t networkTaskHandle;
@@ -40,9 +42,9 @@ class WebCfgServer
 {
 public:
     #ifndef NUKI_HUB_UPDATER
-    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer);
+    WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     #else
-    WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer);
+    WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     #endif
     ~WebCfgServer() = default;
 
@@ -93,7 +95,6 @@ private:
     NukiWrapper* _nuki = nullptr;
     NukiOpenerWrapper* _nukiOpener = nullptr;
     Gpio* _gpio = nullptr;
-    bool _pinsConfigured = false;
     bool _brokerConfigured = false;
     bool _rebootRequired = false;
     #endif
@@ -103,19 +104,18 @@ private:
     String generateConfirmCode();
     String _confirmCode = "----";
 
-    int checkDuoAuth(PsychicRequest *request);
-    int checkDuoApprove();
-    bool startDuoAuth(char* pushType = (char*)"");
-    void saveSessions(bool duo = false);
-    void loadSessions(bool duo = false);
+    void saveSessions(int type = 0);
+    void loadSessions(int type = 0);
     void clearSessions();
     esp_err_t logoutSession(PsychicRequest *request, PsychicResponse* resp);
-    bool isAuthenticated(PsychicRequest *request, bool duo = false);
+    bool isAuthenticated(PsychicRequest *request, int type = 0);
     bool processLogin(PsychicRequest *request, PsychicResponse* resp);
+    bool processTOTP(PsychicRequest *request, PsychicResponse* resp);
     int doAuthentication(PsychicRequest *request);
     esp_err_t buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);
-    esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildTOTPHtml(PsychicRequest *request, PsychicResponse* resp, int type);
+    esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp, int type);
     esp_err_t buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
@@ -138,6 +138,7 @@ private:
     PsychicHttpServer* _psychicServer = nullptr;
     NukiNetwork* _network = nullptr;
     Preferences* _preferences = nullptr;
+    ImportExport* _importExport;
 
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
@@ -147,20 +148,8 @@ private:
     size_t _otaContentLen = 0;
     String _hostname;
     JsonDocument _httpSessions;
-    JsonDocument _duoSessions;
-    JsonDocument _sessionsOpts;
-    struct tm timeinfo;
-    bool _duoActiveRequest;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
     int _bypassGPIOHigh = -1;
     int _bypassGPIOLow = -1;
-    int64_t _duoRequestTS = 0;
-    String _duoTransactionId;
-    String _duoHost;
-    String _duoSkey;
-    String _duoIkey;
-    String _duoUser;
-    String _duoCheckId;
-    String _duoCheckIP;    
 };

@@ -223,7 +223,7 @@ void Gpio::loadPinConfiguration()
     {
         PinEntry entry;
         entry.pin = serialized[i * 2];
-        Log->print(("Pin "));
+        Log->print("Pin ");
         Log->println(entry.pin);
 
         if(std::find(disabledPins.begin(), disabledPins.end(), entry.pin) == disabledPins.end())
@@ -234,14 +234,14 @@ void Gpio::loadPinConfiguration()
             }
             entry.role = (PinRole) serialized[(i * 2 + 1)];
             Log->println("Not found in Ethernet disabled pins");
-            Log->print(("Role: "));
+            Log->print("Role: ");
             Log->println(getRoleDescription(entry.role));
         }
         else
         {
             entry.role = PinRole::Ethernet;
             Log->println("Found in Ethernet disabled pins");
-            Log->print(("Role: "));
+            Log->print("Role: ");
             Log->println(getRoleDescription(entry.role));
         }
         if(entry.role != PinRole::Disabled)
@@ -359,7 +359,7 @@ const std::vector<int> Gpio::getDisabledPins() const
         break;
     }
 
-    Log->print(("GPIO Boot button and Ethernet disabled pins:"));
+    Log->print("GPIO Boot button and Ethernet disabled pins:");
     for_each_n(disabledPins.begin(), disabledPins.size(),
                [](int x)
     {
@@ -382,7 +382,7 @@ void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
     for(int i=0; i < len; i++)
     {
         const auto& entry = pinConfiguration[i];
-        Log->print(("Pin "));
+        Log->print("Pin ");
         Log->println(entry.pin);
 
         if(std::find(disabledPins.begin(), disabledPins.end(), entry.pin) != disabledPins.end())
@@ -390,7 +390,7 @@ void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
             serialized[i * 2] = entry.pin;
             serialized[i * 2 + 1] = (int8_t)PinRole::Ethernet;
             Log->println("Found in Ethernet disabled pins");
-            Log->print(("Role: "));
+            Log->print("Role: ");
             Log->println(getRoleDescription(PinRole::Ethernet));
 
         }
@@ -401,7 +401,7 @@ void Gpio::savePinConfiguration(const std::vector<PinEntry> &pinConfiguration)
                 serialized[i * 2] = entry.pin;
                 serialized[i * 2 + 1] = (int8_t) entry.role;
                 Log->println("Not found in Ethernet disabled pins");
-                Log->print(("Role: "));
+                Log->print("Role: ");
                 Log->println(getRoleDescription(entry.role));
             }
         }

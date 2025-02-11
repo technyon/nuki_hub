@@ -72,7 +72,7 @@ void EthernetDevice::initialize()
     if(ethCriticalFailure)
     {
         ethCriticalFailure = false;
-        Log->println(("Failed to initialize ethernet hardware"));
+        Log->println("Failed to initialize ethernet hardware");
         Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
         wifiFallback = true;
         delay(200);
@@ -80,11 +80,11 @@ void EthernetDevice::initialize()
         return;
     }
 
-    Log->println(("Init Ethernet"));
+    Log->println("Init Ethernet");
 
     if(_useSpi)
     {
-        Log->println(("Use SPI"));
+        Log->println("Use SPI");
         ethCriticalFailure = true;
         SPI.begin(_spi_sck, _spi_miso, _spi_mosi);
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
@@ -93,7 +93,7 @@ void EthernetDevice::initialize()
 #ifdef CONFIG_IDF_TARGET_ESP32
     else
     {
-        Log->println(("Use RMII"));
+        Log->println("Use RMII");
 
         // Workaround for failing RMII initialization with pioarduino 3.1.0
         // Revoke all GPIO's some of them set by init PSRAM in IDF
@@ -118,7 +118,7 @@ void EthernetDevice::initialize()
 
     if(_hardwareInitialized)
     {
-        Log->println(("Ethernet hardware Initialized"));
+        Log->println("Ethernet hardware Initialized");
         wifiFallback = false;
 
         if(_useSpi && !_ipConfiguration->dhcpEnabled())
@@ -133,7 +133,7 @@ void EthernetDevice::initialize()
     }
     else
     {
-        Log->println(("Failed to initialize ethernet hardware"));
+        Log->println("Failed to initialize ethernet hardware");
         Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
         wifiFallback = true;
         delay(200);
@@ -150,7 +150,7 @@ void EthernetDevice::update()
     {
         if(_ipConfiguration->ipAddress() != ETH.localIP())
         {
-            Log->println(("ETH Set static IP"));
+            Log->println("ETH Set static IP");
             ETH.config(_ipConfiguration->ipAddress(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet(), _ipConfiguration->dnsServer());
             _checkIpTs = espMillis() + 5000;
             return;

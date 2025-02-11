@@ -31,6 +31,7 @@
 #include "RestartReason.h"
 #include "EspMillis.h"
 #include "NimBLEDevice.h"
+#include "ImportExport.h"
 
 /*
 #ifdef DEBUG_NUKIHUB
@@ -65,6 +66,7 @@ int64_t restartTs = (pow(2,63) - (5 * 1000 * 60000)) / 1000;
 #include "../../src/RestartReason.h"
 #include "../../src/NukiNetwork.h"
 #include "../../src/EspMillis.h"
+#include "../../src/ImportExport.h"
 
 int64_t restartTs = 10 * 60 * 1000;
 
@@ -78,6 +80,7 @@ NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 WebCfgServer* webCfgServerSSL = nullptr;
 Preferences* preferences = nullptr;
+ImportExport* importExport = nullptr;
 
 RTC_NOINIT_ATTR int espRunning;
 RTC_NOINIT_ATTR int restartReason;
@@ -163,9 +166,9 @@ void setReroute()
 uint8_t checkPartition()
 {
     const esp_partition_t* running_partition = esp_ota_get_running_partition();
-    Log->print(("Partition size: "));
+    Log->print("Partition size: ");
     Log->println(running_partition->size);
-    Log->print(("Partition subtype: "));
+    Log->print("Partition subtype: ");
     Log->println(running_partition->subtype);
 
     if(running_partition->size == 1966080)
@@ -203,7 +206,7 @@ void networkTask(void *pvParameters)
             if(bootloopCounter > 0)
             {
                 bootloopCounter = (int8_t)0;
-                Log->println(("Bootloop counter reset"));
+                Log->println("Bootloop counter reset");
             }
         }
 
@@ -339,12 +342,12 @@ void bootloopDetection()
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         bootloopCounter++;
-        Log->print(("Bootloop counter incremented: "));
+        Log->print("Bootloop counter incremented: ");
         Log->println(bootloopCounter);
 
         if(bootloopCounter == 10)
         {
-            Log->print(("Bootloop detected."));
+            Log->print("Bootloop detected.");
 
             preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
             preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
@@ -440,7 +443,7 @@ void otaTask(void *pvParameter)
     {
         .http_config = &config,
     };
-    Log->print(("Attempting to download update from "));
+    Log->print("Attempting to download update from ");
     Log->println(config.url);
 
     int retryMax = 3;
@@ -649,9 +652,9 @@ void setup()
     }
 
 #ifdef NUKI_HUB_UPDATER
-    Log->print(("Nuki Hub OTA version "));
+    Log->print("Nuki Hub OTA version ");
     Log->println(NUKI_HUB_VERSION);
-    Log->print(("Nuki Hub OTA build "));
+    Log->print("Nuki Hub OTA build ");
     Log->println();
 
     if(preferences->getString(preference_updater_version, "") != NUKI_HUB_VERSION)
@@ -666,6 +669,8 @@ void setup()
     {
         preferences->putString(preference_updater_date, NUKI_HUB_DATE);
     }
+    
+    importExport = new ImportExport(preferences);
 
     network = new NukiNetwork(preferences);
     network->initialize();
@@ -735,7 +740,7 @@ void setup()
                         psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
                         psychicSSLServer->setCertificate(cert, key);
                         psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
-                        webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer);
+                        webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
                         webCfgServerSSL->initialize();
                         psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
                             return response->redirect("/");
@@ -751,7 +756,7 @@ void setup()
         #endif
             psychicServer = new PsychicHttpServer;
             psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-            webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
+            webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
             webCfgServer->initialize();
             psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
                 return response->redirect("/");
@@ -767,9 +772,9 @@ void setup()
         bootloopDetection();
     }
 
-    Log->print(("Nuki Hub version "));
+    Log->print("Nuki Hub version ");
     Log->println(NUKI_HUB_VERSION);
-    Log->print(("Nuki Hub build "));
+    Log->print("Nuki Hub build ");
     Log->println(NUKI_HUB_BUILD);
 
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
@@ -791,8 +796,10 @@ void setup()
     Log->print(gpioDesc.c_str());
 
     const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
+    
+    importExport = new ImportExport(preferences);
 
-    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size);
+    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size, importExport);
     network->initialize();
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
@@ -826,7 +833,7 @@ void setup()
             networkLock->initialize();
         }
 
-        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences);
+        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences, CharBuffer::get(), buffer_size);
         nuki->initialize();
     }
 
@@ -840,7 +847,7 @@ void setup()
             networkOpener->initialize();
         }
 
-        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences);
+        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences, CharBuffer::get(), buffer_size);
         nukiOpener->initialize();
     }
 
@@ -911,7 +918,7 @@ void setup()
                             psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
                             psychicSSLServer->setCertificate(cert, key);
                             psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
-                            webCfgServerSSL = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer);
+                            webCfgServerSSL = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
                             webCfgServerSSL->initialize();
                             psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
                                 return response->redirect("/");
@@ -927,7 +934,7 @@ void setup()
             #endif
                 psychicServer = new PsychicHttpServer;
                 psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer);
+                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
                 webCfgServer->initialize();
                 psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
                     return response->redirect("/");
@@ -949,26 +956,26 @@ void setup()
         }
 #endif
         */
-
-        String timeserver = preferences->getString(preference_time_server, "pool.ntp.org");
-        esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(timeserver.c_str());
-        config.start = false;
-        config.server_from_dhcp = true;
-        config.renew_servers_after_new_IP = true;
-        config.index_of_first_server = 1;
-
-        if (network->networkDeviceType() == NetworkDeviceType::WiFi)
-        {
-            config.ip_event_to_renew = IP_EVENT_STA_GOT_IP;
-        }
-        else
-        {
-            config.ip_event_to_renew = IP_EVENT_ETH_GOT_IP;
-        }
-        config.sync_cb = cbSyncTime;
-        esp_netif_sntp_init(&config);
     }
 #endif
+
+    String timeserver = preferences->getString(preference_time_server, "pool.ntp.org");
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(timeserver.c_str());
+    config.start = false;
+    config.server_from_dhcp = true;
+    config.renew_servers_after_new_IP = true;
+    config.index_of_first_server = 1;
+
+    if (network->networkDeviceType() == NetworkDeviceType::WiFi)
+    {
+        config.ip_event_to_renew = IP_EVENT_STA_GOT_IP;
+    }
+    else
+    {
+        config.ip_event_to_renew = IP_EVENT_ETH_GOT_IP;
+    }
+    config.sync_cb = cbSyncTime;
+    esp_netif_sntp_init(&config);
 
     if(doOta)
     {

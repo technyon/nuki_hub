@@ -237,7 +237,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
             return;
         }
 
-        Log->print(("Lock action received: "));
+        Log->print("Lock action received: ");
         Log->println(data);
         LockActionResult lockActionResult = LockActionResult::Failed;
         if(_lockActionReceivedCallback != NULL)

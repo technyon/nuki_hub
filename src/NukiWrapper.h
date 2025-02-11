@@ -14,7 +14,7 @@
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
 public:
-    NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences);
+    NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences, char* buffer, size_t bufferSize);
     virtual ~NukiWrapper();
 
     void initialize();
@@ -27,7 +27,6 @@ public:
     void lockngo();
     void lockngounlatch();
 
-    bool isPinSet();
     bool isPinValid();
     void setPin(const uint16_t pin);
     void setUltraPin(const uint32_t pin);
@@ -168,4 +167,7 @@ private:
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
+
+    char* _buffer;
+    const size_t _bufferSize;
 };
