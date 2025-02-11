@@ -384,6 +384,11 @@ bool NukiNetwork::update()
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     int64_t ts = espMillis();
     _device->update();
+    
+    if(_importExport->getTOTPEnabled() && _importExport->_invalidCount > 0 && (ts - (120000 * _importExport->_invalidCount)) > _importExport->_lastCodeCheck)
+    {
+        _importExport->_invalidCount--;
+    }
 
     if(disableNetwork || !_mqttEnabled || _device->isApOpen())
     {

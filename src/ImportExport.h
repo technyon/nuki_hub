@@ -27,6 +27,8 @@ public:
     JsonDocument _duoSessions;
     JsonDocument _totpSessions;
     JsonDocument _sessionsOpts;
+    int64_t _lastCodeCheck = 0;
+    int _invalidCount = 0;
 private:
     void saveSessions();
     Preferences* _preferences;

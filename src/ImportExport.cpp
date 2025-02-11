@@ -1,4 +1,5 @@
 #include "ImportExport.h"
+#include "EspMillis.h"
 #include "SPIFFS.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
@@ -268,10 +269,18 @@ int ImportExport::checkDuoApprove()
 
 bool ImportExport::checkTOTP(String* totpKey)
 {
-    String key(totpKey->c_str());
-    
     if(_totpEnabled)
     {
+        if((pow(_invalidCount, 5) + _lastCodeCheck) > espMillis())
+        {
+            _lastCodeCheck = espMillis();
+            return false;
+        }
+
+        _lastCodeCheck = espMillis();
+        
+        String key(totpKey->c_str());    
+    
         time_t now;
         time(&now);
         int totpTime = -60;
@@ -282,11 +291,13 @@ bool ImportExport::checkTOTP(String* totpKey)
             
             if(key.toInt() == key2.toInt())
             {
+                _invalidCount = 0;
                 Log->println("Successful TOTP MFA Auth");
                 return true;
             }
             totpTime += 30;
         }
+        _invalidCount++;
         Log->println("Failed TOTP MFA Auth");
     }
     return false;

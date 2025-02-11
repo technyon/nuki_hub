@@ -1885,6 +1885,11 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
         return buildConfirmHtml(request, resp, "NTP time not synced yet, TOTP not available, please wait for NTP to sync", 3, true);
     }
     
+    if((pow(_importExport->_invalidCount, 5) + _importExport->_lastCodeCheck) > espMillis())
+    {
+        return buildConfirmHtml(request, resp, "Too many invalid TOTP tries, please wait before retrying", 3, true);
+    }
+    
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
