@@ -39,6 +39,8 @@ void ImportExport::readSettings()
 
     _totpKey = _preferences->getString(preference_totp_secret, "");
     _totpEnabled = _totpKey.length() > 0;
+    _bypassKey = _preferences->getString(preference_bypass_secret, "");
+    _bypassEnabled = _bypassKey.length() > 0;
 }
 
 bool ImportExport::getDuoEnabled()
@@ -49,6 +51,11 @@ bool ImportExport::getDuoEnabled()
 bool ImportExport::getTOTPEnabled()
 {
     return _totpEnabled;
+}
+
+bool ImportExport::getBypassEnabled()
+{
+    return _bypassEnabled;
 }
 
 bool ImportExport::getBypassGPIOEnabled()
@@ -132,7 +139,7 @@ int ImportExport::checkDuoAuth(PsychicRequest *request)
     const char* duo_ikey = _duoIkey.c_str();
     const char* duo_skey = _duoSkey.c_str();
     const char* duo_user = _duoUser.c_str();
-    
+
     int type = 0;
     if(request->hasParam("type"))
     {
@@ -168,7 +175,7 @@ int ImportExport::checkDuoAuth(PsychicRequest *request)
                     _duoTransactionId = "";
                     _duoCheckIP = "";
                     _duoCheckId = "";
-                    
+
                     if(type==0)
                     {
                         int64_t durationLength = 60*60*_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720);
@@ -200,7 +207,7 @@ int ImportExport::checkDuoAuth(PsychicRequest *request)
                     _duoTransactionId = "";
                     _duoCheckIP = "";
                     _duoCheckId = "";
-                    
+
                     if(type==0)
                     {
                         if (_preferences->getBool(preference_mfa_reconfigure, false))
@@ -278,9 +285,9 @@ bool ImportExport::checkTOTP(String* totpKey)
         }
 
         _lastCodeCheck = espMillis();
-        
-        String key(totpKey->c_str());    
-    
+
+        String key(totpKey->c_str());
+
         time_t now;
         time(&now);
         int totpTime = -60;
@@ -288,7 +295,7 @@ bool ImportExport::checkTOTP(String* totpKey)
         while (totpTime <= 60)
         {
             String key2(TOTP::currentOTP(now, _totpKey, 30, 6, totpTime)->c_str());
-            
+
             if(key.toInt() == key2.toInt())
             {
                 _invalidCount = 0;
@@ -299,6 +306,30 @@ bool ImportExport::checkTOTP(String* totpKey)
         }
         _invalidCount++;
         Log->println("Failed TOTP MFA Auth");
+    }
+    return false;
+}
+
+bool ImportExport::checkBypass(String bypass)
+{
+    if(_bypassEnabled)
+    {
+        if((pow(_invalidCount2, 5) + _lastCodeCheck2) > espMillis())
+        {
+            _lastCodeCheck2 = espMillis();
+            return false;
+        }
+
+        _lastCodeCheck2 = espMillis();
+
+        if(bypass == _bypassKey)
+        {
+            _invalidCount2 = 0;
+            Log->println("Successful Bypass MFA Auth");
+            return true;
+        }
+        _invalidCount2++;
+        Log->println("Failed Bypass MFA Auth");
     }
     return false;
 }
@@ -439,6 +470,10 @@ void ImportExport::exportNukiHubJson(JsonDocument &json, bool redacted, bool pai
             continue;
         }
         if(strcmp(key, preference_totp_secret) == 0)
+        {
+            continue;
+        }
+        if(strcmp(key, preference_bypass_secret) == 0)
         {
             continue;
         }

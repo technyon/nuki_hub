@@ -102,18 +102,22 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
     {
         cookieKey = "totpId";
     }
+    else if (type == 3)
+    {
+        cookieKey = "bypassId";
+    }
 
     if (request->hasCookie(cookieKey.c_str()))
     {
         String cookie = request->getCookie(cookieKey.c_str());
 
-        if ((type == 0 && _httpSessions[cookie].is<JsonVariant>()) || (type == 1 && _importExport->_duoSessions[cookie].is<JsonVariant>()) || (type == 2 && _importExport->_totpSessions[cookie].is<JsonVariant>()))
+        if ((type == 0 && _httpSessions[cookie].is<JsonVariant>()) || (type == 1 && _importExport->_duoSessions[cookie].is<JsonVariant>()) || (type == 2 && _importExport->_totpSessions[cookie].is<JsonVariant>()) || (type == 3 && _importExport->_bypassSessions[cookie].is<JsonVariant>()))
         {
             struct timeval time;
             gettimeofday(&time, NULL);
             int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
 
-            if ((type == 0 && _httpSessions[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us))
+            if ((type == 0 && _httpSessions[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us) || (type == 3 && _importExport->_bypassSessions[cookie].as<signed long long>() > time_us))
             {
                 return true;
             }
@@ -191,6 +195,23 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         else
         {
             Log->print("No totp session cookie found");
+        }
+    }
+
+    if (_importExport->getBypassEnabled())
+    {
+        if (!_isSSL)
+        {
+            resp->setCookie("bypassId", "", 0, "HttpOnly");
+        }
+        else
+        {
+            resp->setCookie("bypassId", "", 0, "Secure; HttpOnly");
+        }
+
+        if (request->hasCookie("bypassId")) {
+            String cookie2 = request->getCookie("bypassId");
+            _importExport->_bypassSessions.remove(cookie2);
         }
     }
 
@@ -369,6 +390,11 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
                 _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
                 return 4;
             }
+            else if(!timeSynced && _importExport->getBypassEnabled() && isAuthenticated(request, 3))
+            {
+                _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = false;
+                return 4;
+            }
 
             Log->println("Authentication Failed");
 
@@ -507,7 +533,7 @@ void WebCfgServer::initialize()
             }
             int authReq = doAuthentication(request);
 
-            if (value != "status" && value != "login" && value != "duocheck")
+            if (value != "status" && value != "login" && value != "duocheck" && value != "bypass")
             {
                 switch (authReq)
                 {
@@ -558,6 +584,15 @@ void WebCfgServer::initialize()
             else if (value == "totp")
             {
                 return buildTOTPHtml(request, resp, 0);
+            }
+            else if (value == "bypass")
+            {
+                return buildBypassHtml(request, resp);
+            }
+            else if (value == "newbypass" && _newBypass)
+            {
+                _newBypass = false;
+                return buildConfirmHtml(request, resp, "Logged in using Bypass. New bypass: " + _preferences->getString(preference_bypass_secret, ""), 3, false);
             }
             else if (value == "logout")
             {
@@ -816,7 +851,7 @@ void WebCfgServer::initialize()
                 }
             }
 
-            if (value != "login" && value != "totp")
+            if (value != "login" && value != "totp" && value != "bypass")
             {
                 int authReq = doAuthentication(request);
 
@@ -865,6 +900,11 @@ void WebCfgServer::initialize()
                                     approved = true;
                                 }
                             }
+                        }
+                        else if(!timeSynced && _importExport->getBypassEnabled() && isAuthenticated(request, 3))
+                        {
+                            _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
+                            approved = true;
                         }
 
                         if (!approved)
@@ -924,6 +964,23 @@ void WebCfgServer::initialize()
                     resp->setCode(302);
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/get?page=totp");
+                }
+            }
+            else if (value == "bypass")
+            {
+                bool loggedIn = processBypass(request, resp);
+                if (loggedIn)
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    _newBypass = true;
+                    return resp->redirect("/get?page=newbypass");
+                }
+                else
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/");
                 }
             }
             #ifndef NUKI_HUB_UPDATER
@@ -1882,14 +1939,14 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
 {
     if (!timeSynced)
     {
-        return buildConfirmHtml(request, resp, "NTP time not synced yet, TOTP not available, please wait for NTP to sync", 3, true);
+        return buildConfirmHtml(request, resp, "NTP time not synced yet, TOTP not available, please wait for NTP to sync or use <a href=\"/get?page=bypass\">one-time bypass</a>", 3, true);
     }
-    
+
     if((pow(_importExport->_invalidCount, 5) + _importExport->_lastCodeCheck) > espMillis())
     {
-        return buildConfirmHtml(request, resp, "Too many invalid TOTP tries, please wait before retrying", 3, true);
+        return buildConfirmHtml(request, resp, "Too many invalid TOTP tries, please wait before retrying or use <a href=\"/get?page=bypass\">one-time bypass</a>", 3, true);
     }
-    
+
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
@@ -1943,6 +2000,32 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
     return response.endSend();
 }
 
+esp_err_t WebCfgServer::buildBypassHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    if (timeSynced)
+    {
+        return buildConfirmHtml(request, resp, "One-time bypass is only available if NTP time is not synced</a>", 3, true);
+    }
+
+    if((pow(_importExport->_invalidCount2, 5) + _importExport->_lastCodeCheck2) > espMillis())
+    {
+        return buildConfirmHtml(request, resp, "Too many invalid bypass tries, please wait before retrying", 3, true);
+    }
+
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
+    response.print("</head><body><center><h2>Nuki Hub One-time Bypass</h2>");
+    response.print("<form action=\"/post?page=bypass\" method=\"post\">");
+    response.print("<div class=\"container\">");
+    response.print("<label for=\"bypass\"><b>Bypass code</b></label><input type=\"text\" placeholder=\"Enter bypass code\" name=\"bypass\">");
+    response.print("<button type=\"submit\" ");
+    response.print(">Login</button></div>");
+    response.print("</form></center></body></html>");
+    return response.endSend();
+}
+
 esp_err_t WebCfgServer::buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     char valueStr[2];
@@ -1986,7 +2069,7 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
 {
     if (!timeSynced)
     {
-        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync or use <a href=\"/get?page=bypass\">one-time bypass</a>", 3, true);
     }
 
     String duoText;
@@ -2122,6 +2205,52 @@ bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
                 saveSessions();
 
                 _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = request->hasParam("totp");
+
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool WebCfgServer::processBypass(PsychicRequest *request, PsychicResponse* resp)
+{
+    if(!timeSynced && request->hasParam("bypass"))
+    {
+        const PsychicWebParameter* pass = request->getParam("bypass");
+        if(pass->value() != "")
+        {
+            String bypass = pass->value();
+            if (_importExport->checkBypass(bypass))
+            {
+                char buffer[33];
+                int i;
+                for (i = 0; i < 4; i++) {
+                    sprintf(buffer + (i * 8), "%08lx", (unsigned long int)esp_random());
+                }
+
+                if (!_isSSL)
+                {
+                    resp->setCookie("bypassId", buffer, 3600, "HttpOnly");
+                }
+                else
+                {
+                    resp->setCookie("bypassId", buffer, 3600, "Secure; HttpOnly");
+                }
+
+                struct timeval time;
+                gettimeofday(&time, NULL);
+                int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+                _importExport->_bypassSessions[buffer] = time_us + ((int64_t)3600*1000000L);
+
+                char randomstr2[33];
+                randomSeed(analogRead(0));
+                char chars[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+                for(int i = 0;i < 32; i++){
+                    randomstr2[i] = chars[random(36)];
+                }
+                randomstr2[32] = '\0';
+                _preferences->putString(preference_bypass_secret, randomstr2);
 
                 return true;
             }
@@ -4151,6 +4280,19 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
             }
         }
+        else if(key == "CREDBYPASS")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_bypass_secret, "") != value)
+                {
+                    _preferences->putString(preference_bypass_secret, value);
+                    Log->print("Setting changed: ");
+                    Log->println(key);
+                    configChanged = true;
+                }
+            }
+        }
         else if(key == "NUKIPIN" && _nuki != nullptr)
         {
             if(value == "#")
@@ -4708,6 +4850,13 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
         randomstr[i] = chars[random(32)];
     }
     randomstr[16] = '\0';
+    char randomstr2[33];
+    randomSeed(analogRead(0));
+    char chars2[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+    for(int i = 0;i < 32; i++){
+        randomstr2[i] = chars2[random(36)];
+    }
+    randomstr2[32] = '\0';
 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
@@ -4738,6 +4887,10 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     response.print("<tr id=\"totpgentr\" ><td><input type=\"button\" id=\"totpgen\" onclick=\"document.getElementsByName('CREDTOTP')[0].type='text'; document.getElementsByName('CREDTOTP')[0].value='");
     response.print(randomstr);
     response.print("'; document.getElementById('totpgentr').style.display='none';\" value=\"Generate new TOTP key\"></td></tr>");
+    printInputField(&response, "CREDBYPASS", "One-time MFA Bypass", "*", 32, "", true, false);
+    response.print("<tr id=\"bypassgentr\" ><td><input type=\"button\" id=\"bypassgen\" onclick=\"document.getElementsByName('CREDBYPASS')[0].type='text'; document.getElementsByName('CREDBYPASS')[0].value='");
+    response.print(randomstr2);
+    response.print("'; document.getElementById('bypassgentr').style.display='none';\" value=\"Generate new Bypass\"></td></tr>");
     printInputField(&response, "CREDLFTM", "Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime, 3600), 12, "");
     printInputField(&response, "CREDLFTMRMBR", "Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_remember, 720), 12, "");
     printInputField(&response, "CREDDUOLFTM", "Duo Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_duo, 3600), 12, "");

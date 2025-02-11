@@ -384,10 +384,15 @@ bool NukiNetwork::update()
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     int64_t ts = espMillis();
     _device->update();
-    
+
     if(_importExport->getTOTPEnabled() && _importExport->_invalidCount > 0 && (ts - (120000 * _importExport->_invalidCount)) > _importExport->_lastCodeCheck)
     {
         _importExport->_invalidCount--;
+    }
+
+    if(_importExport->getBypassEnabled() && _importExport->_invalidCount2 > 0 && (ts - (120000 * _importExport->_invalidCount2)) > _importExport->_lastCodeCheck2)
+    {
+        _importExport->_invalidCount2--;
     }
 
     if(disableNetwork || !_mqttEnabled || _device->isApOpen())
@@ -477,7 +482,7 @@ bool NukiNetwork::update()
             _lastRssi = rssi;
         }
     }
-    
+
     if(_overwriteNukiHubConfigTS > 0 && espMillis() > _overwriteNukiHubConfigTS)
     {
         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_json, "--", true);
@@ -1101,7 +1106,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     if(timeSynced && _importExport->getTOTPEnabled() && !doc["totp"].isNull())
                     {
                         String jsonTotp = doc["totp"];
-                        
+
                         if (!_importExport->checkTOTP(&jsonTotp)) {
                             publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action_command_result, "{\"error\": \"totpIncorrect\"}", false);
                             publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);
@@ -1114,15 +1119,19 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);
                         return;
                     }
-                    else if (_importExport->startDuoAuth((char*)"Approve Nuki Hub setting change"))
+                    else
                     {
+                        bool duoRes = _importExport->startDuoAuth((char*)"Approve Nuki Hub setting change");
                         int duoResult = 2;
 
-                        while (duoResult == 2)
+                        if (duoRes)
                         {
-                            duoResult = _importExport->checkDuoApprove();
-                            delay(2000);
-                            esp_task_wdt_reset();
+                            while (duoResult == 2)
+                            {
+                                duoResult = _importExport->checkDuoApprove();
+                                delay(2000);
+                                esp_task_wdt_reset();
+                            }
                         }
 
                         if (duoResult != 1)
@@ -1133,18 +1142,18 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                         }
                     }
                 }
-                
+
                 if(!doc["exportHTTPS"].isNull() && _device->isEncrypted())
                 {
                     if(_preferences->getBool(preference_publish_config, false))
                     {
-                        if(_device->isEncrypted()) 
+                        if(_device->isEncrypted())
                         {
                             JsonDocument json;
                             _importExport->exportHttpsJson(json);
                             serializeJson(json, _buffer, _bufferSize);
                             publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_json, _buffer, false);
-                            
+
                             if (doc["exportHTTPS"].as<int>() > 0)
                             {
                                 _overwriteNukiHubConfigTS = espMillis() + (doc["exportHTTPS"].as<int>() * 1000);
@@ -1164,7 +1173,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                 {
                     if(_preferences->getBool(preference_publish_config, false))
                     {
-                        if(_device->isEncrypted()) 
+                        if(_device->isEncrypted())
                         {
                             JsonDocument json;
                             _importExport->exportMqttsJson(json);
@@ -1193,7 +1202,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                         bool redacted = false;
                         if(!doc["redacted"].isNull())
                         {
-                            if(_device->isEncrypted()) 
+                            if(_device->isEncrypted())
                             {
                                 redacted = true;
                             }
@@ -1205,7 +1214,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                         bool pairing = false;
                         if(!doc["pairing"].isNull())
                         {
-                            if(_device->isEncrypted()) 
+                            if(_device->isEncrypted())
                             {
                                 pairing = true;
                             }
