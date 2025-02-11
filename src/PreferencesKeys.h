@@ -540,7 +540,8 @@ private:
     std::vector<char*> _redact =
     {
         preference_mqtt_user, preference_mqtt_password, preference_cred_user, preference_cred_password, preference_nuki_id_lock, preference_nuki_id_opener, preference_wifi_pass,
-        preference_lock_gemini_pin, preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_https_fqdn, preference_bypass_proxy
+        preference_lock_gemini_pin, preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_bypass_proxy,
+        preference_totp_secret
     };
     std::vector<char*> _boolPrefs =
     {

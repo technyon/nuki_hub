@@ -427,10 +427,14 @@ void ImportExport::exportNukiHubJson(JsonDocument &json, bool redacted, bool pai
         {
             continue;
         }
+        if(strcmp(key, preference_totp_secret) == 0)
+        {
+            continue;
+        }
         if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end())
-            {
-                continue;
-            }
+        {
+            continue;
+        }
         if(!_preferences->isKey(key))
         {
             json[key] = "";
