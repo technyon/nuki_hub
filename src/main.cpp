@@ -518,7 +518,7 @@ void logCoreDump()
 {
     coredumpPrinted = false;
     delay(500);
-    Serial.println("Printing coredump and saving to coredump.hex on SPIFFS");
+    Log->println("Printing coredump and saving to coredump.hex on SPIFFS");
     size_t size = 0;
     size_t address = 0;
     if (esp_core_dump_image_get(&address, &size) == ESP_OK)
@@ -528,6 +528,7 @@ void logCoreDump()
 
         if (pt != NULL)
         {
+            File file;
             uint8_t bf[256];
             char str_dst[640];
             int16_t toRead;
@@ -536,15 +537,17 @@ void logCoreDump()
             {
                 Log->println("SPIFFS Mount Failed");
             }
-
-            File file = SPIFFS.open("/coredump.hex", FILE_WRITE);
-            if (!file) {
-                Log->println("Failed to open /coredump.hex for writing");
-            }
             else
             {
-                file.printf("%s\r\n", NUKI_HUB_HW);
-                file.printf("%s\r\n", NUKI_HUB_BUILD);
+                file = SPIFFS.open("/coredump.hex", FILE_WRITE);
+                if (!file) {
+                    Log->println("Failed to open /coredump.hex for writing");
+                }
+                else
+                {
+                    file.printf("%s\r\n", NUKI_HUB_HW);
+                    file.printf("%s\r\n", NUKI_HUB_BUILD);
+                }
             }
 
             Serial.printf("%s\r\n", NUKI_HUB_HW);
