@@ -52,7 +52,7 @@ public:
 
 private:
     #ifndef NUKI_HUB_UPDATER
-    esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey = false);
     bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
     bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
     void processGpioArgs(PsychicRequest *request, PsychicResponse* resp);
