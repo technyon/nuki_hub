@@ -333,6 +333,8 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 - Duo secret key: Set to the Duo secret key
 - Duo user: Set to the Duo user that you want to receive the push notification
 - TOTP Secret Key: Set a TOTP secret key to enable TOTP MFA. Enter the TOTP secret key in an authenticator application (Password manager, Microsoft/Google Authenticator etc.) to generate TOTP codes.
+- One-time MFA Bypass: Set a 32 character long alphanumeric string that can be used as a one-time MFA bypass when the ESP32 is unable to sync it's time and TOTP and Duo are unavailable as a result.
+- Admin key: Set a 32 character long alphanumeric string that can be used in combination with a TOTP code to export and import settings without needing to log in (for use with automated systems).
 - Session validity (in seconds): Session validity to use with form authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
 - Session validity remember (in hours): Session validity to use with form authentication when the "Remember me" checkbox is enabled, default 720 hours.
 - Duo Session validity (in seconds): Session validity to use with Duo authentication when the "Remember me" checkbox is disabled, default 3600 seconds.

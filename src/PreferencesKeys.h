@@ -97,6 +97,7 @@
 #define preference_config_from_mqtt (char*)"nhCntrlEnabled"
 #define preference_totp_secret (char*)"totpsecret"
 #define preference_bypass_secret (char*)"bypassecret"
+#define preference_admin_secret (char*)"adminsecret"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
@@ -536,13 +537,14 @@ private:
         preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_cred_duo_enabled, preference_https_fqdn, preference_bypass_proxy,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_publish_config,
-        preference_config_from_mqtt, preference_totp_secret, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember, preference_bypass_secret
+        preference_config_from_mqtt, preference_totp_secret, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember, preference_bypass_secret,
+        preference_admin_secret
     };
     std::vector<char*> _redact =
     {
         preference_mqtt_user, preference_mqtt_password, preference_cred_user, preference_cred_password, preference_nuki_id_lock, preference_nuki_id_opener, preference_wifi_pass,
         preference_lock_gemini_pin, preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_bypass_proxy,
-        preference_totp_secret, preference_bypass_secret
+        preference_totp_secret, preference_bypass_secret, preference_admin_secret
     };
     std::vector<char*> _boolPrefs =
     {

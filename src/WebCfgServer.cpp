@@ -531,10 +531,38 @@ void WebCfgServer::initialize()
                     value = p->value();
                 }
             }
-            int authReq = doAuthentication(request);
 
-            if (value != "status" && value != "login" && value != "duocheck" && value != "bypass")
+            bool adminKeyValid = false;
+            if(value == "export" && timeSynced && request->hasParam("adminkey") && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
             {
+                String value2 = "";
+                if(request->hasParam("adminkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("adminkey");
+                    if(p->value() != "")
+                    {
+                        value2 = p->value();
+                    }
+                }
+                String value3 = "";
+                if(request->hasParam("totpkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("totpkey");
+                    if(p->value() != "")
+                    {
+                        value3 = p->value();
+                    }
+                }
+                if (value2.length() > 0 && value2 == _preferences->getString(preference_admin_secret, "") && _importExport->checkTOTP(&value3))
+                {
+                    adminKeyValid = true;
+                }
+            }
+
+            if (!adminKeyValid && value != "status" && value != "login" && value != "duocheck" && value != "bypass")
+            {
+                int authReq = doAuthentication(request);
+
                 switch (authReq)
                 {
                     case 0:
@@ -569,14 +597,16 @@ void WebCfgServer::initialize()
                         break;
                 }
             }
-            else if (value == "status" && authReq != 4)
+            else if (value == "status")
             {
-                resp->setCode(200);
-                resp->setContentType("application/json");
-                resp->setContent("{}");
-                return resp->send();
+                if (doAuthentication(request) != 4)
+                {
+                    resp->setCode(200);
+                    resp->setContentType("application/json");
+                    resp->setContent("{}");
+                    return resp->send();
+                }
             }
-
             if (value == "login")
             {
                 return buildLoginHtml(request, resp);
@@ -592,7 +622,7 @@ void WebCfgServer::initialize()
             else if (value == "newbypass" && _newBypass)
             {
                 _newBypass = false;
-                return buildConfirmHtml(request, resp, "Logged in using Bypass. New bypass: " + _preferences->getString(preference_bypass_secret, ""), 3, false);
+                return buildConfirmHtml(request, resp, "Logged in using Bypass. New bypass: " + _preferences->getString(preference_bypass_secret, "") + " <br/><br/><a href=\"/\">Home page</a>", 3, false);
             }
             else if (value == "logout")
             {
@@ -657,6 +687,11 @@ void WebCfgServer::initialize()
                 if(!_preferences->getBool(preference_cred_duo_approval, false) || (!_importExport->getTOTPEnabled() && !_duoEnabled))
                 {
                     return sendSettings(request, resp);
+                }
+
+                if(adminKeyValid)
+                {
+                    return sendSettings(request, resp, true);
                 }
 
                 if(_importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"])
@@ -851,7 +886,33 @@ void WebCfgServer::initialize()
                 }
             }
 
-            if (value != "login" && value != "totp" && value != "bypass")
+            bool adminKeyValid = false;
+            if(value == "import" && timeSynced && request->hasParam("adminkey") && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+            {
+                String value2 = "";
+                if(request->hasParam("adminkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("adminkey");
+                    if(p->value() != "")
+                    {
+                        value2 = p->value();
+                    }
+                }
+                String value3 = "";
+                if(request->hasParam("totpkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("totpkey");
+                    if(p->value() != "")
+                    {
+                        value3 = p->value();
+                    }
+                }
+                if (value2.length() > 0 && value2 == _preferences->getString(preference_admin_secret, "") && _importExport->checkTOTP(&value3))
+                {
+                    adminKeyValid = true;
+                }
+            }
+            if(!adminKeyValid && value != "login" && value != "totp" && value != "bypass")
             {
                 int authReq = doAuthentication(request);
 
@@ -1026,7 +1087,23 @@ void WebCfgServer::initialize()
             {
                 String message = "";
                 bool restart = processImport(request, resp, message);
-                return buildConfirmHtml(request, resp, message, 3, true);
+
+                if(adminKeyValid)
+                {
+                    resp->setCode(200);
+                    resp->setContentType("application/json");
+                    resp->setContent("{ \"result\": \"success\"}");
+                    esp_err_t res = resp->send();
+                    if(restart)
+                    {
+                        restartEsp(RestartReason::RequestedViaWebServer);
+                    }
+                    return res;
+                }
+                else
+                {
+                    return buildConfirmHtml(request, resp, message, 3, true);
+                }
             }
             #endif
             else
@@ -2303,7 +2380,7 @@ bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
 }
 
 #ifndef NUKI_HUB_UPDATER
-esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* resp)
+esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey)
 {
     JsonDocument json;
     String jsonPretty;
@@ -2352,7 +2429,10 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* r
     serializeJsonPretty(json, jsonPretty);
     char buf[26 + name.length()];
     snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", name.c_str());
-    resp->addHeader("Content-Disposition", buf);
+    if(!adminKey)
+    {
+        resp->addHeader("Content-Disposition", buf);
+    }
     resp->setCode(200);
     resp->setContentType("application/json");
     resp->setContent(jsonPretty.c_str());
@@ -4293,6 +4373,19 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
             }
         }
+        else if(key == "CREDADMIN")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_admin_secret, "") != value)
+                {
+                    _preferences->putString(preference_admin_secret, value);
+                    Log->print("Setting changed: ");
+                    Log->println(key);
+                    configChanged = true;
+                }
+            }
+        }
         else if(key == "NUKIPIN" && _nuki != nullptr)
         {
             if(value == "#")
@@ -4843,20 +4936,27 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
 
 esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* resp)
 {
+    char chars[] = {'2', '3','4', '5', '6','7', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+    char chars2[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+
     char randomstr[17];
     randomSeed(analogRead(0));
-    char chars[] = {'2', '3','4', '5', '6','7', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
     for(int i = 0;i < 16; i++){
         randomstr[i] = chars[random(32)];
     }
     randomstr[16] = '\0';
     char randomstr2[33];
     randomSeed(analogRead(0));
-    char chars2[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
     for(int i = 0;i < 32; i++){
         randomstr2[i] = chars2[random(36)];
     }
     randomstr2[32] = '\0';
+    char randomstr3[33];
+    randomSeed(analogRead(0));
+    for(int i = 0;i < 32; i++){
+        randomstr3[i] = chars2[random(36)];
+    }
+    randomstr3[32] = '\0';
 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
@@ -4891,6 +4991,10 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     response.print("<tr id=\"bypassgentr\" ><td><input type=\"button\" id=\"bypassgen\" onclick=\"document.getElementsByName('CREDBYPASS')[0].type='text'; document.getElementsByName('CREDBYPASS')[0].value='");
     response.print(randomstr2);
     response.print("'; document.getElementById('bypassgentr').style.display='none';\" value=\"Generate new Bypass\"></td></tr>");
+    printInputField(&response, "CREDADMIN", "Admin key", "*", 32, "", true, false);
+    response.print("<tr id=\"admingentr\" ><td><input type=\"button\" id=\"admingen\" onclick=\"document.getElementsByName('CREDADMIN')[0].type='text'; document.getElementsByName('CREDADMIN')[0].value='");
+    response.print(randomstr3);
+    response.print("'; document.getElementById('admingentr').style.display='none';\" value=\"Generate new Admin key\"></td></tr>");
     printInputField(&response, "CREDLFTM", "Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime, 3600), 12, "");
     printInputField(&response, "CREDLFTMRMBR", "Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_remember, 720), 12, "");
     printInputField(&response, "CREDDUOLFTM", "Duo Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_duo, 3600), 12, "");
