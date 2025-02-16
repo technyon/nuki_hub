@@ -86,7 +86,9 @@ private:
     #if defined(CONFIG_IDF_TARGET_ESP32)
     const std::vector<std::pair<String, String>> getNetworkCustomCLKOptions() const;
     #endif
-
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    void createSSLCertificate();
+    #endif
     const String getPreselectionForGpio(const uint8_t& pin) const;
     const String pinStateToString(const NukiPinState& value) const;
 

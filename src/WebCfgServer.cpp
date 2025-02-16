@@ -9,6 +9,7 @@
 #include "esp_random.h"
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
+#include "util/SSLCert.hpp"
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
@@ -774,6 +775,10 @@ void WebCfgServer::initialize()
             {
                 return buildHttpSSLConfigHtml(request, resp, 2);
             }
+            else if (value == "selfsignhttps")
+            {
+                return buildHttpSSLConfigHtml(request, resp, 3);
+            }            
             else if (value == "nukicfg")
             {
                 return buildNukiConfigHtml(request, resp);
@@ -2726,6 +2731,13 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     configChanged = true;
                 }
             }
+        }
+        else if(key == "HTTPGEN")
+        {
+            createSSLCertificate();
+            Log->print("Setting changed: ");
+            Log->println(key);
+            configChanged = true;        
         }
         #endif
         else if(key == "UPTIME")
@@ -5097,6 +5109,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
+        response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><button title=\"Generate HTTP SSL Certificate and key\" onclick=\" window.open('/get?page=selfsignhttps', '_self'); return false;\">Generate</button></td></tr>");
         printInputField(&response, "HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", _preferences->getString(preference_https_fqdn, "").c_str(), 255, "");
     }
     #endif
@@ -5326,7 +5339,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
             printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "", 4400, true, true);
         }
     }
-    else
+    else if (type == 2)
     {
         bool found = false;
 
@@ -5359,6 +5372,11 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
         {
             printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "", 2200, true, true);
         }
+    }
+    else
+    {
+        response.print("<input type=\"hidden\" name=\"HTTPGEN\" value=\"1\">");
+        response.print("<tr><td>Click save to generate a HTTPS SSL Certificate and key</td></tr>");
     }
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -7005,4 +7023,64 @@ const String WebCfgServer::getPreselectionForGpio(const uint8_t &pin) const
 
     return String((int8_t)PinRole::Disabled);
 }
+
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+void WebCfgServer::createSSLCertificate()
+{
+    SSLCert* cert;
+    cert = new SSLCert();
+    int createCertResult = createSelfSignedCert(
+        *cert,
+        KEYSIZE_2048,
+        "CN=nukihub.local,O=NukiHub,C=DE",
+        "20250101000000",
+        "20350101000000"
+    );
+    bool crtSuccess = false;
+    bool keySuccess = false;
+
+    if (createCertResult == 0) {
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+            if (!file) {
+                Log->println("Failed to open /http_ssl.crt for writing");
+            }
+            else
+            {
+                if (!file.write((byte *)cert->getCertData(), cert->getCertLength()))
+                {
+                    Log->println("Failed to write /http_ssl.crt");
+                }
+                else
+                {
+                    crtSuccess = true;
+                }
+                file.close();
+            }
+
+            File file2 = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+            if (!file2) {
+                Log->println("Failed to open /http_ssl.key for writing");
+            }
+            else
+            {
+                if (!file2.write((byte *)cert->getPKData(), cert->getPKLength()))
+                {
+                    Log->println("Failed to write /http_ssl.key");
+                }
+                else
+                {
+                    keySuccess = true;
+                }
+                file2.close();
+            }
+        }
+    }
+}
+#endif
+
 #endif
