@@ -29,6 +29,13 @@ e000 boot_app0.bin
 10000 nuki_hub_esp32.bin
 280000 nuki_hub_updater_esp32.bin
 
+ESP32-GL-S10
+e000 boot_app0.bin
+1000 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32.bin
+280000 nuki_hub_updater_esp32.bin
+
 ESP32-S3
 e000 boot_app0.bin
 0 bootloader.bin
@@ -84,6 +91,10 @@ Howto flash (esptool)
 As an alternative to the Download Tools, you can also use the esptool from the Espressif SDK. The command line to flash looks like this:
 
 ## ESP32
+
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32.bin 0x280000 nuki_hub_updater_esp32.bin 0x8000 nuki_hub.partitions.bin
+
+## ESP32-GL-S10
 
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 bootloader.bin 0x10000 nuki_hub_esp32.bin 0x280000 nuki_hub_updater_esp32.bin 0x8000 nuki_hub.partitions.bin
 
