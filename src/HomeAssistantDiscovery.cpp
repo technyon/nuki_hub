@@ -216,12 +216,12 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
                      "",
     { { (char*)"en", (char*)"true" }});
 
-    // Nuki Hub Webserver enabled
+    // Webserver enabled
     publishHassTopic("switch",
                      "webserver",
                      _nukiHubUidString,
                      "_webserver",
-                     "Nuki Hub webserver enabled",
+                     "Webserver enabled",
                      _hostname.c_str(),
                      _baseTopic.c_str(),
                      String("~") + mqtt_topic_webserver_state,
@@ -317,12 +317,12 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
         {(char*)"ic", (char*)"mdi:counter"}
     });
 
-    // Nuki Hub restart reason
+    // Restart reason
     publishHassTopic("sensor",
                      "nuki_hub_restart_reason",
                      _nukiHubUidString,
                      "_nuki_hub_restart_reason",
-                     "Nuki Hub restart reason",
+                     "Restart reason",
                      _hostname.c_str(),
                      _baseTopic.c_str(),
                      String("~") + mqtt_topic_restart_reason_fw,
@@ -333,12 +333,12 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
                      "",
     { { (char*)"en", (char*)"true" }});
 
-    // Nuki Hub restart reason ESP
+    // Restart reason ESP
     publishHassTopic("sensor",
                      "nuki_hub_restart_reason_esp",
                      _nukiHubUidString,
                      "_nuki_hub_restart_reason_esp",
-                     "Nuki Hub restart reason ESP",
+                     "Restart reason ESP",
                      _hostname.c_str(),
                      _baseTopic.c_str(),
                      String("~") + mqtt_topic_restart_reason_esp,
@@ -351,12 +351,12 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
 
     if(_checkUpdates)
     {
-        // NUKI Hub latest
+        // Nuki Hub latest
         publishHassTopic("sensor",
                          "nuki_hub_latest",
                          _nukiHubUidString,
                          "_nuki_hub_latest",
-                         "NUKI Hub latest",
+                         "Nuki Hub latest",
                          _hostname.c_str(),
                          _baseTopic.c_str(),
                          String("~") + mqtt_topic_info_nuki_hub_latest,
@@ -370,7 +370,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
             {(char*)"ic", (char*)"mdi:counter"}
         });
 
-        // NUKI Hub update
+        // Nuki Hub update
         char latest_version_topic[250];
         _baseTopic.toCharArray(latest_version_topic,_baseTopic.length() + 1);
         strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
@@ -381,7 +381,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
                              "nuki_hub_update",
                              _nukiHubUidString,
                              "_nuki_hub_update",
-                             "NUKI Hub firmware update",
+                             "Nuki Hub firmware update",
                              _hostname.c_str(),
                              _baseTopic.c_str(),
                              String("~") + mqtt_topic_info_nuki_hub_version,
@@ -403,7 +403,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
                              "nuki_hub_update",
                              _nukiHubUidString,
                              "_nuki_hub_update",
-                             "NUKI Hub firmware update",
+                             "Nuki Hub firmware update",
                              _hostname.c_str(),
                              _baseTopic.c_str(),
                              String("~") + mqtt_topic_info_nuki_hub_version,
@@ -427,12 +427,12 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
         removeHassTopic((char*)"update", (char*)"nuki_hub_update", _nukiHubUidString);
     }
 
-    // Nuki Hub IP Address
+    // IP Address
     publishHassTopic("sensor",
                      "nuki_hub_ip",
                      _nukiHubUidString,
                      "_nuki_hub_ip",
-                     "Nuki Hub IP",
+                     "IP",
                      _hostname.c_str(),
                      _baseTopic.c_str(),
                      String("~") + mqtt_topic_info_nuki_hub_ip,
