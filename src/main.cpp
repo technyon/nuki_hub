@@ -185,6 +185,43 @@ uint8_t checkPartition()
     }
 }
 
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
+  Serial.printf("Listing directory: %s\r\n", dirname);
+
+  File root = fs.open(dirname);
+  if (!root) {
+    Serial.println("- failed to open directory");
+    return;
+  }
+  if (!root.isDirectory()) {
+    Serial.println(" - not a directory");
+    return;
+  }
+
+  File file = root.openNextFile();
+  while (file) {
+    if (file.isDirectory()) {
+      Serial.print("  DIR : ");
+      Serial.println(file.name());
+      if (levels) {
+        listDir(fs, file.path(), levels - 1);
+      }
+    } else {
+      Serial.print("  FILE: ");
+      Serial.print(file.name());
+      Serial.print("\tSIZE: ");
+      Serial.println(file.size());
+    }
+
+    if (file.size() > (int)(SPIFFS.totalBytes() * 0.4))
+    {
+        SPIFFS.remove((String)"/" + file.name());
+    }
+    
+    file = root.openNextFile();
+  }
+}
+
 void cbSyncTime(struct timeval *tv)  {
   Log->println("NTP time synced");
   timeSynced = true;
@@ -634,6 +671,11 @@ void setup()
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         logCoreDump();
+    }
+    
+    if (SPIFFS.begin(true))
+    {
+        listDir(SPIFFS, "/", 1);
     }
 
     uint8_t partitionType = checkPartition();

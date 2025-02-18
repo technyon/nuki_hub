@@ -5948,6 +5948,11 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.print("\nNuki task stack high watermark: ");
     response.print(uxTaskGetStackHighWaterMark(nukiTaskHandle));
+    SPIFFS.begin(true);
+    response.print("\n\n------------ SPIFFS ------------");
+    response.printf("\nSPIFFS Total Bytes: %u", SPIFFS.totalBytes());
+    response.printf("\nSPIFFS Used Bytes: %u", SPIFFS.usedBytes());
+    response.printf("\nSPIFFS Free Bytes: %u", SPIFFS.totalBytes() - SPIFFS.usedBytes());
     response.print("\n\n------------ GENERAL SETTINGS ------------");
     response.print("\nNetwork task stack size: ");
     response.print(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE));
@@ -7036,8 +7041,6 @@ void WebCfgServer::createSSLCertificate()
         "20250101000000",
         "20350101000000"
     );
-    bool crtSuccess = false;
-    bool keySuccess = false;
 
     if (createCertResult == 0) {
         if (!SPIFFS.begin(true)) {
@@ -7051,13 +7054,9 @@ void WebCfgServer::createSSLCertificate()
             }
             else
             {
-                if (!file.write((byte *)cert->getCertData(), cert->getCertLength()))
+                if (!file.print(cert->getCertPEM()))
                 {
                     Log->println("Failed to write /http_ssl.crt");
-                }
-                else
-                {
-                    crtSuccess = true;
                 }
                 file.close();
             }
@@ -7068,17 +7067,18 @@ void WebCfgServer::createSSLCertificate()
             }
             else
             {
-                if (!file2.write((byte *)cert->getPKData(), cert->getPKLength()))
+                if (!file2.print(cert->getKeyPEM()))
                 {
                     Log->println("Failed to write /http_ssl.key");
-                }
-                else
-                {
-                    keySuccess = true;
                 }
                 file2.close();
             }
         }
+    }
+    else
+    {
+        Log->print("SSL Self sign failed: ");
+        Log->println(createCertResult);
     }
 }
 #endif
