@@ -52,7 +52,7 @@ public:
 
 private:
     #ifndef NUKI_HUB_UPDATER
-    esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey = false);
     bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
     bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
     void processGpioArgs(PsychicRequest *request, PsychicResponse* resp);
@@ -86,7 +86,9 @@ private:
     #if defined(CONFIG_IDF_TARGET_ESP32)
     const std::vector<std::pair<String, String>> getNetworkCustomCLKOptions() const;
     #endif
-
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    void createSSLCertificate();
+    #endif
     const String getPreselectionForGpio(const uint8_t& pin) const;
     const String pinStateToString(const NukiPinState& value) const;
 
@@ -111,9 +113,11 @@ private:
     bool isAuthenticated(PsychicRequest *request, int type = 0);
     bool processLogin(PsychicRequest *request, PsychicResponse* resp);
     bool processTOTP(PsychicRequest *request, PsychicResponse* resp);
+    bool processBypass(PsychicRequest *request, PsychicResponse* resp);
     int doAuthentication(PsychicRequest *request);
     esp_err_t buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t buildBypassHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildTOTPHtml(PsychicRequest *request, PsychicResponse* resp, int type);
     esp_err_t buildDuoHtml(PsychicRequest *request, PsychicResponse* resp, int type);
     esp_err_t buildDuoCheckHtml(PsychicRequest *request, PsychicResponse* resp);
@@ -150,6 +154,7 @@ private:
     JsonDocument _httpSessions;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
+    bool _newBypass = false;
     int _bypassGPIOHigh = -1;
     int _bypassGPIOLow = -1;
 };

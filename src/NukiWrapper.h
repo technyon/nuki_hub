@@ -108,7 +108,7 @@ private:
     bool _publishAuthData = false;
     bool _clearAuthData = false;
     bool _checkKeypadCodes = false;
-    int64_t _invalidCount = 0;
+    int _invalidCount = 0;
     int64_t _lastCodeCheck = 0;
     std::vector<uint16_t> _keypadCodeIds;
     std::vector<uint32_t> _keypadCodes;

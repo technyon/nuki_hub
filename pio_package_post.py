@@ -9,6 +9,8 @@ def get_board_name(env):
     
     if env.get('BOARD') == 'nuki-esp32solo1':
         board = 'esp32solo1'
+    elif env.get('BOARD') == 'nuki-esp32gls10':
+        board = 'esp32gls10'
     elif env.get('BOARD') == 'nuki-esp32-s3-oct':
         board = 'esp32s3oct'
     return board

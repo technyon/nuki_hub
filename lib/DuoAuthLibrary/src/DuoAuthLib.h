@@ -2,6 +2,7 @@
  *@license
  *
  *Copyright 2020 Cisco Systems, Inc. or its affiliates
+ *Modifications copyright (C) 2025 iranl / Nuki Hub
  *
  *Licensed under the Apache License, Version 2.0 (the "License");
  *you may not use this file except in compliance with the License.
@@ -24,6 +25,11 @@
  * @url https://github.com/CiscoDevNet/Arduino-DuoAuthLibrary-ESP32
  * @version 1.0.0
  * @author Gary Oppel <gaoppel@cisco.com>
+
+ * @url https://github.com/technyon/nuki_hub/lib/DuoAuthLibrary
+ * @version 1.1.0
+ * @author iranl <25727444+iranl@users.noreply.github.com>
+ * Modified to enable using ESP32 CA Certificate bundle 
  */
 
 //Verify that the Duo Auth Library descriptor is only included once

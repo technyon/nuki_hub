@@ -9,6 +9,7 @@
 #include "esp_random.h"
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
+#include "util/SSLCert.hpp"
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <esp_wifi.h>
@@ -102,18 +103,22 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
     {
         cookieKey = "totpId";
     }
+    else if (type == 3)
+    {
+        cookieKey = "bypassId";
+    }
 
     if (request->hasCookie(cookieKey.c_str()))
     {
         String cookie = request->getCookie(cookieKey.c_str());
 
-        if ((type == 0 && _httpSessions[cookie].is<JsonVariant>()) || (type == 1 && _importExport->_duoSessions[cookie].is<JsonVariant>()) || (type == 2 && _importExport->_totpSessions[cookie].is<JsonVariant>()))
+        if ((type == 0 && _httpSessions[cookie].is<JsonVariant>()) || (type == 1 && _importExport->_duoSessions[cookie].is<JsonVariant>()) || (type == 2 && _importExport->_totpSessions[cookie].is<JsonVariant>()) || (type == 3 && _importExport->_bypassSessions[cookie].is<JsonVariant>()))
         {
             struct timeval time;
             gettimeofday(&time, NULL);
             int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
 
-            if ((type == 0 && _httpSessions[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us))
+            if ((type == 0 && _httpSessions[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us) || (type == 3 && _importExport->_bypassSessions[cookie].as<signed long long>() > time_us))
             {
                 return true;
             }
@@ -191,6 +196,23 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         else
         {
             Log->print("No totp session cookie found");
+        }
+    }
+
+    if (_importExport->getBypassEnabled())
+    {
+        if (!_isSSL)
+        {
+            resp->setCookie("bypassId", "", 0, "HttpOnly");
+        }
+        else
+        {
+            resp->setCookie("bypassId", "", 0, "Secure; HttpOnly");
+        }
+
+        if (request->hasCookie("bypassId")) {
+            String cookie2 = request->getCookie("bypassId");
+            _importExport->_bypassSessions.remove(cookie2);
         }
     }
 
@@ -369,6 +391,11 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
                 _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
                 return 4;
             }
+            else if(!timeSynced && _importExport->getBypassEnabled() && isAuthenticated(request, 3))
+            {
+                _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = false;
+                return 4;
+            }
 
             Log->println("Authentication Failed");
 
@@ -505,10 +532,38 @@ void WebCfgServer::initialize()
                     value = p->value();
                 }
             }
-            int authReq = doAuthentication(request);
 
-            if (value != "status" && value != "login" && value != "duocheck")
+            bool adminKeyValid = false;
+            if(value == "export" && timeSynced && request->hasParam("adminkey") && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
             {
+                String value2 = "";
+                if(request->hasParam("adminkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("adminkey");
+                    if(p->value() != "")
+                    {
+                        value2 = p->value();
+                    }
+                }
+                String value3 = "";
+                if(request->hasParam("totpkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("totpkey");
+                    if(p->value() != "")
+                    {
+                        value3 = p->value();
+                    }
+                }
+                if (value2.length() > 0 && value2 == _preferences->getString(preference_admin_secret, "") && _importExport->checkTOTP(&value3))
+                {
+                    adminKeyValid = true;
+                }
+            }
+
+            if (!adminKeyValid && value != "status" && value != "login" && value != "duocheck" && value != "bypass")
+            {
+                int authReq = doAuthentication(request);
+
                 switch (authReq)
                 {
                     case 0:
@@ -543,14 +598,16 @@ void WebCfgServer::initialize()
                         break;
                 }
             }
-            else if (value == "status" && authReq != 4)
+            else if (value == "status")
             {
-                resp->setCode(200);
-                resp->setContentType("application/json");
-                resp->setContent("{}");
-                return resp->send();
+                if (doAuthentication(request) != 4)
+                {
+                    resp->setCode(200);
+                    resp->setContentType("application/json");
+                    resp->setContent("{}");
+                    return resp->send();
+                }
             }
-
             if (value == "login")
             {
                 return buildLoginHtml(request, resp);
@@ -558,6 +615,15 @@ void WebCfgServer::initialize()
             else if (value == "totp")
             {
                 return buildTOTPHtml(request, resp, 0);
+            }
+            else if (value == "bypass")
+            {
+                return buildBypassHtml(request, resp);
+            }
+            else if (value == "newbypass" && _newBypass)
+            {
+                _newBypass = false;
+                return buildConfirmHtml(request, resp, "Logged in using Bypass. New bypass: " + _preferences->getString(preference_bypass_secret, "") + " <br/><br/><a href=\"/\">Home page</a>", 3, false);
             }
             else if (value == "logout")
             {
@@ -624,12 +690,17 @@ void WebCfgServer::initialize()
                     return sendSettings(request, resp);
                 }
 
+                if(adminKeyValid)
+                {
+                    return sendSettings(request, resp, true);
+                }
+
                 if(_importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"])
                 {
                     _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
                     return sendSettings(request, resp);
                 }
-                else if(request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+                else if(timeSynced && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
                 {
                     const PsychicWebParameter* pass = request->getParam("totpkey");
                     if(pass->value() != "")
@@ -704,6 +775,10 @@ void WebCfgServer::initialize()
             {
                 return buildHttpSSLConfigHtml(request, resp, 2);
             }
+            else if (value == "selfsignhttps")
+            {
+                return buildHttpSSLConfigHtml(request, resp, 3);
+            }            
             else if (value == "nukicfg")
             {
                 return buildNukiConfigHtml(request, resp);
@@ -816,7 +891,33 @@ void WebCfgServer::initialize()
                 }
             }
 
-            if (value != "login" && value != "totp")
+            bool adminKeyValid = false;
+            if(value == "import" && timeSynced && request->hasParam("adminkey") && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+            {
+                String value2 = "";
+                if(request->hasParam("adminkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("adminkey");
+                    if(p->value() != "")
+                    {
+                        value2 = p->value();
+                    }
+                }
+                String value3 = "";
+                if(request->hasParam("totpkey"))
+                {
+                    const PsychicWebParameter* p = request->getParam("totpkey");
+                    if(p->value() != "")
+                    {
+                        value3 = p->value();
+                    }
+                }
+                if (value2.length() > 0 && value2 == _preferences->getString(preference_admin_secret, "") && _importExport->checkTOTP(&value3))
+                {
+                    adminKeyValid = true;
+                }
+            }
+            if(!adminKeyValid && value != "login" && value != "totp" && value != "bypass")
             {
                 int authReq = doAuthentication(request);
 
@@ -853,7 +954,7 @@ void WebCfgServer::initialize()
                     if(!_importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"])
                     {
                         bool approved = false;
-                        if(request->hasParam("totpkey") && _importExport->getTOTPEnabled())
+                        if(timeSynced && request->hasParam("totpkey") && _importExport->getTOTPEnabled())
                         {
                             const PsychicWebParameter* pass = request->getParam("totpkey");
                             if(pass->value() != "")
@@ -865,6 +966,11 @@ void WebCfgServer::initialize()
                                     approved = true;
                                 }
                             }
+                        }
+                        else if(!timeSynced && _importExport->getBypassEnabled() && isAuthenticated(request, 3))
+                        {
+                            _importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"] = false;
+                            approved = true;
                         }
 
                         if (!approved)
@@ -926,6 +1032,23 @@ void WebCfgServer::initialize()
                     return resp->redirect("/get?page=totp");
                 }
             }
+            else if (value == "bypass")
+            {
+                bool loggedIn = processBypass(request, resp);
+                if (loggedIn)
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    _newBypass = true;
+                    return resp->redirect("/get?page=newbypass");
+                }
+                else
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/");
+                }
+            }
             #ifndef NUKI_HUB_UPDATER
             else if (value == "savecfg")
             {
@@ -969,7 +1092,23 @@ void WebCfgServer::initialize()
             {
                 String message = "";
                 bool restart = processImport(request, resp, message);
-                return buildConfirmHtml(request, resp, message, 3, true);
+
+                if(adminKeyValid)
+                {
+                    resp->setCode(200);
+                    resp->setContentType("application/json");
+                    resp->setContent("{ \"result\": \"success\"}");
+                    esp_err_t res = resp->send();
+                    if(restart)
+                    {
+                        restartEsp(RestartReason::RequestedViaWebServer);
+                    }
+                    return res;
+                }
+                else
+                {
+                    return buildConfirmHtml(request, resp, message, 3, true);
+                }
             }
             #endif
             else
@@ -1880,18 +2019,20 @@ esp_err_t WebCfgServer::buildLoginHtml(PsychicRequest *request, PsychicResponse*
 
 esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* resp, int type)
 {
+    if (!timeSynced)
+    {
+        return buildConfirmHtml(request, resp, "NTP time not synced yet, TOTP not available, please wait for NTP to sync or use <a href=\"/get?page=bypass\">one-time bypass</a>", 3, true);
+    }
+
+    if((pow(_importExport->_invalidCount, 5) + _importExport->_lastCodeCheck) > espMillis())
+    {
+        return buildConfirmHtml(request, resp, "Too many invalid TOTP tries, please wait before retrying or use <a href=\"/get?page=bypass\">one-time bypass</a>", 3, true);
+    }
+
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
     response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
-    /*
-    if (!timeSynced)
-    {
-        char millis[20];
-        itoa(espMillis(), millis, 10);
-        response.print((String)"<script>window.onload = function() { var startTime = Date.now(); var interval = setInterval(function() { var elapsedTime = Date.now() - startTime; document.getElementById(\"timestamp\").innerHTML = (elapsedTime / 1000).toFixed(3) + " + millis + ";}, 100);  }</script>");
-    }
-    */
     response.print("</head><body><center><h2>Nuki Hub TOTP</h2>");
 
     String typeText = "Login";
@@ -1931,18 +2072,38 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
 
     response.print("<div class=\"container\">");
     response.print("<label for=\"totpkey\"><b>TOTP</b></label><input type=\"text\" placeholder=\"Enter TOTP code\" name=\"totpkey\">");
-    /*
-    if (!timeSynced)
-    {
-        response.print("<label for=\"timestamp\"><b>Timestamp</b></label><span type=\"text\" id=\"timestamp\"></span>");
-    }
-    */
     response.print("<button type=\"submit\" ");
     if(type == 1)
     {
         response.print("onclick=\"setTimeout(function() { window.location.href = '/' }, 1000);\"");
     }
     response.print((String)">" + typeText + "</button></div>");
+    response.print("</form></center></body></html>");
+    return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildBypassHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    if (timeSynced)
+    {
+        return buildConfirmHtml(request, resp, "One-time bypass is only available if NTP time is not synced</a>", 3, true);
+    }
+
+    if((pow(_importExport->_invalidCount2, 5) + _importExport->_lastCodeCheck2) > espMillis())
+    {
+        return buildConfirmHtml(request, resp, "Too many invalid bypass tries, please wait before retrying", 3, true);
+    }
+
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
+    response.print("</head><body><center><h2>Nuki Hub One-time Bypass</h2>");
+    response.print("<form action=\"/post?page=bypass\" method=\"post\">");
+    response.print("<div class=\"container\">");
+    response.print("<label for=\"bypass\"><b>Bypass code</b></label><input type=\"text\" placeholder=\"Enter bypass code\" name=\"bypass\">");
+    response.print("<button type=\"submit\" ");
+    response.print(">Login</button></div>");
     response.print("</form></center></body></html>");
     return response.endSend();
 }
@@ -1990,7 +2151,7 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
 {
     if (!timeSynced)
     {
-        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync", 3, true);
+        return buildConfirmHtml(request, resp, "NTP time not synced yet, Duo not available, please wait for NTP to sync or use <a href=\"/get?page=bypass\">one-time bypass</a>", 3, true);
     }
 
     String duoText;
@@ -2134,9 +2295,55 @@ bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
     return false;
 }
 
+bool WebCfgServer::processBypass(PsychicRequest *request, PsychicResponse* resp)
+{
+    if(!timeSynced && request->hasParam("bypass"))
+    {
+        const PsychicWebParameter* pass = request->getParam("bypass");
+        if(pass->value() != "")
+        {
+            String bypass = pass->value();
+            if (_importExport->checkBypass(bypass))
+            {
+                char buffer[33];
+                int i;
+                for (i = 0; i < 4; i++) {
+                    sprintf(buffer + (i * 8), "%08lx", (unsigned long int)esp_random());
+                }
+
+                if (!_isSSL)
+                {
+                    resp->setCookie("bypassId", buffer, 3600, "HttpOnly");
+                }
+                else
+                {
+                    resp->setCookie("bypassId", buffer, 3600, "Secure; HttpOnly");
+                }
+
+                struct timeval time;
+                gettimeofday(&time, NULL);
+                int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+                _importExport->_bypassSessions[buffer] = time_us + ((int64_t)3600*1000000L);
+
+                char randomstr2[33];
+                randomSeed(analogRead(0));
+                char chars[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+                for(int i = 0;i < 32; i++){
+                    randomstr2[i] = chars[random(36)];
+                }
+                randomstr2[32] = '\0';
+                _preferences->putString(preference_bypass_secret, randomstr2);
+
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
 {
-    if(request->hasParam("totpkey"))
+    if(timeSynced && request->hasParam("totpkey"))
     {
         const PsychicWebParameter* pass = request->getParam("totpkey");
         if(pass->value() != "")
@@ -2178,7 +2385,7 @@ bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
 }
 
 #ifndef NUKI_HUB_UPDATER
-esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* resp)
+esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey)
 {
     JsonDocument json;
     String jsonPretty;
@@ -2227,7 +2434,10 @@ esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* r
     serializeJsonPretty(json, jsonPretty);
     char buf[26 + name.length()];
     snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", name.c_str());
-    resp->addHeader("Content-Disposition", buf);
+    if(!adminKey)
+    {
+        resp->addHeader("Content-Disposition", buf);
+    }
     resp->setCode(200);
     resp->setContentType("application/json");
     resp->setContent(jsonPretty.c_str());
@@ -2521,6 +2731,13 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     configChanged = true;
                 }
             }
+        }
+        else if(key == "HTTPGEN")
+        {
+            createSSLCertificate();
+            Log->print("Setting changed: ");
+            Log->println(key);
+            configChanged = true;        
         }
         #endif
         else if(key == "UPTIME")
@@ -4155,6 +4372,32 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
             }
         }
+        else if(key == "CREDBYPASS")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_bypass_secret, "") != value)
+                {
+                    _preferences->putString(preference_bypass_secret, value);
+                    Log->print("Setting changed: ");
+                    Log->println(key);
+                    configChanged = true;
+                }
+            }
+        }
+        else if(key == "CREDADMIN")
+        {
+            if(value != "*")
+            {
+                if(_preferences->getString(preference_admin_secret, "") != value)
+                {
+                    _preferences->putString(preference_admin_secret, value);
+                    Log->print("Setting changed: ");
+                    Log->println(key);
+                    configChanged = true;
+                }
+            }
+        }
         else if(key == "NUKIPIN" && _nuki != nullptr)
         {
             if(value == "#")
@@ -4705,13 +4948,27 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
 
 esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* resp)
 {
+    char chars[] = {'2', '3','4', '5', '6','7', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+    char chars2[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
+
     char randomstr[17];
     randomSeed(analogRead(0));
-    char chars[] = {'2', '3','4', '5', '6','7', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
     for(int i = 0;i < 16; i++){
         randomstr[i] = chars[random(32)];
     }
     randomstr[16] = '\0';
+    char randomstr2[33];
+    randomSeed(analogRead(0));
+    for(int i = 0;i < 32; i++){
+        randomstr2[i] = chars2[random(36)];
+    }
+    randomstr2[32] = '\0';
+    char randomstr3[33];
+    randomSeed(analogRead(0));
+    for(int i = 0;i < 32; i++){
+        randomstr3[i] = chars2[random(36)];
+    }
+    randomstr3[32] = '\0';
 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
@@ -4738,10 +4995,18 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
     printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
     printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
-    printInputField(&response, "CREDTOTP", "TOTP Secret Key (requires Form authentication)", "*", 16, "", true, false);
+    printInputField(&response, "CREDTOTP", "TOTP Secret Key", "*", 16, "", true, false);
     response.print("<tr id=\"totpgentr\" ><td><input type=\"button\" id=\"totpgen\" onclick=\"document.getElementsByName('CREDTOTP')[0].type='text'; document.getElementsByName('CREDTOTP')[0].value='");
     response.print(randomstr);
     response.print("'; document.getElementById('totpgentr').style.display='none';\" value=\"Generate new TOTP key\"></td></tr>");
+    printInputField(&response, "CREDBYPASS", "One-time MFA Bypass", "*", 32, "", true, false);
+    response.print("<tr id=\"bypassgentr\" ><td><input type=\"button\" id=\"bypassgen\" onclick=\"document.getElementsByName('CREDBYPASS')[0].type='text'; document.getElementsByName('CREDBYPASS')[0].value='");
+    response.print(randomstr2);
+    response.print("'; document.getElementById('bypassgentr').style.display='none';\" value=\"Generate new Bypass\"></td></tr>");
+    printInputField(&response, "CREDADMIN", "Admin key", "*", 32, "", true, false);
+    response.print("<tr id=\"admingentr\" ><td><input type=\"button\" id=\"admingen\" onclick=\"document.getElementsByName('CREDADMIN')[0].type='text'; document.getElementsByName('CREDADMIN')[0].value='");
+    response.print(randomstr3);
+    response.print("'; document.getElementById('admingentr').style.display='none';\" value=\"Generate new Admin key\"></td></tr>");
     printInputField(&response, "CREDLFTM", "Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime, 3600), 12, "");
     printInputField(&response, "CREDLFTMRMBR", "Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_remember, 720), 12, "");
     printInputField(&response, "CREDDUOLFTM", "Duo Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_duo, 3600), 12, "");
@@ -4844,6 +5109,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
+        response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><button title=\"Generate HTTP SSL Certificate and key\" onclick=\" window.open('/get?page=selfsignhttps', '_self'); return false;\">Generate</button></td></tr>");
         printInputField(&response, "HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", _preferences->getString(preference_https_fqdn, "").c_str(), 255, "");
     }
     #endif
@@ -5073,7 +5339,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
             printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "", 4400, true, true);
         }
     }
-    else
+    else if (type == 2)
     {
         bool found = false;
 
@@ -5106,6 +5372,11 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
         {
             printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "", 2200, true, true);
         }
+    }
+    else
+    {
+        response.print("<input type=\"hidden\" name=\"HTTPGEN\" value=\"1\">");
+        response.print("<tr><td>Click save to generate a HTTPS SSL Certificate and key</td></tr>");
     }
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -5677,6 +5948,11 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.print("\nNuki task stack high watermark: ");
     response.print(uxTaskGetStackHighWaterMark(nukiTaskHandle));
+    SPIFFS.begin(true);
+    response.print("\n\n------------ SPIFFS ------------");
+    response.printf("\nSPIFFS Total Bytes: %u", SPIFFS.totalBytes());
+    response.printf("\nSPIFFS Used Bytes: %u", SPIFFS.usedBytes());
+    response.printf("\nSPIFFS Free Bytes: %u", SPIFFS.totalBytes() - SPIFFS.usedBytes());
     response.print("\n\n------------ GENERAL SETTINGS ------------");
     response.print("\nNetwork task stack size: ");
     response.print(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE));
@@ -6752,4 +7028,59 @@ const String WebCfgServer::getPreselectionForGpio(const uint8_t &pin) const
 
     return String((int8_t)PinRole::Disabled);
 }
+
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+void WebCfgServer::createSSLCertificate()
+{
+    SSLCert* cert;
+    cert = new SSLCert();
+    int createCertResult = createSelfSignedCert(
+        *cert,
+        KEYSIZE_2048,
+        "CN=nukihub.local,O=NukiHub,C=DE",
+        "20250101000000",
+        "20350101000000"
+    );
+
+    if (createCertResult == 0) {
+        if (!SPIFFS.begin(true)) {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+            if (!file) {
+                Log->println("Failed to open /http_ssl.crt for writing");
+            }
+            else
+            {
+                if (!file.print(cert->getCertPEM()))
+                {
+                    Log->println("Failed to write /http_ssl.crt");
+                }
+                file.close();
+            }
+
+            File file2 = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+            if (!file2) {
+                Log->println("Failed to open /http_ssl.key for writing");
+            }
+            else
+            {
+                if (!file2.print(cert->getKeyPEM()))
+                {
+                    Log->println("Failed to write /http_ssl.key");
+                }
+                file2.close();
+            }
+        }
+    }
+    else
+    {
+        Log->print("SSL Self sign failed: ");
+        Log->println(createCertResult);
+    }
+}
+#endif
+
 #endif

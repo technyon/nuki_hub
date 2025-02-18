@@ -15,7 +15,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.3.2 and Arduino Core 3.1.0.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.3.2 and Arduino Core 3.1.1.
 - Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C6 and ESP32-H2.
 - Untested builds are provided for the ESP32-Solo1 (as the developers don't own one).
 
@@ -333,6 +333,8 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 - Duo secret key: Set to the Duo secret key
 - Duo user: Set to the Duo user that you want to receive the push notification
 - TOTP Secret Key: Set a TOTP secret key to enable TOTP MFA. Enter the TOTP secret key in an authenticator application (Password manager, Microsoft/Google Authenticator etc.) to generate TOTP codes.
+- One-time MFA Bypass: Set a 32 character long alphanumeric string that can be used as a one-time MFA bypass when the ESP32 is unable to sync it's time and TOTP and Duo are unavailable as a result.
+- Admin key: Set a 32 character long alphanumeric string that can be used in combination with a TOTP code to export and import settings without needing to log in (for use with automated systems).
 - Session validity (in seconds): Session validity to use with form authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
 - Session validity remember (in hours): Session validity to use with form authentication when the "Remember me" checkbox is enabled, default 720 hours.
 - Duo Session validity (in seconds): Session validity to use with Duo authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
@@ -527,7 +529,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 
 Consider this when deciding if you want to enable the following functionality:
 
-- Any application/actor that has read access to `nukihub/configuration/action` and `nukihub/configuration/json` can view your changes and exports. 
+- Any application/actor that has read access to `nukihub/configuration/action` and `nukihub/configuration/json` can view your changes and exports.
 - If you have not enabled the setting to require MFA when changing settings any application/actor that has write access to `nukihub/configuration/action` can change Nuki Hub settings (including pairing data and credentials)
 
 ### Export Nuki Hub settings over MQTT
@@ -562,7 +564,7 @@ After the import is complete the ESP32 will reboot.
 
 If you have enabled `Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)` you will need to either provide a currently valid TOTP code as part of the sent JSON in the `totp` node or approve the Duo Push before the settings will be changed/imported.
 
-Note: When importing settings using MQTT there are less/no checks on the values entered. These checks are only available when changing settings through the WebConfigurator. 
+Note: When importing settings using MQTT there are less/no checks on the values entered. These checks are only available when changing settings through the WebConfigurator.
 Consider testing your configuration values by changing them in the Web Configurator before trying to use MQTT to change configuration.
 A general explanation of the values that can be imported can be found in the [PreferencesKeys.h](/src/PreferencesKeys.h) file
 

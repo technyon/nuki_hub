@@ -16,7 +16,9 @@ public:
     int checkDuoApprove();
     bool startDuoAuth(char* pushType = (char*)"");
     bool getTOTPEnabled();
+    bool getBypassEnabled();
     bool checkTOTP(String* totpKey);
+    bool checkBypass(String bypass);
     bool getDuoEnabled();
     bool getBypassGPIOEnabled();
     int getBypassGPIOHigh();
@@ -27,11 +29,17 @@ public:
     JsonDocument _duoSessions;
     JsonDocument _totpSessions;
     JsonDocument _sessionsOpts;
+    JsonDocument _bypassSessions;
+    int64_t _lastCodeCheck = 0;
+    int64_t _lastCodeCheck2 = 0;
+    int _invalidCount = 0;
+    int _invalidCount2 = 0;
 private:
     void saveSessions();
     Preferences* _preferences;
     struct tm timeinfo;
     bool _totpEnabled = false;
+    bool _bypassEnabled = false;
     bool _duoActiveRequest;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
@@ -45,6 +53,7 @@ private:
     String _duoUser;
     String _duoCheckId;
     String _duoCheckIP;
-    String _totpKey;    
+    String _totpKey;
+    String _bypassKey;
 };
 
