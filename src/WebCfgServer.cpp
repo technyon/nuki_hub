@@ -133,7 +133,7 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
 
 esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* resp)
 {
-    Log->print("Logging out");
+    Log->println("Logging out");
 
     if (!_isSSL)
     {
@@ -152,7 +152,7 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
     }
     else
     {
-        Log->print("No session cookie found");
+        Log->println("No session cookie found");
     }
 
     if (_duoEnabled)
@@ -173,7 +173,7 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         }
         else
         {
-            Log->print("No duo session cookie found");
+            Log->println("No duo session cookie found");
         }
     }
 
@@ -195,7 +195,7 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         }
         else
         {
-            Log->print("No totp session cookie found");
+            Log->println("No totp session cookie found");
         }
     }
 
@@ -360,7 +360,7 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
             {
                 if (digitalRead(BOOT_BUTTON_GPIO) == LOW)
                 {
-                    Log->print("Duo bypassed because boot button pressed");
+                    Log->println("Duo bypassed because boot button pressed");
                     return 4;
                 }
             }
@@ -368,7 +368,7 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
             {
                 if (digitalRead(_bypassGPIOHigh) == HIGH)
                 {
-                    Log->print("Duo bypassed because bypass GPIO pin pulled high");
+                    Log->println("Duo bypassed because bypass GPIO pin pulled high");
                     return 4;
                 }
             }
@@ -376,7 +376,7 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
             {
                 if (digitalRead(_bypassGPIOLow) == LOW)
                 {
-                    Log->print("Duo bypassed because bypass GPIO pin pulled low");
+                    Log->println("Duo bypassed because bypass GPIO pin pulled low");
                     return 4;
                 }
             }
@@ -949,7 +949,7 @@ void WebCfgServer::initialize()
                         break;
                 }
 
-                if(_preferences->getBool(preference_cred_duo_approval, false) && (_importExport->getTOTPEnabled() && _duoEnabled))
+                if(_preferences->getBool(preference_cred_duo_approval, false) && (_importExport->getTOTPEnabled() || _duoEnabled))
                 {
                     if(!_importExport->_sessionsOpts[request->client()->localIP().toString() + "approve"])
                     {
@@ -2213,7 +2213,7 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
         response.beginSend();
         response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         response.print("<style>.container{border:3px solid #f1f1f1; max-width: 400px; padding:16px}</style>");
-        response.print((String)"<script>let intervalId; let stop = 0; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + String(buffer) + "&type=" + type + "', true); request.onload = () => { const obj = request.responseText; if ((obj == \"1\" || obj == \"0\") && stop == 0) { stop = 1; clearInterval(intervalId); if (obj == \"1\") { document.getElementById('duoresult').innerHTML = '" + duoText + " approved<br>Redirecting...'; ");
+        response.print((String)"<script>let intervalId; let stop = 0; window.onload = function() { intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + String(buffer) + "&type=" + type + "', true); request.onload = () => { const obj = request.responseText; if ((obj == \"1\" || obj == \"0\") && stop == 0) { stop = 1; clearInterval(intervalId); if (obj == \"1\") { document.getElementById('duoresult').innerHTML = '" + duoText + " approved<br>Redirecting...'; ");
         if(type == 0)
         {
             response.print("setTimeout(function() { window.location.href = \"/\"");
@@ -2239,7 +2239,10 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
             for(int index = 0; index < params; index++)
             {
                 const PsychicWebParameter* p = request->getParam(index);
-                response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
+                if (p->name() != "submit")
+                {
+                    response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
+                }
             }
             response.print("</form>");
         }
