@@ -14,6 +14,7 @@
 #include "esp_core_dump.h"
 #include "FS.h"
 #include "SPIFFS.h"
+#include <ESPmDNS.h>
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
 #endif
@@ -791,6 +792,10 @@ void setup()
                             return response->redirect("/");
                         });
                         psychicSSLServer->begin();
+                        if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                            MDNS.addService("http", "tcp", 443);
+                        }
+    
                     }
                 }
             }
@@ -807,6 +812,9 @@ void setup()
                 return response->redirect("/");
             });
             psychicServer->begin();
+            if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                MDNS.addService("http", "tcp", 80);
+            }
         #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         }
         #endif
@@ -969,6 +977,9 @@ void setup()
                                 return response->redirect("/");
                             });
                             psychicSSLServer->begin();
+                            if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                                MDNS.addService("http", "tcp", 443);
+                            }
                         }
                     }
                 }
@@ -985,6 +996,9 @@ void setup()
                     return response->redirect("/");
                 });
                 psychicServer->begin();
+                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                    MDNS.addService("http", "tcp", 80);
+                }
             #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
             }
             #endif
