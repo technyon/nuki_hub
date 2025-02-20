@@ -6984,7 +6984,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomPHYOp
 #if defined(CONFIG_IDF_TARGET_ESP32)
     options.push_back(std::make_pair("4", "LAN8720"));
     options.push_back(std::make_pair("5", "RTL8201"));
-    options.push_back(std::make_pair("6", "TLK110"));
+    options.push_back(std::make_pair("6", "TLK110/IP101"));
     options.push_back(std::make_pair("7", "DP83848"));
     options.push_back(std::make_pair("8", "KSZ8041"));
     options.push_back(std::make_pair("9", "KSZ8081"));
@@ -6997,6 +6997,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomCLKOp
 {
     std::vector<std::pair<String, String>> options;
     options.push_back(std::make_pair("0", "GPIO0 IN"));
+    options.push_back(std::make_pair("1", "GPIO0 OUT"));    
     options.push_back(std::make_pair("2", "GPIO16 OUT"));
     options.push_back(std::make_pair("3", "GPIO17 OUT"));
     return options;
