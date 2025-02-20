@@ -65,7 +65,7 @@ std::string NetworkUtil::GetCustomEthernetDeviceName(int custPHY)
     case 5:
         return"Custom (RTL8201)";
     case 6:
-        return "Custom (TLK110)";
+        return "Custom (TLK110/IP101)";
     case 7:
         return "Custom (DP83848)";
     case 8:
@@ -112,6 +112,9 @@ eth_clock_mode_t NetworkUtil::GetCustomClock(int custCLKpref)
     {
     case 0:
         return ETH_CLOCK_GPIO0_IN;
+        break;
+    case 1:        
+        return ETH_CLOCK_GPIO0_OUT;
         break;
     case 2:
         return ETH_CLOCK_GPIO16_OUT;

@@ -3,6 +3,7 @@
 #ifndef CONFIG_IDF_TARGET_ESP32
 typedef enum {
     ETH_CLOCK_GPIO0_IN = 0,
+    ETH_CLOCK_GPIO0_OUT = 1,    
     ETH_CLOCK_GPIO16_OUT = 2,
     ETH_CLOCK_GPIO17_OUT = 3
 } eth_clock_mode_t;

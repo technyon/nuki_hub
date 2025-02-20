@@ -15,7 +15,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.3.2 and Arduino Core 3.1.1.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.3.2 and Arduino Core 3.1.3.
 - Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C6 and ESP32-H2.
 - Untested builds are provided for the ESP32-Solo1 (as the developers don't own one).
 
@@ -46,7 +46,7 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 - [LilyGO-T-ETH-Lite](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
 - [LilyGO-T-ETH-Lite-ESP32S3](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
 - [LilyGO-T-ETH ELite](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
-- [GL-S10 (Revisions 2.1, 2.3 / 1.0 is not supported)](https://www.gl-inet.com/products/gl-s10/)
+- [GL-S10 (Revisions 2.1, 2.3 / 1.0 might not be supported)](https://www.gl-inet.com/products/gl-s10/)
 
 In principle all ESP32 (and variants) devices with built-in ethernet port are supported, but might require additional setup using the "Custom LAN setup" option.
 See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section for more information.
@@ -211,6 +211,8 @@ Webflash will automatically flash the no/Quad SPI PSRAM build when an ESP32-S3 i
 If your ESP32-S3 device has PSRAM but it is not detected please switch to the other S3 binary.<br>
 You can do this by flashing the correct binaries manually or by selecting the option to switch S3 binary build from the Firmware Update page of the Web Configurator.
 
+Note that there are also is a separate build of Nuki Hub available for the GL-S10 ESP32 which is needed to enable PSRAM on this device (BETA).<br>
+
 ## Configuration
 
 In a browser navigate to the IP address assigned to the ESP32.
@@ -225,8 +227,9 @@ In a browser navigate to the IP address assigned to the ESP32.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
 - Restart on disconnect: Enable to restart the Nuki Hub when disconnected from the network.
 - Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
-- HTTP SSL Certificate (PSRAM enabled devices only): Optionally set to the SSL certificate of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
-- HTTP SSL Key (PSRAM enabled devices only): Optionally set to the SSL key of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
+- Set HTTP SSL Certificate (PSRAM enabled devices only): Optionally set to the SSL certificate of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
+- Set HTTP SSL Key (PSRAM enabled devices only): Optionally set to the SSL key of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
+- Generate self-signed HTTP SSL Certificate and key: Optionally generate a self-signed SSL certificate and key for the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
 - Nuki Hub FQDN for HTTP redirect (PSRAM enabled devices only): FQDN hostname of the Nuki Hub device used for redirecting from HTTP to HTTPS.
 
 #### IP Address assignment
@@ -730,7 +733,9 @@ openssl req -new -key server.key -out server.csr -subj "/C=US/ST=YourState/L=You
 ## HTTPS Server (optional, PSRAM enabled devices only)
 
 The Webconfigurator can use/force HTTPS on PSRAM enabled devices.<br>
-To enable SSL encryption, supply the certificate and key in the Network configuration page and reboot Nuki Hub.<br>
+To enable SSL encryption, supply the certificate and key in the Network configuration page.<br>
+You can also let Nuki Hub generate a self-signed certificate by clicking "Generate" on the Network configuration page.<br>
+Reboot Nuki Hub afterwards to enable to HTTPS server (and disable HTTP).<br>
 
 Example self-signed certificate creation for your HTTPS server:
 ```console
