@@ -71,6 +71,13 @@ e000 boot_app0.bin
 10000 nuki_hub_esp32h2.bin
 280000 nuki_hub_updater_esp32h2.bin
 
+ESP32-P4
+e000 boot_app0.bin
+0 bootloader.bin
+8000 nuki_hub.partitions.bin
+10000 nuki_hub_esp32p4.bin
+280000 nuki_hub_updater_esp32p4.bin
+
 ESP32-SOLO1
 e000 boot_app0.bin
 1000 bootloader.bin

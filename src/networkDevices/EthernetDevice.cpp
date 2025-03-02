@@ -4,7 +4,7 @@
 #include "../RestartReason.h"
 #include "../EspMillis.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
 #include "esp_private/esp_gpio_reserve.h"
 #include <bootloader_common.h>
 #include "esp_psram.h"
@@ -90,7 +90,7 @@ void EthernetDevice::initialize()
         _hardwareInitialized = ETH.begin(_type, _phy_addr, _cs, _irq, _rst, SPI);
         ethCriticalFailure = false;
     }
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
     else
     {
         Log->println("Use RMII");

@@ -17,11 +17,10 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 <b>Supported ESP32 devices:</b>
 - Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.3.2 and Arduino Core 3.1.3.
 - Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C6 and ESP32-H2.
-- Untested builds are provided for the ESP32-Solo1 (as the developers don't own one).
+- Untested builds are provided for the ESP32-P4 (with the ESP32-C6-MINI-1 module for BLE and WiFi) and ESP32-Solo1 (as the developers don't own one).
 
 <b>Not supported ESP32 devices:</b>
 - The ESP32-S2 has no built-in BLE and as such can't run Nuki Hub.
-- We are looking into supporting the ESP32-P4 with the ESP32-C6-MINI-1 module for BLE and WiFi
 
 <b>Supported Nuki devices:</b>
 - Nuki Smart Lock 1.0
@@ -60,13 +59,14 @@ When buying a new device in 2025 we can only recommend the ESP32-S3 with PSRAM (
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter.<br>
 The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
 
-If/When the ESP32-P4 with ESP32-C6-MINI-1 module for BLE/WiFi is supported this will probably become the preferred device for Nuki Hub.
+We provide a build for the ESP32-P4 with ESP32-C6-MINI-1 module for BLE/WiFi but this device is untested as of now.
 
 Other considerations:
 - If Ethernet/PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
-- If WIFI6 is absolutely required (it probably isn't): ESP32-C6
+- If WIFI6 is absolutely required (it probably isn't): ESP32-C6 or ESP32-P4 with ESP32-C6-MINI-1 module (UNTESTED)
 
 Devices ranked best-to-worst:
+- ESP32-P4 with ESP32-C6-MINI-1 module (UNTESTED)
 - ESP32-S3 with PSRAM
 - ......
 - ......
@@ -938,7 +938,7 @@ Now connect via Wi-Fi and change the network hardware to "Generic W5500".<br>
 
 If Ethernet hardware isn't detected or initialised properly after changing the network device, Wi-Fi will be used as a fallback.<br>
 <br>
-Note: LAN8720 modules are only supported on the ESP32 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
+Note: LAN8720 modules are only supported on the ESP32, ESP32-P4 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
 
 ## FAQ / Troubleshooting
 

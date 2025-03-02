@@ -1609,6 +1609,11 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
     {
         response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to other PSRAM release version\"></form>");
     }
+    #elif defined(CONFIG_IDF_TARGET_ESP32) && !defined(NUKI_TARGET_GL_S10)
+    if(_preferences->getInt(preference_network_hardware) == 8)
+    {
+        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to specific GL-S10 release version\"></form>");
+    }
     #endif
     response.print("<div style=\"clear: both\"></div><br>");
 
@@ -4825,7 +4830,7 @@ esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, Ps
     response.print("<table>");
     printDropDown(&response, "NWCUSTPHY", "PHY", String(_preferences->getInt(preference_network_custom_phy)), getNetworkCustomPHYOptions(), "");
     printInputField(&response, "NWCUSTADDR", "ADDR", _preferences->getInt(preference_network_custom_addr, 1), 6, "");
-#if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
     printDropDown(&response, "NWCUSTCLK", "CLK", String(_preferences->getInt(preference_network_custom_clk, 0)), getNetworkCustomCLKOptions(), "internalopt");
     printInputField(&response, "NWCUSTPWR", "PWR", _preferences->getInt(preference_network_custom_pwr, 12), 6, "class=\"internalopt\"");
     printInputField(&response, "NWCUSTMDIO", "MDIO", _preferences->getInt(preference_network_custom_mdio), 6, "class=\"internalopt\"");
@@ -6732,7 +6737,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
         //}
     }
-    #if defined(CONFIG_IDF_TARGET_ESP32S3)
+    #if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32)) && !defined(CONFIG_FREERTOS_UNICORE)
     else if(request->hasParam("other"))
     {
         res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
@@ -6981,7 +6986,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomPHYOp
     options.push_back(std::make_pair("1", "W5500"));
     options.push_back(std::make_pair("2", "DN9051"));
     options.push_back(std::make_pair("3", "KSZ8851SNL"));
-#if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
     options.push_back(std::make_pair("4", "LAN8720"));
     options.push_back(std::make_pair("5", "RTL8201"));
     options.push_back(std::make_pair("6", "TLK110/IP101"));
@@ -6992,7 +6997,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomPHYOp
 
     return options;
 }
-#if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
 const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomCLKOptions() const
 {
     std::vector<std::pair<String, String>> options;
