@@ -6,7 +6,7 @@
 #include "../PreferencesKeys.h"
 #include "NetworkUtil.h"
 #include "../networkDevices/LAN8720Definitions.h"
-#include "networkDevices/Tlk110Definitions.h"
+#include "../networkDevices/Tlk110Definitions.h"
 
 NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDeviceType, String hostname, Preferences *preferences, IPConfiguration *ipConfiguration)
 {
