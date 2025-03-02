@@ -6,6 +6,7 @@
 #include "../PreferencesKeys.h"
 #include "NetworkUtil.h"
 #include "../networkDevices/LAN8720Definitions.h"
+#include "networkDevices/Tlk110Definitions.h"
 
 NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDeviceType, String hostname, Preferences *preferences, IPConfiguration *ipConfiguration)
 {
@@ -59,14 +60,12 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
         break;
     case NetworkDeviceType::M5STACK_PoESP32_Unit:
         device = new EthernetDevice(hostname, preferences, ipConfiguration, "M5STACK PoESP32 Unit",
-                                    ETH_PHY_ADDR_W5500,
-                                    ETH_PHY_CS_M5_W5500,
-                                    ETH_PHY_IRQ_M5_W5500,
-                                    ETH_PHY_RST_M5_W5500,
-                                    ETH_PHY_SPI_SCK_M5_W5500,
-                                    ETH_PHY_SPI_MISO_M5_W5500,
-                                    ETH_PHY_SPI_MOSI_M5_W5500,
-                                    ETH_PHY_W5500);
+                                    ETH_PHY_ADDR_M5_POESP32,
+                                    ETH_PHY_POWER_M5_POESP32,
+                                    ETH_PHY_MDC_M5_POESP32,
+                                    ETH_PHY_MDIO_M5_POESP32,
+                                    ETH_CLK_MODE_M5_TYPE,
+                                    ETH_CLK_MODE_M5_POESP32);
         break;
     case NetworkDeviceType::LilyGO_T_ETH_ELite:
         device = new EthernetDevice(hostname, preferences, ipConfiguration, "LilyGO T-ETH ELite",
