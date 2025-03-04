@@ -1,0 +1,8 @@
+#pragma once
+
+#define ETH_CLK_MODE_M5_TYPE          ETH_PHY_TLK110
+#define ETH_CLK_MODE_M5_POESP32       ETH_CLOCK_GPIO0_IN
+#define ETH_PHY_ADDR_M5_POESP32       1
+#define ETH_PHY_MDC_M5_POESP32        23
+#define ETH_PHY_MDIO_M5_POESP32       18
+#define ETH_PHY_POWER_M5_POESP32      5
