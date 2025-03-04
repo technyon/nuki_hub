@@ -5,7 +5,7 @@
 #define NUKI_HUB_VERSION "9.09"
 #define NUKI_HUB_VERSION_INT (uint32_t)909
 #define NUKI_HUB_BUILD "unknownbuildnr"
-#define NUKI_HUB_DATE "2025-03-02"
+#define NUKI_HUB_DATE "2025-03-03"
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_OTA_MANIFEST_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/manifest.json"
@@ -120,6 +120,8 @@
 #define GITHUB_BETA_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/beta/nuki_hub_updater_esp32.bin"
 #define GITHUB_MASTER_RELEASE_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_esp32-gl-s10.bin"
 #define GITHUB_MASTER_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_updater_esp32.bin"
+#define GITHUB_LATEST_RELEASE_BINARY_URL_OTHER (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32.bin"
+#define GITHUB_LATEST_UPDATER_BINARY_URL_OTHER (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_updater_esp32.bin"
 #define NUKI_HUB_HW (char*)"ESP32-GL-S10"
 #define BOOT_BUTTON_GPIO (gpio_num_t)0
 #else
@@ -135,6 +137,8 @@
 #define GITHUB_BETA_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/beta/nuki_hub_updater_esp32.bin"
 #define GITHUB_MASTER_RELEASE_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_esp32.bin"
 #define GITHUB_MASTER_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_updater_esp32.bin"
+#define GITHUB_LATEST_RELEASE_BINARY_URL_OTHER (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32-gl-s10.bin"
+#define GITHUB_LATEST_UPDATER_BINARY_URL_OTHER (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_updater_esp32.bin"
 #define NUKI_HUB_HW (char*)"ESP32"
 #define BOOT_BUTTON_GPIO (gpio_num_t)0
 #endif

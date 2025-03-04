@@ -108,7 +108,7 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
                                         preferences->getInt(preference_network_custom_mosi, -1),
                                         custEthtype);
         }
-#if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
         else if(custPHY >= 4 && custPHY <= 9)
         {
             int custCLKpref = preferences->getInt(preference_network_custom_clk, 0);

@@ -77,7 +77,7 @@ std::string NetworkUtil::GetCustomEthernetDeviceName(int custPHY)
     }
 }
 
-#if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
 eth_phy_type_t NetworkUtil::GetCustomEthernetType(int custPHY)
 {
     switch(custPHY)

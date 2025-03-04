@@ -329,7 +329,7 @@ const std::vector<int> Gpio::getDisabledPins() const
         disabledPins.push_back(_preferences->getInt(preference_network_custom_mdc, -1));
         disabledPins.push_back(_preferences->getInt(preference_network_custom_mdio, -1));
         break;
-#if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
     case 4:
         disabledPins.push_back(12);
         disabledPins.push_back(ETH_RESET_PIN_LAN8720);
