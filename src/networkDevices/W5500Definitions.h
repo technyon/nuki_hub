@@ -29,3 +29,13 @@
 #define ETH_PHY_SPI_SCK_GENERIC_W5500   8
 #define ETH_PHY_SPI_MISO_GENERIC_W5500  9
 #define ETH_PHY_SPI_MOSI_GENERIC_W5500  10
+
+#define ETH_ADDR_WAVESHARE_ESP32_S3_ETH                        1
+#define ETH_PHY_SPI_IRQ_WAVESHARE_ESP32_S3_ETH                     10
+#define ETH_PHY_SPI_RST_WAVESHARE_ESP32_S3_ETH                    9
+#define ETH_PHY_SPI_CS_WAVESHARE_ESP32_S3_ETH                      14
+#define ETH_PHY_SPI_SCK_WAVESHARE_ESP32_S3_ETH                    13
+#define ETH_PHY_SPI_MISO_WAVESHARE_ESP32_S3_ETH                    12
+#define ETH_PHY_SPI_MOSI_WAVESHARE_ESP32_S3_ETH                    11
+
+#define ETH_ADDR                        1

@@ -47,6 +47,17 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
                                     ETH_PHY_SPI_MOSI_M5_W5500_S3,
                                     ETH_PHY_W5500);
         break;
+    case NetworkDeviceType::Waveshare_ESP32_S3_ETH:
+        device = new EthernetDevice(hostname, preferences, ipConfiguration, "Waveshare ESP32-S3-ETH / ESP32-S3-ETH-POE",
+                                    ETH_ADDR_WAVESHARE_ESP32_S3_ETH,
+                                    ETH_PHY_SPI_CS_WAVESHARE_ESP32_S3_ETH,
+                                    ETH_PHY_SPI_IRQ_WAVESHARE_ESP32_S3_ETH,
+                                    ETH_PHY_SPI_RST_WAVESHARE_ESP32_S3_ETH,
+                                    ETH_PHY_SPI_SCK_WAVESHARE_ESP32_S3_ETH,
+                                    ETH_PHY_SPI_MISO_WAVESHARE_ESP32_S3_ETH,
+                                    ETH_PHY_SPI_MOSI_WAVESHARE_ESP32_S3_ETH,
+                                    ETH_PHY_W5500);
+        break;
     case NetworkDeviceType::ETH01_Evo:
         device = new EthernetDevice(hostname, preferences, ipConfiguration, "ETH01-Evo",
                                     ETH_PHY_ADDR_ETH01EVO,
@@ -117,7 +128,13 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
             eth_phy_type_t custEthtype = NetworkUtil::GetCustomEthernetType(custPHY);
             eth_clock_mode_t custCLK = NetworkUtil::GetCustomClock(custCLKpref);
 
-            device = new EthernetDevice(hostname, preferences, ipConfiguration, custName, preferences->getInt(preference_network_custom_addr, -1), preferences->getInt(preference_network_custom_pwr, -1), preferences->getInt(preference_network_custom_mdc, -1), preferences->getInt(preference_network_custom_mdio, -1), custEthtype, custCLK);
+            device = new EthernetDevice(hostname, preferences, ipConfiguration, custName,
+                                        preferences->getInt(preference_network_custom_addr, -1),
+                                        preferences->getInt(preference_network_custom_pwr, -1),
+                                        preferences->getInt(preference_network_custom_mdc, -1),
+                                        preferences->getInt(preference_network_custom_mdio, -1),
+                                        custEthtype,
+                                        custCLK);
         }
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
