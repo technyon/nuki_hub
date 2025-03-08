@@ -119,10 +119,6 @@ Devices ranked best-to-worst:
 
 ## Support Nuki Hub development
 
-If you haven't ordered your Nuki product yet, you can support me by using my referrer code when placing your order:<br>
-REF2BJHFVHZKK<br>
-This will also give you a 10% discount on your order.<br>
-<br>
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:<br>
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1IDUBV)
 
