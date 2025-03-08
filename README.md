@@ -46,7 +46,8 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 - [LilyGO-T-ETH-Lite-ESP32S3](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
 - [LilyGO-T-ETH ELite](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
 - [GL-S10 (Revisions 2.1, 2.3 / 1.0 might not be supported)](https://www.gl-inet.com/products/gl-s10/)
-
+- [Waveshare ESP32-S3-ETH / ESP32-S3-POE-ETH](https://www.waveshare.com/esp32-s3-eth.htm?sku=28771)
+  
 In principle all ESP32 (and variants) devices with built-in ethernet port are supported, but might require additional setup using the "Custom LAN setup" option.
 See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section for more information.
 
