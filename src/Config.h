@@ -5,7 +5,7 @@
 #define NUKI_HUB_VERSION "9.10"
 #define NUKI_HUB_VERSION_INT (uint32_t)910
 #define NUKI_HUB_BUILD "unknownbuildnr"
-#define NUKI_HUB_DATE "2025-03-03"
+#define NUKI_HUB_DATE "2025-03-21"
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_OTA_MANIFEST_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/manifest.json"

@@ -33,7 +33,7 @@ void NetworkDevice::init()
                 {
                     _useEncryption = true;
                     Log->println("MQTT over TLS.");
-                    _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
+                    _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::YES);
                     _mqttClientSecure->setCACert(caDest);
 
                     File file2 = SPIFFS.open("/mqtt_ssl.crt");
@@ -70,7 +70,7 @@ void NetworkDevice::init()
     if (!_useEncryption)
     {
         Log->println("MQTT without TLS.");
-        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
+        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::YES);
     }
 
     if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
@@ -103,7 +103,7 @@ void NetworkDevice::update()
 {
     if (_mqttEnabled)
     {
-        getMqttClient()->loop();
+        //getMqttClient()->loop();
     }
 }
 
