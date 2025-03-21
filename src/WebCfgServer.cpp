@@ -4412,7 +4412,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             {
                 if (_preferences->getBool(preference_lock_gemini_enabled, false))
                 {
-                    message = "Nuki Lock Ultra PIN cleared";
+                    message = "Nuki Lock Ultra/5th gen PIN cleared";
                     _nuki->setUltraPin(0xffffffff);
                     _preferences->putInt(preference_lock_gemini_pin, 0);
                 }
@@ -4431,7 +4431,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 {
                     if(_nuki->getUltraPin() != value.toInt())
                     {
-                        message = "Nuki Lock Ultra PIN saved";
+                        message = "Nuki Lock Ultra/5th gen PIN saved";
                         _nuki->setUltraPin(value.toInt());
                         _preferences->putInt(preference_lock_gemini_pin, value.toInt());
                         Log->print("Setting changed: ");
@@ -5781,7 +5781,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<h3>Basic Nuki Configuration</h3>");
     response.print("<table>");
     printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled, true), "");
-    printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
+    printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra/5th gen enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
     printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled, false), "");
     printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, true), "");
     response.print("</table><br>");
@@ -6268,7 +6268,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     else
     {
         response.print("\nLock enabled: Yes");
-        response.print("\nLock Ultra enabled: ");
+        response.print("\nLock Ultra/5th gen enabled: ");
         response.print(_preferences->getBool(preference_lock_gemini_enabled, false) ? "Yes" : "No");
         response.print("\nPaired: ");
         response.print(_nuki->isPaired() ? "Yes" : "No");
@@ -6466,7 +6466,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             uint32_t authorizationIdInt = authorizationId[0] + 256U*authorizationId[1] + 65536U*authorizationId[2] + 16777216U*authorizationId[3];
             response.print("\nAuthorizationId (UINT32_T): ");
             response.print(authorizationIdInt);
-            response.print("\nPaired to Nuki Lock Ultra: ");
+            response.print("\nPaired to Nuki Lock Ultra/5th gen: ");
             response.print(nukiBlePref.getBool("isUltra", false) ? "Yes" : "No");
         }
     }
