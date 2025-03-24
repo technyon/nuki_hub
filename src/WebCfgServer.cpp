@@ -4377,6 +4377,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     configChanged = true;
                     clearSession = true;
                     newMFA = true;
+                    _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
                 }
             }
         }
