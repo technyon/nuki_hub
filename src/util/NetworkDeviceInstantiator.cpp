@@ -80,6 +80,18 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
                                     ETH_PHY_SPI_MOSI_ELITE_W5500,
                                     ETH_PHY_W5500);
         break;
+    case NetworkDeviceType::LilyGO_T_ETH_Lite_S3:
+        device = new EthernetDevice(hostname, preferences, ipConfiguration, "LilyGO T-ETH-Lite-ESP32S3",
+                                    ETH_PHY_ADDR_W5500,
+                                    ETH_PHY_CS_ETHLITES3_W5500,
+                                    ETH_PHY_IRQ_ETHLITES3_W5500,
+                                    ETH_PHY_RST_ETHLITES3_W5500,
+                                    ETH_PHY_SPI_SCK_ETHLITES3_W5500,
+                                    ETH_PHY_SPI_MISO_ETHLITES3_W5500,
+                                    ETH_PHY_SPI_MOSI_ETHLITES3_W5500,
+                                    ETH_PHY_W5500);
+        break;
+
     case NetworkDeviceType::CUSTOM:
     {
         int custPHY = preferences->getInt(preference_network_custom_phy, 0);

@@ -6975,6 +6975,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     options.push_back(std::make_pair("8", "GL-S10"));
     options.push_back(std::make_pair("9", "ETH01-Evo"));
     options.push_back(std::make_pair("13", "Waveshare ESP32-S3-ETH / ESP32-S3-ETH-POE"));
+    options.push_back(std::make_pair("14", "LilyGO T-ETH-Lite-ESP32S3"));
     options.push_back(std::make_pair("11", "Custom LAN module"));
 
     return options;
