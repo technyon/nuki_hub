@@ -35,8 +35,8 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Keypad 2.0
 
 <b>Probably supported Nuki devices (untested):</b>
-- Nuki Smart Lock 5.0 Pro
-- Nuki Smart Lock Go
+- Nuki Smart Lock 5.0 Pro (See https://github.com/technyon/nuki_hub/issues/642)
+- Nuki Smart Lock Go (See https://github.com/technyon/nuki_hub/issues/643)
 
 <b>Supported Ethernet devices:</b><br>
 As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with built-in wired ethernet are supported:
@@ -212,7 +212,7 @@ Webflash will automatically flash the no/Quad SPI PSRAM build when an ESP32-S3 i
 If your ESP32-S3 device has PSRAM but it is not detected please switch to the other S3 binary.<br>
 You can do this by flashing the correct binaries manually or by selecting the option to switch S3 binary build from the Firmware Update page of the Web Configurator.
 
-Note that there are also is a separate build of Nuki Hub available for the GL-S10 ESP32 which is needed to enable PSRAM on this device (BETA).<br>
+Note that there are also is a separate build of Nuki Hub available for the GL-S10 ESP32 which is needed to enable PSRAM on this device.<br>
 
 ## Configuration
 
