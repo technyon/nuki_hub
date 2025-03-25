@@ -58,7 +58,7 @@ def merge_bin(source, target, env):
         flash_args.append(position)
         flash_args.append(bin_file)
 
-    flash_args.append("0x2B0000")
+    flash_args.append("0x270000")
     flash_args.append(f"{target_dir}/nuki_hub_updater_{board}.bin")
 
     cmd = f"esptool.py --chip {chip} merge_bin -o {target_file} --flash_mode dio --flash_freq keep --flash_size keep " + " ".join(flash_args)
