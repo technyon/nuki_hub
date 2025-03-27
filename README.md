@@ -29,14 +29,12 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Smart Lock 3.0 Pro
 - Nuki Smart Lock 4.0
 - Nuki Smart Lock 4.0 Pro
+- Nuki Smart Lock Go
+- Nuki Smart Lock 5.0 Pro
 - Nuki Smart Lock Ultra
 - Nuki Opener
 - Nuki Keypad 1.0
 - Nuki Keypad 2.0
-
-<b>Probably supported Nuki devices (untested):</b>
-- Nuki Smart Lock 5.0 Pro (See https://github.com/technyon/nuki_hub/issues/642)
-- Nuki Smart Lock Go (See https://github.com/technyon/nuki_hub/issues/643)
 
 <b>Supported Ethernet devices:</b><br>
 As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with built-in wired ethernet are supported:
@@ -165,15 +163,15 @@ MQTT nodes like lock state and battery level should now reflect the reported val
 This is not recommended (unless when using [hybrid mode](/HYBRID.md)) and will lead to excessive battery drain and can lead to either device missing updates.
 Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
 
-## Pairing with a Nuki Lock Ultra / 5th gen Pro
+## Pairing with a Nuki Lock Ultra / Nuki Lock Go / Nuki Lock 5th gen Pro
 
 Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
 
-Before enabling pairing mode using the button on the Lock Ultra / 5th gen Pro first setup Nuki Hub as follows:
-- Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra/5th gen enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra/5th gen enabled" will change multiple other NukiHub settings.
-- Input your 6-digit Nuki Lock Ultra/5th gen PIN on the "Credentials" page and Save
+Before enabling pairing mode using the button on the Nuki Lock Ultra / Nuki Lock Go / Nuki Lock 5th gen Pro first setup Nuki Hub as follows:
+- Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra/Go/5th gen enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra/Go/5th gen enabled" will change multiple other NukiHub settings.
+- Input your 6-digit Nuki Lock Ultra/Go/5th gen PIN on the "Credentials" page and Save
 - Press the button on the Nuki device for a few seconds until the LED ring lights up and remains lit.
-- It is **strongly** recommended(/mandatory) to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra/5th gen Pro does not support Bridge mode
+- It is **strongly** recommended(/mandatory) to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra/Go/5th gen Pro does not support Bridge mode
 
 When pairing is successful, the web interface should show "Paired: Yes".<br>
 
@@ -274,7 +272,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 #### Basic Nuki Configuration
 
 - Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0 and Ultra)
-- Nuki Smartlock Ultra/5th gen enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra/5th gen Pro
+- Nuki Smartlock Ultra/Go/5th gen enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra/Go/5th gen Pro
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
 - New Nuki Bluetooth connection mode (disable if there are connection issues): Enable to use the latest Nuki BLE connection mode (recommended). Disable if you have issues communicating with the lock/opener
 
@@ -349,7 +347,7 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 #### Nuki Lock PIN / Nuki Opener PIN
 
 - PIN Code: Fill with the Nuki Security Code of the Nuki Lock and/or Nuki Opener. Required for functions that require the security code to be sent to the lock/opener such as setting lock permissions/adding keypad codes, viewing the activity log or changing the Nuki device configuration. Set to "#" to remove the security code from the Nuki Hub configuration.
-- PIN Code Ultra/5th gen: Fill with the 6-digit Nuki Security Code of the Nuki Lock Ultra/5th gen Pro. Required for pairing (and many other functions)
+- PIN Code Ultra/5th gen: Fill with the 6-digit Nuki Security Code of the Nuki Lock Ultra/Go/5th gen Pro. Required for pairing (and many other functions)
 
 #### Unpair Nuki Lock / Unpair Nuki Opener
 
