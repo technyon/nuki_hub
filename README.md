@@ -220,7 +220,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Network Configuration
 
-- Host name: Set the hostname for the Nuki Hub ESP
+- Hostname (needs to be unique, "nukihub" is not allowed): Set the hostname for the Nuki Hub ESP, will also be used as the MQTT client ID. Needs to be unique.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.

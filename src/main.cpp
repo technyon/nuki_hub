@@ -95,6 +95,8 @@ RTC_NOINIT_ATTR bool wifiFallback;
 RTC_NOINIT_ATTR bool ethCriticalFailure;
 bool coredumpPrinted = true;
 bool timeSynced = false;
+bool webStarted = false;
+bool webSSLStarted = false;
 
 int lastHTTPeventId = -1;
 bool doOta = false;
@@ -218,7 +220,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
     {
         SPIFFS.remove((String)"/" + file.name());
     }
-    
+
     file = root.openNextFile();
   }
 }
@@ -257,6 +259,20 @@ void networkTask(void *pvParameters)
             {
                 esp_netif_sntp_start();
             }
+    
+            /* MDNS currently disabled for causing issues (9.10 / 2025-04-01)
+            if(webSSLStarted) {
+                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                    MDNS.addService("http", "tcp", 443);
+                }
+            }
+            else if(webStarted) {
+                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                    MDNS.addService("http", "tcp", 80);
+                }
+            }
+            */
+
             reroute = false;
             setReroute();
         }
@@ -529,6 +545,8 @@ void setupTasks(bool ota)
     esp_chip_info_t info;
     esp_chip_info(&info);
     uint8_t espCores = info.cores;
+    Log->print("Cores: ");
+    Log->println(espCores);
 
     if(ota)
     {
@@ -673,7 +691,7 @@ void setup()
     {
         logCoreDump();
     }
-    
+
     if (SPIFFS.begin(true))
     {
         listDir(SPIFFS, "/", 1);
@@ -792,10 +810,7 @@ void setup()
                             return response->redirect("/");
                         });
                         psychicSSLServer->begin();
-                        if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                            MDNS.addService("http", "tcp", 443);
-                        }
-    
+                        webSSLStarted = true;
                     }
                 }
             }
@@ -812,9 +827,7 @@ void setup()
                 return response->redirect("/");
             });
             psychicServer->begin();
-            if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                MDNS.addService("http", "tcp", 80);
-            }
+            webStarted = true;
         #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         }
         #endif
@@ -977,9 +990,7 @@ void setup()
                                 return response->redirect("/");
                             });
                             psychicSSLServer->begin();
-                            if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                                MDNS.addService("http", "tcp", 443);
-                            }
+                            webSSLStarted = true;
                         }
                     }
                 }
@@ -996,9 +1007,7 @@ void setup()
                     return response->redirect("/");
                 });
                 psychicServer->begin();
-                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                    MDNS.addService("http", "tcp", 80);
-                }
+                webStarted = true;
             #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
             }
             #endif
