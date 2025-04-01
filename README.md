@@ -184,9 +184,14 @@ See [hybrid mode](/HYBRID.md) for more information.
 
 ESP32 devices have a limited amount of free RAM available.<br>
 <br>
-On version >=9.00 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
-- ESP32: 60 kilobytes / 60.000 bytes
-- Other variants (C3/S3/C6/H2): 90-120 kilobytes / 90.000-120.000 bytes
+On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
+
+- ESP32: 40.000 bytes
+- ESP32 with PSRAM: 90.000 bytes + PSRAM
+- ESP32-C3: 45.000 bytes
+- ESP32-C6: 170.000 bytes
+- ESP32-S3 90.000 bytes
+- ESP32-S3 with PSRAM: 130.000 bytes + PSRAM
 
 This free amount of RAM can be reduced (temporarily) by certain actions (such as changing Nuki device config) or continuously when enabling the following:
 - Connecting both a Nuki opener and a Nuki lock to Nuki Hub
@@ -697,13 +702,15 @@ When you are on the right application you can upload the new binary by clicking 
 After about a minute the new firmware should be installed afterwhich the ESP will reboot automatically to the updated binary.<br>
 Selecting the wrong binary will lead to an unsuccessfull update<br>
 <br>
-<b> Note for users upgrading from Nuki Hub 8.35 or lower:</b><br>
-Updating to version 9.00 requires a change to the partition table of the ESP32.<br>
-Please follow the instructions for the [First time installation](#first-time-installation) one time when updating to Nuki Hub 9.00 from an earlier version.<br>
+<b> Note for users upgrading from Nuki Hub 9.09 or lower:</b><br>
+Updating to version 9.10 requires a change to the partition table of the ESP32.<br>
+Please follow the instructions for the [First time installation](#first-time-installation) one time when updating to Nuki Hub 9.10 from an earlier version.<br>
 
 ## MQTT Encryption (optional)
 
 The communication via MQTT can be SSL encrypted.<br>
+Note: MQTT SSL requires a significant amount of RAM and will not work in most cases on low RAM devices (ESP32 without PSRAM or ESP32-C3)
+
 To enable SSL encryption, supply the necessary information in the MQTT Configuration page.<br>
 <br>
 The following configurations are supported:<br>
