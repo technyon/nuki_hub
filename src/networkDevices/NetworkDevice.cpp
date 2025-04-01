@@ -7,9 +7,19 @@
 #include "SPIFFS.h"
 #include "../MqttTopics.h"
 #include "PreferencesKeys.h"
+#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#include "esp_psram.h"
+#endif
 
 void NetworkDevice::init()
 {
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    if(esp_psram_get_size() > 0)
+    {
+        _mqttInternal = true;
+    }
+    #endif
+    
     if(_preferences->getBool(preference_mqtt_ssl_enabled, false)) {
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
@@ -28,12 +38,19 @@ void NetworkDevice::init()
                 char* caDest;
                 caDest = (char *)malloc(sizeof(char) * (ca_cert.length()+1));
                 strcpy(caDest, ca_cert.c_str());
- 
+
                 if(ca_cert.length() > 1)
                 {
                     _useEncryption = true;
                     Log->println("MQTT over TLS.");
-                    _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::YES);
+                    if(_mqttInternal)
+                    {
+                        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::YES);
+                    }
+                    else
+                    {
+                        _mqttClientSecure = new espMqttClientSecure(espMqttClientTypes::UseInternalTask::NO);
+                    }
                     _mqttClientSecure->setCACert(caDest);
 
                     File file2 = SPIFFS.open("/mqtt_ssl.crt");
@@ -48,7 +65,7 @@ void NetworkDevice::init()
                         char* certDest;
                         certDest = (char *)malloc(sizeof(char) * (cert.length()+1));
                         strcpy(certDest, cert.c_str());
-                
+
                         String key = file3.readString();
                         file3.close();
                         char* keyDest;
@@ -70,7 +87,14 @@ void NetworkDevice::init()
     if (!_useEncryption)
     {
         Log->println("MQTT without TLS.");
-        _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::YES);
+        if(_mqttInternal)
+        {
+            _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::YES);
+        }
+        else
+        {
+            _mqttClient = new espMqttClient(espMqttClientTypes::UseInternalTask::NO);
+        }
     }
 
     if(_preferences->getBool(preference_mqtt_log_enabled, false) || _preferences->getBool(preference_webserial_enabled, false))
@@ -101,9 +125,9 @@ void NetworkDevice::init()
 }
 void NetworkDevice::update()
 {
-    if (_mqttEnabled)
+    if (_mqttEnabled && !_mqttInternal)
     {
-        //getMqttClient()->loop();
+        getMqttClient()->loop();
     }
 }
 
