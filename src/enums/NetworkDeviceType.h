@@ -14,5 +14,6 @@ enum class NetworkDeviceType
     GL_S10,
     ETH01_Evo,
     Waveshare_ESP32_S3_ETH,
+    LilyGO_T_ETH_Lite_S3,
     CUSTOM
 };

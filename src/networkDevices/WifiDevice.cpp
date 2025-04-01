@@ -286,10 +286,6 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
         break;
     case ARDUINO_EVENT_WIFI_STA_CONNECTED:       
         Log->println("Connected to access point");
-        if(!_openAP)
-        {
-            onConnected();
-        }
         break;
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:    
         Log->println("Disconnected from WiFi access point"); 

@@ -29,6 +29,8 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Smart Lock 3.0 Pro
 - Nuki Smart Lock 4.0
 - Nuki Smart Lock 4.0 Pro
+- Nuki Smart Lock Go
+- Nuki Smart Lock 5.0 Pro
 - Nuki Smart Lock Ultra
 - Nuki Opener
 - Nuki Keypad 1.0
@@ -161,30 +163,35 @@ MQTT nodes like lock state and battery level should now reflect the reported val
 This is not recommended (unless when using [hybrid mode](/HYBRID.md)) and will lead to excessive battery drain and can lead to either device missing updates.
 Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
 
-## Pairing with a Nuki Lock Ultra
+## Pairing with a Nuki Lock Ultra / Nuki Lock Go / Nuki Lock 5th gen Pro
 
 Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
 
-Before enabling pairing mode using the button on the Lock Ultra first setup Nuki Hub as follows:
-- Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra enabled" will change multiple other NukiHub settings.
-- Input your 6-digit Nuki Lock Ultra PIN on the "Credentials" page and Save
+Before enabling pairing mode using the button on the Nuki Lock Ultra / Nuki Lock Go / Nuki Lock 5th gen Pro first setup Nuki Hub as follows:
+- Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra/Go/5th gen enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra/Go/5th gen enabled" will change multiple other NukiHub settings.
+- Input your 6-digit Nuki Lock Ultra/Go/5th gen PIN on the "Credentials" page and Save
 - Press the button on the Nuki device for a few seconds until the LED ring lights up and remains lit.
-- It is **strongly** recommended(/mandatory) to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra does not support Bridge mode
+- It is **strongly** recommended(/mandatory) to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra/Go/5th gen Pro does not support Bridge mode
 
 When pairing is successful, the web interface should show "Paired: Yes".<br>
 
 ## Hybrid mode
 
-Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0, Nuki Lock 4.0 Pro or Nuki Lock Ultra in conjunction with Nuki Hub.<br>
+Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0, Nuki Lock 4.0 Pro, Nuki Lock 5.0 Pro, Nuki Lock Go or Nuki Lock Ultra in conjunction with Nuki Hub.<br>
 See [hybrid mode](/HYBRID.md) for more information.
 
 ## Memory constraints
 
 ESP32 devices have a limited amount of free RAM available.<br>
 <br>
-On version >=9.00 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
-- ESP32: 60 kilobytes / 60.000 bytes
-- Other variants (C3/S3/C6/H2): 90-120 kilobytes / 90.000-120.000 bytes
+On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
+
+- ESP32: 40.000 bytes
+- ESP32 with PSRAM: 90.000 bytes + PSRAM
+- ESP32-C3: 45.000 bytes
+- ESP32-C6: 170.000 bytes
+- ESP32-S3 90.000 bytes
+- ESP32-S3 with PSRAM: 130.000 bytes + PSRAM
 
 This free amount of RAM can be reduced (temporarily) by certain actions (such as changing Nuki device config) or continuously when enabling the following:
 - Connecting both a Nuki opener and a Nuki lock to Nuki Hub
@@ -208,7 +215,7 @@ Webflash will automatically flash the no/Quad SPI PSRAM build when an ESP32-S3 i
 If your ESP32-S3 device has PSRAM but it is not detected please switch to the other S3 binary.<br>
 You can do this by flashing the correct binaries manually or by selecting the option to switch S3 binary build from the Firmware Update page of the Web Configurator.
 
-Note that there are also is a separate build of Nuki Hub available for the GL-S10 ESP32 which is needed to enable PSRAM on this device (BETA).<br>
+Note that there are also is a separate build of Nuki Hub available for the GL-S10 ESP32 which is needed to enable PSRAM on this device.<br>
 
 ## Configuration
 
@@ -218,7 +225,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Network Configuration
 
-- Host name: Set the hostname for the Nuki Hub ESP
+- Hostname (needs to be unique, "nukihub" is not allowed): Set the hostname for the Nuki Hub ESP, will also be used as the MQTT client ID. Needs to be unique.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
@@ -270,7 +277,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 #### Basic Nuki Configuration
 
 - Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0 and Ultra)
-- Nuki Smartlock Ultra enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra
+- Nuki Smartlock Ultra/Go/5th gen enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra/Go/5th gen Pro
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
 - New Nuki Bluetooth connection mode (disable if there are connection issues): Enable to use the latest Nuki BLE connection mode (recommended). Disable if you have issues communicating with the lock/opener
 
@@ -345,7 +352,7 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 #### Nuki Lock PIN / Nuki Opener PIN
 
 - PIN Code: Fill with the Nuki Security Code of the Nuki Lock and/or Nuki Opener. Required for functions that require the security code to be sent to the lock/opener such as setting lock permissions/adding keypad codes, viewing the activity log or changing the Nuki device configuration. Set to "#" to remove the security code from the Nuki Hub configuration.
-- PIN Code Ultra: Fill with the 6-digit Nuki Security Code of the Nuki Lock Ultra. Required for pairing (and many other functions)
+- PIN Code Ultra/5th gen: Fill with the 6-digit Nuki Security Code of the Nuki Lock Ultra/Go/5th gen Pro. Required for pairing (and many other functions)
 
 #### Unpair Nuki Lock / Unpair Nuki Opener
 
@@ -615,8 +622,8 @@ Changing settings has to enabled first in the configuration portal. Check the se
 | autoLockEnabled                         | Whether auto lock is enabled.                                                                    | 1 = enabled, 0 = disabled                                         |`{ "autoLockEnabled": "1" }`        |
 | immediateAutoLockEnabled                | Whether auto lock should be performed immediately after the door has been closed.                | 1 = enabled, 0 = disabled                                        |`{ "immediateAutoLockEnabled": "1" }`|
 | autoUpdateEnabled                       | Whether automatic firmware updates should be enabled.                                            | 1 = enabled, 0 = disabled                                         |`{ "autoUpdateEnabled": "1" }`      |
-| motorSpeed                              | The desired motor speed (Ultra only)                                                             | "Standard", "Insane", "Gentle"                                    |`{ "motorSpeed": "Standard" }`      |
-| enableSlowSpeedDuringNightMode          | Whether the slow speed should be applied during Night Mode (Ultra only)                          | 1 = enabled, 0 = disabled                            |`{ "enableSlowSpeedDuringNightMode": "1" }`      |
+| motorSpeed                              | The desired motor speed (Ultra/5th gen Pro only)                                                 | "Standard", "Insane", "Gentle"                                    |`{ "motorSpeed": "Standard" }`      |
+| enableSlowSpeedDuringNightMode          | Whether the slow speed should be applied during Night Mode (Ultra/5th gen Pro only)              | 1 = enabled, 0 = disabled                            |`{ "enableSlowSpeedDuringNightMode": "1" }`      |
 | rebootNuki                              | Reboot the Nuki device immediately                                                               | 1 = reboot nuki                                                   |`{ "rebootNuki": "1" }`             |
 
 ### Nuki Opener Configuration
@@ -695,13 +702,15 @@ When you are on the right application you can upload the new binary by clicking 
 After about a minute the new firmware should be installed afterwhich the ESP will reboot automatically to the updated binary.<br>
 Selecting the wrong binary will lead to an unsuccessfull update<br>
 <br>
-<b> Note for users upgrading from Nuki Hub 8.35 or lower:</b><br>
-Updating to version 9.00 requires a change to the partition table of the ESP32.<br>
-Please follow the instructions for the [First time installation](#first-time-installation) one time when updating to Nuki Hub 9.00 from an earlier version.<br>
+<b> Note for users upgrading from Nuki Hub 9.09 or lower:</b><br>
+Updating to version 9.10 requires a change to the partition table of the ESP32.<br>
+Please follow the instructions for the [First time installation](#first-time-installation) one time when updating to Nuki Hub 9.10 from an earlier version.<br>
 
 ## MQTT Encryption (optional)
 
 The communication via MQTT can be SSL encrypted.<br>
+Note: MQTT SSL requires a significant amount of RAM and will not work in most cases on low RAM devices (ESP32 without PSRAM or ESP32-C3)
+
 To enable SSL encryption, supply the necessary information in the MQTT Configuration page.<br>
 <br>
 The following configurations are supported:<br>

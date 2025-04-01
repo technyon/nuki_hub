@@ -22,13 +22,13 @@ In hybrid mode Nuki Hub will automatically choose the best way to communicate wi
 When compared to regular/bridge mode this leads to speed increases in getting state changes and pushing state changes (because we can send and receive usefull information directly over MQTT without having to connect over BLE)
 When compared to the official MQTT implementation this adds many many features that are not available in the official MQTT implementation and would normally require you to use the app or Web API (which has its own issues, downtime and cloud requirement).
 
-**As the Nuki Smartlock Ultra has no support for the Nuki Bridge it is mandatory to setup Hybrid mode to receive prompt state changes from the lock in Nuki Hub.**
+**As the Nuki Smartlock Ultra/5th gen Pro has no support for the Nuki Bridge it is mandatory to setup Hybrid mode to receive prompt state changes from the lock in Nuki Hub.**
 
 ### Requirements ###
 
 - ESP32 running Nuki Hub 9.08 or higher
-- For WiFi: Nuki lock 3.0 Pro, Nuki Lock 4.0 Pro or Nuki Lock Ultra
-- For Thread: Nuki Lock 4.0, Nuki Lock 4.0 Pro or Nuki Lock Ultra. Note that you do ***NOT*** need to buy the remote access addon for the Nuki Lock 4.0
+- For WiFi: Nuki lock 3.0 Pro, Nuki Lock 4.0 Pro, Nuki Lock 5.0 Pro, Nuki Lock Go or Nuki Lock Ultra
+- For Thread: Nuki Lock 4.0, Nuki Lock 4.0 Pro, Nuki Lock 5.0 Pro, Nuki Lock Go or Nuki Lock Ultra. Note that you do ***NOT*** need to buy the remote access addon for the Nuki Lock 4.0 or Nuki Lock Go
 - For Thread: The Nuki Lock needs to have network access to the same MQTT server as the one that Nuki Hub is conected to. Depending if the MQTT server is reachable over IPv6 you might need an OpenThread Border router that supports NAT64 and has this enabled. Currently this means an Apple Device or Home Assistant with the Matter server and OpenThread Border Router
 - The Nuki Opener does not have WiFI or Thread and thus doesn't benefit from the hybrid solutions added speed. You can however use and connect a Nuki Opener as usual which will function over regular BLE and can still connect Nuki Hub as a bridge to an Opener.
 

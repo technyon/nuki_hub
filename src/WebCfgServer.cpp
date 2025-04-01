@@ -1601,18 +1601,18 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 #else
     String build_type = "debug";
 #endif
-    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('latestver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
-    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('betaver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
-    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('devver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('latestver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
+    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('betaver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
+    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('devver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
     #if defined(CONFIG_IDF_TARGET_ESP32S3)
     if(esp_psram_get_size() <= 0)
     {
-        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to other PSRAM release version\"></form>");
+        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to other PSRAM release version\"></form>");
     }
     #elif defined(CONFIG_IDF_TARGET_ESP32) && !defined(NUKI_TARGET_GL_S10)
     if(_preferences->getInt(preference_network_hardware) == 8)
     {
-        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"token\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to specific GL-S10 release version\"></form>");
+        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to specific GL-S10 release version\"></form>");
     }
     #endif
     response.print("<div style=\"clear: both\"></div><br>");
@@ -3174,7 +3174,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "HOSTNAME")
         {
-            if(_preferences->getString(preference_hostname, "") != value)
+            if(_preferences->getString(preference_hostname, "") != value && value != "nukihub")
             {
                 _preferences->putString(preference_hostname, value);
                 Log->print("Setting changed: ");
@@ -4377,6 +4377,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     configChanged = true;
                     clearSession = true;
                     newMFA = true;
+                    _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
                 }
             }
         }
@@ -4412,7 +4413,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             {
                 if (_preferences->getBool(preference_lock_gemini_enabled, false))
                 {
-                    message = "Nuki Lock Ultra PIN cleared";
+                    message = "Nuki Lock Ultra/Go/5th gen PIN cleared";
                     _nuki->setUltraPin(0xffffffff);
                     _preferences->putInt(preference_lock_gemini_pin, 0);
                 }
@@ -4431,7 +4432,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 {
                     if(_nuki->getUltraPin() != value.toInt())
                     {
-                        message = "Nuki Lock Ultra PIN saved";
+                        message = "Nuki Lock Ultra/Go/5th gen PIN saved";
                         _nuki->setUltraPin(value.toInt());
                         _preferences->putInt(preference_lock_gemini_pin, value.toInt());
                         Log->print("Setting changed: ");
@@ -5103,7 +5104,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Network Configuration</h3>");
     response.print("<table>");
-    printInputField(&response, "HOSTNAME", "Host name", _preferences->getString(preference_hostname).c_str(), 100, "");
+    printInputField(&response, "HOSTNAME", "Hostname (needs to be unique, \"nukihub\" is not allowed)", _preferences->getString(preference_hostname).c_str(), 100, "");
     printDropDown(&response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions(), "");
     printInputField(&response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
 #ifndef CONFIG_IDF_TARGET_ESP32H2
@@ -5781,7 +5782,7 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<h3>Basic Nuki Configuration</h3>");
     response.print("<table>");
     printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled, true), "");
-    printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
+    printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra/Go/5th gen enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
     printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled, false), "");
     printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, true), "");
     response.print("</table><br>");
@@ -6268,7 +6269,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     else
     {
         response.print("\nLock enabled: Yes");
-        response.print("\nLock Ultra enabled: ");
+        response.print("\nLock Ultra/Go/5th gen enabled: ");
         response.print(_preferences->getBool(preference_lock_gemini_enabled, false) ? "Yes" : "No");
         response.print("\nPaired: ");
         response.print(_nuki->isPaired() ? "Yes" : "No");
@@ -6466,7 +6467,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             uint32_t authorizationIdInt = authorizationId[0] + 256U*authorizationId[1] + 65536U*authorizationId[2] + 16777216U*authorizationId[3];
             response.print("\nAuthorizationId (UINT32_T): ");
             response.print(authorizationIdInt);
-            response.print("\nPaired to Nuki Lock Ultra: ");
+            response.print("\nPaired to Nuki Lock Ultra/Go/5th gen: ");
             response.print(nukiBlePref.getBool("isUltra", false) ? "Yes" : "No");
         }
     }
@@ -6689,9 +6690,9 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
 {
     esp_err_t res;
     String value = "";
-    if(request->hasParam("token"))
+    if(request->hasParam("CONFIRMTOKEN"))
     {
-        const PsychicWebParameter* p = request->getParam("token");
+        const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
         if(p->value() != "")
         {
             value = p->value();
@@ -6975,6 +6976,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     options.push_back(std::make_pair("8", "GL-S10"));
     options.push_back(std::make_pair("9", "ETH01-Evo"));
     options.push_back(std::make_pair("13", "Waveshare ESP32-S3-ETH / ESP32-S3-ETH-POE"));
+    options.push_back(std::make_pair("14", "LilyGO T-ETH-Lite-ESP32S3"));
     options.push_back(std::make_pair("11", "Custom LAN module"));
 
     return options;

@@ -64,6 +64,7 @@ protected:
 
     bool _useEncryption = false;
     bool _mqttEnabled = true;
+    bool _mqttInternal = false;
     char* _path;
     #endif
     

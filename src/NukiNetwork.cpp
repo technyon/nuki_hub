@@ -11,6 +11,7 @@
 #endif
 #include "networkDevices/EthernetDevice.h"
 #include "hal/wdt_hal.h"
+#include "esp_mac.h"
 
 NukiNetwork* NukiNetwork::_inst = nullptr;
 
@@ -216,9 +217,15 @@ void NukiNetwork::initialize()
 {
     _hostname = _preferences->getString(preference_hostname, "");
 
-    if(_hostname == "")
+    if(_hostname == "" || _hostname == "nukihub")
     {
-        _hostname = "nukihub";
+        char _nukiHubUidString[20];
+        uint8_t mac[8];
+        esp_efuse_mac_get_default(mac);
+        uint64_t curDevId;
+        memcpy(&curDevId, &mac, 8);
+        sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
+        _hostname = (String)"NH" + _nukiHubUidString;
         _preferences->putString(preference_hostname, _hostname);
     }
 
@@ -258,9 +265,15 @@ void NukiNetwork::initialize()
 
         _hostname = _preferences->getString(preference_hostname, "");
 
-        if(_hostname == "")
+        if(_hostname == "" || _hostname == "nukihub")
         {
-            _hostname = "nukihub";
+            char _nukiHubUidString[20];
+            uint8_t mac[8];
+            esp_efuse_mac_get_default(mac);
+            uint64_t curDevId;
+            memcpy(&curDevId, &mac, 8);
+            sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
+            _hostname = (String)"NH" + _nukiHubUidString;
             _preferences->putString(preference_hostname, _hostname);
         }
 
@@ -429,7 +442,7 @@ bool NukiNetwork::update()
         _firstDisconnected = true;
     }
 
-    if(!_device->mqttConnected() && _device->isConnected())
+    if(!_logIp && _device->isConnected() && !_device->mqttConnected() )
     {
         bool success = reconnect();
         if(!success)
@@ -453,7 +466,7 @@ bool NukiNetwork::update()
         delay(2000);
     }
 
-    if(!_device->mqttConnected() || !_device->isConnected())
+    if(!_device->isConnected() || !_device->mqttConnected() )
     {
         if(_networkTimeout > 0 && (ts - _lastConnectedTs > _networkTimeout * 1000) && ts > 60000)
         {

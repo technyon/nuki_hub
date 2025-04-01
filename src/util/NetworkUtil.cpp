@@ -36,6 +36,8 @@ NetworkDeviceType NetworkUtil::GetDeviceTypeFromPreference(int hardwareDetect, i
         return NetworkDeviceType::LilyGO_T_ETH_ELite;
     case 13:
         return NetworkDeviceType::Waveshare_ESP32_S3_ETH;
+    case 14:
+        return NetworkDeviceType::LilyGO_T_ETH_Lite_S3;
     default:
         Log->println("Unknown hardware selected, falling back to Wi-Fi.");
         return NetworkDeviceType::WiFi;
