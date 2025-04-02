@@ -16,7 +16,8 @@ void NetworkDevice::init()
     #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
     if(esp_psram_get_size() > 0)
     {
-        _mqttInternal = true;
+        //_mqttInternal = true;
+        _mqttInternal = false;
     }
     #endif
     

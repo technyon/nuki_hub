@@ -5,7 +5,6 @@
 #include "IPConfiguration.h"
 #include "esp_wifi.h"
 #include <WiFi.h>
-#include <ESPmDNS.h>
 
 class WifiDevice : public NetworkDevice
 {

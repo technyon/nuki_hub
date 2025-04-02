@@ -186,12 +186,12 @@ ESP32 devices have a limited amount of free RAM available.<br>
 <br>
 On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
 
-- ESP32: 40.000 bytes
-- ESP32 with PSRAM: 90.000 bytes + PSRAM
-- ESP32-C3: 45.000 bytes
-- ESP32-C6: 170.000 bytes
-- ESP32-S3 90.000 bytes
-- ESP32-S3 with PSRAM: 130.000 bytes + PSRAM
+- ESP32: 70.000 bytes
+- ESP32 with PSRAM: 110.000 bytes + PSRAM
+- ESP32-C3: 90.000 bytes
+- ESP32-C6: 200.000 bytes
+- ESP32-S3 130.000 bytes
+- ESP32-S3 with PSRAM: 180.000 bytes + PSRAM
 
 This free amount of RAM can be reduced (temporarily) by certain actions (such as changing Nuki device config) or continuously when enabling the following:
 - Connecting both a Nuki opener and a Nuki lock to Nuki Hub
@@ -709,7 +709,7 @@ Please follow the instructions for the [First time installation](#first-time-ins
 ## MQTT Encryption (optional)
 
 The communication via MQTT can be SSL encrypted.<br>
-Note: MQTT SSL requires a significant amount of RAM and will not work in most cases on low RAM devices (ESP32 without PSRAM or ESP32-C3)
+Note: MQTT SSL requires a significant amount of RAM and might not work on low RAM devices (ESP32 without PSRAM or ESP32-C3)
 
 To enable SSL encryption, supply the necessary information in the MQTT Configuration page.<br>
 <br>

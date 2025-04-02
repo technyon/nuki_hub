@@ -14,7 +14,7 @@
 #include "esp_core_dump.h"
 #include "FS.h"
 #include "SPIFFS.h"
-#include <ESPmDNS.h>
+//#include <ESPmDNS.h>
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
 #endif
