@@ -69,6 +69,7 @@ private:
     bool updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
+    void updateDebug();
     void updateAuthData(bool retrieved);
     void updateKeypad(bool retrieved);
     void updateTimeControl(bool retrieved);

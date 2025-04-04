@@ -359,7 +359,8 @@ void NukiWrapper::update(bool reboot)
             {
                 Log->println("Updating Lock config based on timer or query");
                 _nextConfigUpdateTs = ts + _intervalConfig * 1000;
-                updateConfig();
+                updateConfig();                
+                updateDebug();
             }
             if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
             {
@@ -726,6 +727,40 @@ void NukiWrapper::updateConfig()
         int64_t ts = espMillis();
         _nextConfigUpdateTs = ts + 10000;
     }
+}
+
+void NukiWrapper::updateDebug()
+{
+    Nuki::CmdResult result = (Nuki::CmdResult)-1;
+    Log->println("Running debug command - RequestGeneralStatistics");
+    result = _nukiLock.genericCommand(Nuki::Command::RequestGeneralStatistics);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    Log->println("Running debug command - RequestMqttConfig");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.genericCommand(Nuki::Command::RequestMqttConfig);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    
+    /*
+      RequestGeneralStatistics    = 0x0063,
+      RequestMqttConfig           = 0x008B,
+      
+      RequestInternalLogEntries   = 0x0065,
+      RequestAccessoryInfo        = 0x0091,
+      RequestMatterPairings       = 0x0112      
+      CheckKeypadCode             = 0x006E,
+
+      SmartLockScanWifi           = 0x0080,
+      SmartLockConnectWifi        = 0x0082,
+      SmartLockSetWifiConfig      = 0x0087,
+      SetMqttConfig               = 0x008D,
+      SetKeypad2Config            = 0x009C,
+      EnableMatterCommissioning   = 0x0110,
+      SetMatterState              = 0x0111,
+    */
 }
 
 void NukiWrapper::updateAuthData(bool retrieved)
