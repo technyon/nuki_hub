@@ -27,63 +27,63 @@ e000 boot_app0.bin
 1000 nuki_hub_bootloader_esp32.bin
 8000 nuki_hub_partitions_esp32.bin
 10000 nuki_hub_esp32.bin
-280000 nuki_hub_updater_esp32.bin
+270000 nuki_hub_updater_esp32.bin
 
 ESP32-GL-S10
 e000 boot_app0.bin
 1000 nuki_hub_bootloader_esp32.bin
 8000 nuki_hub_partitions_esp32.bin
 10000 nuki_hub_esp32.bin
-280000 nuki_hub_updater_esp32.bin
+270000 nuki_hub_updater_esp32.bin
 
 ESP32-S3
 e000 boot_app0.bin
 0 nuki_hub_bootloader_esp32s3.bin
 8000 nuki_hub_partitions_esp32s3.bin
 10000 nuki_hub_esp32s3.bin
-280000 nuki_hub_updater_esp32s3.bin
+270000 nuki_hub_updater_esp32s3.bin
 
 ESP32-S3-OCT
 e000 boot_app0.bin
 0 nuki_hub_bootloader_esp32s3oct.bin
 8000 nuki_hub_partitions_esp32s3oct.bin
 10000 nuki_hub_esp32s3oct.bin
-280000 nuki_hub_updater_esp32s3oct.bin
+270000 nuki_hub_updater_esp32s3oct.bin
 
 ESP32-C3
 e000 boot_app0.bin
 0 nuki_hub_bootloader_esp32c3.bin
 8000 nuki_hub_partitions_esp32c3.bin
 10000 nuki_hub_esp32c3.bin
-280000 nuki_hub_updater_esp32c3.bin
+270000 nuki_hub_updater_esp32c3.bin
 
 ESP32-C6
 e000 boot_app0.bin
 0 nuki_hub_bootloader_esp32c6.bin
 8000 nuki_hub_partitions_esp32c6.bin
 10000 nuki_hub_esp32c6.bin
-280000 nuki_hub_updater_esp32c6.bin
+270000 nuki_hub_updater_esp32c6.bin
 
 ESP32-H2
 e000 boot_app0.bin
 0 nuki_hub_bootloader_esp32h2.bin
 8000 nuki_hub_partitions_esp32h2.bin
 10000 nuki_hub_esp32h2.bin
-280000 nuki_hub_updater_esp32h2.bin
+270000 nuki_hub_updater_esp32h2.bin
 
 ESP32-P4
 e000 boot_app0.bin
 0 nuki_hub_bootloader_esp32p4.bin
 8000 nuki_hub_partitions_esp32p4.bin
 10000 nuki_hub_esp32p4.bin
-280000 nuki_hub_updater_esp32p4.bin
+270000 nuki_hub_updater_esp32p4.bin
 
 ESP32-SOLO1
 e000 boot_app0.bin
 1000 nuki_hub_bootloader_esp32-solo1.bin
 8000 nuki_hub_partitions_esp32-solo1.bin
 10000 nuki_hub_esp32-solo1.bin
-280000 nuki_hub_updater_esp32-solo1.bin
+270000 nuki_hub_updater_esp32-solo1.bin
 
 Make sure the checkmarks for all files are enabled.
 
