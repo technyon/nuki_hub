@@ -15,7 +15,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.3.2 and Arduino Core 3.1.3.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.4.1 and Arduino Core 3.2.0.
 - Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C6 and ESP32-H2.
 - Untested builds are provided for the ESP32-P4 (with the ESP32-C6-MINI-1 module for BLE and WiFi) and ESP32-Solo1 (as the developers don't own one).
 
@@ -58,6 +58,9 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 We don't recommend using single-core ESP32 devices (ESP32-C3, ESP32-C6, ESP32-H2, ESP32-Solo1).<br>
 Although Nuki Hub supports single-core devices, Nuki Hub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs much better on dual-core devices.<br>
 
+We also don't recommend using the original ESP32 or ESP32-Solo1 devices because these devices experience unexpected crashes related to the (closed-source) BLE controller.<br>
+In all newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C6, ESP32-H2) these unexpected crashed haven't been seen.
+
 When buying a new device in 2025 we can only recommend the ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter.<br>
 The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
@@ -71,17 +74,15 @@ Other considerations:
 Devices ranked best-to-worst:
 - ESP32-P4 with ESP32-C6-MINI-1 module (UNTESTED)
 - ESP32-S3 with PSRAM
-- ......
+- ...... <br>
+(Devices below will not support some Nuki Hub functions, be slower and/or are more likely to experience unexpected crashed)
+- ESP32-S3 without PSRAM
 - ......
 - ESP32 with PSRAM
-- ......<br>
-(Devices below will not support some Nuki Hub functions)
 - ......
-- ESP32-S3 without PSRAM
 - ESP32 without PSRAM
 - ...... <br>
-(Devices below will not support more Nuki Hub functions)
-- ......
+(Devices below will not support more Nuki Hub functions, be slower and/or are more likely to experience unexpected crashed)
 - ESP32-C6
 - ESP32-solo1
 - ESP32-C3
