@@ -3174,7 +3174,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         }
         else if(key == "HOSTNAME")
         {
-            if(_preferences->getString(preference_hostname, "") != value && value != "nukihub")
+            if(_preferences->getString(preference_hostname, "") != value)
             {
                 _preferences->putString(preference_hostname, value);
                 Log->print("Setting changed: ");
@@ -5104,7 +5104,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Network Configuration</h3>");
     response.print("<table>");
-    printInputField(&response, "HOSTNAME", "Hostname (needs to be unique, \"nukihub\" is not allowed)", _preferences->getString(preference_hostname).c_str(), 100, "");
+    printInputField(&response, "HOSTNAME", "Hostname (needs to be unique)", _preferences->getString(preference_hostname).c_str(), 100, "");
     printDropDown(&response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions(), "");
     printInputField(&response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
 #ifndef CONFIG_IDF_TARGET_ESP32H2
