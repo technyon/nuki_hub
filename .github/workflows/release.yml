@@ -140,7 +140,7 @@ jobs:
           prerelease: false
           allowUpdates: true
           updateOnlyUnreleased: false
-          draft: false
+          draft: true
           generateReleaseNotes: true
           makeLatest: true
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
