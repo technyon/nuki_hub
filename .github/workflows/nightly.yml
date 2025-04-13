@@ -136,23 +136,21 @@ jobs:
         run: |
           mkdir -p ota/beta/
           mkdir -p ota/master/
-          mkdir -p webflash/
           mkdir -p resources/
           mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/master/
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/src/Config.h src/Config.h
           python3 resources/ota_manifest.py master $Version
-          find * -not -path "ota*" -not -path "webflash*" -delete
+          find * -not -path "ota*" -delete
           rm -rf .github .gitignore .gitmodules
           touch ota/beta/empty
           touch ota/master/empty
-          touch webflash/empty
       - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update binaries"
-          file_pattern: 'ota/* ota/master/* ota/beta/* webflash/*'
+          file_pattern: 'ota/* ota/master/* ota/beta/*'
           branch: binary
           skip_dirty_check: true
           skip_fetch: true

@@ -129,7 +129,6 @@ This project is free to use for everyone. However if you feel like donating, you
 
 Flash the firmware to an ESP32. The easiest way to install is to use the web installer using a compatible browser like Chrome/Opera/Edge:<br>
 https://technyon.github.io/nuki_hub/<br>
-NOTE: Webflash is not available for the ESP32-Solo1<br>
 <br>
 Alternatively download the latest release for your ESP32 model from https://github.com/technyon/nuki_hub/releases<br>
 Unpack the zip archive and read the included how-to-flash.txt for installation instructions for either "Espressif Flash Download Tools" or "esptool".<br>
@@ -212,7 +211,6 @@ You can check on the info page of the Web configurator if PSRAM is available.
 
 Note that there are two builds of Nuki Hub for the ESP32-S3 available.<br>
 One for devices with no or Quad SPI PSRAM and one for devices with Octal SPI PSRAM.<br>
-Webflash will automatically flash the no/Quad SPI PSRAM build when an ESP32-S3 is connected.<br>
 If your ESP32-S3 device has PSRAM but it is not detected please switch to the other S3 binary.<br>
 You can do this by flashing the correct binaries manually or by selecting the option to switch S3 binary build from the Firmware Update page of the Web Configurator.
 
