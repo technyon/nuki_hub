@@ -6642,7 +6642,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
 
     response.print("\n\n------------ GPIO ------------\n");
     response.print("\nRetain Input GPIO MQTT state: ");
-    response.print(_preferences->getBool(preference_retain_gpio, false) ? "Yes" : "No");
+    response.print(_preferences->getBool(preference_retain_gpio, false) ? "Yes\n" : "No\n");
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response.print(gpioStr);

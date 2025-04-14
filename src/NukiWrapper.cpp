@@ -359,7 +359,7 @@ void NukiWrapper::update(bool reboot)
             {
                 Log->println("Updating Lock config based on timer or query");
                 _nextConfigUpdateTs = ts + _intervalConfig * 1000;
-                updateConfig();                
+                updateConfig();
                 updateDebug();
             }
             if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
@@ -732,8 +732,17 @@ void NukiWrapper::updateConfig()
 void NukiWrapper::updateDebug()
 {
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
+    int count = 0;
+
     Log->println("Running debug command - RequestGeneralStatistics");
+    result = (Nuki::CmdResult)-1;
     result = _nukiLock.genericCommand(Nuki::Command::RequestGeneralStatistics);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    Log->println("Running debug command - RequestDailyStatistics");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.requestDailyStatistics();
     Log->print("Result: ");
     Log->println(result);
     Log->println("Debug command complete");
@@ -743,23 +752,123 @@ void NukiWrapper::updateDebug()
     Log->print("Result: ");
     Log->println(result);
     Log->println("Debug command complete");
+    Log->println("Running debug command - RequestMqttConfigForMigration");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.genericCommand(Nuki::Command::RequestMqttConfigForMigration);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    Log->println("Running debug command - ReadWifiConfig");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.genericCommand(Nuki::Command::ReadWifiConfig);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    Log->println("Running debug command - ReadWifiConfigForMigration");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.genericCommand(Nuki::Command::ReadWifiConfigForMigration);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    Log->println("Running debug command - GetKeypad2Config");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.genericCommand(Nuki::Command::GetKeypad2Config, false);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    Log->println("Running debug command - RequestFingerprintEntries");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.retrieveFingerprintEntries();
+    Log->print("Result: ");
+    Log->println(result);
+    count = 0;
+    while (count < 5) {
+        delay(1000);
+        esp_task_wdt_reset();
+        count++;
+    }
+
+    std::list<NukiLock::FingerprintEntry> fingerprintEntries;
+    _nukiLock.getFingerprintEntries(&fingerprintEntries);
+
+    Log->print("Fingerprint entries: ");
+    Log->println(fingerprintEntries.size());
+    Log->println("Debug command complete");
+
+    Log->println("Running debug command - RequestInternalLogEntries");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.retrieveInternalLogEntries(0, 10, 1, false);
+    Log->print("Result: ");
+    Log->println(result);
+
+    count = 0;
+    while (count < 15) {
+        delay(1000);
+        esp_task_wdt_reset();
+        count++;
+    }
+
+    std::list<NukiLock::InternalLogEntry> internalLogEntries;
+    _nukiLock.getInternalLogEntries(&internalLogEntries);
+
+    Log->print("InternalLog entries: ");
+    Log->println(internalLogEntries.size());
+    Log->println("Debug command complete");
+
+    Log->println("Running debug command - scanWifi");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.scanWifi(15);
+    Log->print("Result: ");
+    Log->println(result);
+
+    count = 0;
+    while (count < 20) {
+        delay(1000);
+        esp_task_wdt_reset();
+        count++;
+    }
+
+    std::list<NukiLock::WifiScanEntry> wifiScanEntries;
+    _nukiLock.getWifiScanEntries(&wifiScanEntries);
+
+    Log->print("WifiScan entries: ");
+    Log->println(wifiScanEntries.size());
+    Log->println("Debug command complete");
+    
+    Log->println("Running debug command - getAccessoryInfo, type = 4");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.getAccessoryInfo(4);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+    
+    Log->println("Running debug command - getAccessoryInfo, type = 5");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.getAccessoryInfo(5);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
+
+    Log->println("Running debug command - RequestDoorSensorConfig");
+    result = (Nuki::CmdResult)-1;
+    result = _nukiLock.genericCommand(Nuki::Command::RequestDoorSensorConfig, false);
+    Log->print("Result: ");
+    Log->println(result);
+    Log->println("Debug command complete");
     
     /*
-      RequestGeneralStatistics    = 0x0063,
-      RequestMqttConfig           = 0x008B,
-      
-      RequestInternalLogEntries   = 0x0065,
-      RequestAccessoryInfo        = 0x0091,
-      RequestMatterPairings       = 0x0112      
-      CheckKeypadCode             = 0x006E,
+    CheckKeypadCode             = 0x006E  keypadCode (int), (nonce, PIN)
 
-      SmartLockScanWifi           = 0x0080,
-      SmartLockConnectWifi        = 0x0082,
-      SmartLockSetWifiConfig      = 0x0087,
-      SetMqttConfig               = 0x008D,
-      SetKeypad2Config            = 0x009C,
-      EnableMatterCommissioning   = 0x0110,
-      SetMatterState              = 0x0111,
+    RequestMatterPairings       = 0x0112  requestTotalCount (bool), (nonce, PIN)
+    MatterPairing               = 0x0113
+    MatterPairingCount          = 0x0114
+
+    ConnectWifi                 = 0x0082
+    SetWifiConfig               = 0x0087
+    SetMqttConfig               = 0x008D
+    SetKeypad2Config            = 0x009C
+    EnableMatterCommissioning   = 0x0110
+    SetMatterState              = 0x0111
     */
 }
 
