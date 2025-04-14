@@ -124,7 +124,7 @@ jobs:
             echo "${FOLDER} -- ${ZIPFILE}"
             cd $FOLDER
 
-            zip -9r ../../${ZIPFILE} * -x "webflash_nuki_hub_*.bin"
+            zip -9r ../../${ZIPFILE} *
             ARTIFACTS="${ARTIFACTS}${ZIPFILE},"
 
             cd ../..
@@ -140,7 +140,7 @@ jobs:
           prerelease: false
           allowUpdates: true
           updateOnlyUnreleased: false
-          draft: false
+          draft: true
           generateReleaseNotes: true
           makeLatest: true
           name: "Nuki Hub ${{ steps.get_version.outputs.VERSION }}"
@@ -148,32 +148,29 @@ jobs:
           artifacts: ${{ steps.zip.outputs.artifacts }}
           artifactContentType: application/zip
           tag: ${{ steps.get_version.outputs.VERSION }}
-      - name: Copy binaries to ota and webflash and remove beta
+      - name: Copy binaries to ota and remove beta
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           mkdir -p ota/beta/
           mkdir -p ota/master/
-          mkdir -p webflash/
           mkdir -p resources/
           mkdir -p src/
-          cp -vf release/*/nuki_hub_*.bin ota/
-          cp -vf release/*/webflash_nuki_hub_*.bin webflash/
+          cp -vf release/*/nuki_hub_*.bin ota/          
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/src/Config.h src/Config.h
           python3 resources/ota_manifest.py release $Version
           python3 resources/ota_manifest.py beta none
-          find * -not -path "ota*" -not -path "webflash*" -delete
+          find * -not -path "ota*" -delete
           rm -rf ota/beta/*.bin
           rm -rf .github .gitignore .gitmodules
           touch ota/beta/empty
           touch ota/master/empty
-          touch webflash/empty
       - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update binaries"
-          file_pattern: 'ota/* ota/master/* ota/beta/* webflash/*'
+          file_pattern: 'ota/* ota/master/* ota/beta/*'
           branch: binary
           skip_dirty_check: true
           skip_fetch: true

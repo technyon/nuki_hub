@@ -28,11 +28,13 @@ def copy_files(source, target, env):
     project_dir = env.get('PROJECT_DIR')
     board = get_board_name(env)
 
-    if "partitions.bin" in file.name:
-        shutil.copy(file, f"{target_dir}/nuki_hub.{file.name}")
-    elif "firmware" in file.stem:
+    if "firmware" in file.stem:
         shutil.copy(file, f"{target_dir}/nuki_hub_{board}{file.suffix}")
         shutil.copy(f"{project_dir}/updater/release/{board}/updater.bin", f"{target_dir}/nuki_hub_updater_{board}{file.suffix}")
+    elif "bootloader" in file.stem:
+        shutil.copy(file, f"{target_dir}/nuki_hub_bootloader_{board}{file.suffix}")
+    elif "partitions" in file.stem:
+        shutil.copy(file, f"{target_dir}/nuki_hub_partitions_{board}{file.suffix}")
     else:
         shutil.copy(file, f"{target_dir}/{file.name}")
 
@@ -79,4 +81,4 @@ env.AddPostAction("$BUILD_DIR/partitions.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/bootloader.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/firmware.elf", copy_files)
 
-env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)
+#env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)

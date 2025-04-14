@@ -217,7 +217,7 @@ void NukiNetwork::initialize()
 {
     _hostname = _preferences->getString(preference_hostname, "");
 
-    if(_hostname == "" || _hostname == "nukihub")
+    if(_hostname == "")
     {
         char _nukiHubUidString[20];
         uint8_t mac[8];
@@ -265,7 +265,7 @@ void NukiNetwork::initialize()
 
         _hostname = _preferences->getString(preference_hostname, "");
 
-        if(_hostname == "" || _hostname == "nukihub")
+        if(_hostname == "")
         {
             char _nukiHubUidString[20];
             uint8_t mac[8];

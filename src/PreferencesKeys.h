@@ -563,7 +563,7 @@ private:
     };
     std::vector<char*> _bytePrefs =
     {
-        preference_acl, preference_conf_info_enabled, preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl,
+        preference_acl, preference_conf_lock_basic_acl, preference_conf_lock_advanced_acl, preference_conf_opener_basic_acl,
         preference_conf_opener_advanced_acl, preference_gpio_configuration
     };
     std::vector<char*> _intPrefs =
