@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -275,13 +275,11 @@ class JsonDeserializer {
       if (memberFilter.allow()) {
         auto member = object.getMember(adaptString(key), resources_);
         if (!member) {
-          // Save key in memory pool.
-          auto savedKey = stringBuilder_.save();
-
-          // Allocate slot in object
-          member = object.addMember(savedKey, resources_);
-          if (!member)
+          auto keyVariant = object.addPair(&member, resources_);
+          if (!keyVariant)
             return DeserializationError::NoMemory;
+
+          stringBuilder_.save(keyVariant);
         } else {
           member->clear(resources_);
         }
@@ -390,7 +388,7 @@ class JsonDeserializer {
     if (err)
       return err;
 
-    variant.setOwnedString(stringBuilder_.save());
+    stringBuilder_.save(&variant);
 
     return DeserializationError::Ok;
   }

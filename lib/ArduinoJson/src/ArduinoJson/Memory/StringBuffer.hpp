@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -32,7 +32,26 @@ class StringBuffer {
     return node_->data;
   }
 
-  StringNode* save() {
+  JsonString str() const {
+    ARDUINOJSON_ASSERT(node_ != nullptr);
+    return JsonString(node_->data, node_->length);
+  }
+
+  void save(VariantData* data) {
+    ARDUINOJSON_ASSERT(node_ != nullptr);
+    const char* s = node_->data;
+    if (isTinyString(s, size_))
+      data->setTinyString(adaptString(s, size_));
+    else
+      data->setOwnedString(commitStringNode());
+  }
+
+  void saveRaw(VariantData* data) {
+    data->setRawString(commitStringNode());
+  }
+
+ private:
+  StringNode* commitStringNode() {
     ARDUINOJSON_ASSERT(node_ != nullptr);
     node_->data[size_] = 0;
     auto node = resources_->getString(adaptString(node_->data, size_));
@@ -52,13 +71,6 @@ class StringBuffer {
     return node;
   }
 
-  JsonString str() const {
-    ARDUINOJSON_ASSERT(node_ != nullptr);
-
-    return JsonString(node_->data, node_->length);
-  }
-
- private:
   ResourceManager* resources_;
   StringNode* node_ = nullptr;
   size_t size_ = 0;

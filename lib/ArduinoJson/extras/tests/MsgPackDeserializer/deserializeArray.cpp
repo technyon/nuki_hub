@@ -1,12 +1,15 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
+#include "Allocators.hpp"
+
 TEST_CASE("deserialize MsgPack array") {
-  JsonDocument doc;
+  SpyingAllocator spy;
+  JsonDocument doc(&spy);
 
   SECTION("fixarray") {
     SECTION("empty") {
@@ -29,6 +32,24 @@ TEST_CASE("deserialize MsgPack array") {
       REQUIRE(array.size() == 2);
       REQUIRE(array[0] == 1);
       REQUIRE(array[1] == 2);
+    }
+
+    SECTION("tiny strings") {
+      DeserializationError error =
+          deserializeMsgPack(doc, "\x92\xA3xxx\xA3yyy");
+
+      REQUIRE(error == DeserializationError::Ok);
+      REQUIRE(doc.is<JsonArray>());
+      REQUIRE(doc.size() == 2);
+      REQUIRE(doc[0] == "xxx");
+      REQUIRE(doc[1] == "yyy");
+      REQUIRE(spy.log() == AllocatorLog{
+                               Allocate(sizeofPool()),
+                               Allocate(sizeofString("xxx")),
+                               // Buffer is reused for the next string
+                               Deallocate(sizeofString("xxx")),
+                               Reallocate(sizeofPool(), sizeofPool(2)),
+                           });
     }
   }
 

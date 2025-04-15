@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_DECODE_UNICODE 1
@@ -133,8 +133,8 @@ TEST_CASE("Allocation of the key fails") {
     REQUIRE(spy.log() ==
             AllocatorLog{
                 Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
                 Allocate(sizeofPool()),
+                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
                 AllocateFail(sizeofStringBuffer()),
                 ReallocateFail(sizeofPool(), sizeofObject(1)),
             });
@@ -155,8 +155,8 @@ TEST_CASE("Allocation of the key fails") {
     REQUIRE(spy.log() ==
             AllocatorLog{
                 Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
                 Allocate(sizeofPool()),
+                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
                 AllocateFail(sizeofStringBuffer()),
                 ReallocateFail(sizeofPool(), sizeofObject(1)),
             });

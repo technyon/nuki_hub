@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson/Memory/StringBuilder.hpp>
@@ -7,6 +7,7 @@
 
 #include "Allocators.hpp"
 
+using namespace ArduinoJson;
 using namespace ArduinoJson::detail;
 
 TEST_CASE("StringBuilder") {
@@ -16,17 +17,36 @@ TEST_CASE("StringBuilder") {
 
   SECTION("Empty string") {
     StringBuilder str(&resources);
+    VariantData data;
 
     str.startString();
-    str.save();
+    str.save(&data);
 
-    REQUIRE(resources.size() == sizeofString(""));
     REQUIRE(resources.overflowed() == false);
-    REQUIRE(spyingAllocator.log() ==
-            AllocatorLog{
-                Allocate(sizeofStringBuffer()),
-                Reallocate(sizeofStringBuffer(), sizeofString("")),
-            });
+    REQUIRE(spyingAllocator.log() == AllocatorLog{
+                                         Allocate(sizeofStringBuffer()),
+                                     });
+    REQUIRE(data.type() == VariantType::TinyString);
+  }
+
+  SECTION("Tiny string") {
+    StringBuilder str(&resources);
+
+    str.startString();
+    str.append("url");
+
+    REQUIRE(str.isValid() == true);
+    REQUIRE(str.str() == "url");
+    REQUIRE(spyingAllocator.log() == AllocatorLog{
+                                         Allocate(sizeofStringBuffer()),
+                                     });
+
+    VariantData data;
+    str.save(&data);
+
+    REQUIRE(resources.overflowed() == false);
+    REQUIRE(data.type() == VariantType::TinyString);
+    REQUIRE(data.asString() == "url");
   }
 
   SECTION("Short string fits in first allocation") {
@@ -96,48 +116,69 @@ TEST_CASE("StringBuilder") {
   }
 }
 
-static StringNode* addStringToPool(ResourceManager& resources, const char* s) {
-  StringBuilder str(&resources);
-  str.startString();
-  str.append(s);
-  return str.save();
+static JsonString saveString(StringBuilder& builder, const char* s) {
+  VariantData data;
+  builder.startString();
+  builder.append(s);
+  builder.save(&data);
+  return data.asString();
 }
 
 TEST_CASE("StringBuilder::save() deduplicates strings") {
-  ResourceManager resources;
+  SpyingAllocator spy;
+  ResourceManager resources(&spy);
+  StringBuilder builder(&resources);
 
   SECTION("Basic") {
-    auto s1 = addStringToPool(resources, "hello");
-    auto s2 = addStringToPool(resources, "world");
-    auto s3 = addStringToPool(resources, "hello");
+    auto s1 = saveString(builder, "hello");
+    auto s2 = saveString(builder, "world");
+    auto s3 = saveString(builder, "hello");
 
-    REQUIRE(s1 == s3);
-    REQUIRE(s2 != s3);
-    REQUIRE(s1->references == 2);
-    REQUIRE(s2->references == 1);
-    REQUIRE(s3->references == 2);
-    REQUIRE(resources.size() == sizeofString("hello") + sizeofString("world"));
+    REQUIRE(s1 == "hello");
+    REQUIRE(s2 == "world");
+    REQUIRE(+s1.c_str() == +s3.c_str());  // same address
+
+    REQUIRE(spy.log() ==
+            AllocatorLog{
+                Allocate(sizeofStringBuffer()),
+                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
+                Allocate(sizeofStringBuffer()),
+                Reallocate(sizeofStringBuffer(), sizeofString("world")),
+                Allocate(sizeofStringBuffer()),
+            });
   }
 
   SECTION("Requires terminator") {
-    auto s1 = addStringToPool(resources, "hello world");
-    auto s2 = addStringToPool(resources, "hello");
+    auto s1 = saveString(builder, "hello world");
+    auto s2 = saveString(builder, "hello");
 
-    REQUIRE(s2 != s1);
-    REQUIRE(s1->references == 1);
-    REQUIRE(s2->references == 1);
-    REQUIRE(resources.size() ==
-            sizeofString("hello world") + sizeofString("hello"));
+    REQUIRE(s1 == "hello world");
+    REQUIRE(s2 == "hello");
+    REQUIRE(+s2.c_str() != +s1.c_str());  // different address
+
+    REQUIRE(spy.log() ==
+            AllocatorLog{
+                Allocate(sizeofStringBuffer()),
+                Reallocate(sizeofStringBuffer(), sizeofString("hello world")),
+                Allocate(sizeofStringBuffer()),
+                Reallocate(sizeofStringBuffer(), sizeofString("hello")),
+            });
   }
 
   SECTION("Don't overrun") {
-    auto s1 = addStringToPool(resources, "hello world");
-    auto s2 = addStringToPool(resources, "wor");
+    auto s1 = saveString(builder, "hello world");
+    auto s2 = saveString(builder, "worl");
 
-    REQUIRE(s2 != s1);
-    REQUIRE(s1->references == 1);
-    REQUIRE(s2->references == 1);
-    REQUIRE(resources.size() ==
-            sizeofString("hello world") + sizeofString("wor"));
+    REQUIRE(s1 == "hello world");
+    REQUIRE(s2 == "worl");
+    REQUIRE(s2.c_str() != s1.c_str());  // different address
+
+    REQUIRE(spy.log() ==
+            AllocatorLog{
+                Allocate(sizeofStringBuffer()),
+                Reallocate(sizeofStringBuffer(), sizeofString("hello world")),
+                Allocate(sizeofStringBuffer()),
+                Reallocate(sizeofStringBuffer(), sizeofString("worl")),
+            });
   }
 }

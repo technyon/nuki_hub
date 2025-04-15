@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -100,13 +100,13 @@ TEST_CASE("JsonObject::set()") {
     JsonDocument doc3(&timebomb);
     JsonObject obj3 = doc3.to<JsonObject>();
 
-    obj1["a"_s] = 1;
-    obj1["b"_s] = 2;
+    obj1["alpha"_s] = 1;
+    obj1["beta"_s] = 2;
 
     bool success = obj3.set(obj1);
 
     REQUIRE(success == false);
-    REQUIRE(doc3.as<std::string>() == "{\"a\":1}");
+    REQUIRE(doc3.as<std::string>() == "{\"alpha\":1}");
   }
 
   SECTION("copy fails in the middle of an array") {

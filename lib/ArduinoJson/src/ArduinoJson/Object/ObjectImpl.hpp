@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -66,6 +66,22 @@ inline VariantData* ObjectData::addMember(TAdaptedString key,
   CollectionData::appendPair(keySlot, valueSlot, resources);
 
   return valueSlot.ptr();
+}
+
+inline VariantData* ObjectData::addPair(VariantData** value,
+                                        ResourceManager* resources) {
+  auto keySlot = resources->allocVariant();
+  if (!keySlot)
+    return nullptr;
+
+  auto valueSlot = resources->allocVariant();
+  if (!valueSlot)
+    return nullptr;
+  *value = valueSlot.ptr();
+
+  CollectionData::appendPair(keySlot, valueSlot, resources);
+
+  return keySlot.ptr();
 }
 
 // Returns the size (in bytes) of an object with n members.
