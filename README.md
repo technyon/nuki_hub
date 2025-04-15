@@ -1009,11 +1009,11 @@ Navigate to "MQTT Configuration" and change the "MQTT Nuki Hub Path" under "Basi
 
 ### The Nuki battery is draining quickly.
 
-This often is a result of enabling "Register as app" when not using [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance).<br>
+This often is a result of enabling "Nuki Bridge is running alongside Nuki Hub" when not using [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance).<br>
 Doing so will cause Nuki Hub to constantly query the lock and as such cause excessive battery drain.<br>
-To prevent this behaviour, unpair Nuki Hub, disable "Register as app", and re-pair.<br>
+To prevent this behaviour, unpair Nuki Hub, disable "Nuki Bridge is running alongside Nuki Hub", and re-pair.<br>
 <br>
-<b>Never enable "Register as app" unless you intend to use a Nuki Bridge in addition to Nuki Hub or you are using Hybrid mode!</b>
+<b>Never enable "Nuki Bridge is running alongside Nuki Hub" unless you intend to use a Nuki Bridge in addition to Nuki Hub or you are using Hybrid mode!</b>
 
 ## Building from source
 <b>Docker (Preferred)</b><br>
