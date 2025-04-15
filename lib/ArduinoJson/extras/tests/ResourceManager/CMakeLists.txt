@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2024, Benoit BLANCHON
+# Copyright © 2014-2025, Benoit BLANCHON
 # MIT License
 
 add_executable(ResourceManagerTests
@@ -8,6 +8,7 @@ add_executable(ResourceManagerTests
 	saveString.cpp
 	shrinkToFit.cpp
 	size.cpp
+	StringBuffer.cpp
 	StringBuilder.cpp
 	swap.cpp
 )

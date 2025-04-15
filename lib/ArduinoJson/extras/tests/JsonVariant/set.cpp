@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -61,6 +61,18 @@ TEST_CASE("JsonVariant::set() when there is enough memory") {
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofString("hello")),
                          });
+  }
+
+  SECTION("char* (tiny string optimization)") {
+    char str[16];
+
+    strcpy(str, "abc");
+    bool result = variant.set(str);
+    strcpy(str, "def");
+
+    REQUIRE(result == true);
+    REQUIRE(variant == "abc");  // stores by copy
+    REQUIRE(spy.log() == AllocatorLog{});
   }
 
   SECTION("(char*)0") {

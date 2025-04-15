@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2024, Benoit BLANCHON
+# Copyright © 2014-2025, Benoit BLANCHON
 # MIT License
 
 add_executable(MiscTests
@@ -7,6 +7,7 @@ add_executable(MiscTests
 	conflicts.cpp
 	issue1967.cpp
 	issue2129.cpp
+	issue2166.cpp
 	JsonString.cpp
 	NoArduinoHeader.cpp
 	printable.cpp

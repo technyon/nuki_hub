@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -24,6 +24,7 @@ enum class VariantTypeBits : uint8_t {
 
 enum class VariantType : uint8_t {
   Null = 0,             // 0000 0000
+  TinyString = 0x02,    // 0000 0010
   RawString = 0x03,     // 0000 0011
   LinkedString = 0x04,  // 0000 0100
   OwnedString = 0x05,   // 0000 0101
@@ -46,6 +47,8 @@ inline bool operator&(VariantType type, VariantTypeBits bit) {
   return (uint8_t(type) & uint8_t(bit)) != 0;
 }
 
+const size_t tinyStringMaxLength = 3;
+
 union VariantContent {
   VariantContent() {}
 
@@ -61,6 +64,7 @@ union VariantContent {
   CollectionData asCollection;
   const char* asLinkedString;
   struct StringNode* asOwnedString;
+  char asTinyString[tinyStringMaxLength + 1];
 };
 
 #if ARDUINOJSON_USE_EXTENSIONS

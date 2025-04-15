@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -305,7 +305,7 @@ class MsgPackDeserializer {
     if (err)
       return err;
 
-    variant->setOwnedString(stringBuffer_.save());
+    stringBuffer_.save(variant);
     return DeserializationError::Ok;
   }
 
@@ -334,7 +334,7 @@ class MsgPackDeserializer {
     if (err)
       return err;
 
-    variant->setRawString(stringBuffer_.save());
+    stringBuffer_.saveRaw(variant);
     return DeserializationError::Ok;
   }
 
@@ -403,19 +403,16 @@ class MsgPackDeserializer {
 
       JsonString key = stringBuffer_.str();
       TFilter memberFilter = filter[key.c_str()];
-      VariantData* member;
+      VariantData* member = 0;
 
       if (memberFilter.allow()) {
         ARDUINOJSON_ASSERT(object != 0);
 
-        // Save key in memory pool.
-        auto savedKey = stringBuffer_.save();
-
-        member = object->addMember(savedKey, resources_);
-        if (!member)
+        auto keyVariant = object->addPair(&member, resources_);
+        if (!keyVariant)
           return DeserializationError::NoMemory;
-      } else {
-        member = 0;
+
+        stringBuffer_.save(keyVariant);
       }
 
       err = parseVariant(member, memberFilter, nestingLimit.decrement());

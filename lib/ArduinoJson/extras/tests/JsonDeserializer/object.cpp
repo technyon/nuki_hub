@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -292,22 +292,23 @@ TEST_CASE("deserialize JSON object") {
     }
 
     SECTION("Repeated key") {
-      DeserializationError err = deserializeJson(doc, "{a:{b:{c:1}},a:2}");
+      DeserializationError err =
+          deserializeJson(doc, "{alfa:{bravo:{charlie:1}},alfa:2}");
 
       REQUIRE(err == DeserializationError::Ok);
-      REQUIRE(doc.as<std::string>() == "{\"a\":2}");
+      REQUIRE(doc.as<std::string>() == "{\"alfa\":2}");
       REQUIRE(spy.log() ==
               AllocatorLog{
                   Allocate(sizeofStringBuffer()),
-                  Reallocate(sizeofStringBuffer(), sizeofString("a")),
                   Allocate(sizeofPool()),
+                  Reallocate(sizeofStringBuffer(), sizeofString("alfa")),
                   Allocate(sizeofStringBuffer()),
-                  Reallocate(sizeofStringBuffer(), sizeofString("b")),
+                  Reallocate(sizeofStringBuffer(), sizeofString("bravo")),
                   Allocate(sizeofStringBuffer()),
-                  Reallocate(sizeofStringBuffer(), sizeofString("c")),
+                  Reallocate(sizeofStringBuffer(), sizeofString("charlie")),
                   Allocate(sizeofStringBuffer()),
-                  Deallocate(sizeofString("b")),
-                  Deallocate(sizeofString("c")),
+                  Deallocate(sizeofString("bravo")),
+                  Deallocate(sizeofString("charlie")),
                   Deallocate(sizeofStringBuffer()),
                   Reallocate(sizeofPool(), sizeofObject(2) + sizeofObject(1)),
               });
@@ -378,7 +379,7 @@ TEST_CASE("deserialize JSON object under memory constraints") {
   }
 
   SECTION("pool allocation fails") {
-    timebomb.setCountdown(2);
+    timebomb.setCountdown(1);
     char input[] = "{\"a\":1}";
 
     DeserializationError err = deserializeJson(doc, input);
@@ -389,11 +390,11 @@ TEST_CASE("deserialize JSON object under memory constraints") {
 
   SECTION("string allocation fails") {
     timebomb.setCountdown(3);
-    char input[] = "{\"a\":\"b\"}";
+    char input[] = "{\"alfa\":\"bravo\"}";
 
     DeserializationError err = deserializeJson(doc, input);
 
     REQUIRE(err == DeserializationError::NoMemory);
-    REQUIRE(doc.as<std::string>() == "{\"a\":null}");
+    REQUIRE(doc.as<std::string>() == "{\"alfa\":null}");
   }
 }

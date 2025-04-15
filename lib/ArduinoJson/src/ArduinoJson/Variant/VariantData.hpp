@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -16,6 +16,16 @@ ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename T>
 T parseNumber(const char* s);
+
+template <typename T>
+static bool isTinyString(const T& s, size_t n) {
+  if (n > tinyStringMaxLength)
+    return false;
+  bool containsNul = false;
+  for (uint8_t i = 0; i < uint8_t(n); i++)
+    containsNul |= !s[i];
+  return !containsNul;
+}
 
 class VariantData {
   VariantContent content_;  // must be first to allow cast from array to variant
@@ -62,6 +72,9 @@ class VariantData {
 
       case VariantType::Object:
         return visit.visit(content_.asObject);
+
+      case VariantType::TinyString:
+        return visit.visit(JsonString(content_.asTinyString));
 
       case VariantType::LinkedString:
         return visit.visit(JsonString(content_.asLinkedString, true));
@@ -185,6 +198,7 @@ class VariantData {
 #else
     (void)resources;  // silence warning
 #endif
+    const char* str = nullptr;
     switch (type_) {
       case VariantType::Boolean:
         return static_cast<T>(content_.asBoolean);
@@ -198,9 +212,15 @@ class VariantData {
       case VariantType::Int64:
         return static_cast<T>(extension->asInt64);
 #endif
+      case VariantType::TinyString:
+        str = content_.asTinyString;
+        break;
       case VariantType::LinkedString:
+        str = content_.asLinkedString;
+        break;
       case VariantType::OwnedString:
-        return parseNumber<T>(content_.asOwnedString->data);
+        str = content_.asOwnedString->data;
+        break;
       case VariantType::Float:
         return static_cast<T>(content_.asFloat);
 #if ARDUINOJSON_USE_DOUBLE
@@ -208,8 +228,11 @@ class VariantData {
         return static_cast<T>(extension->asDouble);
 #endif
       default:
-        return 0;
+        return 0.0;
     }
+
+    ARDUINOJSON_ASSERT(str != nullptr);
+    return parseNumber<T>(str);
   }
 
   template <typename T>
@@ -220,6 +243,7 @@ class VariantData {
 #else
     (void)resources;  // silence warning
 #endif
+    const char* str = nullptr;
     switch (type_) {
       case VariantType::Boolean:
         return content_.asBoolean;
@@ -233,10 +257,15 @@ class VariantData {
       case VariantType::Int64:
         return convertNumber<T>(extension->asInt64);
 #endif
+      case VariantType::TinyString:
+        str = content_.asTinyString;
+        break;
       case VariantType::LinkedString:
-        return parseNumber<T>(content_.asLinkedString);
+        str = content_.asLinkedString;
+        break;
       case VariantType::OwnedString:
-        return parseNumber<T>(content_.asOwnedString->data);
+        str = content_.asOwnedString->data;
+        break;
       case VariantType::Float:
         return convertNumber<T>(content_.asFloat);
 #if ARDUINOJSON_USE_DOUBLE
@@ -246,6 +275,9 @@ class VariantData {
       default:
         return 0;
     }
+
+    ARDUINOJSON_ASSERT(str != nullptr);
+    return parseNumber<T>(str);
   }
 
   ObjectData* asObject() {
@@ -268,6 +300,8 @@ class VariantData {
 
   JsonString asString() const {
     switch (type_) {
+      case VariantType::TinyString:
+        return JsonString(content_.asTinyString);
       case VariantType::LinkedString:
         return JsonString(content_.asLinkedString, true);
       case VariantType::OwnedString:
@@ -382,7 +416,8 @@ class VariantData {
 
   bool isString() const {
     return type_ == VariantType::LinkedString ||
-           type_ == VariantType::OwnedString;
+           type_ == VariantType::OwnedString ||
+           type_ == VariantType::TinyString;
   }
 
   size_t nesting(const ResourceManager* resources) const {
@@ -475,11 +510,6 @@ class VariantData {
   template <typename TAdaptedString>
   bool setString(TAdaptedString value, ResourceManager* resources);
 
-  bool setString(StringNode* s, ResourceManager*) {
-    setOwnedString(s);
-    return true;
-  }
-
   template <typename TAdaptedString>
   static void setString(VariantData* var, TAdaptedString value,
                         ResourceManager* resources) {
@@ -494,6 +524,23 @@ class VariantData {
     ARDUINOJSON_ASSERT(s);
     type_ = VariantType::LinkedString;
     content_.asLinkedString = s;
+  }
+
+  template <typename TAdaptedString>
+  void setTinyString(const TAdaptedString& s) {
+    ARDUINOJSON_ASSERT(type_ == VariantType::Null);  // must call clear() first
+    ARDUINOJSON_ASSERT(s.size() <= tinyStringMaxLength);
+
+    type_ = VariantType::TinyString;
+
+    auto n = uint8_t(s.size());
+    for (uint8_t i = 0; i < n; i++) {
+      char c = s[i];
+      ARDUINOJSON_ASSERT(c != 0);  // no NUL in tiny string
+      content_.asTinyString[i] = c;
+    }
+
+    content_.asTinyString[n] = 0;
   }
 
   void setOwnedString(StringNode* s) {

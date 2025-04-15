@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -76,6 +76,16 @@ struct StringAdapter<TChar*, enable_if_t<IsChar<TChar>::value>> {
   }
 };
 
+template <typename TChar>
+struct StringAdapter<TChar[], enable_if_t<IsChar<TChar>::value>> {
+  using AdaptedString = RamString;
+
+  static AdaptedString adapt(const TChar* p) {
+    auto str = reinterpret_cast<const char*>(p);
+    return AdaptedString(str, str ? ::strlen(str) : 0);
+  }
+};
+
 template <size_t N>
 struct StringAdapter<const char (&)[N]> {
   using AdaptedString = RamString;
@@ -90,8 +100,9 @@ struct StringAdapter<TChar[N], enable_if_t<IsChar<TChar>::value>> {
   using AdaptedString = RamString;
 
   static AdaptedString adapt(const TChar* p) {
+    ARDUINOJSON_ASSERT(p);
     auto str = reinterpret_cast<const char*>(p);
-    return AdaptedString(str, str ? ::strlen(str) : 0);
+    return AdaptedString(str, ::strlen(str));
   }
 };
 

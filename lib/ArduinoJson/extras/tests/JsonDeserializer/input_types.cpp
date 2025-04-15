@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -26,8 +26,8 @@ TEST_CASE("deserializeJson(char*)") {
   REQUIRE(spy.log() ==
           AllocatorLog{
               Allocate(sizeofStringBuffer()),
-              Reallocate(sizeofStringBuffer(), sizeofString("hello")),
               Allocate(sizeofPool()),
+              Reallocate(sizeofStringBuffer(), sizeofString("hello")),
               Allocate(sizeofStringBuffer()),
               Reallocate(sizeofStringBuffer(), sizeofString("world")),
               Reallocate(sizeofPool(), sizeofObject(1)),

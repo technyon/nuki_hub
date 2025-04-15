@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -348,13 +348,14 @@ TEST_CASE("deserializeMsgPack() under memory constaints") {
     SECTION("{}") {
       checkError(0, "\x80", DeserializationError::Ok);
     }
-    SECTION("{H:1}") {
-      checkError(1, "\x81\xA1H\x01", DeserializationError::NoMemory);
-      checkError(2, "\x81\xA1H\x01", DeserializationError::Ok);
+    SECTION("{Hello:1}") {
+      checkError(1, "\x81\xA5Hello\x01", DeserializationError::NoMemory);
+      checkError(2, "\x81\xA5Hello\x01", DeserializationError::Ok);
     }
-    SECTION("{H:1,W:2}") {
-      checkError(2, "\x82\xA1H\x01\xA1W\x02", DeserializationError::NoMemory);
-      checkError(3, "\x82\xA1H\x01\xA1W\x02", DeserializationError::Ok);
+    SECTION("{Hello:1,World:2}") {
+      checkError(2, "\x82\xA5Hello\x01\xA5World\x02",
+                 DeserializationError::NoMemory);
+      checkError(3, "\x82\xA5Hello\x01\xA5World\x02", DeserializationError::Ok);
     }
   }
 
@@ -362,14 +363,16 @@ TEST_CASE("deserializeMsgPack() under memory constaints") {
     SECTION("{}") {
       checkError(0, "\xDE\x00\x00", DeserializationError::Ok);
     }
-    SECTION("{H:1}") {
-      checkError(1, "\xDE\x00\x01\xA1H\x01", DeserializationError::NoMemory);
-      checkError(2, "\xDE\x00\x01\xA1H\x01", DeserializationError::Ok);
-    }
-    SECTION("{H:1,W:2}") {
-      checkError(2, "\xDE\x00\x02\xA1H\x01\xA1W\x02",
+    SECTION("{Hello:1}") {
+      checkError(1, "\xDE\x00\x01\xA5Hello\x01",
                  DeserializationError::NoMemory);
-      checkError(3, "\xDE\x00\x02\xA1H\x01\xA1W\x02", DeserializationError::Ok);
+      checkError(2, "\xDE\x00\x01\xA5Hello\x01", DeserializationError::Ok);
+    }
+    SECTION("{Hello:1,World:2}") {
+      checkError(2, "\xDE\x00\x02\xA5Hello\x01\xA5World\x02",
+                 DeserializationError::NoMemory);
+      checkError(3, "\xDE\x00\x02\xA5Hello\x01\xA5World\x02",
+                 DeserializationError::Ok);
     }
   }
 
@@ -382,8 +385,8 @@ TEST_CASE("deserializeMsgPack() under memory constaints") {
                  DeserializationError::NoMemory);
       checkError(2, "\xDF\x00\x00\x00\x01\xA1H\x01", DeserializationError::Ok);
     }
-    SECTION("{H:1,W:2}") {
-      checkError(2, "\xDF\x00\x00\x00\x02\xA1H\x01\xA1W\x02",
+    SECTION("{Hello:1,World:2}") {
+      checkError(2, "\xDF\x00\x00\x00\x02\xA5Hello\x01\xA5World\x02",
                  DeserializationError::NoMemory);
       checkError(3, "\xDF\x00\x00\x00\x02\xA1H\x01\xA1W\x02",
                  DeserializationError::Ok);

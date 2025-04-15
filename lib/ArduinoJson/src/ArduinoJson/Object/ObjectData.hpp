@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -10,8 +10,10 @@ ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 class ObjectData : public CollectionData {
  public:
-  template <typename TAdaptedString>  // also works with StringNode*
+  template <typename TAdaptedString>
   VariantData* addMember(TAdaptedString key, ResourceManager* resources);
+
+  VariantData* addPair(VariantData** value, ResourceManager* resources);
 
   template <typename TAdaptedString>
   VariantData* getOrAddMember(TAdaptedString key, ResourceManager* resources);
