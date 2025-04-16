@@ -14,6 +14,7 @@
 #include "esp_core_dump.h"
 #include "FS.h"
 #include "SPIFFS.h"
+#include "SerialReader.h"
 //#include <ESPmDNS.h>
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
@@ -50,6 +51,7 @@ NukiOpenerWrapper* nukiOpener = nullptr;
 NukiDeviceId* deviceIdLock = nullptr;
 NukiDeviceId* deviceIdOpener = nullptr;
 Gpio* gpio = nullptr;
+SerialReader* serialReader = nullptr;
 
 bool lockEnabled = false;
 bool openerEnabled = false;
@@ -248,6 +250,11 @@ void networkTask(void *pvParameters)
                 bootloopCounter = (int8_t)0;
                 Log->println("Bootloop counter reset");
             }
+        }
+
+        if(serialReader != nullptr)
+        {
+            serialReader->update();
         }
 
         network->update();
@@ -877,7 +884,9 @@ void setup()
         doOta = false;
         lockEnabled = false;
         openerEnabled = false;
+
     }
+    serialReader = new SerialReader(importExport);
 
     if(lockEnabled || openerEnabled)
     {
