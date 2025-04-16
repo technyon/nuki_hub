@@ -39,7 +39,7 @@ void SerialReader::update()
             Serial.println("Configuration imported");
         }
 
-        if(!receivingConfig && line == "-- NUKI HUB CONFIG END --")
+        if(line == "-- NUKI HUB CONFIG END --")
         {
             Serial.println("Receive config end");
             receivingConfig = false;
@@ -52,7 +52,7 @@ void SerialReader::update()
             config = config + line;
         }
 
-        if(!receivingConfig && line == "-- NUKI HUB CONFIG START --")
+        if(line == "-- NUKI HUB CONFIG START --")
         {
             Serial.println("Receive config start");
             config = "";
