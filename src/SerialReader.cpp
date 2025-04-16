@@ -36,7 +36,7 @@ void SerialReader::update()
         if(!receivingConfig && line == "savecfg")
         {
             _importExport->importJson(json);
-            Serial.println("Configuration imported");
+            Serial.println("Configuration saved");
         }
 
         if(line == "-- NUKI HUB CONFIG END --")
