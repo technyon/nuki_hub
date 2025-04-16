@@ -139,6 +139,7 @@ jobs:
           mkdir -p resources/
           mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/master/
+          cp -vf release/*/nuki_hub_*.elf ota/master/          
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/src/Config.h src/Config.h
           python3 resources/ota_manifest.py master $Version
