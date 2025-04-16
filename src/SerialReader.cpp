@@ -2,8 +2,9 @@
 #include "RestartReason.h"
 #include "EspMillis.h"
 
-SerialReader::SerialReader(ImportExport *importExport)
-: _importExport(importExport)
+SerialReader::SerialReader(ImportExport *importExport, NukiNetwork* network)
+: _importExport(importExport),
+  _network(network)
 {
 }
 
@@ -24,6 +25,12 @@ void SerialReader::update()
         {
             Serial.print("Uptime (seconds): ");
             Serial.println(espMillis() / 1000);
+        }
+
+        if(!receivingConfig && line == "ip")
+        {
+            Serial.print("IP address: ");
+            Serial.println(_network->localIP());
         }
 
         if(!receivingConfig && line == "printcfg")

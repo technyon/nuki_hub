@@ -2,12 +2,13 @@
 
 #include "Arduino.h"
 #include "ImportExport.h"
+#include "NukiNetwork.h"
 #include <ArduinoJson.h>
 
 class SerialReader
 {
 public:
-    explicit SerialReader(ImportExport* importExport);
+    explicit SerialReader(ImportExport* importExport, NukiNetwork* network);
 
     void update();
 
@@ -17,4 +18,5 @@ private:
     bool receivingConfig = false;
 
     ImportExport* _importExport = nullptr;
+    NukiNetwork* _network = nullptr;
 };

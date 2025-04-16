@@ -884,9 +884,8 @@ void setup()
         doOta = false;
         lockEnabled = false;
         openerEnabled = false;
-
     }
-    serialReader = new SerialReader(importExport);
+    serialReader = new SerialReader(importExport, network);
 
     if(lockEnabled || openerEnabled)
     {
