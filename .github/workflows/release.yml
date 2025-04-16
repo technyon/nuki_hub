@@ -178,3 +178,25 @@ jobs:
           disable_globbing: true
           add_options: '-f'
           push_options: '-f'
+  next_version:
+    name: Set next release version
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Set new version
+        run: |
+          python3 resources/next_version.py      
+      - name: Commit config to master
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Set next release version"
+          file_pattern: 'src/Config.h'
+          branch: master
+          skip_dirty_check: true
+          skip_fetch: true
+          skip_checkout: true
+          disable_globbing: true
