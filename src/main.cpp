@@ -252,11 +252,12 @@ void networkTask(void *pvParameters)
             }
         }
 
+#ifndef NUKI_HUB_UPDATER
         if(serialReader != nullptr)
         {
             serialReader->update();
         }
-
+#endif
         network->update();
         bool connected = network->isConnected();
 

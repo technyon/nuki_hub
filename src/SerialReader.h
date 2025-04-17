@@ -17,6 +17,7 @@ private:
     JsonDocument json;
     bool _receivingConfig = false;
     int64_t _lastCommandTs = 0;
+    int _deserializationError = -1;
 
     ImportExport* _importExport = nullptr;
     NukiNetwork* _network = nullptr;

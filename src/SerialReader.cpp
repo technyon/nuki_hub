@@ -42,6 +42,18 @@ void SerialReader::update()
             Serial.println(_network->localIP());
         }
 
+        if(line == "printerror")
+        {
+            Serial.println(_deserializationError);
+        }
+
+        if(line == "printcfgstr")
+        {
+            Serial.println();
+            Serial.println(config);
+            Serial.println();
+        }
+
         if(line == "printcfg")
         {
             Serial.println();
@@ -61,6 +73,7 @@ void SerialReader::update()
             _receivingConfig = false;
             json.clear();
             DeserializationError error = deserializeJson(json, config);
+            _deserializationError = (int)error.code();
         }
 
         if(_receivingConfig)
@@ -72,7 +85,7 @@ void SerialReader::update()
         {
             Serial.println("Receive config start");
             config = "";
-            _receivngConfig = true;
+            _receivingConfig = true;
         }
     }
 }
