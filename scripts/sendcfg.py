@@ -10,6 +10,9 @@ def send_file_to_serial(file_path, port, baudrate=9600, delay=0.1):
             print(f"Opened serial port {port} at {baudrate} baud.")
 
             # Read file and send line by line
+            ser.write("start\n".encode('utf-8'))
+            time.sleep(delay)
+
             ser.write("-- NUKI HUB CONFIG START --\n".encode('utf-8'))
 
             with open(file_path, 'r') as file:
@@ -23,13 +26,13 @@ def send_file_to_serial(file_path, port, baudrate=9600, delay=0.1):
             time.sleep(delay)
             print("Configuration sent.")
 
-            # ser.write("savecfg\n".encode('utf-8'))
-            # time.sleep(delay)
-            # print("Configuration saved.")
-            #
-            # ser.write("reset\n".encode('utf-8'))
-            # print("ESP restarted.")
-            # time.sleep(1)
+            ser.write("savecfg\n".encode('utf-8'))
+            time.sleep(delay)
+            print("Configuration saved.")
+            
+            ser.write("reset\n".encode('utf-8'))
+            print("ESP restarted.")
+            time.sleep(1)
 
     except serial.SerialException as e:
         print(f"Serial error: {e}")
