@@ -15,7 +15,8 @@ public:
 private:
     String config = "";
     JsonDocument json;
-    bool receivingConfig = false;
+    bool _receivingConfig = false;
+    int64_t _lastCommandTs = 0;
 
     ImportExport* _importExport = nullptr;
     NukiNetwork* _network = nullptr;

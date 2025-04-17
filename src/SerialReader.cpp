@@ -16,31 +16,40 @@ void SerialReader::update()
         String line = Serial.readStringUntil('\n');
 //        Serial.println(line);
 
-        if(!receivingConfig && line == "reset")
+        int64_t ts = espMillis();
+
+        if(ts - _lastCommandTs > 3000)
+        {
+            _receivingConfig = false;
+        }
+        _lastCommandTs = ts;
+
+
+        if(line == "reset")
         {
             restartEsp(RestartReason::RequestedViaSerial);
         }
 
-        if(!receivingConfig && line == "uptime")
+        if(line == "uptime")
         {
             Serial.print("Uptime (seconds): ");
             Serial.println(espMillis() / 1000);
         }
 
-        if(!receivingConfig && line == "ip")
+        if(line == "ip")
         {
             Serial.print("IP address: ");
             Serial.println(_network->localIP());
         }
 
-        if(!receivingConfig && line == "printcfg")
+        if(line == "printcfg")
         {
             Serial.println();
             serializeJsonPretty(json, Serial);
             Serial.println();
         }
 
-        if(!receivingConfig && line == "savecfg")
+        if(line == "savecfg")
         {
             _importExport->importJson(json);
             Serial.println("Configuration saved");
@@ -49,12 +58,12 @@ void SerialReader::update()
         if(line == "-- NUKI HUB CONFIG END --")
         {
             Serial.println("Receive config end");
-            receivingConfig = false;
+            _receivingConfig = false;
             json.clear();
             DeserializationError error = deserializeJson(json, config);
         }
 
-        if(receivingConfig)
+        if(_receivingConfig)
         {
             config = config + line;
         }
@@ -63,7 +72,7 @@ void SerialReader::update()
         {
             Serial.println("Receive config start");
             config = "";
-            receivingConfig = true;
+            _receivngConfig = true;
         }
     }
 }

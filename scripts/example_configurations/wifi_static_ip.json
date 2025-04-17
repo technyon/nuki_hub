@@ -1,0 +1,9 @@
+{
+  "hostname": "nuki-static",
+  "ipaddr" : "192.168.8.25",
+  "ipsub" : "255.255.255.0",
+  "ipgtw" : "192.168.8.1",
+  "dnssrv" : "1.1.1.1",
+  "wifiSSID": "a",
+  "wifiPass": "a"
+}

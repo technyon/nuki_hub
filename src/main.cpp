@@ -14,13 +14,13 @@
 #include "esp_core_dump.h"
 #include "FS.h"
 #include "SPIFFS.h"
-#include "SerialReader.h"
 //#include <ESPmDNS.h>
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
 #endif
 
 #ifndef NUKI_HUB_UPDATER
+#include "SerialReader.h"
 #include "NukiWrapper.h"
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
@@ -884,8 +884,10 @@ void setup()
         doOta = false;
         lockEnabled = false;
         openerEnabled = false;
+#ifndef NUKI_HUB_UPDATER
+        serialReader = new SerialReader(importExport, network);
+#endif
     }
-    serialReader = new SerialReader(importExport, network);
 
     if(lockEnabled || openerEnabled)
     {
