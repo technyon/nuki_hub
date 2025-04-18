@@ -129,7 +129,7 @@ jobs:
 
             cd ../..
           done
-          
+
           # remove last character
           ARTIFACTS="${ARTIFACTS%?}"
           echo "artifacts=${ARTIFACTS}" | tee -a ${GITHUB_OUTPUT}
@@ -156,13 +156,15 @@ jobs:
           mkdir -p ota/master/
           mkdir -p resources/
           mkdir -p src/
-          cp -vf release/*/nuki_hub_*.bin ota/          
+          cp -vf release/*/nuki_hub_*.bin ota/
+          cp -vf release/*/nuki_hub_*.elf ota/
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/src/Config.h src/Config.h
           python3 resources/ota_manifest.py release $Version
           python3 resources/ota_manifest.py beta none
           find * -not -path "ota*" -delete
           rm -rf ota/beta/*.bin
+          rm -rf ota/beta/*.elf
           rm -rf .github .gitignore .gitmodules
           touch ota/beta/empty
           touch ota/master/empty
@@ -178,3 +180,25 @@ jobs:
           disable_globbing: true
           add_options: '-f'
           push_options: '-f'
+  next_version:
+    name: Set next release version
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Set new version
+        run: |
+          python3 resources/next_version.py
+      - name: Commit config to master
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Set next release version"
+          file_pattern: 'src/Config.h'
+          branch: master
+          skip_dirty_check: true
+          skip_fetch: true
+          skip_checkout: true
+          disable_globbing: true
