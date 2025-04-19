@@ -3,18 +3,15 @@ import time
 import sys
 import os
 
-def send_file_to_serial(file_path, port, baudrate=9600, delay=0.1):
+def send_configuration(file_path, port, baudrate=9600, delay=0.1):
     try:
         # Open serial port
         with serial.Serial(port, baudrate, timeout=1) as ser:
             print(f"Opened serial port {port} at {baudrate} baud.")
 
-            # Read file and send line by line
-            ser.write("start\n".encode('utf-8'))
-            time.sleep(delay)
-
             ser.write("-- NUKI HUB CONFIG START --\n".encode('utf-8'))
 
+            # Read configuration file and send line by line
             with open(file_path, 'r') as file:
                 for line in file:
                     ser.write(line.encode('utf-8'))  # Send line
@@ -26,10 +23,12 @@ def send_file_to_serial(file_path, port, baudrate=9600, delay=0.1):
             time.sleep(delay)
             print("Configuration sent.")
 
+            # persist previously sent configuration
             ser.write("savecfg\n".encode('utf-8'))
             time.sleep(delay)
             print("Configuration saved.")
-            
+
+            # restart ESP
             ser.write("reset\n".encode('utf-8'))
             print("ESP restarted.")
             time.sleep(1)
@@ -55,4 +54,4 @@ if __name__ == "__main__":
     serial_port = sys.argv[1]
     baud_rate = 115200
 
-    send_file_to_serial(config_file, serial_port, baud_rate)
+    send_configuration(config_file, serial_port, baud_rate)
