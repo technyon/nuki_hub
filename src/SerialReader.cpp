@@ -36,12 +36,6 @@ void SerialReader::update()
             Serial.println(espMillis() / 1000);
         }
 
-        if(line == "ip")
-        {
-            Serial.print("IP address: ");
-            Serial.println(_network->localIP());
-        }
-
         if(line == "printerror")
         {
             Serial.println(_deserializationError);

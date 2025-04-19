@@ -15,7 +15,7 @@ def send_configuration(file_path, port, baudrate=9600, delay=0.1):
             with open(file_path, 'r') as file:
                 for line in file:
                     ser.write(line.encode('utf-8'))  # Send line
-                    ser.write("\n".encode('utf-8'))
+                    ser.write("\n".encode('utf-8'))  # Send new line
                     print(f"Sent: {line.strip()}")
                     time.sleep(delay)  # Optional delay between lines
 
