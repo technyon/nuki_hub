@@ -5,7 +5,7 @@
 The Nuki Hub software runs on a ESP32 module and acts as a bridge between Nuki devices and a Home Automation platform.<br>
 <br>
 It communicates with a Nuki Lock and/or Opener through Bluetooth (BLE) and uses MQTT to integrate with other systems.<br>
-<br>
+<br>    
 It exposes the lock state (and much more) through MQTT and allows executing commands like locking and unlocking as well as changing the Nuki Lock/Opener configuration through MQTT.<br>
 
 ***Nuki Hub does not integrate with the Nuki mobile app, it can't register itself as a bridge in the official Nuki mobile app.***

@@ -1,0 +1,5 @@
+{
+  "hostname": "nuki-123456",
+  "wifiSSID": "YOUR_SSID",
+  "wifiPass": "YOUR_WIFI_PRESHARED_KEY"
+}
