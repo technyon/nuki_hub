@@ -5149,7 +5149,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     printInputField(&response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100, "");
     printInputField(&response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
     printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
-    printInputField(&response, "MQTTPASS", "MQTT Password", "*", 30, "", true, true);
+    printInputField(&response, "MQTTPASS", "MQTT Password", "*", 40, "", true, true);
     printInputField(&response, "MQTTPATH", "MQTT Nuki Hub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
     printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
     response.print("</table><br>");
