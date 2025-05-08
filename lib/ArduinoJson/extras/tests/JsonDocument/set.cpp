@@ -87,6 +87,13 @@ TEST_CASE("JsonDocument::set()") {
                          });
   }
 
+  SECTION("Flash tiny string") {  // issue #2170
+    doc.set(F("abc"));
+
+    REQUIRE(doc.as<const char*>() == "abc"_s);
+    REQUIRE(spy.log() == AllocatorLog{});
+  }
+
 #ifdef HAS_VARIABLE_LENGTH_ARRAY
   SECTION("VLA") {
     size_t i = 16;

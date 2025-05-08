@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #include <Arduino.h>
@@ -128,6 +128,7 @@ TEST_CASE("IsString<T>") {
   CHECK(IsString<const __FlashStringHelper*>::value == true);
   CHECK(IsString<const char*>::value == true);
   CHECK(IsString<const char[8]>::value == true);
+  CHECK(IsString<const char[]>::value == true);
   CHECK(IsString<::String>::value == true);
   CHECK(IsString<::StringSumHelper>::value == true);
   CHECK(IsString<const EmptyStruct*>::value == false);

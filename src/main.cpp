@@ -20,6 +20,7 @@
 #endif
 
 #ifndef NUKI_HUB_UPDATER
+#include "SerialReader.h"
 #include "NukiWrapper.h"
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
@@ -50,6 +51,7 @@ NukiOpenerWrapper* nukiOpener = nullptr;
 NukiDeviceId* deviceIdLock = nullptr;
 NukiDeviceId* deviceIdOpener = nullptr;
 Gpio* gpio = nullptr;
+SerialReader* serialReader = nullptr;
 
 bool lockEnabled = false;
 bool openerEnabled = false;
@@ -250,6 +252,12 @@ void networkTask(void *pvParameters)
             }
         }
 
+#ifndef NUKI_HUB_UPDATER
+        if(serialReader != nullptr)
+        {
+            serialReader->update();
+        }
+#endif
         network->update();
         bool connected = network->isConnected();
 
@@ -877,6 +885,9 @@ void setup()
         doOta = false;
         lockEnabled = false;
         openerEnabled = false;
+#ifndef NUKI_HUB_UPDATER
+        serialReader = new SerialReader(importExport, network);
+#endif
     }
 
     if(lockEnabled || openerEnabled)

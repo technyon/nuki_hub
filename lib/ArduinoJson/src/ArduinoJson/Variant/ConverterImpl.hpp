@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2024, Benoit BLANCHON
+// Copyright © 2014-2025, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -230,9 +230,9 @@ class StringBuilderPrint : public Print {
     copier_.startString();
   }
 
-  StringNode* save() {
+  void save(VariantData* data) {
     ARDUINOJSON_ASSERT(!overflowed());
-    return copier_.save();
+    copier_.save(data);
   }
 
   size_t write(uint8_t c) {
@@ -268,7 +268,7 @@ inline void convertToJson(const ::Printable& src, JsonVariant dst) {
   src.printTo(print);
   if (print.overflowed())
     return;
-  data->setOwnedString(print.save());
+  print.save(data);
 }
 
 #endif

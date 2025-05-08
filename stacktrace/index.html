@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title>NukiHub Stack trace decoder</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1.3.3/css/pico.min-dist.css">
+    <style>
+      hgroup {
+        margin: var(--typography-spacing-vertical) 0;
+      }
+      main {
+        margin-top: 0;
+      }
+      h3 {
+        font-size: 1.4rem;
+        --typography-spacing-vertical: 1rem;
+        display: inline-block;
+      }
+      input {
+        display: inline-block !important;
+        width: auto !important;
+      }
+      body>footer, body>header, body>main {
+        padding: 0 var(--spacing);
+      }
+      section {
+        margin-bottom: 0;
+      }
+      textarea {
+        padding: 5px;
+        font-size: 0.75rem;
+        font-family: monospace;
+      }
+      textarea[disabled] {
+        cursor: default;
+        --background-color: var(--form-element-background-color);
+        --border-color: var(--form-element-border-color);
+        opacity: var(--form-element-opacity);
+      }
+      ul {
+        padding-left: 0;
+      }
+      ul li {
+        list-style: none;
+        word-break: break-all;
+        font-size: 0.7rem;
+        margin-bottom: 0;
+      }
+    </style>
+    <script>
+        window.addEventListener("load", function(event) {
+            const selectEl = document.querySelector("#elffile");
+
+            fetch("https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/dummy.bin").then(function(response) {
+                if (!response.ok) {
+                    throw new Error("Not 2xx response", {cause: response});
+                }
+                else {
+                    for (let i = 0; i < selectEl.options.length; i++) {
+                        const text = selectEl.options[i].value;
+                        if (text == '') {
+                            selectEl.remove(i);
+                            i--;
+                        }
+                    }
+                }
+            }).catch(function(err) {
+                for (let i = 0; i < selectEl.options.length; i++) {
+                    const text = selectEl.options[i].value;
+                    if (text.includes('/beta/')) {
+                        selectEl.remove(i);
+                        i--;
+                    }
+                }
+            });
+        },{ once: true });
+    </script>
+  </head>
+
+  <body>
+    <header>
+      <hgroup>
+        <h1>NukiHub Stack Trace Decoder</h1>
+      </hgroup>
+    </header>
+    <main>
+      <section>
+        <h3>Binary:</h3>
+        <select id="elffile">
+            <optgroup label="Release version">
+            <option label="NukiHub ESP32" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32.elf"></option>
+            <option label="NukiHub ESP32-C3" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32c3.elf"></option>
+            <option label="NukiHub ESP32-C6" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32c6.elf"></option>
+            <option label="NukiHub ESP32-S3" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32s3.elf"></option>
+            <option label="NukiHub ESP32-S3 OCTAL PSRAM" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32s3oct.elf"></option>
+            <option label="NukiHub ESP32-P4" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32p4.elf"></option>
+            <option label="NukiHub ESP32-SOLO1" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32solo1.elf"></option>
+            <option label="NukiHub GL-S10" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32gls10.elf"></option>
+            </optgroup>
+            <optgroup label="Beta version">
+            <option class="beta" label="NukiHub ESP32" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32.elf"></option>
+            <option class="beta" label="NukiHub ESP32-C3" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32c3.elf"></option>
+            <option class="beta" label="NukiHub ESP32-C6" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32c6.elf"></option>
+            <option class="beta" label="NukiHub ESP32-S3" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32s3.elf"></option>
+            <option class="beta" label="NukiHub ESP32-S3 OCTAL PSRAM" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32s3oct.elf"></option>
+            <option class="beta" label="NukiHub ESP32-P4" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32p4.elf"></option>
+            <option class="beta" label="NukiHub ESP32-SOLO1" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32solo1.elf"></option>
+            <option class="beta" label="NukiHub GL-S10" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32gls10.elf"></option>
+            <option class="beta" label="No Beta available" disabled value=""></option>
+            </optgroup>
+            <optgroup label="Development version">
+            <option label="NukiHub ESP32" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32.elf"></option>
+            <option label="NukiHub ESP32-C3" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32c3.elf"></option>
+            <option label="NukiHub ESP32-C6" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32c6.elf"></option>
+            <option label="NukiHub ESP32-S3" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32s3.elf"></option>
+            <option label="NukiHub ESP32-S3 OCTAL PSRAM" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32s3oct.elf"></option>
+            <option label="NukiHub ESP32-P4" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32p4.elf"></option>
+            <option label="NukiHub ESP32-SOLO1" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32solo1.elf"></option>
+            <option label="NukiHub GL-S10" value="https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32gls10.elf"></option>
+            </optgroup>
+        </select>
+      </section>
+      <section>
+        <h3>Stack trace:</h3>
+        <textarea id="stacktrace" width="100%" rows="10"></textarea>
+        <button aria-busy="true" id="run-button" disabled>Loading...</button>
+      </section>
+      <section id="output" hidden>
+        <h3>Output:</h3>
+        <ul id="decoded-list"></ul>
+      </section>
+    </main>
+
+    <script type="module">
+      // Load the WASM lib
+      import init, {decode as esp_exception_decode} from "./esp_exception_decoder_rs.js";
+
+      // Get some references to the DOM
+      const stacktrace = document.querySelector('#stacktrace');
+      const elffile = document.querySelector('#elffile');
+      const run_button = document.querySelector('#run-button');
+
+      const section_output = document.querySelector('#output');
+      const decoded_list = document.querySelector('#decoded-list');
+
+      (async function run() {
+        await init();
+
+        // Update the button state
+        run_button.textContent = 'Run!';
+        run_button.removeAttribute('disabled');
+        run_button.setAttribute('aria-busy', 'disabled');
+
+        const req = new XMLHttpRequest();
+        req.responseType = "arraybuffer";
+        req.onload = (event) => {
+          const arrayBuffer = req.response; // Note: not req.responseText
+          if (arrayBuffer) {
+            const elf_bytes = new Uint8Array(arrayBuffer);
+            const decoded_addresses = esp_exception_decode(elf_bytes, stacktrace.value);
+            // Unhide and update the decoded text area with the result from decode call
+            section_output.removeAttribute('hidden');
+            decoded_list.textContent = '';
+            decoded_addresses.forEach((e) => {
+              const entry_elm = document.createElement('li');
+              entry_elm.innerHTML = `0x${e.address.toString(16)}: <strong>${e.function_name}</strong> at <mark>${e.location}</mark>`;
+              decoded_list.appendChild(entry_elm);
+            });
+          }
+        };
+
+        // Setup the click event
+        run_button.addEventListener('click', (e) => {
+          req.open("GET", elffile.value, true);
+          req.send(null);
+        });
+      })();
+    </script>
+  </body>
+</html>

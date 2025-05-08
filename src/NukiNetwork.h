@@ -144,7 +144,7 @@ private:
     int64_t _nextReconnect = 0;
     char _mqttBrokerAddr[101] = {0};
     char _mqttUser[31] = {0};
-    char _mqttPass[31] = {0};
+    char _mqttPass[41] = {0};
     char _maintenancePathPrefix[181] = {0};
     int _networkTimeout = 0;
     std::vector<MqttReceiver*> _mqttReceivers;

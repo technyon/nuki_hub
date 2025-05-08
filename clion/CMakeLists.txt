@@ -57,6 +57,7 @@ set(SRCFILES
         ../src/EspMillis.h
         ../src/enums/NukiPinState.h
         ../src/networkDevices/Tlk110Definitions.h
+        ../src/SerialReader.cpp
 )
 
 file(GLOB_RECURSE SRCFILESREC

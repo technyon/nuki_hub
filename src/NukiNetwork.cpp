@@ -311,7 +311,6 @@ void NukiNetwork::initialize()
             for(int i=0; i < len; i++)
             {
                 _mqttPass[i] = mqttPass.charAt(i);
-
             }
         }
 
