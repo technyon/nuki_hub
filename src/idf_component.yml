@@ -4,7 +4,7 @@ dependencies:
 
   esp-nimble-cpp:
     git: https://github.com/h2zero/esp-nimble-cpp.git
-    version: da9450dbdb60b56bca15f431e137c912b11114bb
+    version: 39f974625c81882f1a4b0967f1beb0fe01e2b4ea
     
   espressif/libsodium: "^1.0.20~2"
 
@@ -12,7 +12,6 @@ dependencies:
     version: "*"
     rules:
       - if: "target in [esp32p4]"
-
   espressif/esp_wifi_remote:
     version: "*"
     rules:
