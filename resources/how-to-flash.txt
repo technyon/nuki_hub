@@ -57,6 +57,13 @@ e000 boot_app0.bin
 10000 nuki_hub_esp32c3.bin
 270000 nuki_hub_updater_esp32c3.bin
 
+ESP32-C5
+e000 boot_app0.bin
+2000 nuki_hub_bootloader_esp32c5.bin
+8000 nuki_hub_partitions_esp32c5.bin
+10000 nuki_hub_esp32c5.bin
+260000 nuki_hub_updater_esp32c5.bin
+
 ESP32-C6
 e000 boot_app0.bin
 0 nuki_hub_bootloader_esp32c6.bin
@@ -116,6 +123,10 @@ esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_res
 ## ESP32-C3
 
 esptool.py --chip esp32c3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 nuki_hub_bootloader_esp32c3.bin 0x10000 nuki_hub_esp32c3.bin 0x270000 nuki_hub_updater_esp32c3.bin 0x8000 nuki_hub_partitions_esp32c3.bin
+
+## ESP32-C5
+
+esptool.py --chip esp32c5 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x2000 nuki_hub_bootloader_esp32c5.bin 0x10000 nuki_hub_esp32c5.bin 0x260000 nuki_hub_updater_esp32c5.bin 0x8000 nuki_hub_partitions_esp32c5.bin
 
 ## ESP32-C6
 

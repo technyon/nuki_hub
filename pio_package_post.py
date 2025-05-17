@@ -38,34 +38,6 @@ def copy_files(source, target, env):
     else:
         shutil.copy(file, f"{target_dir}/{file.name}")
 
-def merge_bin(source, target, env):
-    #if not env.get('BUILD_TYPE') in ['release']:
-    #    return
-
-    board = get_board_name(env)
-    chip = env.get('BOARD_MCU')
-    target_dir = create_target_dir(env)
-    target_file = f"{target_dir}/webflash_nuki_hub_{board}.bin"
-
-    app_position = "0x10000"
-    app_path = target[0].get_abspath()
-
-    flash_args = list()
-    flash_args.append(app_position)
-    flash_args.append(app_path)
-
-    for position, bin_file in env.get('FLASH_EXTRA_IMAGES'):
-        if "boot_app0.bin" in bin_file:
-            bin_file = "resources/boot_app0.bin"
-        flash_args.append(position)
-        flash_args.append(bin_file)
-
-    flash_args.append("0x270000")
-    flash_args.append(f"{target_dir}/nuki_hub_updater_{board}.bin")
-
-    cmd = f"esptool.py --chip {chip} merge_bin -o {target_file} --flash_mode dio --flash_freq keep --flash_size keep " + " ".join(flash_args)
-    env.Execute(cmd)
-
 def package_last_files(source, target, env):
     files = ["resources/boot_app0.bin", "resources/how-to-flash.txt"]
 
@@ -80,5 +52,3 @@ env.AddPostAction("$BUILD_DIR/firmware.bin", package_last_files)
 env.AddPostAction("$BUILD_DIR/partitions.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/bootloader.bin", copy_files)
 env.AddPostAction("$BUILD_DIR/firmware.elf", copy_files)
-
-#env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", merge_bin)
