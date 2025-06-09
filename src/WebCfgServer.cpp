@@ -6642,7 +6642,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
 
     response.print("\n\n------------ GPIO ------------\n");
     response.print("\nRetain Input GPIO MQTT state: ");
-    response.print(_preferences->getBool(preference_retain_gpio, false) ? "Yes" : "No");
+    response.print(_preferences->getBool(preference_retain_gpio, false) ? "Yes\n" : "No\n");
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response.print(gpioStr);
@@ -6977,6 +6977,9 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOp
     options.push_back(std::make_pair("9", "ETH01-Evo"));
     options.push_back(std::make_pair("13", "Waveshare ESP32-S3-ETH / ESP32-S3-ETH-POE"));
     options.push_back(std::make_pair("14", "LilyGO T-ETH-Lite-ESP32S3"));
+    options.push_back(std::make_pair("15", "Waveshare ESP32-P4-NANO"));
+    options.push_back(std::make_pair("16", "Waveshare ESP32-P4-Module-DEV-KIT"));
+    options.push_back(std::make_pair("17", "ESP32-P4-Function-EV-Board"));
     options.push_back(std::make_pair("11", "Custom LAN module"));
 
     return options;

@@ -38,6 +38,12 @@ NetworkDeviceType NetworkUtil::GetDeviceTypeFromPreference(int hardwareDetect, i
         return NetworkDeviceType::Waveshare_ESP32_S3_ETH;
     case 14:
         return NetworkDeviceType::LilyGO_T_ETH_Lite_S3;
+    case 15:
+        return NetworkDeviceType::Waveshare_ESP32_P4_NANO;
+    case 16:
+        return NetworkDeviceType::Waveshare_ESP32_P4_Module_DEV_KIT;
+    case 17:
+        return NetworkDeviceType::ESP32_P4_Function_EV_Board;        
     default:
         Log->println("Unknown hardware selected, falling back to Wi-Fi.");
         return NetworkDeviceType::WiFi;
@@ -101,7 +107,7 @@ eth_clock_mode_t NetworkUtil::GetCustomClock(int custCLKpref)
     case 0:
         return ETH_CLOCK_GPIO0_IN;
         break;
-    case 1:        
+    case 1:
         return ETH_CLOCK_GPIO0_OUT;
         break;
     case 2:

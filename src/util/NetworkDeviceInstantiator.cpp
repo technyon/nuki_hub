@@ -11,6 +11,9 @@
 NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDeviceType, String hostname, Preferences *preferences, IPConfiguration *ipConfiguration)
 {
     NetworkDevice* device = nullptr;
+    #if defined(CONFIG_IDF_TARGET_ESP32P4)
+    bool fakedevice = true;
+    #endif
 
     switch (networkDeviceType)
     {
@@ -91,7 +94,35 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
                                         ETH_PHY_SPI_MOSI_ETHLITES3_W5500,
                                         ETH_PHY_W5500);
             break;
-
+        #if defined(CONFIG_IDF_TARGET_ESP32P4)
+        case NetworkDeviceType::Waveshare_ESP32_P4_NANO:
+            device = new EthernetDevice(hostname, preferences, ipConfiguration, "Waveshare ESP32-P4-NANO",
+                                        1,
+                                        51,
+                                        31,
+                                        52,
+                                        ETH_PHY_IP101,
+                                        ETH_CLOCK_GPIO0_IN);
+            break;
+        case NetworkDeviceType::Waveshare_ESP32_P4_Module_DEV_KIT:
+            device = new EthernetDevice(hostname, preferences, ipConfiguration, "Waveshare ESP32-P4-Module-DEV-KIT",
+                                        1,
+                                        51,
+                                        31,
+                                        52,
+                                        ETH_PHY_IP101,
+                                        ETH_CLOCK_GPIO0_IN);
+            break;
+        case NetworkDeviceType::ESP32_P4_Function_EV_Board:
+            device = new EthernetDevice(hostname, preferences, ipConfiguration, "ESP32-P4-Function-EV-Board",
+                                        1,
+                                        51,
+                                        31,
+                                        52,
+                                        ETH_PHY_IP101,
+                                        ETH_CLOCK_GPIO0_IN);
+            break;
+        #endif
         case NetworkDeviceType::CUSTOM:
         {
             int custPHY = preferences->getInt(preference_network_custom_phy, 0);
@@ -153,6 +184,9 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
             else
             {
                 device = new WifiDevice(hostname, preferences, ipConfiguration);
+                #if defined(CONFIG_IDF_TARGET_ESP32P4)
+                fakedevice = false;
+                #endif
             }
 #endif
         }
@@ -183,9 +217,15 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         case NetworkDeviceType::WiFi:
             device = new WifiDevice(hostname, preferences, ipConfiguration);
+            #if defined(CONFIG_IDF_TARGET_ESP32P4)
+            fakedevice = false;
+            #endif
             break;
         default:
             device = new WifiDevice(hostname, preferences, ipConfiguration);
+            #if defined(CONFIG_IDF_TARGET_ESP32P4)
+            fakedevice = false;
+            #endif
             break;
 #else
             default:
@@ -201,6 +241,17 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
         break;
 #endif
     }
+
+    #if defined(CONFIG_IDF_TARGET_ESP32P4)
+    if (fakedevice) {
+        Log->println("Create dummy WiFi device for Hosted on P4");
+        NetworkDevice* device2 = nullptr;
+        device2 = new WifiDevice("fakep4forhosted", preferences, ipConfiguration);
+        device2->initialize();
+        delete device2;
+        device2 = NULL;
+    }
+    #endif
 
     return device;
 }

@@ -15,5 +15,8 @@ enum class NetworkDeviceType
     ETH01_Evo,
     Waveshare_ESP32_S3_ETH,
     LilyGO_T_ETH_Lite_S3,
+    Waveshare_ESP32_P4_NANO,
+    Waveshare_ESP32_P4_Module_DEV_KIT,
+    ESP32_P4_Function_EV_Board,    
     CUSTOM
 };

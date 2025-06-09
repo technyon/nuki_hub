@@ -80,7 +80,7 @@ e000 boot_app0.bin
 
 ESP32-P4
 e000 boot_app0.bin
-0 nuki_hub_bootloader_esp32p4.bin
+2000 nuki_hub_bootloader_esp32p4.bin
 8000 nuki_hub_partitions_esp32p4.bin
 10000 nuki_hub_esp32p4.bin
 270000 nuki_hub_updater_esp32p4.bin
@@ -138,7 +138,7 @@ esptool.py --chip esp32h2 --port /dev/ttyUSB0 --baud 921600 --before default_res
 
 ## ESP32-P4
 
-esptool.py --chip esp32p4 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 nuki_hub_bootloader_esp32p4.bin 0x10000 nuki_hub_esp32p4.bin 0x270000 nuki_hub_updater_esp32p4.bin 0x8000 nuki_hub_partitions_esp32p4.bin
+esptool.py --chip esp32p4 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x2000 nuki_hub_bootloader_esp32p4.bin 0x10000 nuki_hub_esp32p4.bin 0x270000 nuki_hub_updater_esp32p4.bin 0x8000 nuki_hub_partitions_esp32p4.bin
 
 ## ESP32-SOLO1
 
