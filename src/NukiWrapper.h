@@ -69,6 +69,7 @@ private:
     bool updateKeyTurnerState();
     void updateBatteryState();
     void updateConfig();
+    void updateDebug();
     void updateAuthData(bool retrieved);
     void updateKeypad(bool retrieved);
     void updateTimeControl(bool retrieved);
@@ -140,6 +141,7 @@ private:
     bool _keypadEnabled = false;
     bool _forceId = false;
     bool _isUltra = false;
+    bool _isDebugging = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;

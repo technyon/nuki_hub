@@ -16,8 +16,8 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 
 <b>Supported ESP32 devices:</b>
 - Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.4.1 and Arduino Core 3.2.0.
-- Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C6 and ESP32-H2.
-- Untested builds are provided for the ESP32-P4 (with the ESP32-C6-MINI-1 module for BLE and WiFi) and ESP32-Solo1 (as the developers don't own one).
+- Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C6, ESP32-P4 (with the ESP32-C6-MINI-1 module for BLE and WiFi) and ESP32-H2.
+- Untested builds are provided for the ESP32-Solo1 (as the developers don't own one).
 
 <b>Not supported ESP32 devices:</b>
 - The ESP32-S2 has no built-in BLE and as such can't run Nuki Hub.
@@ -49,6 +49,9 @@ As an alternative to Wi-Fi (which is available on any supported ESP32), the foll
 - [LilyGO-T-ETH ELite](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-Series)
 - [GL-S10 (Revisions 2.1, 2.3 / 1.0 might not be supported)](https://www.gl-inet.com/products/gl-s10/)
 - [Waveshare ESP32-S3-ETH / ESP32-S3-POE-ETH](https://www.waveshare.com/esp32-s3-eth.htm?sku=28771)
+- [Waveshare ESP32-P4-NANO](https://www.waveshare.com/esp32-p4-nano.htm)
+- [Waveshare ESP32-P4-Module-DEV-KIT](https://www.waveshare.com/esp32-p4-module-dev-kit.htm)
+- [Espressif ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html)
   
 In principle all ESP32 (and variants) devices with built-in ethernet port are supported, but might require additional setup using the "Custom LAN setup" option.
 See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section for more information.
@@ -59,20 +62,24 @@ We don't recommend using single-core ESP32 devices (ESP32-C3, ESP32-C6, ESP32-H2
 Although Nuki Hub supports single-core devices, Nuki Hub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs much better on dual-core devices.<br>
 
 We also don't recommend using the original ESP32 or ESP32-Solo1 devices because these devices experience unexpected crashes related to the (closed-source) BLE controller.<br>
-In all newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C6, ESP32-H2) these unexpected crashed haven't been seen.
+In newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C6, ESP32-H2) these unexpected crashes are seen less.
 
-When buying a new device in 2025 we can only recommend the ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
+When buying a new device in 2025 we can only recommend the ESP32-P4 or ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
+
+The ESP32-P4 with ESP32-C6-MINI-1 module for BLE/WiFi is the most powerfull ESP32 in 2025. 
+It supports (with the C6 co-processor) anything the ESP32 range has to offer with the highest CPU clocks, largest flash and PSRAM, Ethernet, PoE and WiFi6.
+The only function missing (when not using a C5 as co-processor) is 5Ghz WiFi support.
+
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter.<br>
 The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
 
-We provide a build for the ESP32-P4 with ESP32-C6-MINI-1 module for BLE/WiFi but this device is untested as of now.
-
 Other considerations:
-- If Ethernet/PoE is required: An ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
-- If WIFI6 is absolutely required (it probably isn't): ESP32-C6 or ESP32-P4 with ESP32-C6-MINI-1 module (UNTESTED)
+- If Ethernet/PoE is required: ESP32-P4 with ESP32-C6-MINI-1 module or ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
+- If WIFI6 is absolutely required: ESP32-P4 with ESP32-C6-MINI-1 module or ESP32-C6
 
 Devices ranked best-to-worst:
-- ESP32-P4 with ESP32-C6-MINI-1 module (UNTESTED)
+- ESP32-P4 with ESP32-C6-MINI-1 module
+- ...... <br>
 - ESP32-S3 with PSRAM
 - ...... <br>
 (Devices below will not support some Nuki Hub functions, be slower and/or are more likely to experience unexpected crashes)

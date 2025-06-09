@@ -20,29 +20,39 @@ const String WifiDevice::deviceName() const
 
 void WifiDevice::initialize()
 {
-    ssid = _preferences->getString(preference_wifi_ssid, "");
-    ssid.trim();
-    pass = _preferences->getString(preference_wifi_pass, "");
-    pass.trim();
-    WiFi.setHostname(_hostname.c_str());
+    if (_hostname != "fakep4forhosted") {
+        ssid = _preferences->getString(preference_wifi_ssid, "");
+        ssid.trim();
+        pass = _preferences->getString(preference_wifi_pass, "");
+        pass.trim();
+        WiFi.setHostname(_hostname.c_str());
 
-    WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
-    {
-        onWifiEvent(event, info);
-    });
+        WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
+        {
+            onWifiEvent(event, info);
+        });
 
-    if(isWifiConfigured())
-    {
-        Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
-        _openAP = false;
+        if(isWifiConfigured())
+        {
+            Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
+            _openAP = false;
+        }
+        else
+        {
+            Log->println("No SSID or Wifi password saved, opening AP");
+            _openAP = true;
+        }
+
+        scan(false, true);
     }
     else
     {
-        Log->println("No SSID or Wifi password saved, opening AP");
-        _openAP = true;
+        WiFi.disconnect(true);
+        WiFi.mode(WIFI_STA);
+        WiFi.disconnect();
+        delay(5000);
+        Log->println("Dummy WiFi device for Hosted on P4 done");
     }
-
-    scan(false, true);
     return;
 }
 
@@ -177,7 +187,7 @@ bool WifiDevice::connect()
         }
 
         return false;
-    }
+    } 
 
     return true;
 }
