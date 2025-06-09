@@ -162,6 +162,7 @@ void NukiWrapper::readSettings()
     _forceKeypad = _preferences->getBool(preference_lock_force_keypad, false);
     _forceId = _preferences->getBool(preference_lock_force_id, false);
     _isUltra = _preferences->getBool(preference_lock_gemini_enabled, false);
+    _isDebugging = _preferences->getBool(preference_debug_hex_data, false);
 
     _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
     _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
@@ -360,7 +361,10 @@ void NukiWrapper::update(bool reboot)
                 Log->println("Updating Lock config based on timer or query");
                 _nextConfigUpdateTs = ts + _intervalConfig * 1000;
                 updateConfig();
-                updateDebug();
+                if(_isDebugging)
+                {
+                    updateDebug();
+                }
             }
             if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
             {
