@@ -12,8 +12,10 @@ dependencies:
     version: "*"
     rules:
       - if: "target in [esp32p4]"
+
   espressif/esp_wifi_remote:
     version: "*"
+    override_path: '../resources/espressif__esp_wifi_remote/'
     rules:
       - if: "target in [esp32p4]"
 
