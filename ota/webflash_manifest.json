@@ -55,7 +55,7 @@
     {
       "chipFamily": "ESP32-P4",
       "parts": [
-        { "path": "nuki_hub_bootloader_esp32p4.bin", "offset": 0 },
+        { "path": "nuki_hub_bootloader_esp32p4.bin", "offset": 8192 },
         { "path": "nuki_hub_partitions_esp32p4.bin", "offset": 32768 },
         { "path": "boot_app0.bin", "offset": 57344 },
         { "path": "nuki_hub_esp32p4.bin", "offset": 65536 },
