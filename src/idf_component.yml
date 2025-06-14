@@ -4,7 +4,7 @@ dependencies:
 
   esp-nimble-cpp:
     git: https://github.com/h2zero/esp-nimble-cpp.git
-    version: 0172cb4b394949e89ebe1d79b4a9787b481d890c
+    version: 2.3.1
     
   espressif/libsodium: "^1.0.20~2"
 
