@@ -1142,7 +1142,9 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                             {
                                 duoResult = _importExport->checkDuoApprove();
                                 delay(2000);
+                                #if !defined(CONFIG_IDF_TARGET_ESP32C5)
                                 esp_task_wdt_reset();
+                                #endif
                             }
                         }
 

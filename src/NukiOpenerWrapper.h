@@ -25,6 +25,7 @@ public:
     void deactivateRTO();
     void deactivateCM();
 
+    bool hasConnected();
     bool isPinValid();
     void setPin(const uint16_t pin);
     uint16_t getPin();
@@ -36,6 +37,7 @@ public:
     const bool isPaired() const;
     const bool hasKeypad() const;
     const BLEAddress getBleAddress() const;
+    uint8_t restartController();
 
     std::string firmwareVersion() const;
     std::string hardwareVersion() const;
@@ -135,9 +137,11 @@ private:
     bool _forceKeypad = false;
     bool _keypadEnabled = false;
     bool _forceId = false;
+    bool _hasConnected = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;
+    uint8_t _restartController = 0;
     int _rssiPublishInterval = 0;
     int64_t _statusUpdatedTs = 0;
     int64_t _nextLockStateUpdateTs = 0;
@@ -158,7 +162,7 @@ private:
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
-    
+
     char* _buffer;
     const size_t _bufferSize;
 };

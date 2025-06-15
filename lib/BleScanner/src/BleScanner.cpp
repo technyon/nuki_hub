@@ -20,6 +20,16 @@ Scanner::Scanner(int reservedSubscribers) {
   subscribers.reserve(reservedSubscribers);
 }
 
+Scanner::~Scanner() {
+  Serial.println("Destroying scanner");
+  bleScan->stop();
+  Serial.println("bleScan stopped");
+  bleScan->clearResults();
+  Serial.println("bleScan results cleared");
+  bleScan = nullptr;
+  Serial.println("bleScan nulled");
+}
+
 void Scanner::initialize(const std::string& deviceName, const bool wantDuplicates, const uint16_t interval, const uint16_t window) {
   if (!BLEDevice::isInitialized()) {
     if (wantDuplicates) {

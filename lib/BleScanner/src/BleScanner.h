@@ -25,7 +25,7 @@ namespace BleScanner {
 class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
   public:
     Scanner(int reservedSubscribers = 10);
-    ~Scanner() = default;
+    ~Scanner();
 
     static Scanner& instance() {
       static Scanner* scanner = new Scanner(); // only initialized once on first call

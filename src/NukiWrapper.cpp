@@ -229,6 +229,16 @@ void NukiWrapper::readSettings()
     }
 }
 
+uint8_t NukiWrapper::restartController()
+{
+    return _restartController;
+}
+
+bool NukiWrapper::hasConnected()
+{
+    return _hasConnected;
+}
+
 void NukiWrapper::update(bool reboot)
 {
     wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
@@ -270,9 +280,9 @@ void NukiWrapper::update(bool reboot)
     {
         Log->print("No BLE beacon received from the lock for ");
         Log->print((ts - lastReceivedBeaconTs) / 1000);
-        Log->println(" seconds, restarting device.");
+        Log->println(" seconds, signalling to restart BLE controller.");
         delay(200);
-        restartEsp(RestartReason::BLEBeaconWatchdog);
+        _restartController = 2;
     }
 
     _nukiLock.updateConnectionState();
@@ -534,6 +544,10 @@ bool NukiWrapper::updateKeyTurnerState()
         }
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         return false;
+    }
+    else if (!_hasConnected)
+    {
+        _hasConnected = true;
     }
 
     _retryLockstateCount = 0;
@@ -4320,8 +4334,8 @@ void NukiWrapper::notify(Nuki::EventType eventType)
             }
             else if(eventType == Nuki::EventType::BLE_ERROR_ON_DISCONNECT)
             {
-                Log->println("Error in disconnecting BLE client, rebooting");
-                restartEsp(RestartReason::BLEError);
+                Log->println("Error in disconnecting BLE client, signalling to restart BLE controller");
+                _restartController = 1;
             }
         }
     }
