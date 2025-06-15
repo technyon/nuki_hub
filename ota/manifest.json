@@ -1,0 +1,26 @@
+{
+    "release": {
+        "time": "2025-04-07",
+        "version": "9.10",
+        "version_int": "910",
+        "fullversion": "9.10",
+        "build": "14318502393.12.1",
+        "number": 1
+    },
+    "beta": {
+        "time": "2025-06-09",
+        "version": "9.11",
+        "version_int": "911",
+        "fullversion": "9.11-beta1",
+        "build": "15544416401.43.1",
+        "number": 1
+    },
+    "master": {
+        "time": "2025-06-15",
+        "version": "9.11",
+        "version_int": "911",
+        "fullversion": "9.11-master9",
+        "build": "15658566691.399.1",
+        "number": 9
+    }
+}
