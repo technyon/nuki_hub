@@ -529,7 +529,8 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
             _statusUpdated &&
             _keyTurnerState.lockState == NukiOpener::LockState::Locked &&
             _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked &&
-            _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState)
+            _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState &&
+            _keyTurnerState.nukiState != NukiOpener::State::ContinuousMode)
     {
         Log->println("Nuki opener: Ring detected (Locked)");
         _network->publishRing(true);
