@@ -201,7 +201,7 @@ On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free 
 - ESP32: 70.000 bytes
 - ESP32 with PSRAM: 110.000 bytes + PSRAM
 - ESP32-C3: 90.000 bytes
-- ESP32-C5: TBD bytes
+- ESP32-C5: 110.000 bytes
 - ESP32-C6: 200.000 bytes
 - ESP32-S3 130.000 bytes
 - ESP32-S3 with PSRAM: 180.000 bytes + PSRAM
