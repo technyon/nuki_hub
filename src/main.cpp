@@ -105,6 +105,9 @@ bool coredumpPrinted = true;
 bool timeSynced = false;
 bool webStarted = false;
 bool webSSLStarted = false;
+bool lockStarted = false;
+bool openerStarted = false;
+bool bleScannerStarted = false;
 uint8_t partitionType = -1;
 
 int lastHTTPeventId = -1;
@@ -243,96 +246,6 @@ void cbSyncTime(struct timeval *tv)  {
   timeSynced = true;
 }
 
-void networkTask(void *pvParameters)
-{
-    int64_t networkLoopTs = 0;
-    bool reroute = true;
-    if(preferences->getBool(preference_show_secrets, false))
-    {
-        preferences->putBool(preference_show_secrets, false);
-    }
-    while(true)
-    {
-        int64_t ts = espMillis();
-        if(ts > 120000 && ts < 125000)
-        {
-            if(bootloopCounter > 0)
-            {
-                bootloopCounter = (int8_t)0;
-                Log->println("Bootloop counter reset");
-            }
-        }
-
-#ifndef NUKI_HUB_UPDATER
-        if(serialReader != nullptr)
-        {
-            serialReader->update();
-        }
-#endif
-        network->update();
-        bool connected = network->isConnected();
-
-        if(connected && reroute)
-        {
-            if(preferences->getBool(preference_update_time, false))
-            {
-                esp_netif_sntp_start();
-            }
-
-            /* MDNS currently disabled for causing issues (9.10 / 2025-04-01)
-            if(webSSLStarted) {
-                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                    MDNS.addService("http", "tcp", 443);
-                }
-            }
-            else if(webStarted) {
-                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                    MDNS.addService("http", "tcp", 80);
-                }
-            }
-            */
-
-            reroute = false;
-            setReroute();
-        }
-
-#ifndef NUKI_HUB_UPDATER
-        wifiConnected = network->wifiConnected();
-
-        if(connected && lockEnabled)
-        {
-            rebootLock = networkLock->update();
-        }
-
-        if(connected && openerEnabled)
-        {
-            networkOpener->update();
-        }
-#endif
-
-        if(espMillis() - networkLoopTs > 120000)
-        {
-            Log->println("networkTask is running");
-            networkLoopTs = espMillis();
-        }
-
-        if(espMillis() > restartTs)
-        {
-            partitionType = checkPartition();
-
-            if(partitionType!=1)
-            {
-                esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
-            }
-
-            restartEsp(RestartReason::RestartTimer);
-        }
-        #if !defined(CONFIG_IDF_TARGET_ESP32C5)
-        esp_task_wdt_reset();
-        #endif
-    }
-}
-
 #ifndef NUKI_HUB_UPDATER
 void startWebServer()
 {
@@ -428,9 +341,46 @@ void startWebServer()
     #endif
 }
 
-void restartBle()
+void startNuki(bool lock)
+{
+    if (lock)
+    {
+        nukiOfficial = new NukiOfficial(preferences);
+        networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
+
+        if(!disableNetwork)
+        {
+            networkLock->initialize();
+        }
+
+        lockStarted = true;
+    }
+    else
+    {
+        networkOpener = new NukiNetworkOpener(network, preferences, CharBuffer::get(), buffer_size);
+
+        if(!disableNetwork)
+        {
+            networkOpener->initialize();
+        }
+
+        openerStarted = true;
+    }
+}
+
+void restartServices(bool reconnect)
 {
     bleDone = false;
+    lockEnabled = preferences->getBool(preference_lock_enabled);
+    openerEnabled = preferences->getBool(preference_opener_enabled);
+    importExport->readSettings();
+    network->readSettings();
+    gpio->setPins();
+
+    if (reconnect)
+    {
+        network->reconnect(true);
+    }
 
     if(webSSLStarted)
     {
@@ -462,27 +412,45 @@ void restartBle()
         Log->println("Deleting webCfgServer done");
     }
 
-    if(lockEnabled)
+    if(lockStarted)
     {
         Log->println("Deleting nuki");
         delete nuki;
         nuki = nullptr;
+        if (reconnect)
+        {
+            lockStarted = false;
+            delete networkLock;
+            networkLock = nullptr;
+            delete nukiOfficial;
+            nukiOfficial = nullptr;
+        }
         Log->println("Deleting nuki done");
     }
 
-    if(openerEnabled)
+    if(openerStarted)
     {
         Log->println("Deleting nukiOpener");
         delete nukiOpener;
         nukiOpener = nullptr;
+        if (reconnect)
+        {
+            openerStarted = false;            
+            delete networkOpener;
+            networkOpener = nullptr;
+        }
         Log->println("Deleting nukiOpener done");
     }
 
-    Log->println("Destroying scanner from main");
-    delete bleScanner;
-    Log->println("Scanner deleted");
-    bleScanner = nullptr;
-    Log->println("Scanner nulled from main");
+    if (bleScannerStarted)
+    {
+        bleScannerStarted = false;
+        Log->println("Destroying scanner from main");
+        delete bleScanner;
+        Log->println("Scanner deleted");
+        bleScanner = nullptr;
+        Log->println("Scanner nulled from main");
+    }
 
     if (BLEDevice::isInitialized()) {
         Log->println("Deinit BLE device");
@@ -491,25 +459,44 @@ void restartBle()
     }
 
     delay(2000);
-    Log->println("Restarting BLE Scanner");
-    bleScanner = new BleScanner::Scanner();
-    bleScanner->initialize("NukiHub", true, 40, 40);
-    bleScanner->setScanDuration(0);
-    Log->println("Restarting BLE Scanner done");
+
+    if(lockEnabled || openerEnabled)
+    {
+        Log->println("Restarting BLE Scanner");
+        bleScanner = new BleScanner::Scanner();
+        bleScanner->initialize("NukiHub", true, 40, 40);
+        bleScanner->setScanDuration(0);
+        bleScannerStarted = true;
+        Log->println("Restarting BLE Scanner done");
+    }
 
     if(lockEnabled)
     {
         Log->println("Restarting Nuki lock");
+
+        if (reconnect)
+        {
+            startNuki(true);
+        }
+
         nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences, CharBuffer::get(), buffer_size);
         nuki->initialize();
+        bleScanner->whitelist(nuki->getBleAddress());
         Log->println("Restarting Nuki lock done");
     }
 
     if(openerEnabled)
     {
         Log->println("Restarting Nuki opener");
+
+        if (reconnect)
+        {
+            startNuki(false);
+        }
+
         nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences, CharBuffer::get(), buffer_size);
         nukiOpener->initialize();
+        bleScanner->whitelist(nukiOpener->getBleAddress());
         Log->println("Restarting Nuki opener done");
     }
 
@@ -521,8 +508,121 @@ void restartBle()
         startWebServer();
         Log->println("Restarting web server done");
     }
+    else if(!doOta && !disableNetwork && (forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false)))
+    {
+        if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
+        {
+            Log->println("Starting web server");
+            startWebServer();
+            Log->println("Starting web server done");
+        }
+    }
+}
+#endif
+
+void networkTask(void *pvParameters)
+{
+    int64_t networkLoopTs = 0;
+    bool reroute = true;
+    if(preferences->getBool(preference_show_secrets, false))
+    {
+        preferences->putBool(preference_show_secrets, false);
+    }
+    while(true)
+    {
+        int64_t ts = espMillis();
+        if(ts > 120000 && ts < 125000)
+        {
+            if(bootloopCounter > 0)
+            {
+                bootloopCounter = (int8_t)0;
+                Log->println("Bootloop counter reset");
+            }
+        }
+
+#ifndef NUKI_HUB_UPDATER
+        if(serialReader != nullptr)
+        {
+            serialReader->update();
+        }
+#endif
+        network->update();
+        bool connected = network->isConnected();
+
+        if(connected && reroute)
+        {
+            if(preferences->getBool(preference_update_time, false))
+            {
+                esp_netif_sntp_start();
+            }
+
+            /* MDNS currently disabled for causing issues (9.10 / 2025-04-01)
+            if(webSSLStarted) {
+                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                    MDNS.addService("http", "tcp", 443);
+                }
+            }
+            else if(webStarted) {
+                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                    MDNS.addService("http", "tcp", 80);
+                }
+            }
+            */
+
+            reroute = false;
+            setReroute();
+        }
+
+#ifndef NUKI_HUB_UPDATER
+        wifiConnected = network->wifiConnected();
+        int restartServ = network->getRestartServices();
+
+        if (restartServ == 1)
+        {
+            restartServices(false);            
+        }
+        else if (restartServ == 2)
+        {
+            restartServices(true);
+        }
+        else
+        {
+            if(connected && lockStarted)
+            {
+                rebootLock = networkLock->update();
+            }
+
+            if(connected && openerStarted)
+            {
+                networkOpener->update();
+            }
+        }
+#endif
+
+        if(espMillis() - networkLoopTs > 120000)
+        {
+            Log->println("networkTask is running");
+            networkLoopTs = espMillis();
+        }
+
+        if(espMillis() > restartTs)
+        {
+            partitionType = checkPartition();
+
+            if(partitionType!=1)
+            {
+                esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
+            }
+
+            restartEsp(RestartReason::RestartTimer);
+        }
+        #if !defined(CONFIG_IDF_TARGET_ESP32C5)
+        esp_task_wdt_reset();
+        #endif
+    }
 }
 
+#ifndef NUKI_HUB_UPDATER
 void nukiTask(void *pvParameters)
 {
     if (preferences->getBool(preference_mqtt_ssl_enabled, false))
@@ -544,10 +644,13 @@ void nukiTask(void *pvParameters)
     {
         if((disableNetwork || wifiConnected) && bleDone)
         {
-            bleScanner->update();
-            delay(20);
-
-            bool needsPairing = (lockEnabled && !nuki->isPaired()) || (openerEnabled && !nukiOpener->isPaired());
+            if(bleScannerStarted)
+            {
+                bleScanner->update();
+                delay(20);
+            }
+            
+            bool needsPairing = (lockStarted && !nuki->isPaired()) || (openerStarted && !nukiOpener->isPaired());
 
             if (needsPairing)
             {
@@ -566,7 +669,7 @@ void nukiTask(void *pvParameters)
                 }
             }
 
-            if(lockEnabled)
+            if(lockStarted)
             {
                 if (nuki->restartController() > 0)
                 {
@@ -584,7 +687,7 @@ void nukiTask(void *pvParameters)
                     else
                     {
                         lockRestartControllerCount += 1;
-                        restartBle();
+                        restartServices(false);
                         continue;
                     }
                 }
@@ -594,12 +697,12 @@ void nukiTask(void *pvParameters)
                     {
                         lockRestartControllerCount = 0;
                     }
-                    
+
                     nuki->update(rebootLock);
                     rebootLock = false;
                 }
             }
-            if(openerEnabled)
+            if(openerStarted)
             {
                 if (nukiOpener->restartController() > 0)
                 {
@@ -617,7 +720,7 @@ void nukiTask(void *pvParameters)
                     else
                     {
                         openerRestartControllerCount += 1;
-                        restartBle();
+                        restartServices(false);
                         continue;
                     }
                 }
@@ -627,7 +730,7 @@ void nukiTask(void *pvParameters)
                     {
                         openerRestartControllerCount = 0;
                     }
-                    
+
                     nukiOpener->update();
                 }
             }
@@ -1138,11 +1241,9 @@ void setup()
     gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
     Log->print(gpioDesc.c_str());
 
-    const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-
     importExport = new ImportExport(preferences);
 
-    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size, importExport);
+    network = new NukiNetwork(preferences, gpio, CharBuffer::get(), buffer_size, importExport);
     network->initialize();
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
@@ -1166,6 +1267,7 @@ void setup()
         // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
         bleScanner->initialize("NukiHub", true, 40, 40);
         bleScanner->setScanDuration(0);
+        bleScannerStarted = true;
     }
 
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));

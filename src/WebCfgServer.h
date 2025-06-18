@@ -99,6 +99,7 @@ private:
     Gpio* _gpio = nullptr;
     bool _brokerConfigured = false;
     bool _rebootRequired = false;
+    int _restartServicesRequired = 0;
     #endif
 
     std::vector<String> _ssidList;

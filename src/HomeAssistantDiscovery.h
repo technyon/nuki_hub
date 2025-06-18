@@ -59,16 +59,11 @@ private:
     NetworkDevice* _device = nullptr;
     Preferences* _preferences = nullptr;
     
-    String _discoveryTopic;
     String _baseTopic;
     String _hostname;
     
     JsonDocument _uidToName;
     char _nukiHubUidString[20];
-    
-    bool _offEnabled = false;
-    bool _checkUpdates = false;
-    bool _updateFromMQTT = false;
     
     char* _buffer;
     const size_t _bufferSize;

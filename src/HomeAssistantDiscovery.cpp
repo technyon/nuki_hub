@@ -11,11 +11,7 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
       _buffer(buffer),
       _bufferSize(bufferSize)
 {
-    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
     _baseTopic = _preferences->getString(preference_mqtt_lock_path);
-    _offEnabled = _preferences->getBool(preference_official_hybrid_enabled, false);
-    _checkUpdates = _preferences->getBool(preference_check_updates, false);
-    _updateFromMQTT = _preferences->getBool(preference_update_from_mqtt, false);
     _hostname = _preferences->getString(preference_hostname, "");
     uint64_t savedDevId = _preferences->getULong64(preference_nukihub_id, 0);
     uint8_t mac[8];
@@ -349,7 +345,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
                      "",
     { { (char*)"en", (char*)"true" }});
 
-    if(_checkUpdates)
+    if(_preferences->getBool(preference_check_updates, false))
     {
         // Nuki Hub latest
         publishHassTopic("sensor",
@@ -375,7 +371,7 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
         _baseTopic.toCharArray(latest_version_topic,_baseTopic.length() + 1);
         strcat(latest_version_topic, mqtt_topic_info_nuki_hub_latest);
 
-        if(!_updateFromMQTT)
+        if(!_preferences->getBool(preference_update_from_mqtt, false))
         {
             publishHassTopic("update",
                              "nuki_hub_update",
@@ -667,7 +663,7 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
                      "",
     { { (char*)"en", (char*)"true" } });
 
-    if(_offEnabled && strcmp(deviceType, "SmartLock") == 0)
+    if(_preferences->getBool(preference_official_hybrid_enabled, false) && strcmp(deviceType, "SmartLock") == 0)
     {
         // Hybrid connected
         String hybridPath = _baseTopic;
@@ -2988,7 +2984,7 @@ void HomeAssistantDiscovery::publishHassTopic(const String& mqttDeviceType,
         std::vector<std::pair<char*, char*>> additionalEntries
                                              )
 {
-    if (_discoveryTopic != "")
+    if (_preferences->getString(preference_mqtt_hass_discovery, "") != "")
     {
         JsonDocument json;
         json = createHassJson(uidString, uidStringPostfix, displayName, name, baseTopic, stateTopic, deviceType, deviceClass, stateClass, entityCat, commandTopic, additionalEntries);
@@ -3000,7 +2996,7 @@ void HomeAssistantDiscovery::publishHassTopic(const String& mqttDeviceType,
 
 String HomeAssistantDiscovery::createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
-    String path = _discoveryTopic;
+    String path = _preferences->getString(preference_mqtt_hass_discovery, "");
     path.concat("/");
     path.concat(mqttDeviceType);
     path.concat("/");
@@ -3014,7 +3010,7 @@ String HomeAssistantDiscovery::createHassTopicPath(const String& mqttDeviceType,
 
 void HomeAssistantDiscovery::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
-    if (_discoveryTopic != "")
+    if (_preferences->getString(preference_mqtt_hass_discovery, "") != "")
     {
         String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");

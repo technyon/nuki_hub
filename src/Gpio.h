@@ -76,6 +76,7 @@ public:
     const std::vector<PinRole>& getAllRoles() const;
 
     void setPinOutput(const uint8_t& pin, const uint8_t& state);
+    void setPins();
 
 private:
     void IRAM_ATTR notify(const GpioAction& action, const int& pin);
@@ -139,6 +140,8 @@ private:
 
     std::vector<uint8_t> _triggerState;
     hw_timer_t* timer = nullptr;
+    
+    bool _first = true;
 
     Preferences* _preferences = nullptr;
 };
