@@ -18,6 +18,7 @@
 #include "ImportExport.h"
 
 extern TaskHandle_t nukiTaskHandle;
+extern bool nuki_hub_https_server_enabled;
 
 enum class TokenType
 {
@@ -86,7 +87,7 @@ private:
     #if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
     const std::vector<std::pair<String, String>> getNetworkCustomCLKOptions() const;
     #endif
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    #ifdef NUKI_HUB_HTTPS_SERVER
     void createSSLCertificate();
     #endif
     const String getPreselectionForGpio(const uint8_t& pin) const;

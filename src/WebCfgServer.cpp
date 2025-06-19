@@ -9,6 +9,8 @@
 #include "esp_random.h"
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
+#endif
+#ifdef NUKI_HUB_HTTPS_SERVER
 #include "util/SSLCert.hpp"
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
@@ -2697,8 +2699,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
             }
         }
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-        else if(key == "HTTPCRT")
+        else if(key == "HTTPCRT" && nuki_hub_https_server_enabled)
         {
             if (!SPIFFS.begin(true)) {
                 Log->println("SPIFFS Mount Failed");
@@ -2734,7 +2735,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
             }
         }
-        else if(key == "HTTPKEY")
+        else if(key == "HTTPKEY" && nuki_hub_https_server_enabled)
         {
             if (!SPIFFS.begin(true)) {
                 Log->println("SPIFFS Mount Failed");
@@ -2770,14 +2771,15 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
             }
         }
-        else if(key == "HTTPGEN")
+        else if(key == "HTTPGEN" && nuki_hub_https_server_enabled)
         {
+            #ifdef NUKI_HUB_HTTPS_SERVER
             createSSLCertificate();
+            #endif
             Log->print("Setting changed: ");
             Log->println(key);
             configChanged = true;
         }
-        #endif
         else if(key == "UPTIME")
         {
             if(_preferences->getBool(preference_update_time, false) != (value == "1"))
@@ -4809,12 +4811,10 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     response.print("<button title=\"Basic export\" onclick=\" window.open('/get?page=export', '_self'); return false;\">Basic export</button>");
     response.print("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/get?page=export&redacted=1'); return false;\">Export with redacted settings</button>");
     response.print("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/get?page=export&redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
+    if(nuki_hub_https_server_enabled)
     {
         response.print("<br><br><button title=\"Export HTTP SSL certificate and key\" onclick=\" window.open('/get?page=export&type=https'); return false;\">Export HTTP SSL certificate and key</button>");
     }
-    #endif
     response.print("<br><br><button title=\"Export MQTT SSL CA, client certificate and client key\" onclick=\" window.open('/get?page=export&type=mqtts'); return false;\">Export MQTT SSL CA, client certificate and client key</button>");
     response.print("<br><br><button title=\"Export Coredump\" onclick=\" window.open('/get?page=coredump'); return false;\">Export Coredump</button>");
     response.print("</div></body></html>");
@@ -5121,15 +5121,13 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
+    if(nuki_hub_https_server_enabled)
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><button title=\"Generate HTTP SSL Certificate and key\" onclick=\" window.open('/get?page=selfsignhttps', '_self'); return false;\">Generate</button></td></tr>");
         printInputField(&response, "HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", _preferences->getString(preference_https_fqdn, "").c_str(), 255, "");
     }
-    #endif
     response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
@@ -5326,7 +5324,6 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
     {
         bool found = false;
 
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
         }
@@ -5350,7 +5347,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 found = true;
             }
         }
-        #endif
+
         if (!found)
         {
             printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "", 4400, true, true);
@@ -5360,7 +5357,6 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
     {
         bool found = false;
 
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
         }
@@ -5384,7 +5380,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 found = true;
             }
         }
-        #endif
+        
         if (!found)
         {
             printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "", 2200, true, true);
@@ -5941,7 +5937,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(ESP.getFreeHeap());
     response.print("\nTotal internal heap: ");
     response.print(ESP.getHeapSize());
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
     if(esp_psram_get_size() > 0)
     {
         response.print("\nPSRAM Available: Yes");
@@ -5958,9 +5954,9 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     {
         response.print("\nPSRAM Available: No");
     }
-#else
+    #else
     response.print("\nPSRAM Available: No");
-#endif
+    #endif
     response.print("\nNetwork task stack high watermark: ");
     response.print(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.print("\nNuki task stack high watermark: ");
@@ -6028,30 +6024,19 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
     response.print("\nHTTP SSL: ");
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
-    {
-        if (!SPIFFS.begin(true)) {
-            response.print("Disabled");
-        }
-        else
-        {
-            File file = SPIFFS.open("/http_ssl.crt");
-            File file2 = SPIFFS.open("/http_ssl.key");
-            response.print((!file || file.isDirectory() || !file2 || file2.isDirectory()) ? "Disabled" : "Enabled");
-            file.close();
-            file2.close();
-            response.print("\nNuki Hub FQDN for HTTP redirect: ");
-            response.print(_preferences->getString(preference_https_fqdn, "").length() > 0 ? "***" : "Not set");
-        }
+    if (!SPIFFS.begin(true) || !nuki_hub_https_server_enabled) {
+        response.print("Disabled");
     }
     else
     {
-        response.print("Disabled");
+        File file = SPIFFS.open("/http_ssl.crt");
+        File file2 = SPIFFS.open("/http_ssl.key");
+        response.print((!file || file.isDirectory() || !file2 || file2.isDirectory()) ? "Disabled" : "Enabled");
+        file.close();
+        file2.close();
+        response.print("\nNuki Hub FQDN for HTTP redirect: ");
+        response.print(_preferences->getString(preference_https_fqdn, "").length() > 0 ? "***" : "Not set");
     }
-    #else
-    response.print("Disabled");
-    #endif
     response.print("\nAdvanced menu enabled: ");
     response.print(_preferences->getBool(preference_enable_debug_mode, false) ? "Yes" : "No");
     response.print("\nPublish free heap over MQTT: ");
@@ -7052,7 +7037,7 @@ const String WebCfgServer::getPreselectionForGpio(const uint8_t &pin) const
     return String((int8_t)PinRole::Disabled);
 }
 
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#ifdef NUKI_HUB_HTTPS_SERVER
 void WebCfgServer::createSSLCertificate()
 {
     SSLCert* cert;

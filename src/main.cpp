@@ -15,6 +15,11 @@
 #include "FS.h"
 #include "SPIFFS.h"
 //#include <ESPmDNS.h>
+#ifdef NUKI_HUB_HTTPS_SERVER
+bool nuki_hub_https_server_enabled = true;
+#else
+bool nuki_hub_https_server_enabled = false;
+#endif
 #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
 #include "esp_psram.h"
 #endif
@@ -249,24 +254,20 @@ void cbSyncTime(struct timeval *tv)  {
 #ifndef NUKI_HUB_UPDATER
 void startWebServer()
 {
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    bool failed = false;
+    bool failed = true;
 
-    if (esp_psram_get_size() <= 0) {
+    if (!nuki_hub_https_server_enabled) {
         Log->println("Not running on PSRAM enabled device");
-        failed = true;
     }
     else
     {
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
-            failed = true;
         }
         else
         {
             File file = SPIFFS.open("/http_ssl.crt");
             if (!file || file.isDirectory()) {
-                failed = true;
                 Log->println("http_ssl.crt not found");
             }
             else
@@ -281,7 +282,6 @@ void startWebServer()
 
                 File file2 = SPIFFS.open("/http_ssl.key");
                 if (!file2 || file2.isDirectory()) {
-                    failed = true;
                     Log->println("http_ssl.key not found");
                 }
                 else
@@ -319,6 +319,7 @@ void startWebServer()
                     });
                     psychicSSLServer->begin();
                     webSSLStarted = true;
+                    failed = false;
                 }
             }
         }
@@ -326,7 +327,6 @@ void startWebServer()
 
     if (failed)
     {
-    #endif
         psychicServer = new PsychicHttpServer;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
         webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
@@ -336,9 +336,7 @@ void startWebServer()
         });
         psychicServer->begin();
         webStarted = true;
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
     }
-    #endif
 }
 
 void startNuki(bool lock)
@@ -1042,6 +1040,15 @@ void logCoreDump()
 
 void setup()
 {
+    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    #ifndef FORCE_NUKI_HUB_HTTPS_SERVER
+    if(esp_psram_get_size() <= 0)
+    {
+        nuki_hub_https_server_enabled = false;
+    }
+    #endif
+    #endif
+    
     //Set Log level to error for all TAGS
     esp_log_level_set("*", ESP_LOG_ERROR);
     //Set Log level to none for mqtt TAG
@@ -1050,14 +1057,13 @@ void setup()
     Serial.begin(115200);
     Log = &Serial;
 
-#if !defined(NUKI_HUB_UPDATER) && !defined(CONFIG_IDF_TARGET_ESP32C5)
-    //
+    #if !defined(NUKI_HUB_UPDATER) && !defined(CONFIG_IDF_TARGET_ESP32C5)
     stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
     static char linebuf[1024];
     setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
     esp_rom_install_channel_putc(1, &ets_putc_handler);
     //ets_install_putc1(&ets_putc_handler);
-#endif
+    #endif
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
@@ -1121,24 +1127,20 @@ void setup()
 
     if(!doOta)
     {
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-        bool failed = false;
+        bool failed = true;
 
-        if (esp_psram_get_size() <= 0) {
-            Log->println("Not running on PSRAM enabled device");
-            failed = true;
+        if (!nuki_hub_https_server_enabled) {
+            Log->println("Not running on HTTPS server enabled device");
         }
         else
         {
             if (!SPIFFS.begin(true)) {
                 Log->println("SPIFFS Mount Failed");
-                failed = true;
             }
             else
             {
                 File file = SPIFFS.open("/http_ssl.crt");
                 if (!file || file.isDirectory()) {
-                    failed = true;
                     Log->println("http_ssl.crt not found");
                 }
                 else
@@ -1153,7 +1155,6 @@ void setup()
 
                     File file2 = SPIFFS.open("/http_ssl.key");
                     if (!file2 || file2.isDirectory()) {
-                        failed = true;
                         Log->println("http_ssl.key not found");
                     }
                     else
@@ -1191,6 +1192,7 @@ void setup()
                         });
                         psychicSSLServer->begin();
                         webSSLStarted = true;
+                        failed = false;
                     }
                 }
             }
@@ -1198,7 +1200,6 @@ void setup()
 
         if (failed)
         {
-        #endif
             psychicServer = new PsychicHttpServer;
             psychicServer->config.stack_size = HTTPD_TASK_SIZE;
             webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
@@ -1208,9 +1209,7 @@ void setup()
             });
             psychicServer->begin();
             webStarted = true;
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         }
-        #endif
     }
 #else
     if(preferences->getBool(preference_enable_bootloop_reset, false))

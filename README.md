@@ -709,7 +709,7 @@ If you have enabled "Allow updating using MQTT" you can also use the Home Assist
 <br>
 Alternatively you can select a binary file from your file system to update Nuki Hub or the Nuki Hub updator manually<br>
 You can only update Nuki Hub from the Nuki Hub updater and update the updater only from Nuki Hub<br>
-You can reboot from Nuki Hub to the updater and vice versa by selecting the reboot option from the "Firware update" page<br>
+You can reboot from Nuki Hub to the updater and vice versa by selecting the reboot option from the "Firmware update" page<br>
 When you are on the right application you can upload the new binary by clicking on "Browse" and select the new "nuki_hub\[board\].bin" or "nuki_hub_updater\[board\].bin" file and select "Upload file".<br>
 After about a minute the new firmware should be installed afterwhich the ESP will reboot automatically to the updated binary.<br>
 Selecting the wrong binary will lead to an unsuccessfull update<br>

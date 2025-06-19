@@ -7,20 +7,9 @@
 #include "SPIFFS.h"
 #include "../MqttTopics.h"
 #include "PreferencesKeys.h"
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-#include "esp_psram.h"
-#endif
 
 void NetworkDevice::init()
 {
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
-    {
-        //_mqttInternal = true;
-        _mqttInternal = false;
-    }
-    #endif
-    
     if(_preferences->getBool(preference_mqtt_ssl_enabled, false)) {
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
