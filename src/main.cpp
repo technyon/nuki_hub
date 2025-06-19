@@ -20,7 +20,7 @@ bool nuki_hub_https_server_enabled = true;
 #else
 bool nuki_hub_https_server_enabled = false;
 #endif
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
 
@@ -625,7 +625,7 @@ void nukiTask(void *pvParameters)
 {
     if (preferences->getBool(preference_mqtt_ssl_enabled, false))
     {
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
         if (esp_psram_get_size() <= 0)
         {
             Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
@@ -1040,7 +1040,7 @@ void logCoreDump()
 
 void setup()
 {
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
     #ifndef FORCE_NUKI_HUB_HTTPS_SERVER
     if(esp_psram_get_size() <= 0)
     {

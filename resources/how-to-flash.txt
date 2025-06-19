@@ -29,12 +29,19 @@ e000 boot_app0.bin
 10000 nuki_hub_esp32.bin
 270000 nuki_hub_updater_esp32.bin
 
+ESP32-NOPSRAM
+e000 boot_app0.bin
+1000 nuki_hub_bootloader_esp32nopsram.bin
+8000 nuki_hub_partitions_esp32nopsram.bin
+10000 nuki_hub_esp32nopsram.bin
+270000 nuki_hub_updater_esp32nopsram.bin
+
 ESP32-GL-S10
 e000 boot_app0.bin
-1000 nuki_hub_bootloader_esp32.bin
-8000 nuki_hub_partitions_esp32.bin
-10000 nuki_hub_esp32.bin
-270000 nuki_hub_updater_esp32.bin
+1000 nuki_hub_bootloader_esp32gls10.bin
+8000 nuki_hub_partitions_esp32gls10.bin
+10000 nuki_hub_esp32gls10.bin
+270000 nuki_hub_updater_esp32gls10.bin
 
 ESP32-S3
 e000 boot_app0.bin
@@ -42,6 +49,13 @@ e000 boot_app0.bin
 8000 nuki_hub_partitions_esp32s3.bin
 10000 nuki_hub_esp32s3.bin
 270000 nuki_hub_updater_esp32s3.bin
+
+ESP32-S3-NOPSRAM
+e000 boot_app0.bin
+0 nuki_hub_bootloader_esp32s3nopsram.bin
+8000 nuki_hub_partitions_esp32s3nopsram.bin
+10000 nuki_hub_esp32s3nopsram.bin
+270000 nuki_hub_updater_esp32s3nopsram.bin
 
 ESP32-S3-OCT
 e000 boot_app0.bin
@@ -87,10 +101,10 @@ e000 boot_app0.bin
 
 ESP32-SOLO1
 e000 boot_app0.bin
-1000 nuki_hub_bootloader_esp32-solo1.bin
-8000 nuki_hub_partitions_esp32-solo1.bin
-10000 nuki_hub_esp32-solo1.bin
-270000 nuki_hub_updater_esp32-solo1.bin
+1000 nuki_hub_bootloader_esp32solo1.bin
+8000 nuki_hub_partitions_esp32solo1.bin
+10000 nuki_hub_esp32solo1.bin
+270000 nuki_hub_updater_esp32solo1.bin
 
 Make sure the checkmarks for all files are enabled.
 
@@ -108,13 +122,21 @@ As an alternative to the Download Tools, you can also use the esptool from the E
 
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 nuki_hub_bootloader_esp32.bin 0x10000 nuki_hub_esp32.bin 0x270000 nuki_hub_updater_esp32.bin 0x8000 nuki_hub_partitions_esp32.bin
 
+## ESP32-NOPSRAM
+
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 nuki_hub_bootloader_esp32nopsram.bin 0x10000 nuki_hub_esp32nopsram.bin 0x270000 nuki_hub_updater_esp32nopsram.bin 0x8000 nuki_hub_partitions_esp32nopsram.bin
+
 ## ESP32-GL-S10
 
-esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 nuki_hub_bootloader_esp32.bin 0x10000 nuki_hub_esp32.bin 0x270000 nuki_hub_updater_esp32.bin 0x8000 nuki_hub_partitions_esp32.bin
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 nuki_hub_bootloader_esp32gls10.bin 0x10000 nuki_hub_esp32gls10.bin 0x270000 nuki_hub_updater_esp32gls10.bin 0x8000 nuki_hub_partitions_esp32gls10.bin
 
 ## ESP32-S3
 
 esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 nuki_hub_bootloader_esp32s3.bin 0x10000 nuki_hub_esp32s3.bin 0x270000 nuki_hub_updater_esp32s3.bin 0x8000 nuki_hub_partitions_esp32s3.bin
+
+## ESP32-S3-NOPSRAM
+
+esptool.py --chip esp32s3 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x0 nuki_hub_bootloader_esp32s3nopsram.bin 0x10000 nuki_hub_esp32s3nopsram.bin 0x270000 nuki_hub_updater_esp32s3nopsram.bin 0x8000 nuki_hub_partitions_esp32s3nopsram.bin
 
 ## ESP32-S3-OCT
 
@@ -142,6 +164,6 @@ esptool.py --chip esp32p4 --port /dev/ttyUSB0 --baud 921600 --before default_res
 
 ## ESP32-SOLO1
 
-esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 nuki_hub_bootloader_esp32-solo1.bin 0x10000 nuki_hub_esp32-solo1.bin 0x270000 nuki_hub_updater_esp32-solo1.bin 0x8000 nuki_hub_partitions_esp32-solo1.bin
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq keep --flash_size detect 0xe000 boot_app0.bin 0x1000 nuki_hub_bootloader_esp32solo1.bin 0x10000 nuki_hub_esp32solo1.bin 0x270000 nuki_hub_updater_esp32solo1.bin 0x8000 nuki_hub_partitions_esp32solo1.bin
 
 Adjust the serial device and path to the binaries if necessary.

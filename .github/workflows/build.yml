@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32, esp32-s3, esp32-s3-oct, esp32-c3, esp32-c5, esp32-c6, esp32-h2, esp32-solo1, esp32-gl-s10, esp32-p4]
+        board: [esp32, esp32-nopsram, esp32-s3, esp32-s3-nopsram, esp32-s3-oct, esp32-c3, esp32-c5, esp32-c6, esp32-h2, esp32-solo1, esp32-gl-s10, esp32-p4]
         build: [release]
     env:
       BOARD: ${{ matrix.board }}

@@ -13,6 +13,10 @@ def get_board_name(env):
         board = 'esp32gls10'
     elif env.get('BOARD') == 'nuki-esp32-s3-oct':
         board = 'esp32s3oct'
+    elif env.get('BOARD') == 'nuki-esp32-s3-nopsram':
+        board = 'esp32s3nopsram'
+    elif env.get('BOARD') == 'nuki-esp32dev-nopsram':
+        board = 'esp32nopsram'          
     return board
 
 def create_target_dir(env):
