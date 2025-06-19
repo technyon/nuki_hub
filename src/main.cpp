@@ -30,6 +30,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
+#include "Gpio.h"
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 #include "WebCfgServer.h"
@@ -456,7 +457,10 @@ void restartServices(bool reconnect)
         Log->println("Deinit BLE device done");
     }
 
-    delay(2000);
+    if (esp_task_wdt_status(NULL) == ESP_OK) {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
 
     if(lockEnabled || openerEnabled)
     {
@@ -498,6 +502,11 @@ void restartServices(bool reconnect)
         Log->println("Restarting Nuki opener done");
     }
 
+
+    if (esp_task_wdt_status(NULL) == ESP_OK) {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
     bleDone = true;
 
     if(webStarted || webSSLStarted)
@@ -545,6 +554,10 @@ void networkTask(void *pvParameters)
         }
 #endif
         network->update();
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
         bool connected = network->isConnected();
 
         if(connected && reroute)
@@ -588,11 +601,19 @@ void networkTask(void *pvParameters)
             if(connected && lockStarted)
             {
                 rebootLock = networkLock->update();
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(50 / portTICK_PERIOD_MS);
             }
 
             if(connected && openerStarted)
             {
                 networkOpener->update();
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(50 / portTICK_PERIOD_MS);
             }
         }
 #endif
@@ -614,26 +635,36 @@ void networkTask(void *pvParameters)
 
             restartEsp(RestartReason::RestartTimer);
         }
-        #if !defined(CONFIG_IDF_TARGET_ESP32C5)
-        esp_task_wdt_reset();
-        #endif
+        
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
 #ifndef NUKI_HUB_UPDATER
 void nukiTask(void *pvParameters)
 {
+    esp_task_wdt_add(NULL);
+    
     if (preferences->getBool(preference_mqtt_ssl_enabled, false))
     {
         #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
         if (esp_psram_get_size() <= 0)
         {
             Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-            delay(20000);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(20000 / portTICK_PERIOD_MS);
         }
         #else
         Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-        delay(20000);
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(20000 / portTICK_PERIOD_MS);
         #endif
     }
     int64_t nukiLoopTs = 0;
@@ -645,14 +676,20 @@ void nukiTask(void *pvParameters)
             if(bleScannerStarted)
             {
                 bleScanner->update();
-                delay(20);
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(20 / portTICK_PERIOD_MS);
             }
             
             bool needsPairing = (lockStarted && !nuki->isPaired()) || (openerStarted && !nukiOpener->isPaired());
 
             if (needsPairing)
             {
-                delay(2500);
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(2500 / portTICK_PERIOD_MS);
             }
             else if (!whiteListed)
             {
@@ -739,9 +776,10 @@ void nukiTask(void *pvParameters)
             Log->println("nukiTask is running");
             nukiLoopTs = espMillis();
         }
-        #if !defined(CONFIG_IDF_TARGET_ESP32C5)
-        esp_task_wdt_reset();
-        #endif
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
@@ -832,6 +870,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
 void otaTask(void *pvParameter)
 {
+    esp_task_wdt_add(NULL);
+    
     partitionType = checkPartition();
     String updateUrl;
 
@@ -885,14 +925,17 @@ void otaTask(void *pvParameter)
         {
             Log->println("Firmware upgrade failed, retrying in 5 seconds");
             retryCount++;
-            #if !defined(CONFIG_IDF_TARGET_ESP32C5)
-            esp_task_wdt_reset();
-            #endif
-            delay(5000);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
             continue;
         }
         while (1)
         {
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
     }
@@ -904,15 +947,13 @@ void otaTask(void *pvParameter)
 void setupTasks(bool ota)
 {
     // configMAX_PRIORITIES is 25
-    #if !defined(CONFIG_IDF_TARGET_ESP32C5)
     esp_task_wdt_config_t twdt_config =
     {
         .timeout_ms = 300000,
-        .idle_core_mask = 0,
+        .idle_core_mask = (1 << CONFIG_FREERTOS_NUMBER_OF_CORES) - 1,
         .trigger_panic = true,
     };
     esp_task_wdt_reconfigure(&twdt_config);
-    #endif
 
     esp_chip_info_t info;
     esp_chip_info(&info);
@@ -923,26 +964,17 @@ void setupTasks(bool ota)
     if(ota)
     {
         xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, (espCores > 1) ? 1 : 0);
-        #if !defined(CONFIG_IDF_TARGET_ESP32C5)
-        esp_task_wdt_add(otaTaskHandle);
-        #endif
     }
     else
     {
         if(!disableNetwork)
         {
             xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, (espCores > 1) ? 1 : 0);
-            #if !defined(CONFIG_IDF_TARGET_ESP32C5)
-            esp_task_wdt_add(networkTaskHandle);
-            #endif
         }
 #ifndef NUKI_HUB_UPDATER
         if(!network->isApOpen() && (lockEnabled || openerEnabled))
         {
             xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
-            #if !defined(CONFIG_IDF_TARGET_ESP32C5)
-            esp_task_wdt_add(nukiTaskHandle);
-            #endif
         }
 #endif
     }
@@ -951,7 +983,10 @@ void setupTasks(bool ota)
 void logCoreDump()
 {
     coredumpPrinted = false;
-    delay(500);
+    if (esp_task_wdt_status(NULL) == ESP_OK) {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     Log->println("Printing coredump and saving to coredump.hex on SPIFFS");
     size_t size = 0;
     size_t address = 0;
@@ -1272,13 +1307,7 @@ void setup()
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
     {
-        nukiOfficial = new NukiOfficial(preferences);
-        networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
-
-        if(!disableNetwork)
-        {
-            networkLock->initialize();
-        }
+        startNuki(true);
 
         nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences, CharBuffer::get(), buffer_size);
         nuki->initialize();
@@ -1287,12 +1316,7 @@ void setup()
     Log->println(openerEnabled ? F("Nuki Opener enabled") : F("Nuki Opener disabled"));
     if(openerEnabled)
     {
-        networkOpener = new NukiNetworkOpener(network, preferences, CharBuffer::get(), buffer_size);
-
-        if(!disableNetwork)
-        {
-            networkOpener->initialize();
-        }
+        startNuki(false);
 
         nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences, CharBuffer::get(), buffer_size);
         nukiOpener->initialize();

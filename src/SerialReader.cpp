@@ -1,6 +1,7 @@
 #include "SerialReader.h"
 #include "RestartReason.h"
 #include "EspMillis.h"
+#include "hal/wdt_hal.h"
 
 SerialReader::SerialReader(ImportExport *importExport, NukiNetwork* network)
 : _importExport(importExport),
@@ -11,6 +12,11 @@ SerialReader::SerialReader(ImportExport *importExport, NukiNetwork* network)
 
 void SerialReader::update()
 {
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    
     if(Serial.available())
     {
         String line = Serial.readStringUntil('\n');

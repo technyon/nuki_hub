@@ -7,6 +7,7 @@
 #include "RestartReason.h"
 #include <ArduinoJson.h>
 #include <ctype.h>
+#include "hal/wdt_hal.h"
 
 extern bool forceEnableWebServer;
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
@@ -160,6 +161,11 @@ void NukiNetworkLock::initialize()
 
 bool NukiNetworkLock::update()
 {
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);    
+    
     bool ret = false;
 
     if(_nukiOfficial->hasOffStateToPublish())
