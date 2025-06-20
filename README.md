@@ -957,6 +957,15 @@ If Ethernet hardware isn't detected or initialised properly after changing the n
 <br>
 Note: LAN8720 modules are only supported on the ESP32, ESP32-P4 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3, ESP32-C5 or ESP-C6<br>
 
+## Debugging crashes
+
+If you are running a pre-compiled version of NukiHub (latest release, beta or nightly) you can use https://technyon.github.io/nuki_hub/stacktrace/ to debug crashes.
+You will need to collect a stack trace of the crash while connected to the serial logger (over USB).
+
+A stack trace usually starts with `Guru Mediation Error` and ends with `ELF file SHA256: ......`
+Copy the entire stack trace to the box in our online decoder and select the correct binary you are using.
+Click Run and check the output to find in which function the crash occurs and consider creating an issue on GitHub.
+
 ## FAQ / Troubleshooting
 
 ### Pairing with the lock (or opener) doesn't work
