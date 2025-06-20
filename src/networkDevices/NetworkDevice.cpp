@@ -7,19 +7,10 @@
 #include "SPIFFS.h"
 #include "../MqttTopics.h"
 #include "PreferencesKeys.h"
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-#include "esp_psram.h"
-#endif
 
 void NetworkDevice::init()
 {
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
-    {
-        //_mqttInternal = true;
-        _mqttInternal = false;
-    }
-    #endif
+    _useEncryption = false;
     
     if(_preferences->getBool(preference_mqtt_ssl_enabled, false)) {
         if (!SPIFFS.begin(true)) {
@@ -274,6 +265,21 @@ void NetworkDevice::mqttDisable()
 {
     getMqttClient()->disconnect();
     _mqttEnabled = false;
+}
+
+void NetworkDevice::mqttRestart()
+{
+    if (_useEncryption)
+    {
+        delete _mqttClientSecure;
+        _mqttClientSecure = nullptr;
+    }
+    else
+    {
+        delete _mqttClient;
+        _mqttClient = nullptr;
+    }
+    init();
 }
 
 bool NetworkDevice::isEncrypted()

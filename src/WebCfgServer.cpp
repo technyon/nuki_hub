@@ -7,8 +7,10 @@
 #include "FS.h"
 #include "SPIFFS.h"
 #include "esp_random.h"
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
+#endif
+#ifdef NUKI_HUB_HTTPS_SERVER
 #include "util/SSLCert.hpp"
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
@@ -669,6 +671,34 @@ void WebCfgServer::initialize()
                 return res;
             }
             #ifndef NUKI_HUB_UPDATER
+            else if (value == "restartservices")
+            {
+                String value2 = "";
+                if(request->hasParam("CONFIRMTOKEN"))
+                {
+                    const PsychicWebParameter* p = request->getParam("CONFIRMTOKEN");
+                    if(p->value() != "")
+                    {
+                        value2 = p->value();
+                    }
+                }
+                else
+                {
+                    return buildConfirmHtml(request, resp, "No confirm code set.", 3, true);
+                }
+
+                if(value2 != _confirmCode)
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/");
+                }
+                esp_err_t res = buildConfirmHtml(request, resp, "Restarting services...", 2, true);
+                _network->setRestartServices(_restartServicesRequired == 1 ? false : true);
+                _restartServicesRequired = 0;
+                waitAndProcess(true, 1000);
+                return res;
+            }
             else if (value == "info")
             {
                 return buildInfoHtml(request, resp);
@@ -778,7 +808,7 @@ void WebCfgServer::initialize()
             else if (value == "selfsignhttps")
             {
                 return buildHttpSSLConfigHtml(request, resp, 3);
-            }            
+            }
             else if (value == "nukicfg")
             {
                 return buildNukiConfigHtml(request, resp);
@@ -1482,7 +1512,10 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
         int loop = 0;
         while(!_network->isConnected() && loop < 150)
         {
-            delay(100);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(100 / portTICK_PERIOD_MS);
             loop++;
         }
 
@@ -1604,16 +1637,30 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
     response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('latestver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
     response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('betaver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
     response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('devver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
-    #if defined(CONFIG_IDF_TARGET_ESP32S3)
+    #if defined(CONFIG_IDF_TARGET_ESP32S3) && defined(CONFIG_SPIRAM)
     if(esp_psram_get_size() <= 0)
     {
         response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to other PSRAM release version\"></form>");
+        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to No PSRAM release version\"></form>");
     }
-    #elif defined(CONFIG_IDF_TARGET_ESP32) && !defined(NUKI_TARGET_GL_S10)
+    #elif defined(CONFIG_IDF_TARGET_ESP32S3)
+    response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to Quad PSRAM release version\"></form>");
+    response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to Octal PSRAM release version\"></form>");
+    #elif defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_SPIRAM) && !defined(NUKI_TARGET_GL_S10)
     if(_preferences->getInt(preference_network_hardware) == 8)
     {
         response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to specific GL-S10 release version\"></form>");
     }
+    if(esp_psram_get_size() <= 0)
+    {
+        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to No PSRAM release version\"></form>");
+    }
+    #elif defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
+    if(_preferences->getInt(preference_network_hardware) == 8)
+    {
+        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to specific GL-S10 release version\"></form>");
+    }
+    response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to Quad PSRAM release version\"></form>");
     #endif
     response.print("<div style=\"clear: both\"></div><br>");
 
@@ -1773,7 +1820,7 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
         }
         else
         {
-            vTaskDelay( 50 / portTICK_PERIOD_MS);
+            vTaskDelay(50 / portTICK_PERIOD_MS);
         }
     }
 }
@@ -2463,6 +2510,8 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     bool networkReconfigure = false;
     bool clearSession = false;
     bool newMFA = false;
+    bool restartServicesNoReconnect = false;
+    bool restartServicesReconnect = false;
     unsigned char currentBleAddress[6];
     unsigned char authorizationId[4] = {0x00};
     unsigned char secretKeyK[32] = {0x00};
@@ -2506,7 +2555,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putString(preference_mqtt_broker, value);
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "MQTTPORT")
@@ -2516,7 +2565,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_mqtt_broker_port,  value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "MQTTUSER")
@@ -2532,7 +2581,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_mqtt_user, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
@@ -2545,7 +2594,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_mqtt_password, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
@@ -2556,7 +2605,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putString(preference_mqtt_lock_path, value);
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "MQTTCA")
@@ -2591,7 +2640,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
@@ -2627,7 +2676,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
@@ -2663,12 +2712,11 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-        else if(key == "HTTPCRT")
+        else if(key == "HTTPCRT" && nuki_hub_https_server_enabled)
         {
             if (!SPIFFS.begin(true)) {
                 Log->println("SPIFFS Mount Failed");
@@ -2700,11 +2748,11 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                 }
             }
         }
-        else if(key == "HTTPKEY")
+        else if(key == "HTTPKEY" && nuki_hub_https_server_enabled)
         {
             if (!SPIFFS.begin(true)) {
                 Log->println("SPIFFS Mount Failed");
@@ -2736,18 +2784,19 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                 }
             }
         }
-        else if(key == "HTTPGEN")
+        else if(key == "HTTPGEN" && nuki_hub_https_server_enabled)
         {
+            #ifdef NUKI_HUB_HTTPS_SERVER
             createSSLCertificate();
+            #endif
             Log->print("Setting changed: ");
             Log->println(key);
-            configChanged = true;        
+            configChanged = true;
         }
-        #endif
         else if(key == "UPTIME")
         {
             if(_preferences->getBool(preference_update_time, false) != (value == "1"))
@@ -2755,7 +2804,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_update_time, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "TIMESRV")
@@ -2925,7 +2974,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_rssi_publish_interval, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "HTTPSFQDN")
@@ -2935,7 +2983,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putString(preference_https_fqdn, value);
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DUOHOST")
@@ -2947,7 +2995,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_cred_duo_host, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                     clearSession = true;
                     newMFA = true;
                 }
@@ -2962,7 +3010,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_cred_duo_ikey, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                     clearSession = true;
                     newMFA = true;
                 }
@@ -2977,7 +3025,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_cred_duo_skey, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                     clearSession = true;
                     newMFA = true;
                 }
@@ -2992,7 +3040,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_cred_duo_user, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                     clearSession = true;
                     newMFA = true;
                 }
@@ -3008,7 +3056,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
                 newMFA = true;
             }
@@ -3020,7 +3068,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_cred_bypass_boot_btn_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DUOBYPASSHIGH")
@@ -3030,7 +3078,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_bypass_gpio_high, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DUOBYPASSLOW")
@@ -3040,7 +3088,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_bypass_gpio_low, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DUOAPPROVAL")
@@ -3050,7 +3098,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_cred_duo_approval, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "CREDLFTM")
@@ -3060,7 +3108,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_session_lifetime, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
@@ -3071,7 +3119,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_session_lifetime_remember, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
@@ -3082,7 +3130,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_session_lifetime_duo, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
@@ -3093,7 +3141,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_session_lifetime_duo_remember, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
@@ -3104,7 +3152,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_session_lifetime_totp, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
@@ -3115,7 +3163,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_cred_session_lifetime_totp_remember, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
@@ -3127,7 +3175,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_hass_device_discovery, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "ENHADISC")
@@ -3138,7 +3186,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "HASSDISCOVERY")
@@ -3149,7 +3197,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putString(preference_mqtt_hass_discovery, value);
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "OPENERCONT")
@@ -3159,7 +3207,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_opener_continuous_mode, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "HASSCUURL")
@@ -3169,7 +3216,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putString(preference_mqtt_hass_cu_url, value);
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "HOSTNAME")
@@ -3189,7 +3235,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_network_timeout, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "FINDBESTRSSI")
@@ -3199,7 +3244,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_find_best_rssi, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "RSTDISC")
@@ -3209,7 +3253,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "MQTTLOG")
@@ -3229,7 +3272,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_mqtt_ssl_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "WEBLOG")
@@ -3239,7 +3282,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_webserial_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "CHECKUPDATE")
@@ -3249,7 +3292,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_check_updates, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "UPDATEMQTT")
@@ -3259,7 +3302,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_update_from_mqtt, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "OFFHYBRID")
@@ -3273,7 +3316,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "HYBRIDACT")
@@ -3287,7 +3330,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "HYBRIDTIMER")
@@ -3297,7 +3339,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_query_interval_hybrid_lockstate, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "HYBRIDRETRY")
@@ -3307,7 +3348,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_official_hybrid_retry, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "HYBRIDREBOOT")
@@ -3317,7 +3357,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_hybrid_reboot_on_disconnect, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "DISNONJSON")
@@ -3327,7 +3367,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_disable_non_json, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "DHCPENA")
@@ -3387,7 +3427,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_query_interval_lockstate, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "CFGINT")
@@ -3397,7 +3436,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_query_interval_configuration, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "BATINT")
@@ -3407,7 +3445,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_query_interval_battery, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "KPINT")
@@ -3417,7 +3454,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_query_interval_keypad, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "NRTRY")
@@ -3427,7 +3463,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_command_nr_of_retries, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "TRYDLY")
@@ -3437,7 +3472,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_command_retry_delay, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "TXPWR")
@@ -3453,7 +3487,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putInt(preference_ble_tx_power, value.toInt());
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    //configChanged = true;
                 }
             }
         }
@@ -3464,7 +3497,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "TSKNTWK")
@@ -3502,7 +3534,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putInt(preference_authlog_max_entries, value.toInt());
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    //configChanged = true;
                 }
             }
         }
@@ -3515,7 +3546,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putInt(preference_keypad_max_entries, value.toInt());
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    //configChanged = true;
                 }
             }
         }
@@ -3528,7 +3558,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    //configChanged = true;
                 }
             }
         }
@@ -3541,7 +3570,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putInt(preference_auth_max_entries, value.toInt());
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    //configChanged = true;
                 }
             }
         }
@@ -3565,7 +3593,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "DISNTWNOCON")
@@ -3575,7 +3602,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_disable_network_not_connected, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "OTAUPD")
@@ -3605,7 +3632,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_show_secrets, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "DBGCONN")
@@ -3615,7 +3641,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_debug_connect, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DBGCOMMU")
@@ -3625,7 +3651,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_debug_communication, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DBGHEAP")
@@ -3635,7 +3661,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_publish_debug_info, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DBGREAD")
@@ -3645,7 +3671,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_debug_readable_data, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DBGHEX")
@@ -3655,7 +3681,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_debug_hex_data, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "DBGCOMM")
@@ -3665,7 +3691,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_debug_command, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "LCKFORCEID")
@@ -3724,7 +3750,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_conf_info_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "CONFNHPUB")
@@ -3738,7 +3763,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_publish_config, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "CONFNHCTRL")
@@ -3752,7 +3777,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_config_from_mqtt, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "KPPUB")
@@ -3762,7 +3787,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "KPCODE")
@@ -3772,7 +3796,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_keypad_publish_code, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "KPCHECK")
@@ -3782,7 +3805,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_keypad_check_code_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "KPENA")
@@ -3792,7 +3814,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "TCPUB")
@@ -3802,7 +3824,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "AUTHPUB")
@@ -3812,7 +3833,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_auth_info_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "KPPER")
@@ -3822,7 +3842,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "TCPER")
@@ -3832,7 +3851,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_timecontrol_topic_per_entry, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "TCENA")
@@ -3842,7 +3860,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "AUTHPER")
@@ -3852,7 +3870,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_auth_topic_per_entry, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "AUTHENA")
@@ -3862,7 +3879,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_auth_control_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "PUBAUTH")
@@ -3872,7 +3889,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_publish_authdata, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "CREDDIGEST")
@@ -3882,7 +3898,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putInt(preference_http_auth_type, value.toInt());
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
@@ -3895,7 +3911,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_bypass_proxy, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                     clearSession = true;
                 }
             }
@@ -4279,7 +4295,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_register_as_app, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "REGAPPOPN")
@@ -4289,7 +4304,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_register_opener_as_app, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                //configChanged = true;
             }
         }
         else if(key == "LOCKENA")
@@ -4299,7 +4313,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_lock_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "GEMINIENA")
@@ -4316,7 +4330,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
         }
         else if(key == "OPENA")
@@ -4326,17 +4340,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_opener_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "CONNMODE")
-        {
-            if(_preferences->getBool(preference_connect_mode, true) != (value == "1"))
-            {
-                _preferences->putBool(preference_connect_mode, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "CREDUSER")
@@ -4352,7 +4356,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_cred_user, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                     clearSession = true;
                 }
             }
@@ -4374,7 +4378,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_totp_secret, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                     clearSession = true;
                     newMFA = true;
                     _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
@@ -4390,7 +4394,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_bypass_secret, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                 }
             }
         }
@@ -4403,7 +4407,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _preferences->putString(preference_admin_secret, value);
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
                 }
             }
         }
@@ -4424,7 +4427,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
             else
             {
@@ -4437,7 +4440,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                         _preferences->putInt(preference_lock_gemini_pin, value.toInt());
                         Log->print("Setting changed: ");
                         Log->println(key);
-                        configChanged = true;
+                        restartServicesNoReconnect = true;
                     }
                 }
                 else
@@ -4448,7 +4451,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                         _nuki->setPin(value.toInt());
                         Log->print("Setting changed: ");
                         Log->println(key);
-                        configChanged = true;
+                        restartServicesNoReconnect = true;
                     }
                 }
             }
@@ -4461,7 +4464,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _nukiOpener->setPin(0xffff);
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesNoReconnect = true;
             }
             else
             {
@@ -4471,7 +4474,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     _nukiOpener->setPin(value.toInt());
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesNoReconnect = true;
                 }
             }
         }
@@ -4551,7 +4554,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         nukiBlePref.end();
         Log->print("Setting changed: ");
         Log->println("Lock pairing data");
-        configChanged = true;
+        restartServicesNoReconnect = true;
     }
 
     if(manPairOpn)
@@ -4566,7 +4569,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         nukiBlePref.end();
         Log->print("Setting changed: ");
         Log->println("Opener pairing data");
-        configChanged = true;
+        restartServicesNoReconnect = true;
     }
 
     if(pass1 != "" && pass1 != "*" && pass1 == pass2)
@@ -4576,7 +4579,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_cred_password, pass1);
             Log->print("Setting changed: ");
             Log->println("CREDPASS");
-            configChanged = true;
+            restartServicesNoReconnect = true;
             clearSession = true;
         }
     }
@@ -4588,14 +4591,14 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_mqtt_user, "");
             Log->print("Setting changed: ");
             Log->println("MQTTUSER");
-            configChanged = true;
+            restartServicesReconnect = true;
         }
         if(_preferences->getString(preference_mqtt_password, "") != "")
         {
             _preferences->putString(preference_mqtt_password, "");
             Log->print("Setting changed: ");
             Log->println("MQTTPASS");
-            configChanged = true;
+            restartServicesReconnect = true;
         }
     }
 
@@ -4606,7 +4609,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_cred_user, "");
             Log->print("Setting changed: ");
             Log->println("CREDUSER");
-            configChanged = true;
+            restartServicesNoReconnect = true;
             clearSession = true;
         }
         if(_preferences->getString(preference_cred_password, "") != "")
@@ -4614,7 +4617,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_cred_password, "");
             Log->print("Setting changed: ");
             Log->println("CREDPASS");
-            configChanged = true;
+            restartServicesNoReconnect = true;
             clearSession = true;
         }
     }
@@ -4639,7 +4642,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBytes(preference_acl, (byte*)(&aclPrefs), sizeof(aclPrefs));
                 Log->print("Setting changed: ");
                 Log->println("ACLPREFS");
-                //configChanged = true;
                 break;
             }
         }
@@ -4650,7 +4652,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBytes(preference_conf_lock_basic_acl, (byte*)(&basicLockConfigAclPrefs), sizeof(basicLockConfigAclPrefs));
                 Log->print("Setting changed: ");
                 Log->println("ACLCONFBASICLOCK");
-                //configChanged = true;
                 break;
             }
         }
@@ -4661,7 +4662,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBytes(preference_conf_lock_advanced_acl, (byte*)(&advancedLockConfigAclPrefs), sizeof(advancedLockConfigAclPrefs));
                 Log->print("Setting changed: ");
                 Log->println("ACLCONFADVANCEDLOCK");
-                //configChanged = true;
                 break;
 
             }
@@ -4673,7 +4673,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBytes(preference_conf_opener_basic_acl, (byte*)(&basicOpenerConfigAclPrefs), sizeof(basicOpenerConfigAclPrefs));
                 Log->print("Setting changed: ");
                 Log->println("ACLCONFBASICOPENER");
-                //configChanged = true;
                 break;
             }
         }
@@ -4684,7 +4683,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBytes(preference_conf_opener_advanced_acl, (byte*)(&advancedOpenerConfigAclPrefs), sizeof(advancedOpenerConfigAclPrefs));
                 Log->print("Setting changed: ");
                 Log->println("ACLCONFADVANCEDOPENER");
-                //configChanged = true;
                 break;
             }
         }
@@ -4694,20 +4692,33 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     {
         clearSessions();
     }
+
     if(newMFA)
     {
         _preferences->putBool(preference_mfa_reconfigure, true);
-        _importExport->readSettings();
     }
+
     if(configChanged)
     {
-        message = "Configuration saved, reboot required to apply";
+        message = "Configuration saved, reboot required to apply some settings";
         _rebootRequired = true;
+    }
+    else if (restartServicesReconnect)
+    {
+        message = "Configuration saved, restart services required to apply some settings";
+        _restartServicesRequired = 2;
+    }
+    else if (restartServicesNoReconnect)
+    {
+        message = "Configuration saved, restart services required to apply some settings";
+        _restartServicesRequired = 1;
     }
     else
     {
         message = "Configuration saved.";
     }
+
+    _importExport->readSettings();
 
     _network->readSettings();
     if(_nuki != nullptr)
@@ -4807,12 +4818,10 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     response.print("<button title=\"Basic export\" onclick=\" window.open('/get?page=export', '_self'); return false;\">Basic export</button>");
     response.print("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/get?page=export&redacted=1'); return false;\">Export with redacted settings</button>");
     response.print("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/get?page=export&redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
+    if(nuki_hub_https_server_enabled)
     {
         response.print("<br><br><button title=\"Export HTTP SSL certificate and key\" onclick=\" window.open('/get?page=export&type=https'); return false;\">Export HTTP SSL certificate and key</button>");
     }
-    #endif
     response.print("<br><br><button title=\"Export MQTT SSL CA, client certificate and client key\" onclick=\" window.open('/get?page=export&type=mqtts'); return false;\">Export MQTT SSL CA, client certificate and client key</button>");
     response.print("<br><br><button title=\"Export Coredump\" onclick=\" window.open('/get?page=coredump'); return false;\">Export Coredump</button>");
     response.print("</div></body></html>");
@@ -4858,7 +4867,11 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     buildHtmlHeader(&response, header);
     if(_rebootRequired)
     {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
+        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SOME SETTINGS</td></tr></tbody></table>");
+    }
+    if(_restartServicesRequired > 0)
+    {
+        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RESTART SERVICES REQUIRED TO APPLY SOME SETTINGS</td></tr></tbody></table>");
     }
     if(_preferences->getBool(preference_webserial_enabled, false))
     {
@@ -4945,8 +4958,10 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     }
 #endif
     buildNavigationMenuEntry(&response, "Info page", "/get?page=info");
-    String rebooturl = "/get?page=reboot&CONFIRMTOKEN=" + _confirmCode;
-    buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebooturl.c_str());
+    String rebootUrl = "/get?page=reboot&CONFIRMTOKEN=" + _confirmCode;
+    buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebootUrl.c_str());
+    String restartServicesUrl = "/get?page=restartservices&CONFIRMTOKEN=" + _confirmCode;
+    buildNavigationMenuEntry(&response, "Restart Services", restartServicesUrl.c_str());
     if (_preferences->getInt(preference_http_auth_type, 0) == 2)
     {
         buildNavigationMenuEntry(&response, "Logout", "/get?page=logout");
@@ -5113,15 +5128,13 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
+    if(nuki_hub_https_server_enabled)
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><button title=\"Generate HTTP SSL Certificate and key\" onclick=\" window.open('/get?page=selfsignhttps', '_self'); return false;\">Generate</button></td></tr>");
         printInputField(&response, "HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", _preferences->getString(preference_https_fqdn, "").c_str(), 255, "");
     }
-    #endif
     response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
@@ -5318,7 +5331,6 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
     {
         bool found = false;
 
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
         }
@@ -5342,7 +5354,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 found = true;
             }
         }
-        #endif
+
         if (!found)
         {
             printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "", 4400, true, true);
@@ -5352,7 +5364,6 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
     {
         bool found = false;
 
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
         }
@@ -5376,7 +5387,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 found = true;
             }
         }
-        #endif
+        
         if (!found)
         {
             printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "", 2200, true, true);
@@ -5784,7 +5795,6 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled, true), "");
     printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra/Go/5th gen enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
     printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled, false), "");
-    printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, true), "");
     response.print("</table><br>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
     response.print("<table>");
@@ -5933,7 +5943,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(ESP.getFreeHeap());
     response.print("\nTotal internal heap: ");
     response.print(ESP.getHeapSize());
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
     if(esp_psram_get_size() > 0)
     {
         response.print("\nPSRAM Available: Yes");
@@ -5950,9 +5960,9 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     {
         response.print("\nPSRAM Available: No");
     }
-#else
+    #else
     response.print("\nPSRAM Available: No");
-#endif
+    #endif
     response.print("\nNetwork task stack high watermark: ");
     response.print(uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.print("\nNuki task stack high watermark: ");
@@ -6020,30 +6030,19 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print("\nWeb configurator enabled: ");
     response.print(_preferences->getBool(preference_webserver_enabled, true) ? "Yes" : "No");
     response.print("\nHTTP SSL: ");
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-    if(esp_psram_get_size() > 0)
-    {
-        if (!SPIFFS.begin(true)) {
-            response.print("Disabled");
-        }
-        else
-        {
-            File file = SPIFFS.open("/http_ssl.crt");
-            File file2 = SPIFFS.open("/http_ssl.key");
-            response.print((!file || file.isDirectory() || !file2 || file2.isDirectory()) ? "Disabled" : "Enabled");
-            file.close();
-            file2.close();
-            response.print("\nNuki Hub FQDN for HTTP redirect: ");
-            response.print(_preferences->getString(preference_https_fqdn, "").length() > 0 ? "***" : "Not set");
-        }
+    if (!SPIFFS.begin(true) || !nuki_hub_https_server_enabled) {
+        response.print("Disabled");
     }
     else
     {
-        response.print("Disabled");
+        File file = SPIFFS.open("/http_ssl.crt");
+        File file2 = SPIFFS.open("/http_ssl.key");
+        response.print((!file || file.isDirectory() || !file2 || file2.isDirectory()) ? "Disabled" : "Enabled");
+        file.close();
+        file2.close();
+        response.print("\nNuki Hub FQDN for HTTP redirect: ");
+        response.print(_preferences->getString(preference_https_fqdn, "").length() > 0 ? "***" : "Not set");
     }
-    #else
-    response.print("Disabled");
-    #endif
     response.print("\nAdvanced menu enabled: ");
     response.print(_preferences->getBool(preference_enable_debug_mode, false) ? "Yes" : "No");
     response.print("\nPublish free heap over MQTT: ");
@@ -6190,8 +6189,6 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("Disabled");
     }
     response.print("\n\n------------ BLUETOOTH ------------");
-    response.print("\nBluetooth connection mode: ");
-    response.print(_preferences->getBool(preference_connect_mode, true) ? "New" : "Old");
     response.print("\nBluetooth TX power (dB): ");
     response.print(_preferences->getInt(preference_ble_tx_power, 9));
     response.print("\nBluetooth command nr of retries: ");
@@ -6667,7 +6664,7 @@ esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, PsychicResponse* 
         return buildConfirmHtml(request, resp, "Confirm code is invalid.", 3, true);
     }
 
-    esp_err_t res = buildConfirmHtml(request, resp, opener ? "Unpairing Nuki Opener and restarting." : "Unpairing Nuki Lock and restarting.", 3, true);
+    esp_err_t res = buildConfirmHtml(request, resp, opener ? "Unpairing Nuki Opener." : "Unpairing Nuki Lock.", 3, true);
 
     if(!opener && _nuki != nullptr)
     {
@@ -6682,7 +6679,7 @@ esp_err_t WebCfgServer::processUnpair(PsychicRequest *request, PsychicResponse* 
 
     _network->disableHASS();
     waitAndProcess(false, 1000);
-    restartEsp(RestartReason::DeviceUnpaired);
+    _network->setRestartServices(true);
     return res;
 }
 
@@ -7008,7 +7005,7 @@ const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomCLKOp
 {
     std::vector<std::pair<String, String>> options;
     options.push_back(std::make_pair("0", "GPIO0 IN"));
-    options.push_back(std::make_pair("1", "GPIO0 OUT"));    
+    options.push_back(std::make_pair("1", "GPIO0 OUT"));
     options.push_back(std::make_pair("2", "GPIO16 OUT"));
     options.push_back(std::make_pair("3", "GPIO17 OUT"));
     return options;
@@ -7044,7 +7041,7 @@ const String WebCfgServer::getPreselectionForGpio(const uint8_t &pin) const
     return String((int8_t)PinRole::Disabled);
 }
 
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#ifdef NUKI_HUB_HTTPS_SERVER
 void WebCfgServer::createSSLCertificate()
 {
     SSLCert* cert;
