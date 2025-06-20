@@ -10,6 +10,8 @@
 
 void NetworkDevice::init()
 {
+    _useEncryption = false;
+    
     if(_preferences->getBool(preference_mqtt_ssl_enabled, false)) {
         if (!SPIFFS.begin(true)) {
             Log->println("SPIFFS Mount Failed");
@@ -263,6 +265,21 @@ void NetworkDevice::mqttDisable()
 {
     getMqttClient()->disconnect();
     _mqttEnabled = false;
+}
+
+void NetworkDevice::mqttRestart()
+{
+    if (_useEncryption)
+    {
+        delete _mqttClientSecure;
+        _mqttClientSecure = nullptr;
+    }
+    else
+    {
+        delete _mqttClient;
+        _mqttClient = nullptr;
+    }
+    init();
 }
 
 bool NetworkDevice::isEncrypted()

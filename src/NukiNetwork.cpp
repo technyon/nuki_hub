@@ -103,19 +103,9 @@ void NukiNetwork::setupDevice()
     Log->print("Network device: ");
     Log->println(_device->deviceName());
 
-#ifndef NUKI_HUB_UPDATER
-    _device->mqttOnConnect([&](bool sessionPresent)
-    {
-        onMqttConnect(sessionPresent);
-    });
-    _device->mqttOnDisconnect([&](espMqttClientTypes::DisconnectReason reason)
-    {
-        onMqttDisconnect(reason);
-    });
-
+    #ifndef NUKI_HUB_UPDATER
     _hadiscovery = new HomeAssistantDiscovery(_device, _preferences, _buffer, _bufferSize);
-#endif
-
+    #endif
 }
 
 void NukiNetwork::reconfigureDevice()
@@ -391,6 +381,17 @@ void NukiNetwork::setMQTTConnectionSettings()
     Log->print(_mqttBrokerAddr);
     Log->print(":");
     Log->println(_mqttPort);
+
+    #ifndef NUKI_HUB_UPDATER
+    _device->mqttOnConnect([&](bool sessionPresent)
+    {
+        onMqttConnect(sessionPresent);
+    });
+    _device->mqttOnDisconnect([&](espMqttClientTypes::DisconnectReason reason)
+    {
+        onMqttDisconnect(reason);
+    });
+    #endif
 }
 
 int NukiNetwork::getRestartServices()
@@ -703,7 +704,8 @@ bool NukiNetwork::reconnect(bool force)
     {
         if (force)
         {
-            _device->mqttDisconnect(true);
+            _mqttReceivers.clear();
+            _device->mqttRestart();
             setMQTTConnectionSettings();
         }
         

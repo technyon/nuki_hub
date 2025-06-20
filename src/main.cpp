@@ -1107,8 +1107,8 @@ void setup()
 
     if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
-            esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
-            esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT)
+            //|| esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         logCoreDump();
     }

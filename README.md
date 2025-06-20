@@ -291,7 +291,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0 and Ultra)
 - Nuki Smartlock Ultra/Go/5th gen enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra/Go/5th gen Pro
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
-- New Nuki Bluetooth connection mode (disable if there are connection issues): Enable to use the latest Nuki BLE connection mode (recommended). Disable if you have issues communicating with the lock/opener
 
 #### Advanced Nuki Configuration
 

@@ -694,7 +694,7 @@ void WebCfgServer::initialize()
                     return resp->redirect("/");
                 }
                 esp_err_t res = buildConfirmHtml(request, resp, "Restarting services...", 2, true);
-                _network->setRestartServices(_restartServicesRequired);
+                _network->setRestartServices(_restartServicesRequired == 1 ? false : true);
                 _restartServicesRequired = 0;
                 waitAndProcess(true, 1000);
                 return res;
@@ -2626,7 +2626,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
@@ -2662,7 +2662,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
@@ -2698,7 +2698,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                     }
                     Log->print("Setting changed: ");
                     Log->println(key);
-                    configChanged = true;
+                    restartServicesReconnect = true;
                 }
             }
         }
@@ -3258,7 +3258,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 _preferences->putBool(preference_mqtt_ssl_enabled, (value == "1"));
                 Log->print("Setting changed: ");
                 Log->println(key);
-                configChanged = true;
+                restartServicesReconnect = true;
             }
         }
         else if(key == "WEBLOG")
@@ -4327,16 +4327,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 Log->print("Setting changed: ");
                 Log->println(key);
                 restartServicesReconnect = true;
-            }
-        }
-        else if(key == "CONNMODE")
-        {
-            if(_preferences->getBool(preference_connect_mode, true) != (value == "1"))
-            {
-                _preferences->putBool(preference_connect_mode, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
             }
         }
         else if(key == "CREDUSER")
@@ -5791,7 +5781,6 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled, true), "");
     printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra/Go/5th gen enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
     printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled, false), "");
-    printCheckBox(&response, "CONNMODE", "New Nuki Bluetooth connection mode (disable if there are connection issues)", _preferences->getBool(preference_connect_mode, true), "");
     response.print("</table><br>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
     response.print("<table>");
@@ -6186,8 +6175,6 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("Disabled");
     }
     response.print("\n\n------------ BLUETOOTH ------------");
-    response.print("\nBluetooth connection mode: ");
-    response.print(_preferences->getBool(preference_connect_mode, true) ? "New" : "Old");
     response.print("\nBluetooth TX power (dB): ");
     response.print(_preferences->getInt(preference_ble_tx_power, 9));
     response.print("\nBluetooth command nr of retries: ");

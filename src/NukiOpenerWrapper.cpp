@@ -62,10 +62,10 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.setDebugCommand(_preferences->getBool(preference_debug_command, false));
     _nukiOpener.registerLogger(Log);
 
-    _nukiOpener.initialize(_preferences->getBool(preference_connect_mode, true));
+    _nukiOpener.initialize();
     _nukiOpener.registerBleScanner(_bleScanner);
     _nukiOpener.setEventHandler(this);
-    _nukiOpener.setConnectTimeout(3);
+    _nukiOpener.setConnectTimeout(2);
     _nukiOpener.setDisconnectTimeout(2000);
 
     _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
@@ -337,9 +337,17 @@ void NukiOpenerWrapper::update()
     }
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
-        _statusUpdated = updateKeyTurnerState();
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
+        _statusUpdated = updateKeyTurnerState();
         _network->publishStatusUpdated(_statusUpdated);
+        
+        if(_statusUpdated)
+        {
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
     }
     if(_network->mqttConnectionState() == 2)
     {
@@ -516,6 +524,10 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
             Log->print(_retryDelay);
             Log->println("ms");
             _nextLockStateUpdateTs = espMillis() + _retryDelay;
+        }
+        else
+        {
+            _nextLockStateUpdateTs = espMillis() + (_retryLockstateCount * 333);
         }
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         return false;

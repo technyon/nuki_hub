@@ -68,10 +68,10 @@ void NukiWrapper::initialize()
         _nukiLock.saveUltraPincode(_preferences->getInt(preference_lock_gemini_pin, 0), false);
     }
 
-    _nukiLock.initialize(_preferences->getBool(preference_connect_mode, true));
+    _nukiLock.initialize();
     _nukiLock.registerBleScanner(_bleScanner);
     _nukiLock.setEventHandler(this);
-    _nukiLock.setConnectTimeout(3);
+    _nukiLock.setConnectTimeout(2);
     _nukiLock.setDisconnectTimeout(2000);
 
     _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
@@ -361,9 +361,17 @@ void NukiWrapper::update(bool reboot)
     if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         Log->println("Updating Lock state based on status, timer or query");
-        _statusUpdated = updateKeyTurnerState();
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
+        _statusUpdated = updateKeyTurnerState();
         _network->publishStatusUpdated(_statusUpdated);
+        
+        if(_statusUpdated)
+        {
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
     }
     if(_network->mqttConnectionState() == 2)
     {
@@ -382,7 +390,7 @@ void NukiWrapper::update(bool reboot)
                 updateConfig();
                 if(_isDebugging)
                 {
-                    updateDebug();
+                    //updateDebug();
                 }
             }
             if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
@@ -550,6 +558,10 @@ bool NukiWrapper::updateKeyTurnerState()
             Log->print(_retryDelay);
             Log->println("ms");
             _nextLockStateUpdateTs = espMillis() + _retryDelay;
+        }
+        else
+        {
+            _nextLockStateUpdateTs = espMillis() + (_retryLockstateCount * 333);
         }
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         return false;

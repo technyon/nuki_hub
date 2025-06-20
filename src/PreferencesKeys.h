@@ -37,10 +37,6 @@
 #define preference_time_server (char*)"timeServer"
 
 //MQTT RELATED
-#define preference_mqtt_ssl_enabled (char*)"mqttSSLena"
-#define preference_mqtt_ca (char*)"mqttca"
-#define preference_mqtt_crt (char*)"mqttcrt"
-#define preference_mqtt_key (char*)"mqttkey"
 #define preference_mqtt_log_enabled (char*)"mqttlog"
 #define preference_gpio_configuration (char*)"gpiocfg"
 
@@ -105,7 +101,6 @@
 #define preference_opener_force_keypad (char*)"opForceKp"
 #define preference_admin_secret (char*)"adminsecret"
 
-//TO BE EFFECTUATED IN WEBSERVER AND OTHER USES
 //REQUIRE SERVICES RELOAD
 #define preference_lock_enabled (char*)"lockena"
 #define preference_opener_enabled (char*)"openerena"
@@ -119,7 +114,6 @@
 #define preference_cred_password (char*)"crdpass"
 #define preference_lock_gemini_pin (char*)"geminiPin"
 #define preference_lock_gemini_enabled (char*)"geminiena"
-#define preference_connect_mode (char*)"nukiConnMode"
 #define preference_https_fqdn (char*)"httpsFQDN"
 #define preference_bypass_proxy (char*)"credBypass"
 #define preference_http_auth_type (char*)"httpdAuthType"
@@ -160,8 +154,10 @@
 #define preference_hybrid_reboot_on_disconnect (char*)"hybridRbtLck"
 #define preference_bypass_secret (char*)"bypassecret"
 #define preference_totp_secret (char*)"totpsecret"
-
-//END TO BE EFFECTUATED IN WEBSERVER AND OTHER USES
+#define preference_mqtt_ssl_enabled (char*)"mqttSSLena"
+#define preference_mqtt_ca (char*)"mqttca"
+#define preference_mqtt_crt (char*)"mqttcrt"
+#define preference_mqtt_key (char*)"mqttkey"
 
 //NOT USER CHANGABLE
 #define preference_mfa_reconfigure (char*)"mfaRECONF"
@@ -254,7 +250,6 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_debug_readable_data, false);
         preferences->putBool(preference_debug_hex_data, false);
         preferences->putBool(preference_debug_command, false);
-        preferences->putBool(preference_connect_mode, true);
         preferences->putBool(preference_retain_gpio, false);
         preferences->putBool(preference_enable_debug_mode, false);
         preferences->putBool(preference_cred_duo_enabled, false);
@@ -544,7 +539,7 @@ private:
         preference_network_custom_pwr, preference_network_custom_mdio, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,
         preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_auth_max_entries, preference_wifi_ssid, preference_wifi_pass,
         preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_mqtt_hass_enabled, preference_hass_device_discovery, preference_retain_gpio,
-        preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
+        preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command,
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_nukihub_id,
         preference_cred_duo_host, preference_cred_duo_ikey, preference_cred_duo_skey, preference_cred_duo_user, preference_cred_duo_enabled, preference_https_fqdn, preference_bypass_proxy,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
@@ -568,7 +563,7 @@ private:
         preference_official_hybrid_actions, preference_official_hybrid_retry, preference_conf_info_enabled, preference_disable_non_json, preference_update_from_mqtt,
         preference_auth_control_enabled, preference_auth_topic_per_entry, preference_auth_info_enabled, preference_webserial_enabled, preference_hass_device_discovery,
         preference_keypad_check_code_enabled, preference_disable_network_not_connected, preference_find_best_rssi, preference_cred_bypass_boot_btn_enabled,
-        preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command, preference_connect_mode,
+        preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command,
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled,
         preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled, preference_enable_debug_mode, preference_cred_duo_enabled, preference_cred_duo_approval, 
         preference_publish_config, preference_config_from_mqtt
