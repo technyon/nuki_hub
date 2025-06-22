@@ -51,10 +51,16 @@ void WifiDevice::initialize()
         WiFi.disconnect(true);
         WiFi.mode(WIFI_STA);
         WiFi.disconnect();
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
-            esp_task_wdt_reset();
+
+        int loop = 0;
+        while (!_wifiClientStarted && loop < 50) {
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            loop++;
         }
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+
         Log->println("Dummy WiFi device for Hosted on P4 done");
     }
     return;
@@ -64,23 +70,24 @@ void WifiDevice::scan(bool passive, bool async)
 {
     if (!_openAP)
     {
+        _wifiClientStarted = false;
         WiFi.disconnect(true);
         WiFi.mode(WIFI_STA);
         WiFi.disconnect();
+    }
+
+    int loop = 0;
+    while (!_wifiClientStarted && loop < 50) {
         if (esp_task_wdt_status(NULL) == ESP_OK) {
             esp_task_wdt_reset();
         }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        loop++;
     }
 
     WiFi.scanDelete();
     WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
     WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
-
-    if (esp_task_wdt_status(NULL) == ESP_OK) {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     if(async)
     {
@@ -126,13 +133,6 @@ void WifiDevice::openAP()
 
 bool WifiDevice::connect()
 {
-    WiFi.mode(WIFI_STA);
-    WiFi.setHostname(_hostname.c_str());
-    if (esp_task_wdt_status(NULL) == ESP_OK) {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-
     int bestConnection = -1;
 
     if(_preferences->getBool(preference_find_best_rssi, false))
@@ -215,7 +215,7 @@ bool WifiDevice::connect()
         }
 
         return false;
-    } 
+    }
 
     return true;
 }
@@ -284,10 +284,10 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
   Log->printf("[WiFi-event] event: %d\n", event);
 
   switch (event) {
-    case ARDUINO_EVENT_WIFI_READY:               
-        Log->println("WiFi interface ready"); 
+    case ARDUINO_EVENT_WIFI_READY:
+        Log->println("WiFi interface ready");
         break;
-    case ARDUINO_EVENT_WIFI_SCAN_DONE:           
+    case ARDUINO_EVENT_WIFI_SCAN_DONE:
         Log->println("Completed scan for access points");
         _foundNetworks = WiFi.scanComplete();
 
@@ -315,28 +315,29 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
             scan(false, true);
         }
         break;
-    case ARDUINO_EVENT_WIFI_STA_START:           
-        Log->println("WiFi client started"); 
+    case ARDUINO_EVENT_WIFI_STA_START:
+        Log->println("WiFi client started");
+        _wifiClientStarted = true;
         break;
-    case ARDUINO_EVENT_WIFI_STA_STOP:            
-        Log->println("WiFi clients stopped"); 
+    case ARDUINO_EVENT_WIFI_STA_STOP:
+        Log->println("WiFi clients stopped");
         if(!_openAP)
         {
             onDisconnected();
         }
         break;
-    case ARDUINO_EVENT_WIFI_STA_CONNECTED:       
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
         Log->println("Connected to access point");
         break;
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:    
-        Log->println("Disconnected from WiFi access point"); 
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+        Log->println("Disconnected from WiFi access point");
         if(!_openAP)
         {
             onDisconnected();
         }
         break;
-    case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE: 
-        Log->println("Authentication mode of access point has changed"); 
+    case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
+        Log->println("Authentication mode of access point has changed");
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
         Log->print("Obtained IP address: ");
@@ -346,38 +347,38 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
             onConnected();
         }
         break;
-    case ARDUINO_EVENT_WIFI_STA_LOST_IP:        
+    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
         Log->println("Lost IP address and IP address is reset to 0");
         if(!_openAP)
         {
             onDisconnected();
         }
         break;
-    case ARDUINO_EVENT_WIFI_AP_START:           
+    case ARDUINO_EVENT_WIFI_AP_START:
         Log->println("WiFi access point started");
         break;
-    case ARDUINO_EVENT_WIFI_AP_STOP:            
-        Log->println("WiFi access point  stopped"); 
+    case ARDUINO_EVENT_WIFI_AP_STOP:
+        Log->println("WiFi access point  stopped");
         break;
-    case ARDUINO_EVENT_WIFI_AP_STACONNECTED:    
-        Log->println("Client connected"); 
+    case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+        Log->println("Client connected");
         break;
-    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED: 
-        Log->println("Client disconnected"); 
+    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+        Log->println("Client disconnected");
         break;
-    case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:   
-        Log->println("Assigned IP address to client"); 
+    case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
+        Log->println("Assigned IP address to client");
         break;
-    case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:  
-        Log->println("Received probe request"); 
+    case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
+        Log->println("Received probe request");
         break;
-    case ARDUINO_EVENT_WIFI_AP_GOT_IP6:         
-        Log->println("AP IPv6 is preferred"); 
+    case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
+        Log->println("AP IPv6 is preferred");
         break;
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:        
-        Log->println("STA IPv6 is preferred"); 
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
+        Log->println("STA IPv6 is preferred");
         break;
-    default:                                    
+    default:
         break;
   }
 }

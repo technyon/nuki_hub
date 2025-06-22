@@ -6,6 +6,10 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "esp_task_wdt.h"
+#ifdef CONFIG_HEAP_TASK_TRACKING
+#include "esp_heap_task_info.h"
+#include "esp_heap_caps.h"
+#endif
 #include "Config.h"
 #include "esp32-hal-log.h"
 #include "hal/wdt_hal.h"
@@ -644,6 +648,49 @@ void networkTask(void *pvParameters)
 }
 
 #ifndef NUKI_HUB_UPDATER
+#ifdef CONFIG_HEAP_TASK_TRACKING
+static void print_all_tasks_info(void)
+{
+    heap_all_tasks_stat_t tasks_stat;
+    /* call API to dynamically allocate the memory necessary to store the
+     * information collected while calling heap_caps_get_all_task_stat */
+    const esp_err_t ret_val = heap_caps_alloc_all_task_stat_arrays(&tasks_stat);
+    assert(ret_val == ESP_OK);
+
+    /* collect the information */
+    heap_caps_get_all_task_stat(&tasks_stat);
+
+    /* process the information retrieved */
+    Log->printf("\n--------------------------------------------------------------------------------\n");
+    Log->printf("PRINTING ALL TASKS INFO\n");
+    Log->printf("--------------------------------------------------------------------------------\n");
+    for (size_t task_idx = 0; task_idx < tasks_stat.task_count; task_idx++) {
+        task_stat_t task_stat = tasks_stat.stat_arr[task_idx];
+        Log->printf("%s: %s: Peak Usage %" PRIu16 ", Current Usage %" PRIu16 "\n", task_stat.name,
+                                                                          task_stat.is_alive ? "ALIVE  " : "DELETED",
+                                                                          task_stat.overall_peak_usage,
+                                                                          task_stat.overall_current_usage);
+
+        for (size_t heap_idx = 0; heap_idx < task_stat.heap_count; heap_idx++) {
+            heap_stat_t heap_stat = task_stat.heap_stat[heap_idx];
+            Log->printf("    %s: Caps: %" PRIu32 ". Size %" PRIu16 ", Current Usage %" PRIu16 ", Peak Usage %" PRIu16 ", alloc count %" PRIu16 "\n", heap_stat.name,
+                                                                                                                                      heap_stat.caps,
+                                                                                                                                      heap_stat.size,
+                                                                                                                                      heap_stat.current_usage,
+                                                                                                                                      heap_stat.peak_usage,
+                                                                                                                                      heap_stat.alloc_count);
+
+            for (size_t alloc_idx = 0; alloc_idx < heap_stat.alloc_count; alloc_idx++) {
+                heap_task_block_t alloc_stat = heap_stat.alloc_stat[alloc_idx];
+                Log->printf("        %p: Size: %" PRIu32 "\n", alloc_stat.address, alloc_stat.size);
+            }
+        }
+    }
+
+    /* delete the memory dynamically allocated while calling heap_caps_alloc_all_task_stat_arrays */
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
+}
+#endif
 void nukiTask(void *pvParameters)
 {
     esp_task_wdt_add(NULL);
@@ -1256,6 +1303,9 @@ void setup()
     Log->println(NUKI_HUB_VERSION);
     Log->print("Nuki Hub build ");
     Log->println(NUKI_HUB_BUILD);
+    
+    Log->println(preferences->getString(preference_cred_user));
+    Log->println(preferences->getString(preference_cred_password));
 
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
 
@@ -1372,12 +1422,7 @@ void setup()
         setupTasks(false);
     }
 
-#ifdef DEBUG_NUKIHUB
-    Log->print("Task Name\tStatus\tPrio\tHWM\tTask\tAffinity\n");
-    char stats_buffer[1024];
-    vTaskList(stats_buffer);
-    Log->println(stats_buffer);
-#endif
+    //print_all_tasks_info();
 }
 
 void loop()

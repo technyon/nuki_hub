@@ -198,18 +198,19 @@ ESP32 devices have a limited amount of free RAM available.<br>
 <br>
 On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
 
-- ESP32: 70.000 bytes
-- ESP32 with PSRAM: 110.000 bytes + PSRAM
-- ESP32-C3: 90.000 bytes
-- ESP32-C5: 110.000 bytes
+- ESP32: 105.000 bytes
+- ESP32 with PSRAM: 120.000 bytes + PSRAM
+- ESP32-C3: 70.000 bytes
+- ESP32-C5 with PSRAM: 130.000 bytes + PSRAM
 - ESP32-C6: 200.000 bytes
-- ESP32-S3 130.000 bytes
-- ESP32-S3 with PSRAM: 180.000 bytes + PSRAM
+- ESP32-P4: 450.000 bytes
+- ESP32-S3 135.000 bytes
+- ESP32-S3 with PSRAM: 185.000 bytes + PSRAM
 
 This free amount of RAM can be reduced (temporarily) by certain actions (such as changing Nuki device config) or continuously when enabling the following:
 - Connecting both a Nuki opener and a Nuki lock to Nuki Hub
 - Enlarging stack sizes of the Nuki and Network task to accommodate large amounts of keypad codes, authorization entries or timecontrol entries
-- MQTT SSL (Costs about 30k RAM)
+- MQTT SSL (Costs about 20k-30k RAM)
 - HTTP SSL (Costs about 30k RAM)
 - Developing/debugging Nuki devices and/or Nuki Hub, using WebSerial (Costs about 30k RAM)
 

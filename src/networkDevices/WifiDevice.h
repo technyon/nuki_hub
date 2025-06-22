@@ -43,4 +43,5 @@ private:
     bool _openAP = false;
     bool _startAP = true;
     bool _connected = false;
+    bool _wifiClientStarted = false;
 };
