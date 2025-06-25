@@ -1,0 +1,11 @@
+dependencies:
+  idf:
+    version: '>=5.3'
+description: ESP-Hosted-MCU provide drivers to act any ESP chipset as Wi-Fi or Bluetooth
+  co-processor.
+repository: git://github.com/espressif/esp-hosted-mcu.git
+repository_info:
+  commit_sha: 5c1a1f14088a02babe4e3deb3008a76d2f9dc6da
+  path: .
+url: https://github.com/espressif/esp-hosted-mcu
+version: 2.0.10

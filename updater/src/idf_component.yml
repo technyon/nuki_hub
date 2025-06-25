@@ -3,13 +3,14 @@ dependencies:
   idf: ">=5.5"
 
   espressif/esp_hosted:
-    version: 2.0.10
+    version: "*"
+    override_path: "../../resources/espressif__esp_hosted"
     rules:
       - if: "target in [esp32p4]"
 
   espressif/esp_wifi_remote:
     version: "*"
-    override_path: '../../resources/espressif__esp_wifi_remote/'
+    override_path: "../../resources/espressif__esp_wifi_remote"
     rules:
       - if: "target in [esp32p4]"
 
