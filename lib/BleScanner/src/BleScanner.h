@@ -25,7 +25,7 @@ namespace BleScanner {
 class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
   public:
     Scanner(int reservedSubscribers = 10);
-    ~Scanner() = default;
+    ~Scanner();
 
     static Scanner& instance() {
       static Scanner* scanner = new Scanner(); // only initialized once on first call
@@ -95,7 +95,7 @@ class Scanner : public Publisher, BLEAdvertisedDeviceCallbacks {
 
   private:
     uint32_t scanDuration = 0; //default indefinite scanning time
-    BLEScan* bleScan = nullptr;
+    NimBLEScan* bleScan = nullptr;
     std::vector<Subscriber*> subscribers;
     uint16_t scanErrors = 0;
     bool scanningEnabled = true;

@@ -141,7 +141,7 @@ void start_async_req_workers(void)
 #endif
 
 /* Calculate the maximum size needed for the scratch buffer */
-#define HTTPD_SCRATCH_BUF MAX(HTTPD_MAX_REQ_HDR_LEN, HTTPD_MAX_URI_LEN)
+#define HTTPD_SCRATCH_BUF MAX(CONFIG_HTTPD_MAX_REQ_HDR_LEN, CONFIG_HTTPD_MAX_URI_LEN)
 
 /**
  * @brief   Auxiliary data structure for use during reception and processing
@@ -170,54 +170,3 @@ struct httpd_req_aux
     uint8_t mask_key[4];      /*!< WebSocket mask key for this payload */
 #endif
 };
-
-esp_err_t httpd_req_async_handler_begin(httpd_req_t* r, httpd_req_t** out)
-{
-  if (r == NULL || out == NULL)
-  {
-    return ESP_ERR_INVALID_ARG;
-  }
-
-  // alloc async req
-  httpd_req_t* async = (httpd_req_t*)malloc(sizeof(httpd_req_t));
-  if (async == NULL)
-  {
-    return ESP_ERR_NO_MEM;
-  }
-  memcpy((void*)async, (void*)r, sizeof(httpd_req_t));
-
-  // alloc async aux
-  async->aux = (httpd_req_aux*)malloc(sizeof(struct httpd_req_aux));
-  if (async->aux == NULL)
-  {
-    free(async);
-    return ESP_ERR_NO_MEM;
-  }
-  memcpy(async->aux, r->aux, sizeof(struct httpd_req_aux));
-
-  // not available in 4.4.x
-  // mark socket as "in use"
-  // struct httpd_req_aux *ra = r->aux;
-  // ra->sd->for_async_req = true;
-
-  *out = async;
-
-  return ESP_OK;
-}
-
-esp_err_t httpd_req_async_handler_complete(httpd_req_t* r)
-{
-  if (r == NULL)
-  {
-    return ESP_ERR_INVALID_ARG;
-  }
-
-  // not available in 4.4.x
-  // struct httpd_req_aux *ra = (httpd_req_aux *)r->aux;
-  // ra->sd->for_async_req = false;
-
-  free(r->aux);
-  free(r);
-
-  return ESP_OK;
-}

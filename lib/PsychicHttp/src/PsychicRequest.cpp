@@ -306,6 +306,8 @@ String PsychicRequest::getCookie(const char* key)
   if (!hasCookie(key, &size))
     return cookie;
 
+  size = httpd_req_get_hdr_value_len(this->_req, "Cookie");
+
   // allocate cookie buffer... keep it on the stack
   char buf[size];
 

@@ -33,6 +33,7 @@ public:
     virtual bool mqttConnect();
     virtual bool mqttDisconnect(bool force);
     virtual void mqttDisable();
+    virtual void mqttRestart();
     virtual bool mqttConnected() const;
 
     virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const char* payload);

@@ -49,7 +49,7 @@ help:
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
-	@-rm -rf release debug .pio/build updater/.pio/build
+	@-rm -rf release debug .pio/build updater/.pio/build dependencies.lock updater/dependencies.lock managed_components updater/managed_components
 
 # Install dependencies
 .PHONY: deps

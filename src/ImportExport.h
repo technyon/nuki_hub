@@ -43,6 +43,7 @@ private:
     bool _duoActiveRequest;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
+    bool _updateTime = false;
     int _bypassGPIOHigh = -1;
     int _bypassGPIOLow = -1;
     int64_t _duoRequestTS = 0;

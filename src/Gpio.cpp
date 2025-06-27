@@ -15,7 +15,6 @@ Gpio::Gpio(Preferences* preferences)
     : _preferences(preferences)
 {
     _inst = this;
-    loadPinConfiguration();
     _inst->init();
 }
 
@@ -120,6 +119,13 @@ void Gpio::init()
         _inst->_triggerState.push_back(0);
     }
 
+    _inst->setPins();
+}
+
+void Gpio::setPins()
+{
+    loadPinConfiguration();
+    
     bool hasInputPin = false;
 
     if (_inst->_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false))
@@ -180,8 +186,9 @@ void Gpio::init()
         }
     }
 
-    if(hasInputPin)
+    if(hasInputPin && _first)
     {
+        _first = false;
         _inst->timer = timerBegin(1000000);
         timerAttachInterrupt(_inst->timer, isrOnTimer);
         timerAlarm(_inst->timer, 100000, true, 0);

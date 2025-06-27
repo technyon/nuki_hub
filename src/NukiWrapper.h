@@ -27,6 +27,7 @@ public:
     void lockngo();
     void lockngounlatch();
 
+    bool hasConnected();
     bool isPinValid();
     void setPin(const uint16_t pin);
     void setUltraPin(const uint32_t pin);
@@ -42,6 +43,7 @@ public:
     bool hasDoorSensor() const;
     bool offConnected();
     const BLEAddress getBleAddress() const;
+    uint8_t restartController();
 
     std::string firmwareVersion() const;
     std::string hardwareVersion() const;
@@ -142,9 +144,11 @@ private:
     bool _forceId = false;
     bool _isUltra = false;
     bool _isDebugging = false;
+    bool _hasConnected = false;
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;
+    uint8_t _restartController = 0;    
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryConfigCount = 0;

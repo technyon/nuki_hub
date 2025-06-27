@@ -41,6 +41,7 @@ void ImportExport::readSettings()
     _totpEnabled = _totpKey.length() > 0;
     _bypassKey = _preferences->getString(preference_bypass_secret, "");
     _bypassEnabled = _bypassKey.length() > 0;
+    _updateTime = _preferences->getBool(preference_update_time, false);
 }
 
 bool ImportExport::getDuoEnabled()
@@ -117,7 +118,7 @@ void ImportExport::setDuoCheckId(String duoCheckId)
 
 void ImportExport::saveSessions()
 {
-    if(_preferences->getBool(preference_update_time, false))
+    if(_updateTime)
     {
         if (!SPIFFS.begin(true))
         {
