@@ -128,9 +128,11 @@ Devices ranked best-to-worst:
 | Feature parity with the Nuki app (e.g. changing device settings, keypad codes, authorizations etc.) | :white_check_mark: | :no_entry: |
 
 ## Support Nuki Hub development
-
 This project is free to use for everyone. However if you feel like donating, you can buy me a coffee at ko-fi.com:<br>
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1IDUBV)
+<br><br>
+If you plan to buy NUKI hardware, you can use my referral code to earn a 10% discount. It allows the project to team to buy furuther NUKI hardware for testing:<br>
+> REF-3TnaGNQJdc
 
 ## First time installation
 
