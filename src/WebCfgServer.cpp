@@ -28,6 +28,15 @@ extern bool timeSynced;
 #include <HTTPClient.h>
 #include <NetworkClientSecure.h>
 #include "ArduinoJson.h"
+#include <freertos/queue.h>
+
+typedef struct {
+  int socket;
+  char *buffer;
+  size_t len;
+} WebsocketMessage;
+
+QueueHandle_t wsMessages;
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport)
     : _nuki(nuki),
@@ -87,6 +96,7 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
         }
     }
     _confirmCode = generateConfirmCode();
+
 
 #ifndef NUKI_HUB_UPDATER
     _brokerConfigured = _preferences->getString(preference_mqtt_broker).length() > 0 && _preferences->getInt(preference_mqtt_broker_port) > 0;
@@ -422,6 +432,96 @@ void WebCfgServer::initialize()
     {
         return sendCss(request, resp);
     });
+    
+    
+    if(_preferences->getBool(preference_webserial_enabled, false))
+    {
+        #ifndef NUKI_HUB_UPDATER
+        if (websocketHandler == nullptr)
+        {
+            websocketHandler = new PsychicWebSocketHandler;
+        }
+        
+        _psychicServer->on("/webserial", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+        {
+            int authReq = doAuthentication(request);
+
+            switch (authReq)
+            {
+                case 0:
+                    return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 1:
+                    return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                    break;
+                case 2:
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=login");
+                    break;
+                case 3:
+                case 5:
+                case 4:
+                default:
+                    break;
+            }
+            
+            return sendWebSerial(request, resp);
+        });
+
+        //prepare our message queue of 10 messages
+        wsMessages = xQueueCreate(10, sizeof(WebsocketMessage));
+        if (wsMessages == 0) {
+            Log->printf("Failed to create queue= %p\n", wsMessages);
+        }
+        
+        websocketHandler->onOpen([](PsychicWebSocketClient *client) {
+            Log->printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString());
+            client->sendMessage("NukiHub WebSerial started");
+        });
+        websocketHandler->onFrame([](PsychicWebSocketRequest *request, httpd_ws_frame *frame)
+        {
+            if(strcmp((char *)frame->payload, "ping") == 0)
+            {
+                WebsocketMessage wm;
+                wm.socket = request->client()->socket();
+                wm.len = frame->len;
+                wm.buffer = (char *)malloc(frame->len);
+
+                if (wm.buffer == NULL)
+                {
+                    Log->printf("Queue message: unable to allocate %d bytes\n", frame->len);
+                    return ESP_FAIL;
+                }
+
+                memcpy(wm.buffer, "pong", frame->len);
+
+                if (xQueueSend(wsMessages, &wm, 1) != pdTRUE)
+                {
+                    Log->printf("[socket] queue full #%d\n", wm.socket);
+                    free(wm.buffer);
+                }
+
+                if (!uxQueueSpacesAvailable(wsMessages))
+                {
+                    return request->reply("Queue Full");
+                }
+            }
+            else
+            {
+                Log->printf("[socket] #%d sent: %s\n", request->client()->socket(), (char *)frame->payload);
+            }
+            return ESP_OK;
+        });
+        websocketHandler->onClose([](PsychicWebSocketClient *client) {
+            Log->printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString());
+        });
+
+        _psychicServer->on("/ws", websocketHandler);
+        #endif
+    
+    }
+    
     _psychicServer->on("/favicon.ico", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
     {
         return sendFavicon(request, resp);
@@ -430,6 +530,110 @@ void WebCfgServer::initialize()
     if(_network->isApOpen())
     {
 #ifndef CONFIG_IDF_TARGET_ESP32H2
+        _psychicServer->on("/get", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+        {
+            String value = "";
+            if(request->hasParam("page"))
+            {
+                const PsychicWebParameter* p = request->getParam("page");
+                if(p->value() != "")
+                {
+                    value = p->value();
+                }
+            }
+            if (value != "login")
+            {
+                int authReq = doAuthentication(request);
+
+                switch (authReq)
+                {
+                    case 0:
+                        return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 1:
+                        return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 2:
+                        resp->setCode(302);
+                        resp->addHeader("Cache-Control", "no-cache");
+                        return resp->redirect("/get?page=login");
+                        break;
+                    case 4:
+                    default:
+                        break;
+                }
+            }
+            if (value == "login")
+            {
+                return buildLoginHtml(request, resp);
+            }
+            else
+            {
+                Log->println("Page not found, loading index");
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/");
+            }
+        });
+
+        _psychicServer->on("/post", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
+        {
+            String value = "";
+            if(request->hasParam("page"))
+            {
+                const PsychicWebParameter* p = request->getParam("page");
+                if(p->value() != "")
+                {
+                    value = p->value();
+                }
+            }
+
+            if(value != "login")
+            {
+                int authReq = doAuthentication(request);
+
+                switch (authReq)
+                {
+                    case 0:
+                        return request->requestAuthentication(BASIC_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 1:
+                        return request->requestAuthentication(DIGEST_AUTH, "Nuki Hub", "You must log in.");
+                        break;
+                    case 2:
+                        resp->setCode(302);
+                        resp->addHeader("Cache-Control", "no-cache");
+                        return resp->redirect("/get?page=login");
+                        break;
+                        break;
+                    case 4:
+                    default:
+                        break;
+                }
+            }
+
+            if (value == "login")
+            {
+                bool loggedIn = processLogin(request, resp);
+                if (loggedIn)
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/");
+                }
+                else
+                {
+                    resp->setCode(302);
+                    resp->addHeader("Cache-Control", "no-cache");
+                    return resp->redirect("/get?page=login");
+                }
+            }
+            else
+            {
+                return buildWifiConnectHtml(request, resp);
+            }
+        });
+
         _psychicServer->on("/ssidlist", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
         {
             return buildSSIDListHtml(request, resp);
@@ -2440,6 +2644,34 @@ bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
 }
 
 #ifndef NUKI_HUB_UPDATER
+esp_err_t WebCfgServer::sendWebSerial(PsychicRequest* request, PsychicResponse* resp)
+{
+    // escaped by https://www.cescaper.com/
+    resp->addHeader("Cache-Control", "public, max-age=3600");
+    resp->setCode(200);
+    resp->setContentType("text/html");
+    resp->setContent((const uint8_t *)WEBSERIAL_HTML, sizeof(WEBSERIAL_HTML));
+    return resp->send();
+}
+
+void WebCfgServer::updateWebSerial()
+{
+    if (websocketHandler != nullptr) {
+        WebsocketMessage message;
+        while (xQueueReceive(wsMessages, &message, 0) == pdTRUE)
+        {
+            PsychicWebSocketClient *client = websocketHandler->getClient(message.socket);
+            if (client == NULL) {
+                Log->printf("[socket] client #%d bad, bailing\n", message.socket);
+                return;
+            }
+
+            client->sendMessage(HTTPD_WS_TYPE_TEXT, message.buffer, message.len);
+            free(message.buffer);
+        }
+    }
+}
+
 esp_err_t WebCfgServer::sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey)
 {
     JsonDocument json;
@@ -4873,10 +5105,6 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     {
         response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RESTART SERVICES REQUIRED TO APPLY SOME SETTINGS</td></tr></tbody></table>");
     }
-    if(_preferences->getBool(preference_webserial_enabled, false))
-    {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">WEBSERIAL IS ENABLED, ONLY ENABLE WHEN DEBUGGING AND DISABLE ASAP</td></tr></tbody></table>");
-    }
 #ifdef DEBUG_NUKIHUB
     response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RUNNING DEBUG BUILD, SWITCH TO RELEASE BUILD ASAP</td></tr></tbody></table>");
 #endif
@@ -4949,7 +5177,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     }
     if(_preferences->getBool(preference_webserial_enabled, false))
     {
-        buildNavigationMenuEntry(&response, "Open Webserial", "/get?page=webserial");
+        buildNavigationMenuEntry(&response, "Open Webserial", "/webserial");
     }
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     if(_allowRestartToPortal)
@@ -5387,7 +5615,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 found = true;
             }
         }
-        
+
         if (!found)
         {
             printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "", 2200, true, true);
@@ -5420,7 +5648,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.print("</td></tr>");
     printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
-    //printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
+    printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
     printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 65536)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
     response.print("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");

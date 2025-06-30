@@ -306,6 +306,7 @@ String PsychicRequest::getCookie(const char* key)
   if (!hasCookie(key, &size))
     return cookie;
 
+  //Following line is needed until https://github.com/espressif/esp-idf/pull/16202 is merged and available in ESP-IDF 5.5 (beta2/RC/final)
   size = httpd_req_get_hdr_value_len(this->_req, "Cookie");
 
   // allocate cookie buffer... keep it on the stack

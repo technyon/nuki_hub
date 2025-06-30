@@ -37,14 +37,22 @@ void WifiDevice::initialize()
         {
             Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
             _openAP = false;
+            if(_preferences->getBool(preference_find_best_rssi, false))
+            {
+                scan(false, true);
+            }
+            else
+            {
+                WiFi.mode(WIFI_STA);
+                connect();
+            }
         }
         else
         {
             Log->println("No SSID or Wifi password saved, opening AP");
             _openAP = true;
+            scan(false, true);
         }
-
-        scan(false, true);
     }
     else
     {
@@ -133,6 +141,15 @@ void WifiDevice::openAP()
 
 bool WifiDevice::connect()
 {
+    int loop = 0;
+    while (!_wifiClientStarted && loop < 50) {
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        loop++;
+    }
+
     int bestConnection = -1;
 
     if(_preferences->getBool(preference_find_best_rssi, false))
@@ -180,10 +197,17 @@ bool WifiDevice::connect()
         WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
     }
 
-    WiFi.begin(ssid, pass);
+    if (bestConnection == -1)
+    {
+        WiFi.begin(ssid, pass);
+    }
+    else
+    {
+        WiFi.begin(ssid, pass, WiFi.channel(bestConnection), WiFi.BSSID(bestConnection), 1);
+    }
 
     Log->print("WiFi connecting");
-    int loop = 0;
+    loop = 0;
     while(!isConnected() && loop < 600)
     {
          Log->print(".");

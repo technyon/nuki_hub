@@ -44,6 +44,7 @@ class WebCfgServer
 public:
     #ifndef NUKI_HUB_UPDATER
     WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
+    void updateWebSerial();
     #else
     WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     #endif
@@ -127,6 +128,7 @@ private:
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
     esp_err_t sendCss(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendWebSerial(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t sendFavicon(PsychicRequest *request, PsychicResponse* resp);
     void createSsidList();
     void buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader = "");
@@ -145,7 +147,7 @@ private:
     NukiNetwork* _network = nullptr;
     Preferences* _preferences = nullptr;
     ImportExport* _importExport;
-
+    
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;

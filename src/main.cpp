@@ -45,13 +45,6 @@ bool nuki_hub_https_server_enabled = false;
 #include "NimBLEDevice.h"
 #include "ImportExport.h"
 
-/*
-#ifdef DEBUG_NUKIHUB
-#include <WString.h>
-#include <MycilaWebSerial.h>
-#endif
-*/
-
 NukiNetworkLock* networkLock = nullptr;
 NukiNetworkOpener* networkOpener = nullptr;
 BleScanner::Scanner* bleScanner = nullptr;
@@ -94,6 +87,8 @@ char log_print_buffer[1024];
 PsychicHttpServer* psychicServer = nullptr;
 PsychicHttpServer* psychicServerRedirect = nullptr;
 PsychicHttpsServer* psychicSSLServer = nullptr;
+PsychicWebSocketHandler* websocketHandler = nullptr;
+
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 WebCfgServer* webCfgServerSSL = nullptr;
@@ -118,6 +113,7 @@ bool webSSLStarted = false;
 bool lockStarted = false;
 bool openerStarted = false;
 bool bleScannerStarted = false;
+bool webSerialEnabled = false;
 uint8_t partitionType = -1;
 
 int lastHTTPeventId = -1;
@@ -260,13 +256,17 @@ void cbSyncTime(struct timeval *tv)  {
 void startWebServer()
 {
     bool failed = true;
-
-    if (!nuki_hub_https_server_enabled) {
+    
+    webSerialEnabled = preferences->getBool(preference_webserial_enabled, false);
+    
+    if (!nuki_hub_https_server_enabled) 
+    {
         Log->println("Not running on PSRAM enabled device");
     }
     else
     {
-        if (!SPIFFS.begin(true)) {
+        if (!SPIFFS.begin(true)) 
+        {
             Log->println("SPIFFS Mount Failed");
         }
         else
@@ -286,7 +286,8 @@ void startWebServer()
                 cert[filesize] = '\0';
 
                 File file2 = SPIFFS.open("/http_ssl.key");
-                if (!file2 || file2.isDirectory()) {
+                if (!file2 || file2.isDirectory()) 
+                {
                     Log->println("http_ssl.key not found");
                 }
                 else
@@ -602,6 +603,15 @@ void networkTask(void *pvParameters)
         }
         else
         {
+            if(connected && webSerialEnabled && (webSSLStarted || webStarted))
+            {
+                webCfgServerSSL->updateWebSerial();
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(50 / portTICK_PERIOD_MS);
+            }
+            
             if(connected && lockStarted)
             {
                 rebootLock = networkLock->update();
@@ -1304,9 +1314,6 @@ void setup()
     Log->print("Nuki Hub build ");
     Log->println(NUKI_HUB_BUILD);
     
-    Log->println(preferences->getString(preference_cred_user));
-    Log->println(preferences->getString(preference_cred_password));
-
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
 
     deviceIdLock = new NukiDeviceId(preferences, preference_device_id_lock);
@@ -1380,18 +1387,6 @@ void setup()
         {
             startWebServer();
         }
-        /*
-#ifdef DEBUG_NUKIHUB
-        else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
-
-        if(preferences->getBool(preference_webserial_enabled, false))
-        {
-          WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
-          WebSerial.begin(psychicServer);
-          WebSerial.setBuffer(1024);
-        }
-#endif
-        */
     }
 #endif
 

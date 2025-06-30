@@ -12,10 +12,11 @@
 #include <Arduino.h>
 #include <Print.h>
 #include <espMqttClient.h>
-//#include "MycilaWebSerial.h"
+#include "PsychicWebSocket.h"
 
 #define MQTT_MAX_PACKET_SIZE 1024
 
+extern PsychicWebSocketHandler* websocketHandler;
 extern bool coredumpPrinted;
 
 enum MqttLoggerMode {
