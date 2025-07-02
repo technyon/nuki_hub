@@ -128,8 +128,13 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
         {
             struct timeval time;
             gettimeofday(&time, NULL);
-            int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
-
+            int64_t time_us = 0;
+            
+            if (timeSynced)
+            {
+                time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
+            }
+            
             if ((type == 0 && _httpSessions[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us) || (type == 3 && _importExport->_bypassSessions[cookie].as<signed long long>() > time_us))
             {
                 return true;
