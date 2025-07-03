@@ -1730,23 +1730,32 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
 
         if (!_network->isConnected())
         {
-            message = "Failed to connect to the given SSID with the given secret key, credentials not saved<br/>";
+            message = "Failed to connect to the given SSID, settings not saved<br/>";
             return res;
         }
         else
         {
-            if(_network->isConnected())
+            message = "Connection successful. Rebooting Nuki Hub.<br/>Please connect this device to the wireless network with the SSID "
+            + ssid + " or a wired/wireless connection that has access to the network of the selected SSID now<br/>and navigate to Nuki Hub at ";
+            
+            if (_isSSL)
             {
-                message = "Connection successful. Rebooting Nuki Hub.<br/>";
-                _preferences->putString(preference_wifi_ssid, ssid);
-                _preferences->putString(preference_wifi_pass, pass);
-                res = true;
+                if (_preferences->getString(preference_https_fqdn, "") != "") 
+                {
+                    message += "<a href=\"https://" + _preferences->getString(preference_https_fqdn, "") + "\">https://" + _preferences->getString(preference_https_fqdn, "") + "</a>";
+                }
+                else
+                {
+                    message += "<a href=\"https://" + _network->localIP() + "\">https://" + _network->localIP() + "</a>";
+                }
             }
             else
             {
-                message = "Failed to connect to the given SSID, no IP received, credentials not saved<br/>";
-                return res;
+                message += "<a href=\"http://" + _network->localIP() + "\">http://" + _network->localIP() + "</a>";
             }
+            _preferences->putString(preference_wifi_ssid, ssid);
+            _preferences->putString(preference_wifi_pass, pass);
+            res = true;
         }
     }
     else
