@@ -39,6 +39,7 @@ public:
     const String networkBSSID() const;
     const NetworkDeviceType networkDeviceType();
     void setKeepAliveCallback(std::function<void()> reconnectTick);
+    String localIP();
 
     NetworkDevice* device();
 
@@ -50,7 +51,6 @@ public:
     void registerMqttReceiver(MqttReceiver* receiver);
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
-    String localIP();
 
     bool reconnect(bool force = false);
     void subscribe(const char* prefix, const char* path);

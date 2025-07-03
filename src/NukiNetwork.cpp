@@ -175,6 +175,11 @@ bool NukiNetwork::wifiConnected()
     }
 }
 
+String NukiNetwork::localIP()
+{
+    return _device->localIP();
+}
+
 #ifdef NUKI_HUB_UPDATER
 void NukiNetwork::initialize()
 {
@@ -1730,10 +1735,5 @@ void NukiNetwork::disableMqtt()
 {
     _device->mqttDisable();
     _mqttEnabled = false;
-}
-
-String NukiNetwork::localIP()
-{
-    return _device->localIP();
 }
 #endif
