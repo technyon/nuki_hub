@@ -1,0 +1,33 @@
+{
+    "name": "AsyncWebSerial",
+    "version": "1.0.1",
+    "keywords": "web serial, ESP32",
+    "description": "AsyncWebSerial: Simplify ESP32 debugging and logging with seamless browser-based serial communication.",
+    "homepage": "https://github.com/circuitcode/AsyncWebSerial",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/circuitcode/AsyncWebSerial.git"
+    },
+    "authors": [
+        {
+            "name": "Andrea Sessa",
+            "maintanier": true
+        }
+    ],
+    "license": "MIT",
+    "framworks": "arduino",
+    "platforms": "espressif32",
+    "headers": [
+        "AsyncWebSerial.h"
+    ],
+    "export": {
+        "include": [
+            "examples",
+            "src",
+            "library.json",
+            "library.properties",
+            "LICENSE",
+            "README.md"
+        ]
+    }
+}

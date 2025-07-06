@@ -6537,6 +6537,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print(_preferences->getInt(preference_lock_max_auth_entry_count, 0));
         response.print("\nRegister as: ");
         response.print(_preferences->getBool(preference_register_as_app, false) ? "App" : "Bridge");
+        response.print("\nForce Lock ID: ");
+        response.print(_preferences->getBool(preference_lock_force_id, false) ? "Yes" : "No");
+        response.print("\nForce Lock Keypad: ");
+        response.print(_preferences->getBool(preference_lock_force_keypad, false) ? "Yes" : "No");
+        response.print("\nForce Lock Doorsensor: ");
+        response.print(_preferences->getBool(preference_lock_force_doorsensor, false) ? "Yes" : "No");
         response.print("\n\n------------ HYBRID MODE ------------");
         if(!_preferences->getBool(preference_official_hybrid_enabled, false))
         {
@@ -6559,12 +6565,6 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             response.print("\nTime between status updates when official MQTT is offline (s): ");
             response.print(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600));
         }
-        response.print("\nForce Lock ID: ");
-        response.print(_preferences->getBool(preference_lock_force_id, false) ? "Yes" : "No");
-        response.print("\nForce Lock Keypad: ");
-        response.print(_preferences->getBool(preference_lock_force_keypad, false) ? "Yes" : "No");
-        response.print("\nForce Lock Doorsensor: ");
-        response.print(_preferences->getBool(preference_lock_force_doorsensor, false) ? "Yes" : "No");
         uint32_t basicLockConfigAclPrefs[16];
         _preferences->getBytes(preference_conf_lock_basic_acl, &basicLockConfigAclPrefs, sizeof(basicLockConfigAclPrefs));
         uint32_t advancedLockConfigAclPrefs[25];

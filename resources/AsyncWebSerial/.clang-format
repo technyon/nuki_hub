@@ -1,0 +1,39 @@
+# Base style
+BasedOnStyle: LLVM
+
+# Custom configurations
+IndentWidth: 4                # Number of spaces per indentation level
+TabWidth: 4                   # Width of a tab (useful if 'UseTab' is set)
+UseTab: Never                 # Use spaces instead of tabs
+
+# Function formatting
+BreakBeforeBraces: Linux
+AllowShortFunctionsOnASingleLine: Inline # Allow short functions to stay on a single line
+AlwaysBreakBeforeMultilineStrings: false # Keep multiline strings together
+
+# Alignment
+AlignConsecutiveAssignments: true # Align consecutive assignments
+AlignTrailingComments: true       # Align trailing comments
+
+# Parameter formatting
+AllowAllParametersOfDeclarationOnNextLine: false # Parameters declared on the same line if possible
+
+# Array and list formatting
+BinPackArguments: true            # Place multiple arguments on the same line if possible
+BinPackParameters: true           # Same logic for parameters
+ColumnLimit: 120                  # Line length limit
+
+# Pointer and reference formatting
+PointerAlignment: Right           # Align pointer near the variable name or type (values: Left, Right, Middle)
+ReferenceAlignment: Right         # Same logic for references
+
+# Namespace
+IndentNamespace: None             # No indentation for namespaces
+NamespaceIndentation: None        # Alternative namespace indentation option
+
+# Comments
+ReflowComments: true              # Reformat comments to fit within the line length limit
+
+# Optional advanced configurations
+IncludeBlocks: Preserve           # Preserve blank lines between includes
+SortIncludes: true                # Sort includes alphabetically EmptyLineBeforeAccessModifier: Always # Blank line before "public:", "private:", etc.

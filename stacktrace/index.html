@@ -137,7 +137,7 @@
 
     <script type="module">
       // Load the WASM lib
-      import init, {decode as esp_exception_decode} from "./esp_exception_decoder_rs.js";
+      import init, {decode as esp_exception_decode} from "./esp_stacktrace_decoder_rs.js";
 
       // Get some references to the DOM
       const stacktrace = document.querySelector('#stacktrace');

@@ -1,0 +1,12 @@
+{
+    "scripts": {
+        "build": "node build.js"
+    },
+    "dependencies": {
+        "html-minifier-terser": "^7.1.0"
+    },
+    "license": "MIT",
+    "files": [
+        "LICENSE"
+    ]
+}
