@@ -32,24 +32,27 @@ public:
     bool mqttConnected();
     bool wifiConnected();
     void clearWifiFallback();
+    int getRestartServices();
+    void setRestartServices(bool reconnect = false);
 
     const String networkDeviceName() const;
     const String networkBSSID() const;
     const NetworkDeviceType networkDeviceType();
     void setKeepAliveCallback(std::function<void()> reconnectTick);
+    String localIP();
 
     NetworkDevice* device();
 
     #ifdef NUKI_HUB_UPDATER
     explicit NukiNetwork(Preferences* preferences);
     #else
-    explicit NukiNetwork(Preferences* preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize, ImportExport* importExport);
+    explicit NukiNetwork(Preferences* preferences, Gpio* gpio, char* buffer, size_t bufferSize, ImportExport* importExport);
 
     void registerMqttReceiver(MqttReceiver* receiver);
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
-    String localIP();
 
+    bool reconnect(bool force = false);
     void subscribe(const char* prefix, const char* path);
     void initTopic(const char* prefix, const char* path, const char* value);
     void publishFloat(const char* prefix, const char* topic, const float value, bool retain, const uint8_t precision = 2);
@@ -93,8 +96,8 @@ public:
     #endif
 private:
     void setupDevice();
-    bool reconnect();
-
+    void setMQTTConnectionSettings();
+    
     static NukiNetwork* _inst;
 
     const char* _latestVersion;
@@ -132,6 +135,7 @@ private:
     ImportExport* _importExport;
     Gpio* _gpio;
 
+    int _restartServices = 0;
     int _mqttConnectionState = 0;
     int _mqttConnectCounter = 0;
     int _mqttPort = 1883;

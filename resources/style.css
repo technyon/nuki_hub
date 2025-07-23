@@ -11,32 +11,32 @@ source: https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css
 */
 
 :root {
-    --nc-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-    --nc-font-mono: Consolas, monaco, 'Ubuntu Mono', 'Liberation Mono', 'Courier New', Courier, monospace;
-    --nc-tx-1: #000000;
-    --nc-tx-2: #1A1A1A;
-    --nc-bg-1: #FFFFFF;
-    --nc-bg-2: #F6F8FA;
-    --nc-bg-3: #E5E7EB;
-    --nc-lk-1: #0070F3;
-    --nc-lk-2: #0366D6;
-    --nc-lk-tx: #FFFFFF;
-    --nc-ac-1: #79FFE1;
-    --nc-ac-tx: #0C4047
+    --nc-font-sans: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';
+    --nc-font-mono: Consolas,monaco,'Ubuntu Mono','Liberation Mono','Courier New',Courier,monospace;
+    --nc-tx-1: #000;
+    --nc-tx-2: #1a1a1a;
+    --nc-bg-1: #fff;
+    --nc-bg-2: #f6f8fa;
+    --nc-bg-3: #e5e7eb;
+    --nc-lk-1: #0070f3;
+    --nc-lk-2: #0366d6;
+    --nc-lk-tx: #fff;
+    --nc-ac-1: #79ffe1;
+    --nc-ac-tx: #0c4047
 }
 
-@media (prefers-color-scheme:dark) {
+@media(prefers-color-scheme: dark) {
     :root {
-        --nc-tx-1: #ffffff;
-        --nc-tx-2: #eeeeee;
-        --nc-bg-1: #000000;
-        --nc-bg-2: #111111;
-        --nc-bg-3: #222222;
-        --nc-lk-1: #3291FF;
-        --nc-lk-2: #0070F3;
-        --nc-lk-tx: #FFFFFF;
-        --nc-ac-1: #7928CA;
-        --nc-ac-tx: #FFFFFF
+        --nc-tx-1:#fff;
+        --nc-tx-2: #eee;
+        --nc-bg-1: #000;
+        --nc-bg-2: #111;
+        --nc-bg-3: #222;
+        --nc-lk-1: #3291ff;
+        --nc-lk-2: #0070f3;
+        --nc-lk-tx: #fff;
+        --nc-ac-1: #7928ca;
+        --nc-ac-tx: #fff
     }
 }
 
@@ -45,20 +45,11 @@ source: https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css
     padding: 0
 }
 
-img,
-input,
-option,
-p,
-table,
-textarea,
-ul {
+img,input,option,p,table,textarea,ul {
     margin-bottom: 1rem
 }
 
-button,
-html,
-input,
-select {
+button,html,input,select {
     font-family: var(--nc-font-sans)
 }
 
@@ -81,39 +72,64 @@ body {
     color: var(--nc-ac-tx)
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,h2,h3,h4,h5,h6 {
     line-height: 1;
     color: var(--nc-tx-1);
     padding-top: .875rem
 }
 
-h1, h2, h3 {
+h1,h2,h3 {
     color: var(--nc-tx-1);
     padding-bottom: 2px;
     margin-bottom: 8px;
     border-bottom: 1px solid var(--nc-bg-2)
 }
 
-h4, h5, h6 {
+h4,h5,h6 {
     margin-bottom: .3rem
 }
 
-h1 { font-size: 2.25rem }
-h2 { font-size: 1.85rem }
-h3 { font-size: 1.55rem }
-h4 { font-size: 1.25rem }
-h5 { font-size: 1rem }
-h6 { font-size: .875rem }
-a { color: var(--nc-lk-1) }
-a:hover { color: var(--nc-lk-2) !important; }
-abbr { cursor: help }
-abbr:hover { cursor: help }
+h1 {
+    font-size: 2.25rem
+}
 
-a button,
-button,
-input[type=button],
-input[type=reset],
-input[type=submit] {
+h2 {
+    font-size: 1.85rem
+}
+
+h3 {
+    font-size: 1.55rem
+}
+
+h4 {
+    font-size: 1.25rem
+}
+
+h5 {
+    font-size: 1rem
+}
+
+h6 {
+    font-size: .875rem
+}
+
+a {
+    color: var(--nc-lk-1)
+}
+
+a:hover {
+    color: var(--nc-lk-2) !important;
+}
+
+abbr {
+    cursor: help
+}
+
+abbr:hover {
+    cursor: help
+}
+
+a button,button,input[type=button],input[type=reset],input[type=submit] {
     font-size: 1rem;
     display: inline-block;
     padding: 6px 12px;
@@ -129,26 +145,13 @@ input[type=submit] {
     color: var(--nc-lk-tx)
 }
 
-a button[disabled],
-button[disabled],
-input[type=button][disabled],
-input[type=reset][disabled],
-input[type=submit][disabled] {
+a button[disabled],button[disabled],input[type=button][disabled],input[type=reset][disabled],input[type=submit][disabled] {
     cursor: default;
     opacity: .5;
     cursor: not-allowed
 }
 
-.button:focus,
-.button:hover,
-button:focus,
-button:hover,
-input[type=button]:focus,
-input[type=button]:hover,
-input[type=reset]:focus,
-input[type=reset]:hover,
-input[type=submit]:focus,
-input[type=submit]:hover {
+.button:focus,.button:hover,button:focus,button:hover,input[type=button]:focus,input[type=button]:hover,input[type=reset]:focus,input[type=reset]:hover,input[type=submit]:focus,input[type=submit]:hover {
     background: var(--nc-lk-2)
 }
 
@@ -157,18 +160,25 @@ table {
     width: 100%
 }
 
-td, th {
+td,th {
     border: 1px solid var(--nc-bg-3);
     text-align: left;
     padding: .5rem
 }
 
-th { background: var(--nc-bg-2) }
-tr:nth-child(even) { background: var(--nc-bg-2) }
+th {
+    background: var(--nc-bg-2)
+}
 
-textarea { max-width: 100% }
+tr:nth-child(even) {
+    background: var(--nc-bg-2)
+}
 
-input, select, textarea {
+textarea {
+    max-width: 100%
+}
+
+input,select,textarea {
     padding: 6px 12px;
     margin-bottom: .5rem;
     background: var(--nc-bg-2);
@@ -179,50 +189,57 @@ input, select, textarea {
     box-sizing: border-box
 }
 
-img { max-width: 100% }
+img {
+    max-width: 100%
+}
 
 td>input {
-    margin-top: 0px;
-    margin-bottom: 0px
+    margin-top: 0;
+    margin-bottom: 0
 }
 
 td>textarea {
-    margin-top: 0px;
-    margin-bottom: 0px
+    margin-top: 0;
+    margin-bottom: 0
 }
 
 td>select {
-    margin-top: 0px;
-    margin-bottom: 0px
+    margin-top: 0;
+    margin-bottom: 0
 }
 
 .warning {
-    color: #f00;
+    color: red
 }
 
 @media only screen and (max-width: 600px) {
-    .adapt td { display: block; }
+    .adapt td {
+        display:block
+    }
 
-    .adapt input[type=text],
-    .adapt input[type=password],
-    .adapt input[type=submit],
-    .adapt textarea,
-    .adapt select { width: 100%; }
+    .adapt input[type=text],.adapt input[type=password],.adapt input[type=submit],.adapt textarea,.adapt select {
+        width: 100%
+    }
 
     .adapt td:has(input[type=checkbox]) {
-        text-align: center;
+        text-align: center
     }
 
     .adapt input[type=checkbox] {
         width: 1.5em;
-        height: 1.5em;
+        height: 1.5em
     }
 
-    .adapt table td:first-child { border-bottom: 0; }
-    .adapt table td:last-child { border-top: 0; }
+    .adapt table td:first-child {
+        border-bottom: 0
+    }
+
+    .adapt table td:last-child {
+        border-top: 0
+    }
 
     #tblnav a li>span {
-        max-width: 140px;
+        max-width: 140px
     }
 }
 
@@ -236,32 +253,31 @@ td>select {
     line-height: 1;
     color: var(--nc-tx-1);
     text-decoration: none;
-
-    background: linear-gradient(to left, transparent 50%, rgba(255,255,255,0.4) 50%) right;
+    background: linear-gradient(to left,transparent 50%,rgba(255,255,255,0.4) 50%) right;
     background-size: 200% 100%;
-    transition:all .2s ease;
+    transition: all .2s ease
 }
 
-#tblnav a:nth-child(even) {
-    background: linear-gradient(to left, var(--nc-bg-2) 50%, rgba(255,255,255,0.4) 50%) right;
-    background-size: 200% 100%;
+#tblnav a {
+    background: linear-gradient(to left,var(--nc-bg-2) 50%,rgba(255,255,255,0.4) 50%) right;
+    background-size: 200% 100%
 }
 
 #tblnav a:hover {
     background-position: left;
-    transition:all .45s ease;
+    transition: all .45s ease
 }
 
 #tblnav a:active {
     background: var(--nc-lk-1);
-    transition:all .15s ease;
+    transition: all .15s ease
 }
 
 #tblnav a li {
     list-style: none;
     padding: .5rem;
     display: inline-block;
-    width: 100%;
+    width: 100%
 }
 
 #tblnav a li>span {
@@ -271,10 +287,16 @@ td>select {
     color: #f70;
     font-weight: 100;
     font-style: italic;
-    display: block;
+    display: block
 }
 
 .tdbtn {
     text-align: center;
-    vertical-align: middle;
+    vertical-align: middle
+}
+
+.naventry {
+    float: left;
+    max-width: 375px;
+    width: 100%
 }

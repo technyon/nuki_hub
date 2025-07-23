@@ -6,6 +6,10 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "esp_task_wdt.h"
+#ifdef CONFIG_HEAP_TASK_TRACKING
+#include "esp_heap_task_info.h"
+#include "esp_heap_caps.h"
+#endif
 #include "Config.h"
 #include "esp32-hal-log.h"
 #include "hal/wdt_hal.h"
@@ -15,7 +19,12 @@
 #include "FS.h"
 #include "SPIFFS.h"
 //#include <ESPmDNS.h>
-#ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+#ifdef NUKI_HUB_HTTPS_SERVER
+bool nuki_hub_https_server_enabled = true;
+#else
+bool nuki_hub_https_server_enabled = false;
+#endif
+#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
 
@@ -24,6 +33,7 @@
 #include "NukiWrapper.h"
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
+#include "Gpio.h"
 #include "Gpio.h"
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
@@ -34,13 +44,6 @@
 #include "EspMillis.h"
 #include "NimBLEDevice.h"
 #include "ImportExport.h"
-
-/*
-#ifdef DEBUG_NUKIHUB
-#include <WString.h>
-#include <MycilaWebSerial.h>
-#endif
-*/
 
 NukiNetworkLock* networkLock = nullptr;
 NukiNetworkOpener* networkOpener = nullptr;
@@ -53,10 +56,14 @@ NukiDeviceId* deviceIdOpener = nullptr;
 Gpio* gpio = nullptr;
 SerialReader* serialReader = nullptr;
 
+bool bleDone = false;
 bool lockEnabled = false;
 bool openerEnabled = false;
 bool wifiConnected = false;
 bool rebootLock = false;
+uint8_t lockRestartControllerCount = 0;
+uint8_t openerRestartControllerCount = 0;
+char16_t buffer_size = CHAR_BUFFER_SIZE;
 
 TaskHandle_t nukiTaskHandle = nullptr;
 
@@ -78,7 +85,10 @@ int64_t restartTs = 10 * 60 * 1000;
 char log_print_buffer[1024];
 
 PsychicHttpServer* psychicServer = nullptr;
+PsychicHttpServer* psychicServerRedirect = nullptr;
 PsychicHttpsServer* psychicSSLServer = nullptr;
+PsychicWebSocketHandler* websocketHandler = nullptr;
+
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 WebCfgServer* webCfgServerSSL = nullptr;
@@ -95,10 +105,16 @@ RTC_NOINIT_ATTR bool forceEnableWebServer;
 RTC_NOINIT_ATTR bool disableNetwork;
 RTC_NOINIT_ATTR bool wifiFallback;
 RTC_NOINIT_ATTR bool ethCriticalFailure;
+
 bool coredumpPrinted = true;
 bool timeSynced = false;
 bool webStarted = false;
 bool webSSLStarted = false;
+bool lockStarted = false;
+bool openerStarted = false;
+bool bleScannerStarted = false;
+bool webSerialEnabled = false;
+uint8_t partitionType = -1;
 
 int lastHTTPeventId = -1;
 bool doOta = false;
@@ -176,11 +192,15 @@ uint8_t checkPartition()
     Log->print("Partition subtype: ");
     Log->println(running_partition->subtype);
 
+
+    #if !defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CONFIG_IDF_TARGET_ESP32P4)
     if(running_partition->size == 1966080)
     {
         return 0;    //OLD PARTITION TABLE
     }
-    else if(running_partition->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_0)
+    #endif
+
+    if(running_partition->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_0)
     {
         return 1;    //NEW PARTITION TABLE, RUNNING MAIN APP
     }
@@ -232,6 +252,286 @@ void cbSyncTime(struct timeval *tv)  {
   timeSynced = true;
 }
 
+#ifndef NUKI_HUB_UPDATER
+void startWebServer()
+{
+    bool failed = true;
+    
+    webSerialEnabled = preferences->getBool(preference_webserial_enabled, false);
+    
+    if (!nuki_hub_https_server_enabled) 
+    {
+        Log->println("Not running on PSRAM enabled device");
+    }
+    else
+    {
+        if (!SPIFFS.begin(true)) 
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt");
+            if (!file || file.isDirectory()) {
+                Log->println("http_ssl.crt not found");
+            }
+            else
+            {
+                Log->println("Reading http_ssl.crt");
+                size_t filesize = file.size();
+                char cert[filesize + 1];
+
+                file.read((uint8_t *)cert, sizeof(cert));
+                file.close();
+                cert[filesize] = '\0';
+
+                File file2 = SPIFFS.open("/http_ssl.key");
+                if (!file2 || file2.isDirectory()) 
+                {
+                    Log->println("http_ssl.key not found");
+                }
+                else
+                {
+                    Log->println("Reading http_ssl.key");
+                    size_t filesize2 = file2.size();
+                    char key[filesize2 + 1];
+
+                    file2.read((uint8_t *)key, sizeof(key));
+                    file2.close();
+                    key[filesize2] = '\0';
+
+                    psychicServerRedirect = new PsychicHttpServer();
+                    psychicServerRedirect->config.ctrl_port = 20424;
+                    psychicServerRedirect->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                        String url = "https://" + request->host() + request->url();
+                        if (preferences->getString(preference_https_fqdn, "") != "")
+                        {
+                            url = "https://" + preferences->getString(preference_https_fqdn) + request->url();
+                        }
+
+                        response->setCode(301);
+                        response->addHeader("Cache-Control", "no-cache");
+                        return response->redirect(url.c_str());
+                    });
+                    psychicServerRedirect->begin();
+                    psychicSSLServer = new PsychicHttpsServer;
+                    psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
+                    psychicSSLServer->setCertificate(cert, key);
+                    psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
+                    webCfgServerSSL = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
+                    webCfgServerSSL->initialize();
+                    psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                        return response->redirect("/");
+                    });
+                    psychicSSLServer->begin();
+                    webSSLStarted = true;
+                    failed = false;
+                }
+            }
+        }
+    }
+
+    if (failed)
+    {
+        psychicServer = new PsychicHttpServer;
+        psychicServer->config.stack_size = HTTPD_TASK_SIZE;
+        webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
+        webCfgServer->initialize();
+        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+            return response->redirect("/");
+        });
+        psychicServer->begin();
+        webStarted = true;
+    }
+}
+
+void startNuki(bool lock)
+{
+    if (lock)
+    {
+        nukiOfficial = new NukiOfficial(preferences);
+        networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
+
+        if(!disableNetwork)
+        {
+            networkLock->initialize();
+        }
+
+        lockStarted = true;
+    }
+    else
+    {
+        networkOpener = new NukiNetworkOpener(network, preferences, CharBuffer::get(), buffer_size);
+
+        if(!disableNetwork)
+        {
+            networkOpener->initialize();
+        }
+
+        openerStarted = true;
+    }
+}
+
+void restartServices(bool reconnect)
+{
+    bleDone = false;
+    lockEnabled = preferences->getBool(preference_lock_enabled);
+    openerEnabled = preferences->getBool(preference_opener_enabled);
+    importExport->readSettings();
+    network->readSettings();
+    gpio->setPins();
+
+    if (reconnect)
+    {
+        network->reconnect(true);
+    }
+
+    if(webSSLStarted)
+    {
+        Log->println("Reset Psychic SSL server");
+        psychicSSLServer->reset();
+        Log->println("Reset Psychic SSL server done");
+        Log->println("Deleting Psychic SSL server");
+        delete psychicSSLServer;
+        psychicSSLServer = nullptr;
+        Log->println("Deleting Psychic SSL server done");
+    }
+
+    if(webStarted)
+    {
+        Log->println("Reset Psychic server");
+        psychicServer->reset();
+        Log->println("Reset Psychic server done");
+        Log->println("Deleting Psychic server");
+        delete psychicServer;
+        psychicServer = nullptr;
+        Log->println("Deleting Psychic server done");
+    }
+
+    if(webStarted || webSSLStarted)
+    {
+        Log->println("Deleting webCfgServer");
+        delete webCfgServer;
+        webCfgServer = nullptr;
+        Log->println("Deleting webCfgServer done");
+    }
+
+    if(lockStarted)
+    {
+        Log->println("Deleting nuki");
+        delete nuki;
+        nuki = nullptr;
+        if (reconnect)
+        {
+            lockStarted = false;
+            delete networkLock;
+            networkLock = nullptr;
+            delete nukiOfficial;
+            nukiOfficial = nullptr;
+        }
+        Log->println("Deleting nuki done");
+    }
+
+    if(openerStarted)
+    {
+        Log->println("Deleting nukiOpener");
+        delete nukiOpener;
+        nukiOpener = nullptr;
+        if (reconnect)
+        {
+            openerStarted = false;            
+            delete networkOpener;
+            networkOpener = nullptr;
+        }
+        Log->println("Deleting nukiOpener done");
+    }
+
+    if (bleScannerStarted)
+    {
+        bleScannerStarted = false;
+        Log->println("Destroying scanner from main");
+        delete bleScanner;
+        Log->println("Scanner deleted");
+        bleScanner = nullptr;
+        Log->println("Scanner nulled from main");
+    }
+
+    if (BLEDevice::isInitialized()) {
+        Log->println("Deinit BLE device");
+        BLEDevice::deinit(false);
+        Log->println("Deinit BLE device done");
+    }
+
+    if (esp_task_wdt_status(NULL) == ESP_OK) {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    if(lockEnabled || openerEnabled)
+    {
+        Log->println("Restarting BLE Scanner");
+        bleScanner = new BleScanner::Scanner();
+        bleScanner->initialize("NukiHub", true, 40, 40);
+        bleScanner->setScanDuration(0);
+        bleScannerStarted = true;
+        Log->println("Restarting BLE Scanner done");
+    }
+
+    if(lockEnabled)
+    {
+        Log->println("Restarting Nuki lock");
+
+        if (reconnect)
+        {
+            startNuki(true);
+        }
+
+        nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences, CharBuffer::get(), buffer_size);
+        nuki->initialize();
+        bleScanner->whitelist(nuki->getBleAddress());
+        Log->println("Restarting Nuki lock done");
+    }
+
+    if(openerEnabled)
+    {
+        Log->println("Restarting Nuki opener");
+
+        if (reconnect)
+        {
+            startNuki(false);
+        }
+
+        nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences, CharBuffer::get(), buffer_size);
+        nukiOpener->initialize();
+        bleScanner->whitelist(nukiOpener->getBleAddress());
+        Log->println("Restarting Nuki opener done");
+    }
+
+
+    if (esp_task_wdt_status(NULL) == ESP_OK) {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    bleDone = true;
+
+    if(webStarted || webSSLStarted)
+    {
+        Log->println("Restarting web server");
+        startWebServer();
+        Log->println("Restarting web server done");
+    }
+    else if(!doOta && !disableNetwork && (forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false)))
+    {
+        if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
+        {
+            Log->println("Starting web server");
+            startWebServer();
+            Log->println("Starting web server done");
+        }
+    }
+}
+#endif
+
 void networkTask(void *pvParameters)
 {
     int64_t networkLoopTs = 0;
@@ -259,6 +559,10 @@ void networkTask(void *pvParameters)
         }
 #endif
         network->update();
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
         bool connected = network->isConnected();
 
         if(connected && reroute)
@@ -267,7 +571,7 @@ void networkTask(void *pvParameters)
             {
                 esp_netif_sntp_start();
             }
-    
+
             /* MDNS currently disabled for causing issues (9.10 / 2025-04-01)
             if(webSSLStarted) {
                 if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
@@ -287,15 +591,44 @@ void networkTask(void *pvParameters)
 
 #ifndef NUKI_HUB_UPDATER
         wifiConnected = network->wifiConnected();
+        int restartServ = network->getRestartServices();
 
-        if(connected && lockEnabled)
+        if (restartServ == 1)
         {
-            rebootLock = networkLock->update();
+            restartServices(false);            
         }
-
-        if(connected && openerEnabled)
+        else if (restartServ == 2)
         {
-            networkOpener->update();
+            restartServices(true);
+        }
+        else
+        {
+            if(connected && webSerialEnabled && (webSSLStarted || webStarted))
+            {
+                webCfgServerSSL->updateWebSerial();
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(50 / portTICK_PERIOD_MS);
+            }
+            
+            if(connected && lockStarted)
+            {
+                rebootLock = networkLock->update();
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(50 / portTICK_PERIOD_MS);
+            }
+
+            if(connected && openerStarted)
+            {
+                networkOpener->update();
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(50 / portTICK_PERIOD_MS);
+            }
         }
 #endif
 
@@ -307,7 +640,7 @@ void networkTask(void *pvParameters)
 
         if(espMillis() > restartTs)
         {
-            uint8_t partitionType = checkPartition();
+            partitionType = checkPartition();
 
             if(partitionType!=1)
             {
@@ -316,40 +649,104 @@ void networkTask(void *pvParameters)
 
             restartEsp(RestartReason::RestartTimer);
         }
-        esp_task_wdt_reset();
+        
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
 #ifndef NUKI_HUB_UPDATER
+#ifdef CONFIG_HEAP_TASK_TRACKING
+static void print_all_tasks_info(void)
+{
+    heap_all_tasks_stat_t tasks_stat;
+    /* call API to dynamically allocate the memory necessary to store the
+     * information collected while calling heap_caps_get_all_task_stat */
+    const esp_err_t ret_val = heap_caps_alloc_all_task_stat_arrays(&tasks_stat);
+    assert(ret_val == ESP_OK);
+
+    /* collect the information */
+    heap_caps_get_all_task_stat(&tasks_stat);
+
+    /* process the information retrieved */
+    Log->printf("\n--------------------------------------------------------------------------------\n");
+    Log->printf("PRINTING ALL TASKS INFO\n");
+    Log->printf("--------------------------------------------------------------------------------\n");
+    for (size_t task_idx = 0; task_idx < tasks_stat.task_count; task_idx++) {
+        task_stat_t task_stat = tasks_stat.stat_arr[task_idx];
+        Log->printf("%s: %s: Peak Usage %" PRIu16 ", Current Usage %" PRIu16 "\n", task_stat.name,
+                                                                          task_stat.is_alive ? "ALIVE  " : "DELETED",
+                                                                          task_stat.overall_peak_usage,
+                                                                          task_stat.overall_current_usage);
+
+        for (size_t heap_idx = 0; heap_idx < task_stat.heap_count; heap_idx++) {
+            heap_stat_t heap_stat = task_stat.heap_stat[heap_idx];
+            Log->printf("    %s: Caps: %" PRIu32 ". Size %" PRIu16 ", Current Usage %" PRIu16 ", Peak Usage %" PRIu16 ", alloc count %" PRIu16 "\n", heap_stat.name,
+                                                                                                                                      heap_stat.caps,
+                                                                                                                                      heap_stat.size,
+                                                                                                                                      heap_stat.current_usage,
+                                                                                                                                      heap_stat.peak_usage,
+                                                                                                                                      heap_stat.alloc_count);
+
+            for (size_t alloc_idx = 0; alloc_idx < heap_stat.alloc_count; alloc_idx++) {
+                heap_task_block_t alloc_stat = heap_stat.alloc_stat[alloc_idx];
+                Log->printf("        %p: Size: %" PRIu32 "\n", alloc_stat.address, alloc_stat.size);
+            }
+        }
+    }
+
+    /* delete the memory dynamically allocated while calling heap_caps_alloc_all_task_stat_arrays */
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
+}
+#endif
 void nukiTask(void *pvParameters)
 {
+    esp_task_wdt_add(NULL);
+    
     if (preferences->getBool(preference_mqtt_ssl_enabled, false))
     {
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+        #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
         if (esp_psram_get_size() <= 0)
         {
             Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-            delay(20000);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(20000 / portTICK_PERIOD_MS);
         }
         #else
         Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-        delay(20000);
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(20000 / portTICK_PERIOD_MS);
         #endif
     }
     int64_t nukiLoopTs = 0;
     bool whiteListed = false;
     while(true)
     {
-        if(disableNetwork || wifiConnected)
+        if((disableNetwork || wifiConnected) && bleDone)
         {
-            bleScanner->update();
-            delay(20);
-
-            bool needsPairing = (lockEnabled && !nuki->isPaired()) || (openerEnabled && !nukiOpener->isPaired());
+            if(bleScannerStarted)
+            {
+                bleScanner->update();
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(20 / portTICK_PERIOD_MS);
+            }
+            
+            bool needsPairing = (lockStarted && !nuki->isPaired()) || (openerStarted && !nukiOpener->isPaired());
 
             if (needsPairing)
             {
-                delay(2500);
+                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    esp_task_wdt_reset();
+                }
+                vTaskDelay(2500 / portTICK_PERIOD_MS);
             }
             else if (!whiteListed)
             {
@@ -364,14 +761,70 @@ void nukiTask(void *pvParameters)
                 }
             }
 
-            if(lockEnabled)
+            if(lockStarted)
             {
-                nuki->update(rebootLock);
-                rebootLock = false;
+                if (nuki->restartController() > 0)
+                {
+                    if (lockRestartControllerCount > 3)
+                    {
+                        if (nuki->restartController() == 1)
+                        {
+                            restartEsp(RestartReason::BLEError);
+                        }
+                        else if (nuki->restartController() == 2)
+                        {
+                            restartEsp(RestartReason::BLEBeaconWatchdog);
+                        }
+                    }
+                    else
+                    {
+                        lockRestartControllerCount += 1;
+                        restartServices(false);
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (lockRestartControllerCount > 0 && nuki->hasConnected())
+                    {
+                        lockRestartControllerCount = 0;
+                    }
+
+                    nuki->update(rebootLock);
+                    rebootLock = false;
+                }
             }
-            if(openerEnabled)
+            if(openerStarted)
             {
-                nukiOpener->update();
+                if (nukiOpener->restartController() > 0)
+                {
+                    if (openerRestartControllerCount > 3)
+                    {
+                        if (nukiOpener->restartController() == 1)
+                        {
+                            restartEsp(RestartReason::BLEError);
+                        }
+                        else if (nukiOpener->restartController() == 2)
+                        {
+                            restartEsp(RestartReason::BLEBeaconWatchdog);
+                        }
+                    }
+                    else
+                    {
+                        openerRestartControllerCount += 1;
+                        restartServices(false);
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (openerRestartControllerCount > 0 && nukiOpener->hasConnected())
+                    {
+                        openerRestartControllerCount = 0;
+                    }
+
+                    nukiOpener->update();
+                }
             }
         }
 
@@ -380,8 +833,10 @@ void nukiTask(void *pvParameters)
             Log->println("nukiTask is running");
             nukiLoopTs = espMillis();
         }
-
-        esp_task_wdt_reset();
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
@@ -472,7 +927,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
 void otaTask(void *pvParameter)
 {
-    uint8_t partitionType = checkPartition();
+    esp_task_wdt_add(NULL);
+    
+    partitionType = checkPartition();
     String updateUrl;
 
     if(partitionType==1)
@@ -525,12 +982,17 @@ void otaTask(void *pvParameter)
         {
             Log->println("Firmware upgrade failed, retrying in 5 seconds");
             retryCount++;
-            esp_task_wdt_reset();
-            delay(5000);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
             continue;
         }
         while (1)
         {
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
     }
@@ -545,7 +1007,7 @@ void setupTasks(bool ota)
     esp_task_wdt_config_t twdt_config =
     {
         .timeout_ms = 300000,
-        .idle_core_mask = 0,
+        .idle_core_mask = (1 << CONFIG_FREERTOS_NUMBER_OF_CORES) - 1,
         .trigger_panic = true,
     };
     esp_task_wdt_reconfigure(&twdt_config);
@@ -559,20 +1021,17 @@ void setupTasks(bool ota)
     if(ota)
     {
         xTaskCreatePinnedToCore(otaTask, "ota", 8192, NULL, 2, &otaTaskHandle, (espCores > 1) ? 1 : 0);
-        esp_task_wdt_add(otaTaskHandle);
     }
     else
     {
         if(!disableNetwork)
         {
             xTaskCreatePinnedToCore(networkTask, "ntw", preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), NULL, 3, &networkTaskHandle, (espCores > 1) ? 1 : 0);
-            esp_task_wdt_add(networkTaskHandle);
         }
 #ifndef NUKI_HUB_UPDATER
         if(!network->isApOpen() && (lockEnabled || openerEnabled))
         {
             xTaskCreatePinnedToCore(nukiTask, "nuki", preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), NULL, 2, &nukiTaskHandle, 0);
-            esp_task_wdt_add(nukiTaskHandle);
         }
 #endif
     }
@@ -581,7 +1040,10 @@ void setupTasks(bool ota)
 void logCoreDump()
 {
     coredumpPrinted = false;
-    delay(500);
+    if (esp_task_wdt_status(NULL) == ESP_OK) {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     Log->println("Printing coredump and saving to coredump.hex on SPIFFS");
     size_t size = 0;
     size_t address = 0;
@@ -670,6 +1132,15 @@ void logCoreDump()
 
 void setup()
 {
+    #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
+    #ifndef FORCE_NUKI_HUB_HTTPS_SERVER
+    if(esp_psram_get_size() <= 0)
+    {
+        nuki_hub_https_server_enabled = false;
+    }
+    #endif
+    #endif
+    
     //Set Log level to error for all TAGS
     esp_log_level_set("*", ESP_LOG_ERROR);
     //Set Log level to none for mqtt TAG
@@ -678,14 +1149,13 @@ void setup()
     Serial.begin(115200);
     Log = &Serial;
 
-#ifndef NUKI_HUB_UPDATER
-    //
+    #if !defined(NUKI_HUB_UPDATER) && !defined(CONFIG_IDF_TARGET_ESP32C5)
     stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
     static char linebuf[1024];
     setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
     esp_rom_install_channel_putc(1, &ets_putc_handler);
     //ets_install_putc1(&ets_putc_handler);
-#endif
+    #endif
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
@@ -694,8 +1164,8 @@ void setup()
 
     if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
-            esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT ||
-            esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
+            esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT)
+            //|| esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         logCoreDump();
     }
@@ -705,7 +1175,7 @@ void setup()
         listDir(SPIFFS, "/", 1);
     }
 
-    uint8_t partitionType = checkPartition();
+    partitionType = checkPartition();
 
     //default disableNetwork RTC_ATTR to false on power-on
     if(espRunning != 1)
@@ -749,24 +1219,20 @@ void setup()
 
     if(!doOta)
     {
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-        bool failed = false;
+        bool failed = true;
 
-        if (esp_psram_get_size() <= 0) {
-            Log->println("Not running on PSRAM enabled device");
-            failed = true;
+        if (!nuki_hub_https_server_enabled) {
+            Log->println("Not running on HTTPS server enabled device");
         }
         else
         {
             if (!SPIFFS.begin(true)) {
                 Log->println("SPIFFS Mount Failed");
-                failed = true;
             }
             else
             {
                 File file = SPIFFS.open("/http_ssl.crt");
                 if (!file || file.isDirectory()) {
-                    failed = true;
                     Log->println("http_ssl.crt not found");
                 }
                 else
@@ -781,7 +1247,6 @@ void setup()
 
                     File file2 = SPIFFS.open("/http_ssl.key");
                     if (!file2 || file2.isDirectory()) {
-                        failed = true;
                         Log->println("http_ssl.key not found");
                     }
                     else
@@ -819,6 +1284,7 @@ void setup()
                         });
                         psychicSSLServer->begin();
                         webSSLStarted = true;
+                        failed = false;
                     }
                 }
             }
@@ -826,7 +1292,6 @@ void setup()
 
         if (failed)
         {
-        #endif
             psychicServer = new PsychicHttpServer;
             psychicServer->config.stack_size = HTTPD_TASK_SIZE;
             webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
@@ -836,9 +1301,7 @@ void setup()
             });
             psychicServer->begin();
             webStarted = true;
-        #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
         }
-        #endif
     }
 #else
     if(preferences->getBool(preference_enable_bootloop_reset, false))
@@ -850,7 +1313,7 @@ void setup()
     Log->println(NUKI_HUB_VERSION);
     Log->print("Nuki Hub build ");
     Log->println(NUKI_HUB_BUILD);
-
+    
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
 
     deviceIdLock = new NukiDeviceId(preferences, preference_device_id_lock);
@@ -861,7 +1324,7 @@ void setup()
         deviceIdOpener->assignId(deviceIdLock->get());
     }
 
-    char16_t buffer_size = preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE);
+    buffer_size = preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE);
     CharBuffer::initialize(buffer_size);
 
     gpio = new Gpio(preferences);
@@ -869,11 +1332,9 @@ void setup()
     gpio->getConfigurationText(gpioDesc, gpio->pinConfiguration(), "\n\r");
     Log->print(gpioDesc.c_str());
 
-    const String mqttLockPath = preferences->getString(preference_mqtt_lock_path);
-
     importExport = new ImportExport(preferences);
 
-    network = new NukiNetwork(preferences, gpio, mqttLockPath, CharBuffer::get(), buffer_size, importExport);
+    network = new NukiNetwork(preferences, gpio, CharBuffer::get(), buffer_size, importExport);
     network->initialize();
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
@@ -897,18 +1358,13 @@ void setup()
         // https://developer.nuki.io/t/bluetooth-specification-questions/1109/27
         bleScanner->initialize("NukiHub", true, 40, 40);
         bleScanner->setScanDuration(0);
+        bleScannerStarted = true;
     }
 
     Log->println(lockEnabled ? F("Nuki Lock enabled") : F("Nuki Lock disabled"));
     if(lockEnabled)
     {
-        nukiOfficial = new NukiOfficial(preferences);
-        networkLock = new NukiNetworkLock(network, nukiOfficial, preferences, CharBuffer::get(), buffer_size);
-
-        if(!disableNetwork)
-        {
-            networkLock->initialize();
-        }
+        startNuki(true);
 
         nuki = new NukiWrapper("NukiHub", deviceIdLock, bleScanner, networkLock, nukiOfficial, gpio, preferences, CharBuffer::get(), buffer_size);
         nuki->initialize();
@@ -917,124 +1373,20 @@ void setup()
     Log->println(openerEnabled ? F("Nuki Opener enabled") : F("Nuki Opener disabled"));
     if(openerEnabled)
     {
-        networkOpener = new NukiNetworkOpener(network, preferences, CharBuffer::get(), buffer_size);
-
-        if(!disableNetwork)
-        {
-            networkOpener->initialize();
-        }
+        startNuki(false);
 
         nukiOpener = new NukiOpenerWrapper("NukiHub", deviceIdOpener, bleScanner, networkOpener, gpio, preferences, CharBuffer::get(), buffer_size);
         nukiOpener->initialize();
     }
 
+    bleDone = true;
+
     if(!doOta && !disableNetwork && (forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true) || preferences->getBool(preference_webserial_enabled, false)))
     {
         if(forceEnableWebServer || preferences->getBool(preference_webserver_enabled, true))
         {
-            #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-            bool failed = false;
-
-            if (esp_psram_get_size() <= 0) {
-                Log->println("Not running on PSRAM enabled device");
-                failed = true;
-            }
-            else
-            {
-                if (!SPIFFS.begin(true)) {
-                    Log->println("SPIFFS Mount Failed");
-                    failed = true;
-                }
-                else
-                {
-                    File file = SPIFFS.open("/http_ssl.crt");
-                    if (!file || file.isDirectory()) {
-                        failed = true;
-                        Log->println("http_ssl.crt not found");
-                    }
-                    else
-                    {
-                        Log->println("Reading http_ssl.crt");
-                        size_t filesize = file.size();
-                        char cert[filesize + 1];
-
-                        file.read((uint8_t *)cert, sizeof(cert));
-                        file.close();
-                        cert[filesize] = '\0';
-
-                        File file2 = SPIFFS.open("/http_ssl.key");
-                        if (!file2 || file2.isDirectory()) {
-                            failed = true;
-                            Log->println("http_ssl.key not found");
-                        }
-                        else
-                        {
-                            Log->println("Reading http_ssl.key");
-                            size_t filesize2 = file2.size();
-                            char key[filesize2 + 1];
-
-                            file2.read((uint8_t *)key, sizeof(key));
-                            file2.close();
-                            key[filesize2] = '\0';
-
-                            psychicServer = new PsychicHttpServer();
-                            psychicServer->config.ctrl_port = 20424;
-                            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
-                                String url = "https://" + request->host() + request->url();
-                                if (preferences->getString(preference_https_fqdn, "") != "")
-                                {
-                                    url = "https://" + preferences->getString(preference_https_fqdn) + request->url();
-                                }
-
-                                response->setCode(301);
-                                response->addHeader("Cache-Control", "no-cache");
-                                return response->redirect(url.c_str());
-                            });
-                            psychicServer->begin();
-                            psychicSSLServer = new PsychicHttpsServer;
-                            psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
-                            psychicSSLServer->setCertificate(cert, key);
-                            psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
-                            webCfgServerSSL = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
-                            webCfgServerSSL->initialize();
-                            psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
-                                return response->redirect("/");
-                            });
-                            psychicSSLServer->begin();
-                            webSSLStarted = true;
-                        }
-                    }
-                }
-            }
-
-            if (failed)
-            {
-            #endif
-                psychicServer = new PsychicHttpServer;
-                psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-                webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
-                webCfgServer->initialize();
-                psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
-                    return response->redirect("/");
-                });
-                psychicServer->begin();
-                webStarted = true;
-            #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
-            }
-            #endif
+            startWebServer();
         }
-        /*
-#ifdef DEBUG_NUKIHUB
-        else psychicServer->onNotFound([](PsychicRequest* request) { return request->redirect("/webserial"); });
-
-        if(preferences->getBool(preference_webserial_enabled, false))
-        {
-          WebSerial.setAuthentication(preferences->getString(preference_cred_user), preferences->getString(preference_cred_password));
-          WebSerial.begin(psychicServer);
-          WebSerial.setBuffer(1024);
-        }
-#endif
-        */
     }
 #endif
 
@@ -1065,12 +1417,7 @@ void setup()
         setupTasks(false);
     }
 
-#ifdef DEBUG_NUKIHUB
-    Log->print("Task Name\tStatus\tPrio\tHWM\tTask\tAffinity\n");
-    char stats_buffer[1024];
-    vTaskList(stats_buffer);
-    Log->println(stats_buffer);
-#endif
+    //print_all_tasks_info();
 }
 
 void loop()

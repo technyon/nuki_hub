@@ -75,7 +75,7 @@ void MqttLogger::sendBuffer()
     {
         bool doSerial = this->mode==MqttLoggerMode::SerialOnly || this->mode==MqttLoggerMode::MqttAndSerial || this->mode==MqttLoggerMode::MqttAndSerialAndWeb || this->mode==MqttLoggerMode::SerialAndWeb;
         bool doWebSerial = this->mode==MqttLoggerMode::MqttAndSerialAndWeb || this->mode==MqttLoggerMode::SerialAndWeb;
-        if (this->mode!=MqttLoggerMode::SerialOnly && this->mode!=MqttLoggerMode::SerialAndWeb && this->client != NULL && this->client->connected()) 
+        if (this->mode!=MqttLoggerMode::SerialOnly && this->mode!=MqttLoggerMode::SerialAndWeb && this->client != NULL && this->client->connected())
         {
             this->client->publish(topic, 0, true, this->buffer, this->bufferCnt);
         }
@@ -88,10 +88,9 @@ void MqttLogger::sendBuffer()
             Serial.write(this->buffer, this->bufferCnt);
             Serial.println();
         }
-        if (doWebSerial)
+        if (doWebSerial && websocketHandler != nullptr)
         {
-            //WebSerial.write(this->buffer, this->bufferCnt);
-            //WebSerial.println();
+            websocketHandler->sendAll(HTTPD_WS_TYPE_TEXT, this->buffer, this->bufferCnt);
         }
         this->bufferCnt=0;
     }

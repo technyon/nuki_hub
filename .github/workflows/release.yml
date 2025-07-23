@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32, esp32-s3, esp32-s3-oct, esp32-c3, esp32-c6, esp32-h2, esp32-solo1, esp32-gl-s10, esp32-p4]
+        board: [esp32, esp32-nopsram, esp32-s3, esp32-s3-nopsram, esp32-s3-oct, esp32-c3, esp32-c5, esp32-c6, esp32-h2, esp32-solo1, esp32-gl-s10, esp32-p4]
         build: [release]
     env:
       BOARD: ${{ matrix.board }}
@@ -36,7 +36,7 @@ jobs:
           key: ${{ runner.os }}-pio-${{ matrix.board }}
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       - name: Install dependencies
         run: make deps
       - name: Add version info
@@ -154,6 +154,7 @@ jobs:
         run: |
           mkdir -p ota/beta/
           mkdir -p ota/master/
+          mkdir -p ota/old/
           mkdir -p resources/
           mkdir -p src/
           cp -vf release/*/nuki_hub_*.bin ota/
@@ -168,11 +169,13 @@ jobs:
           rm -rf .github .gitignore .gitmodules
           touch ota/beta/empty
           touch ota/master/empty
+          echo release/*/nuki_hub_*.bin | tr ' ' '\n' | xargs -n1 -I{} bash -c 'cp {} ota/old/$VERSION.$(basename "{}")'
+          python3 resources/old_manifest.py $Version
       - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update binaries"
-          file_pattern: 'ota/* ota/master/* ota/beta/*'
+          file_pattern: 'ota/* ota/master/* ota/beta/* ota/old/*'
           branch: binary
           skip_dirty_check: true
           skip_fetch: true

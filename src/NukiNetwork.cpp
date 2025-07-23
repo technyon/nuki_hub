@@ -23,7 +23,7 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
 #ifndef NUKI_HUB_UPDATER
-NukiNetwork::NukiNetwork(Preferences *preferences, Gpio* gpio, const String& maintenancePathPrefix, char* buffer, size_t bufferSize, ImportExport* importExport)
+NukiNetwork::NukiNetwork(Preferences *preferences, Gpio* gpio, char* buffer, size_t bufferSize, ImportExport* importExport)
     : _preferences(preferences),
       _gpio(gpio),
       _buffer(buffer),
@@ -35,33 +35,6 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
 #endif
 {
     _inst = this;
-    _webEnabled = _preferences->getBool(preference_webserver_enabled, true);
-
-#ifndef NUKI_HUB_UPDATER
-    memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
-    size_t len = maintenancePathPrefix.length();
-    for(int i=0; i < len; i++)
-    {
-        _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
-    }
-
-    _lockPath = _preferences->getString(preference_mqtt_lock_path);
-    String connectionStateTopic = _lockPath + mqtt_topic_mqtt_connection_state;
-
-    memset(_mqttConnectionStateTopic, 0, sizeof(_mqttConnectionStateTopic));
-    len = connectionStateTopic.length();
-    for(int i=0; i < len; i++)
-    {
-        _mqttConnectionStateTopic[i] = connectionStateTopic.charAt(i);
-    }
-
-    if(_preferences->getString(preference_mqtt_hass_discovery, "") != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
-    {
-        _preferences->putBool(preference_mqtt_hass_enabled, true);
-    }
-
-#endif
-
     setupDevice();
 }
 
@@ -76,9 +49,9 @@ void NukiNetwork::setupDevice()
 
     if(hardwareDetect == 0)
     {
-#ifndef CONFIG_IDF_TARGET_ESP32H2
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
         hardwareDetect = 1;
-#else
+        #else
         hardwareDetect = 11;
         _preferences->putInt(preference_network_custom_addr, 1);
         _preferences->putInt(preference_network_custom_cs, 8);
@@ -88,13 +61,13 @@ void NukiNetwork::setupDevice()
         _preferences->putInt(preference_network_custom_miso, 12);
         _preferences->putInt(preference_network_custom_mosi, 13);
         _preferences->putBool(preference_ntw_reconfigure, true);
-#endif
+        #endif
         _preferences->putInt(preference_network_hardware, hardwareDetect);
     }
 
     if(wifiFallback == true)
     {
-#ifndef CONFIG_IDF_TARGET_ESP32H2
+        #ifndef CONFIG_IDF_TARGET_ESP32H2
         if(!_firstBootAfterDeviceChange)
         {
             Log->println("Failed to connect to network. Wi-Fi fallback is disabled, rebooting.");
@@ -105,7 +78,7 @@ void NukiNetwork::setupDevice()
 
         Log->println("Switching to Wi-Fi device as fallback.");
         _networkDeviceType = NetworkDeviceType::WiFi;
-#else
+        #else
         int custEth = _preferences->getInt(preference_network_custom_phy, 0);
 
         if(custEth<3)
@@ -118,7 +91,7 @@ void NukiNetwork::setupDevice()
         }
         _preferences->putInt(preference_network_custom_phy, custEth);
         _preferences->putBool(preference_ntw_reconfigure, true);
-#endif
+        #endif
     }
     else
     {
@@ -130,19 +103,9 @@ void NukiNetwork::setupDevice()
     Log->print("Network device: ");
     Log->println(_device->deviceName());
 
-#ifndef NUKI_HUB_UPDATER
-    _device->mqttOnConnect([&](bool sessionPresent)
-    {
-        onMqttConnect(sessionPresent);
-    });
-    _device->mqttOnDisconnect([&](espMqttClientTypes::DisconnectReason reason)
-    {
-        onMqttDisconnect(reason);
-    });
-
+    #ifndef NUKI_HUB_UPDATER
     _hadiscovery = new HomeAssistantDiscovery(_device, _preferences, _buffer, _bufferSize);
-#endif
-
+    #endif
 }
 
 void NukiNetwork::reconfigureDevice()
@@ -212,6 +175,11 @@ bool NukiNetwork::wifiConnected()
     }
 }
 
+String NukiNetwork::localIP()
+{
+    return _device->localIP();
+}
+
 #ifdef NUKI_HUB_UPDATER
 void NukiNetwork::initialize()
 {
@@ -248,6 +216,9 @@ bool NukiNetwork::update()
 #else
 void NukiNetwork::initialize()
 {
+    readSettings();
+    setMQTTConnectionSettings();    
+    
     _gpio->addCallback([this](const GpioAction& action, const int& pin)
     {
         gpioActionCallback(action, pin);
@@ -255,14 +226,6 @@ void NukiNetwork::initialize()
 
     if(!disableNetwork)
     {
-        String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
-
-        size_t len = mqttPath.length();
-        for(int i=0; i < len; i++)
-        {
-            _nukiHubPath[i] = mqttPath.charAt(i);
-        }
-
         _hostname = _preferences->getString(preference_hostname, "");
 
         if(_hostname == "")
@@ -277,47 +240,11 @@ void NukiNetwork::initialize()
             _preferences->putString(preference_hostname, _hostname);
         }
 
-        _mqttPort = _preferences->getInt(preference_mqtt_broker_port, 0);
-
-        if(_mqttPort == 0)
-        {
-            _mqttPort = 1883;
-            _preferences->putInt(preference_mqtt_broker_port, _mqttPort);
-        }
-
         strcpy(_hostnameArr, _hostname.c_str());
         _device->initialize();
 
         Log->print("Host name: ");
         Log->println(_hostname);
-
-        String brokerAddr = _preferences->getString(preference_mqtt_broker);
-        strcpy(_mqttBrokerAddr, brokerAddr.c_str());
-
-        String mqttUser = _preferences->getString(preference_mqtt_user);
-        if(mqttUser.length() > 0)
-        {
-            size_t len = mqttUser.length();
-            for(int i=0; i < len; i++)
-            {
-                _mqttUser[i] = mqttUser.charAt(i);
-            }
-        }
-
-        String mqttPass = _preferences->getString(preference_mqtt_password);
-        if(mqttPass.length() > 0)
-        {
-            size_t len = mqttPass.length();
-            for(int i=0; i < len; i++)
-            {
-                _mqttPass[i] = mqttPass.charAt(i);
-            }
-        }
-
-        Log->print("MQTT Broker: ");
-        Log->print(_mqttBrokerAddr);
-        Log->print(":");
-        Log->println(_mqttPort);
 
         _device->mqttSetClientId(_hostnameArr);
         _device->mqttSetCleanSession(false);
@@ -359,13 +286,12 @@ void NukiNetwork::initialize()
                 break;
             }
         }
-
-        readSettings();
     }
 }
 
 void NukiNetwork::readSettings()
 {
+    _webEnabled = _preferences->getBool(preference_webserver_enabled, true);
     _disableNetworkIfNotConnected = _preferences->getBool(preference_disable_network_not_connected, false);
     _restartOnDisconnect = _preferences->getBool(preference_restart_on_disconnect, false);
     _checkUpdates = _preferences->getBool(preference_check_updates, false);
@@ -386,6 +312,110 @@ void NukiNetwork::readSettings()
     }
 
     _publishDebugInfo = _preferences->getBool(preference_publish_debug_info, false);
+}
+
+void NukiNetwork::setMQTTConnectionSettings()
+{
+    String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
+    memset(_nukiHubPath, 0, sizeof(_nukiHubPath));
+    size_t len = mqttPath.length();
+    for(int i=0; i < len; i++)
+    {
+        _nukiHubPath[i] = mqttPath.charAt(i);
+    }
+
+    String maintenancePathPrefix = _preferences->getString(preference_mqtt_lock_path);
+    memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
+    len = maintenancePathPrefix.length();
+    for(int i=0; i < len; i++)
+    {
+        _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
+    }
+
+    _lockPath = _preferences->getString(preference_mqtt_lock_path);
+    String connectionStateTopic = _lockPath + mqtt_topic_mqtt_connection_state;
+
+    memset(_mqttConnectionStateTopic, 0, sizeof(_mqttConnectionStateTopic));
+    len = connectionStateTopic.length();
+    for(int i=0; i < len; i++)
+    {
+        _mqttConnectionStateTopic[i] = connectionStateTopic.charAt(i);
+    }
+
+    if(_preferences->getString(preference_mqtt_hass_discovery, "") != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
+    {
+        _preferences->putBool(preference_mqtt_hass_enabled, true);
+    }    
+    
+    memset(_mqttBrokerAddr, 0, sizeof(_mqttBrokerAddr));
+    memset(_mqttUser, 0, sizeof(_mqttUser));
+    memset(_mqttPass, 0, sizeof(_mqttPass));
+    
+    String brokerAddr = _preferences->getString(preference_mqtt_broker);
+    strcpy(_mqttBrokerAddr, brokerAddr.c_str());
+
+    _mqttPort = _preferences->getInt(preference_mqtt_broker_port, 0);
+
+    if(_mqttPort == 0)
+    {
+        _mqttPort = 1883;
+        _preferences->putInt(preference_mqtt_broker_port, _mqttPort);
+    }
+
+    String mqttUser = _preferences->getString(preference_mqtt_user);
+    if(mqttUser.length() > 0)
+    {
+        len = mqttUser.length();
+        for(int i=0; i < len; i++)
+        {
+            _mqttUser[i] = mqttUser.charAt(i);
+        }
+    }
+
+    String mqttPass = _preferences->getString(preference_mqtt_password);
+    if(mqttPass.length() > 0)
+    {
+        len = mqttPass.length();
+        for(int i=0; i < len; i++)
+        {
+            _mqttPass[i] = mqttPass.charAt(i);
+        }
+    }
+
+    Log->print("MQTT Broker: ");
+    Log->print(_mqttBrokerAddr);
+    Log->print(":");
+    Log->println(_mqttPort);
+
+    #ifndef NUKI_HUB_UPDATER
+    _device->mqttOnConnect([&](bool sessionPresent)
+    {
+        onMqttConnect(sessionPresent);
+    });
+    _device->mqttOnDisconnect([&](espMqttClientTypes::DisconnectReason reason)
+    {
+        onMqttDisconnect(reason);
+    });
+    #endif
+}
+
+int NukiNetwork::getRestartServices()
+{
+    int restartServices = _restartServices;
+    _restartServices = 0;
+    return restartServices;
+}
+
+void NukiNetwork::setRestartServices(bool reconnect)
+{
+    if (reconnect)
+    {
+        _restartServices = 2;
+    }
+    else
+    {
+        _restartServices = 1;
+    }
 }
 
 bool NukiNetwork::update()
@@ -446,7 +476,10 @@ bool NukiNetwork::update()
         bool success = reconnect();
         if(!success)
         {
-            delay(2000);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
             _mqttConnectCounter++;
             return false;
         }
@@ -455,14 +488,20 @@ bool NukiNetwork::update()
         if(forceEnableWebServer && !_webEnabled)
         {
             forceEnableWebServer = false;
-            delay(200);
-            restartEsp(RestartReason::ReconfigureWebServer);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(200 / portTICK_PERIOD_MS);
+            setRestartServices(false);
         }
         else if(!_webEnabled)
         {
             forceEnableWebServer = false;
         }
-        delay(2000);
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 
     if(!_device->isConnected() || !_device->mqttConnected() )
@@ -474,10 +513,16 @@ bool NukiNetwork::update()
                 forceEnableWebServer = true;
             }
             Log->println("Network timeout has been reached, restarting ...");
-            delay(200);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(200 / portTICK_PERIOD_MS);
             restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
-        delay(2000);
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
         return false;
     }
 
@@ -656,12 +701,21 @@ void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &r
     }
 }
 
-bool NukiNetwork::reconnect()
+bool NukiNetwork::reconnect(bool force)
 {
     _mqttConnectionState = 0;
 
-    while (!_device->mqttConnected() && espMillis() > _nextReconnect)
+    while (force || (!_device->mqttConnected() && espMillis() > _nextReconnect))
     {
+        if (force)
+        {
+            _mqttReceivers.clear();
+            _device->mqttRestart();
+            setMQTTConnectionSettings();
+        }
+        
+        force = false;
+        
         if(strcmp(_mqttBrokerAddr, "") == 0)
         {
             Log->println("MQTT Broker not configured, aborting connection attempt.");
@@ -697,7 +751,10 @@ bool NukiNetwork::reconnect()
 
         while(!_connectReplyReceived && espMillis() < timeout)
         {
-            delay(50);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(50 / portTICK_PERIOD_MS);
             _device->update();
             if(_keepAliveCallback != nullptr)
             {
@@ -710,7 +767,10 @@ bool NukiNetwork::reconnect()
             Log->println("MQTT connected");
             _mqttConnectedTs = millis();
             _mqttConnectionState = 1;
-            delay(100);
+            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                esp_task_wdt_reset();
+            }
+            vTaskDelay(100 / portTICK_PERIOD_MS);
             _device->mqttOnMessage(onMqttDataReceivedCallback);
 
             if(_firstConnect)
@@ -955,7 +1015,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
     {
         Log->println("Restart requested via MQTT.");
         clearWifiFallback();
-        delay(200);
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(200 / portTICK_PERIOD_MS);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false) && !mqttRecentlyConnected())
@@ -1008,7 +1071,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
                     Log->println("Updating to latest release version.");
-                    delay(200);
+                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        esp_task_wdt_reset();
+                    }
+                    vTaskDelay(200 / portTICK_PERIOD_MS);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1023,7 +1089,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
                     Log->println("Updating to latest beta version.");
-                    delay(200);
+                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        esp_task_wdt_reset();
+                    }
+                    vTaskDelay(200 / portTICK_PERIOD_MS);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1038,7 +1107,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
                     Log->println("Updating to latest developmemt version.");
-                    delay(200);
+                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        esp_task_wdt_reset();
+                    }
+                    vTaskDelay(200 / portTICK_PERIOD_MS);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1053,7 +1125,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
                     Log->println("Updating to latest release version.");
-                    delay(200);
+                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        esp_task_wdt_reset();
+                    }
+                    vTaskDelay(200 / portTICK_PERIOD_MS);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1077,7 +1152,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 return;
             }
-            Log->println("Webserver enabled, restarting.");
+            Log->println("Webserver enabled");
             _preferences->putBool(preference_webserver_enabled, true);
         }
         else if (strcmp(data, "0") == 0)
@@ -1086,12 +1161,15 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             {
                 return;
             }
-            Log->println("Webserver disabled, restarting.");
+            Log->println("Webserver disabled");
             _preferences->putBool(preference_webserver_enabled, false);
         }
         clearWifiFallback();
-        delay(200);
-        restartEsp(RestartReason::ReconfigureWebServer);
+        if (esp_task_wdt_status(NULL) == ESP_OK) {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        setRestartServices(false);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_nuki_hub_config_action) && !mqttRecentlyConnected())
     {
@@ -1141,8 +1219,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                             while (duoResult == 2)
                             {
                                 duoResult = _importExport->checkDuoApprove();
-                                delay(2000);
-                                esp_task_wdt_reset();
+                                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                                    esp_task_wdt_reset();
+                                }
+                                vTaskDelay(2000 / portTICK_PERIOD_MS);
                             }
                         }
 
@@ -1259,7 +1339,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                         serializeJson(json, _buffer, _bufferSize);
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_json, _buffer, false);
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);
-                        delay(200);
+                        if (esp_task_wdt_status(NULL) == ESP_OK) {
+                            esp_task_wdt_reset();
+                        }
+                        vTaskDelay(200 / portTICK_PERIOD_MS);
                         restartEsp(RestartReason::ConfigurationUpdated);
                     }
                     else
@@ -1396,10 +1479,10 @@ void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)
     path.concat(mqttTopic);
     publish(path.c_str(), "", true);
 
-#ifdef DEBUG_NUKIHUB
+    #ifdef DEBUG_NUKIHUB
     Log->print("Removing MQTT topic: ");
     Log->println(path.c_str());
-#endif
+    #endif
 }
 
 void NukiNetwork::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
@@ -1652,10 +1735,5 @@ void NukiNetwork::disableMqtt()
 {
     _device->mqttDisable();
     _mqttEnabled = false;
-}
-
-String NukiNetwork::localIP()
-{
-    return _device->localIP();
 }
 #endif

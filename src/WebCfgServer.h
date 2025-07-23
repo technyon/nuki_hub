@@ -18,6 +18,7 @@
 #include "ImportExport.h"
 
 extern TaskHandle_t nukiTaskHandle;
+extern bool nuki_hub_https_server_enabled;
 
 enum class TokenType
 {
@@ -43,6 +44,7 @@ class WebCfgServer
 public:
     #ifndef NUKI_HUB_UPDATER
     WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
+    void updateWebSerial();
     #else
     WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     #endif
@@ -86,7 +88,7 @@ private:
     #if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
     const std::vector<std::pair<String, String>> getNetworkCustomCLKOptions() const;
     #endif
-    #ifdef CONFIG_SOC_SPIRAM_SUPPORTED
+    #ifdef NUKI_HUB_HTTPS_SERVER
     void createSSLCertificate();
     #endif
     const String getPreselectionForGpio(const uint8_t& pin) const;
@@ -99,6 +101,7 @@ private:
     Gpio* _gpio = nullptr;
     bool _brokerConfigured = false;
     bool _rebootRequired = false;
+    int _restartServicesRequired = 0;
     #endif
 
     std::vector<String> _ssidList;
@@ -125,6 +128,7 @@ private:
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
     esp_err_t sendCss(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendWebSerial(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t sendFavicon(PsychicRequest *request, PsychicResponse* resp);
     void createSsidList();
     void buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader = "");
@@ -143,7 +147,7 @@ private:
     NukiNetwork* _network = nullptr;
     Preferences* _preferences = nullptr;
     ImportExport* _importExport;
-
+    
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;

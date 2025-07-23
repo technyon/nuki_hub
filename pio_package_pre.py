@@ -10,6 +10,10 @@ def recursive_purge(dir, pattern):
             elif re.search(pattern, os.path.join(dir, f)):
                 os.remove(os.path.join(dir, f))
 
+os.system("python resources/bin2array/bin2array.py icon/favicon-32x32.png -O src/webServerConstants/favicon-32x32.h -l 16")  
+os.system("python resources/bin2array/bin2array.py resources/style.css -O src/webServerConstants/style.h -l 16")
+os.system("python resources/bin2array/bin2array.py resources/AsyncWebSerial/frontend/index.html -O src/webServerConstants/webSerial.h -l 16")
+
 regex = r"\#define NUKI_HUB_DATE \"(.*)\""
 content_new = ""
 file_content = ""

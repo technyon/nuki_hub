@@ -15,8 +15,8 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.4.1 and Arduino Core 3.2.0.
-- Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C6, ESP32-P4 (with the ESP32-C6-MINI-1 module for BLE and WiFi) and ESP32-H2.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.0 and Arduino Core 3.3.0.
+- Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-P4 (with the ESP32-C6-MINI-1 module for BLE and WiFi) and ESP32-H2.
 - Untested builds are provided for the ESP32-Solo1 (as the developers don't own one).
 
 <b>Not supported ESP32 devices:</b>
@@ -58,8 +58,8 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 
 ## Recommended ESP32 devices
 
-We don't recommend using single-core ESP32 devices (ESP32-C3, ESP32-C6, ESP32-H2, ESP32-Solo1).<br>
-Although Nuki Hub supports single-core devices, Nuki Hub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs much better on dual-core devices.<br>
+We don't recommend using the original ESP32 or ESP32-Solo1 devices because these devices experience unexpected crashes related to the (closed-source) BLE controller.<br>
+In newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-H2) these unexpected crashed are seen a lot less.
 
 We also don't recommend using the original ESP32 or ESP32-Solo1 devices because these devices experience unexpected crashes related to the (closed-source) BLE controller.<br>
 In newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C6, ESP32-H2) these unexpected crashes are seen less.
@@ -71,16 +71,20 @@ It supports (with the C6 co-processor) anything the ESP32 range has to offer wit
 The only function missing (when not using a C5 as co-processor) is 5Ghz WiFi support.
 
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter.<br>
-The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C6 or ESP32-P4 with C6 module)
+The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C5, C6 or ESP32-P4 with C6 module)
+
+The ESP32-C5 with PSRAM is a good option providing higher clockspeeds than the C6 and adding PSRAM and WIFI 6 on the 5 Ghz band support.
+Nuki Hub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs better on dual-core devices.<br>
 
 Other considerations:
 - If Ethernet/PoE is required: ESP32-P4 with ESP32-C6-MINI-1 module or ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
-- If WIFI6 is absolutely required: ESP32-P4 with ESP32-C6-MINI-1 module or ESP32-C6
+- If WIFI6 is required: ESP32-P4 with ESP32-C6-MINI-1 module, ESP32-C5 or ESP32-C6
 
 Devices ranked best-to-worst:
 - ESP32-P4 with ESP32-C6-MINI-1 module
 - ...... <br>
 - ESP32-S3 with PSRAM
+- ESP32-C5 with PSRAM
 - ...... <br>
 (Devices below will not support some Nuki Hub functions, be slower and/or are more likely to experience unexpected crashes)
 - ESP32-S3 without PSRAM
@@ -90,6 +94,7 @@ Devices ranked best-to-worst:
 - ESP32 without PSRAM
 - ...... <br>
 (Devices below will not support more Nuki Hub functions, be slower and/or are more likely to experience unexpected crashes)
+- ESP32-C5
 - ESP32-C6
 - ESP32-solo1
 - ESP32-C3
@@ -195,17 +200,19 @@ ESP32 devices have a limited amount of free RAM available.<br>
 <br>
 On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
 
-- ESP32: 70.000 bytes
-- ESP32 with PSRAM: 110.000 bytes + PSRAM
-- ESP32-C3: 90.000 bytes
+- ESP32: 105.000 bytes
+- ESP32 with PSRAM: 120.000 bytes + PSRAM
+- ESP32-C3: 70.000 bytes
+- ESP32-C5 with PSRAM: 130.000 bytes + PSRAM
 - ESP32-C6: 200.000 bytes
-- ESP32-S3 130.000 bytes
-- ESP32-S3 with PSRAM: 180.000 bytes + PSRAM
+- ESP32-P4: 450.000 bytes
+- ESP32-S3 135.000 bytes
+- ESP32-S3 with PSRAM: 185.000 bytes + PSRAM
 
 This free amount of RAM can be reduced (temporarily) by certain actions (such as changing Nuki device config) or continuously when enabling the following:
 - Connecting both a Nuki opener and a Nuki lock to Nuki Hub
 - Enlarging stack sizes of the Nuki and Network task to accommodate large amounts of keypad codes, authorization entries or timecontrol entries
-- MQTT SSL (Costs about 30k RAM)
+- MQTT SSL (Costs about 20k-30k RAM)
 - HTTP SSL (Costs about 30k RAM)
 - Developing/debugging Nuki devices and/or Nuki Hub, using WebSerial (Costs about 30k RAM)
 
@@ -287,7 +294,6 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0 and Ultra)
 - Nuki Smartlock Ultra/Go/5th gen enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra/Go/5th gen Pro
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
-- New Nuki Bluetooth connection mode (disable if there are connection issues): Enable to use the latest Nuki BLE connection mode (recommended). Disable if you have issues communicating with the lock/opener
 
 #### Advanced Nuki Configuration
 
@@ -705,7 +711,7 @@ If you have enabled "Allow updating using MQTT" you can also use the Home Assist
 <br>
 Alternatively you can select a binary file from your file system to update Nuki Hub or the Nuki Hub updator manually<br>
 You can only update Nuki Hub from the Nuki Hub updater and update the updater only from Nuki Hub<br>
-You can reboot from Nuki Hub to the updater and vice versa by selecting the reboot option from the "Firware update" page<br>
+You can reboot from Nuki Hub to the updater and vice versa by selecting the reboot option from the "Firmware update" page<br>
 When you are on the right application you can upload the new binary by clicking on "Browse" and select the new "nuki_hub\[board\].bin" or "nuki_hub_updater\[board\].bin" file and select "Upload file".<br>
 After about a minute the new firmware should be installed afterwhich the ESP will reboot automatically to the updated binary.<br>
 Selecting the wrong binary will lead to an unsuccessfull update<br>
@@ -952,7 +958,16 @@ Now connect via Wi-Fi and change the network hardware to "Generic W5500".<br>
 
 If Ethernet hardware isn't detected or initialised properly after changing the network device, Wi-Fi will be used as a fallback.<br>
 <br>
-Note: LAN8720 modules are only supported on the ESP32, ESP32-P4 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3 or ESP-C6<br>
+Note: LAN8720 modules are only supported on the ESP32, ESP32-P4 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3, ESP32-C5 or ESP-C6<br>
+
+## Debugging crashes
+
+If you are running a pre-compiled version of NukiHub (latest release, beta or nightly) you can use https://technyon.github.io/nuki_hub/stacktrace/ to debug crashes.
+You will need to collect a stack trace of the crash while connected to the serial logger (over USB).
+
+A stack trace usually starts with `Guru Mediation Error` and ends with `ELF file SHA256: ......`
+Copy the entire stack trace to the box in our online decoder and select the correct binary you are using.
+Click Run and check the output to find in which function the crash occurs and consider creating an issue on GitHub.
 
 ## FAQ / Troubleshooting
 
