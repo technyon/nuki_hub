@@ -2599,7 +2599,7 @@ bool WebCfgServer::processBypass(PsychicRequest *request, PsychicResponse* resp)
                 _importExport->_bypassSessions[buffer] = time_us + ((int64_t)3600*1000000L);
 
                 char randomstr2[33];
-                randomSeed(analogRead(0));
+                randomSeed(esp_random());
                 char chars[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
                 for(int i = 0;i < 32; i++){
                     randomstr2[i] = chars[random(36)];
@@ -5218,19 +5218,19 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     char chars2[] = {'1', '2', '3','4', '5', '6','7', '8', '9', '0', 'A', 'B', 'C', 'D','E', 'F', 'G','H', 'I', 'J','K', 'L', 'M', 'N', 'O','P', 'Q','R', 'S', 'T','U', 'V', 'W','X', 'Y', 'Z'};
 
     char randomstr[17];
-    randomSeed(analogRead(0));
+    randomSeed(esp_random());
     for(int i = 0;i < 16; i++){
         randomstr[i] = chars[random(32)];
     }
     randomstr[16] = '\0';
     char randomstr2[33];
-    randomSeed(analogRead(0));
+    randomSeed(esp_random());
     for(int i = 0;i < 32; i++){
         randomstr2[i] = chars2[random(36)];
     }
     randomstr2[32] = '\0';
     char randomstr3[33];
-    randomSeed(analogRead(0));
+    randomSeed(esp_random());
     for(int i = 0;i < 32; i++){
         randomstr3[i] = chars2[random(36)];
     }
