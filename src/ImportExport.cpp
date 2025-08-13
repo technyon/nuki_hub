@@ -7,7 +7,7 @@
 #include <TOTP-RC6236-generator.hpp>
 
 ImportExport::ImportExport(Preferences *preferences)
- : _preferences(preferences)
+    : _preferences(preferences)
 {
     readSettings();
 }
@@ -151,7 +151,8 @@ int ImportExport::checkDuoAuth(PsychicRequest *request)
         }
     }
 
-    if (request->hasParam("id")) {
+    if (request->hasParam("id"))
+    {
         const PsychicWebParameter* p = request->getParam("id");
         String id = p->value();
         DuoAuthLib duoAuth;
@@ -337,13 +338,15 @@ bool ImportExport::checkBypass(String bypass)
 
 void ImportExport::exportHttpsJson(JsonDocument &json)
 {
-    if (!SPIFFS.begin(true)) {
+    if (!SPIFFS.begin(true))
+    {
         Log->println("SPIFFS Mount Failed");
     }
     else
     {
         File file = SPIFFS.open("/http_ssl.crt");
-        if (!file || file.isDirectory()) {
+        if (!file || file.isDirectory())
+        {
             Log->println("http_ssl.crt not found");
         }
         else
@@ -359,13 +362,15 @@ void ImportExport::exportHttpsJson(JsonDocument &json)
         }
     }
 
-    if (!SPIFFS.begin(true)) {
+    if (!SPIFFS.begin(true))
+    {
         Log->println("SPIFFS Mount Failed");
     }
     else
     {
         File file = SPIFFS.open("/http_ssl.key");
-        if (!file || file.isDirectory()) {
+        if (!file || file.isDirectory())
+        {
             Log->println("http_ssl.key not found");
         }
         else
@@ -384,13 +389,15 @@ void ImportExport::exportHttpsJson(JsonDocument &json)
 
 void ImportExport::exportMqttsJson(JsonDocument &json)
 {
-    if (!SPIFFS.begin(true)) {
+    if (!SPIFFS.begin(true))
+    {
         Log->println("SPIFFS Mount Failed");
     }
     else
     {
         File file = SPIFFS.open("/mqtt_ssl.ca");
-        if (!file || file.isDirectory()) {
+        if (!file || file.isDirectory())
+        {
             Log->println("mqtt_ssl.ca not found");
         }
         else
@@ -406,13 +413,15 @@ void ImportExport::exportMqttsJson(JsonDocument &json)
         }
     }
 
-    if (!SPIFFS.begin(true)) {
+    if (!SPIFFS.begin(true))
+    {
         Log->println("SPIFFS Mount Failed");
     }
     else
     {
         File file = SPIFFS.open("/mqtt_ssl.crt");
-        if (!file || file.isDirectory()) {
+        if (!file || file.isDirectory())
+        {
             Log->println("mqtt_ssl.crt not found");
         }
         else
@@ -428,13 +437,15 @@ void ImportExport::exportMqttsJson(JsonDocument &json)
         }
     }
 
-    if (!SPIFFS.begin(true)) {
+    if (!SPIFFS.begin(true))
+    {
         Log->println("SPIFFS Mount Failed");
     }
     else
     {
         File file = SPIFFS.open("/mqtt_ssl.key");
-        if (!file || file.isDirectory()) {
+        if (!file || file.isDirectory())
+        {
             Log->println("mqtt_ssl.key not found");
         }
         else
@@ -481,11 +492,11 @@ void ImportExport::exportNukiHubJson(JsonDocument &json, bool redacted, bool pai
         if(strcmp(key, preference_admin_secret) == 0)
         {
             continue;
-        }        
-        if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end())
-        {
-            continue;
         }
+        if(!redacted) if(std::find(redactedPrefs.begin(), redactedPrefs.end(), key) != redactedPrefs.end())
+            {
+                continue;
+            }
         if(!_preferences->isKey(key))
         {
             json[key] = "";
@@ -909,7 +920,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
     nukiBlePref.end();
     if(!doc["mqtt_ssl.ca"].isNull())
     {
-        if (!SPIFFS.begin(true)) {
+        if (!SPIFFS.begin(true))
+        {
             Log->println("SPIFFS Mount Failed");
             json["mqtt_ssl.ca"] = "error";
         }
@@ -918,7 +930,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             if(doc["mqtt_ssl.ca"].as<String>().length() > 0)
             {
                 File file = SPIFFS.open("/mqtt_ssl.ca", FILE_WRITE);
-                if (!file) {
+                if (!file)
+                {
                     Log->println("Failed to open /mqtt_ssl.ca for writing");
                     json["mqtt_ssl.ca"] = "error";
                 }
@@ -938,7 +951,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             }
             else
             {
-                if (!SPIFFS.remove("/mqtt_ssl.ca")) {
+                if (!SPIFFS.remove("/mqtt_ssl.ca"))
+                {
                     Log->println("Failed to delete /mqtt_ssl.ca");
                     json["mqtt_ssl.crt"] = "error";
                 }
@@ -951,7 +965,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
     }
     if(!doc["mqtt_ssl.crt"].isNull())
     {
-        if (!SPIFFS.begin(true)) {
+        if (!SPIFFS.begin(true))
+        {
             Log->println("SPIFFS Mount Failed");
             json["mqtt_ssl.crt"] = "error";
         }
@@ -960,7 +975,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             if(doc["mqtt_ssl.crt"].as<String>().length() > 0)
             {
                 File file = SPIFFS.open("/mqtt_ssl.crt", FILE_WRITE);
-                if (!file) {
+                if (!file)
+                {
                     Log->println("Failed to open /mqtt_ssl.crt for writing");
                     json["mqtt_ssl.crt"] = "error";
                 }
@@ -980,7 +996,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             }
             else
             {
-                if (!SPIFFS.remove("/mqtt_ssl.crt")) {
+                if (!SPIFFS.remove("/mqtt_ssl.crt"))
+                {
                     Log->println("Failed to delete /mqtt_ssl.crt");
                     json["mqtt_ssl.crt"] = "error";
                 }
@@ -993,7 +1010,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
     }
     if(!doc["mqtt_ssl.key"].isNull())
     {
-        if (!SPIFFS.begin(true)) {
+        if (!SPIFFS.begin(true))
+        {
             Log->println("SPIFFS Mount Failed");
             json["mqtt_ssl.key"] = "error";
         }
@@ -1002,7 +1020,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             if(doc["mqtt_ssl.key"].as<String>().length() > 0)
             {
                 File file = SPIFFS.open("/mqtt_ssl.key", FILE_WRITE);
-                if (!file) {
+                if (!file)
+                {
                     Log->println("Failed to open /mqtt_ssl.key for writing");
                     json["mqtt_ssl.key"] = "error";
                 }
@@ -1022,7 +1041,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             }
             else
             {
-                if (!SPIFFS.remove("/mqtt_ssl.key")) {
+                if (!SPIFFS.remove("/mqtt_ssl.key"))
+                {
                     Log->println("Failed to delete /mqtt_ssl.key");
                 }
                 else
@@ -1034,7 +1054,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
     }
     if(!doc["http_ssl.crt"].isNull())
     {
-        if (!SPIFFS.begin(true)) {
+        if (!SPIFFS.begin(true))
+        {
             Log->println("SPIFFS Mount Failed");
             json["http_ssl.crt"] = "error";
         }
@@ -1043,7 +1064,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             if(doc["http_ssl.crt"].as<String>().length() > 0)
             {
                 File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
-                if (!file) {
+                if (!file)
+                {
                     Log->println("Failed to open /http_ssl.crt for writing");
                     json["http_ssl.crt"] = "error";
                 }
@@ -1063,7 +1085,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             }
             else
             {
-                if (!SPIFFS.remove("/http_ssl.crt")) {
+                if (!SPIFFS.remove("/http_ssl.crt"))
+                {
                     Log->println("Failed to delete /http_ssl.crt");
                     json["http_ssl.crt"] = "error";
                 }
@@ -1076,7 +1099,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
     }
     if(!doc["http_ssl.key"].isNull())
     {
-        if (!SPIFFS.begin(true)) {
+        if (!SPIFFS.begin(true))
+        {
             Log->println("SPIFFS Mount Failed");
             json["http_ssl.key"] = "error";
         }
@@ -1085,7 +1109,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             if(doc["http_ssl.key"].as<String>().length() > 0)
             {
                 File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
-                if (!file) {
+                if (!file)
+                {
                     Log->println("Failed to open /http_ssl.key for writing");
                     json["http_ssl.key"] = "error";
                 }
@@ -1105,7 +1130,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
             }
             else
             {
-                if (!SPIFFS.remove("/http_ssl.key")) {
+                if (!SPIFFS.remove("/http_ssl.key"))
+                {
                     Log->println("Failed to delete /http_ssl.key");
                     json["http_ssl.key"] = "error";
                 }

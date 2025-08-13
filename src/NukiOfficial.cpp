@@ -228,59 +228,59 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
 
                 switch(offContext)
                 {
-                    case 0:
-                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadBackKey", true);
-                        break;
-                    case 1:
-                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadCode", true);
-                        break;
-                    case 2:
-                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadFingerprint", true);
-                        break;
-                    default:
-                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
-                        break;
+                case 0:
+                    _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadBackKey", true);
+                    break;
+                case 1:
+                    _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadCode", true);
+                    break;
+                case 2:
+                    _publisher->publishString(mqtt_topic_lock_lock_action_context, "keypadFingerprint", true);
+                    break;
+                default:
+                    _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                    break;
                 }
             }
             else
             {
                 _authId = offAuthId;
-                
+
                 switch(offTrigger)
                 {
-                    case 0:
-                        if (offContext == 1)
-                        {
-                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "autoUnlock", true);
-                        }
-                        else
-                        {
-                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
-                        }
-                        break;
-                    case 2:
-                        if (offContext > 0)
-                        {
-                            _publisher->publishString(mqtt_topic_lock_lock_action_context, String("button") + String(offContext) + "press", true);
-                        }
-                        else
-                        {
-                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
-                        }
-                        break;
-                    case 3:
-                        if (offContext > 0)
-                        {
-                            _publisher->publishString(mqtt_topic_lock_lock_action_context, String("fob") + String(offContext) + "press", true);
-                        }
-                        else
-                        {
-                            _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
-                        }
-                        break;
-                    default:
+                case 0:
+                    if (offContext == 1)
+                    {
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "autoUnlock", true);
+                    }
+                    else
+                    {
                         _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
-                        break;
+                    }
+                    break;
+                case 2:
+                    if (offContext > 0)
+                    {
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, String("button") + String(offContext) + "press", true);
+                    }
+                    else
+                    {
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                    }
+                    break;
+                case 3:
+                    if (offContext > 0)
+                    {
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, String("fob") + String(offContext) + "press", true);
+                    }
+                    else
+                    {
+                        _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                    }
+                    break;
+                default:
+                    _publisher->publishString(mqtt_topic_lock_lock_action_context, "", true);
+                    break;
                 }
             }
             _hasAuthId = true;

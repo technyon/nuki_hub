@@ -80,9 +80,9 @@ void NukiOpenerWrapper::readSettings()
 
     if(pwrLvl >= 9)
     {
-        #if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32)
         powerLevel = ESP_PWR_LVL_P9;
-        #else
+#else
         if(pwrLvl >= 20)
         {
             powerLevel = ESP_PWR_LVL_P20;
@@ -103,7 +103,7 @@ void NukiOpenerWrapper::readSettings()
         {
             powerLevel = ESP_PWR_LVL_P9;
         }
-        #endif
+#endif
     }
     else if(pwrLvl >= 6)
     {
@@ -247,7 +247,8 @@ void NukiOpenerWrapper::update()
         }
         else
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -268,7 +269,8 @@ void NukiOpenerWrapper::update()
         Log->print("No BLE beacon received from the opener for ");
         Log->print((ts - lastReceivedBeaconTs) / 1000);
         Log->println(" seconds, signalling to restart BLE controller.");
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -304,7 +306,8 @@ void NukiOpenerWrapper::update()
 
                 _network->publishRetry(std::to_string(retryCount + 1));
 
-                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                if (esp_task_wdt_status(NULL) == ESP_OK)
+                {
                     esp_task_wdt_reset();
                 }
                 vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
@@ -340,10 +343,11 @@ void NukiOpenerWrapper::update()
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         _statusUpdated = updateKeyTurnerState();
         _network->publishStatusUpdated(_statusUpdated);
-        
+
         if(_statusUpdated)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -615,7 +619,8 @@ void NukiOpenerWrapper::updateBatteryState()
     {
         Log->print("Querying opener battery state: ");
         result = _nukiOpener.requestBatteryReport(&_batteryReport);
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -790,7 +795,8 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -1020,7 +1026,8 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
         {
             Log->print("Querying opener authorization: ");
             result = _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -3062,7 +3069,8 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
                         if(resultKp == Nuki::CmdResult::Success)
                         {
-                            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                            if (esp_task_wdt_status(NULL) == ESP_OK)
+                            {
                                 esp_task_wdt_reset();
                             }
                             vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -3431,7 +3439,8 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        if (esp_task_wdt_status(NULL) == ESP_OK)
+                        {
                             esp_task_wdt_reset();
                         }
                         vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -3890,7 +3899,8 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        if (esp_task_wdt_status(NULL) == ESP_OK)
+                        {
                             esp_task_wdt_reset();
                         }
                         vTaskDelay(5000 / portTICK_PERIOD_MS);

@@ -21,7 +21,7 @@ public:
     virtual bool isApOpen();
 
     int8_t signalStrength() override;
-    
+
     String localIP() override;
     String BSSIDstr() override;
 

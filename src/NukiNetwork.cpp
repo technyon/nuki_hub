@@ -49,9 +49,9 @@ void NukiNetwork::setupDevice()
 
     if(hardwareDetect == 0)
     {
-        #ifndef CONFIG_IDF_TARGET_ESP32H2
+#ifndef CONFIG_IDF_TARGET_ESP32H2
         hardwareDetect = 1;
-        #else
+#else
         hardwareDetect = 11;
         _preferences->putInt(preference_network_custom_addr, 1);
         _preferences->putInt(preference_network_custom_cs, 8);
@@ -61,13 +61,13 @@ void NukiNetwork::setupDevice()
         _preferences->putInt(preference_network_custom_miso, 12);
         _preferences->putInt(preference_network_custom_mosi, 13);
         _preferences->putBool(preference_ntw_reconfigure, true);
-        #endif
+#endif
         _preferences->putInt(preference_network_hardware, hardwareDetect);
     }
 
     if(wifiFallback == true)
     {
-        #ifndef CONFIG_IDF_TARGET_ESP32H2
+#ifndef CONFIG_IDF_TARGET_ESP32H2
         if(!_firstBootAfterDeviceChange)
         {
             Log->println("Failed to connect to network. Wi-Fi fallback is disabled, rebooting.");
@@ -78,7 +78,7 @@ void NukiNetwork::setupDevice()
 
         Log->println("Switching to Wi-Fi device as fallback.");
         _networkDeviceType = NetworkDeviceType::WiFi;
-        #else
+#else
         int custEth = _preferences->getInt(preference_network_custom_phy, 0);
 
         if(custEth<3)
@@ -91,7 +91,7 @@ void NukiNetwork::setupDevice()
         }
         _preferences->putInt(preference_network_custom_phy, custEth);
         _preferences->putBool(preference_ntw_reconfigure, true);
-        #endif
+#endif
     }
     else
     {
@@ -103,9 +103,9 @@ void NukiNetwork::setupDevice()
     Log->print("Network device: ");
     Log->println(_device->deviceName());
 
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     _hadiscovery = new HomeAssistantDiscovery(_device, _preferences, _buffer, _bufferSize);
-    #endif
+#endif
 }
 
 void NukiNetwork::reconfigureDevice()
@@ -156,11 +156,11 @@ bool NukiNetwork::isConnected()
 
 bool NukiNetwork::mqttConnected()
 {
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     return _device->mqttConnected();
-    #else
+#else
     return false;
-    #endif
+#endif
 }
 
 bool NukiNetwork::wifiConnected()
@@ -217,8 +217,8 @@ bool NukiNetwork::update()
 void NukiNetwork::initialize()
 {
     readSettings();
-    setMQTTConnectionSettings();    
-    
+    setMQTTConnectionSettings();
+
     _gpio->addCallback([this](const GpioAction& action, const int& pin)
     {
         gpioActionCallback(action, pin);
@@ -345,12 +345,12 @@ void NukiNetwork::setMQTTConnectionSettings()
     if(_preferences->getString(preference_mqtt_hass_discovery, "") != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
     {
         _preferences->putBool(preference_mqtt_hass_enabled, true);
-    }    
-    
+    }
+
     memset(_mqttBrokerAddr, 0, sizeof(_mqttBrokerAddr));
     memset(_mqttUser, 0, sizeof(_mqttUser));
     memset(_mqttPass, 0, sizeof(_mqttPass));
-    
+
     String brokerAddr = _preferences->getString(preference_mqtt_broker);
     strcpy(_mqttBrokerAddr, brokerAddr.c_str());
 
@@ -387,7 +387,7 @@ void NukiNetwork::setMQTTConnectionSettings()
     Log->print(":");
     Log->println(_mqttPort);
 
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     _device->mqttOnConnect([&](bool sessionPresent)
     {
         onMqttConnect(sessionPresent);
@@ -396,7 +396,7 @@ void NukiNetwork::setMQTTConnectionSettings()
     {
         onMqttDisconnect(reason);
     });
-    #endif
+#endif
 }
 
 int NukiNetwork::getRestartServices()
@@ -476,7 +476,8 @@ bool NukiNetwork::update()
         bool success = reconnect();
         if(!success)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -488,7 +489,8 @@ bool NukiNetwork::update()
         if(forceEnableWebServer && !_webEnabled)
         {
             forceEnableWebServer = false;
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -498,7 +500,8 @@ bool NukiNetwork::update()
         {
             forceEnableWebServer = false;
         }
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -513,13 +516,15 @@ bool NukiNetwork::update()
                 forceEnableWebServer = true;
             }
             Log->println("Network timeout has been reached, restarting ...");
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(200 / portTICK_PERIOD_MS);
             restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -713,9 +718,9 @@ bool NukiNetwork::reconnect(bool force)
             _device->mqttRestart();
             setMQTTConnectionSettings();
         }
-        
+
         force = false;
-        
+
         if(strcmp(_mqttBrokerAddr, "") == 0)
         {
             Log->println("MQTT Broker not configured, aborting connection attempt.");
@@ -751,7 +756,8 @@ bool NukiNetwork::reconnect(bool force)
 
         while(!_connectReplyReceived && espMillis() < timeout)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -767,7 +773,8 @@ bool NukiNetwork::reconnect(bool force)
             Log->println("MQTT connected");
             _mqttConnectedTs = millis();
             _mqttConnectionState = 1;
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -1015,7 +1022,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
     {
         Log->println("Restart requested via MQTT.");
         clearWifiFallback();
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -1071,7 +1079,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
                     Log->println("Updating to latest release version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    if (esp_task_wdt_status(NULL) == ESP_OK)
+                    {
                         esp_task_wdt_reset();
                     }
                     vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -1089,7 +1098,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
                     Log->println("Updating to latest beta version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    if (esp_task_wdt_status(NULL) == ESP_OK)
+                    {
                         esp_task_wdt_reset();
                     }
                     vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -1107,7 +1117,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
                     Log->println("Updating to latest developmemt version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    if (esp_task_wdt_status(NULL) == ESP_OK)
+                    {
                         esp_task_wdt_reset();
                     }
                     vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -1125,7 +1136,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
                     Log->println("Updating to latest release version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    if (esp_task_wdt_status(NULL) == ESP_OK)
+                    {
                         esp_task_wdt_reset();
                     }
                     vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -1165,7 +1177,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             _preferences->putBool(preference_webserver_enabled, false);
         }
         clearWifiFallback();
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -1197,7 +1210,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     {
                         String jsonTotp = doc["totp"];
 
-                        if (!_importExport->checkTOTP(&jsonTotp)) {
+                        if (!_importExport->checkTOTP(&jsonTotp))
+                        {
                             publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action_command_result, "{\"error\": \"totpIncorrect\"}", false);
                             publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);
                             return;
@@ -1219,7 +1233,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                             while (duoResult == 2)
                             {
                                 duoResult = _importExport->checkDuoApprove();
-                                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                                if (esp_task_wdt_status(NULL) == ESP_OK)
+                                {
                                     esp_task_wdt_reset();
                                 }
                                 vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -1339,7 +1354,8 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                         serializeJson(json, _buffer, _bufferSize);
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_json, _buffer, false);
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);
-                        if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        if (esp_task_wdt_status(NULL) == ESP_OK)
+                        {
                             esp_task_wdt_reset();
                         }
                         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -1479,10 +1495,10 @@ void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)
     path.concat(mqttTopic);
     publish(path.c_str(), "", true);
 
-    #ifdef DEBUG_NUKIHUB
+#ifdef DEBUG_NUKIHUB
     Log->print("Removing MQTT topic: ");
     Log->println(path.c_str());
-    #endif
+#endif
 }
 
 void NukiNetwork::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)

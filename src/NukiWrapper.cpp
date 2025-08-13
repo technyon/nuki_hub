@@ -85,9 +85,9 @@ void NukiWrapper::readSettings()
 
     if(pwrLvl >= 9)
     {
-        #if defined(CONFIG_IDF_TARGET_ESP32)
+#if defined(CONFIG_IDF_TARGET_ESP32)
         powerLevel = ESP_PWR_LVL_P9;
-        #else
+#else
         if(pwrLvl >= 20)
         {
             powerLevel = ESP_PWR_LVL_P20;
@@ -108,7 +108,7 @@ void NukiWrapper::readSettings()
         {
             powerLevel = ESP_PWR_LVL_P9;
         }
-        #endif
+#endif
     }
     else if(pwrLvl >= 6)
     {
@@ -263,7 +263,8 @@ void NukiWrapper::update(bool reboot)
         }
         else
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -284,7 +285,8 @@ void NukiWrapper::update(bool reboot)
         Log->print("No BLE beacon received from the lock for ");
         Log->print((ts - lastReceivedBeaconTs) / 1000);
         Log->println(" seconds, signalling to restart BLE controller.");
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -324,7 +326,8 @@ void NukiWrapper::update(bool reboot)
 
                 _network->publishRetry(std::to_string(retryCount + 1));
 
-                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                if (esp_task_wdt_status(NULL) == ESP_OK)
+                {
                     esp_task_wdt_reset();
                 }
                 vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
@@ -364,10 +367,11 @@ void NukiWrapper::update(bool reboot)
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         _statusUpdated = updateKeyTurnerState();
         _network->publishStatusUpdated(_statusUpdated);
-        
+
         if(_statusUpdated)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -821,8 +825,10 @@ void NukiWrapper::updateDebug()
     Log->print("Result: ");
     Log->println(result);
     count = 0;
-    while (count < 5) {
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+    while (count < 5)
+    {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -843,8 +849,10 @@ void NukiWrapper::updateDebug()
     Log->println(result);
 
     count = 0;
-    while (count < 15) {
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+    while (count < 15)
+    {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -865,8 +873,10 @@ void NukiWrapper::updateDebug()
     Log->println(result);
 
     count = 0;
-    while (count < 20) {
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+    while (count < 20)
+    {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -879,14 +889,14 @@ void NukiWrapper::updateDebug()
     Log->print("WifiScan entries: ");
     Log->println(wifiScanEntries.size());
     Log->println("Debug command complete");
-    
+
     Log->println("Running debug command - getAccessoryInfo, type = 4");
     result = (Nuki::CmdResult)-1;
     result = _nukiLock.getAccessoryInfo(4);
     Log->print("Result: ");
     Log->println(result);
     Log->println("Debug command complete");
-    
+
     Log->println("Running debug command - getAccessoryInfo, type = 5");
     result = (Nuki::CmdResult)-1;
     result = _nukiLock.getAccessoryInfo(5);
@@ -900,7 +910,7 @@ void NukiWrapper::updateDebug()
     Log->print("Result: ");
     Log->println(result);
     Log->println("Debug command complete");
-    
+
     /*
     CheckKeypadCode             = 0x006E  keypadCode (int), (nonce, PIN)
 
@@ -948,7 +958,8 @@ void NukiWrapper::updateAuthData(bool retrieved)
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -1176,7 +1187,8 @@ void NukiWrapper::updateAuth(bool retrieved)
         {
             Log->print("Querying lock authorization: ");
             result = _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -3312,7 +3324,8 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
                         if(resultKp == Nuki::CmdResult::Success)
                         {
-                            if (esp_task_wdt_status(NULL) == ESP_OK) {
+                            if (esp_task_wdt_status(NULL) == ESP_OK)
+                            {
                                 esp_task_wdt_reset();
                             }
                             vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -3682,7 +3695,8 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        if (esp_task_wdt_status(NULL) == ESP_OK)
+                        {
                             esp_task_wdt_reset();
                         }
                         vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -3901,7 +3915,8 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiLock.deleteAuthorizationEntry(authId);
-                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    if (esp_task_wdt_status(NULL) == ESP_OK)
+                    {
                         esp_task_wdt_reset();
                     }
                     vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -4124,7 +4139,8 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiLock.addAuthorizationEntry(entry);
-                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    if (esp_task_wdt_status(NULL) == ESP_OK)
+                    {
                         esp_task_wdt_reset();
                     }
                     vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -4150,7 +4166,8 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK) {
+                        if (esp_task_wdt_status(NULL) == ESP_OK)
+                        {
                             esp_task_wdt_reset();
                         }
                         vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -4296,7 +4313,8 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiLock.updateAuthorizationEntry(entry);
-                    if (esp_task_wdt_status(NULL) == ESP_OK) {
+                    if (esp_task_wdt_status(NULL) == ESP_OK)
+                    {
                         esp_task_wdt_reset();
                     }
                     vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -4411,7 +4429,8 @@ void NukiWrapper::readConfig()
         {
             ++retryCount;
             Log->println("Failed to retrieve lock config, retrying in 1s");
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -4442,7 +4461,8 @@ void NukiWrapper::readAdvancedConfig()
         {
             ++retryCount;
             Log->println("Failed to retrieve lock advanced config, retrying in 1s");
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -4457,9 +4477,9 @@ void NukiWrapper::readAdvancedConfig()
 bool NukiWrapper::hasDoorSensor() const
 {
     return (_forceDoorsensor ||
-           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
-           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
-           _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating);
+            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorClosed ||
+            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::DoorOpened ||
+            _keyTurnerState.doorSensorState == Nuki::DoorSensorState::Calibrating);
 }
 
 const BLEAddress NukiWrapper::getBleAddress() const

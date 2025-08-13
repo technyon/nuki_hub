@@ -17,28 +17,28 @@ class EthernetDevice : public NetworkDevice
 
 public:
     EthernetDevice(const String& hostname,
-                     Preferences* preferences,
-                     const IPConfiguration* ipConfiguration,
-                     const std::string& deviceName,
-                     uint8_t phy_addr = ETH_PHY_ADDR_LAN8720,
-                     int power = ETH_PHY_POWER_LAN8720,
-                     int mdc = ETH_PHY_MDC_LAN8720,
-                     int mdio = ETH_PHY_MDIO_LAN8720,
-                     eth_phy_type_t ethtype = ETH_PHY_TYPE_LAN8720,
-                     eth_clock_mode_t clock_mode = ETH_CLK_MODE_LAN8720);
+                   Preferences* preferences,
+                   const IPConfiguration* ipConfiguration,
+                   const std::string& deviceName,
+                   uint8_t phy_addr = ETH_PHY_ADDR_LAN8720,
+                   int power = ETH_PHY_POWER_LAN8720,
+                   int mdc = ETH_PHY_MDC_LAN8720,
+                   int mdio = ETH_PHY_MDIO_LAN8720,
+                   eth_phy_type_t ethtype = ETH_PHY_TYPE_LAN8720,
+                   eth_clock_mode_t clock_mode = ETH_CLK_MODE_LAN8720);
 
     EthernetDevice(const String& hostname,
-                     Preferences* preferences,
-                     const IPConfiguration* ipConfiguration,
-                     const std::string& deviceName,
-                     uint8_t phy_addr,
-                     int cs,
-                     int irq,
-                     int rst,
-                     int spi_sck,
-                     int spi_miso,
-                     int spi_mosi,
-                     eth_phy_type_t ethtype);
+                   Preferences* preferences,
+                   const IPConfiguration* ipConfiguration,
+                   const std::string& deviceName,
+                   uint8_t phy_addr,
+                   int cs,
+                   int irq,
+                   int rst,
+                   int spi_sck,
+                   int spi_miso,
+                   int spi_mosi,
+                   eth_phy_type_t ethtype);
 
     const String deviceName() const override;
 

@@ -139,13 +139,13 @@ private:
         mqtt_topic_query_config, mqtt_topic_query_lockstate, mqtt_topic_query_keypad, mqtt_topic_query_battery, mqtt_topic_query_lockstate_command_result,
         mqtt_topic_battery_level, mqtt_topic_battery_critical, mqtt_topic_battery_charging, mqtt_topic_battery_voltage, mqtt_topic_battery_drain,
         mqtt_topic_battery_max_turn_current, mqtt_topic_battery_lock_distance, mqtt_topic_battery_keypad_critical, mqtt_topic_battery_doorsensor_critical,
-        mqtt_topic_battery_basic_json,mqtt_topic_battery_advanced_json, mqtt_topic_keypad, mqtt_topic_keypad_codes, mqtt_topic_keypad_command_action, 
+        mqtt_topic_battery_basic_json,mqtt_topic_battery_advanced_json, mqtt_topic_keypad, mqtt_topic_keypad_codes, mqtt_topic_keypad_command_action,
         mqtt_topic_keypad_command_id, mqtt_topic_keypad_command_name, mqtt_topic_keypad_command_code, mqtt_topic_keypad_command_enabled, mqtt_topic_keypad_command_result,
-        mqtt_topic_keypad_json, mqtt_topic_keypad_json_action, mqtt_topic_keypad_json_command_result, mqtt_topic_timecontrol, mqtt_topic_timecontrol_entries, 
-        mqtt_topic_timecontrol_json, mqtt_topic_timecontrol_action, mqtt_topic_timecontrol_command_result, mqtt_topic_auth, mqtt_topic_auth_entries, 
-        mqtt_topic_auth_json, mqtt_topic_auth_action, mqtt_topic_auth_command_result, mqtt_topic_info_hardware_version, mqtt_topic_info_firmware_version, 
-        mqtt_topic_info_nuki_hub_version, mqtt_topic_info_nuki_hub_build, mqtt_topic_info_nuki_hub_latest, mqtt_topic_info_nuki_hub_ip, mqtt_topic_reset, 
-        mqtt_topic_update, mqtt_topic_webserver_state, mqtt_topic_webserver_action, mqtt_topic_uptime, mqtt_topic_wifi_rssi, mqtt_topic_log, mqtt_topic_freeheap, 
+        mqtt_topic_keypad_json, mqtt_topic_keypad_json_action, mqtt_topic_keypad_json_command_result, mqtt_topic_timecontrol, mqtt_topic_timecontrol_entries,
+        mqtt_topic_timecontrol_json, mqtt_topic_timecontrol_action, mqtt_topic_timecontrol_command_result, mqtt_topic_auth, mqtt_topic_auth_entries,
+        mqtt_topic_auth_json, mqtt_topic_auth_action, mqtt_topic_auth_command_result, mqtt_topic_info_hardware_version, mqtt_topic_info_firmware_version,
+        mqtt_topic_info_nuki_hub_version, mqtt_topic_info_nuki_hub_build, mqtt_topic_info_nuki_hub_latest, mqtt_topic_info_nuki_hub_ip, mqtt_topic_reset,
+        mqtt_topic_update, mqtt_topic_webserver_state, mqtt_topic_webserver_action, mqtt_topic_uptime, mqtt_topic_wifi_rssi, mqtt_topic_log, mqtt_topic_freeheap,
         mqtt_topic_restart_reason_fw, mqtt_topic_restart_reason_esp, mqtt_topic_mqtt_connection_state, mqtt_topic_network_device, mqtt_topic_hybrid_state
     };
 public:

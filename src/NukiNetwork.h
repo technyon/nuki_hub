@@ -43,9 +43,9 @@ public:
 
     NetworkDevice* device();
 
-    #ifdef NUKI_HUB_UPDATER
+#ifdef NUKI_HUB_UPDATER
     explicit NukiNetwork(Preferences* preferences);
-    #else
+#else
     explicit NukiNetwork(Preferences* preferences, Gpio* gpio, char* buffer, size_t bufferSize, ImportExport* importExport);
 
     void registerMqttReceiver(MqttReceiver* receiver);
@@ -72,20 +72,20 @@ public:
     void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
     void disableHASS();
     void publishHassTopic(const String& mqttDeviceType,
-                           const String& mqttDeviceName,
-                           const String& uidString,
-                           const String& uidStringPostfix,
-                           const String& displayName,
-                           const String& name,
-                           const String& baseTopic,
-                           const String& stateTopic,
-                           const String& deviceType,
-                           const String& deviceClass,
-                           const String& stateClass,
-                           const String& entityCat,
-                           const String& commandTopic,
-                           std::vector<std::pair<char*, char*>> additionalEntries
-                          );
+                          const String& mqttDeviceName,
+                          const String& uidString,
+                          const String& uidStringPostfix,
+                          const String& displayName,
+                          const String& name,
+                          const String& baseTopic,
+                          const String& stateTopic,
+                          const String& deviceType,
+                          const String& deviceClass,
+                          const String& stateClass,
+                          const String& entityCat,
+                          const String& commandTopic,
+                          std::vector<std::pair<char*, char*>> additionalEntries
+                         );
     void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
 
     int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
@@ -93,11 +93,11 @@ public:
     bool pathEquals(const char* prefix, const char* path, const char* referencePath);
     uint16_t subscribe(const char* topic, uint8_t qos);
     void addReconnectedCallback(std::function<void()> reconnectedCallback);
-    #endif
+#endif
 private:
     void setupDevice();
     void setMQTTConnectionSettings();
-    
+
     static NukiNetwork* _inst;
 
     const char* _latestVersion;
@@ -115,7 +115,7 @@ private:
     bool _firstBootAfterDeviceChange = false;
     bool _webEnabled = true;
 
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
     void onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length);
@@ -173,5 +173,5 @@ private:
     const size_t _bufferSize;
 
     int8_t _lastRssi = 127;
-    #endif
+#endif
 };

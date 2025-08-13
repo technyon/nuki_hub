@@ -125,7 +125,7 @@ void Gpio::init()
 void Gpio::setPins()
 {
     loadPinConfiguration();
-    
+
     bool hasInputPin = false;
 
     if (_inst->_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false))

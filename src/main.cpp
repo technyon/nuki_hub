@@ -157,11 +157,11 @@ void setReroute()
 {
     esp_log_set_vprintf(_log_vprintf);
 
-    #ifdef DEBUG_NUKIHUB
+#ifdef DEBUG_NUKIHUB
     esp_log_level_set("*", ESP_LOG_DEBUG);
     esp_log_level_set("nvs", ESP_LOG_INFO);
     esp_log_level_set("wifi", ESP_LOG_INFO);
-    #else
+#else
     /*
     esp_log_level_set("*", ESP_LOG_NONE);
     esp_log_level_set("httpd", ESP_LOG_ERROR);
@@ -175,7 +175,7 @@ void setReroute()
     esp_log_level_set("nvs", ESP_LOG_ERROR);
     esp_log_level_set("wifi", ESP_LOG_ERROR);
     */
-    #endif
+#endif
 
     if(preferences->getBool(preference_mqtt_log_enabled))
     {
@@ -193,12 +193,12 @@ uint8_t checkPartition()
     Log->println(running_partition->subtype);
 
 
-    #if !defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CONFIG_IDF_TARGET_ESP32P4)
+#if !defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CONFIG_IDF_TARGET_ESP32P4)
     if(running_partition->size == 1966080)
     {
         return 0;    //OLD PARTITION TABLE
     }
-    #endif
+#endif
 
     if(running_partition->subtype == ESP_PARTITION_SUBTYPE_APP_OTA_0)
     {
@@ -210,69 +210,79 @@ uint8_t checkPartition()
     }
 }
 
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
-  Serial.printf("Listing directory: %s\r\n", dirname);
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+{
+    Serial.printf("Listing directory: %s\r\n", dirname);
 
-  File root = fs.open(dirname);
-  if (!root) {
-    Serial.println("- failed to open directory");
-    return;
-  }
-  if (!root.isDirectory()) {
-    Serial.println(" - not a directory");
-    return;
-  }
-
-  File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
-      Serial.print("  DIR : ");
-      Serial.println(file.name());
-      if (levels) {
-        listDir(fs, file.path(), levels - 1);
-      }
-    } else {
-      Serial.print("  FILE: ");
-      Serial.print(file.name());
-      Serial.print("\tSIZE: ");
-      Serial.println(file.size());
-    }
-
-    if (file.size() > (int)(SPIFFS.totalBytes() * 0.4))
+    File root = fs.open(dirname);
+    if (!root)
     {
-        SPIFFS.remove((String)"/" + file.name());
+        Serial.println("- failed to open directory");
+        return;
+    }
+    if (!root.isDirectory())
+    {
+        Serial.println(" - not a directory");
+        return;
     }
 
-    file = root.openNextFile();
-  }
+    File file = root.openNextFile();
+    while (file)
+    {
+        if (file.isDirectory())
+        {
+            Serial.print("  DIR : ");
+            Serial.println(file.name());
+            if (levels)
+            {
+                listDir(fs, file.path(), levels - 1);
+            }
+        }
+        else
+        {
+            Serial.print("  FILE: ");
+            Serial.print(file.name());
+            Serial.print("\tSIZE: ");
+            Serial.println(file.size());
+        }
+
+        if (file.size() > (int)(SPIFFS.totalBytes() * 0.4))
+        {
+            SPIFFS.remove((String)"/" + file.name());
+        }
+
+        file = root.openNextFile();
+    }
 }
 
-void cbSyncTime(struct timeval *tv)  {
-  Log->println("NTP time synced");
-  timeSynced = true;
+void cbSyncTime(struct timeval *tv)
+{
+    Log->println("NTP time synced");
+    timeSynced = true;
 }
 
 #ifndef NUKI_HUB_UPDATER
 void startWebServer()
 {
     bool failed = true;
-    
+
     webSerialEnabled = preferences->getBool(preference_webserial_enabled, false);
-    
-    if (!nuki_hub_https_server_enabled) 
+
+    if (!nuki_hub_https_server_enabled)
     {
         Log->println("Not running on PSRAM enabled device");
     }
     else
     {
-        if (!SPIFFS.begin(true)) 
+        if (!SPIFFS.begin(true))
         {
             Log->println("SPIFFS Mount Failed");
         }
         else
         {
             File file = SPIFFS.open("/http_ssl.crt");
-            if (!file || file.isDirectory()) {
+            if (!file || file.isDirectory())
+            {
                 Log->println("http_ssl.crt not found");
             }
             else
@@ -286,7 +296,7 @@ void startWebServer()
                 cert[filesize] = '\0';
 
                 File file2 = SPIFFS.open("/http_ssl.key");
-                if (!file2 || file2.isDirectory()) 
+                if (!file2 || file2.isDirectory())
                 {
                     Log->println("http_ssl.key not found");
                 }
@@ -302,7 +312,8 @@ void startWebServer()
 
                     psychicServerRedirect = new PsychicHttpServer();
                     psychicServerRedirect->config.ctrl_port = 20424;
-                    psychicServerRedirect->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                    psychicServerRedirect->onNotFound([](PsychicRequest* request, PsychicResponse* response)
+                    {
                         String url = "https://" + request->host() + request->url();
                         if (preferences->getString(preference_https_fqdn, "") != "")
                         {
@@ -320,7 +331,8 @@ void startWebServer()
                     psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
                     webCfgServerSSL = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
                     webCfgServerSSL->initialize();
-                    psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                    psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
+                    {
                         return response->redirect("/");
                     });
                     psychicSSLServer->begin();
@@ -337,7 +349,8 @@ void startWebServer()
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
         webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
         webCfgServer->initialize();
-        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
+        {
             return response->redirect("/");
         });
         psychicServer->begin();
@@ -439,7 +452,7 @@ void restartServices(bool reconnect)
         nukiOpener = nullptr;
         if (reconnect)
         {
-            openerStarted = false;            
+            openerStarted = false;
             delete networkOpener;
             networkOpener = nullptr;
         }
@@ -456,13 +469,15 @@ void restartServices(bool reconnect)
         Log->println("Scanner nulled from main");
     }
 
-    if (BLEDevice::isInitialized()) {
+    if (BLEDevice::isInitialized())
+    {
         Log->println("Deinit BLE device");
         BLEDevice::deinit(false);
         Log->println("Deinit BLE device done");
     }
 
-    if (esp_task_wdt_status(NULL) == ESP_OK) {
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
         esp_task_wdt_reset();
     }
     vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -508,7 +523,8 @@ void restartServices(bool reconnect)
     }
 
 
-    if (esp_task_wdt_status(NULL) == ESP_OK) {
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
         esp_task_wdt_reset();
     }
     vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -559,7 +575,8 @@ void networkTask(void *pvParameters)
         }
 #endif
         network->update();
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -595,7 +612,7 @@ void networkTask(void *pvParameters)
 
         if (restartServ == 1)
         {
-            restartServices(false);            
+            restartServices(false);
         }
         else if (restartServ == 2)
         {
@@ -606,16 +623,18 @@ void networkTask(void *pvParameters)
             if(connected && webSerialEnabled && (webSSLStarted || webStarted))
             {
                 webCfgServerSSL->updateWebSerial();
-                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                if (esp_task_wdt_status(NULL) == ESP_OK)
+                {
                     esp_task_wdt_reset();
                 }
                 vTaskDelay(50 / portTICK_PERIOD_MS);
             }
-            
+
             if(connected && lockStarted)
             {
                 rebootLock = networkLock->update();
-                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                if (esp_task_wdt_status(NULL) == ESP_OK)
+                {
                     esp_task_wdt_reset();
                 }
                 vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -624,7 +643,8 @@ void networkTask(void *pvParameters)
             if(connected && openerStarted)
             {
                 networkOpener->update();
-                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                if (esp_task_wdt_status(NULL) == ESP_OK)
+                {
                     esp_task_wdt_reset();
                 }
                 vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -649,8 +669,9 @@ void networkTask(void *pvParameters)
 
             restartEsp(RestartReason::RestartTimer);
         }
-        
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -674,23 +695,26 @@ static void print_all_tasks_info(void)
     Log->printf("\n--------------------------------------------------------------------------------\n");
     Log->printf("PRINTING ALL TASKS INFO\n");
     Log->printf("--------------------------------------------------------------------------------\n");
-    for (size_t task_idx = 0; task_idx < tasks_stat.task_count; task_idx++) {
+    for (size_t task_idx = 0; task_idx < tasks_stat.task_count; task_idx++)
+    {
         task_stat_t task_stat = tasks_stat.stat_arr[task_idx];
         Log->printf("%s: %s: Peak Usage %" PRIu16 ", Current Usage %" PRIu16 "\n", task_stat.name,
-                                                                          task_stat.is_alive ? "ALIVE  " : "DELETED",
-                                                                          task_stat.overall_peak_usage,
-                                                                          task_stat.overall_current_usage);
+                    task_stat.is_alive ? "ALIVE  " : "DELETED",
+                    task_stat.overall_peak_usage,
+                    task_stat.overall_current_usage);
 
-        for (size_t heap_idx = 0; heap_idx < task_stat.heap_count; heap_idx++) {
+        for (size_t heap_idx = 0; heap_idx < task_stat.heap_count; heap_idx++)
+        {
             heap_stat_t heap_stat = task_stat.heap_stat[heap_idx];
             Log->printf("    %s: Caps: %" PRIu32 ". Size %" PRIu16 ", Current Usage %" PRIu16 ", Peak Usage %" PRIu16 ", alloc count %" PRIu16 "\n", heap_stat.name,
-                                                                                                                                      heap_stat.caps,
-                                                                                                                                      heap_stat.size,
-                                                                                                                                      heap_stat.current_usage,
-                                                                                                                                      heap_stat.peak_usage,
-                                                                                                                                      heap_stat.alloc_count);
+                        heap_stat.caps,
+                        heap_stat.size,
+                        heap_stat.current_usage,
+                        heap_stat.peak_usage,
+                        heap_stat.alloc_count);
 
-            for (size_t alloc_idx = 0; alloc_idx < heap_stat.alloc_count; alloc_idx++) {
+            for (size_t alloc_idx = 0; alloc_idx < heap_stat.alloc_count; alloc_idx++)
+            {
                 heap_task_block_t alloc_stat = heap_stat.alloc_stat[alloc_idx];
                 Log->printf("        %p: Size: %" PRIu32 "\n", alloc_stat.address, alloc_stat.size);
             }
@@ -704,25 +728,27 @@ static void print_all_tasks_info(void)
 void nukiTask(void *pvParameters)
 {
     esp_task_wdt_add(NULL);
-    
+
     if (preferences->getBool(preference_mqtt_ssl_enabled, false))
     {
-        #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
+#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
         if (esp_psram_get_size() <= 0)
         {
             Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(20000 / portTICK_PERIOD_MS);
         }
-        #else
+#else
         Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(20000 / portTICK_PERIOD_MS);
-        #endif
+#endif
     }
     int64_t nukiLoopTs = 0;
     bool whiteListed = false;
@@ -733,17 +759,19 @@ void nukiTask(void *pvParameters)
             if(bleScannerStarted)
             {
                 bleScanner->update();
-                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                if (esp_task_wdt_status(NULL) == ESP_OK)
+                {
                     esp_task_wdt_reset();
                 }
                 vTaskDelay(20 / portTICK_PERIOD_MS);
             }
-            
+
             bool needsPairing = (lockStarted && !nuki->isPaired()) || (openerStarted && !nukiOpener->isPaired());
 
             if (needsPairing)
             {
-                if (esp_task_wdt_status(NULL) == ESP_OK) {
+                if (esp_task_wdt_status(NULL) == ESP_OK)
+                {
                     esp_task_wdt_reset();
                 }
                 vTaskDelay(2500 / portTICK_PERIOD_MS);
@@ -833,7 +861,8 @@ void nukiTask(void *pvParameters)
             Log->println("nukiTask is running");
             nukiLoopTs = espMillis();
         }
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -886,30 +915,30 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         Log->println("");
         switch (evt->event_id)
         {
-            case HTTP_EVENT_ERROR:
-                Log->println("HTTP_EVENT_ERROR");
-                break;
-            case HTTP_EVENT_ON_CONNECTED:
-                Log->print("HTTP_EVENT_ON_CONNECTED");
-                break;
-            case HTTP_EVENT_HEADER_SENT:
-                Log->print("HTTP_EVENT_HEADER_SENT");
-                break;
-            case HTTP_EVENT_ON_HEADER:
-                Log->print("HTTP_EVENT_ON_HEADER");
-                break;
-            case HTTP_EVENT_ON_DATA:
-                Log->print("HTTP_EVENT_ON_DATA");
-                break;
-            case HTTP_EVENT_ON_FINISH:
-                Log->println("HTTP_EVENT_ON_FINISH");
-                break;
-            case HTTP_EVENT_DISCONNECTED:
-                Log->println("HTTP_EVENT_DISCONNECTED");
-                break;
-            case HTTP_EVENT_REDIRECT:
-                Log->print("HTTP_EVENT_REDIRECT");
-                break;
+        case HTTP_EVENT_ERROR:
+            Log->println("HTTP_EVENT_ERROR");
+            break;
+        case HTTP_EVENT_ON_CONNECTED:
+            Log->print("HTTP_EVENT_ON_CONNECTED");
+            break;
+        case HTTP_EVENT_HEADER_SENT:
+            Log->print("HTTP_EVENT_HEADER_SENT");
+            break;
+        case HTTP_EVENT_ON_HEADER:
+            Log->print("HTTP_EVENT_ON_HEADER");
+            break;
+        case HTTP_EVENT_ON_DATA:
+            Log->print("HTTP_EVENT_ON_DATA");
+            break;
+        case HTTP_EVENT_ON_FINISH:
+            Log->println("HTTP_EVENT_ON_FINISH");
+            break;
+        case HTTP_EVENT_DISCONNECTED:
+            Log->println("HTTP_EVENT_DISCONNECTED");
+            break;
+        case HTTP_EVENT_REDIRECT:
+            Log->print("HTTP_EVENT_REDIRECT");
+            break;
         }
     }
     else
@@ -928,7 +957,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 void otaTask(void *pvParameter)
 {
     esp_task_wdt_add(NULL);
-    
+
     partitionType = checkPartition();
     String updateUrl;
 
@@ -982,7 +1011,8 @@ void otaTask(void *pvParameter)
         {
             Log->println("Firmware upgrade failed, retrying in 5 seconds");
             retryCount++;
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -990,7 +1020,8 @@ void otaTask(void *pvParameter)
         }
         while (1)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK) {
+            if (esp_task_wdt_status(NULL) == ESP_OK)
+            {
                 esp_task_wdt_reset();
             }
             vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -1040,7 +1071,8 @@ void setupTasks(bool ota)
 void logCoreDump()
 {
     coredumpPrinted = false;
-    if (esp_task_wdt_status(NULL) == ESP_OK) {
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
         esp_task_wdt_reset();
     }
     vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -1066,7 +1098,8 @@ void logCoreDump()
             else
             {
                 file = SPIFFS.open("/coredump.hex", FILE_WRITE);
-                if (!file) {
+                if (!file)
+                {
                     Log->println("Failed to open /coredump.hex for writing");
                 }
                 else
@@ -1106,14 +1139,16 @@ void logCoreDump()
                 }
                 Serial.printf("%s", str_dst);
 
-                if (file) {
+                if (file)
+                {
                     file.printf("%s", str_dst);
                 }
             }
 
             Serial.println("");
 
-            if (file) {
+            if (file)
+            {
                 file.println("");
                 file.close();
             }
@@ -1132,15 +1167,15 @@ void logCoreDump()
 
 void setup()
 {
-    #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
-    #ifndef FORCE_NUKI_HUB_HTTPS_SERVER
+#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
+#ifndef FORCE_NUKI_HUB_HTTPS_SERVER
     if(esp_psram_get_size() <= 0)
     {
         nuki_hub_https_server_enabled = false;
     }
-    #endif
-    #endif
-    
+#endif
+#endif
+
     //Set Log level to error for all TAGS
     esp_log_level_set("*", ESP_LOG_ERROR);
     //Set Log level to none for mqtt TAG
@@ -1149,13 +1184,13 @@ void setup()
     Serial.begin(115200);
     Log = &Serial;
 
-    #if !defined(NUKI_HUB_UPDATER) && !defined(CONFIG_IDF_TARGET_ESP32C5)
+#if !defined(NUKI_HUB_UPDATER) && !defined(CONFIG_IDF_TARGET_ESP32C5)
     stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
     static char linebuf[1024];
     setvbuf(stdout, linebuf, _IOLBF, sizeof(linebuf));
     esp_rom_install_channel_putc(1, &ets_putc_handler);
     //ets_install_putc1(&ets_putc_handler);
-    #endif
+#endif
 
     preferences = new Preferences();
     preferences->begin("nukihub", false);
@@ -1165,7 +1200,7 @@ void setup()
     if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT)
-            //|| esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
+        //|| esp_reset_reason() == esp_reset_reason_t::ESP_RST_WDT)
     {
         logCoreDump();
     }
@@ -1221,18 +1256,21 @@ void setup()
     {
         bool failed = true;
 
-        if (!nuki_hub_https_server_enabled) {
+        if (!nuki_hub_https_server_enabled)
+        {
             Log->println("Not running on HTTPS server enabled device");
         }
         else
         {
-            if (!SPIFFS.begin(true)) {
+            if (!SPIFFS.begin(true))
+            {
                 Log->println("SPIFFS Mount Failed");
             }
             else
             {
                 File file = SPIFFS.open("/http_ssl.crt");
-                if (!file || file.isDirectory()) {
+                if (!file || file.isDirectory())
+                {
                     Log->println("http_ssl.crt not found");
                 }
                 else
@@ -1246,7 +1284,8 @@ void setup()
                     cert[filesize] = '\0';
 
                     File file2 = SPIFFS.open("/http_ssl.key");
-                    if (!file2 || file2.isDirectory()) {
+                    if (!file2 || file2.isDirectory())
+                    {
                         Log->println("http_ssl.key not found");
                     }
                     else
@@ -1261,7 +1300,8 @@ void setup()
 
                         psychicServer = new PsychicHttpServer();
                         psychicServer->config.ctrl_port = 20424;
-                        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
+                        {
                             String url = "https://" + request->host() + request->url();
                             if (preferences->getString(preference_https_fqdn, "") != "")
                             {
@@ -1279,7 +1319,8 @@ void setup()
                         psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
                         webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
                         webCfgServerSSL->initialize();
-                        psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+                        psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
+                        {
                             return response->redirect("/");
                         });
                         psychicSSLServer->begin();
@@ -1296,7 +1337,8 @@ void setup()
             psychicServer->config.stack_size = HTTPD_TASK_SIZE;
             webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
             webCfgServer->initialize();
-            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
+            {
                 return response->redirect("/");
             });
             psychicServer->begin();
@@ -1313,7 +1355,7 @@ void setup()
     Log->println(NUKI_HUB_VERSION);
     Log->print("Nuki Hub build ");
     Log->println(NUKI_HUB_BUILD);
-    
+
     uint32_t devIdOpener = preferences->getUInt(preference_device_id_opener);
 
     deviceIdLock = new NukiDeviceId(preferences, preference_device_id_lock);

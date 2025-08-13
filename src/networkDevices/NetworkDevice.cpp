@@ -11,15 +11,18 @@
 void NetworkDevice::init()
 {
     _useEncryption = false;
-    
-    if(_preferences->getBool(preference_mqtt_ssl_enabled, false)) {
-        if (!SPIFFS.begin(true)) {
+
+    if(_preferences->getBool(preference_mqtt_ssl_enabled, false))
+    {
+        if (!SPIFFS.begin(true))
+        {
             Log->println("SPIFFS Mount Failed");
         }
         else
         {
             File file = SPIFFS.open("/mqtt_ssl.ca");
-            if (!file || file.isDirectory()) {
+            if (!file || file.isDirectory())
+            {
                 Log->println("mqtt_ssl.ca not found");
             }
             else
@@ -47,7 +50,8 @@ void NetworkDevice::init()
 
                     File file2 = SPIFFS.open("/mqtt_ssl.crt");
                     File file3 = SPIFFS.open("/mqtt_ssl.key");
-                    if (!file2 || file2.isDirectory() || !file3 || file3.isDirectory()) {
+                    if (!file2 || file2.isDirectory() || !file3 || file3.isDirectory())
+                    {
                         Log->println("mqtt_ssl.crt or mqtt_ssl.key not found");
                     }
                     else

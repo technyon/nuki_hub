@@ -43,7 +43,7 @@ NetworkDeviceType NetworkUtil::GetDeviceTypeFromPreference(int hardwareDetect, i
     case 16:
         return NetworkDeviceType::Waveshare_ESP32_P4_Module_DEV_KIT;
     case 17:
-        return NetworkDeviceType::ESP32_P4_Function_EV_Board;        
+        return NetworkDeviceType::ESP32_P4_Function_EV_Board;
     default:
         Log->println("Unknown hardware selected, falling back to Wi-Fi.");
         return NetworkDeviceType::WiFi;

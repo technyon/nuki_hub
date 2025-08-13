@@ -69,7 +69,8 @@ const String EthernetDevice::deviceName() const
 
 void EthernetDevice::initialize()
 {
-    if (esp_task_wdt_status(NULL) == ESP_OK) {
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
         esp_task_wdt_reset();
     }
     vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -79,7 +80,8 @@ void EthernetDevice::initialize()
         Log->println("Failed to initialize ethernet hardware");
         Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
         wifiFallback = true;
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -108,11 +110,11 @@ void EthernetDevice::initialize()
         // https://github.com/arendst/Tasmota/commit/f8fbe153000591727e40b5007e0de78c33833131
         // https://github.com/arendst/Tasmota/commit/f8fbe153000591727e40b5007e0de78c33833131#diff-32fc0eefbf488dd507b3bef52189bbe37158737aba6f96fe98a8746dc5021955R417
         uint32_t pkg_version = bootloader_common_get_chip_ver_pkg();
-        #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
+#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
         if(esp_psram_get_size() <= 0 && pkg_version <= 3)
-        #else
+#else
         if(pkg_version <= 3)
-        #endif
+#endif
         {
             esp_gpio_revoke(0xFFFFFFFFFFFFFFFF);
         }
@@ -147,7 +149,8 @@ void EthernetDevice::initialize()
         Log->println("Failed to initialize ethernet hardware");
         Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
         wifiFallback = true;
-        if (esp_task_wdt_status(NULL) == ESP_OK) {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
             esp_task_wdt_reset();
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -232,7 +235,8 @@ void EthernetDevice::onNetworkEvent(arduino_event_id_t event, arduino_event_info
 
 void EthernetDevice::reconfigure()
 {
-    if (esp_task_wdt_status(NULL) == ESP_OK) {
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
         esp_task_wdt_reset();
     }
     vTaskDelay(200 / portTICK_PERIOD_MS);

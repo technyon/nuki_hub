@@ -24,7 +24,7 @@ public:
                           const String& entityCat = "",
                           const String& commandTopic = "",
                           std::vector<std::pair<char*, char*>> additionalEntries = {}
-                          );    
+                         );
 private:
     void publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction, char *unlockAction, char *openAction);
     void publishHASSDeviceConfig(char* deviceType, const char* baseTopic, char* name, char* uidString, const char *softwareVersion, const char *hardwareVersion, const char* availabilityTopic, const bool& hasKeypad, char* lockAction, char* unlockAction, char* openAction);
@@ -54,17 +54,17 @@ private:
                                 const String& entityCat = "",
                                 const String& commandTopic = "",
                                 std::vector<std::pair<char*, char*>> additionalEntries = {}
-                                );
+                               );
 
     NetworkDevice* _device = nullptr;
     Preferences* _preferences = nullptr;
-    
+
     String _baseTopic;
     String _hostname;
-    
+
     JsonDocument _uidToName;
     char _nukiHubUidString[20];
-    
+
     char* _buffer;
     const size_t _bufferSize;
 };

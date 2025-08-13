@@ -42,18 +42,18 @@ extern TaskHandle_t networkTaskHandle;
 class WebCfgServer
 {
 public:
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     void updateWebSerial();
-    #else
+#else
     WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
-    #endif
+#endif
     ~WebCfgServer() = default;
 
     void initialize();
 
 private:
-    #ifndef NUKI_HUB_UPDATER
+#ifndef NUKI_HUB_UPDATER
     esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey = false);
     bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
     bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
@@ -70,9 +70,9 @@ private:
     esp_err_t buildAdvancedConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildNukiConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildGpioConfigHtml(PsychicRequest *request, PsychicResponse* resp);
-    #ifndef CONFIG_IDF_TARGET_ESP32H2
+#ifndef CONFIG_IDF_TARGET_ESP32H2
     esp_err_t buildConfigureWifiHtml(PsychicRequest *request, PsychicResponse* resp);
-    #endif
+#endif
     esp_err_t buildInfoHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildCustomNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t processUnpair(PsychicRequest *request, PsychicResponse* resp, bool opener);
@@ -85,12 +85,12 @@ private:
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
     const std::vector<std::pair<String, String>> getGpioOptions() const;
     const std::vector<std::pair<String, String>> getNetworkCustomPHYOptions() const;
-    #if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
     const std::vector<std::pair<String, String>> getNetworkCustomCLKOptions() const;
-    #endif
-    #ifdef NUKI_HUB_HTTPS_SERVER
+#endif
+#ifdef NUKI_HUB_HTTPS_SERVER
     void createSSLCertificate();
-    #endif
+#endif
     const String getPreselectionForGpio(const uint8_t& pin) const;
     const String pinStateToString(const NukiPinState& value) const;
 
@@ -102,7 +102,7 @@ private:
     bool _brokerConfigured = false;
     bool _rebootRequired = false;
     int _restartServicesRequired = 0;
-    #endif
+#endif
 
     std::vector<String> _ssidList;
     std::vector<int> _rssiList;
@@ -135,11 +135,11 @@ private:
     void waitAndProcess(const bool blocking, const uint32_t duration);
     esp_err_t handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final);
     void printCheckBox(PsychicStreamResponse *response, const char* token, const char* description, const bool value, const char* htmlClass);
-    #ifndef CONFIG_IDF_TARGET_ESP32H2
+#ifndef CONFIG_IDF_TARGET_ESP32H2
     esp_err_t buildWifiConnectHtml(PsychicRequest *request, PsychicResponse* resp);
     bool processWiFi(PsychicRequest *request, PsychicResponse* resp, String& message);
 
-    #endif
+#endif
     void printInputField(PsychicStreamResponse *response, const char* token, const char* description, const char* value, const size_t& maxLength, const char* args, const bool& isPassword = false, const bool& showLengthRestriction = false);
     void printInputField(PsychicStreamResponse *response, const char* token, const char* description, const int value, size_t maxLength, const char* args);
 
@@ -147,7 +147,7 @@ private:
     NukiNetwork* _network = nullptr;
     Preferences* _preferences = nullptr;
     ImportExport* _importExport;
-    
+
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;

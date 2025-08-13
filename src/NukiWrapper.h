@@ -148,7 +148,7 @@ private:
     uint _maxKeypadCodeCount = 0;
     uint _maxTimeControlEntryCount = 0;
     uint _maxAuthEntryCount = 0;
-    uint8_t _restartController = 0;    
+    uint8_t _restartController = 0;
     int _nrOfRetries = 0;
     int _retryDelay = 0;
     int _retryConfigCount = 0;

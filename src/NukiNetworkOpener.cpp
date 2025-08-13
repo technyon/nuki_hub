@@ -135,8 +135,8 @@ void NukiNetworkOpener::update()
     wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_feed(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);    
-    
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
     if(_resetRingStateTs != 0 && espMillis() >= _resetRingStateTs)
     {
         _resetRingStateTs = 0;
@@ -353,7 +353,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
             publishState(keyTurnerState);
         }
     }
-    
+
     if(strcmp(str, "undefined") == 0)
     {
         _nukiPublisher->publishString(mqtt_topic_lock_availability, "offline", true);
