@@ -646,7 +646,7 @@ bool NukiNetwork::update()
     {
         uint8_t pin = gpioTs.first;
         int64_t ts = gpioTs.second;
-        if(ts != 0 && ((espMillis() - ts) >= GPIO_DEBOUNCE_TIME))
+        if(ts != 0)
         {
             _gpioTs[pin] = 0;
 
