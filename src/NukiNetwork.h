@@ -29,6 +29,7 @@ public:
     void scan(bool passive = false, bool async = true);
     bool isApOpen();
     bool isConnected();
+    bool isInternetConnected();
     bool mqttConnected();
     bool wifiConnected();
     void clearWifiFallback();
@@ -114,6 +115,7 @@ private:
     NetworkDeviceType _networkDeviceType  = (NetworkDeviceType)-1;
     bool _firstBootAfterDeviceChange = false;
     bool _webEnabled = true;
+    bool _hasInternet = false;
 
 #ifndef NUKI_HUB_UPDATER
     static void onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
@@ -126,6 +128,7 @@ private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
     void buildMqttPath(const char *path, char *outPath);
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
+    void checkInternetConnectivity();
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
@@ -159,6 +162,8 @@ private:
     bool _publishDebugInfo = false;
     bool _logIp = true;
     bool _retainGpio = false;
+    bool _haEnabled = false;
+    bool _haSetupDone = false;
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
     int64_t _lastConnectedTs = 0;

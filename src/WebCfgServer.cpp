@@ -1813,33 +1813,36 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 #ifndef NUKI_HUB_UPDATER
     bool manifestSuccess = false;
     JsonDocument doc;
-
-    NetworkClientSecure *clientOTAUpdate = new NetworkClientSecure;
-    if (clientOTAUpdate)
+    
+    if(_network->isInternetConnected())
     {
-        clientOTAUpdate->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+        NetworkClientSecure *clientOTAUpdate = new NetworkClientSecure;
+        if (clientOTAUpdate)
         {
-            HTTPClient httpsOTAClient;
-            httpsOTAClient.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-            httpsOTAClient.setTimeout(2500);
-            httpsOTAClient.useHTTP10(true);
-
-            if (httpsOTAClient.begin(*clientOTAUpdate, GITHUB_OTA_MANIFEST_URL))
+            clientOTAUpdate->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
             {
-                int httpResponseCodeOTA = httpsOTAClient.GET();
+                HTTPClient httpsOTAClient;
+                httpsOTAClient.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+                httpsOTAClient.setTimeout(2500);
+                httpsOTAClient.useHTTP10(true);
 
-                if (httpResponseCodeOTA == HTTP_CODE_OK || httpResponseCodeOTA == HTTP_CODE_MOVED_PERMANENTLY)
+                if (httpsOTAClient.begin(*clientOTAUpdate, GITHUB_OTA_MANIFEST_URL))
                 {
-                    DeserializationError jsonError = deserializeJson(doc, httpsOTAClient.getStream());
-                    if (!jsonError)
+                    int httpResponseCodeOTA = httpsOTAClient.GET();
+
+                    if (httpResponseCodeOTA == HTTP_CODE_OK || httpResponseCodeOTA == HTTP_CODE_MOVED_PERMANENTLY)
                     {
-                        manifestSuccess = true;
+                        DeserializationError jsonError = deserializeJson(doc, httpsOTAClient.getStream());
+                        if (!jsonError)
+                        {
+                            manifestSuccess = true;
+                        }
                     }
+                    httpsOTAClient.end();
                 }
-                httpsOTAClient.end();
             }
+            delete clientOTAUpdate;
         }
-        delete clientOTAUpdate;
     }
 
     response.print("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
@@ -6365,6 +6368,9 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_network->isConnected() ? "Yes" : "No");
     if(_network->isConnected())
     {
+        response.print("\nInternet connected: ");
+        response.print(_network->isInternetConnected() ? "Yes" : "No");
+
         response.print("\nIP Address: ");
         response.print(_network->localIP());
 
