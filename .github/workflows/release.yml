@@ -162,10 +162,10 @@ jobs:
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/resources/old_manifest.py resources/old_manifest.py
           cp -vf master/src/Config.h src/Config.h
-          echo release/*/nuki_hub_*.bin | tr ' ' '\n' | xargs -n1 -I{} bash -c 'cp {} ota/old/$VERSION.$(basename "{}")'
+          echo release/*/nuki_hub_*.bin | tr ' ' '\n' | xargs -n1 -I{} bash -c 'cp {} ota/old/${{ steps.get_version.outputs.VERSION }}.$(basename "{}")'
           python3 resources/ota_manifest.py release $Version
           python3 resources/ota_manifest.py beta none
-          python3 resources/old_manifest.py $Version
+          python3 resources/old_manifest.py ${{ steps.get_version.outputs.VERSION }}
           find * -not -path "ota*" -delete
           rm -rf ota/beta/*.bin
           rm -rf ota/beta/*.elf
