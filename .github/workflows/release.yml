@@ -161,16 +161,16 @@ jobs:
           cp -vf release/*/nuki_hub_*.elf ota/
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
           cp -vf master/src/Config.h src/Config.h
+          echo release/*/nuki_hub_*.bin | tr ' ' '\n' | xargs -n1 -I{} bash -c 'cp {} ota/old/$VERSION.$(basename "{}")'
           python3 resources/ota_manifest.py release $Version
           python3 resources/ota_manifest.py beta none
+          python3 resources/old_manifest.py $Version
           find * -not -path "ota*" -delete
           rm -rf ota/beta/*.bin
           rm -rf ota/beta/*.elf
           rm -rf .github .gitignore .gitmodules
           touch ota/beta/empty
           touch ota/master/empty
-          echo release/*/nuki_hub_*.bin | tr ' ' '\n' | xargs -n1 -I{} bash -c 'cp {} ota/old/$VERSION.$(basename "{}")'
-          python3 resources/old_manifest.py $Version
       - name: Commit binaries to binary
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
