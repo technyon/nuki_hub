@@ -160,6 +160,7 @@ jobs:
           cp -vf release/*/nuki_hub_*.bin ota/
           cp -vf release/*/nuki_hub_*.elf ota/
           cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
+          cp -vf master/resources/old_manifest.py resources/old_manifest.py
           cp -vf master/src/Config.h src/Config.h
           echo release/*/nuki_hub_*.bin | tr ' ' '\n' | xargs -n1 -I{} bash -c 'cp {} ota/old/$VERSION.$(basename "{}")'
           python3 resources/ota_manifest.py release $Version
