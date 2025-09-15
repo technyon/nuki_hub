@@ -485,6 +485,7 @@ uint16_t NukiOpenerWrapper::getPin()
 void NukiOpenerWrapper::unpair()
 {
     _nukiOpener.unPairNuki();
+    _preferences->remove(preference_opener_log_num);
     Preferences nukiBlePref;
     nukiBlePref.begin("NukiHubopener", false);
     nukiBlePref.clear();

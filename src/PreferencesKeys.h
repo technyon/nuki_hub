@@ -182,6 +182,8 @@
 #define preference_latest_version (char*)"latest"
 #define preference_reset_mqtt_topics (char*)"rstMqtt"
 #define preference_nukihub_id (char*)"nukihubId"
+#define preference_lock_log_num (char*)"lckLgNm"
+#define preference_opener_log_num (char*)"opLgNm"
 
 //OBSOLETE
 #define preference_access_level (char*)"accLvl"
