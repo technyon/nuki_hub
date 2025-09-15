@@ -517,6 +517,7 @@ uint32_t NukiWrapper::getUltraPin()
 void NukiWrapper::unpair()
 {
     _nukiLock.unPairNuki();
+    _preferences->remove(preference_lock_log_num);    
     Preferences nukiBlePref;
     nukiBlePref.begin("NukiHub", false);
     nukiBlePref.clear();
