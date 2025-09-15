@@ -12,6 +12,7 @@
 #include "networkDevices/EthernetDevice.h"
 #include "hal/wdt_hal.h"
 #include "esp_mac.h"
+#include <ESP32Ping.h>
 
 NukiNetwork* NukiNetwork::_inst = nullptr;
 
@@ -152,6 +153,11 @@ void NukiNetwork::clearWifiFallback()
 bool NukiNetwork::isConnected()
 {
     return _device->isConnected();
+}
+
+bool NukiNetwork::isInternetConnected()
+{
+    return _hasInternet;
 }
 
 bool NukiNetwork::mqttConnected()
@@ -297,7 +303,8 @@ void NukiNetwork::readSettings()
     _checkUpdates = _preferences->getBool(preference_check_updates, false);
     _rssiPublishInterval = _preferences->getInt(preference_rssi_publish_interval, 0) * 1000;
     _retainGpio = _preferences->getBool(preference_retain_gpio, false);
-
+    _haEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
+    
     if(_rssiPublishInterval == 0)
     {
         _rssiPublishInterval = 60000;
@@ -469,6 +476,8 @@ bool NukiNetwork::update()
         Log->print("IP: ");
         Log->println(_device->localIP());
         _firstDisconnected = true;
+        
+        checkInternetConnectivity();
     }
 
     if(!_logIp && _device->isConnected() && !_device->mqttConnected() )
@@ -575,7 +584,7 @@ bool NukiNetwork::update()
         _lastMaintenanceTs = ts;
     }
 
-    if(_checkUpdates)
+    if(_checkUpdates && (!_haEnabled || (_haEnabled && _haSetupDone)) && _hasInternet)
     {
         if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
         {
@@ -663,6 +672,11 @@ bool NukiNetwork::update()
     }
 
     return true;
+}
+
+void NukiNetwork::checkInternetConnectivity()
+{
+    _hasInternet = Ping.ping("github.com", 3);
 }
 
 void NukiNetwork::onMqttConnect(const bool &sessionPresent)
@@ -849,6 +863,7 @@ bool NukiNetwork::reconnect(bool force)
                 if(_preferences->getBool(preference_mqtt_hass_enabled, false))
                 {
                     setupHASS(0, 0, {0}, {0}, {0}, false, false);
+                    _haSetupDone = true;
                 }
 
                 initTopic(_maintenancePathPrefix, mqtt_topic_reset, "0");
@@ -1029,7 +1044,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
         vTaskDelay(200 / portTICK_PERIOD_MS);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false) && !mqttRecentlyConnected())
+    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false) && !mqttRecentlyConnected() && _hasInternet)
     {
         Log->println("Update requested via MQTT.");
 
