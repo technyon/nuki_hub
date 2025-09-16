@@ -5,12 +5,27 @@
 #define NUKI_HUB_VERSION "9.13"
 #define NUKI_HUB_VERSION_INT (uint32_t)913
 #define NUKI_HUB_BUILD "unknownbuildnr"
-#define NUKI_HUB_DATE "2025-09-10"
+#define NUKI_HUB_DATE "2025-09-16"
 
 #define GITHUB_LATEST_RELEASE_URL (char*)"https://github.com/technyon/nuki_hub/releases/latest"
 #define GITHUB_OTA_MANIFEST_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/manifest.json"
 
-#if defined(CONFIG_IDF_TARGET_ESP32P4)
+#if defined(NUKI_TARGET_P4_C5)
+#define GITHUB_LATEST_RELEASE_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32p4c5.bin"
+#define GITHUB_LATEST_UPDATER_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_updater_esp32p4c5.bin"
+#define GITHUB_BETA_RELEASE_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32p4c5.bin"
+#define GITHUB_BETA_UPDATER_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_updater_esp32p4c5.bin"
+#define GITHUB_MASTER_RELEASE_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_esp32p4c5.bin"
+#define GITHUB_MASTER_UPDATER_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/master/nuki_hub_updater_esp32p4c5.bin"
+#define GITHUB_LATEST_RELEASE_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/nuki_hub_esp32p4c5.bin"
+#define GITHUB_LATEST_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/nuki_hub_updater_esp32p4c5.bin"
+#define GITHUB_BETA_RELEASE_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/beta/nuki_hub_esp32p4c5.bin"
+#define GITHUB_BETA_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/beta/nuki_hub_updater_esp32p4c5.bin"
+#define GITHUB_MASTER_RELEASE_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_esp32p4c5.bin"
+#define GITHUB_MASTER_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_updater_esp32p4c5.bin"
+#define NUKI_HUB_HW (char*)"ESP32-P4 (C5)"
+#define BOOT_BUTTON_GPIO (gpio_num_t)35
+#elif defined(CONFIG_IDF_TARGET_ESP32P4)
 #define GITHUB_LATEST_RELEASE_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32p4.bin"
 #define GITHUB_LATEST_UPDATER_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_updater_esp32p4.bin"
 #define GITHUB_BETA_RELEASE_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/nuki_hub_esp32p4.bin"
@@ -23,7 +38,7 @@
 #define GITHUB_BETA_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/beta/nuki_hub_updater_esp32p4.bin"
 #define GITHUB_MASTER_RELEASE_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_esp32p4.bin"
 #define GITHUB_MASTER_UPDATER_BINARY_URL_DBG (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/debug/master/nuki_hub_updater_esp32p4.bin"
-#define NUKI_HUB_HW (char*)"ESP32-P4"
+#define NUKI_HUB_HW (char*)"ESP32-P4 (C6)"
 #define BOOT_BUTTON_GPIO (gpio_num_t)35
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 #define GITHUB_LATEST_RELEASE_BINARY_URL (char*)"https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/nuki_hub_esp32c3.bin"
