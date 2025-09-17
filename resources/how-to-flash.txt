@@ -162,6 +162,10 @@ esptool.py --chip esp32h2 --port /dev/ttyUSB0 --baud 921600 --before default-res
 
 esptool.py --chip esp32p4 --port /dev/ttyUSB0 --baud 921600 --before default-reset --after hard-reset write-flash -z --flash-mode dio --flash-freq keep --flash-size detect 0xe000 boot_app0.bin 0x2000 nuki_hub_bootloader_esp32p4.bin 0x10000 nuki_hub_esp32p4.bin 0x270000 nuki_hub_updater_esp32p4.bin 0x8000 nuki_hub_partitions_esp32p4.bin
 
+## ESP32-P4C5
+
+esptool.py --chip esp32p4 --port /dev/ttyUSB0 --baud 921600 --before default-reset --after hard-reset write-flash -z --flash-mode dio --flash-freq keep --flash-size detect 0xe000 boot_app0.bin 0x2000 nuki_hub_bootloader_esp32p4c5.bin 0x10000 nuki_hub_esp32p4c5.bin 0x270000 nuki_hub_updater_esp32p4c5.bin 0x8000 nuki_hub_partitions_esp32p4c5.bin
+
 ## ESP32-SOLO1
 
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default-reset --after hard-reset write-flash -z --flash-mode dio --flash-freq keep --flash-size detect 0xe000 boot_app0.bin 0x1000 nuki_hub_bootloader_esp32solo1.bin 0x10000 nuki_hub_esp32solo1.bin 0x270000 nuki_hub_updater_esp32solo1.bin 0x8000 nuki_hub_partitions_esp32solo1.bin
