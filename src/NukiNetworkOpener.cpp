@@ -23,8 +23,11 @@ NukiNetworkOpener::NukiNetworkOpener(NukiNetwork* network, Preferences* preferen
 
 void NukiNetworkOpener::initialize()
 {
-    _lastRollingLog = _preferences->getInt(preference_opener_log_num, 0);
-    
+    if (_preferences->getBool(preference_save_log_num, false)) {
+        _lastRollingLog = _preferences->getInt(preference_opener_log_num, 0);
+        _saveLogEnabled = true;
+    }
+
     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
     mqttPath.concat("/opener");
 
@@ -157,8 +160,7 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
         return;
     }
 
-    /*
-    if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
+    if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last) && !_saveLogEnabled)
     {
         if(strcmp(data, "") == 0 ||
                 strcmp(data, "--") == 0)
@@ -171,7 +173,6 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
             _lastRollingLog = atoi(data);
         }
     }
-    */
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_action))
     {
@@ -688,7 +689,9 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
             }
 
             _lastRollingLog = log.index;
-            _preferences->putInt(preference_opener_log_num, _lastRollingLog);
+            if (_saveLogEnabled) {
+                _preferences->putInt(preference_opener_log_num, _lastRollingLog);
+            }
         }
     }
 

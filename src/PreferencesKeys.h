@@ -158,6 +158,7 @@
 #define preference_mqtt_ca (char*)"mqttca"
 #define preference_mqtt_crt (char*)"mqttcrt"
 #define preference_mqtt_key (char*)"mqttkey"
+#define preference_save_log_num (char*)"svLgNm"
 
 //NOT USER CHANGABLE
 #define preference_mfa_reconfigure (char*)"mfaRECONF"

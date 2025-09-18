@@ -78,6 +78,7 @@ private:
     char _mqttPath[181] = {0};
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
+    bool _saveLogEnabled = false;
     bool _disableNonJSON = false;
     bool _clearNonJsonKeypad = true;
 

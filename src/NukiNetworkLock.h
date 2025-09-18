@@ -88,6 +88,7 @@ private:
 
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
+    bool _saveLogEnabled = false;
     bool _disableNonJSON = false;
     bool _clearNonJsonKeypad = true;
     bool _offConnected = false;
