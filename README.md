@@ -324,7 +324,8 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 - Add, modify and delete timecontrol entries: Enable to allow configuration of timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol)" section of this README
 - Publish authorization information: Enable to publish information about authorization entries through MQTT, see the "[Authorization](#authorization)" section of this README
 - Modify and delete authorization entries: Enable to allow configuration of authorization entries through MQTT, see the "[Authorization](#authorization)" section of this README
-- Publish auth data: Enable to publish authorization data to the MQTT topic lock/log
+- Publish authorization log: Enable to publish authorization data to the MQTT topic lock/log
+- Save auth log number to flash: Enable to save the highest Nuki lock and/or opener auth log number to flash on change. Prevents duplicates in the rolling log but slightly increases flash wear.
 
 #### Nuki Lock/Opener Access Control
 - Enable or disable executing each available lock action for the Nuki Lock and Nuki Opener through MQTT. Note: GPIO control is not restricted through this setting.

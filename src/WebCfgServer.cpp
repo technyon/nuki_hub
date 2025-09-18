@@ -4179,6 +4179,15 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 Log->println(key);
             }
         }
+        else if(key == "SAVELOGNUM")
+        {
+            if(_preferences->getBool(preference_save_log_num, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_save_log_num, (value == "1"));
+                Log->print("Setting changed: ");
+                Log->println(key);
+            }
+        }
         else if(key == "CREDDIGEST")
         {
             if(_preferences->getInt(preference_http_auth_type, 0) != value.toInt())
@@ -5925,6 +5934,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
     printCheckBox(&response, "AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
     printCheckBox(&response, "AUTHENA", "Modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
     printCheckBox(&response, "PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
+    printCheckBox(&response, "SAVELOGNUM", "Save auth log number to flash", _preferences->getBool(preference_save_log_num), "");    
     response.print("</table><br>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
 

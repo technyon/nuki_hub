@@ -35,8 +35,11 @@ NukiNetworkLock::~NukiNetworkLock()
 
 void NukiNetworkLock::initialize()
 {
-    _lastRollingLog = _preferences->getInt(preference_lock_log_num, 0);
-    
+    if (_preferences->getBool(preference_save_log_num, false)) {
+        _lastRollingLog = _preferences->getInt(preference_lock_log_num, 0);
+        _saveLogEnabled = true;
+    }
+
     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
     mqttPath.concat("/lock");
 
@@ -205,8 +208,7 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         return;
     }
 
-    /*
-    if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last))
+    if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last) && !_saveLogEnabled)
     {
         if(strcmp(data, "") == 0 ||
                 strcmp(data, "--") == 0)
@@ -219,7 +221,6 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
             _lastRollingLog = atoi(data);
         }
     }
-    */
 
     if(_nukiOfficial->getOffEnabled())
     {
@@ -774,7 +775,9 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
         if(log.index > _lastRollingLog)
         {
             _lastRollingLog = log.index;
-            _preferences->putInt(preference_lock_log_num, _lastRollingLog);
+            if (_saveLogEnabled) {
+                _preferences->putInt(preference_lock_log_num, _lastRollingLog);
+            }
             serializeJson(entry, _buffer, _bufferSize);
             _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, true);
             _nukiPublisher->publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
