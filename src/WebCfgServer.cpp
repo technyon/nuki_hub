@@ -6217,7 +6217,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<h3>System Information</h3><pre>");
+    response.print("<button onclick=\"copyFunction()\">Copy for GitHub issue with all personal information redacted</button><br /><br /><h3>System Information</h3><pre id=\"preInfo\">");
     response.print("------------ NUKI HUB ------------");
     response.print("\nDevice: ");
     response.print(NUKI_HUB_HW);
@@ -6381,18 +6381,22 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("\nInternet connected: ");
         response.print(_network->isInternetConnected() ? "Yes" : "No");
 
-        response.print("\nIP Address: ");
+        response.print("\nIP Address: <span class=\"redact\">");
         response.print(_network->localIP());
+        response.print("</span>");
 
         if(_network->networkDeviceName() == "Built-in Wi-Fi")
         {
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-            response.print("\nSSID: ");
+            response.print("\nSSID: <span class=\"redact\">");
             response.print(WiFi.SSID());
-            response.print("\nBSSID of AP: ");
+            response.print("</span>");
+            response.print("\nBSSID of AP: <span class=\"redact\">");
             response.print(_network->networkBSSID());
-            response.print("\nESP32 MAC address: ");
+            response.print("</span>");
+            response.print("\nESP32 MAC address: <span class=\"redact\">");
             response.print(WiFi.macAddress());
+            response.print("</span>");
 #endif
         }
         else
@@ -6410,14 +6414,18 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     else
     {
         response.print("\nDHCP enabled: No");
-        response.print("\nStatic IP address: ");
+        response.print("\nStatic IP address: <span class=\"redact\">");
         response.print(_preferences->getString(preference_ip_address, ""));
-        response.print("\nStatic IP subnet: ");
+        response.print("</span>");
+        response.print("\nStatic IP subnet: <span class=\"redact\">");
         response.print(_preferences->getString(preference_ip_subnet, ""));
-        response.print("\nStatic IP gateway: ");
+        response.print("</span>");
+        response.print("\nStatic IP gateway: <span class=\"redact\">");
         response.print(_preferences->getString(preference_ip_gateway, ""));
-        response.print("\nStatic IP DNS server: ");
+        response.print("</span>");
+        response.print("\nStatic IP DNS server: <span class=\"redact\">");
         response.print(_preferences->getString(preference_ip_dns_server, ""));
+        response.print("</span>");
     }
     if(_network->networkDeviceName() == "Built-in Wi-Fi")
     {
@@ -6457,10 +6465,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print("\n\n------------ MQTT ------------");
     response.print("\nMQTT connected: ");
     response.print(_network->mqttConnectionState() > 0 ? "Yes" : "No");
-    response.print("\nMQTT broker address: ");
+    response.print("\nMQTT broker address: <span class=\"redact\">");
     response.print(_preferences->getString(preference_mqtt_broker, ""));
-    response.print("\nMQTT broker port: ");
+    response.print("</span>");
+    response.print("\nMQTT broker port: <span class=\"redact\">");
     response.print(_preferences->getInt(preference_mqtt_broker_port, 1883));
+    response.print("</span>");
     response.print("\nMQTT username: ");
     response.print(_preferences->getString(preference_mqtt_user, "").length() > 0 ? "***" : "Not set");
     response.print("\nMQTT password: ");
@@ -6562,10 +6572,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("Yes");
         response.print("\nHome Assistant auto discovery topic: ");
         response.print(_preferences->getString(preference_mqtt_hass_discovery, "") + "/");
-        response.print("\nNuki Hub configuration URL for HA: ");
+        response.print("\nNuki Hub configuration URL for HA: <span class=\"redact\">");
         response.print(_preferences->getString(preference_mqtt_hass_cu_url, "").length() > 0 ? _preferences->getString(preference_mqtt_hass_cu_url, "") : "http://" + _network->localIP());
-        response.print("\nNuki Hub ID: ");
+        response.print("</span>");
+        response.print("\nNuki Hub ID: <span class=\"redact\">");
         response.print(_preferences->getULong64(preference_nukihub_id, 0));
+        response.print("</span>");
     }
     else
     {
@@ -6756,27 +6768,31 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             nukiBlePref.getBytes("authorizationId", authorizationId, 4);
             nukiBlePref.end();
             response.print("\n\n------------ NUKI LOCK PAIRING ------------");
-            response.print("\nBLE Address: ");
+            response.print("\nBLE Address: <span class=\"redact\">");
             for (int i = 0; i < 6; i++)
             {
                 sprintf(tmp, "%02x", currentBleAddress[i]);
                 response.print(tmp);
             }
-            response.print("\nSecretKeyK: ");
+            response.print("</span>");
+            response.print("\nSecretKeyK: <span class=\"redact\">");
             for (int i = 0; i < 32; i++)
             {
                 sprintf(tmp, "%02x", secretKeyK[i]);
                 response.print(tmp);
             }
-            response.print("\nAuthorizationId: ");
+            response.print("</span>");
+            response.print("\nAuthorizationId: <span class=\"redact\">");
             for (int i = 0; i < 4; i++)
             {
                 sprintf(tmp, "%02x", authorizationId[i]);
                 response.print(tmp);
             }
             uint32_t authorizationIdInt = authorizationId[0] + 256U*authorizationId[1] + 65536U*authorizationId[2] + 16777216U*authorizationId[3];
-            response.print("\nAuthorizationId (UINT32_T): ");
+            response.print("</span>");
+            response.print("\nAuthorizationId (UINT32_T): <span class=\"redact\">");
             response.print(authorizationIdInt);
+            response.print("</span>");
             response.print("\nPaired to Nuki Lock Ultra/Go/5th gen: ");
             response.print(nukiBlePref.getBool("isUltra", false) ? "Yes" : "No");
         }
@@ -6926,27 +6942,31 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             nukiBlePref.getBytes("authorizationId", authorizationIdOpn, 4);
             nukiBlePref.end();
             response.print("\n\n------------ NUKI OPENER PAIRING ------------");
-            response.print("\nBLE Address: ");
+            response.print("\nBLE Address: <span class=\"redact\">");
             for (int i = 0; i < 6; i++)
             {
                 sprintf(tmp, "%02x", currentBleAddressOpn[i]);
                 response.print(tmp);
             }
-            response.print("\nSecretKeyK: ");
+            response.print("</span>");
+            response.print("\nSecretKeyK: <span class=\"redact\">");
             for (int i = 0; i < 32; i++)
             {
                 sprintf(tmp, "%02x", secretKeyKOpn[i]);
                 response.print(tmp);
             }
-            response.print("\nAuthorizationId: ");
+            response.print("</span>");
+            response.print("\nAuthorizationId: <span class=\"redact\">");
             for (int i = 0; i < 4; i++)
             {
                 sprintf(tmp, "%02x", authorizationIdOpn[i]);
                 response.print(tmp);
             }
             uint32_t authorizationIdOpnInt = authorizationIdOpn[0] + 256U*authorizationIdOpn[1] + 65536U*authorizationIdOpn[2] + 16777216U*authorizationIdOpn[3];
-            response.print("\nAuthorizationId (UINT32_T): ");
+            response.print("</span>");
+            response.print("\nAuthorizationId (UINT32_T): <span class=\"redact\">");
             response.print(authorizationIdOpnInt);
+            response.print("</span>");
         }
     }
 
@@ -6956,7 +6976,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response.print(gpioStr);
-    response.print("</pre></body></html>");
+    response.print("</pre><script>function copyFunction() { var copyText = document.getElementById(\"preInfo\"); copyText.select(); copyText.setSelectionRange(0, 99999); navigator.clipboard.writeText(copyText.value); }");
+    response.print("</script></body></html>");
     return response.endSend();
 }
 
