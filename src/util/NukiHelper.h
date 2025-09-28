@@ -3,7 +3,7 @@
 #include "NukiConstants.h"
 #include "NukiLock.h"
 
-class NukiUtil
+class NukiHelper
 {
 public:
     static const NukiLock::LockAction lockActionToEnum(const char* str); // char array at least 14 characters

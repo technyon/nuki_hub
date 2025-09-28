@@ -9,7 +9,7 @@
 #include "hal/wdt_hal.h"
 #include <time.h>
 #include "esp_sntp.h"
-#include "util/NukiUtil.h"
+#include "util/NukiHelper.h"
 
 NukiWrapper* nukiInst = nullptr;
 
@@ -648,7 +648,7 @@ void NukiWrapper::updateBatteryState()
         }
     }
 
-    NukiUtil::printCommandResult(result);
+    NukiHelper::printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
@@ -956,7 +956,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
             }
         }
 
-        NukiUtil::printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
@@ -1044,7 +1044,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
             }
         }
 
-        NukiUtil::printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitKeypadUpdateTs = espMillis() + 5000;
@@ -1123,7 +1123,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
             }
         }
 
-        NukiUtil::printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitTimeControlUpdateTs = espMillis() + 5000;
@@ -1204,7 +1204,7 @@ void NukiWrapper::updateAuth(bool retrieved)
             }
         }
 
-        NukiUtil::printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthUpdateTs = millis() + 5000;
@@ -1266,7 +1266,7 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
     {
         if(strlen(value) > 0)
         {
-            action = NukiUtil::lockActionToEnum(value);
+            action = NukiHelper::lockActionToEnum(value);
             if((int)action == 0xff)
             {
                 return LockActionResult::UnknownAction;
@@ -1611,7 +1611,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction1") == 0)
                     {
-                        const uint8_t fobAct1 = NukiUtil::fobActionToInt(jsonchar);
+                        const uint8_t fobAct1 = NukiHelper::fobActionToInt(jsonchar);
 
                         if(fobAct1 != 99)
                         {
@@ -1631,7 +1631,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction2") == 0)
                     {
-                        const uint8_t fobAct2 = NukiUtil::fobActionToInt(jsonchar);
+                        const uint8_t fobAct2 = NukiHelper::fobActionToInt(jsonchar);
 
                         if(fobAct2 != 99)
                         {
@@ -1651,7 +1651,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction3") == 0)
                     {
-                        const uint8_t fobAct3 = NukiUtil::fobActionToInt(jsonchar);
+                        const uint8_t fobAct3 = NukiHelper::fobActionToInt(jsonchar);
 
                         if(fobAct3 != 99)
                         {
@@ -1691,7 +1691,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "advertisingMode") == 0)
                     {
-                        Nuki::AdvertisingMode advmode = NukiUtil::advertisingModeToEnum(jsonchar);
+                        Nuki::AdvertisingMode advmode = NukiHelper::advertisingModeToEnum(jsonchar);
 
                         if((int)advmode != 0xff)
                         {
@@ -1711,7 +1711,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "timeZone") == 0)
                     {
-                        Nuki::TimeZoneId tzid = NukiUtil::timeZoneToEnum(jsonchar);
+                        Nuki::TimeZoneId tzid = NukiHelper::timeZoneToEnum(jsonchar);
 
                         if((int)tzid != 0xff)
                         {
@@ -1901,7 +1901,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "singleButtonPressAction") == 0)
                     {
-                        NukiLock::ButtonPressAction sbpa = NukiUtil::buttonPressActionToEnum(jsonchar);
+                        NukiLock::ButtonPressAction sbpa = NukiHelper::buttonPressActionToEnum(jsonchar);
 
                         if((int)sbpa != 0xff)
                         {
@@ -1921,7 +1921,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "doubleButtonPressAction") == 0)
                     {
-                        NukiLock::ButtonPressAction dbpa = NukiUtil::buttonPressActionToEnum(jsonchar);
+                        NukiLock::ButtonPressAction dbpa = NukiHelper::buttonPressActionToEnum(jsonchar);
 
                         if((int)dbpa != 0xff)
                         {
@@ -1961,7 +1961,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "batteryType") == 0)
                     {
-                        Nuki::BatteryType battype = NukiUtil::batteryTypeToEnum(jsonchar);
+                        Nuki::BatteryType battype = NukiHelper::batteryTypeToEnum(jsonchar);
 
                         if((int)battype != 0xff && !_isUltra)
                         {
@@ -2258,7 +2258,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "motorSpeed") == 0)
                     {
-                        NukiLock::MotorSpeed motorSpeed = NukiUtil::motorSpeedToEnum(jsonchar);
+                        NukiLock::MotorSpeed motorSpeed = NukiHelper::motorSpeedToEnum(jsonchar);
 
                         if((int)motorSpeed != 0xff)
                         {
@@ -3227,7 +3227,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
     if(lockAction.length() > 0)
     {
-        timeControlLockAction = NukiUtil::lockActionToEnum(lockAction.c_str());
+        timeControlLockAction = NukiHelper::lockActionToEnum(lockAction.c_str());
 
         if((int)timeControlLockAction == 0xff)
         {

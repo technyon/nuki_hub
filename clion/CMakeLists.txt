@@ -58,8 +58,8 @@ set(SRCFILES
         ../src/enums/NukiPinState.h
         ../src/networkDevices/Tlk110Definitions.h
         ../src/SerialReader.cpp
-        ../src/util/NukiUtil.cpp
-        ../src/util/NukiOpenerUtil.cpp
+        ../src/util/NukiHelper.cpp
+        ../src/util/NukiOpenerHelper.cpp
 
 file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c

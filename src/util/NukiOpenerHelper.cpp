@@ -1,9 +1,9 @@
-#include "NukiOpenerUtil.h"
+#include "NukiOpenerHelper.h"
 #include <cstring>
 #include "Logger.h"
 #include "NukiOpenerUtils.h"
 
-const NukiOpener::LockAction NukiOpenerUtil::lockActionToEnum(const char *str)
+const NukiOpener::LockAction NukiOpenerHelper::lockActionToEnum(const char *str)
 {
     if(strcmp(str, "activateRTO") == 0 || strcmp(str, "ActivateRTO") == 0)
     {
@@ -40,7 +40,7 @@ const NukiOpener::LockAction NukiOpenerUtil::lockActionToEnum(const char *str)
     return (NukiOpener::LockAction)0xff;
 }
 
-const Nuki::AdvertisingMode NukiOpenerUtil::advertisingModeToEnum(const char *str)
+const Nuki::AdvertisingMode NukiOpenerHelper::advertisingModeToEnum(const char *str)
 {
     if(strcmp(str, "Automatic") == 0)
     {
@@ -61,7 +61,7 @@ const Nuki::AdvertisingMode NukiOpenerUtil::advertisingModeToEnum(const char *st
     return (Nuki::AdvertisingMode)0xff;
 }
 
-const uint8_t NukiOpenerUtil::fobActionToInt(const char *str)
+const uint8_t NukiOpenerHelper::fobActionToInt(const char *str)
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -90,7 +90,7 @@ const uint8_t NukiOpenerUtil::fobActionToInt(const char *str)
     return 99;
 }
 
-const uint8_t NukiOpenerUtil::operatingModeToInt(const char *str)
+const uint8_t NukiOpenerHelper::operatingModeToInt(const char *str)
 {
     if(strcmp(str, "Generic door opener") == 0)
     {
@@ -159,7 +159,7 @@ const uint8_t NukiOpenerUtil::operatingModeToInt(const char *str)
     return 99;
 }
 
-const uint8_t NukiOpenerUtil::doorbellSuppressionToInt(const char *str)
+const uint8_t NukiOpenerHelper::doorbellSuppressionToInt(const char *str)
 {
     if(strcmp(str, "Off") == 0)
     {
@@ -196,7 +196,7 @@ const uint8_t NukiOpenerUtil::doorbellSuppressionToInt(const char *str)
     return 99;
 }
 
-const uint8_t NukiOpenerUtil::soundToInt(const char *str)
+const uint8_t NukiOpenerHelper::soundToInt(const char *str)
 {
     if(strcmp(str, "No Sound") == 0)
     {
@@ -217,7 +217,7 @@ const uint8_t NukiOpenerUtil::soundToInt(const char *str)
     return 99;
 }
 
-const NukiOpener::ButtonPressAction NukiOpenerUtil::buttonPressActionToEnum(const char* str)
+const NukiOpener::ButtonPressAction NukiOpenerHelper::buttonPressActionToEnum(const char* str)
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -254,7 +254,7 @@ const NukiOpener::ButtonPressAction NukiOpenerUtil::buttonPressActionToEnum(cons
     return (NukiOpener::ButtonPressAction)0xff;
 }
 
-const Nuki::BatteryType NukiOpenerUtil::batteryTypeToEnum(const char* str)
+const Nuki::BatteryType NukiOpenerHelper::batteryTypeToEnum(const char* str)
 {
     if(strcmp(str, "Alkali") == 0)
     {
@@ -271,7 +271,7 @@ const Nuki::BatteryType NukiOpenerUtil::batteryTypeToEnum(const char* str)
     return (Nuki::BatteryType)0xff;
 }
 
-void NukiOpenerUtil::printCommandResult(Nuki::CmdResult result)
+void NukiOpenerHelper::printCommandResult(Nuki::CmdResult result)
 {
     char resultStr[15];
     NukiOpener::cmdResultToString(result, resultStr);

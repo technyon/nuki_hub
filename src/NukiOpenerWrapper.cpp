@@ -10,8 +10,8 @@
 #include "hal/wdt_hal.h"
 #include <time.h>
 #include "esp_sntp.h"
-#include "util/NukiOpenerUtil.h"
-#include "util/NukiUtil.h"
+#include "util/NukiOpenerHelper.h"
+#include "util/NukiHelper.h"
 
 NukiOpenerWrapper* nukiOpenerInst;
 Preferences* nukiOpenerPreferences = nullptr;
@@ -637,7 +637,7 @@ void NukiOpenerWrapper::updateBatteryState()
         }
     }
 
-    NukiOpenerUtil::printCommandResult(result);
+    NukiOpenerHelper::printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
@@ -794,7 +794,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         }
 
         Log->println(result);
-        NukiOpenerUtil::printCommandResult(result);
+        NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
@@ -883,7 +883,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
             }
         }
 
-        NukiOpenerUtil::printCommandResult(result);
+        NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitKeypadUpdateTs = espMillis() + 5000;
@@ -963,7 +963,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
             }
         }
 
-        NukiOpenerUtil::printCommandResult(result);
+        NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitTimeControlUpdateTs = espMillis() + 5000;
@@ -1044,7 +1044,7 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
             }
         }
 
-        NukiOpenerUtil::printCommandResult(result);
+        NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthUpdateTs = millis() + 5000;
@@ -1101,7 +1101,7 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
     {
         if(strlen(value) > 0)
         {
-            action = NukiOpenerUtil::lockActionToEnum(value);
+            action = NukiOpenerHelper::lockActionToEnum(value);
             if((int)action == 0xff)
             {
                 return LockActionResult::UnknownAction;
@@ -1375,7 +1375,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction1") == 0)
                     {
-                        const uint8_t fobAct1 = NukiOpenerUtil::fobActionToInt(jsonchar);
+                        const uint8_t fobAct1 = NukiOpenerHelper::fobActionToInt(jsonchar);
 
                         if(fobAct1 != 99)
                         {
@@ -1395,7 +1395,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction2") == 0)
                     {
-                        const uint8_t fobAct2 = NukiOpenerUtil::fobActionToInt(jsonchar);
+                        const uint8_t fobAct2 = NukiOpenerHelper::fobActionToInt(jsonchar);
 
                         if(fobAct2 != 99)
                         {
@@ -1415,7 +1415,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction3") == 0)
                     {
-                        const uint8_t fobAct3 = NukiOpenerUtil::fobActionToInt(jsonchar);
+                        const uint8_t fobAct3 = NukiOpenerHelper::fobActionToInt(jsonchar);
 
                         if(fobAct3 != 99)
                         {
@@ -1435,7 +1435,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "operatingMode") == 0)
                     {
-                        const uint8_t opmode = NukiOpenerUtil::operatingModeToInt(jsonchar);
+                        const uint8_t opmode = NukiOpenerHelper::operatingModeToInt(jsonchar);
 
                         if(opmode != 99)
                         {
@@ -1455,7 +1455,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "advertisingMode") == 0)
                     {
-                        Nuki::AdvertisingMode advmode = NukiOpenerUtil::advertisingModeToEnum(jsonchar);
+                        Nuki::AdvertisingMode advmode = NukiOpenerHelper::advertisingModeToEnum(jsonchar);
 
                         if((int)advmode != 0xff)
                         {
@@ -1475,7 +1475,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "timeZone") == 0)
                     {
-                        Nuki::TimeZoneId tzid = NukiUtil::timeZoneToEnum(jsonchar);
+                        Nuki::TimeZoneId tzid = NukiHelper::timeZoneToEnum(jsonchar);
 
                         if((int)tzid != 0xff)
                         {
@@ -1725,7 +1725,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "doorbellSuppression") == 0)
                     {
-                        const uint8_t dbsupr = NukiOpenerUtil::doorbellSuppressionToInt(jsonchar);
+                        const uint8_t dbsupr = NukiOpenerHelper::doorbellSuppressionToInt(jsonchar);
 
                         if(dbsupr != 99)
                         {
@@ -1765,7 +1765,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "soundRing") == 0)
                     {
-                        const uint8_t sound = NukiOpenerUtil::soundToInt(jsonchar);
+                        const uint8_t sound = NukiOpenerHelper::soundToInt(jsonchar);
 
                         if(sound != 99)
                         {
@@ -1785,7 +1785,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "soundOpen") == 0)
                     {
-                        const uint8_t sound = NukiOpenerUtil::soundToInt(jsonchar);
+                        const uint8_t sound = NukiOpenerHelper::soundToInt(jsonchar);
 
                         if(sound != 99)
                         {
@@ -1805,7 +1805,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "soundRto") == 0)
                     {
-                        const uint8_t sound = NukiOpenerUtil::soundToInt(jsonchar);
+                        const uint8_t sound = NukiOpenerHelper::soundToInt(jsonchar);
 
                         if(sound != 99)
                         {
@@ -1825,7 +1825,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "soundCm") == 0)
                     {
-                        const uint8_t sound = NukiOpenerUtil::soundToInt(jsonchar);
+                        const uint8_t sound = NukiOpenerHelper::soundToInt(jsonchar);
 
                         if(sound != 99)
                         {
@@ -1885,7 +1885,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "singleButtonPressAction") == 0)
                     {
-                        NukiOpener::ButtonPressAction sbpa = NukiOpenerUtil::buttonPressActionToEnum(jsonchar);
+                        NukiOpener::ButtonPressAction sbpa = NukiOpenerHelper::buttonPressActionToEnum(jsonchar);
 
                         if((int)sbpa != 0xff)
                         {
@@ -1905,7 +1905,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "doubleButtonPressAction") == 0)
                     {
-                        NukiOpener::ButtonPressAction dbpa = NukiOpenerUtil::buttonPressActionToEnum(jsonchar);
+                        NukiOpener::ButtonPressAction dbpa = NukiOpenerHelper::buttonPressActionToEnum(jsonchar);
 
                         if((int)dbpa != 0xff)
                         {
@@ -1925,7 +1925,7 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "batteryType") == 0)
                     {
-                        Nuki::BatteryType battype = NukiOpenerUtil::batteryTypeToEnum(jsonchar);
+                        Nuki::BatteryType battype = NukiOpenerHelper::batteryTypeToEnum(jsonchar);
 
                         if((int)battype != 0xff)
                         {
@@ -2858,7 +2858,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
     if(lockAction.length() > 0)
     {
-        timeControlLockAction = NukiOpenerUtil::lockActionToEnum(lockAction.c_str());
+        timeControlLockAction = NukiOpenerHelper::lockActionToEnum(lockAction.c_str());
 
         if((int)timeControlLockAction == 0xff)
         {

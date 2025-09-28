@@ -1,7 +1,7 @@
 #pragma once
 #include "NukiOpener.h"
 
-class NukiOpenerUtil
+class NukiOpenerHelper
 {
 public:
     static const NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 24 characters

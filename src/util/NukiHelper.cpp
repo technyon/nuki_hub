@@ -1,8 +1,8 @@
-#include "NukiUtil.h"
+#include "NukiHelper.h"
 #include <cstring>
 #include "Logger.h"
 
-const NukiLock::LockAction NukiUtil::lockActionToEnum(const char *str)
+const NukiLock::LockAction NukiHelper::lockActionToEnum(const char *str)
 {
     if(strcmp(str, "unlock") == 0 || strcmp(str, "Unlock") == 0)
     {
@@ -43,7 +43,7 @@ const NukiLock::LockAction NukiUtil::lockActionToEnum(const char *str)
     return (NukiLock::LockAction)0xff;
 }
 
-const Nuki::AdvertisingMode NukiUtil::advertisingModeToEnum(const char *str)
+const Nuki::AdvertisingMode NukiHelper::advertisingModeToEnum(const char *str)
 {
     if(strcmp(str, "Automatic") == 0)
     {
@@ -64,7 +64,7 @@ const Nuki::AdvertisingMode NukiUtil::advertisingModeToEnum(const char *str)
     return (Nuki::AdvertisingMode)0xff;
 }
 
-const Nuki::TimeZoneId NukiUtil::timeZoneToEnum(const char *str)
+const Nuki::TimeZoneId NukiHelper::timeZoneToEnum(const char *str)
 {
     if(strcmp(str, "Africa/Cairo") == 0)
     {
@@ -257,7 +257,7 @@ const Nuki::TimeZoneId NukiUtil::timeZoneToEnum(const char *str)
     return (Nuki::TimeZoneId)0xff;
 }
 
-const uint8_t NukiUtil::fobActionToInt(const char *str)
+const uint8_t NukiHelper::fobActionToInt(const char *str)
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -282,7 +282,7 @@ const uint8_t NukiUtil::fobActionToInt(const char *str)
     return 99;
 }
 
-const NukiLock::ButtonPressAction NukiUtil::buttonPressActionToEnum(const char* str)
+const NukiLock::ButtonPressAction NukiHelper::buttonPressActionToEnum(const char* str)
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -315,7 +315,7 @@ const NukiLock::ButtonPressAction NukiUtil::buttonPressActionToEnum(const char* 
     return (NukiLock::ButtonPressAction)0xff;
 }
 
-const Nuki::BatteryType NukiUtil::batteryTypeToEnum(const char* str)
+const Nuki::BatteryType NukiHelper::batteryTypeToEnum(const char* str)
 {
     if(strcmp(str, "Alkali") == 0)
     {
@@ -332,7 +332,7 @@ const Nuki::BatteryType NukiUtil::batteryTypeToEnum(const char* str)
     return (Nuki::BatteryType)0xff;
 }
 
-const NukiLock::MotorSpeed NukiUtil::motorSpeedToEnum(const char* str)
+const NukiLock::MotorSpeed NukiHelper::motorSpeedToEnum(const char* str)
 {
     if(strcmp(str, "Standard") == 0)
     {
@@ -349,7 +349,7 @@ const NukiLock::MotorSpeed NukiUtil::motorSpeedToEnum(const char* str)
     return (NukiLock::MotorSpeed)0xff;
 }
 
-void NukiUtil::printCommandResult(Nuki::CmdResult result)
+void NukiHelper::printCommandResult(Nuki::CmdResult result)
 {
     char resultStr[15];
     NukiLock::cmdResultToString(result, resultStr);
