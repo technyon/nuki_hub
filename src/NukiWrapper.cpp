@@ -229,12 +229,12 @@ void NukiWrapper::readSettings()
     }
 }
 
-uint8_t NukiWrapper::restartController()
+const uint8_t NukiWrapper::restartController() const
 {
     return _restartController;
 }
 
-bool NukiWrapper::hasConnected()
+const bool NukiWrapper::hasConnected() const
 {
     return _hasConnected;
 }
@@ -489,7 +489,7 @@ void NukiWrapper::lockngounlatch()
     _nextLockAction = NukiLock::LockAction::LockNgoUnlatch;
 }
 
-bool NukiWrapper::isPinValid()
+const bool NukiWrapper::isPinValid()
 {
     return _preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured) == (int)NukiPinState::Valid;
 }
@@ -504,12 +504,12 @@ void NukiWrapper::setUltraPin(const uint32_t pin)
     _nukiLock.saveUltraPincode(pin);
 }
 
-uint16_t NukiWrapper::getPin()
+const uint16_t NukiWrapper::getPin()
 {
     return _nukiLock.getSecurityPincode();
 }
 
-uint32_t NukiWrapper::getUltraPin()
+const uint32_t NukiWrapper::getUltraPin()
 {
     return _nukiLock.getUltraPincode();
 }
@@ -1252,7 +1252,7 @@ void NukiWrapper::postponeBleWatchdog()
     _disableBleWatchdogTs = espMillis() + 15000;
 }
 
-NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
+const NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str) const
 {
     if(strcmp(str, "unlock") == 0 || strcmp(str, "Unlock") == 0)
     {
@@ -1363,12 +1363,12 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
     nukiInst->onConfigUpdateReceived(value);
 }
 
-bool NukiWrapper::offConnected()
+const bool NukiWrapper::offConnected()
 {
     return _nukiOfficial->getOffConnected();
 }
 
-Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str)
+const Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str) const
 {
     if(strcmp(str, "Automatic") == 0)
     {
@@ -1389,7 +1389,7 @@ Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str)
     return (Nuki::AdvertisingMode)0xff;
 }
 
-Nuki::TimeZoneId NukiWrapper::timeZoneToEnum(const char *str)
+const Nuki::TimeZoneId NukiWrapper::timeZoneToEnum(const char *str) const
 {
     if(strcmp(str, "Africa/Cairo") == 0)
     {
@@ -1582,7 +1582,7 @@ Nuki::TimeZoneId NukiWrapper::timeZoneToEnum(const char *str)
     return (Nuki::TimeZoneId)0xff;
 }
 
-uint8_t NukiWrapper::fobActionToInt(const char *str)
+const uint8_t NukiWrapper::fobActionToInt(const char *str) const
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -1607,7 +1607,7 @@ uint8_t NukiWrapper::fobActionToInt(const char *str)
     return 99;
 }
 
-NukiLock::ButtonPressAction NukiWrapper::buttonPressActionToEnum(const char* str)
+const NukiLock::ButtonPressAction NukiWrapper::buttonPressActionToEnum(const char* str) const
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -1640,7 +1640,7 @@ NukiLock::ButtonPressAction NukiWrapper::buttonPressActionToEnum(const char* str
     return (NukiLock::ButtonPressAction)0xff;
 }
 
-Nuki::BatteryType NukiWrapper::batteryTypeToEnum(const char* str)
+const Nuki::BatteryType NukiWrapper::batteryTypeToEnum(const char* str) const
 {
     if(strcmp(str, "Alkali") == 0)
     {
@@ -1657,7 +1657,7 @@ Nuki::BatteryType NukiWrapper::batteryTypeToEnum(const char* str)
     return (Nuki::BatteryType)0xff;
 }
 
-NukiLock::MotorSpeed NukiWrapper::motorSpeedToEnum(const char* str)
+const NukiLock::MotorSpeed NukiWrapper::motorSpeedToEnum(const char* str) const
 {
     if(strcmp(str, "Standard") == 0)
     {
@@ -4495,12 +4495,12 @@ void NukiWrapper::printCommandResult(Nuki::CmdResult result)
     Log->println(resultStr);
 }
 
-std::string NukiWrapper::firmwareVersion() const
+const std::string NukiWrapper::firmwareVersion() const
 {
     return _firmwareVersion;
 }
 
-std::string NukiWrapper::hardwareVersion() const
+const std::string NukiWrapper::hardwareVersion() const
 {
     return _hardwareVersion;
 }

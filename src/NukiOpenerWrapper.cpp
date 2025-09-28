@@ -214,7 +214,7 @@ void NukiOpenerWrapper::readSettings()
     }
 }
 
-uint8_t NukiOpenerWrapper::restartController()
+const uint8_t NukiOpenerWrapper::restartController() const
 {
     return _restartController;
 }
@@ -477,7 +477,7 @@ void NukiOpenerWrapper::setPin(const uint16_t pin)
     _nukiOpener.saveSecurityPincode(pin);
 }
 
-uint16_t NukiOpenerWrapper::getPin()
+const uint16_t NukiOpenerWrapper::getPin()
 {
     return _nukiOpener.getSecurityPincode();
 }
@@ -1091,7 +1091,7 @@ void NukiOpenerWrapper::postponeBleWatchdog()
     _disableBleWatchdogTs = espMillis() + 15000;
 }
 
-NukiOpener::LockAction NukiOpenerWrapper::lockActionToEnum(const char *str)
+const NukiOpener::LockAction NukiOpenerWrapper::lockActionToEnum(const char *str) const
 {
     if(strcmp(str, "activateRTO") == 0 || strcmp(str, "ActivateRTO") == 0)
     {
@@ -1173,7 +1173,7 @@ void NukiOpenerWrapper::onConfigUpdateReceivedCallback(const char *value)
     nukiOpenerInst->onConfigUpdateReceived(value);
 }
 
-Nuki::AdvertisingMode NukiOpenerWrapper::advertisingModeToEnum(const char *str)
+const Nuki::AdvertisingMode NukiOpenerWrapper::advertisingModeToEnum(const char *str) const
 {
     if(strcmp(str, "Automatic") == 0)
     {
@@ -1194,7 +1194,7 @@ Nuki::AdvertisingMode NukiOpenerWrapper::advertisingModeToEnum(const char *str)
     return (Nuki::AdvertisingMode)0xff;
 }
 
-Nuki::TimeZoneId NukiOpenerWrapper::timeZoneToEnum(const char *str)
+const Nuki::TimeZoneId NukiOpenerWrapper::timeZoneToEnum(const char *str) const
 {
     if(strcmp(str, "Africa/Cairo") == 0)
     {
@@ -1387,7 +1387,7 @@ Nuki::TimeZoneId NukiOpenerWrapper::timeZoneToEnum(const char *str)
     return (Nuki::TimeZoneId)0xff;
 }
 
-uint8_t NukiOpenerWrapper::fobActionToInt(const char *str)
+const uint8_t NukiOpenerWrapper::fobActionToInt(const char *str) const
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -1416,7 +1416,7 @@ uint8_t NukiOpenerWrapper::fobActionToInt(const char *str)
     return 99;
 }
 
-uint8_t NukiOpenerWrapper::operatingModeToInt(const char *str)
+const uint8_t NukiOpenerWrapper::operatingModeToInt(const char *str) const
 {
     if(strcmp(str, "Generic door opener") == 0)
     {
@@ -1485,7 +1485,7 @@ uint8_t NukiOpenerWrapper::operatingModeToInt(const char *str)
     return 99;
 }
 
-uint8_t NukiOpenerWrapper::doorbellSuppressionToInt(const char *str)
+const uint8_t NukiOpenerWrapper::doorbellSuppressionToInt(const char *str) const
 {
     if(strcmp(str, "Off") == 0)
     {
@@ -1522,7 +1522,7 @@ uint8_t NukiOpenerWrapper::doorbellSuppressionToInt(const char *str)
     return 99;
 }
 
-uint8_t NukiOpenerWrapper::soundToInt(const char *str)
+const uint8_t NukiOpenerWrapper::soundToInt(const char *str) const
 {
     if(strcmp(str, "No Sound") == 0)
     {
@@ -1543,7 +1543,7 @@ uint8_t NukiOpenerWrapper::soundToInt(const char *str)
     return 99;
 }
 
-NukiOpener::ButtonPressAction NukiOpenerWrapper::buttonPressActionToEnum(const char* str)
+const NukiOpener::ButtonPressAction NukiOpenerWrapper::buttonPressActionToEnum(const char* str) const
 {
     if(strcmp(str, "No Action") == 0)
     {
@@ -1580,7 +1580,7 @@ NukiOpener::ButtonPressAction NukiOpenerWrapper::buttonPressActionToEnum(const c
     return (NukiOpener::ButtonPressAction)0xff;
 }
 
-Nuki::BatteryType NukiOpenerWrapper::batteryTypeToEnum(const char* str)
+const Nuki::BatteryType NukiOpenerWrapper::batteryTypeToEnum(const char* str) const
 {
     if(strcmp(str, "Alkali") == 0)
     {
@@ -4104,7 +4104,7 @@ const BLEAddress NukiOpenerWrapper::getBleAddress() const
     return _nukiOpener.getBleAddress();
 }
 
-BleScanner::Scanner *NukiOpenerWrapper::bleScanner()
+const BleScanner::Scanner *NukiOpenerWrapper::bleScanner()
 {
     return _bleScanner;
 }
@@ -4202,12 +4202,12 @@ void NukiOpenerWrapper::printCommandResult(Nuki::CmdResult result)
     Log->println(resultStr);
 }
 
-std::string NukiOpenerWrapper::firmwareVersion() const
+const std::string NukiOpenerWrapper::firmwareVersion() const
 {
     return _firmwareVersion;
 }
 
-std::string NukiOpenerWrapper::hardwareVersion() const
+const std::string NukiOpenerWrapper::hardwareVersion() const
 {
     return _hardwareVersion;
 }
