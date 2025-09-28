@@ -1,7 +1,3 @@
-//
-// Created by phr on 28/9/25.
-//
-
 #include "NukiUtil.h"
 #include <cstring>
 #include "Logger.h"

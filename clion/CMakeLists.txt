@@ -59,7 +59,7 @@ set(SRCFILES
         ../src/networkDevices/Tlk110Definitions.h
         ../src/SerialReader.cpp
         ../src/util/NukiUtil.cpp
-)
+        ../src/util/NukiOpenerUtil.cpp
 
 file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c
