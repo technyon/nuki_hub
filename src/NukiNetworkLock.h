@@ -60,11 +60,11 @@ public:
 
     const uint32_t getAuthId() const;
     const char* getAuthName();
-    int mqttConnectionState();
-    uint8_t queryCommands();
+    const int mqttConnectionState();
+    const uint8_t queryCommands();
 
 private:
-    bool comparePrefixedPath(const char* fullPath, const char* subPath);
+    const bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
     void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
