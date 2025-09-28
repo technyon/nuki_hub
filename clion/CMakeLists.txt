@@ -58,6 +58,7 @@ set(SRCFILES
         ../src/enums/NukiPinState.h
         ../src/networkDevices/Tlk110Definitions.h
         ../src/SerialReader.cpp
+        ../src/util/NukiUtil.cpp
 )
 
 file(GLOB_RECURSE SRCFILESREC

@@ -84,16 +84,6 @@ private:
     void readConfig();
     void readAdvancedConfig();
 
-    void printCommandResult(Nuki::CmdResult result);
-
-    const NukiLock::LockAction lockActionToEnum(const char* str) const; // char array at least 14 characters
-    const Nuki::AdvertisingMode advertisingModeToEnum(const char* str) const;
-    const Nuki::TimeZoneId timeZoneToEnum(const char* str) const;
-    const uint8_t fobActionToInt(const char *str) const;
-    const NukiLock::ButtonPressAction buttonPressActionToEnum(const char* str) const;
-    const Nuki::BatteryType batteryTypeToEnum(const char* str) const;
-    const NukiLock::MotorSpeed motorSpeedToEnum(const char* str) const;
-
     std::string _deviceName;
     NukiDeviceId* _deviceId = nullptr;
     NukiLock::NukiLock _nukiLock;
