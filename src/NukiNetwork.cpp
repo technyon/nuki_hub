@@ -119,7 +119,7 @@ void NukiNetwork::scan(bool passive, bool async)
     _device->scan(passive, async);
 }
 
-bool NukiNetwork::isApOpen()
+const bool NukiNetwork::isApOpen() const
 {
     return _device->isApOpen();
 }
@@ -150,17 +150,17 @@ void NukiNetwork::clearWifiFallback()
     wifiFallback = false;
 }
 
-bool NukiNetwork::isConnected()
+const bool NukiNetwork::isConnected() const
 {
     return _device->isConnected();
 }
 
-bool NukiNetwork::isInternetConnected()
+const bool NukiNetwork::isInternetConnected() const
 {
     return _hasInternet;
 }
 
-bool NukiNetwork::mqttConnected()
+const bool NukiNetwork::mqttConnected()
 {
 #ifndef NUKI_HUB_UPDATER
     return _device->mqttConnected();
@@ -169,7 +169,7 @@ bool NukiNetwork::mqttConnected()
 #endif
 }
 
-bool NukiNetwork::wifiConnected()
+const bool NukiNetwork::wifiConnected()
 {
     if(_networkDeviceType != NetworkDeviceType::WiFi)
     {
@@ -181,7 +181,7 @@ bool NukiNetwork::wifiConnected()
     }
 }
 
-String NukiNetwork::localIP()
+const String NukiNetwork::localIP()
 {
     return _device->localIP();
 }
@@ -406,7 +406,7 @@ void NukiNetwork::setMQTTConnectionSettings()
 #endif
 }
 
-int NukiNetwork::getRestartServices()
+const int NukiNetwork::getRestartServices()
 {
     int restartServices = _restartServices;
     _restartServices = 0;
@@ -1428,17 +1428,17 @@ void NukiNetwork::disableAutoRestarts()
     _restartOnDisconnect = false;
 }
 
-int NukiNetwork::mqttConnectionState()
+const int NukiNetwork::mqttConnectionState() const
 {
     return _mqttConnectionState;
 }
 
-bool NukiNetwork::mqttRecentlyConnected()
+const bool NukiNetwork::mqttRecentlyConnected() const
 {
     return _mqttConnectedTs != -1 && (millis() - _mqttConnectedTs < 6000);
 }
 
-bool NukiNetwork::pathEquals(const char* prefix, const char* path, const char* referencePath)
+const bool NukiNetwork::pathEquals(const char* prefix, const char* path, const char* referencePath)
 {
     char prefixedPath[500];
     buildMqttPath(prefixedPath, { prefix, path });
@@ -1742,14 +1742,14 @@ void NukiNetwork::timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* st
     }
 }
 
-uint16_t NukiNetwork::subscribe(const char *topic, uint8_t qos)
+const uint16_t NukiNetwork::subscribe(const char *topic, uint8_t qos)
 {
     Log->print("Subscribing to MQTT topic: ");
     Log->println(topic);
     return _device->mqttSubscribe(topic, qos);
 }
 
-bool NukiNetwork::comparePrefixedPath(const char *fullPath, const char *subPath)
+const bool NukiNetwork::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
     char prefixedPath[500];
     buildMqttPath(subPath, prefixedPath);

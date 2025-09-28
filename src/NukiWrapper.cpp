@@ -9,6 +9,7 @@
 #include "hal/wdt_hal.h"
 #include <time.h>
 #include "esp_sntp.h"
+#include "util/NukiHelper.h"
 
 NukiWrapper* nukiInst = nullptr;
 
@@ -229,12 +230,12 @@ void NukiWrapper::readSettings()
     }
 }
 
-uint8_t NukiWrapper::restartController()
+const uint8_t NukiWrapper::restartController() const
 {
     return _restartController;
 }
 
-bool NukiWrapper::hasConnected()
+const bool NukiWrapper::hasConnected() const
 {
     return _hasConnected;
 }
@@ -489,7 +490,7 @@ void NukiWrapper::lockngounlatch()
     _nextLockAction = NukiLock::LockAction::LockNgoUnlatch;
 }
 
-bool NukiWrapper::isPinValid()
+const bool NukiWrapper::isPinValid()
 {
     return _preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured) == (int)NukiPinState::Valid;
 }
@@ -504,12 +505,12 @@ void NukiWrapper::setUltraPin(const uint32_t pin)
     _nukiLock.saveUltraPincode(pin);
 }
 
-uint16_t NukiWrapper::getPin()
+const uint16_t NukiWrapper::getPin()
 {
     return _nukiLock.getSecurityPincode();
 }
 
-uint32_t NukiWrapper::getUltraPin()
+const uint32_t NukiWrapper::getUltraPin()
 {
     return _nukiLock.getUltraPincode();
 }
@@ -647,7 +648,7 @@ void NukiWrapper::updateBatteryState()
         }
     }
 
-    printCommandResult(result);
+    NukiHelper::printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
@@ -955,7 +956,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
             }
         }
 
-        printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
@@ -1043,7 +1044,7 @@ void NukiWrapper::updateKeypad(bool retrieved)
             }
         }
 
-        printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitKeypadUpdateTs = espMillis() + 5000;
@@ -1122,7 +1123,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
             }
         }
 
-        printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitTimeControlUpdateTs = espMillis() + 5000;
@@ -1203,7 +1204,7 @@ void NukiWrapper::updateAuth(bool retrieved)
             }
         }
 
-        printCommandResult(result);
+        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthUpdateTs = millis() + 5000;
@@ -1252,47 +1253,6 @@ void NukiWrapper::postponeBleWatchdog()
     _disableBleWatchdogTs = espMillis() + 15000;
 }
 
-NukiLock::LockAction NukiWrapper::lockActionToEnum(const char *str)
-{
-    if(strcmp(str, "unlock") == 0 || strcmp(str, "Unlock") == 0)
-    {
-        return NukiLock::LockAction::Unlock;
-    }
-    else if(strcmp(str, "lock") == 0 || strcmp(str, "Lock") == 0)
-    {
-        return NukiLock::LockAction::Lock;
-    }
-    else if(strcmp(str, "unlatch") == 0 || strcmp(str, "Unlatch") == 0)
-    {
-        return NukiLock::LockAction::Unlatch;
-    }
-    else if(strcmp(str, "lockNgo") == 0 || strcmp(str, "LockNgo") == 0)
-    {
-        return NukiLock::LockAction::LockNgo;
-    }
-    else if(strcmp(str, "lockNgoUnlatch") == 0 || strcmp(str, "LockNgoUnlatch") == 0)
-    {
-        return NukiLock::LockAction::LockNgoUnlatch;
-    }
-    else if(strcmp(str, "fullLock") == 0 || strcmp(str, "FullLock") == 0)
-    {
-        return NukiLock::LockAction::FullLock;
-    }
-    else if(strcmp(str, "fobAction2") == 0 || strcmp(str, "FobAction2") == 0)
-    {
-        return NukiLock::LockAction::FobAction2;
-    }
-    else if(strcmp(str, "fobAction1") == 0 || strcmp(str, "FobAction1") == 0)
-    {
-        return NukiLock::LockAction::FobAction1;
-    }
-    else if(strcmp(str, "fobAction3") == 0 || strcmp(str, "FobAction3") == 0)
-    {
-        return NukiLock::LockAction::FobAction3;
-    }
-    return (NukiLock::LockAction)0xff;
-}
-
 LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 {
     return nukiInst->onLockActionReceived(value);
@@ -1306,7 +1266,7 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
     {
         if(strlen(value) > 0)
         {
-            action = nukiInst->lockActionToEnum(value);
+            action = NukiHelper::lockActionToEnum(value);
             if((int)action == 0xff)
             {
                 return LockActionResult::UnknownAction;
@@ -1363,316 +1323,11 @@ void NukiWrapper::onConfigUpdateReceivedCallback(const char *value)
     nukiInst->onConfigUpdateReceived(value);
 }
 
-bool NukiWrapper::offConnected()
+const bool NukiWrapper::offConnected()
 {
     return _nukiOfficial->getOffConnected();
 }
 
-Nuki::AdvertisingMode NukiWrapper::advertisingModeToEnum(const char *str)
-{
-    if(strcmp(str, "Automatic") == 0)
-    {
-        return Nuki::AdvertisingMode::Automatic;
-    }
-    else if(strcmp(str, "Normal") == 0)
-    {
-        return Nuki::AdvertisingMode::Normal;
-    }
-    else if(strcmp(str, "Slow") == 0)
-    {
-        return Nuki::AdvertisingMode::Slow;
-    }
-    else if(strcmp(str, "Slowest") == 0)
-    {
-        return Nuki::AdvertisingMode::Slowest;
-    }
-    return (Nuki::AdvertisingMode)0xff;
-}
-
-Nuki::TimeZoneId NukiWrapper::timeZoneToEnum(const char *str)
-{
-    if(strcmp(str, "Africa/Cairo") == 0)
-    {
-        return Nuki::TimeZoneId::Africa_Cairo;
-    }
-    else if(strcmp(str, "Africa/Lagos") == 0)
-    {
-        return Nuki::TimeZoneId::Africa_Lagos;
-    }
-    else if(strcmp(str, "Africa/Maputo") == 0)
-    {
-        return Nuki::TimeZoneId::Africa_Maputo;
-    }
-    else if(strcmp(str, "Africa/Nairobi") == 0)
-    {
-        return Nuki::TimeZoneId::Africa_Nairobi;
-    }
-    else if(strcmp(str, "America/Anchorage") == 0)
-    {
-        return Nuki::TimeZoneId::America_Anchorage;
-    }
-    else if(strcmp(str, "America/Argentina/Buenos_Aires") == 0)
-    {
-        return Nuki::TimeZoneId::America_Argentina_Buenos_Aires;
-    }
-    else if(strcmp(str, "America/Chicago") == 0)
-    {
-        return Nuki::TimeZoneId::America_Chicago;
-    }
-    else if(strcmp(str, "America/Denver") == 0)
-    {
-        return Nuki::TimeZoneId::America_Denver;
-    }
-    else if(strcmp(str, "America/Halifax") == 0)
-    {
-        return Nuki::TimeZoneId::America_Halifax;
-    }
-    else if(strcmp(str, "America/Los_Angeles") == 0)
-    {
-        return Nuki::TimeZoneId::America_Los_Angeles;
-    }
-    else if(strcmp(str, "America/Manaus") == 0)
-    {
-        return Nuki::TimeZoneId::America_Manaus;
-    }
-    else if(strcmp(str, "America/Mexico_City") == 0)
-    {
-        return Nuki::TimeZoneId::America_Mexico_City;
-    }
-    else if(strcmp(str, "America/New_York") == 0)
-    {
-        return Nuki::TimeZoneId::America_New_York;
-    }
-    else if(strcmp(str, "America/Phoenix") == 0)
-    {
-        return Nuki::TimeZoneId::America_Phoenix;
-    }
-    else if(strcmp(str, "America/Regina") == 0)
-    {
-        return Nuki::TimeZoneId::America_Regina;
-    }
-    else if(strcmp(str, "America/Santiago") == 0)
-    {
-        return Nuki::TimeZoneId::America_Santiago;
-    }
-    else if(strcmp(str, "America/Sao_Paulo") == 0)
-    {
-        return Nuki::TimeZoneId::America_Sao_Paulo;
-    }
-    else if(strcmp(str, "America/St_Johns") == 0)
-    {
-        return Nuki::TimeZoneId::America_St_Johns;
-    }
-    else if(strcmp(str, "Asia/Bangkok") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Bangkok;
-    }
-    else if(strcmp(str, "Asia/Dubai") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Dubai;
-    }
-    else if(strcmp(str, "Asia/Hong_Kong") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Hong_Kong;
-    }
-    else if(strcmp(str, "Asia/Jerusalem") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Jerusalem;
-    }
-    else if(strcmp(str, "Asia/Karachi") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Karachi;
-    }
-    else if(strcmp(str, "Asia/Kathmandu") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Kathmandu;
-    }
-    else if(strcmp(str, "Asia/Kolkata") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Kolkata;
-    }
-    else if(strcmp(str, "Asia/Riyadh") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Riyadh;
-    }
-    else if(strcmp(str, "Asia/Seoul") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Seoul;
-    }
-    else if(strcmp(str, "Asia/Shanghai") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Shanghai;
-    }
-    else if(strcmp(str, "Asia/Tehran") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Tehran;
-    }
-    else if(strcmp(str, "Asia/Tokyo") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Tokyo;
-    }
-    else if(strcmp(str, "Asia/Yangon") == 0)
-    {
-        return Nuki::TimeZoneId::Asia_Yangon;
-    }
-    else if(strcmp(str, "Australia/Adelaide") == 0)
-    {
-        return Nuki::TimeZoneId::Australia_Adelaide;
-    }
-    else if(strcmp(str, "Australia/Brisbane") == 0)
-    {
-        return Nuki::TimeZoneId::Australia_Brisbane;
-    }
-    else if(strcmp(str, "Australia/Darwin") == 0)
-    {
-        return Nuki::TimeZoneId::Australia_Darwin;
-    }
-    else if(strcmp(str, "Australia/Hobart") == 0)
-    {
-        return Nuki::TimeZoneId::Australia_Hobart;
-    }
-    else if(strcmp(str, "Australia/Perth") == 0)
-    {
-        return Nuki::TimeZoneId::Australia_Perth;
-    }
-    else if(strcmp(str, "Australia/Sydney") == 0)
-    {
-        return Nuki::TimeZoneId::Australia_Sydney;
-    }
-    else if(strcmp(str, "Europe/Berlin") == 0)
-    {
-        return Nuki::TimeZoneId::Europe_Berlin;
-    }
-    else if(strcmp(str, "Europe/Helsinki") == 0)
-    {
-        return Nuki::TimeZoneId::Europe_Helsinki;
-    }
-    else if(strcmp(str, "Europe/Istanbul") == 0)
-    {
-        return Nuki::TimeZoneId::Europe_Istanbul;
-    }
-    else if(strcmp(str, "Europe/London") == 0)
-    {
-        return Nuki::TimeZoneId::Europe_London;
-    }
-    else if(strcmp(str, "Europe/Moscow") == 0)
-    {
-        return Nuki::TimeZoneId::Europe_Moscow;
-    }
-    else if(strcmp(str, "Pacific/Auckland") == 0)
-    {
-        return Nuki::TimeZoneId::Pacific_Auckland;
-    }
-    else if(strcmp(str, "Pacific/Guam") == 0)
-    {
-        return Nuki::TimeZoneId::Pacific_Guam;
-    }
-    else if(strcmp(str, "Pacific/Honolulu") == 0)
-    {
-        return Nuki::TimeZoneId::Pacific_Honolulu;
-    }
-    else if(strcmp(str, "Pacific/Pago_Pago") == 0)
-    {
-        return Nuki::TimeZoneId::Pacific_Pago_Pago;
-    }
-    else if(strcmp(str, "None") == 0)
-    {
-        return Nuki::TimeZoneId::None;
-    }
-    return (Nuki::TimeZoneId)0xff;
-}
-
-uint8_t NukiWrapper::fobActionToInt(const char *str)
-{
-    if(strcmp(str, "No Action") == 0)
-    {
-        return 0;
-    }
-    else if(strcmp(str, "Unlock") == 0)
-    {
-        return 1;
-    }
-    else if(strcmp(str, "Lock") == 0)
-    {
-        return 2;
-    }
-    else if(strcmp(str, "Lock n Go") == 0)
-    {
-        return 3;
-    }
-    else if(strcmp(str, "Intelligent") == 0)
-    {
-        return 4;
-    }
-    return 99;
-}
-
-NukiLock::ButtonPressAction NukiWrapper::buttonPressActionToEnum(const char* str)
-{
-    if(strcmp(str, "No Action") == 0)
-    {
-        return NukiLock::ButtonPressAction::NoAction;
-    }
-    else if(strcmp(str, "Intelligent") == 0)
-    {
-        return NukiLock::ButtonPressAction::Intelligent;
-    }
-    else if(strcmp(str, "Unlock") == 0)
-    {
-        return NukiLock::ButtonPressAction::Unlock;
-    }
-    else if(strcmp(str, "Lock") == 0)
-    {
-        return NukiLock::ButtonPressAction::Lock;
-    }
-    else if(strcmp(str, "Unlatch") == 0)
-    {
-        return NukiLock::ButtonPressAction::Unlatch;
-    }
-    else if(strcmp(str, "Lock n Go") == 0)
-    {
-        return NukiLock::ButtonPressAction::LockNgo;
-    }
-    else if(strcmp(str, "Show Status") == 0)
-    {
-        return NukiLock::ButtonPressAction::ShowStatus;
-    }
-    return (NukiLock::ButtonPressAction)0xff;
-}
-
-Nuki::BatteryType NukiWrapper::batteryTypeToEnum(const char* str)
-{
-    if(strcmp(str, "Alkali") == 0)
-    {
-        return Nuki::BatteryType::Alkali;
-    }
-    else if(strcmp(str, "Accumulators") == 0)
-    {
-        return Nuki::BatteryType::Accumulators;
-    }
-    else if(strcmp(str, "Lithium") == 0)
-    {
-        return Nuki::BatteryType::Lithium;
-    }
-    return (Nuki::BatteryType)0xff;
-}
-
-NukiLock::MotorSpeed NukiWrapper::motorSpeedToEnum(const char* str)
-{
-    if(strcmp(str, "Standard") == 0)
-    {
-        return NukiLock::MotorSpeed::Standard;
-    }
-    else if(strcmp(str, "Insane") == 0)
-    {
-        return NukiLock::MotorSpeed::Insane;
-    }
-    else if(strcmp(str, "Gentle") == 0)
-    {
-        return NukiLock::MotorSpeed::Gentle;
-    }
-    return (NukiLock::MotorSpeed)0xff;
-}
 
 void NukiWrapper::onOfficialUpdateReceived(const char *topic, const char *value)
 {
@@ -1956,7 +1611,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction1") == 0)
                     {
-                        const uint8_t fobAct1 = nukiInst->fobActionToInt(jsonchar);
+                        const uint8_t fobAct1 = NukiHelper::fobActionToInt(jsonchar);
 
                         if(fobAct1 != 99)
                         {
@@ -1976,7 +1631,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction2") == 0)
                     {
-                        const uint8_t fobAct2 = nukiInst->fobActionToInt(jsonchar);
+                        const uint8_t fobAct2 = NukiHelper::fobActionToInt(jsonchar);
 
                         if(fobAct2 != 99)
                         {
@@ -1996,7 +1651,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "fobAction3") == 0)
                     {
-                        const uint8_t fobAct3 = nukiInst->fobActionToInt(jsonchar);
+                        const uint8_t fobAct3 = NukiHelper::fobActionToInt(jsonchar);
 
                         if(fobAct3 != 99)
                         {
@@ -2036,7 +1691,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "advertisingMode") == 0)
                     {
-                        Nuki::AdvertisingMode advmode = nukiInst->advertisingModeToEnum(jsonchar);
+                        Nuki::AdvertisingMode advmode = NukiHelper::advertisingModeToEnum(jsonchar);
 
                         if((int)advmode != 0xff)
                         {
@@ -2056,7 +1711,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "timeZone") == 0)
                     {
-                        Nuki::TimeZoneId tzid = nukiInst->timeZoneToEnum(jsonchar);
+                        Nuki::TimeZoneId tzid = NukiHelper::timeZoneToEnum(jsonchar);
 
                         if((int)tzid != 0xff)
                         {
@@ -2246,7 +1901,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "singleButtonPressAction") == 0)
                     {
-                        NukiLock::ButtonPressAction sbpa = nukiInst->buttonPressActionToEnum(jsonchar);
+                        NukiLock::ButtonPressAction sbpa = NukiHelper::buttonPressActionToEnum(jsonchar);
 
                         if((int)sbpa != 0xff)
                         {
@@ -2266,7 +1921,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "doubleButtonPressAction") == 0)
                     {
-                        NukiLock::ButtonPressAction dbpa = nukiInst->buttonPressActionToEnum(jsonchar);
+                        NukiLock::ButtonPressAction dbpa = NukiHelper::buttonPressActionToEnum(jsonchar);
 
                         if((int)dbpa != 0xff)
                         {
@@ -2306,7 +1961,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "batteryType") == 0)
                     {
-                        Nuki::BatteryType battype = nukiInst->batteryTypeToEnum(jsonchar);
+                        Nuki::BatteryType battype = NukiHelper::batteryTypeToEnum(jsonchar);
 
                         if((int)battype != 0xff && !_isUltra)
                         {
@@ -2603,7 +2258,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "motorSpeed") == 0)
                     {
-                        NukiLock::MotorSpeed motorSpeed = nukiInst->motorSpeedToEnum(jsonchar);
+                        NukiLock::MotorSpeed motorSpeed = NukiHelper::motorSpeedToEnum(jsonchar);
 
                         if((int)motorSpeed != 0xff)
                         {
@@ -3572,7 +3227,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
     if(lockAction.length() > 0)
     {
-        timeControlLockAction = nukiInst->lockActionToEnum(lockAction.c_str());
+        timeControlLockAction = NukiHelper::lockActionToEnum(lockAction.c_str());
 
         if((int)timeControlLockAction == 0xff)
         {
@@ -4488,19 +4143,12 @@ const BLEAddress NukiWrapper::getBleAddress() const
     return _nukiLock.getBleAddress();
 }
 
-void NukiWrapper::printCommandResult(Nuki::CmdResult result)
-{
-    char resultStr[15];
-    NukiLock::cmdResultToString(result, resultStr);
-    Log->println(resultStr);
-}
-
-std::string NukiWrapper::firmwareVersion() const
+const std::string NukiWrapper::firmwareVersion() const
 {
     return _firmwareVersion;
 }
 
-std::string NukiWrapper::hardwareVersion() const
+const std::string NukiWrapper::hardwareVersion() const
 {
     return _hardwareVersion;
 }
