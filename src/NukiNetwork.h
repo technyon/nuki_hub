@@ -27,20 +27,20 @@ public:
     bool update();
     void reconfigureDevice();
     void scan(bool passive = false, bool async = true);
-    bool isApOpen();
-    bool isConnected();
-    bool isInternetConnected();
-    bool mqttConnected();
-    bool wifiConnected();
+    const bool isApOpen() const;
+    const bool isConnected() const;
+    const bool isInternetConnected() const;
+    const bool mqttConnected();
+    const bool wifiConnected();
     void clearWifiFallback();
-    int getRestartServices();
+    const int getRestartServices();
     void setRestartServices(bool reconnect = false);
 
     const String networkDeviceName() const;
     const String networkBSSID() const;
     const NetworkDeviceType networkDeviceType();
     void setKeepAliveCallback(std::function<void()> reconnectTick);
-    String localIP();
+    const String localIP();
 
     NetworkDevice* device();
 
@@ -89,10 +89,10 @@ public:
                          );
     void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
 
-    int mqttConnectionState(); // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
-    bool mqttRecentlyConnected();
-    bool pathEquals(const char* prefix, const char* path, const char* referencePath);
-    uint16_t subscribe(const char* topic, uint8_t qos);
+    const int mqttConnectionState() const;  // 0 = not connected; 1 = connected; 2 = connected and mqtt processed
+    const bool mqttRecentlyConnected() const;
+    const bool pathEquals(const char* prefix, const char* path, const char* referencePath);
+    const uint16_t subscribe(const char* topic, uint8_t qos);
     void addReconnectedCallback(std::function<void()> reconnectedCallback);
 #endif
 private:
@@ -125,7 +125,7 @@ private:
     void onMqttDisconnect(const espMqttClientTypes::DisconnectReason& reason);
     void parseGpioTopics(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total);
     void gpioActionCallback(const GpioAction& action, const int& pin);
-    bool comparePrefixedPath(const char* fullPath, const char* subPath);
+    const bool comparePrefixedPath(const char* fullPath, const char* subPath);
     void buildMqttPath(const char *path, char *outPath);
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
     void checkInternetConnectivity();

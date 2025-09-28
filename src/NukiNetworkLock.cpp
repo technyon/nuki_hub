@@ -1630,7 +1630,7 @@ void NukiNetworkLock::buildMqttPath(const char* path, char* outPath)
     outPath[i+1] = 0x00;
 }
 
-bool NukiNetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
+const bool NukiNetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
     char prefixedPath[500];
     buildMqttPath(subPath, prefixedPath);
@@ -1649,12 +1649,12 @@ String NukiNetworkLock::concat(String a, String b)
     return c;
 }
 
-int NukiNetworkLock::mqttConnectionState()
+const int NukiNetworkLock::mqttConnectionState()
 {
     return _network->mqttConnectionState();
 }
 
-uint8_t NukiNetworkLock::queryCommands()
+const uint8_t NukiNetworkLock::queryCommands()
 {
     uint8_t qc = _queryCommands;
     _queryCommands = 0;

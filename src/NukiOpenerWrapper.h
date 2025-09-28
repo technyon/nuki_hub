@@ -28,7 +28,7 @@ public:
     bool hasConnected();
     bool isPinValid();
     void setPin(const uint16_t pin);
-    uint16_t getPin();
+    const uint16_t getPin();
 
     void unpair();
     void disableWatchdog();
@@ -37,12 +37,12 @@ public:
     const bool isPaired() const;
     const bool hasKeypad() const;
     const BLEAddress getBleAddress() const;
-    uint8_t restartController();
+    const uint8_t restartController() const;
 
-    std::string firmwareVersion() const;
-    std::string hardwareVersion() const;
+    const std::string firmwareVersion() const;
+    const std::string hardwareVersion() const;
 
-    BleScanner::Scanner* bleScanner();
+    const BleScanner::Scanner* bleScanner();
 
     void notify(NukiOpener::EventType eventType) override;
 
@@ -75,18 +75,6 @@ private:
 
     void readConfig();
     void readAdvancedConfig();
-
-    void printCommandResult(Nuki::CmdResult result);
-
-    NukiOpener::LockAction lockActionToEnum(const char* str); // char array at least 14 characters
-    Nuki::AdvertisingMode advertisingModeToEnum(const char* str);
-    Nuki::TimeZoneId timeZoneToEnum(const char* str);
-    uint8_t fobActionToInt(const char *str);
-    uint8_t operatingModeToInt(const char *str);
-    uint8_t doorbellSuppressionToInt(const char *str);
-    uint8_t soundToInt(const char *str);
-    NukiOpener::ButtonPressAction buttonPressActionToEnum(const char* str);
-    Nuki::BatteryType batteryTypeToEnum(const char* str);
 
     std::string _deviceName;
     NukiDeviceId* _deviceId = nullptr;
