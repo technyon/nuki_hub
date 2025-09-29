@@ -6976,7 +6976,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response.print(gpioStr);
-    response.print("</pre><script>function copyFunction() { var copyText = document.getElementById(\"preInfo\"); copyText.select(); copyText.setSelectionRange(0, 99999); navigator.clipboard.writeText(copyText.value); }");
+    response.print("</pre><script>function copyToClipboard(textToCopy) {if (navigator.clipboard && window.isSecureContext){navigator.clipboard.writeText(textToCopy);}else {const textArea = document.createElement(\"textarea\");textArea.value = textToCopy;textArea.style.position =\"absolute\";textArea.style.left = \"-999999px\";document.body.prepend(textArea);textArea.select();try {document.execCommand('copy');} catch (error) {console.error(error);} finally {textArea.remove(); window.location.reload();}}} function copyFunction() { var copyText = document.getElementById(\"preInfo\");  var replaceClasses = copyText.getElementsByClassName(\"redact\"); for (var i = 0; i < replaceClasses.length; i++) { replaceClasses[i].innerHTML = \"***\"; } try {copyToClipboard(copyText.innerText);}catch(error) {console.error(error);} }");
     response.print("</script></body></html>");
     return response.endSend();
 }
