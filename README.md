@@ -429,7 +429,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - Enable Nuki readable data debug logging: Enable to log human readable debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki hex data debug logging: Enable to log hex debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki command debug logging: Enable to log debug information regarding Nuki BLE commands to MQTT and/or Serial.
-- Pubish free heap over MQTT: Enable to publish free heap to MQTT.
+- Publish free heap over MQTT: Enable to publish free heap to MQTT.
 
 ## Exposed MQTT Topics
 

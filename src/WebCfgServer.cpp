@@ -5778,7 +5778,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printCheckBox(&response, "DBGREAD", "Enable Nuki readable data debug logging", _preferences->getBool(preference_debug_readable_data, false), "");
     printCheckBox(&response, "DBGHEX", "Enable Nuki hex data debug logging", _preferences->getBool(preference_debug_hex_data, false), "");
     printCheckBox(&response, "DBGCOMM", "Enable Nuki command debug logging", _preferences->getBool(preference_debug_command, false), "");
-    printCheckBox(&response, "DBGHEAP", "Pubish free heap over MQTT", _preferences->getBool(preference_publish_debug_info, false), "");
+    printCheckBox(&response, "DBGHEAP", "Publish free heap over MQTT", _preferences->getBool(preference_publish_debug_info, false), "");
     response.print("</table>");
 
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
