@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <Preferences.h>
 #include <vector>
@@ -27,7 +28,8 @@ enum class PinRole
     GeneralOutput,
     GeneralInputPullDown,
     GeneralInputPullUp,
-    Ethernet
+    Ethernet,
+    OutputHighMqttConnected
 };
 
 enum class GpioAction
@@ -68,6 +70,7 @@ public:
     const std::vector<PinEntry>& pinConfiguration() const;
     const std::vector<int> getDisabledPins() const;
     const PinRole getPinRole(const int& pin) const;
+    const std::vector<uint8_t> getPinsWithRole(PinRole role) const;
 
     String getRoleDescription(const PinRole& role) const;
 
@@ -121,6 +124,7 @@ private:
         PinRole::InputDeactivateRtoCm,
         PinRole::InputDeactivateRTO,
         PinRole::InputDeactivateCM,
+        PinRole::OutputHighMqttConnected,
         PinRole::OutputHighLocked,
         PinRole::OutputHighUnlocked,
         PinRole::OutputHighRtoActive,
