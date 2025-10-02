@@ -180,6 +180,7 @@ void Gpio::setPins()
         case PinRole::GeneralOutput:
         case PinRole::OutputHighMqttConnected:
         case PinRole::OutputHighNetworkConnected:
+        case PinRole::OutputHighBluetoothCommError:
             pinMode(entry.pin, OUTPUT);
             break;
         case PinRole::Ethernet:
@@ -503,11 +504,12 @@ String Gpio::getRoleDescription(const PinRole& role) const
         return "Output: High when MQTT connected";
     case PinRole::OutputHighNetworkConnected:
         return "Output: High when network connected";
+    case PinRole::OutputHighBluetoothCommError:
+        return "Output: High on bluetooth communication error";
     default:
         return "Unknown";
     }
 }
-
 
 GpioAction Gpio::getGpioAction(const PinRole &role) const
 {
@@ -552,6 +554,7 @@ GpioAction Gpio::getGpioAction(const PinRole &role) const
     case PinRole::OutputHighRtoOrCmActive:
     case PinRole::OutputHighMqttConnected:
     case PinRole::OutputHighNetworkConnected:
+    case PinRole::OutputHighBluetoothCommError:
     default:
         return GpioAction::None;
     }

@@ -42,6 +42,8 @@ public:
     const std::string firmwareVersion() const;
     const std::string hardwareVersion() const;
 
+    void setCommErrorPins(const uint8_t& value);
+
     const BleScanner::Scanner* bleScanner();
 
     void notify(NukiOpener::EventType eventType) override;
@@ -81,8 +83,11 @@ private:
     NukiOpener::NukiOpener _nukiOpener;
     BleScanner::Scanner* _bleScanner = nullptr;
     NukiNetworkOpener* _network = nullptr;
-    Gpio* _gpio = nullptr;
     Preferences* _preferences = nullptr;
+    Gpio* _gpio = nullptr;
+
+    std::vector<uint8_t> _pinsCommError;
+
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds
