@@ -48,6 +48,8 @@ public:
     const std::string firmwareVersion() const;
     const std::string hardwareVersion() const;
 
+    void setCommErrorPins(const uint8_t& value);
+
     void notify(Nuki::EventType eventType) override;
 
 private:
@@ -91,6 +93,9 @@ private:
     NukiNetworkLock* _network = nullptr;
     NukiOfficial* _nukiOfficial = nullptr;
     Gpio* _gpio = nullptr;
+
+    std::vector<uint8_t> _pinsCommError;
+
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds
     int _intervalHybridLockstate = 0; // seconds

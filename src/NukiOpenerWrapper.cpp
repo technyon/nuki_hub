@@ -46,6 +46,9 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId
     network->setAuthCommandReceivedCallback(nukiOpenerInst->onAuthCommandReceivedCallback);
 
     _gpio->addCallback(NukiOpenerWrapper::gpioActionCallback);
+#ifndef NUKI_HUB_UPDATER
+    _pinsCommError = _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError);
+#endif
 }
 
 
@@ -299,6 +302,7 @@ void NukiOpenerWrapper::update()
 
             if(cmdResult != Nuki::CmdResult::Success)
             {
+                setCommErrorPins(HIGH);
                 Log->print("Opener: Last command failed, retrying after ");
                 Log->print(_retryDelay);
                 Log->print(" milliseconds. Retry ");
@@ -318,6 +322,7 @@ void NukiOpenerWrapper::update()
             }
             postponeBleWatchdog();
         }
+        setCommErrorPins(LOW);
 
         if(cmdResult == Nuki::CmdResult::Success)
         {
@@ -3744,6 +3749,14 @@ const std::string NukiOpenerWrapper::firmwareVersion() const
 const std::string NukiOpenerWrapper::hardwareVersion() const
 {
     return _hardwareVersion;
+}
+
+void NukiOpenerWrapper::setCommErrorPins(const uint8_t& value)
+{
+    for (uint8_t pin : _pinsCommError)
+    {
+        _gpio->setPinOutput(pin, value);
+    }
 }
 
 void NukiOpenerWrapper::disableWatchdog()
