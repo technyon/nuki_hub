@@ -179,6 +179,7 @@ void Gpio::setPins()
         case PinRole::OutputHighRtoOrCmActive:
         case PinRole::GeneralOutput:
         case PinRole::OutputHighMqttConnected:
+        case PinRole::OutputHighNetworkConnected:
             pinMode(entry.pin, OUTPUT);
             break;
         case PinRole::Ethernet:
@@ -500,6 +501,8 @@ String Gpio::getRoleDescription(const PinRole& role) const
         return "Ethernet";
     case PinRole::OutputHighMqttConnected:
         return "Output: High when MQTT connected";
+    case PinRole::OutputHighNetworkConnected:
+        return "Output: High when network connected";
     default:
         return "Unknown";
     }
@@ -548,6 +551,7 @@ GpioAction Gpio::getGpioAction(const PinRole &role) const
     case PinRole::OutputHighCmActive:
     case PinRole::OutputHighRtoOrCmActive:
     case PinRole::OutputHighMqttConnected:
+    case PinRole::OutputHighNetworkConnected:
     default:
         return GpioAction::None;
     }

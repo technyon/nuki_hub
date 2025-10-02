@@ -29,7 +29,8 @@ enum class PinRole
     GeneralInputPullDown,
     GeneralInputPullUp,
     Ethernet,
-    OutputHighMqttConnected
+    OutputHighMqttConnected,
+    OutputHighNetworkConnected,
 };
 
 enum class GpioAction
@@ -125,6 +126,7 @@ private:
         PinRole::InputDeactivateRTO,
         PinRole::InputDeactivateCM,
         PinRole::OutputHighMqttConnected,
+        PinRole::OutputHighNetworkConnected,
         PinRole::OutputHighLocked,
         PinRole::OutputHighUnlocked,
         PinRole::OutputHighRtoActive,
