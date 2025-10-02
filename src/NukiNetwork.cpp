@@ -38,6 +38,7 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
     _inst = this;
 #ifndef NUKI_HUB_UPDATER
     _pinsMqttConnected = _gpio->getPinsWithRole(PinRole::OutputHighMqttConnected);
+    _pinsNetworkConnected = _gpio->getPinsWithRole(PinRole::OutputHighNetworkConnected);
 #endif
     setupDevice();
 }
@@ -682,10 +683,15 @@ bool NukiNetwork::update()
 void NukiNetwork::updateNetworkStatusLeds()
 {
     bool mqttConnected = _device->mqttConnected();
+    bool networkConnected = _device->isConnected();
 
     for (uint8_t pin : _pinsMqttConnected)
     {
         _gpio->setPinOutput(pin, mqttConnected ? HIGH : LOW);
+    }
+    for (uint8_t pin : _pinsNetworkConnected)
+    {
+        _gpio->setPinOutput(pin, networkConnected ? HIGH : LOW);
     }
 }
 
