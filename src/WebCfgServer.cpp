@@ -5485,7 +5485,6 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
     printCheckBox(&response, "HYBRIDREBOOT", "Reboot Nuki lock on official MQTT failure", _preferences->getBool(preference_hybrid_reboot_on_disconnect, false), "");
     response.print("</table>");
-    response.print("* If no encryption is configured for the MQTT broker, leave empty.<br><br>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
     response.print("</body>");
@@ -5530,14 +5529,14 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 ca[filesize] = '\0';
 
-                printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", "*", 2200, true, true);
+                printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate", "*", 2200, true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate (*, optional)", "", 2200, true, true);
+            printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate", "", 2200, true, true);
         }
     }
     else if (type == 1)
@@ -5565,14 +5564,14 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 cert[filesize] = '\0';
 
-                printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", "*", 2200, true, true);
+                printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate", "*", 2200, true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate (*, optional)", "", 2200, true, true);
+            printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate", "", 2200, true, true);
         }
     }
     else
@@ -5600,14 +5599,14 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 key[filesize] = '\0';
 
-                printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", "*", 2200, true, true);
+                printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key", "*", 2200, true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key (*, optional)", "", 2200, true, true);
+            printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key", "", 2200, true, true);
         }
     }
     response.print("</table>");
@@ -5654,14 +5653,14 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 cert[filesize] = '\0';
 
-                printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "*", 4400, true, true);
+                printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate", "*", 4400, true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate (*, optional)", "", 4400, true, true);
+            printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate", "", 4400, true, true);
         }
     }
     else if (type == 2)
@@ -5689,14 +5688,14 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 key[filesize] = '\0';
 
-                printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "*", 2200, true, true);
+                printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "*", 2200, true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "HTTPKEY", "HTTP SSL Key (*, optional)", "", 2200, true, true);
+            printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "", 2200, true, true);
         }
     }
     else
