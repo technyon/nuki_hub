@@ -1,8 +1,9 @@
 #include "NukiRetryHandler.h"
 #include "Logger.h"
 
-NukiRetryHandler::NukiRetryHandler(Gpio* gpio, std::vector<uint8_t> pinsCommError, int nrOfRetries, int retryDelay)
-: _gpio(gpio),
+NukiRetryHandler::NukiRetryHandler(std::string reference, Gpio* gpio, std::vector<uint8_t> pinsCommError, int nrOfRetries, int retryDelay)
+: _reference(reference),
+  _gpio(gpio),
   _pinsCommError(pinsCommError),
   _nrOfRetries(nrOfRetries),
   _retryDelay(retryDelay)
@@ -24,7 +25,8 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
             setCommErrorPins(HIGH);
             ++retryCount;
 
-            Log->print("Lock: Last command failed, retrying after ");
+            Log->print(_reference.c_str());
+            Log->print(": Last command failed, retrying after ");
             Log->print(_retryDelay);
             Log->print(" milliseconds. Retry ");
             Log->print(retryCount);

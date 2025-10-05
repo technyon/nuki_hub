@@ -6,7 +6,7 @@
 class NukiRetryHandler
 {
 public:
-    NukiRetryHandler(Gpio* gpio, std::vector<uint8_t> pinsCommError, int nrOfRetries, int retryDelay);
+    NukiRetryHandler(std::string reference, Gpio* gpio, std::vector<uint8_t> pinsCommError, int nrOfRetries, int retryDelay);
 
     const Nuki::CmdResult retryComm(std::function<Nuki::CmdResult ()> func);
 
@@ -14,6 +14,7 @@ public:
 private:
     void setCommErrorPins(const uint8_t& value);
 
+    std::string _reference;
     Gpio* _gpio = nullptr;
     int _nrOfRetries = 0;
     int _retryDelay = 0;

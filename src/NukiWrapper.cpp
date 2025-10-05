@@ -80,7 +80,7 @@ void NukiWrapper::initialize()
     readSettings();
 
 #ifndef NUKI_HUB_UPDATER
-    _nukiRetryHandler = new NukiRetryHandler(_gpio, _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError), _nrOfRetries, _retryDelay);
+    _nukiRetryHandler = new NukiRetryHandler("Lock", _gpio, _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError), _nrOfRetries, _retryDelay);
 #endif
 }
 
@@ -336,39 +336,6 @@ void NukiWrapper::update(bool reboot)
 
             return cmdResult;
         });
-
-        // while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
-        // {
-        //     cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
-        //     char resultStr[15] = {0};
-        //     NukiLock::cmdResultToString(cmdResult, resultStr);
-        //     _network->publishCommandResult(resultStr);
-        //
-        //     Log->print("Lock action result: ");
-        //     Log->println(resultStr);
-        //
-        //     if(cmdResult != Nuki::CmdResult::Success)
-        //     {
-        //         setCommErrorPins(HIGH);
-        //         Log->print("Lock: Last command failed, retrying after ");
-        //         Log->print(_retryDelay);
-        //         Log->print(" milliseconds. Retry ");
-        //         Log->print(retryCount + 1);
-        //         Log->print(" of ");
-        //         Log->println(_nrOfRetries);
-        //
-        //         _network->publishRetry(std::to_string(retryCount + 1));
-        //
-        //         if (esp_task_wdt_status(NULL) == ESP_OK)
-        //         {
-        //             esp_task_wdt_reset();
-        //         }
-        //         vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
-        //
-        //         ++retryCount;
-        //     }
-        //     postponeBleWatchdog();
-        // }
 
         if(result == Nuki::CmdResult::Success)
         {

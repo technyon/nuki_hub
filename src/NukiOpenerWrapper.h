@@ -7,6 +7,7 @@
 #include "BleScanner.h"
 #include "Gpio.h"
 #include "NukiDeviceId.h"
+#include "util/NukiRetryHandler.h"
 
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
@@ -85,6 +86,7 @@ private:
     NukiNetworkOpener* _network = nullptr;
     Preferences* _preferences = nullptr;
     Gpio* _gpio = nullptr;
+    NukiRetryHandler* _nukiRetryHandler = nullptr;
 
     std::vector<uint8_t> _pinsCommError;
 
