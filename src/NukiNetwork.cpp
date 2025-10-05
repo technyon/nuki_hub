@@ -806,7 +806,7 @@ bool NukiNetwork::reconnect(bool force)
         if (_device->mqttConnected())
         {
             Log->println("MQTT connected");
-            _mqttConnectedTs = millis();
+            _mqttConnectedTs = espMillis();
             _mqttConnectionState = 1;
             if (esp_task_wdt_status(NULL) == ESP_OK)
             {

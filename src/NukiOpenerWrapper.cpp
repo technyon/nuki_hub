@@ -979,7 +979,7 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
 
         if(result == Nuki::CmdResult::Success)
         {
-            _waitAuthUpdateTs = millis() + 5000;
+            _waitAuthUpdateTs = espMillis() + 5000;
         }
     }
     else

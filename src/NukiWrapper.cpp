@@ -1145,7 +1145,7 @@ void NukiWrapper::updateAuth(bool retrieved)
         NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
-            _waitAuthUpdateTs = millis() + 5000;
+            _waitAuthUpdateTs = espMillis() + 5000;
         }
     }
     else
