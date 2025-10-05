@@ -10,6 +10,7 @@
 #include <time.h>
 #include "esp_sntp.h"
 #include "util/NukiHelper.h"
+#include "util/NukiRetryHandler.h"
 
 NukiWrapper* nukiInst = nullptr;
 
@@ -46,9 +47,6 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, 
     network->setAuthCommandReceivedCallback(nukiInst->onAuthCommandReceivedCallback);
 
     _gpio->addCallback(NukiWrapper::gpioActionCallback);
-#ifndef NUKI_HUB_UPDATER
-    _pinsCommError = _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError);
-#endif
 }
 
 
@@ -80,6 +78,10 @@ void NukiWrapper::initialize()
 
     _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
     readSettings();
+
+#ifndef NUKI_HUB_UPDATER
+    _nukiRetryHandler = new NukiRetryHandler(_gpio, _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError), _nrOfRetries, _retryDelay);
+#endif
 }
 
 void NukiWrapper::readSettings()
@@ -307,43 +309,68 @@ void NukiWrapper::update(bool reboot)
     if(_nextLockAction != (NukiLock::LockAction)0xff)
     {
         int retryCount = 0;
-        Nuki::CmdResult cmdResult;
 
-        while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
+        Nuki::CmdResult result = _nukiRetryHandler->retryComm([&]()
         {
-            cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
-            char resultStr[15] = {0};
-            NukiLock::cmdResultToString(cmdResult, resultStr);
-            _network->publishCommandResult(resultStr);
+             Nuki::CmdResult cmdResult;
+             cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
+             char resultStr[15] = {0};
+             NukiLock::cmdResultToString(cmdResult, resultStr);
+             _network->publishCommandResult(resultStr);
 
-            Log->print("Lock action result: ");
-            Log->println(resultStr);
+             Log->print("Lock action result: ");
+             Log->println(resultStr);
 
-            if(cmdResult != Nuki::CmdResult::Success)
-            {
-                setCommErrorPins(HIGH);
-                Log->print("Lock: Last command failed, retrying after ");
-                Log->print(_retryDelay);
-                Log->print(" milliseconds. Retry ");
-                Log->print(retryCount + 1);
-                Log->print(" of ");
-                Log->println(_nrOfRetries);
+             if(cmdResult != Nuki::CmdResult::Success)
+             {
+                 _network->publishRetry(std::to_string(retryCount + 1));
 
-                _network->publishRetry(std::to_string(retryCount + 1));
+                 if (esp_task_wdt_status(NULL) == ESP_OK)
+                 {
+                     esp_task_wdt_reset();
+                 }
 
-                if (esp_task_wdt_status(NULL) == ESP_OK)
-                {
-                    esp_task_wdt_reset();
-                }
-                vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
+                 ++retryCount;
+             }
+             postponeBleWatchdog();
 
-                ++retryCount;
-            }
-            postponeBleWatchdog();
-        }
-        setCommErrorPins(LOW);
+            return cmdResult;
+        });
 
-        if(cmdResult == Nuki::CmdResult::Success)
+        // while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
+        // {
+        //     cmdResult = _nukiLock.lockAction(_nextLockAction, 0, 0);
+        //     char resultStr[15] = {0};
+        //     NukiLock::cmdResultToString(cmdResult, resultStr);
+        //     _network->publishCommandResult(resultStr);
+        //
+        //     Log->print("Lock action result: ");
+        //     Log->println(resultStr);
+        //
+        //     if(cmdResult != Nuki::CmdResult::Success)
+        //     {
+        //         setCommErrorPins(HIGH);
+        //         Log->print("Lock: Last command failed, retrying after ");
+        //         Log->print(_retryDelay);
+        //         Log->print(" milliseconds. Retry ");
+        //         Log->print(retryCount + 1);
+        //         Log->print(" of ");
+        //         Log->println(_nrOfRetries);
+        //
+        //         _network->publishRetry(std::to_string(retryCount + 1));
+        //
+        //         if (esp_task_wdt_status(NULL) == ESP_OK)
+        //         {
+        //             esp_task_wdt_reset();
+        //         }
+        //         vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
+        //
+        //         ++retryCount;
+        //     }
+        //     postponeBleWatchdog();
+        // }
+
+        if(result == Nuki::CmdResult::Success)
         {
             _nextLockAction = (NukiLock::LockAction) 0xff;
             _network->publishRetry("--");
@@ -4156,14 +4183,6 @@ const std::string NukiWrapper::firmwareVersion() const
 const std::string NukiWrapper::hardwareVersion() const
 {
     return _hardwareVersion;
-}
-
-void NukiWrapper::setCommErrorPins(const uint8_t& value)
-{
-    for (uint8_t pin : _pinsCommError)
-    {
-        _gpio->setPinOutput(pin, value);
-    }
 }
 
 void NukiWrapper::disableWatchdog()
