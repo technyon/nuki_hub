@@ -541,16 +541,11 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 {
     bool updateStatus = false;
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
-    int retryCount = 0;
 
-    while(result != Nuki::CmdResult::Success && retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        Log->print("Result (attempt ");
-        Log->print(retryCount + 1);
-        Log->print("): ");
-        result =_nukiOpener.requestOpenerState(&_keyTurnerState);
-        ++retryCount;
-    }
+        return _nukiOpener.requestOpenerState(&_keyTurnerState);
+    });
 
     char resultStr[15];
     memset(&resultStr, 0, sizeof(resultStr));
@@ -653,28 +648,18 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 void NukiOpenerWrapper::updateBatteryState()
 {
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
-    int retryCount = 0;
+    Log->print("Querying opener battery state: ");
 
-    while(retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        Log->print("Querying opener battery state: ");
-        result = _nukiOpener.requestBatteryReport(&_batteryReport);
+        Nuki::CmdResult cmdResult = _nukiOpener.requestBatteryReport(&_batteryReport);
         if (esp_task_wdt_status(NULL) == ESP_OK)
         {
             esp_task_wdt_reset();
         }
-        vTaskDelay(250 / portTICK_PERIOD_MS);
-        if(result != Nuki::CmdResult::Success)
-        {
-            ++retryCount;
-        }
-        else
-        {
-            break;
-        }
-    }
+        return cmdResult;
+    });
 
-    NukiOpenerHelper::printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
@@ -725,21 +710,11 @@ void NukiOpenerWrapper::updateConfig()
             const int pinStatus = _preferences->getInt(preference_opener_pin_status, (int)NukiPinState::NotConfigured);
 
             Nuki::CmdResult result = (Nuki::CmdResult)-1;
-            int retryCount = 0;
 
-            while(retryCount < _nrOfRetries + 1)
+            result = _nukiRetryHandler->retryComm([&]()
             {
-                result = _nukiOpener.verifySecurityPin();
-
-                if(result != Nuki::CmdResult::Success)
-                {
-                    ++retryCount;
-                }
-                else
-                {
-                    break;
-                }
-            }
+                return _nukiOpener.verifySecurityPin();
+            });
 
             if(result != Nuki::CmdResult::Success)
             {
@@ -813,22 +788,11 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        int retryCount = 0;
 
-        while(retryCount < _nrOfRetries + 1)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Retrieve log entries: ");
-            result = _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
-
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            return _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
+        });
 
         Log->println(result);
         NukiOpenerHelper::printCommandResult(result);
@@ -903,22 +867,11 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        int retryCount = 0;
 
-        while(retryCount < _nrOfRetries + 1)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Querying opener keypad: ");
-            result = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            return _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+        });
 
         NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
@@ -983,24 +936,13 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        int retryCount = 0;
+        Log->print("Querying opener timecontrol: ");
 
-        while(retryCount < _nrOfRetries + 1)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Querying opener timecontrol: ");
-            result = _nukiOpener.retrieveTimeControlEntries();
+            return _nukiOpener.retrieveTimeControlEntries();
+        });
 
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitTimeControlUpdateTs = espMillis() + 5000;
@@ -1060,28 +1002,18 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        int retryCount = 0;
+        Log->print("Querying opener authorization: ");
 
-        while(retryCount < _nrOfRetries)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Querying opener authorization: ");
-            result = _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
+            Nuki::CmdResult cmdResult = _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
             if (esp_task_wdt_status(NULL) == ESP_OK)
             {
                 esp_task_wdt_reset();
             }
-            vTaskDelay(250 / portTICK_PERIOD_MS);
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            return cmdResult;
+        });
 
-        NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthUpdateTs = millis() + 5000;
@@ -3719,22 +3651,12 @@ void NukiOpenerWrapper::notify(Nuki::EventType eventType)
 void NukiOpenerWrapper::readConfig()
 {
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
-    int retryCount = 0;
 
-    while(retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        result = _nukiOpener.requestConfig(&_nukiConfig);
-        _nukiConfigValid = result == Nuki::CmdResult::Success;
-
-        if(!_nukiConfigValid)
-        {
-            ++retryCount;
-        }
-        else
-        {
-            break;
-        }
-    }
+        return _nukiOpener.requestConfig(&_nukiConfig);
+    });
+    _nukiConfigValid = result == Nuki::CmdResult::Success;
 
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
@@ -3749,22 +3671,12 @@ void NukiOpenerWrapper::readConfig()
 void NukiOpenerWrapper::readAdvancedConfig()
 {
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
-    int retryCount = 0;
 
-    while(retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        result = _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
-        _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
-
-        if(!_nukiAdvancedConfigValid)
-        {
-            ++retryCount;
-        }
-        else
-        {
-            break;
-        }
-    }
+        return _nukiOpener.requestAdvancedConfig(&_nukiAdvancedConfig);
+    });
+    _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
 
     char resultStr[20];
     NukiOpener::cmdResultToString(result, resultStr);
