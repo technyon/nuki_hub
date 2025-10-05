@@ -289,44 +289,6 @@ void NukiOpenerWrapper::update()
 
     if(_nextLockAction != (NukiOpener::LockAction)0xff)
     {
-        // int retryCount = 0;
-        // Nuki::CmdResult cmdResult = (Nuki::CmdResult)-1;
-        //
-        // while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
-        // {
-        //     cmdResult = _nukiOpener.lockAction(_nextLockAction, 0, 0);
-        //     char resultStr[15] = {0};
-        //     NukiOpener::cmdResultToString(cmdResult, resultStr);
-        //
-        //     _network->publishCommandResult(resultStr);
-        //
-        //     Log->print("Opener action result: ");
-        //     Log->println(resultStr);
-        //
-        //     if(cmdResult != Nuki::CmdResult::Success)
-        //     {
-        //         setCommErrorPins(HIGH);
-        //         Log->print("Opener: Last command failed, retrying after ");
-        //         Log->print(_retryDelay);
-        //         Log->print(" milliseconds. Retry ");
-        //         Log->print(retryCount + 1);
-        //         Log->print(" of ");
-        //         Log->println(_nrOfRetries);
-        //
-        //         _network->publishRetry(std::to_string(retryCount + 1));
-        //
-        //         if (esp_task_wdt_status(NULL) == ESP_OK)
-        //         {
-        //             esp_task_wdt_reset();
-        //         }
-        //         vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
-        //
-        //         ++retryCount;
-        //     }
-        //     postponeBleWatchdog();
-        // }
-        // setCommErrorPins(LOW);
-
         int retryCount = 0;
 
         Nuki::CmdResult result = _nukiRetryHandler->retryComm([&]()
