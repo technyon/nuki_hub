@@ -541,6 +541,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 {
     bool updateStatus = false;
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
+    Log->println("Querying opener state");
 
     result = _nukiRetryHandler->retryComm([&]()
     {
@@ -3763,7 +3764,10 @@ void NukiOpenerWrapper::updateTime()
     nukiTime.minute = tm.tm_min;
     nukiTime.second = tm.tm_sec;
 
-    Nuki::CmdResult cmdResult = _nukiOpener.updateTime(nukiTime);
+    Nuki::CmdResult cmdResult = _nukiRetryHandler->retryComm([&]()
+    {
+        return _nukiOpener.updateTime(nukiTime);
+    });
 
     char resultStr[15] = {0};
     NukiOpener::cmdResultToString(cmdResult, resultStr);

@@ -538,14 +538,10 @@ bool NukiWrapper::updateKeyTurnerState()
 
     Log->println("Querying lock state");
 
-    while(result != Nuki::CmdResult::Success && retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        Log->print("Result (attempt ");
-        Log->print(retryCount + 1);
-        Log->print("): ");
-        result =_nukiLock.requestKeyTurnerState(&_keyTurnerState);
-        ++retryCount;
-    }
+        return _nukiLock.requestKeyTurnerState(&_keyTurnerState);
+    });
 
     char resultStr[15];
     memset(&resultStr, 0, sizeof(resultStr));
@@ -630,24 +626,11 @@ void NukiWrapper::updateBatteryState()
 
     Log->println("Querying lock battery state");
 
-    while(retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        Log->print("Result (attempt ");
-        Log->print(retryCount + 1);
-        Log->print("): ");
-        result = _nukiLock.requestBatteryReport(&_batteryReport);
+        return _nukiLock.requestBatteryReport(&_batteryReport);
+    });
 
-        if(result != Nuki::CmdResult::Success)
-        {
-            ++retryCount;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    NukiHelper::printCommandResult(result);
     if(result == Nuki::CmdResult::Success)
     {
         _network->publishBatteryReport(_batteryReport);
@@ -697,20 +680,11 @@ void NukiWrapper::updateConfig()
             const int pinStatus = _preferences->getInt(preference_lock_pin_status, (int)NukiPinState::NotConfigured);
 
             Nuki::CmdResult result = (Nuki::CmdResult)-1;
-            int retryCount = 0;
 
-            while(retryCount < _nrOfRetries + 1)
+            result = _nukiRetryHandler->retryComm([&]()
             {
-                result = _nukiLock.verifySecurityPin();
-                if(result != Nuki::CmdResult::Success)
-                {
-                    ++retryCount;
-                }
-                else
-                {
-                    break;
-                }
-            }
+                return _nukiLock.verifySecurityPin();
+            });
 
             if(result != Nuki::CmdResult::Success)
             {
@@ -940,20 +914,12 @@ void NukiWrapper::updateAuthData(bool retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         int retryCount = 0;
+        Log->print("Retrieving log entries: ");
 
-        while(retryCount < _nrOfRetries + 1)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Retrieve log entries: ");
-            result = _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            return _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
+        });
 
         NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
@@ -1028,22 +994,13 @@ void NukiWrapper::updateKeypad(bool retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         int retryCount = 0;
+        Log->print("Querying lock keypad: ");
 
-        while(retryCount < _nrOfRetries + 1)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Querying lock keypad: ");
-            result = _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            return _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+        });
 
-        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitKeypadUpdateTs = espMillis() + 5000;
@@ -1105,22 +1062,13 @@ void NukiWrapper::updateTimeControl(bool retrieved)
 
     if(!retrieved)
     {
+        Log->print("Querying lock timecontrol: ");
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        int retryCount = 0;
 
-        while(retryCount < _nrOfRetries + 1)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Querying lock timecontrol: ");
-            result = _nukiLock.retrieveTimeControlEntries();
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            return _nukiLock.retrieveTimeControlEntries();
+        });
 
         NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
@@ -1181,27 +1129,18 @@ void NukiWrapper::updateAuth(bool retrieved)
 
     if(!retrieved)
     {
+        Log->print("Querying lock authorization: ");
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        int retryCount = 0;
 
-        while(retryCount < _nrOfRetries)
+        result = _nukiRetryHandler->retryComm([&]()
         {
-            Log->print("Querying lock authorization: ");
-            result = _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
+            Nuki::CmdResult cmdResult = _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
             if (esp_task_wdt_status(NULL) == ESP_OK)
             {
                 esp_task_wdt_reset();
             }
-            vTaskDelay(250 / portTICK_PERIOD_MS);
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
-            {
-                break;
-            }
-        }
+            return cmdResult;
+        });
 
         NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
@@ -4068,33 +4007,22 @@ void NukiWrapper::notify(Nuki::EventType eventType)
 void NukiWrapper::readConfig()
 {
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
-    int retryCount = 0;
 
-    while(retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        result = _nukiLock.requestConfig(&_nukiConfig);
-        _nukiConfigValid = result == Nuki::CmdResult::Success;
-
-        char resultStr[20];
-        NukiLock::cmdResultToString(result, resultStr);
-        Log->print("Lock config result: ");
-        Log->println(resultStr);
+        Nuki::CmdResult cmdResult = _nukiLock.requestConfig(&_nukiConfig);
 
         if(result != Nuki::CmdResult::Success)
         {
-            ++retryCount;
-            Log->println("Failed to retrieve lock config, retrying in 1s");
             if (esp_task_wdt_status(NULL) == ESP_OK)
             {
                 esp_task_wdt_reset();
             }
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
-        else
-        {
-            break;
-        }
-    }
+
+        return cmdResult;
+    });
+    _nukiConfigValid = result == Nuki::CmdResult::Success;
 }
 
 void NukiWrapper::readAdvancedConfig()
@@ -4102,31 +4030,19 @@ void NukiWrapper::readAdvancedConfig()
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
     int retryCount = 0;
 
-    while(retryCount < _nrOfRetries + 1)
+    result = _nukiRetryHandler->retryComm([&]()
     {
-        result = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
-        _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
-
-        char resultStr[20];
-        NukiLock::cmdResultToString(result, resultStr);
-        Log->print("Lock advanced config result: ");
-        Log->println(resultStr);
-
+        Nuki::CmdResult cmdResult = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
         if(result != Nuki::CmdResult::Success)
         {
-            ++retryCount;
-            Log->println("Failed to retrieve lock advanced config, retrying in 1s");
             if (esp_task_wdt_status(NULL) == ESP_OK)
             {
                 esp_task_wdt_reset();
             }
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
-        else
-        {
-            break;
-        }
-    }
+        return cmdResult;
+    });
+    _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
 }
 
 bool NukiWrapper::hasDoorSensor() const
@@ -4209,11 +4125,8 @@ void NukiWrapper::updateTime()
     nukiTime.minute = tm.tm_min;
     nukiTime.second = tm.tm_sec;
 
-    Nuki::CmdResult cmdResult = _nukiLock.updateTime(nukiTime);
-
-    char resultStr[15] = {0};
-    NukiLock::cmdResultToString(cmdResult, resultStr);
-
-    Log->print("Lock time update result: ");
-    Log->println(resultStr);
+    Nuki::CmdResult cmdResult = _nukiRetryHandler->retryComm([&]()
+    {
+        return _nukiLock.updateTime(nukiTime);
+    });
 }
