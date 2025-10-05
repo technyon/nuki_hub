@@ -60,6 +60,7 @@ set(SRCFILES
         ../src/SerialReader.cpp
         ../src/util/NukiHelper.cpp
         ../src/util/NukiOpenerHelper.cpp
+)
 
 file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c
