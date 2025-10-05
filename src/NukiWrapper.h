@@ -10,6 +10,7 @@
 #include "NukiDeviceId.h"
 #include "NukiOfficial.h"
 #include "EspMillis.h"
+#include "util/NukiRetryHandler.h"
 
 class NukiWrapper : public Nuki::SmartlockEventHandler
 {
@@ -48,7 +49,6 @@ public:
     const std::string firmwareVersion() const;
     const std::string hardwareVersion() const;
 
-    void setCommErrorPins(const uint8_t& value);
 
     void notify(Nuki::EventType eventType) override;
 
@@ -93,8 +93,7 @@ private:
     NukiNetworkLock* _network = nullptr;
     NukiOfficial* _nukiOfficial = nullptr;
     Gpio* _gpio = nullptr;
-
-    std::vector<uint8_t> _pinsCommError;
+    NukiRetryHandler* _nukiRetryHandler = nullptr;
 
     Preferences* _preferences;
     int _intervalLockstate = 0; // seconds

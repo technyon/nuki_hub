@@ -48,6 +48,7 @@ set(SRCFILES
         ../lib/BleScanner/src/BleScanner.cpp
         ../lib/MqttLogger/src/MqttLogger.cpp
         ../src/util/NetworkUtil.cpp
+        ../src/util/NukiRetryHandler.cpp
         ../src/enums/NetworkDeviceType.h
         ../src/util/NetworkDeviceInstantiator.cpp
         ../src/HomeAssistantDiscovery.cpp
