@@ -448,49 +448,33 @@ void NukiHelper::fobActionToString(const int fobact, char* str)
 
 void NukiHelper::weekdaysToJsonArray(int weekdaysInt, JsonArray& weekdays)
 {
-    while(weekdaysInt > 0)
+    if ((weekdaysInt & 0b01000000) > 0)
     {
-        if(weekdaysInt >= 64)
-        {
-            weekdays.add("mon");
-            weekdaysInt -= 64;
-            continue;
-        }
-        if(weekdaysInt >= 32)
-        {
-            weekdays.add("tue");
-            weekdaysInt -= 32;
-            continue;
-        }
-        if(weekdaysInt >= 16)
-        {
-            weekdays.add("wed");
-            weekdaysInt -= 16;
-            continue;
-        }
-        if(weekdaysInt >= 8)
-        {
-            weekdays.add("thu");
-            weekdaysInt -= 8;
-            continue;
-        }
-        if(weekdaysInt >= 4)
-        {
-            weekdays.add("fri");
-            weekdaysInt -= 4;
-            continue;
-        }
-        if(weekdaysInt >= 2)
-        {
-            weekdays.add("sat");
-            weekdaysInt -= 2;
-            continue;
-        }
-        if(weekdaysInt >= 1)
-        {
-            weekdays.add("sun");
-            weekdaysInt -= 1;
-        }
+        weekdays.add("mon");
+    }
+    if ((weekdaysInt & 0b00100000) > 0)
+    {
+        weekdays.add("tue");
+    }
+    if ((weekdaysInt & 0b00010000) > 0)
+    {
+        weekdays.add("wed");
+    }
+    if ((weekdaysInt & 0b00001000) > 0)
+    {
+        weekdays.add("thu");
+    }
+    if ((weekdaysInt & 0b00000100) > 0)
+    {
+        weekdays.add("fri");
+    }
+    if ((weekdaysInt & 0b00000010) > 0)
+    {
+        weekdays.add("sat");
+    }
+    if ((weekdaysInt & 0b00000001) > 0)
+    {
+        weekdays.add("sun");
     }
 }
 
