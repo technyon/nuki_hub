@@ -8,6 +8,7 @@
 #include <ArduinoJson.h>
 #include <ctype.h>
 #include "hal/wdt_hal.h"
+#include "util/NukiHelper.h"
 
 extern bool forceEnableWebServer;
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
@@ -877,13 +878,13 @@ void NukiNetworkLock::publishConfig(const NukiLock::Config &config)
     json["dstMode"] = config.dstMode;
     json["hasFob"] = config.hasFob;
     memset(str, 0, sizeof(str));
-    fobActionToString(config.fobAction1, str);
+    NukiHelper::fobActionToString(config.fobAction1, str);
     json["fobAction1"] = str;
     memset(str, 0, sizeof(str));
-    fobActionToString(config.fobAction2, str);
+    NukiHelper::fobActionToString(config.fobAction2, str);
     json["fobAction2"] = str;
     memset(str, 0, sizeof(str));
-    fobActionToString(config.fobAction3, str);
+    NukiHelper::fobActionToString(config.fobAction3, str);
     json["fobAction3"] = str;
     json["singleLock"] = config.singleLock;
     memset(str, 0, sizeof(str));
@@ -894,7 +895,7 @@ void NukiNetworkLock::publishConfig(const NukiLock::Config &config)
     json["firmwareVersion"] = std::to_string(config.firmwareVersion[0]) + "." + std::to_string(config.firmwareVersion[1]) + "." + std::to_string(config.firmwareVersion[2]);
     json["hardwareRevision"] = std::to_string(config.hardwareRevision[0]) + "." + std::to_string(config.hardwareRevision[1]);
     memset(str, 0, sizeof(str));
-    homeKitStatusToString(config.homeKitStatus, str);
+    NukiHelper::homeKitStatusToString(config.homeKitStatus, str);
     json["homeKitStatus"] = str;
     memset(str, 0, sizeof(str));
     _network->timeZoneIdToString(config.timeZoneId, str);
@@ -937,10 +938,10 @@ void NukiNetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &conf
     json["unlockedToLockedTransitionOffsetDegrees"] = config.unlockedToLockedTransitionOffsetDegrees;
     json["lockNgoTimeout"] = config.lockNgoTimeout;
     memset(str, 0, sizeof(str));
-    buttonPressActionToString(config.singleButtonPressAction, str);
+    NukiHelper::buttonPressActionToString(config.singleButtonPressAction, str);
     json["singleButtonPressAction"] = str;
     memset(str, 0, sizeof(str));
-    buttonPressActionToString(config.doubleButtonPressAction, str);
+    NukiHelper::buttonPressActionToString(config.doubleButtonPressAction, str);
     json["doubleButtonPressAction"] = str;
     json["detachedCylinder"] = config.detachedCylinder;
 
@@ -966,7 +967,7 @@ void NukiNetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &conf
     if (_isUltra)
     {
         memset(str, 0, sizeof(str));
-        motorSpeedToString(config.motorSpeed, str);
+        NukiHelper::motorSpeedToString(config.motorSpeed, str);
         json["motorSpeed"] = str;
         json["enableSlowSpeedDuringNightMode"] = config.enableSlowSpeedDuringNightMode;
     }
@@ -1666,102 +1667,6 @@ void NukiNetworkLock::setupHASS(int type, uint32_t nukiId, char* nukiName, const
     _network->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);
 }
 
-void NukiNetworkLock::buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str)
-{
-    switch (btnPressAction)
-    {
-    case NukiLock::ButtonPressAction::NoAction:
-        strcpy(str, "No Action");
-        break;
-    case NukiLock::ButtonPressAction::Intelligent:
-        strcpy(str, "Intelligent");
-        break;
-    case NukiLock::ButtonPressAction::Unlock:
-        strcpy(str, "Unlock");
-        break;
-    case NukiLock::ButtonPressAction::Lock:
-        strcpy(str, "Lock");
-        break;
-    case NukiLock::ButtonPressAction::Unlatch:
-        strcpy(str, "Unlatch");
-        break;
-    case NukiLock::ButtonPressAction::LockNgo:
-        strcpy(str, "Lock n Go");
-        break;
-    case NukiLock::ButtonPressAction::ShowStatus:
-        strcpy(str, "Show Status");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkLock::motorSpeedToString(const NukiLock::MotorSpeed speed, char* str)
-{
-    switch (speed)
-    {
-    case NukiLock::MotorSpeed::Standard:
-        strcpy(str, "Standard");
-        break;
-    case NukiLock::MotorSpeed::Insane:
-        strcpy(str, "Insane");
-        break;
-    case NukiLock::MotorSpeed::Gentle:
-        strcpy(str, "Gentle");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkLock::homeKitStatusToString(const int hkstatus, char* str)
-{
-    switch (hkstatus)
-    {
-    case 0:
-        strcpy(str, "Not Available");
-        break;
-    case 1:
-        strcpy(str, "Disabled");
-        break;
-    case 2:
-        strcpy(str, "Enabled");
-        break;
-    case 3:
-        strcpy(str, "Enabled & Paired");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkLock::fobActionToString(const int fobact, char* str)
-{
-    switch (fobact)
-    {
-    case 0:
-        strcpy(str, "No Action");
-        break;
-    case 1:
-        strcpy(str, "Unlock");
-        break;
-    case 2:
-        strcpy(str, "Lock");
-        break;
-    case 3:
-        strcpy(str, "Lock n Go");
-        break;
-    case 4:
-        strcpy(str, "Intelligent");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
 
 const uint32_t NukiNetworkLock::getAuthId() const
 {
