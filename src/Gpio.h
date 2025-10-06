@@ -31,7 +31,8 @@ enum class PinRole
     Ethernet,
     OutputHighMqttConnected,
     OutputHighNetworkConnected,
-    OutputHighBluetoothCommError
+    OutputHighBluetoothCommError,
+    OutputHighBluetoothComm
 };
 
 enum class GpioAction
@@ -128,6 +129,7 @@ private:
         PinRole::InputDeactivateCM,
         PinRole::OutputHighMqttConnected,
         PinRole::OutputHighNetworkConnected,
+        PinRole::OutputHighBluetoothComm,
         PinRole::OutputHighBluetoothCommError,
         PinRole::OutputHighLocked,
         PinRole::OutputHighUnlocked,

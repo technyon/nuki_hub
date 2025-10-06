@@ -1,9 +1,10 @@
 #include "NukiRetryHandler.h"
 #include "Logger.h"
 
-NukiRetryHandler::NukiRetryHandler(std::string reference, Gpio* gpio, std::vector<uint8_t> pinsCommError, int nrOfRetries, int retryDelay)
+NukiRetryHandler::NukiRetryHandler(std::string reference, Gpio* gpio, std::vector<uint8_t> pinsComm, std::vector<uint8_t> pinsCommError, int nrOfRetries, int retryDelay)
 : _reference(reference),
   _gpio(gpio),
+  _pinsComm(pinsComm),
   _pinsCommError(pinsCommError),
   _nrOfRetries(nrOfRetries),
   _retryDelay(retryDelay)
@@ -15,6 +16,8 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
     Nuki::CmdResult cmdResult = Nuki::CmdResult::Error;
 
     int retryCount = 0;
+
+    setCommPins(HIGH);
 
     while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
     {
@@ -36,9 +39,18 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
             vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
         }
     }
+    setCommPins(LOW);
     setCommErrorPins(LOW);
 
     return cmdResult;
+}
+
+void NukiRetryHandler::setCommPins(const uint8_t& value)
+{
+    for (uint8_t pin : _pinsComm)
+    {
+        _gpio->setPinOutput(pin, value);
+    }
 }
 
 void NukiRetryHandler::setCommErrorPins(const uint8_t& value)

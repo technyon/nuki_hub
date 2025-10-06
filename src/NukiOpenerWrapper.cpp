@@ -46,9 +46,6 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId
     network->setAuthCommandReceivedCallback(nukiOpenerInst->onAuthCommandReceivedCallback);
 
     _gpio->addCallback(NukiOpenerWrapper::gpioActionCallback);
-#ifndef NUKI_HUB_UPDATER
-    _pinsCommError = _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError);
-#endif
 }
 
 
@@ -76,7 +73,7 @@ void NukiOpenerWrapper::initialize()
     _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
     readSettings();
 #ifndef NUKI_HUB_UPDATER
-    _nukiRetryHandler = new NukiRetryHandler("Opener", _gpio, _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError), _nrOfRetries, _retryDelay);
+    _nukiRetryHandler = new NukiRetryHandler("Opener", _gpio, _gpio->getPinsWithRole(PinRole::OutputHighBluetoothComm), _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError), _nrOfRetries, _retryDelay);
 #endif
 }
 
@@ -3656,14 +3653,6 @@ const std::string NukiOpenerWrapper::firmwareVersion() const
 const std::string NukiOpenerWrapper::hardwareVersion() const
 {
     return _hardwareVersion;
-}
-
-void NukiOpenerWrapper::setCommErrorPins(const uint8_t& value)
-{
-    for (uint8_t pin : _pinsCommError)
-    {
-        _gpio->setPinOutput(pin, value);
-    }
 }
 
 void NukiOpenerWrapper::disableWatchdog()

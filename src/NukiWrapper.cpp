@@ -80,7 +80,7 @@ void NukiWrapper::initialize()
     readSettings();
 
 #ifndef NUKI_HUB_UPDATER
-    _nukiRetryHandler = new NukiRetryHandler("Lock", _gpio, _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError), _nrOfRetries, _retryDelay);
+    _nukiRetryHandler = new NukiRetryHandler("Lock", _gpio, _gpio->getPinsWithRole(PinRole::OutputHighBluetoothComm), _gpio->getPinsWithRole(PinRole::OutputHighBluetoothCommError), _nrOfRetries, _retryDelay);
 #endif
 }
 
