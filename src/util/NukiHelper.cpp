@@ -446,6 +446,54 @@ void NukiHelper::fobActionToString(const int fobact, char* str)
     }
 }
 
+void NukiHelper::weekdaysToJsonArray(int weekdaysInt, JsonArray& weekdays)
+{
+    while(weekdaysInt > 0)
+    {
+        if(weekdaysInt >= 64)
+        {
+            weekdays.add("mon");
+            weekdaysInt -= 64;
+            continue;
+        }
+        if(weekdaysInt >= 32)
+        {
+            weekdays.add("tue");
+            weekdaysInt -= 32;
+            continue;
+        }
+        if(weekdaysInt >= 16)
+        {
+            weekdays.add("wed");
+            weekdaysInt -= 16;
+            continue;
+        }
+        if(weekdaysInt >= 8)
+        {
+            weekdays.add("thu");
+            weekdaysInt -= 8;
+            continue;
+        }
+        if(weekdaysInt >= 4)
+        {
+            weekdays.add("fri");
+            weekdaysInt -= 4;
+            continue;
+        }
+        if(weekdaysInt >= 2)
+        {
+            weekdays.add("sat");
+            weekdaysInt -= 2;
+            continue;
+        }
+        if(weekdaysInt >= 1)
+        {
+            weekdays.add("sun");
+            weekdaysInt -= 1;
+        }
+    }
+}
+
 
 void NukiHelper::printCommandResult(Nuki::CmdResult result)
 {

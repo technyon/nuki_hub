@@ -2,6 +2,7 @@
 
 #include "NukiConstants.h"
 #include "NukiLock.h"
+#include <ArduinoJson.h>
 
 class NukiHelper
 {
@@ -18,6 +19,8 @@ public:
     static void motorSpeedToString(const NukiLock::MotorSpeed speed, char* str);
     static void homeKitStatusToString(const int hkstatus, char* str);
     static void fobActionToString(const int fobact, char* str);
+
+    static void weekdaysToJsonArray(int weekdaysInt, JsonArray& weekdays);
 
     static void printCommandResult(Nuki::CmdResult result);
 };

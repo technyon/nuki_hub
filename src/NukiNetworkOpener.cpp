@@ -6,6 +6,7 @@
 #include "Config.h"
 #include <ArduinoJson.h>
 #include "hal/wdt_hal.h"
+#include "util/NukiHelper.h"
 #include "util/NukiOpenerHelper.h"
 
 NukiNetworkOpener::NukiNetworkOpener(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize)
@@ -1273,51 +1274,7 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
         uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
         JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
 
-        while(allowedWeekdaysInt > 0)
-        {
-            if(allowedWeekdaysInt >= 64)
-            {
-                weekdays.add("mon");
-                allowedWeekdaysInt -= 64;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 32)
-            {
-                weekdays.add("tue");
-                allowedWeekdaysInt -= 32;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 16)
-            {
-                weekdays.add("wed");
-                allowedWeekdaysInt -= 16;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 8)
-            {
-                weekdays.add("thu");
-                allowedWeekdaysInt -= 8;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 4)
-            {
-                weekdays.add("fri");
-                allowedWeekdaysInt -= 4;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 2)
-            {
-                weekdays.add("sat");
-                allowedWeekdaysInt -= 2;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 1)
-            {
-                weekdays.add("sun");
-                allowedWeekdaysInt -= 1;
-                continue;
-            }
-        }
+        NukiHelper::weekdaysToJsonArray(allowedWeekdaysInt, weekdays);
 
         char allowedFromTimeT[5];
         sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
