@@ -302,12 +302,6 @@ void NukiOpenerWrapper::update()
              if(cmdResult != Nuki::CmdResult::Success)
              {
                  _network->publishRetry(std::to_string(retryCount + 1));
-
-                 if (esp_task_wdt_status(NULL) == ESP_OK)
-                 {
-                     esp_task_wdt_reset();
-                 }
-
                  ++retryCount;
              }
              postponeBleWatchdog();
@@ -612,12 +606,7 @@ void NukiOpenerWrapper::updateBatteryState()
 
     result = _nukiRetryHandler->retryComm([&]()
     {
-        Nuki::CmdResult cmdResult = _nukiOpener.requestBatteryReport(&_batteryReport);
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        return cmdResult;
+        return _nukiOpener.requestBatteryReport(&_batteryReport);
     });
 
     if(result == Nuki::CmdResult::Success)
@@ -966,12 +955,7 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
 
         result = _nukiRetryHandler->retryComm([&]()
         {
-            Nuki::CmdResult cmdResult = _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            return cmdResult;
+            return _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
         });
 
         if(result == Nuki::CmdResult::Success)

@@ -324,12 +324,6 @@ void NukiWrapper::update(bool reboot)
              if(cmdResult != Nuki::CmdResult::Success)
              {
                  _network->publishRetry(std::to_string(retryCount + 1));
-
-                 if (esp_task_wdt_status(NULL) == ESP_OK)
-                 {
-                     esp_task_wdt_reset();
-                 }
-
                  ++retryCount;
              }
              postponeBleWatchdog();
@@ -1134,12 +1128,7 @@ void NukiWrapper::updateAuth(bool retrieved)
 
         result = _nukiRetryHandler->retryComm([&]()
         {
-            Nuki::CmdResult cmdResult = _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            return cmdResult;
+            return _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
         });
 
         NukiHelper::printCommandResult(result);
@@ -4010,18 +3999,9 @@ void NukiWrapper::readConfig()
 
     result = _nukiRetryHandler->retryComm([&]()
     {
-        Nuki::CmdResult cmdResult = _nukiLock.requestConfig(&_nukiConfig);
-
-        if(result != Nuki::CmdResult::Success)
-        {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-        }
-
-        return cmdResult;
+        return _nukiLock.requestConfig(&_nukiConfig);
     });
+
     _nukiConfigValid = result == Nuki::CmdResult::Success;
 }
 
@@ -4032,15 +4012,7 @@ void NukiWrapper::readAdvancedConfig()
 
     result = _nukiRetryHandler->retryComm([&]()
     {
-        Nuki::CmdResult cmdResult = _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
-        if(result != Nuki::CmdResult::Success)
-        {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-        }
-        return cmdResult;
+        return _nukiLock.requestAdvancedConfig(&_nukiAdvancedConfig);
     });
     _nukiAdvancedConfigValid = result == Nuki::CmdResult::Success;
 }

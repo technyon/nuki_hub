@@ -21,6 +21,11 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
 
     while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
     {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
+            esp_task_wdt_reset();
+        }
+
         cmdResult = func();
 
         if (cmdResult != Nuki::CmdResult::Success)
