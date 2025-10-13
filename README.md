@@ -15,7 +15,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.1 and Arduino Core 3.3.1.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.1 and Arduino Core 3.3.2.
 - Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-P4 with the ESP32-C6 module and ESP32-H2.
 - Untested builds are provided for the ESP32-Solo1 and ESP32-P4 with the ESP32-C5 module (as the developers don't own these devices).
 
@@ -188,7 +188,7 @@ When pairing is successful, the web interface should show "Paired: Yes".<br>
 
 ## Hybrid mode
 
-Hybrid mode allows you to use the official Nuki MQTT implemenation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0, Nuki Lock 4.0 Pro, Nuki Lock 5.0 Pro, Nuki Lock Go or Nuki Lock Ultra in conjunction with Nuki Hub.<br>
+Hybrid mode allows you to use the official Nuki MQTT implementation on a Nuki Lock 3.0 Pro, Nuki Lock 4.0, Nuki Lock 4.0 Pro, Nuki Lock 5.0 Pro, Nuki Lock Go or Nuki Lock Ultra in conjunction with Nuki Hub.<br>
 See [hybrid mode](/HYBRID.md) for more information.
 
 ## Memory constraints
@@ -288,7 +288,7 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 #### Basic Nuki Configuration
 
-- Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (1.0-4.0 and Ultra)
+- Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (All versions)
 - Nuki Smartlock Ultra/Go/5th gen enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra/Go/5th gen Pro
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
 
@@ -429,7 +429,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - Enable Nuki readable data debug logging: Enable to log human readable debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki hex data debug logging: Enable to log hex debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki command debug logging: Enable to log debug information regarding Nuki BLE commands to MQTT and/or Serial.
-- Pubish free heap over MQTT: Enable to publish free heap to MQTT.
+- Publish free heap over MQTT: Enable to publish free heap to MQTT.
 
 ## Exposed MQTT Topics
 
