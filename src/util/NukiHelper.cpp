@@ -349,6 +349,136 @@ const NukiLock::MotorSpeed NukiHelper::motorSpeedToEnum(const char* str)
     return (NukiLock::MotorSpeed)0xff;
 }
 
+void NukiHelper::buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str)
+{
+    switch (btnPressAction)
+    {
+    case NukiLock::ButtonPressAction::NoAction:
+        strcpy(str, "No Action");
+        break;
+    case NukiLock::ButtonPressAction::Intelligent:
+        strcpy(str, "Intelligent");
+        break;
+    case NukiLock::ButtonPressAction::Unlock:
+        strcpy(str, "Unlock");
+        break;
+    case NukiLock::ButtonPressAction::Lock:
+        strcpy(str, "Lock");
+        break;
+    case NukiLock::ButtonPressAction::Unlatch:
+        strcpy(str, "Unlatch");
+        break;
+    case NukiLock::ButtonPressAction::LockNgo:
+        strcpy(str, "Lock n Go");
+        break;
+    case NukiLock::ButtonPressAction::ShowStatus:
+        strcpy(str, "Show Status");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiHelper::motorSpeedToString(const NukiLock::MotorSpeed speed, char* str)
+{
+    switch (speed)
+    {
+    case NukiLock::MotorSpeed::Standard:
+        strcpy(str, "Standard");
+        break;
+    case NukiLock::MotorSpeed::Insane:
+        strcpy(str, "Insane");
+        break;
+    case NukiLock::MotorSpeed::Gentle:
+        strcpy(str, "Gentle");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiHelper::homeKitStatusToString(const int hkstatus, char* str)
+{
+    switch (hkstatus)
+    {
+    case 0:
+        strcpy(str, "Not Available");
+        break;
+    case 1:
+        strcpy(str, "Disabled");
+        break;
+    case 2:
+        strcpy(str, "Enabled");
+        break;
+    case 3:
+        strcpy(str, "Enabled & Paired");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiHelper::fobActionToString(const int fobact, char* str)
+{
+    switch (fobact)
+    {
+    case 0:
+        strcpy(str, "No Action");
+        break;
+    case 1:
+        strcpy(str, "Unlock");
+        break;
+    case 2:
+        strcpy(str, "Lock");
+        break;
+    case 3:
+        strcpy(str, "Lock n Go");
+        break;
+    case 4:
+        strcpy(str, "Intelligent");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiHelper::weekdaysToJsonArray(int weekdaysInt, JsonArray& weekdays)
+{
+    if ((weekdaysInt & 0b01000000) > 0)
+    {
+        weekdays.add("mon");
+    }
+    if ((weekdaysInt & 0b00100000) > 0)
+    {
+        weekdays.add("tue");
+    }
+    if ((weekdaysInt & 0b00010000) > 0)
+    {
+        weekdays.add("wed");
+    }
+    if ((weekdaysInt & 0b00001000) > 0)
+    {
+        weekdays.add("thu");
+    }
+    if ((weekdaysInt & 0b00000100) > 0)
+    {
+        weekdays.add("fri");
+    }
+    if ((weekdaysInt & 0b00000010) > 0)
+    {
+        weekdays.add("sat");
+    }
+    if ((weekdaysInt & 0b00000001) > 0)
+    {
+        weekdays.add("sun");
+    }
+}
+
+
 void NukiHelper::printCommandResult(Nuki::CmdResult result)
 {
     char resultStr[15];

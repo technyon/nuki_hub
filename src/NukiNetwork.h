@@ -25,6 +25,7 @@ public:
     void initialize();
     void readSettings();
     bool update();
+    void updateNetworkStatusLeds();
     void reconfigureDevice();
     void scan(bool passive = false, bool async = true);
     const bool isApOpen() const;
@@ -172,7 +173,10 @@ private:
     int64_t _lastRssiTs = 0;
     bool _mqttEnabled = true;
     int _rssiPublishInterval = 0;
+
     std::map<uint8_t, int64_t> _gpioTs;
+    std::vector<uint8_t> _pinsMqttConnected;
+    std::vector<uint8_t> _pinsNetworkConnected;
 
     char* _buffer;
     const size_t _bufferSize;

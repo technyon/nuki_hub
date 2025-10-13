@@ -7,6 +7,7 @@
 #include "BleScanner.h"
 #include "Gpio.h"
 #include "NukiDeviceId.h"
+#include "util/NukiRetryHandler.h"
 
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
@@ -81,8 +82,10 @@ private:
     NukiOpener::NukiOpener _nukiOpener;
     BleScanner::Scanner* _bleScanner = nullptr;
     NukiNetworkOpener* _network = nullptr;
-    Gpio* _gpio = nullptr;
     Preferences* _preferences = nullptr;
+    Gpio* _gpio = nullptr;
+    NukiRetryHandler* _nukiRetryHandler = nullptr;
+
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds
     int _intervalConfig = 60 * 60; // seconds

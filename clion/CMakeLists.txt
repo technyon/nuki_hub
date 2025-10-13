@@ -48,6 +48,7 @@ set(SRCFILES
         ../lib/BleScanner/src/BleScanner.cpp
         ../lib/MqttLogger/src/MqttLogger.cpp
         ../src/util/NetworkUtil.cpp
+        ../src/util/NukiRetryHandler.cpp
         ../src/enums/NetworkDeviceType.h
         ../src/util/NetworkDeviceInstantiator.cpp
         ../src/HomeAssistantDiscovery.cpp
@@ -60,6 +61,7 @@ set(SRCFILES
         ../src/SerialReader.cpp
         ../src/util/NukiHelper.cpp
         ../src/util/NukiOpenerHelper.cpp
+)
 
 file(GLOB_RECURSE SRCFILESREC
         lib/NimBLE-Arduino/src/*.c

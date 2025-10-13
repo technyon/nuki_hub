@@ -178,6 +178,10 @@ void Gpio::setPins()
         case PinRole::OutputHighCmActive:
         case PinRole::OutputHighRtoOrCmActive:
         case PinRole::GeneralOutput:
+        case PinRole::OutputHighMqttConnected:
+        case PinRole::OutputHighNetworkConnected:
+        case PinRole::OutputHighBluetoothCommError:
+        case PinRole::OutputHighBluetoothComm:
             pinMode(entry.pin, OUTPUT);
             break;
         case PinRole::Ethernet:
@@ -434,6 +438,21 @@ const PinRole Gpio::getPinRole(const int &pin) const
     return PinRole::Disabled;
 }
 
+const std::vector<uint8_t> Gpio::getPinsWithRole(PinRole role) const
+{
+    std::vector<uint8_t> result;
+
+    for (uint8_t pin : _availablePins)
+    {
+        if (getPinRole(pin) == role)
+        {
+            result.push_back(pin);
+        }
+    }
+
+    return result;
+}
+
 String Gpio::getRoleDescription(const PinRole& role) const
 {
     switch(role)
@@ -482,11 +501,18 @@ String Gpio::getRoleDescription(const PinRole& role) const
         return "General input (Pull-up)";
     case PinRole::Ethernet:
         return "Ethernet";
+    case PinRole::OutputHighMqttConnected:
+        return "Output: High when MQTT connected";
+    case PinRole::OutputHighNetworkConnected:
+        return "Output: High when network connected";
+    case PinRole::OutputHighBluetoothComm:
+        return "Output: High on bluetooth communication active";
+    case PinRole::OutputHighBluetoothCommError:
+        return "Output: High on bluetooth communication error";
     default:
         return "Unknown";
     }
 }
-
 
 GpioAction Gpio::getGpioAction(const PinRole &role) const
 {
@@ -529,6 +555,10 @@ GpioAction Gpio::getGpioAction(const PinRole &role) const
     case PinRole::OutputHighRtoActive:
     case PinRole::OutputHighCmActive:
     case PinRole::OutputHighRtoOrCmActive:
+    case PinRole::OutputHighMqttConnected:
+    case PinRole::OutputHighNetworkConnected:
+    case PinRole::OutputHighBluetoothComm:
+    case PinRole::OutputHighBluetoothCommError:
     default:
         return GpioAction::None;
     }

@@ -6,6 +6,8 @@
 #include "Config.h"
 #include <ArduinoJson.h>
 #include "hal/wdt_hal.h"
+#include "util/NukiHelper.h"
+#include "util/NukiOpenerHelper.h"
 
 NukiNetworkOpener::NukiNetworkOpener(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize)
     : _preferences(preferences),
@@ -771,7 +773,7 @@ void NukiNetworkOpener::publishConfig(const NukiOpener::Config &config)
     //json["latitude"] = config.latitude;
     //json["longitude"] = config.longitude;
     memset(str, 0, sizeof(str));
-    capabilitiesToString(config.capabilities, str);
+    NukiOpenerHelper::capabilitiesToString(config.capabilities, str);
     json["capabilities"] = str;
     json["pairingEnabled"] = config.pairingEnabled;
     json["buttonEnabled"] = config.buttonEnabled;
@@ -781,16 +783,16 @@ void NukiNetworkOpener::publishConfig(const NukiOpener::Config &config)
     json["dstMode"] = config.dstMode;
     json["hasFob"] = config.hasFob;
     memset(str, 0, sizeof(str));
-    fobActionToString(config.fobAction1, str);
+    NukiOpenerHelper::fobActionToString(config.fobAction1, str);
     json["fobAction1"] = str;
     memset(str, 0, sizeof(str));
-    fobActionToString(config.fobAction2, str);
+    NukiOpenerHelper::fobActionToString(config.fobAction2, str);
     json["fobAction2"] = str;
     memset(str, 0, sizeof(str));
-    fobActionToString(config.fobAction3, str);
+    NukiOpenerHelper::fobActionToString(config.fobAction3, str);
     json["fobAction3"] = str;
     memset(str, 0, sizeof(str));
-    operatingModeToString(config.operatingMode, str);
+    NukiOpenerHelper::operatingModeToString(config.operatingMode, str);
     json["operatingMode"] = str;
     memset(str, 0, sizeof(str));
     _network->advertisingModeToString(config.advertisingMode, str);
@@ -831,28 +833,28 @@ void NukiNetworkOpener::publishAdvancedConfig(const NukiOpener::AdvancedConfig &
     json["disableRtoAfterRing"] = config.disableRtoAfterRing;
     json["rtoTimeout"] = config.rtoTimeout;
     memset(str, 0, sizeof(str));
-    doorbellSuppressionToString(config.doorbellSuppression, str);
+    NukiOpenerHelper::doorbellSuppressionToString(config.doorbellSuppression, str);
     json["doorbellSuppression"] = str;
     json["doorbellSuppressionDuration"] = config.doorbellSuppressionDuration;
     memset(str, 0, sizeof(str));
-    soundToString(config.soundRing, str);
+    NukiOpenerHelper::soundToString(config.soundRing, str);
     json["soundRing"] = str;
     memset(str, 0, sizeof(str));
-    soundToString(config.soundOpen, str);
+    NukiOpenerHelper::soundToString(config.soundOpen, str);
     json["soundOpen"] = str;
     memset(str, 0, sizeof(str));
-    soundToString(config.soundRto, str);
+    NukiOpenerHelper::soundToString(config.soundRto, str);
     json["soundRto"] = str;
     memset(str, 0, sizeof(str));
-    soundToString(config.soundCm, str);
+    NukiOpenerHelper::soundToString(config.soundCm, str);
     json["soundCm"] = str;
     json["soundConfirmation"] = config.soundConfirmation;
     json["soundLevel"] = config.soundLevel;
     memset(str, 0, sizeof(str));
-    buttonPressActionToString(config.singleButtonPressAction, str);
+    NukiOpenerHelper::buttonPressActionToString(config.singleButtonPressAction, str);
     json["singleButtonPressAction"] = str;
     memset(str, 0, sizeof(str));
-    buttonPressActionToString(config.doubleButtonPressAction, str);
+    NukiOpenerHelper::buttonPressActionToString(config.doubleButtonPressAction, str);
     json["doubleButtonPressAction"] = str;
     memset(str, 0, sizeof(str));
     _network->batteryTypeToString(config.batteryType, str);
@@ -1272,51 +1274,7 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
         uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
         JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
 
-        while(allowedWeekdaysInt > 0)
-        {
-            if(allowedWeekdaysInt >= 64)
-            {
-                weekdays.add("mon");
-                allowedWeekdaysInt -= 64;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 32)
-            {
-                weekdays.add("tue");
-                allowedWeekdaysInt -= 32;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 16)
-            {
-                weekdays.add("wed");
-                allowedWeekdaysInt -= 16;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 8)
-            {
-                weekdays.add("thu");
-                allowedWeekdaysInt -= 8;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 4)
-            {
-                weekdays.add("fri");
-                allowedWeekdaysInt -= 4;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 2)
-            {
-                weekdays.add("sat");
-                allowedWeekdaysInt -= 2;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 1)
-            {
-                weekdays.add("sun");
-                allowedWeekdaysInt -= 1;
-                continue;
-            }
-        }
+        NukiHelper::weekdaysToJsonArray(allowedWeekdaysInt, weekdays);
 
         char allowedFromTimeT[5];
         sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
@@ -1541,199 +1499,4 @@ uint8_t NukiNetworkOpener::queryCommands()
 void NukiNetworkOpener::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
 {
     _network->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);
-}
-
-void NukiNetworkOpener::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str)
-{
-    switch (btnPressAction)
-    {
-    case NukiOpener::ButtonPressAction::NoAction:
-        strcpy(str, "No Action");
-        break;
-    case NukiOpener::ButtonPressAction::ToggleRTO:
-        strcpy(str, "Toggle RTO");
-        break;
-    case NukiOpener::ButtonPressAction::ActivateRTO:
-        strcpy(str, "Activate RTO");
-        break;
-    case NukiOpener::ButtonPressAction::DeactivateRTO:
-        strcpy(str, "Deactivate RTO");
-        break;
-    case NukiOpener::ButtonPressAction::ToggleCM:
-        strcpy(str, "Toggle CM");
-        break;
-    case NukiOpener::ButtonPressAction::ActivateCM:
-        strcpy(str, "Activate CM");
-        break;
-    case NukiOpener::ButtonPressAction::DectivateCM:
-        strcpy(str, "Deactivate CM");
-        break;
-    case NukiOpener::ButtonPressAction::Open:
-        strcpy(str, "Open");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkOpener::fobActionToString(const int fobact, char* str)
-{
-    switch (fobact)
-    {
-    case 0:
-        strcpy(str, "No Action");
-        break;
-    case 1:
-        strcpy(str, "Toggle RTO");
-        break;
-    case 2:
-        strcpy(str, "Activate RTO");
-        break;
-    case 3:
-        strcpy(str, "Deactivate RTO");
-        break;
-    case 7:
-        strcpy(str, "Open");
-        break;
-    case 8:
-        strcpy(str, "Ring");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkOpener::capabilitiesToString(const int capabilities, char* str)
-{
-    switch (capabilities)
-    {
-    case 0:
-        strcpy(str, "Door opener");
-        break;
-    case 1:
-        strcpy(str, "Both");
-        break;
-    case 2:
-        strcpy(str, "RTO");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkOpener::operatingModeToString(const int opmode, char* str)
-{
-    switch (opmode)
-    {
-    case 0:
-        strcpy(str, "Generic door opener");
-        break;
-    case 1:
-        strcpy(str, "Analogue intercom");
-        break;
-    case 2:
-        strcpy(str, "Digital intercom");
-        break;
-    case 3:
-        strcpy(str, "Siedle");
-        break;
-    case 4:
-        strcpy(str, "TCS");
-        break;
-    case 5:
-        strcpy(str, "Bticino");
-        break;
-    case 6:
-        strcpy(str, "Siedle HTS");
-        break;
-    case 7:
-        strcpy(str, "STR");
-        break;
-    case 8:
-        strcpy(str, "Ritto");
-        break;
-    case 9:
-        strcpy(str, "Fermax");
-        break;
-    case 10:
-        strcpy(str, "Comelit");
-        break;
-    case 11:
-        strcpy(str, "Urmet BiBus");
-        break;
-    case 12:
-        strcpy(str, "Urmet 2Voice");
-        break;
-    case 13:
-        strcpy(str, "Golmar");
-        break;
-    case 14:
-        strcpy(str, "SKS");
-        break;
-    case 15:
-        strcpy(str, "Spare");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkOpener::doorbellSuppressionToString(const int dbsupr, char* str)
-{
-    switch (dbsupr)
-    {
-    case 0:
-        strcpy(str, "Off");
-        break;
-    case 1:
-        strcpy(str, "CM");
-        break;
-    case 2:
-        strcpy(str, "RTO");
-        break;
-    case 3:
-        strcpy(str, "CM & RTO");
-        break;
-    case 4:
-        strcpy(str, "Ring");
-        break;
-    case 5:
-        strcpy(str, "CM & Ring");
-        break;
-    case 6:
-        strcpy(str, "RTO & Ring");
-        break;
-    case 7:
-        strcpy(str, "CM & RTO & Ring");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
-}
-
-void NukiNetworkOpener::soundToString(const int sound, char* str)
-{
-    switch (sound)
-    {
-    case 0:
-        strcpy(str, "No Sound");
-        break;
-    case 1:
-        strcpy(str, "Sound 1");
-        break;
-    case 2:
-        strcpy(str, "Sound 2");
-        break;
-    case 3:
-        strcpy(str, "Sound 3");
-        break;
-    default:
-        strcpy(str, "undefined");
-        break;
-    }
 }

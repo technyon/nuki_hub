@@ -271,6 +271,202 @@ const Nuki::BatteryType NukiOpenerHelper::batteryTypeToEnum(const char* str)
     return (Nuki::BatteryType)0xff;
 }
 
+void NukiOpenerHelper::buttonPressActionToString(const NukiOpener::ButtonPressAction btnPressAction, char* str)
+{
+    switch (btnPressAction)
+    {
+    case NukiOpener::ButtonPressAction::NoAction:
+        strcpy(str, "No Action");
+        break;
+    case NukiOpener::ButtonPressAction::ToggleRTO:
+        strcpy(str, "Toggle RTO");
+        break;
+    case NukiOpener::ButtonPressAction::ActivateRTO:
+        strcpy(str, "Activate RTO");
+        break;
+    case NukiOpener::ButtonPressAction::DeactivateRTO:
+        strcpy(str, "Deactivate RTO");
+        break;
+    case NukiOpener::ButtonPressAction::ToggleCM:
+        strcpy(str, "Toggle CM");
+        break;
+    case NukiOpener::ButtonPressAction::ActivateCM:
+        strcpy(str, "Activate CM");
+        break;
+    case NukiOpener::ButtonPressAction::DectivateCM:
+        strcpy(str, "Deactivate CM");
+        break;
+    case NukiOpener::ButtonPressAction::Open:
+        strcpy(str, "Open");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiOpenerHelper::fobActionToString(const int fobact, char* str)
+{
+    switch (fobact)
+    {
+    case 0:
+        strcpy(str, "No Action");
+        break;
+    case 1:
+        strcpy(str, "Toggle RTO");
+        break;
+    case 2:
+        strcpy(str, "Activate RTO");
+        break;
+    case 3:
+        strcpy(str, "Deactivate RTO");
+        break;
+    case 7:
+        strcpy(str, "Open");
+        break;
+    case 8:
+        strcpy(str, "Ring");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiOpenerHelper::capabilitiesToString(const int capabilities, char* str)
+{
+    switch (capabilities)
+    {
+    case 0:
+        strcpy(str, "Door opener");
+        break;
+    case 1:
+        strcpy(str, "Both");
+        break;
+    case 2:
+        strcpy(str, "RTO");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiOpenerHelper::operatingModeToString(const int opmode, char* str)
+{
+    switch (opmode)
+    {
+    case 0:
+        strcpy(str, "Generic door opener");
+        break;
+    case 1:
+        strcpy(str, "Analogue intercom");
+        break;
+    case 2:
+        strcpy(str, "Digital intercom");
+        break;
+    case 3:
+        strcpy(str, "Siedle");
+        break;
+    case 4:
+        strcpy(str, "TCS");
+        break;
+    case 5:
+        strcpy(str, "Bticino");
+        break;
+    case 6:
+        strcpy(str, "Siedle HTS");
+        break;
+    case 7:
+        strcpy(str, "STR");
+        break;
+    case 8:
+        strcpy(str, "Ritto");
+        break;
+    case 9:
+        strcpy(str, "Fermax");
+        break;
+    case 10:
+        strcpy(str, "Comelit");
+        break;
+    case 11:
+        strcpy(str, "Urmet BiBus");
+        break;
+    case 12:
+        strcpy(str, "Urmet 2Voice");
+        break;
+    case 13:
+        strcpy(str, "Golmar");
+        break;
+    case 14:
+        strcpy(str, "SKS");
+        break;
+    case 15:
+        strcpy(str, "Spare");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiOpenerHelper::doorbellSuppressionToString(const int dbsupr, char* str)
+{
+    switch (dbsupr)
+    {
+    case 0:
+        strcpy(str, "Off");
+        break;
+    case 1:
+        strcpy(str, "CM");
+        break;
+    case 2:
+        strcpy(str, "RTO");
+        break;
+    case 3:
+        strcpy(str, "CM & RTO");
+        break;
+    case 4:
+        strcpy(str, "Ring");
+        break;
+    case 5:
+        strcpy(str, "CM & Ring");
+        break;
+    case 6:
+        strcpy(str, "RTO & Ring");
+        break;
+    case 7:
+        strcpy(str, "CM & RTO & Ring");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+void NukiOpenerHelper::soundToString(const int sound, char* str)
+{
+    switch (sound)
+    {
+    case 0:
+        strcpy(str, "No Sound");
+        break;
+    case 1:
+        strcpy(str, "Sound 1");
+        break;
+    case 2:
+        strcpy(str, "Sound 2");
+        break;
+    case 3:
+        strcpy(str, "Sound 3");
+        break;
+    default:
+        strcpy(str, "undefined");
+        break;
+    }
+}
+
+
 void NukiOpenerHelper::printCommandResult(Nuki::CmdResult result)
 {
     char resultStr[15];

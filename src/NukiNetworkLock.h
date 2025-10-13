@@ -67,10 +67,6 @@ private:
     const bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
     void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
-    void buttonPressActionToString(const NukiLock::ButtonPressAction btnPressAction, char* str);
-    void motorSpeedToString(const NukiLock::MotorSpeed speed, char* str);
-    void homeKitStatusToString(const int hkstatus, char* str);
-    void fobActionToString(const int fobact, char* str);
 
     void (*_officialUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
 

@@ -930,6 +930,10 @@ To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can
 - Output: High when RTO active: Outputs a high signal when ring-to-open is active (opener)
 - Output: High when CM active: Outputs a high signal when continuous mode is active (opener)
 - Output: High when RTO or CM active: Outputs a high signal when either ring-to-open or continuous mode is active (opener)
+- Output: High when MQTT connected: Output a high signal when the device is connected to the MQTT broker 
+- Output: High when network connected: Output a high signal when the device is connected to the network
+- Output: High on bluetooth communication error: Output a high signal when bluetooth communication has failed and the device is retrying to send the command
+
 - General input (pull-down): The pin is configured in pull-down configuration and its state is published to the "gpio/pin_x/state" topic
 - General input (pull-up): The pin is configured in pull-up configuration and its state is published to the "gpio/pin_x/state" topic
 - Genral output: The pin is set to high or low depending on the "gpio/pin_x/state" topic

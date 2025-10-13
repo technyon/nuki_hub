@@ -36,6 +36,10 @@ NukiNetwork::NukiNetwork(Preferences *preferences)
 #endif
 {
     _inst = this;
+#ifndef NUKI_HUB_UPDATER
+    _pinsMqttConnected = _gpio->getPinsWithRole(PinRole::OutputHighMqttConnected);
+    _pinsNetworkConnected = _gpio->getPinsWithRole(PinRole::OutputHighNetworkConnected);
+#endif
     setupDevice();
 }
 
@@ -434,6 +438,8 @@ bool NukiNetwork::update()
     int64_t ts = espMillis();
     _device->update();
 
+    updateNetworkStatusLeds();
+
     if(_importExport->getTOTPEnabled() && _importExport->_invalidCount > 0 && (ts - (120000 * _importExport->_invalidCount)) > _importExport->_lastCodeCheck)
     {
         _importExport->_invalidCount--;
@@ -674,6 +680,21 @@ bool NukiNetwork::update()
     return true;
 }
 
+void NukiNetwork::updateNetworkStatusLeds()
+{
+    bool mqttConnected = _device->mqttConnected();
+    bool networkConnected = _device->isConnected();
+
+    for (uint8_t pin : _pinsMqttConnected)
+    {
+        _gpio->setPinOutput(pin, mqttConnected ? HIGH : LOW);
+    }
+    for (uint8_t pin : _pinsNetworkConnected)
+    {
+        _gpio->setPinOutput(pin, networkConnected ? HIGH : LOW);
+    }
+}
+
 void NukiNetwork::checkInternetConnectivity()
 {
     _hasInternet = Ping.ping("github.com", 3);
@@ -785,7 +806,7 @@ bool NukiNetwork::reconnect(bool force)
         if (_device->mqttConnected())
         {
             Log->println("MQTT connected");
-            _mqttConnectedTs = millis();
+            _mqttConnectedTs = espMillis();
             _mqttConnectionState = 1;
             if (esp_task_wdt_status(NULL) == ESP_OK)
             {
@@ -1411,9 +1432,8 @@ void NukiNetwork::parseGpioTopics(const espMqttClientTypes::MessageProperties &p
             Log->print(pin);
             Log->print(" (Output) --> ");
             Log->println(pinState);
-            digitalWrite(pin, pinState);
+            _gpio->setPinOutput(pin, pinState);
         }
-
     }
 }
 
