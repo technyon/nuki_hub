@@ -69,6 +69,8 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.setEventHandler(this);
     _nukiOpener.setConnectTimeout(2);
     _nukiOpener.setDisconnectTimeout(2000);
+    _nukiOpener.setGeneralTimeout(_preferences->getInt(preference_ble_general_timeout, 3000));
+    _nukiOpener.setCommandTimeout(_preferences->getInt(preference_ble_command_timeout, 3000));
 
     _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);
     readSettings();

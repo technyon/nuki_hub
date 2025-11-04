@@ -159,6 +159,8 @@
 #define preference_mqtt_crt (char*)"mqttcrt"
 #define preference_mqtt_key (char*)"mqttkey"
 #define preference_save_log_num (char*)"svLgNm"
+#define preference_ble_general_timeout (char*)"bleGenTmOt"
+#define preference_ble_command_timeout (char*)"bleCmdTmOt"
 
 //NOT USER CHANGABLE
 #define preference_mfa_reconfigure (char*)"mfaRECONF"
@@ -264,7 +266,9 @@ inline void initPreferences(Preferences* preferences)
         preferences->putInt(preference_mqtt_broker_port, 1883);
         preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
         preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
-        preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
+        preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);        
+        preferences->putInt(preference_ble_general_timeout, 3000);
+        preferences->putInt(preference_ble_command_timeout, 3000);        
         preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
         preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
         preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
@@ -557,7 +561,7 @@ private:
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_publish_config,
         preference_config_from_mqtt, preference_totp_secret, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember, preference_bypass_secret,
-        preference_admin_secret
+        preference_admin_secret, preference_ble_general_timeout, preference_ble_command_timeout
     };
     std::vector<char*> _redact =
     {
@@ -597,7 +601,8 @@ private:
         preference_network_custom_irq, preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso,
         preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio, preference_http_auth_type,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
-        preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember
+        preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember,
+        preference_ble_general_timeout, preference_ble_command_timeout
     };
     std::vector<char*> _uintPrefs =
     {
