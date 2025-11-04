@@ -3813,6 +3813,30 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 }
             }
         }
+        else if(key == "BLEGENTIMEOUT")
+        {
+            if(value.toInt() > 2999 && value.toInt() < 65537)
+            {
+                if(_preferences->getInt(preference_ble_general_timeout, 3000) != value.toInt())
+                {
+                    _preferences->putInt(preference_ble_general_timeout, value.toInt());
+                    Log->print("Setting changed: ");
+                    Log->println(key);
+                }
+            }
+        }
+        else if(key == "BLECMDTIMEOUT")
+        {
+            if(value.toInt() > 2999 && value.toInt() < 65537)
+            {
+                if(_preferences->getInt(preference_ble_command_timeout, 3000) != value.toInt())
+                {
+                    _preferences->putInt(preference_ble_command_timeout, value.toInt());
+                    Log->print("Setting changed: ");
+                    Log->println(key);
+                }
+            }
+        }
         else if(key == "ALMAX")
         {
             if(value.toInt() > 0 && value.toInt() < 101)
@@ -5732,6 +5756,8 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printInputField(&response, "TSKNTWK", "Task size Network (min 12288, max 65536)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
     response.print("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
     printInputField(&response, "TSKNUKI", "Task size Nuki (min 8192, max 65536)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
+    printInputField(&response, "BLEGENTIMEOUT", "BLE General timeout in ms (min 3000, max 65536)", _preferences->getInt(preference_ble_general_timeout, 3000), 6, "");
+    printInputField(&response, "BLECMDTIMEOUT", "BLE Command timeout in ms (min 3000, max 65536)", _preferences->getInt(preference_ble_command_timeout, 3000), 6, "");
     printInputField(&response, "ALMAX", "Max auth log entries (min 1, max 100)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
     printInputField(&response, "KPMAX", "Max keypad entries (min 1, max 200)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
     printInputField(&response, "TCMAX", "Max timecontrol entries (min 1, max 100)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "id=\"inputmaxtimecontrol\"");
