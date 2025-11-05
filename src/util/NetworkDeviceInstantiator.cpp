@@ -11,9 +11,6 @@
 NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDeviceType, String hostname, Preferences *preferences, IPConfiguration *ipConfiguration)
 {
     NetworkDevice* device = nullptr;
-#if defined(CONFIG_IDF_TARGET_ESP32P4)
-    bool fakedevice = true;
-#endif
 
     switch (networkDeviceType)
     {
@@ -183,10 +180,13 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         else
         {
+            #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+            if (!hostedIsWiFiActive())
+            {
+                hostedInitWiFi();
+            }
+            #endif
             device = new WifiDevice(hostname, preferences, ipConfiguration);
-#if defined(CONFIG_IDF_TARGET_ESP32P4)
-            fakedevice = false;
-#endif
         }
 #endif
     }
@@ -216,16 +216,22 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     case NetworkDeviceType::WiFi:
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        if (!hostedIsWiFiActive())
+        {
+            hostedInitWiFi();
+        }
+        #endif
         device = new WifiDevice(hostname, preferences, ipConfiguration);
-#if defined(CONFIG_IDF_TARGET_ESP32P4)
-        fakedevice = false;
-#endif
         break;
     default:
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        if (!hostedIsWiFiActive())
+        {
+            hostedInitWiFi();
+        }
+        #endif
         device = new WifiDevice(hostname, preferences, ipConfiguration);
-#if defined(CONFIG_IDF_TARGET_ESP32P4)
-        fakedevice = false;
-#endif
         break;
 #else
     default:
@@ -241,18 +247,6 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
         break;
 #endif
     }
-
-#if defined(CONFIG_IDF_TARGET_ESP32P4)
-    if (fakedevice)
-    {
-        Log->println("Create dummy WiFi device for Hosted on P4");
-        NetworkDevice* device2 = nullptr;
-        device2 = new WifiDevice("fakep4forhosted", preferences, ipConfiguration);
-        device2->initialize();
-        delete device2;
-        device2 = NULL;
-    }
-#endif
 
     return device;
 }

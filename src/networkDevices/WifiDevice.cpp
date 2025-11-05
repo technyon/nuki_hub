@@ -21,58 +21,36 @@ const String WifiDevice::deviceName() const
 
 void WifiDevice::initialize()
 {
-    if (_hostname != "fakep4forhosted")
+    ssid = _preferences->getString(preference_wifi_ssid, "");
+    ssid.trim();
+    pass = _preferences->getString(preference_wifi_pass, "");
+    pass.trim();
+    WiFi.setHostname(_hostname.c_str());
+
+    WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
     {
-        ssid = _preferences->getString(preference_wifi_ssid, "");
-        ssid.trim();
-        pass = _preferences->getString(preference_wifi_pass, "");
-        pass.trim();
-        WiFi.setHostname(_hostname.c_str());
+        onWifiEvent(event, info);
+    });
 
-        WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
+    if(isWifiConfigured())
+    {
+        Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
+        _openAP = false;
+        if(_preferences->getBool(preference_find_best_rssi, false))
         {
-            onWifiEvent(event, info);
-        });
-
-        if(isWifiConfigured())
-        {
-            Log->println(String("Attempting to connect to saved SSID ") + String(ssid));
-            _openAP = false;
-            if(_preferences->getBool(preference_find_best_rssi, false))
-            {
-                scan(false, true);
-            }
-            else
-            {
-                WiFi.mode(WIFI_STA);
-                connect();
-            }
+            scan(false, true);
         }
         else
         {
-            Log->println("No SSID or Wifi password saved, opening AP");
-            _openAP = true;
-            scan(false, true);
+            WiFi.mode(WIFI_STA);
+            connect();
         }
     }
     else
     {
-        WiFi.disconnect(true);
-        WiFi.mode(WIFI_STA);
-        WiFi.disconnect();
-
-        int loop = 0;
-        while (!_wifiClientStarted && loop < 50)
-        {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(100 / portTICK_PERIOD_MS);
-            loop++;
-        }
-
-        Log->println("Dummy WiFi device for Hosted on P4 done");
+        Log->println("No SSID or Wifi password saved, opening AP");
+        _openAP = true;
+        scan(false, true);
     }
     return;
 }

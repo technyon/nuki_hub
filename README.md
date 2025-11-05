@@ -410,7 +410,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - Char buffer size (min 4096, max 65536): Set the character buffer size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 4096.
 - Task size Network (min 12288, max 65536): Set the Network task stack size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 12288.
 - Task size Nuki (min 8192, max 65536): Set the Nuki task stack size. Default 8192.
-- BLE General timeout in ms (min 3000, max 65536): General timeout for communication with Nuki devices, default 3000ms. Mainly used when retrieving Nuki keypad authorizations
+- BLE General timeout in ms (min 3000, max 65536): General timeout for communication with Nuki devices, default 10000ms. Mainly used when retrieving Nuki keypad authorizations
 - BLE Command timeout in ms (min 3000, max 65536): Command timeout for communication with Nuki devices, default 3000ms.
 - Max auth log entries (min 1, max 100): The maximum amount of log entries that will be requested from the lock/opener, default 5.
 - Max keypad entries (min 1, max 200): The maximum amount of keypad codes that will be requested from the lock/opener, default 10.

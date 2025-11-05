@@ -28,6 +28,12 @@ bool nuki_hub_https_server_enabled = false;
 #include "esp_psram.h"
 #endif
 
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#include "esp_hosted.h"
+#include "esp_hosted_ota.h"
+#include "esp_hosted_api_types.h"
+#endif
+
 #ifndef NUKI_HUB_UPDATER
 #include "SerialReader.h"
 #include "NukiWrapper.h"
@@ -114,8 +120,10 @@ bool lockStarted = false;
 bool openerStarted = false;
 bool bleScannerStarted = false;
 bool webSerialEnabled = false;
+bool forceHostedUpdate = false;
 uint8_t partitionType = -1;
 
+uint8_t http_err = 0;
 int lastHTTPeventId = -1;
 bool doOta = false;
 bool restartReason_isValid;
@@ -123,6 +131,339 @@ RestartReason currentRestartReason = RestartReason::NotApplicable;
 
 TaskHandle_t otaTaskHandle = nullptr;
 TaskHandle_t networkTaskHandle = nullptr;
+
+esp_err_t _http_event_handler(esp_http_client_event_t *evt)
+{
+    if (lastHTTPeventId != int(evt->event_id))
+    {
+        Log->println("");
+        switch (evt->event_id)
+        {
+        case HTTP_EVENT_ERROR:
+            Log->println("HTTP_EVENT_ERROR");
+            http_err = 1;
+            break;
+        case HTTP_EVENT_ON_CONNECTED:
+            Log->println("HTTP_EVENT_ON_CONNECTED");
+            break;
+        case HTTP_EVENT_HEADER_SENT:
+            Log->println("HTTP_EVENT_HEADER_SENT");
+            break;
+        case HTTP_EVENT_ON_HEADER:
+            Log->printf("HTTPS_EVENT_ON_HEADER: %s=%s\n", evt->header_key, evt->header_value);
+            if (strcmp(evt->header_key, "Content-Length") == 0) {
+                Log->printf("Content-Length: %s bytes\n", evt->header_value);
+            }
+            break;
+        case HTTP_EVENT_ON_DATA:
+            Log->println("HTTP_EVENT_ON_DATA");
+            break;
+        case HTTP_EVENT_ON_FINISH:
+            Log->println("HTTP_EVENT_ON_FINISH");
+            break;
+        case HTTP_EVENT_DISCONNECTED:
+            Log->println("HTTP_EVENT_DISCONNECTED");
+            break;
+        case HTTP_EVENT_REDIRECT:
+            Log->println("HTTP_EVENT_REDIRECT");
+            break;
+        }
+    }
+    else
+    {
+        Log->print(".");
+    }
+    lastHTTPeventId = int(evt->event_id);
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+    return ESP_OK;
+}
+
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+static esp_err_t parse_image_header_from_buffer(const uint8_t* buffer, size_t buffer_size, size_t* firmware_size, char* app_version_str, size_t version_str_len)
+{
+    esp_image_header_t image_header;
+    esp_image_segment_header_t segment_header;
+    esp_app_desc_t app_desc;
+    size_t offset = 0;
+    size_t total_size = 0;
+
+    /* Check if buffer has enough data for image header */
+    if (buffer_size < sizeof(image_header)) {
+        Log->println("Buffer too small for image header verification");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    /* Read image header from buffer */
+    memcpy(&image_header, buffer + offset, sizeof(image_header));
+
+    /* Validate magic number */
+    if (image_header.magic != ESP_IMAGE_HEADER_MAGIC) {
+        Log->printf("Invalid image magic: 0x%" PRIx8 "\n", image_header.magic);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    Log->printf("Image header: magic=0x%" PRIx8 ", segment_count=%" PRIu8 ", hash_appended=%" PRIu8 "\n", image_header.magic, image_header.segment_count, image_header.hash_appended);
+
+    /* Calculate total size by reading all segments */
+    offset = sizeof(image_header);
+    total_size = sizeof(image_header);
+
+    for (int i = 0; i < image_header.segment_count; i++) {
+        /* Check if buffer has enough data for segment header */
+        if (buffer_size < offset + sizeof(segment_header)) {
+            Log->println("Buffer too small to read all segment headers, using partial verification");
+            break;
+        }
+
+        /* Read segment header from buffer */
+        memcpy(&segment_header, buffer + offset, sizeof(segment_header));
+
+        Log->printf("Segment %d: data_len=%" PRIu32 ", load_addr=0x%" PRIx32 "\n", i, segment_header.data_len, segment_header.load_addr);
+
+        /* Add segment header size + data size */
+        total_size += sizeof(segment_header) + segment_header.data_len;
+        offset += sizeof(segment_header) + segment_header.data_len;
+
+        /* Read app description from the first segment */
+        if (i == 0) {
+            size_t app_desc_offset = sizeof(image_header) + sizeof(segment_header);
+            if (buffer_size >= app_desc_offset + sizeof(app_desc)) {
+                memcpy(&app_desc, buffer + app_desc_offset, sizeof(app_desc));
+                strncpy(app_version_str, app_desc.version, version_str_len - 1);
+                app_version_str[version_str_len - 1] = '\0';
+                Log->printf("Found app description: version='%s', project_name='%s'\n", app_desc.version, app_desc.project_name);
+            } else {
+                Log->println("Buffer too small to read app description");
+                strncpy(app_version_str, "unknown", version_str_len - 1);
+                app_version_str[version_str_len - 1] = '\0';
+            }
+        }
+    }
+
+    /* Add padding to align to 16 bytes */
+    size_t padding = (16 - (total_size % 16)) % 16;
+    if (padding > 0) {
+        Log->printf("Adding %u bytes of padding for alignment\n", (unsigned int)padding);
+        total_size += padding;
+    }
+
+    /* Add the checksum byte (always present) */
+    total_size += 1;
+    Log->println("Added 1 byte for checksum");
+
+    /* Add SHA256 hash if appended */
+    bool has_hash = (image_header.hash_appended == 1);
+    if (has_hash) {
+        total_size += 32;  // SHA256 hash is 32 bytes
+        Log->println("Added 32 bytes for SHA256 hash (hash_appended=1)");
+    } else {
+        Log->println("No SHA256 hash appended (hash_appended=0)");
+    }
+
+    *firmware_size = total_size;
+    Log->printf("Total image size: %u bytes\n", (unsigned int)*firmware_size);
+
+    return ESP_OK;
+}
+
+esp_err_t ota_https_perform(const char* image_url)
+{
+    uint8_t *ota_chunk = NULL;
+    esp_err_t err = ESP_OK;
+    int data_read = 0;
+    int ota_failed = 0;
+
+    if ((image_url == NULL) || (image_url[0] == '\0')) {
+        Log->println("Invalid image URL");
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    // Validate HTTPS URL
+    if (strncmp(image_url, "https://", 8) != 0) {
+        Log->println("URL must use HTTPS protocol");
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    Log->printf("Starting HTTPS OTA from URL: %s\n", image_url);
+
+    esp_http_client_config_t config = {
+        .url = image_url,
+        .timeout_ms = 30000,
+        .event_handler = _http_event_handler,
+        .transport_type = HTTP_TRANSPORT_OVER_SSL,  // Force HTTPS
+        .buffer_size = 8192,  // Larger buffer for SSL
+        .buffer_size_tx = 4096,  // Increased TX buffer
+        .skip_cert_common_name_check = false,  // Always validate CN in production
+        .crt_bundle_attach = esp_crt_bundle_attach,
+        .keep_alive_enable = true,
+        .keep_alive_idle = 5,
+        .keep_alive_interval = 5,
+        .keep_alive_count = 3,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (client == NULL) {
+        Log->println("Failed to initialize HTTPS client");
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    /* Open connection */
+    Log->println("Opening HTTPS connection...");
+    if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
+        Log->printf("Failed to open HTTPS connection: %s\n", esp_err_to_name(err));
+        Log->println("Common causes:");
+        Log->println("   - Certificate CN doesn't match server IP");
+        Log->println("   - Server not running or unreachable");
+        Log->println("   - WiFi connection issues");
+        Log->println("   - Firewall blocking port 443");
+        esp_http_client_cleanup(client);
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    if (http_err) {
+        Log->println("Exiting OTA, due to http failure");
+        esp_http_client_cleanup(client);
+        http_err = 0;
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    /* Fetch headers */
+    Log->println("Fetching HTTPS headers...");
+    int64_t content_length = esp_http_client_fetch_headers(client);
+
+    int http_status = esp_http_client_get_status_code(client);
+    if (http_status != 200) {
+        Log->printf("HTTPS request failed with status: %d\n", http_status);
+        esp_http_client_cleanup(client);
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    if (content_length <= 0) {
+        Log->println("HTTP client fetch headers failed");
+        Log->printf("HTTP GET Status = %d, content_length = %" PRId64 "\n", esp_http_client_get_status_code(client), esp_http_client_get_content_length(client));
+		esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+	Log->printf("HTTP GET Status = %d, content_length = %" PRId64 "\n", esp_http_client_get_status_code(client), esp_http_client_get_content_length(client));
+
+    /* Begin OTA */
+    Log->println("Preparing OTA");
+    if ((err = esp_hosted_slave_ota_begin()) != ESP_OK) {
+        Log->printf("esp_hosted_slave_ota_begin failed: %s\n", esp_err_to_name(err));
+		Log->printf("esp_ota_begin failed, error=%s\n", esp_err_to_name(err));
+		esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    ota_chunk = (uint8_t*)calloc(1, CHUNK_SIZE);
+    if (!ota_chunk) {
+        Log->println("Failed to allocate OTA chunk memory");
+		 esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    Log->println("Starting OTA data transfer over HTTPS");
+
+    /* Read and write OTA data */
+    bool header_verified = false;
+    int chunk_count = 0;
+
+    while ((data_read = esp_http_client_read(client, (char*)ota_chunk, CHUNK_SIZE)) > 0) {
+        Log->printf("Read image length %d\n", data_read);
+
+        /* Verify image header from the first chunk */
+        if (!header_verified && chunk_count == 0) {
+            size_t firmware_size;
+            char app_version[32];
+
+            Log->printf("Verifying image header from first chunk (%d bytes)\n", data_read);
+            if ((err = parse_image_header_from_buffer(ota_chunk, data_read, &firmware_size, app_version, sizeof(app_version))) != ESP_OK) {
+                Log->printf("Image header verification failed: %s\n", esp_err_to_name(err));
+                ota_failed = 1;
+                break;
+            }
+
+            Log->printf("Image verified - Size: %u bytes, Version: %s\n", (unsigned int)firmware_size, app_version);
+
+            #ifdef CONFIG_OTA_VERSION_CHECK_SLAVEFW_SLAVE
+            /* Get current running slave firmware version and compare */
+            esp_hosted_coprocessor_fwver_t current_slave_version = {0};
+            esp_err_t version_ret = esp_hosted_get_coprocessor_fwversion(&current_slave_version);
+
+            if (version_ret == ESP_OK) {
+                char current_version_str[32];
+                snprintf(current_version_str, sizeof(current_version_str), "%" PRIu32 ".%" PRIu32 ".%" PRIu32,
+                         current_slave_version.major1, current_slave_version.minor1, current_slave_version.patch1);
+
+                Log->printf("Current slave firmware version: %s\n", current_version_str);
+                Log->printf("New slave firmware version: %s\n", app_version);
+
+                if (strcmp(app_version, current_version_str) == 0) {
+                    Log->printf("Current slave firmware version (%s) is the same as new version (%s). Skipping OTA.\n", current_version_str, app_version);
+                    /* Cleanup and return success */
+                    free(ota_chunk);
+                    esp_http_client_close(client);
+                    esp_http_client_cleanup(client);
+                    return ESP_HOSTED_SLAVE_OTA_NOT_REQUIRED;
+                }
+
+                Log->printf("Version differs - proceeding with OTA from %s to %s\n", current_version_str, app_version);
+            } else {
+                Log->printf("Could not get current slave firmware version (error: %s), proceeding with OTA\n", esp_err_to_name(version_ret));
+            }
+            #else
+            Log->printf("Version check disabled - proceeding with OTA (new firmware version: %s)\n", app_version);
+            #endif
+
+            header_verified = true;
+        }
+
+        if ((err = esp_hosted_slave_ota_write(ota_chunk, data_read)) != ESP_OK) {
+            Log->printf("esp_hosted_slave_ota_write failed: %s\n", esp_err_to_name(err));
+            ota_failed = 1;
+            break;
+        }
+
+        chunk_count++;
+    }
+
+    /* Cleanup resources */
+    free(ota_chunk);
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+
+    /* Check for read errors */
+    if (data_read < 0) {
+        Log->println("Error: HTTPS data read error");
+        ota_failed = 1;
+    }
+
+    /* End OTA */
+    if ((err = esp_hosted_slave_ota_end()) != ESP_OK) {
+		Log->printf("esp_ota_end failed, error=%s\n", esp_err_to_name(err));
+		esp_http_client_close(client);
+		esp_http_client_cleanup(client);
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    }
+
+    /* Final result */
+    if (ota_failed) {
+        Log->println("********* Slave OTA Failed *******************");
+        return ESP_HOSTED_SLAVE_OTA_FAILED;
+    } else {
+        Log->println("********* Slave OTA Complete *******************");
+        return ESP_HOSTED_SLAVE_OTA_COMPLETED;
+    }
+}
+#endif
 
 ssize_t write_fn(void* cookie, const char* buf, ssize_t size)
 {
@@ -474,6 +815,13 @@ void restartServices(bool reconnect)
         Log->println("Deinit BLE device");
         BLEDevice::deinit(false);
         Log->println("Deinit BLE device done");
+
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        if (hostedIsBLEActive())
+        {
+            hostedDeinitBLE();
+        }
+        #endif
     }
 
     if (esp_task_wdt_status(NULL) == ESP_OK)
@@ -545,6 +893,10 @@ void restartServices(bool reconnect)
             Log->println("Starting web server done");
         }
     }
+
+    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+    hostedInitBLE();
+    #endif
 }
 #endif
 
@@ -584,6 +936,37 @@ void networkTask(void *pvParameters)
 
         if(connected && reroute)
         {
+            #if !defined(NUKI_HUB_UPDATER) && (defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED))
+            //if (hostedHasUpdate() || forceHostedUpdate)
+            if (forceHostedUpdate)
+            {
+                int ret;
+                forceHostedUpdate = false;
+                preferences->putBool(preference_force_hosted_update, false);
+
+                Log->printf("Update URL: %s", hostedGetUpdateURL());
+                ret = ota_https_perform(hostedGetUpdateURL());
+                //ret = ota_https_perform("https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/hosted/network_adapter.bin");
+
+                if (ret == ESP_HOSTED_SLAVE_OTA_COMPLETED) {
+                    Log->printf("Hosted OTA completed successfully");
+                    ret = esp_hosted_slave_ota_activate();
+                    if (ret == ESP_OK) {
+                        Log->printf("Hosted Slave will reboot with new firmware");
+                        Log->printf("********* Restarting host to avoid sync issues **********************");
+                        vTaskDelay(pdMS_TO_TICKS(2000));
+                        esp_restart();
+                    } else {
+                        Log->printf("Failed to activate Hosted OTA: %s", esp_err_to_name(ret));
+                    }
+                } else if (ret == ESP_HOSTED_SLAVE_OTA_NOT_REQUIRED) {
+                    Log->printf("Hosted OTA not required");
+                } else {
+                    Log->printf("Hosted OTA failed: %s", esp_err_to_name(ret));
+                }
+            }
+            #endif
+
             if(preferences->getBool(preference_update_time, false))
             {
                 esp_netif_sntp_start();
@@ -873,6 +1256,7 @@ void bootloopDetection()
 {
     uint64_t cmp = IS_VALID_DETECT;
     bool bootloopIsValid = (bootloopValidDetect == cmp);
+    Log->print("Bootloop counter valid: ");
     Log->println(bootloopIsValid);
 
     if(!bootloopIsValid)
@@ -891,10 +1275,11 @@ void bootloopDetection()
         Log->print("Bootloop counter incremented: ");
         Log->println(bootloopCounter);
 
-        if(bootloopCounter == 10)
+        if(bootloopCounter == 10 && preferences->getBool(preference_enable_bootloop_reset, false))
         {
             Log->print("Bootloop detected.");
 
+            preferences->putInt(preference_network_hardware, 15);
             preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
             preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
             preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
@@ -907,52 +1292,6 @@ void bootloopDetection()
     }
 }
 #endif
-
-esp_err_t _http_event_handler(esp_http_client_event_t *evt)
-{
-    if (lastHTTPeventId != int(evt->event_id))
-    {
-        Log->println("");
-        switch (evt->event_id)
-        {
-        case HTTP_EVENT_ERROR:
-            Log->println("HTTP_EVENT_ERROR");
-            break;
-        case HTTP_EVENT_ON_CONNECTED:
-            Log->print("HTTP_EVENT_ON_CONNECTED");
-            break;
-        case HTTP_EVENT_HEADER_SENT:
-            Log->print("HTTP_EVENT_HEADER_SENT");
-            break;
-        case HTTP_EVENT_ON_HEADER:
-            Log->print("HTTP_EVENT_ON_HEADER");
-            break;
-        case HTTP_EVENT_ON_DATA:
-            Log->print("HTTP_EVENT_ON_DATA");
-            break;
-        case HTTP_EVENT_ON_FINISH:
-            Log->println("HTTP_EVENT_ON_FINISH");
-            break;
-        case HTTP_EVENT_DISCONNECTED:
-            Log->println("HTTP_EVENT_DISCONNECTED");
-            break;
-        case HTTP_EVENT_REDIRECT:
-            Log->print("HTTP_EVENT_REDIRECT");
-            break;
-        }
-    }
-    else
-    {
-        Log->print(".");
-    }
-    lastHTTPeventId = int(evt->event_id);
-    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_feed(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-
-    return ESP_OK;
-}
 
 void otaTask(void *pvParameter)
 {
@@ -1031,6 +1370,8 @@ void otaTask(void *pvParameter)
     esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
     restartEsp(RestartReason::OTAAborted);
 }
+
+
 
 void setupTasks(bool ota)
 {
@@ -1205,6 +1546,8 @@ void setup()
         logCoreDump();
     }
 
+    forceHostedUpdate = preferences->getBool(preference_force_hosted_update, false);
+
     if (SPIFFS.begin(true))
     {
         listDir(SPIFFS, "/", 1);
@@ -1346,10 +1689,11 @@ void setup()
         }
     }
 #else
-    if(preferences->getBool(preference_enable_bootloop_reset, false))
-    {
-        bootloopDetection();
-    }
+    bootloopDetection();
+
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+    hostedInitBLE();
+#endif
 
     Log->print("Nuki Hub version ");
     Log->println(NUKI_HUB_VERSION);
