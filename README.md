@@ -15,8 +15,8 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.1 and Arduino Core 3.3.2.
-- Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-P4 with the ESP32-C6 module and ESP32-H2.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.1 and Arduino Core 3.3.4.
+- Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-C61, ESP32-P4 with the ESP32-C6 module and ESP32-H2.
 - Untested builds are provided for the ESP32-Solo1 and ESP32-P4 with the ESP32-C5 module (as the developers don't own these devices).
 
 <b>Not supported ESP32 devices:</b>
@@ -59,9 +59,9 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 ## Recommended ESP32 devices
 
 We don't recommend using the original ESP32 or ESP32-Solo1 devices because these devices experience unexpected crashes related to the (closed-source) BLE controller.<br>
-In newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-H2) these unexpected crashed are seen a lot less.
+In newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-C61, ESP32-H2) these unexpected crashed are seen a lot less.
 
-When buying a new device in 2025 we can only recommend the ESP32-P4 or ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
+When buying a new device in 2025 we recommend the ESP32-P4 or ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
 
 The ESP32-P4 with ESP32-C6 or ESP32-C5 module for BLE/WiFi is the most powerfull ESP32 in 2025. 
 It supports anything the ESP32 range has to offer with the highest CPU clocks, largest flash and PSRAM, Ethernet, PoE and WiFi6 (and 5 GHZ WiFi with the C5 as co-processor).
@@ -70,11 +70,13 @@ The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using P
 The only functions missing from the ESP32-S3 as compared to other ESP devices is the ability to use some Ethernet modules only supported by the original ESP32 (and ESP32-P4) and the ability to connect over WIFI6 (C5, C6 or ESP32-P4 with C6/C5 module)
 
 The ESP32-C5 with PSRAM is a good option providing higher clockspeeds than the C6 and adding PSRAM and WIFI 6 on the 5 Ghz band support.
+The ESP32-C61 with PSRAM adds PSRAM compared to the C6.
+
 Nuki Hub uses both CPU cores (if available) to process tasks (e.g. HTTP server/MQTT client/BLE scanner/BLE client) and thus runs better on dual-core devices.<br>
 
 Other considerations:
 - If Ethernet/PoE is required: ESP32-P4 with ESP32-C6 or ESP32-C5 module or ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
-- If WIFI6 is required: ESP32-P4 with ESP32-C6 or ESP32-C5 module, ESP32-C5 or ESP32-C6
+- If WIFI6 is required: ESP32-P4 with ESP32-C6 or ESP32-C5 module, ESP32-C5, ESP32-C6 or ESP32-C61
 
 Devices ranked best-to-worst:
 - ESP32-P4 with ESP32-C5 module (UNTESTED)
@@ -85,6 +87,7 @@ Devices ranked best-to-worst:
 - ...... <br>
 (Devices below will not support some Nuki Hub functions, be slower and/or are more likely to experience unexpected crashes)
 - ESP32-S3 without PSRAM
+- ESP32-C61 with PSRAM
 - ......
 - ESP32 with PSRAM
 - ......
@@ -202,6 +205,7 @@ On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free 
 - ESP32-C3: 70.000 bytes
 - ESP32-C5 with PSRAM: 130.000 bytes + PSRAM
 - ESP32-C6: 200.000 bytes
+- ESP32-C61 with PSRAM: TBD + PSRAM
 - ESP32-P4: 450.000 bytes
 - ESP32-S3 135.000 bytes
 - ESP32-S3 with PSRAM: 185.000 bytes + PSRAM
@@ -962,7 +966,7 @@ Now connect via Wi-Fi and change the network hardware to "Generic W5500".<br>
 
 If Ethernet hardware isn't detected or initialised properly after changing the network device, Wi-Fi will be used as a fallback.<br>
 <br>
-Note: LAN8720 modules are only supported on the ESP32, ESP32-P4 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3, ESP32-C5 or ESP-C6<br>
+Note: LAN8720 modules are only supported on the ESP32, ESP32-P4 and ESP32-Solo1, not on the ESP32-S3, ESP32-C3, ESP32-C5, ESP-C6 or ESP-C61<br>
 
 ## Debugging crashes
 
