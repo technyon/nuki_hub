@@ -534,7 +534,7 @@ uint8_t checkPartition()
     Log->println(running_partition->subtype);
 
 
-#if !defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CONFIG_IDF_TARGET_ESP32P4)
+#if !defined(CONFIG_IDF_TARGET_ESP32C5) && !defined(CONFIG_IDF_TARGET_ESP32P4) && !defined(CONFIG_IDF_TARGET_ESP32C61)
     if(running_partition->size == 1966080)
     {
         return 0;    //OLD PARTITION TABLE
