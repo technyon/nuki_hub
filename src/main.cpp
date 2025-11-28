@@ -832,7 +832,10 @@ void restartServices(bool reconnect)
 
     if(lockEnabled || openerEnabled)
     {
-        Log->println("Restarting BLE Scanner");
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        hostedInitBLE();
+        #endif
+		Log->println("Restarting BLE Scanner");
         bleScanner = new BleScanner::Scanner();
         bleScanner->initialize("NukiHub", true, 40, 40);
         bleScanner->setScanDuration(0);
@@ -893,10 +896,6 @@ void restartServices(bool reconnect)
             Log->println("Starting web server done");
         }
     }
-
-    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
-    hostedInitBLE();
-    #endif
 }
 #endif
 
