@@ -78,24 +78,20 @@ Other considerations:
 - If Ethernet/PoE is required: ESP32-P4 with ESP32-C6 or ESP32-C5 module or ESP32-S3 with PSRAM in combination with a SPI Ethernet module ([W5500](https://www.aliexpress.com/w/wholesale-w5500.html)) and [PoE to Ethernet and USB type B/C splitter](https://aliexpress.com/w/wholesale-poe-splitter-usb-c.html) or the LilyGO-T-ETH ELite, LilyGO-T-ETH-Lite-ESP32S3 or M5stack Atom S3R with the M5stack AtomPoe W5500 module
 - If WIFI6 is required: ESP32-P4 with ESP32-C6 or ESP32-C5 module, ESP32-C5, ESP32-C6 or ESP32-C61
 
-Devices ranked best-to-worst:
+Recommended devices ranked best-to-worst:
 - ESP32-P4 with ESP32-C5 module (UNTESTED)
 - ESP32-P4 with ESP32-C6 module
-- ...... <br>
 - ESP32-S3 with PSRAM
 - ESP32-C5 with PSRAM
-- ...... <br>
-(Devices below will not support some Nuki Hub functions, be slower and/or are more likely to experience unexpected crashes)
-- ESP32-S3 without PSRAM
 - ESP32-C61 with PSRAM
-- ......
-- ESP32 with PSRAM
-- ......
-- ESP32 without PSRAM
-- ...... <br>
-(Devices below will not support more Nuki Hub functions, be slower and/or are more likely to experience unexpected crashes)
-- ESP32-C5
+- ESP32-S3 without PSRAM
+- ESP32-C5 without PSRAM
+- ESP32-C61 without PSRAM
 - ESP32-C6
+
+Not recommended devices ranked least-worst-to-worst:
+- ESP32 with PSRAM
+- ESP32 without PSRAM
 - ESP32-solo1
 - ESP32-C3
 - ESP32-H2
