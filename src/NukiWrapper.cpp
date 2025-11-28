@@ -75,7 +75,7 @@ void NukiWrapper::initialize()
     _nukiLock.setEventHandler(this);
     _nukiLock.setConnectTimeout(2);
     _nukiLock.setDisconnectTimeout(2000);
-    _nukiLock.setGeneralTimeout(_preferences->getInt(preference_ble_general_timeout, 3000));
+    _nukiLock.setGeneralTimeout(_preferences->getInt(preference_ble_general_timeout, 10000));
     _nukiLock.setCommandTimeout(_preferences->getInt(preference_ble_command_timeout, 3000));
 
     _hassEnabled = _preferences->getBool(preference_mqtt_hass_enabled, false);

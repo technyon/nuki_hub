@@ -48,6 +48,7 @@
 #define preference_ota_main_url (char*)"otaMainUrl"
 #define preference_ota_updater_url (char*)"otaUpdUrl"
 #define preference_buffer_size (char*)"buffsize"
+#define preference_force_hosted_update (char*)"frcHstdUpd"
 
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
@@ -262,13 +263,14 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_cred_bypass_boot_btn_enabled, false);
         preferences->putBool(preference_publish_config, false);
         preferences->putBool(preference_config_from_mqtt, false);
+        preferences->putBool(preference_force_hosted_update, false);
 
         preferences->putInt(preference_mqtt_broker_port, 1883);
         preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
         preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
-        preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);        
-        preferences->putInt(preference_ble_general_timeout, 3000);
-        preferences->putInt(preference_ble_command_timeout, 3000);        
+        preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
+        preferences->putInt(preference_ble_general_timeout, 10000);
+        preferences->putInt(preference_ble_command_timeout, 3000);
         preferences->putInt(preference_authlog_max_entries, MAX_AUTHLOG);
         preferences->putInt(preference_keypad_max_entries, MAX_KEYPAD);
         preferences->putInt(preference_timecontrol_max_entries, MAX_TIMECONTROL);
@@ -561,7 +563,7 @@ private:
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_publish_config,
         preference_config_from_mqtt, preference_totp_secret, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember, preference_bypass_secret,
-        preference_admin_secret, preference_ble_general_timeout, preference_ble_command_timeout
+        preference_admin_secret, preference_ble_general_timeout, preference_ble_command_timeout, preference_force_hosted_update
     };
     std::vector<char*> _redact =
     {
@@ -582,7 +584,7 @@ private:
         preference_debug_connect, preference_debug_communication, preference_debug_readable_data, preference_debug_hex_data, preference_debug_command,
         preference_lock_force_id, preference_lock_force_doorsensor, preference_lock_force_keypad, preference_opener_force_id, preference_opener_force_keypad, preference_mqtt_ssl_enabled,
         preference_hybrid_reboot_on_disconnect, preference_lock_gemini_enabled, preference_enable_debug_mode, preference_cred_duo_enabled, preference_cred_duo_approval,
-        preference_publish_config, preference_config_from_mqtt
+        preference_publish_config, preference_config_from_mqtt, preference_force_hosted_update
     };
     std::vector<char*> _bytePrefs =
     {

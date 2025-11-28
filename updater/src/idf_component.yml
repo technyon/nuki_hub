@@ -3,7 +3,7 @@ dependencies:
   idf: ">=5.5"
 
   espressif/esp_hosted:
-    version: "*"
+    version: "2.6.6"
     #override_path: "../../resources/espressif__esp_hosted"
     rules:
       - if: "target in [esp32p4]"

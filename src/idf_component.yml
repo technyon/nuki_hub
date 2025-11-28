@@ -4,19 +4,17 @@ dependencies:
 
   esp-nimble-cpp:
     git: https://github.com/h2zero/esp-nimble-cpp.git
-    version: "2.3.3"
+    version: 25af28bcad1d3c42f76bfc6e73bea3f833a4ef6d
     
   espressif/libsodium: "^1.0.20~2"
 
   espressif/esp_hosted:
-    version: "*"
-    #override_path: "../resources/espressif__esp_hosted"
+    version: "2.6.6"
     rules:
       - if: "target in [esp32p4]"
 
   espressif/esp_wifi_remote:
     version: "*"
-    #override_path: "../resources/espressif__esp_wifi_remote"
     rules:
       - if: "target in [esp32p4]"
 

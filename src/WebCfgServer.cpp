@@ -24,6 +24,20 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 extern bool timeSynced;
 
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#include "esp_hosted.h"
+static esp_hosted_coprocessor_fwver_t slave_version_struct = {
+  .major1 = 0,
+  .minor1 = 0,
+  .patch1 = 0
+};
+static esp_hosted_coprocessor_fwver_t host_version_struct = {
+  .major1 = ESP_HOSTED_VERSION_MAJOR_1,
+  .minor1 = ESP_HOSTED_VERSION_MINOR_1,
+  .patch1 = ESP_HOSTED_VERSION_PATCH_1
+};
+#endif
+
 #ifndef NUKI_HUB_UPDATER
 #include <HTTPClient.h>
 #include <NetworkClientSecure.h>
@@ -3573,6 +3587,16 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
                 restartServicesNoReconnect = true;
             }
         }
+        else if(key == "FRCHSTUPD")
+        {
+            if(_preferences->getBool(preference_force_hosted_update, false) != (value == "1"))
+            {
+                _preferences->putBool(preference_force_hosted_update, (value == "1"));
+                Log->print("Setting changed: ");
+                Log->println(key);
+                configChanged = true;
+            }
+        }
         else if(key == "CHECKUPDATE")
         {
             if(_preferences->getBool(preference_check_updates, false) != (value == "1"))
@@ -3817,7 +3841,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         {
             if(value.toInt() > 2999 && value.toInt() < 65537)
             {
-                if(_preferences->getInt(preference_ble_general_timeout, 3000) != value.toInt())
+                if(_preferences->getInt(preference_ble_general_timeout, 10000) != value.toInt())
                 {
                     _preferences->putInt(preference_ble_general_timeout, value.toInt());
                     Log->print("Setting changed: ");
@@ -5749,14 +5773,15 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.print("</td></tr>");
     printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
-    printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
+    printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_force_hosted_update, false), "");    
+    printCheckBox(&response, "FRCHSTUPD", "Force slave Hosted update on next boot", _preferences->getBool(preference_webserial_enabled), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
     printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 65536)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
     response.print("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
     printInputField(&response, "TSKNTWK", "Task size Network (min 12288, max 65536)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
     response.print("<tr><td>Advised minimum network task size based on current settings</td><td id=\"minnetworktask\"></td>");
     printInputField(&response, "TSKNUKI", "Task size Nuki (min 8192, max 65536)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
-    printInputField(&response, "BLEGENTIMEOUT", "BLE General timeout in ms (min 3000, max 65536)", _preferences->getInt(preference_ble_general_timeout, 3000), 6, "");
+    printInputField(&response, "BLEGENTIMEOUT", "BLE General timeout in ms (min 10000, max 65536)", _preferences->getInt(preference_ble_general_timeout, 10000), 6, "");
     printInputField(&response, "BLECMDTIMEOUT", "BLE Command timeout in ms (min 3000, max 65536)", _preferences->getInt(preference_ble_command_timeout, 3000), 6, "");
     printInputField(&response, "ALMAX", "Max auth log entries (min 1, max 100)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
     printInputField(&response, "KPMAX", "Max keypad entries (min 1, max 200)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
@@ -6263,6 +6288,11 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_updater_build, ""));
     response.print("\nUpdater build date: ");
     response.print(_preferences->getString(preference_updater_date, ""));
+    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+    response.printf("\nHost hosted firmware version: %u.%u.%u", host_version_struct.major1, host_version_struct.minor1, host_version_struct.patch1);
+    esp_hosted_get_coprocessor_fwversion(&slave_version_struct);
+    response.printf("\nSlave hosted firmware version: %u.%u.%u", slave_version_struct.major1, slave_version_struct.minor1, slave_version_struct.patch1);
+    #endif
     response.print("\nUptime (min): ");
     response.print(espMillis() / 1000 / 60);
     response.print("\nConfig version: ");

@@ -17,6 +17,7 @@ managed_components
 dependencies.lock
 sdkconfig.esp32*
 sdkconfig.updater_esp32*
+src/webServerConstants/*.h
 updater/src/*.cpp
 updater/src/*.h
 updater/src/networkDevices/*.cpp
