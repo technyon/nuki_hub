@@ -1189,6 +1189,18 @@ LockActionResult NukiWrapper::onLockActionReceivedCallback(const char *value)
 
 LockActionResult NukiWrapper::onLockActionReceived(const char *value)
 {
+    if (value != nullptr && strcmp(value, "recalibrate") == 0)
+    {
+        if(!isPinValid())
+        {
+            Log->println("PIN not valid, cannot recalibrate");
+            return LockActionResult::AccessDenied;
+        }
+        Log->println("Recalibrating");
+        _nukiLock.requestCalibration();
+        return LockActionResult::Success;
+    }
+
     NukiLock::LockAction action;
 
     if(value)

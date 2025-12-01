@@ -1010,6 +1010,18 @@ void NukiOpenerWrapper::postponeBleWatchdog()
 
 LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *value)
 {
+    if (value != nullptr && strcmp(value, "recalibrate") == 0)
+    {
+        if(!nukiOpenerInst->isPinValid())
+        {
+            Log->println("PIN not valid, cannot recalibrate");
+            return LockActionResult::AccessDenied;
+        }
+        Log->println("Recalibrating");
+        nukiOpenerInst->_nukiOpener.requestCalibration();
+        return LockActionResult::Success;
+    }
+
     NukiOpener::LockAction action;
 
     if(value)

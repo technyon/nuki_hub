@@ -901,6 +901,25 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         { (char*)"pl_prs", (char*)"1" }
     });
 
+    // Recalibrate
+    publishHassTopic("button",
+                     "recalibrate",
+                     uidString,
+                     "_recalibrate",
+                     "Recalibrate",
+                     name,
+                     baseTopic,
+                     "",
+                     deviceType,
+                     "",
+                     "",
+                     "config",
+                     String("~") + mqtt_topic_lock_action,
+    {
+        { (char*)"en", (char*)"true" },
+        { (char*)"pl_prs", (char*)"recalibrate" }
+    });
+
     if((int)basicLockConfigAclPrefs[6] == 1)
     {
         // LED enabled
@@ -2039,6 +2058,25 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
     {
         removeHassTopic((char*)"button", (char*)"unlatch", uidString);
     }
+
+    // Recalibrate
+    publishHassTopic("button",
+                     "recalibrate",
+                     uidString,
+                     "_recalibrate",
+                     "Recalibrate",
+                     name,
+                     baseTopic,
+                     "",
+                     deviceType,
+                     "",
+                     "",
+                     "config",
+                     String("~") + mqtt_topic_lock_action,
+    {
+        { (char*)"en", (char*)"true" },
+        { (char*)"pl_prs", (char*)"recalibrate" }
+    });
 
     publishHassTopic("binary_sensor",
                      "continuous_mode",
