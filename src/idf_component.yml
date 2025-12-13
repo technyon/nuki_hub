@@ -9,7 +9,7 @@ dependencies:
   espressif/libsodium: "^1.0.20~2"
 
   espressif/esp_hosted:
-    version: "2.6.6"
+    version: "2.7.3"
     rules:
       - if: "target in [esp32p4]"
 
