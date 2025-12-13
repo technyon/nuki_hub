@@ -1568,6 +1568,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][0] = "Alkali";
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
+        json["options"][3] = "No Warnings";
         serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "battery_type", uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
@@ -2859,6 +2860,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][0] = "Alkali";
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
+        json["options"][3] = "No Warnings";
         serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "battery_type", uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);

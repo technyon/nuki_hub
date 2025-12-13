@@ -1583,6 +1583,9 @@ void NukiNetwork::batteryTypeToString(const Nuki::BatteryType battype, char* str
     case Nuki::BatteryType::Lithium:
         strcpy(str, "Lithium");
         break;
+    case Nuki::BatteryType::NoWarnings:
+        strcpy(str, "No Warnings");
+        break;        
     default:
         strcpy(str, "undefined");
         break;

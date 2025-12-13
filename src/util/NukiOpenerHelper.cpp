@@ -268,6 +268,10 @@ const Nuki::BatteryType NukiOpenerHelper::batteryTypeToEnum(const char* str)
     {
         return Nuki::BatteryType::Lithium;
     }
+    else if(strcmp(str, "No Warnings") == 0)
+    {
+        return Nuki::BatteryType::NoWarnings;
+    }
     return (Nuki::BatteryType)0xff;
 }
 
