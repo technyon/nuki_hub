@@ -796,7 +796,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
 
     uint32_t basicLockConfigAclPrefs[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedLockConfigAclPrefs[25] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedLockConfigAclPrefs[26] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     if(_preferences->getBool(preference_conf_info_enabled, true))
     {
@@ -1568,6 +1568,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][0] = "Alkali";
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
+        json["options"][3] = "No Warnings";
         serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "battery_type", uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
@@ -1968,14 +1969,38 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
                          String("~") + mqtt_topic_config_action,
         {
             { (char*)"en", (char*)"true" },
-            { (char*)"pl_on", (char*)"{ \"rebootNuki\": \"1\"}" },
-            { (char*)"pl_off", (char*)"{ \"rebootNuki\": \"0\"}" },
-            { (char*)"val_tpl", (char*)"{{value_json.rebootNuki}}" }
+            { (char*)"pl_prs", (char*)"{ \"rebootNuki\": \"1\"}" }
         });
     }
     else
     {
         removeHassTopic((char*)"button", (char*)"reboot_nuki", uidString);
+    }
+
+    if((int)advancedLockConfigAclPrefs[25] == 1)
+    {
+        // Recalibrate Nuki
+        publishHassTopic("button",
+                         "recalibrate_nuki",
+                         uidString,
+                         "_recalibrate_nuki",
+                         "Recalibrate Nuki",
+                         name,
+                         baseTopic,
+                         "",
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         String("~") + mqtt_topic_config_action,
+        {
+            { (char*)"en", (char*)"true" },
+            { (char*)"pl_prs", (char*)"{ \"recalibrateNuki\": \"1\"}" }
+        });
+    }
+    else
+    {
+        removeHassTopic((char*)"button", (char*)"recalibrate_nuki", uidString);
     }
 }
 
@@ -2006,7 +2031,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
     uint32_t aclPrefs[17];
     _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
     uint32_t basicOpenerConfigAclPrefs[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t advancedOpenerConfigAclPrefs[21] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t advancedOpenerConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     if(_preferences->getBool(preference_conf_info_enabled, true))
     {
@@ -2859,6 +2884,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][0] = "Alkali";
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
+        json["options"][3] = "No Warnings";
         serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "battery_type", uidString);
         _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
@@ -2922,6 +2948,32 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
     else
     {
         removeHassTopic((char*)"button", (char*)"reboot_nuki", uidString);
+    }
+
+    if((int)advancedOpenerConfigAclPrefs[21] == 1)
+    {
+        // Recalibrate Nuki
+        publishHassTopic("button",
+                         "recalibrate_nuki",
+                         uidString,
+                         "_recalibrate_nuki",
+                         "Recalibrate Nuki",
+                         name,
+                         baseTopic,
+                         "",
+                         deviceType,
+                         "",
+                         "",
+                         "diagnostic",
+                         String("~") + mqtt_topic_config_action,
+        {
+            { (char*)"en", (char*)"true" },
+            { (char*)"pl_prs", (char*)"{ \"recalibrateNuki\": \"1\"}" }
+        });
+    }
+    else
+    {
+        removeHassTopic((char*)"button", (char*)"recalibrate_nuki", uidString);
     }
 }
 

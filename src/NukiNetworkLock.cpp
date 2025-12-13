@@ -972,6 +972,7 @@ void NukiNetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &conf
         json["enableSlowSpeedDuringNightMode"] = config.enableSlowSpeedDuringNightMode;
     }
     json["rebootNuki"] = 0;
+    json["recalibrateNuki"] = 0;
 
     serializeJson(json, _buffer, _bufferSize);
     _nukiPublisher->publishString(mqtt_topic_config_advanced_json, _buffer, true);
