@@ -163,7 +163,7 @@ private:
     int64_t _lastRssi = 0;
     int64_t _disableBleWatchdogTs = 0;
     uint32_t _basicLockConfigaclPrefs[16];
-    uint32_t _advancedLockConfigaclPrefs[25];
+    uint32_t _advancedLockConfigaclPrefs[26];
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
