@@ -15,7 +15,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.1 and Arduino Core 3.3.4.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.1 and Arduino Core 3.3.5.
 - Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-C61, ESP32-P4 with the ESP32-C6 module and ESP32-H2.
 - Untested builds are provided for the ESP32-Solo1 and ESP32-P4 with the ESP32-C5 module (as the developers don't own these devices).
 
@@ -639,6 +639,7 @@ Changing settings has to enabled first in the configuration portal. Check the se
 | motorSpeed                              | The desired motor speed (Ultra/5th gen Pro only)                                                 | "Standard", "Insane", "Gentle"                                    |`{ "motorSpeed": "Standard" }`      |
 | enableSlowSpeedDuringNightMode          | Whether the slow speed should be applied during Night Mode (Ultra/5th gen Pro only)              | 1 = enabled, 0 = disabled                            |`{ "enableSlowSpeedDuringNightMode": "1" }`      |
 | rebootNuki                              | Reboot the Nuki device immediately                                                               | 1 = reboot nuki                                                   |`{ "rebootNuki": "1" }`             |
+| recalibrate                             | Recalibrate the Nuki device                                                                      | 1 = recalibrate nuki                                              |`{ "recalibrateNuki": "1" }`        |
 
 ### Nuki Opener Configuration
 
@@ -679,6 +680,7 @@ Changing settings has to enabled first in the configuration portal. Check the se
 | batteryType                             | The type of the batteries present in the smart lock.                                             | "Alkali", "Accumulators", "Lithium"                               |`{ "batteryType": "Accumulators" }` |
 | automaticBatteryTypeDetection           | Whether the automatic detection of the battery type is enabled.                                  | 1 = enabled, 0 = disabled                                  |`{ "automaticBatteryTypeDetection": "1" }` |
 | rebootNuki                              | Reboot the Nuki device immediately                                                               | 1 = reboot nuki                                                   |`{ "rebootNuki": "1" }`             |
+| recalibrate                             | Recalibrate the Nuki device                                                                      | 1 = recalibrate nuki                                              |`{ "recalibrateNuki": "1" }`        |
 
 Example usage for changing multiple settings at once:<br>
 - `{ "buttonEnabled": "1", "lockngoTimeout": "60", "automaticBatteryTypeDetection": "1" }`
