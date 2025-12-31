@@ -102,7 +102,7 @@ private:
     const std::vector<uint8_t> _availablePins = { 0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 12, 15, 23, 24, 26 };
 #elif defined(CONFIG_IDF_TARGET_ESP32C6)
     //Based on https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-c6_datasheet_en.pdf
-    const std::vector<uint8_t> _availablePins = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23 };
+    const std::vector<uint8_t> _availablePins = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 };
 #elif defined(CONFIG_IDF_TARGET_ESP32C61)
     //Based on https://docs.espressif.com/projects/esp-idf/en/latest/esp32c61/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-c61_datasheet_en.pdf
     const std::vector<uint8_t> _availablePins = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 22, 23, 24, 25, 26, 27, 28, 29 };
