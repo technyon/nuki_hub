@@ -1905,7 +1905,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     }
 
     // Motor speed
-    if((int)advancedLockConfigAclPrefs[23] == 1)
+    if((int)advancedLockConfigAclPrefs[23] == 1 && _preferences->getBool(preference_lock_gemini_enabled, false))
     {
         JsonDocument json;
         json = createHassJson(uidString, "_motor_speed", "Motor speed", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ (char*)"val_tpl", (char*)"{{value_json.motorSpeed}}" }, { (char*)"en", (char*)"true" }, { (char*)"cmd_tpl", (char*)"{ \"motorSpeed\": \"{{ value }}\" }" }});
@@ -1921,7 +1921,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         removeHassTopic((char*)"select", (char*)"motor_speed", uidString);
     }
 
-    if((int)advancedLockConfigAclPrefs[24] == 1)
+    if((int)advancedLockConfigAclPrefs[24] == 1 && _preferences->getBool(preference_lock_gemini_enabled, false))
     {
         // Slow speed during night mode enabled
         publishHassTopic("switch",
