@@ -3,7 +3,11 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#include "WiFi.h"
+#else
 #include "esp_mac.h"
+#endif
 
 HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preferences *preferences, char* buffer, size_t bufferSize)
     : _device(device),
@@ -13,11 +17,34 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
 {
     _baseTopic = _preferences->getString(preference_mqtt_lock_path);
     _hostname = _preferences->getString(preference_hostname, "");
+}
+
+void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
+{
     uint64_t savedDevId = _preferences->getULong64(preference_nukihub_id, 0);
+    uint64_t curDevId;
+
+    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+    curDevId = 0;
+    std::string macString = std::string(WiFi.macAddress().c_str());
+    std::string::iterator i;
+    std::string::iterator end = macString.end();
+
+    for(i = macString.begin(); i != end; ++i) {
+        char let = *i;
+        if (let >= '0' && let <= '9') {
+            curDevId = curDevId*0xf + (let-'0');
+        } else if (let >= 'a' && let <= 'f') {
+            curDevId = curDevId*0xf + (let-'a'+10);
+        } else if (let >= 'A' && let <= 'F') {
+            curDevId = curDevId*0xf + (let-'A'+10);
+        }
+    }
+    #else
     uint8_t mac[8];
     esp_efuse_mac_get_default(mac);
-    uint64_t curDevId;
     memcpy(&curDevId, &mac, 8);
+    #endif
 
     if (savedDevId == 0)
     {
@@ -57,10 +84,7 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
     }
 
     sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
-}
 
-void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
-{
     char uidString[20];
     itoa(nukiId, uidString, 16);
     bool publishAuthData = _preferences->getBool(preference_publish_authdata, false);
@@ -1905,7 +1929,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
     }
 
     // Motor speed
-    if((int)advancedLockConfigAclPrefs[23] == 1)
+    if((int)advancedLockConfigAclPrefs[23] == 1 && _preferences->getBool(preference_lock_gemini_enabled, false))
     {
         JsonDocument json;
         json = createHassJson(uidString, "_motor_speed", "Motor speed", name, baseTopic, String("~") + mqtt_topic_config_advanced_json, deviceType, "", "", "config", String("~") + mqtt_topic_config_action, {{ (char*)"val_tpl", (char*)"{{value_json.motorSpeed}}" }, { (char*)"en", (char*)"true" }, { (char*)"cmd_tpl", (char*)"{ \"motorSpeed\": \"{{ value }}\" }" }});
@@ -1921,7 +1945,7 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         removeHassTopic((char*)"select", (char*)"motor_speed", uidString);
     }
 
-    if((int)advancedLockConfigAclPrefs[24] == 1)
+    if((int)advancedLockConfigAclPrefs[24] == 1 && _preferences->getBool(preference_lock_gemini_enabled, false))
     {
         // Slow speed during night mode enabled
         publishHassTopic("switch",
