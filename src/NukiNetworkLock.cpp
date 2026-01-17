@@ -713,6 +713,12 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
 
             memset(str, 0, sizeof(str));
             NukiLock::completionStatusToString((NukiLock::CompletionStatus)log.data[3], str);
+
+            if (strcmp(str, "undefined") == 0)
+            {
+                itoa(log.data[3], str, 10);
+            }
+
             entry["completionStatus"] = str;
             break;
         case NukiLock::LoggingType::KeypadAction:
