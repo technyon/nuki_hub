@@ -3,6 +3,7 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "RestartReason.h"
+#include "util/CertUtil.h"
 #include <esp_task_wdt.h>
 #include "FS.h"
 #include "SPIFFS.h"
@@ -5585,14 +5586,14 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 ca[filesize] = '\0';
 
-                printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate", "*", 2200, true, true);
+                printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate", "*", certSize(), true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate", "", 2200, true, true);
+            printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate", "", certSize(), true, true);
         }
     }
     else if (type == 1)
@@ -5620,14 +5621,14 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 cert[filesize] = '\0';
 
-                printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate", "*", 2200, true, true);
+                printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate", "*", certSize(), true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate", "", 2200, true, true);
+            printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate", "", certSize(), true, true);
         }
     }
     else
@@ -5655,14 +5656,14 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 key[filesize] = '\0';
 
-                printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key", "*", 2200, true, true);
+                printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key", "*", certSize(), true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key", "", 2200, true, true);
+            printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key", "", certSize(), true, true);
         }
     }
     response.print("</table>");
@@ -5744,14 +5745,14 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
                 file.close();
                 key[filesize] = '\0';
 
-                printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "*", 2200, true, true);
+                printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "*", certSize(), true, true);
                 found = true;
             }
         }
 
         if (!found)
         {
-            printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "", 2200, true, true);
+            printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "", certSize(), true, true);
         }
     }
     else

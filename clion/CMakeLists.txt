@@ -61,6 +61,7 @@ set(SRCFILES
         ../src/SerialReader.cpp
         ../src/util/NukiHelper.cpp
         ../src/util/NukiOpenerHelper.cpp
+        ../src/util/CertUtil.h
 )
 
 file(GLOB_RECURSE SRCFILESREC
