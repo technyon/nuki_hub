@@ -6,6 +6,7 @@
 #include "FS.h"
 #include "SPIFFS.h"
 #include "RestartReason.h"
+#include "util/CertUtil.h"
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include <WiFi.h>
@@ -431,13 +432,22 @@ inline void initPreferences(Preferences* preferences)
         {
             Log->println("Migration 9.07");
 
-            char ca[2200] = {0};
-            char cert[2200] = {0};
-            char key[2200] = {0};
+            int size = certSize();
 
-            size_t caLength = preferences->getString(preference_mqtt_ca, ca, 2200);
-            size_t crtLength = preferences->getString(preference_mqtt_crt, cert, 2200);
-            size_t keyLength = preferences->getString(preference_mqtt_key, key, 2200);
+            char ca[size];
+            char cert[size];
+            char key[size];
+
+            for (int i = 0; i < certSize(); i++)
+            {
+                ca[i] = 0;
+                cert[i] = 0;
+                key[i] = 0;
+            }
+
+            size_t caLength = preferences->getString(preference_mqtt_ca, ca, size);
+            size_t crtLength = preferences->getString(preference_mqtt_crt, cert, size);
+            size_t keyLength = preferences->getString(preference_mqtt_key, key, size);
 
             if (caLength > 1)
             {
