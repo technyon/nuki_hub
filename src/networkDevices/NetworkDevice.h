@@ -12,7 +12,19 @@ public:
         : _hostname(hostname),
           _preferences(preferences),
           _ipConfiguration(ipConfiguration)
-    {}
+    {
+#ifndef NUKI_HUB_UPDATER
+        _mqttClientMutex = xSemaphoreCreateMutex();
+#endif
+    }
+
+    virtual ~NetworkDevice() {
+#ifndef NUKI_HUB_UPDATER
+        if (_mqttClientMutex != nullptr) {
+            vSemaphoreDelete(_mqttClientMutex);
+        }
+#endif
+    }
 
     virtual const String deviceName() const = 0;
 
@@ -58,6 +70,8 @@ protected:
 #ifndef NUKI_HUB_UPDATER
     espMqttClient *_mqttClient = nullptr;
     espMqttClientSecure *_mqttClientSecure = nullptr;
+
+    SemaphoreHandle_t _mqttClientMutex = nullptr;
 
     void init();
 

@@ -123,7 +123,10 @@ void NetworkDevice::update()
 {
     if (_mqttEnabled && !_mqttInternal)
     {
-        getMqttClient()->loop();
+        MqttClient* client = getMqttClient();
+        if (client != nullptr) {
+            client->loop();
+        }
     }
 }
 
@@ -165,17 +168,29 @@ void NetworkDevice::mqttSetKeepAlive(uint16_t keepAlive)
 
 uint16_t NetworkDevice::mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload)
 {
-    return getMqttClient()->publish(topic, qos, retain, payload);
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return 0;
+    }
+    return client->publish(topic, qos, retain, payload);
 }
 
 uint16_t NetworkDevice::mqttPublish(const char *topic, uint8_t qos, bool retain, const uint8_t *payload, size_t length)
 {
-    return getMqttClient()->publish(topic, qos, retain, payload, length);
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return 0;
+    }
+    return client->publish(topic, qos, retain, payload, length);
 }
 
 bool NetworkDevice::mqttConnected() const
 {
-    return getMqttClient()->connected();
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return false;
+    }
+    return client->connected();
 }
 
 void NetworkDevice::mqttSetServer(const char *host, uint16_t port)
@@ -192,12 +207,20 @@ void NetworkDevice::mqttSetServer(const char *host, uint16_t port)
 
 bool NetworkDevice::mqttConnect()
 {
-    return getMqttClient()->connect();
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return false;
+    }
+    return client->connect();
 }
 
 bool NetworkDevice::mqttDisconnect(bool force)
 {
-    return getMqttClient()->disconnect(force);
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return false;
+    }
+    return client->disconnect(force);
 }
 
 void NetworkDevice::mqttSetWill(const char *topic, uint8_t qos, bool retain, const char *payload)
@@ -262,17 +285,28 @@ void NetworkDevice::mqttOnDisconnect(espMqttClientTypes::OnDisconnectCallback ca
 
 uint16_t NetworkDevice::mqttSubscribe(const char *topic, uint8_t qos)
 {
-    return getMqttClient()->subscribe(topic, qos);
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return 0;
+    }
+    return client->subscribe(topic, qos);
 }
 
 void NetworkDevice::mqttDisable()
 {
-    getMqttClient()->disconnect();
+    MqttClient* client = getMqttClient();
+    if (client != nullptr) {
+        client->disconnect();
+    }
     _mqttEnabled = false;
 }
 
 void NetworkDevice::mqttRestart()
 {
+    if (_mqttClientMutex != nullptr) {
+        xSemaphoreTake(_mqttClientMutex, portMAX_DELAY);
+    }
+
     if (_useEncryption)
     {
         delete _mqttClientSecure;
@@ -283,6 +317,11 @@ void NetworkDevice::mqttRestart()
         delete _mqttClient;
         _mqttClient = nullptr;
     }
+
+    if (_mqttClientMutex != nullptr) {
+        xSemaphoreGive(_mqttClientMutex);
+    }
+
     init();
 }
 
@@ -293,14 +332,25 @@ bool NetworkDevice::isEncrypted()
 
 MqttClient *NetworkDevice::getMqttClient() const
 {
+    if (_mqttClientMutex != nullptr) {
+        xSemaphoreTake(_mqttClientMutex, portMAX_DELAY);
+    }
+
+    MqttClient* client = nullptr;
     if (_useEncryption)
     {
-        return _mqttClientSecure;
+        client = _mqttClientSecure;
     }
     else
     {
-        return _mqttClient;
+        client = _mqttClient;
     }
+
+    if (_mqttClientMutex != nullptr) {
+        xSemaphoreGive(_mqttClientMutex);
+    }
+
+    return client;
 }
 #else
 void NetworkDevice::update()
