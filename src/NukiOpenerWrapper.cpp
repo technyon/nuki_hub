@@ -543,25 +543,37 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 
     if((!isPinValid() || !_publishAuthData) &&
             _statusUpdated &&
+            _keyTurnerState.nukiState == NukiOpener::State::ContinuousMode &&
+            _keyTurnerState.trigger == NukiOpener::Trigger::Manual &&
+            (_keyTurnerState.lockState == NukiOpener::LockState::Open ||
+             _keyTurnerState.lockState == NukiOpener::LockState::Opening) &&
+            _lastKeyTurnerState.lockState != NukiOpener::LockState::Open &&
+            _lastKeyTurnerState.lockState != NukiOpener::LockState::Opening)
+    {
+        Log->println("Nuki opener: Ring detected (CM)");
+        _network->publishRing(false);
+    }
+    else if((!isPinValid() || !_publishAuthData) &&
+            _statusUpdated &&
+            _keyTurnerState.trigger == NukiOpener::Trigger::Manual &&
+            (_keyTurnerState.lockState == NukiOpener::LockState::Open ||
+             _keyTurnerState.lockState == NukiOpener::LockState::Opening) &&
+            _lastKeyTurnerState.lockState == NukiOpener::LockState::RTOactive)
+    {
+        Log->println("Nuki opener: Ring detected (RTO)");
+        _network->publishRing(false);
+    }
+    else if((!isPinValid() || !_publishAuthData) &&
+            _statusUpdated &&
             _keyTurnerState.lockState == NukiOpener::LockState::Locked &&
             _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked &&
-            _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState &&
-            _keyTurnerState.nukiState != NukiOpener::State::ContinuousMode)
+            _lastKeyTurnerState.nukiState == _keyTurnerState.nukiState)
     {
-        Log->println("Nuki opener: Ring detected (Locked)");
+        Log->println("Nuki opener: Ring detected");
         _network->publishRing(true);
     }
     else
     {
-        if((!isPinValid() || !_publishAuthData) &&
-                _keyTurnerState.lockState != _lastKeyTurnerState.lockState &&
-                _keyTurnerState.lockState == NukiOpener::LockState::Open &&
-                _keyTurnerState.trigger == NukiOpener::Trigger::Manual)
-        {
-            Log->println("Nuki opener: Ring detected (Open)");
-            _network->publishRing(false);
-        }
-
         if(_publishAuthData)
         {
             Log->println("Publishing auth data");
