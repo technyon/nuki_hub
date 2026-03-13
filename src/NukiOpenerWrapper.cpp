@@ -316,13 +316,8 @@ void NukiOpenerWrapper::update()
             _nextLockAction = (NukiOpener::LockAction) 0xff;
             _network->publishRetry("--");
             retryCount = 0;
-            _statusUpdated = true;
             Log->println("Opener: updating status after action");
             _statusUpdatedTs = ts;
-            if(_intervalLockstate > 10)
-            {
-                _nextLockStateUpdateTs = ts + 10 * 1000;
-            }
         }
         else
         {
