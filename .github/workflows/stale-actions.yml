@@ -17,5 +17,5 @@ jobs:
         close-pr-message: "This PR was automatically closed because of being stale."
         stale-pr-label: "stale"
         stale-issue-label: "stale"
-        exempt-issue-labels: "bug,enhancement,pinned,security"
-        exempt-pr-labels: "bug,enhancement,pinned,security"
+        exempt-issue-labels: "bug,feature request,pinned,security"
+        exempt-pr-labels: "bug,feature request,pinned,security"
