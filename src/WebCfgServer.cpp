@@ -6358,6 +6358,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getBool(preference_update_from_mqtt, false) ? "Yes" : "No");
     response.print("\nUpdate Nuki Hub and Nuki devices time using NTP: ");
     response.print(_preferences->getBool(preference_update_time, false) ? "Yes" : "No");
+    response.print("\nNTP Server: ");
+    response.print(_preferences->getString(preference_time_server, "pool.ntp.org"));
     response.print("\nWeb configurator username: ");
     response.print(_preferences->getString(preference_cred_user, "").length() > 0 ? "***" : "Not set");
     response.print("\nWeb configurator password: ");
