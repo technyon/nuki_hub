@@ -62,6 +62,8 @@ set(SRCFILES
         ../src/util/NukiHelper.cpp
         ../src/util/NukiOpenerHelper.cpp
         ../src/util/CertUtil.h
+        ../src/NtpWrapper.cpp
+        ../src/NtpWrapper.h
 )
 
 file(GLOB_RECURSE SRCFILESREC

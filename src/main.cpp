@@ -14,7 +14,6 @@
 #include "esp32-hal-log.h"
 #include "hal/wdt_hal.h"
 #include "esp_chip_info.h"
-#include "esp_netif_sntp.h"
 #include "esp_core_dump.h"
 #include "FS.h"
 #include "SPIFFS.h"
@@ -40,7 +39,6 @@ bool nuki_hub_https_server_enabled = false;
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
-#include "Gpio.h"
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 #include "WebCfgServer.h"
@@ -50,6 +48,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "EspMillis.h"
 #include "NimBLEDevice.h"
 #include "ImportExport.h"
+#include "NtpWrapper.h"
 
 NukiNetworkLock* networkLock = nullptr;
 NukiNetworkOpener* networkOpener = nullptr;
@@ -61,6 +60,7 @@ NukiDeviceId* deviceIdLock = nullptr;
 NukiDeviceId* deviceIdOpener = nullptr;
 Gpio* gpio = nullptr;
 SerialReader* serialReader = nullptr;
+NtpWrapper* ntpWrapper = nullptr;
 
 bool bleDone = false;
 bool lockEnabled = false;
@@ -594,12 +594,6 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 
         file = root.openNextFile();
     }
-}
-
-void cbSyncTime(struct timeval *tv)
-{
-    Log->println("NTP time synced");
-    timeSynced = true;
 }
 
 #ifndef NUKI_HUB_UPDATER
@@ -1775,23 +1769,8 @@ void setup()
     }
 #endif
 
-    String timeserver = preferences->getString(preference_time_server, "pool.ntp.org");
-    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(timeserver.c_str());
-    config.start = false;
-    config.server_from_dhcp = true;
-    config.renew_servers_after_new_IP = true;
-    config.index_of_first_server = 1;
-
-    if (network->networkDeviceType() == NetworkDeviceType::WiFi)
-    {
-        config.ip_event_to_renew = IP_EVENT_STA_GOT_IP;
-    }
-    else
-    {
-        config.ip_event_to_renew = IP_EVENT_ETH_GOT_IP;
-    }
-    config.sync_cb = cbSyncTime;
-    esp_netif_sntp_init(&config);
+    ntpWrapper = new NtpWrapper(preferences->getString(preference_time_server, "pool.ntp.org"), network->networkDeviceType());
+    ntpWrapper->initialize();
 
     if(doOta)
     {
