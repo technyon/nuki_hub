@@ -1,0 +1,66 @@
+{
+  "name": "NukiHub",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32.bin", "offset": 4096 },
+        { "path": "nuki_hub_partitions_esp32.bin", "offset": 32768 },
+        { "path": "../boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32.bin", "offset": 2621440 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32s3.bin", "offset": 0 },
+        { "path": "nuki_hub_partitions_esp32s3.bin", "offset": 32768 },
+        { "path": "../boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32s3.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32s3.bin", "offset": 2621440 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32c3.bin", "offset": 0 },
+        { "path": "nuki_hub_partitions_esp32c3.bin", "offset": 32768 },
+        { "path": "../boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32c3.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32c3.bin", "offset": 2621440 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32c6.bin", "offset": 0 },
+        { "path": "nuki_hub_partitions_esp32c6.bin", "offset": 32768 },
+        { "path": "../boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32c6.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32c6.bin", "offset": 2621440 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-H2",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32h2.bin", "offset": 0 },
+        { "path": "nuki_hub_partitions_esp32h2.bin", "offset": 32768 },
+        { "path": "../boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32h2.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32h2.bin", "offset": 2621440 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-P4",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32p4.bin", "offset": 8192 },
+        { "path": "nuki_hub_partitions_esp32p4.bin", "offset": 32768 },
+        { "path": "../boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32p4.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32p4.bin", "offset": 2621440 }
+      ]
+    }
+  ]
+}

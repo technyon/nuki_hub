@@ -1,0 +1,16 @@
+{
+  "name": "NukiHub - ESP32 NO PSRAM",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32nopsram.bin", "offset": 4096 },
+        { "path": "nuki_hub_partitions_esp32nopsram.bin", "offset": 32768 },
+        { "path": "../boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32nopsram.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32nopsram.bin", "offset": 2621440 }
+      ]
+    }
+  ]
+}
