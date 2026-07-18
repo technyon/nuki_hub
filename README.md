@@ -134,7 +134,7 @@ This project is free to use for everyone. However if you feel like donating, you
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C1IDUBV)
 <br><br>
 If you plan to buy NUKI hardware, you can use my referral code to earn a 10% discount. It allows the project to team to buy further NUKI hardware for testing:<br>
-> REF-3TnaGNQJdc
+> REF-jrQ31VPE6O
 
 ## First time installation
 
