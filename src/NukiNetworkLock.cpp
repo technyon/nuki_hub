@@ -1164,6 +1164,7 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
                 _network->removeTopic(codeTopic, "createdMin");
                 _network->removeTopic(codeTopic, "createdSec");
                 _network->removeTopic(codeTopic, "lockCount");
+                _network->publish(codeTopic.c_str(), "", true);
             }
         }
 
