@@ -197,8 +197,8 @@ void NukiNetwork::initialize()
 
     if(_hostname == "")
     {
-        char _nukiHubUidString[20];
-        uint8_t mac[8];
+        char _nukiHubUidString[21];
+        uint8_t mac[8] = {0};
         esp_efuse_mac_get_default(mac);
         uint64_t curDevId;
         memcpy(&curDevId, &mac, 8);
@@ -240,8 +240,8 @@ void NukiNetwork::initialize()
 
         if(_hostname == "")
         {
-            char _nukiHubUidString[20];
-            uint8_t mac[8];
+            char _nukiHubUidString[21];
+            uint8_t mac[8] = {0};
             esp_efuse_mac_get_default(mac);
             uint64_t curDevId;
             memcpy(&curDevId, &mac, 8);
