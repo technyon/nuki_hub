@@ -11,14 +11,9 @@ class String;
 class NtpWrapper
 {
 public:
-    NtpWrapper(String timeserver, NetworkDeviceType networkDeviceType);
-    void initialize();
-
-    bool isTimeSynced();
+    void initialize(String timeserver, NetworkDeviceType networkDeviceType);
+    void enable();
 
 private:
     static void cbSyncTime(struct timeval *tv);
-    static bool timeSynced;
-    String timeserver;
-    NetworkDeviceType networkDeviceType;
 };

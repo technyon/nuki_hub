@@ -1,19 +1,11 @@
 #include "NtpWrapper.h"
-
 #include <functional>
-
 #include "Logger.h"
 using namespace std::placeholders;
 
-bool NtpWrapper::timeSynced = false;
+extern bool timeSynced;
 
-NtpWrapper::NtpWrapper(String timeserver, NetworkDeviceType networkDeviceType)
-{
-    this->timeserver = timeserver;
-    this->networkDeviceType = networkDeviceType;
-}
-
-void NtpWrapper::initialize()
+void NtpWrapper::initialize(String timeserver, NetworkDeviceType networkDeviceType)
 {
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(timeserver.c_str());
     config.start = false;
@@ -33,13 +25,13 @@ void NtpWrapper::initialize()
     esp_netif_sntp_init(&config);
 }
 
-bool NtpWrapper::isTimeSynced()
+void NtpWrapper::enable()
 {
-    return timeSynced;
+    esp_netif_sntp_start();
 }
 
 void NtpWrapper::cbSyncTime(struct timeval* tv)
 {
     Log->println("NTP time synced");
-    NtpWrapper::timeSynced = true;
+    timeSynced = true;
 }

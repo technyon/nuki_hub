@@ -60,7 +60,6 @@ NukiDeviceId* deviceIdLock = nullptr;
 NukiDeviceId* deviceIdOpener = nullptr;
 Gpio* gpio = nullptr;
 SerialReader* serialReader = nullptr;
-NtpWrapper* ntpWrapper = nullptr;
 
 bool bleDone = false;
 bool lockEnabled = false;
@@ -83,6 +82,7 @@ int64_t restartTs = (pow(2,63) - (5 * 1000 * 60000)) / 1000;
 #include "../../src/NukiNetwork.h"
 #include "../../src/EspMillis.h"
 #include "../../src/ImportExport.h"
+#include "../../src/NtpWrapper.h"
 
 int64_t restartTs = 10 * 60 * 1000;
 
@@ -90,6 +90,7 @@ int64_t restartTs = 10 * 60 * 1000;
 
 char log_print_buffer[1024];
 
+NtpWrapper* ntpWrapper = nullptr;
 PsychicHttpServer* psychicServer = nullptr;
 PsychicHttpServer* psychicServerRedirect = nullptr;
 PsychicHttpsServer* psychicSSLServer = nullptr;
@@ -962,7 +963,7 @@ void networkTask(void *pvParameters)
 
             if(preferences->getBool(preference_update_time, false))
             {
-                esp_netif_sntp_start();
+                ntpWrapper->enable();
             }
 
             /* MDNS currently disabled for causing issues (9.10 / 2025-04-01)
@@ -1713,8 +1714,11 @@ void setup()
 
     importExport = new ImportExport(preferences);
 
+
+    ntpWrapper = new NtpWrapper();
     network = new NukiNetwork(preferences, gpio, CharBuffer::get(), buffer_size, importExport);
     network->initialize();
+    ntpWrapper->initialize(preferences->getString(preference_time_server, "pool.ntp.org"), network->networkDeviceType());
 
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
@@ -1768,9 +1772,6 @@ void setup()
         }
     }
 #endif
-
-    ntpWrapper = new NtpWrapper(preferences->getString(preference_time_server, "pool.ntp.org"), network->networkDeviceType());
-    ntpWrapper->initialize();
 
     if(doOta)
     {
