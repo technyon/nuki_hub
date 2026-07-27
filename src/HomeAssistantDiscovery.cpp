@@ -41,7 +41,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
         }
     }
     #else
-    uint8_t mac[8];
+    uint8_t mac[8] = {0};
     esp_efuse_mac_get_default(mac);
     memcpy(&curDevId, &mac, 8);
     #endif
