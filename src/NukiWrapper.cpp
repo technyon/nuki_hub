@@ -4116,4 +4116,15 @@ void NukiWrapper::updateTime()
     {
         return _nukiLock.updateTime(nukiTime);
     });
+    if (cmdResult== Nuki::CmdResult::Success)
+    {
+        Log->println("Nuki lock time updated.");
+    }
+    else
+    {
+        char resultStr[15] = {0};
+        NukiLock::cmdResultToString(cmdResult, resultStr);
+        Log->print("Failed to update Nuki lock time. Command result: ");
+        Log->println(resultStr);
+    }
 }
