@@ -159,6 +159,25 @@ void test_outbox_removeCurrent() {
   // Valgrind should not detect a leak here
 }
 
+void test_outbox_remove_consecutive() {
+  Outbox<uint32_t> outbox;
+
+  for (uint32_t i = 1; i <= 5; i++) {
+    outbox.emplace(i);
+  }
+  TEST_ASSERT_EQUAL_UINT32(5, outbox.size());
+
+  Outbox<uint32_t>::Iterator it = outbox.front();
+  ++it; // 2
+  ++it; // 3
+
+  outbox.remove(it); // removes 3
+  outbox.remove(it);  // removes 4
+
+  TEST_ASSERT_EQUAL_UINT32(3, outbox.size());
+}
+
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_outbox_create);
@@ -167,5 +186,6 @@ int main() {
   RUN_TEST(test_outbox_remove1);
   RUN_TEST(test_outbox_remove2);
   RUN_TEST(test_outbox_removeCurrent);
+  RUN_TEST(test_outbox_remove_consecutive);
   return UNITY_END();
 }

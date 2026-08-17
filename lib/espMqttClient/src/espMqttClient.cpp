@@ -26,6 +26,11 @@ espMqttClientSecure& espMqttClientSecure::setInsecure() {
   return *this;
 }
 
+espMqttClientSecure& espMqttClientSecure::setBufferSizes(int rx, int tx) {
+  _client.client.setBufferSizes(rx, tx);
+  return *this;
+}
+
 espMqttClientSecure& espMqttClientSecure::setFingerprint(const uint8_t fingerprint[20]) {
   _client.client.setFingerprint(fingerprint);
   return *this;

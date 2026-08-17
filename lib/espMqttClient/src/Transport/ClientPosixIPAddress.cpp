@@ -17,7 +17,7 @@ IPAddress::IPAddress()
 
 IPAddress::IPAddress(uint8_t p0, uint8_t p1, uint8_t p2, uint8_t p3)
 : _address(0) {
-  _address = (uint32_t)p0 << 24 | (uint32_t)p1 << 16 | (uint32_t)p2 << 8 | p3;
+  _address = static_cast<uint32_t>(p0) << 24 | static_cast<uint32_t>(p1) << 16 | static_cast<uint32_t>(p2) << 8 | p3;
 }
 
 IPAddress::IPAddress(uint32_t address)

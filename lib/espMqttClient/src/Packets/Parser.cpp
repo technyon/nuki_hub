@@ -266,10 +266,21 @@ ParserResult Parser::_varHeaderTopicLength2(Parser* p) {
 
 ParserResult Parser::_varHeaderTopic(Parser* p) {
   // no checking for character [MQTT-3.3.2-1] [MQTT-3.3.2-2]
-  p->_packet.variableHeader.topic[p->_bytePos] = static_cast<char>(p->_data[p->_bytesRead]);
+  // Topics longer than EMC_MAX_TOPIC_LENGTH are truncated (documented behaviour),
+  // but every byte belonging to the topic still has to be consumed from the
+  // stream so _bytesRead stays aligned with the packet's real length. Only the
+  // buffer write is capped; the state transition still waits for topicLength.
+  if (p->_bytePos < EMC_MAX_TOPIC_LENGTH) {
+    p->_packet.variableHeader.topic[p->_bytePos] = static_cast<char>(p->_data[p->_bytesRead]);
+  }
   p->_bytePos++;
-  if (p->_bytePos == p->_packet.variableHeader.topicLength || p->_bytePos == EMC_MAX_TOPIC_LENGTH) {
-    p->_packet.variableHeader.topic[p->_bytePos] = 0x00;  // add c-string delimiter
+  if (p->_bytePos == EMC_MAX_TOPIC_LENGTH && p->_bytePos < p->_packet.variableHeader.topicLength) {
+    p->_packet.variableHeader.topic[p->_bytePos] = 0x00;  // add c-string delimiter for the truncated string
+  }
+  if (p->_bytePos == p->_packet.variableHeader.topicLength) {
+    if (p->_bytePos <= EMC_MAX_TOPIC_LENGTH) {
+      p->_packet.variableHeader.topic[p->_bytePos] = 0x00;  // add c-string delimiter
+    }
     emc_log_i("Packet variable header topic complete");
     if (p->_packet.fixedHeader.packetType & (HeaderFlag.PUBLISH_QOS1 | HeaderFlag.PUBLISH_QOS2)) {
       p->_parse = _varHeaderPacketId1;

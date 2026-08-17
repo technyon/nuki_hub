@@ -37,7 +37,7 @@ bool ClientPosix::connect(IPAddress ip, uint16_t port) {
 
   memset(&_host, 0, sizeof(_host));
   _host.sin_family = AF_INET;
-  _host.sin_addr.s_addr = htonl(uint32_t(ip));
+  _host.sin_addr.s_addr = htonl(static_cast<uint32_t>(ip));
   _host.sin_port = ::htons(port);
 
   int ret = ::connect(_sockfd, reinterpret_cast<sockaddr*>(&_host), sizeof(_host));
@@ -118,7 +118,7 @@ IPAddress ClientPosix::_hostToIP(const char* hostname) {
   freeaddrinfo(servinfo);
 
   if (returnIP != IPAddress(0)) {
-    emc_log_i("Host '%s' = %u", hostname, (uint32_t)returnIP);
+    emc_log_i("Host '%s' = %u", hostname, static_cast<uint32_t>(returnIP));
   } else {
     emc_log_e("No IP for '%s' found", hostname);
   }
