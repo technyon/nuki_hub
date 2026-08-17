@@ -106,6 +106,77 @@ void test_Publish() {
   TEST_ASSERT_FALSE(parser.getPacket().dup());
 }
 
+void test_Publish_topic_at_max_length() {
+  constexpr size_t topicLength = EMC_MAX_TOPIC_LENGTH;
+  constexpr size_t payloadLength = 4;
+  constexpr size_t remainingLength = 2 + topicLength + payloadLength;
+  constexpr size_t fixedHeaderLength = 3;  // remaining length is 134 (0x86, 0x01)
+  uint8_t stream[fixedHeaderLength + remainingLength] = {};
+
+  stream[0] = 0x30;  // PUBLISH, QoS 0
+  stream[1] = static_cast<uint8_t>((remainingLength & 0x7F) | 0x80);
+  stream[2] = static_cast<uint8_t>(remainingLength >> 7);
+  stream[3] = static_cast<uint8_t>(topicLength >> 8);
+  stream[4] = static_cast<uint8_t>(topicLength);
+  for (size_t i = 0; i < topicLength; ++i) {
+    stream[5 + i] = static_cast<uint8_t>('a' + (i % 26));
+  }
+  const size_t payloadOffset = 5 + topicLength;
+  stream[payloadOffset + 0] = 0x11;
+  stream[payloadOffset + 1] = 0x22;
+  stream[payloadOffset + 2] = 0x33;
+  stream[payloadOffset + 3] = 0x44;
+
+  size_t bytesRead = 0;
+  ParserResult result = parser.parse(stream, sizeof(stream), &bytesRead);
+
+  TEST_ASSERT_EQUAL_UINT8(ParserResult::packet, result);
+  TEST_ASSERT_EQUAL_UINT32(sizeof(stream), bytesRead);
+  TEST_ASSERT_EQUAL_UINT16(topicLength, parser.getPacket().variableHeader.topicLength);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.index);
+  TEST_ASSERT_EQUAL_UINT32(payloadLength, parser.getPacket().payload.length);
+  TEST_ASSERT_EQUAL_UINT32(payloadLength, parser.getPacket().payload.total);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(&stream[payloadOffset], parser.getPacket().payload.data, payloadLength);
+}
+
+void test_Publish_topic_longer_than_max_length() {
+  constexpr size_t topicLength = EMC_MAX_TOPIC_LENGTH + 22;
+  constexpr size_t payloadLength = 4;
+  constexpr size_t remainingLength = 2 + topicLength + payloadLength;
+  constexpr size_t fixedHeaderLength = 3;  // remaining length is 156 (0x9c, 0x01)
+  uint8_t stream[fixedHeaderLength + remainingLength] = {};
+  char expectedTopic[EMC_MAX_TOPIC_LENGTH + 1] = {};
+
+  stream[0] = 0x30;  // PUBLISH, QoS 0
+  stream[1] = static_cast<uint8_t>((remainingLength & 0x7F) | 0x80);
+  stream[2] = static_cast<uint8_t>(remainingLength >> 7);
+  stream[3] = static_cast<uint8_t>(topicLength >> 8);
+  stream[4] = static_cast<uint8_t>(topicLength);
+  for (size_t i = 0; i < topicLength; ++i) {
+    const uint8_t value = static_cast<uint8_t>('A' + (i % 26));
+    stream[5 + i] = value;
+    if (i < EMC_MAX_TOPIC_LENGTH) {
+      expectedTopic[i] = static_cast<char>(value);
+    }
+  }
+  const size_t payloadOffset = 5 + topicLength;
+  stream[payloadOffset + 0] = 0x55;
+  stream[payloadOffset + 1] = 0x66;
+  stream[payloadOffset + 2] = 0x77;
+  stream[payloadOffset + 3] = 0x88;
+
+  size_t bytesRead = 0;
+  ParserResult result = parser.parse(stream, sizeof(stream), &bytesRead);
+
+  TEST_ASSERT_EQUAL_UINT8(ParserResult::packet, result);
+  TEST_ASSERT_EQUAL_UINT32(sizeof(stream), bytesRead);
+  TEST_ASSERT_EQUAL_STRING(expectedTopic, parser.getPacket().variableHeader.topic);
+  TEST_ASSERT_EQUAL_UINT32(0, parser.getPacket().payload.index);
+  TEST_ASSERT_EQUAL_UINT32(payloadLength, parser.getPacket().payload.length);
+  TEST_ASSERT_EQUAL_UINT32(payloadLength, parser.getPacket().payload.total);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(&stream[payloadOffset], parser.getPacket().payload.data, payloadLength);
+}
+
 void test_Publish_empty() {
   uint8_t stream0[] = {
     0b00110000,                 // header
@@ -342,6 +413,8 @@ int main() {
   RUN_TEST(test_Empty);
   RUN_TEST(test_Header);
   RUN_TEST(test_Publish);
+  RUN_TEST(test_Publish_topic_at_max_length);
+  RUN_TEST(test_Publish_topic_longer_than_max_length);
   RUN_TEST(test_Publish_empty);
   RUN_TEST(test_PubAck);
   RUN_TEST(test_PubRec);

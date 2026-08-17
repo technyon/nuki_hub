@@ -12,9 +12,8 @@ the LICENSE file.
 #if EMC_USE_MEMPOOL
   #include "MemoryPool/src/MemoryPool.h"
   #include "Config.h"
-#else
-  #include <new>  // new (std::nothrow)
 #endif
+#include <new>  // new, std::nothrow
 #include <utility>  // std::forward
 
 namespace espMqttClientInternals {
@@ -151,11 +150,15 @@ class Outbox {
 
   // remove node at iterator, iterator points to next
   void remove(Iterator& it) {  // NOLINT(runtime/references)
-    if (!it) return;
+      if (!it) return;
     Node* node = it._node;
     Node* prev = it._prev;
-    ++it;
+    Node* next = node->next;
+
     _remove(prev, node);
+
+    it._prev = prev;
+    it._node = next;
   }
 
   // remove current node, current points to next

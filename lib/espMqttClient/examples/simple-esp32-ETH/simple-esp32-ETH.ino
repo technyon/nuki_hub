@@ -1,22 +1,39 @@
-#include <ESP8266WiFi.h>
 
-#include <espMqttClientAsync.h>
+#if __has_include(<Network.h>) == 0
+#  error "Network/Ethernet stack not available."
+#endif
 
-#define WIFI_SSID "yourSSID"
-#define WIFI_PASSWORD "yourpass"
+#include <ETH.h>
+#include <SPI.h>
+
+#include <Network.h>
+
+#include <espMqttClient.h>
 
 #define MQTT_HOST IPAddress(192, 168, 1, 10)
-#define MQTT_PORT 1883
+#define MQTT_PORT 8883
 
-WiFiEventHandler wifiConnectHandler;
-WiFiEventHandler wifiDisconnectHandler;
-espMqttClientAsync mqttClient;
+#define MQTT_PSK_ID "mqttpskid"
+#define MQTT_PSK    "70736B70736B70736B"
+
+
+espMqttClientSecure mqttClient;
 bool reconnectMqtt = false;
 uint32_t lastReconnect = 0;
 
-void connectToWiFi() {
-  Serial.println("Connecting to Wi-Fi...");
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+const uint8_t
+  pinCsETH     = GPIO_NUM_14, // Chip Select LAN-Interface
+  pinClkSCK    = GPIO_NUM_18, // Serial Clock
+  pinMISO      = GPIO_NUM_19, // MISO
+  pinMOSI      = GPIO_NUM_23, // MOSI
+  pinIntETH    = GPIO_NUM_15, // Interrupt LAN-Interface
+  pinRstETH    = GPIO_NUM_27; // Reset LAN-Interface
+
+void connectToNetwork() {
+  Serial.println("Connecting to Network...");
+
+  SPI.begin(pinClkSCK, pinMISO, pinMOSI);
+  ETH.begin(ETH_PHY_W5500, 1, pinCsETH, -1, pinRstETH, SPI); // without IRQ
 }
 
 void connectToMqtt() {
@@ -30,30 +47,52 @@ void connectToMqtt() {
   }
 }
 
-void onWiFiConnect(const WiFiEventStationModeGotIP& event) {
-  (void) event;
-  Serial.println("Connected to Wi-Fi.");
-  connectToMqtt();
-}
+static bool eth_connected = false;
 
-void onWiFiDisconnect(const WiFiEventStationModeDisconnected& event) {
-  (void) event;
-  Serial.println("Disconnected from Wi-Fi.");
+void onEvent(arduino_event_id_t event, arduino_event_info_t info) {
+  switch (event) {
+    case ARDUINO_EVENT_ETH_START:
+      Serial.println("ETH Started");
+      //set eth hostname here
+      ETH.setHostname("esp32-eth0");
+      break;
+    case ARDUINO_EVENT_ETH_CONNECTED: Serial.println("ETH Connected"); break;
+    case ARDUINO_EVENT_ETH_GOT_IP:    Serial.printf("ETH Got IP: '%s'\n", esp_netif_get_desc(info.got_ip.esp_netif)); Serial.println(ETH);
+#if USE_TWO_ETH_PORTS
+      Serial.println(ETH1);
+#endif
+      eth_connected = true;
+      connectToMqtt();
+      break;
+    case ARDUINO_EVENT_ETH_LOST_IP:
+      Serial.println("ETH Lost IP");
+      eth_connected = false;
+      break;
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
+      Serial.println("ETH Disconnected");
+      eth_connected = false;
+      break;
+    case ARDUINO_EVENT_ETH_STOP:
+      Serial.println("ETH Stopped");
+      eth_connected = false;
+      break;
+    default: break;
+  }
 }
 
 void onMqttConnect(bool sessionPresent) {
   Serial.println("Connected to MQTT.");
   Serial.print("Session present: ");
   Serial.println(sessionPresent);
-  uint16_t packetIdSub = mqttClient.subscribe("test/lol", 2);
+  uint16_t packetIdSub = mqttClient.subscribe("foo/bar", 2);
   Serial.print("Subscribing at QoS 2, packetId: ");
   Serial.println(packetIdSub);
-  mqttClient.publish("test/lol", 0, true, "test 1");
+  mqttClient.publish("foo/bar", 0, true, "test 1");
   Serial.println("Publishing at QoS 0");
-  uint16_t packetIdPub1 = mqttClient.publish("test/lol", 1, true, "test 2");
+  uint16_t packetIdPub1 = mqttClient.publish("foo/bar", 1, true, "test 2");
   Serial.print("Publishing at QoS 1, packetId: ");
   Serial.println(packetIdPub1);
-  uint16_t packetIdPub2 = mqttClient.publish("test/lol", 2, true, "test 3");
+  uint16_t packetIdPub2 = mqttClient.publish("foo/bar", 2, true, "test 3");
   Serial.print("Publishing at QoS 2, packetId: ");
   Serial.println(packetIdPub2);
 }
@@ -61,7 +100,7 @@ void onMqttConnect(bool sessionPresent) {
 void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason) {
   Serial.printf("Disconnected from MQTT: %u.\n", static_cast<uint8_t>(reason));
 
-  if (WiFi.isConnected()) {
+  if (eth_connected) {
     reconnectMqtt = true;
     lastReconnect = millis();
   }
@@ -88,6 +127,9 @@ void onMqttMessage(const espMqttClientTypes::MessageProperties& properties, cons
   Serial.println("Publish received.");
   Serial.print("  topic: ");
   Serial.println(topic);
+  String pl = String((const char*)payload).substring(0, len);
+  Serial.print("  payload: ");
+  Serial.println(pl);
   Serial.print("  qos: ");
   Serial.println(properties.qos);
   Serial.print("  dup: ");
@@ -113,10 +155,7 @@ void setup() {
   Serial.println();
   Serial.println();
 
-  WiFi.setAutoConnect(false);
-  WiFi.setAutoReconnect(true);
-  wifiConnectHandler = WiFi.onStationModeGotIP(onWiFiConnect);
-  wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWiFiDisconnect);
+  Network.onEvent(onEvent);
 
   mqttClient.onConnect(onMqttConnect);
   mqttClient.onDisconnect(onMqttDisconnect);
@@ -125,15 +164,16 @@ void setup() {
   mqttClient.onMessage(onMqttMessage);
   mqttClient.onPublish(onMqttPublish);
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
+  mqttClient.setPreSharedKey(MQTT_PSK_ID, MQTT_PSK);
 
-  connectToWiFi();
+  connectToNetwork();
 }
 
 void loop() {
-  static uint32_t currentMillis = 0;
-  currentMillis = millis();
+  static uint32_t currentMillis = millis();
 
   if (reconnectMqtt && currentMillis - lastReconnect > 5000) {
+    Serial.println("connectToMqtt()");
     connectToMqtt();
   }
 }

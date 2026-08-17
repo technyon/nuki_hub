@@ -144,7 +144,8 @@ void loop() {
     ESP.reset();
   }
 
-  static uint32_t currentMillis = millis();
+  static uint32_t currentMillis = 0;
+  currentMillis = millis();
 
   mqttClient.loop();
 

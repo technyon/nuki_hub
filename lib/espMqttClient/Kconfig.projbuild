@@ -1,0 +1,101 @@
+menu "espMqttClient Configuration"
+
+config EMC_TX_TIMEOUT
+    int "TX Timeout"
+    default 10000
+    help
+        Timeout in milliseconds before a (qos > 0) message will be retransmitted.
+
+config EMC_RX_BUFFER_SIZE
+    int "RX Buffer size"
+    default 1440
+    help
+        The sets the size of the buffer to copy incoming data into.
+
+config EMX_TX_BUFFER_SIZE
+    int "TX Buffer size"
+    default 1440
+    help
+        When publishing using the callback, the client fetches data in chunks of EMC_TX_BUFFER_SIZE size.
+        This is not necessarily the same as the actual outging TCP packets.
+
+config EMC_MAX_TOPIC_LENGTH
+    int "Max topic length"
+    default 128
+    help
+        For **incoming** messages, a maximum topic length is set. Topics longer than this will be truncated.
+
+config EMC_PAYLOAD_BUFFER_SIZE
+    int "Payload buffer size"
+    default 32
+    help
+        Set the incoming payload buffer size for SUBACK messages.
+        When subscribing to multiple topics at once, the acknowledgement contains all the return codes in its payload.
+        The default of 32 means you can theoretically subscribe to 32 topics at once.
+
+config EMC_MIN_FREE_MEMORY
+    int "Minimum free memory"
+    default 4096
+    help
+        The client keeps all outgoing packets in a queue which stores its data in heap memory.
+        With this option, you can set the minimum available (contiguous) heap memory that needs to
+        be available for adding a message to the queue.
+
+config EMC_ALLOW_NOT_CONNECTED_PUBLISH
+    bool "Allow publish when not connected"
+    default n
+    help
+        By default, you can publish when the client is not connected. If you don't want this, set this to 0.
+        Regardless of this setting, after you called `disconnect()`, no messages can be published until fully disconnected.
+
+config EMC_WAIT_FOR_CONNACK
+    bool "Wait for CONNACK"
+    default y
+    help
+        By default, espMqttClient waits for the CONNACK (connection acknowledge) packet before starting to send other packets.
+        The MQTT specification allows to start sending before the broker acknowledges the connection but some brokers
+        don't allow this (AWS for example doesn't).
+
+config EMC_CLIENTID_LENGTH
+    int "Client ID length"
+    default 19
+    help
+        The (maximum) length of the client ID. (Keep in mind that this is a c-string. You need to have 1 position available for the null-termination.)
+
+config EMC_TASK_STACK_SIZE
+    int "Task stack size"
+    default 5120
+    help
+        Sets the stack size (in words) of the MQTT client worker task.
+
+config EMC_MULTIPLE_CALLBACKS
+    bool "Multiple callbacks"
+    default n
+    help
+        This macro is by default not enabled so you can add a single callbacks to an event. Assigning a second will overwrite the existing callback.
+        When enabling multiple callbacks, multiple callbacks (with uint32_t id) can be assigned. Removing is done by referencing the id.
+
+config EMC_USE_MEMPOOL
+    bool "Use memory pool"
+    default n
+    help
+        When set to `1`, (outgoing) MQTT packets and the outbox data is stored in a memory pool.
+        The memory pool is part of the espMqttClient object and is thus allocated in the same memory type.
+        There are two pools: one to hold the outgoing packets (dynamic size elements) and one for the outbox itself (fixed-size elements).
+
+    config EMC_NUM_POOL_ELEMENTS
+        int "Number of pool elements"
+        default 32
+        depends on EMC_USE_MEMPOOL
+        help
+            This config variable is only used when enabling the memory pool. It defines the number of elements in the outbox-pool
+            and the number of blocks that will be allocated in the packet-pool
+
+    config EMC_SIZE_POOL_ELEMENTS
+        int "Memory pool packet size"
+        default 128
+        depends on EMC_USE_MEMPOOL
+        help
+            This defines the size of one packet-pool element. Together with `EMC_NUM_POOL_ELEMENTS`, you get the total packet-pool size.
+            The packet-pool can hold any size of element. The configuration only guarantees a minimum of `EMC_NUM_POOL_ELEMENTS` of size `EMC_SIZE_POOL_ELEMENTS` can fit in the pool.
+endmenu

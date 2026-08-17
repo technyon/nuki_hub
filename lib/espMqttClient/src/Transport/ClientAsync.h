@@ -6,23 +6,26 @@ For a copy, see <https://opensource.org/licenses/MIT> or
 the LICENSE file.
 */
 
-#pragma once
-
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 
-#if __has_include(<Network.h>)
-# include <Network.h>  // includes IPAddress
-#else
-# include <WiFiClient.h>  // includes IPAddress
+#pragma once
+
+#if defined(ARDUINO_ARCH_ESP32)
+  #include "freertos/FreeRTOS.h"
+  #include <AsyncTCP.h>
+#elif defined(ARDUINO_ARCH_ESP8266)
+  #include <ESPAsyncTCP.h>
 #endif
 
 #include "Transport.h"
+#include "../Config.h"
+#include "../Logging.h"
 
 namespace espMqttClientInternals {
 
-class ClientSync : public Transport {
+class ClientAsync : public Transport {
  public:
-  ClientSync();
+  ClientAsync();
   bool connect(IPAddress ip, uint16_t port) override;
   bool connect(const char* host, uint16_t port) override;
   size_t write(const uint8_t* buf, size_t size) override;
@@ -30,11 +33,10 @@ class ClientSync : public Transport {
   void stop() override;
   bool connected() override;
   bool disconnected() override;
-# if __has_include(<Network.h>)
-  NetworkClient client;
-# else
-  WiFiClient client;
-# endif
+
+  AsyncClient client;
+  size_t availableData;
+  uint8_t* bufData;
 };
 
 }  // namespace espMqttClientInternals

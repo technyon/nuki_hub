@@ -133,7 +133,8 @@ void setup() {
 }
 
 void loop() {
-  static uint32_t currentMillis = millis();
+  static uint32_t currentMillis = 0;
+  currentMillis = millis();
 
   if (reconnectMqtt && currentMillis - lastReconnect > 5000) {
     connectToMqtt();

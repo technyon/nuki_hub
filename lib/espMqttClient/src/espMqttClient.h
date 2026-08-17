@@ -33,6 +33,7 @@ class espMqttClientSecure : public MqttClientSetup<espMqttClientSecure> {
  public:
   espMqttClientSecure();
   espMqttClientSecure& setInsecure();
+  espMqttClientSecure& setBufferSizes(int rx, int tx);
   espMqttClientSecure& setFingerprint(const uint8_t fingerprint[20]);
   espMqttClientSecure& setTrustAnchors(const X509List *ta);
   espMqttClientSecure& setClientRSACert(const X509List *cert, const PrivateKey *sk);

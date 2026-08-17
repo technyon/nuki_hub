@@ -1,0 +1,6 @@
+dependencies:
+  espressif/arduino-esp32: ^3.1.1
+  idf: ">=5.3"
+description: an MQTT client for the Arduino framework for ESP8266 / ESP32
+url: https://github.com/bertmelis/espMqttClient
+version: 1.7.0
