@@ -12,6 +12,7 @@
 #endif
 #include "Config.h"
 #include "esp32-hal-log.h"
+#include "esp32-hal-bt-mem.h"
 #include "hal/wdt_hal.h"
 #include "esp_chip_info.h"
 #include "esp_netif_sntp.h"
