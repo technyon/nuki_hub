@@ -62,6 +62,14 @@ private:
     static void onAuthCommandReceivedCallback(const char* value);
     static void IRAM_ATTR gpioActionCallback(const GpioAction& action, const int& pin);
     LockActionResult onLockActionReceived(const char* value);
+
+    bool checkPaired();
+    void checkRestartByBeacon(const int64_t& ts);
+    void checkLockAction(const int64_t& ts);
+    void checkDoorSensorOverride();
+    void checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCommands);
+    void checkQueries(const int64_t& ts, const uint8_t& queryCommands);
+
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);

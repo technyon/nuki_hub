@@ -247,48 +247,42 @@ const bool NukiWrapper::hasConnected() const
     return _hasConnected;
 }
 
-void NukiWrapper::update(bool reboot)
+bool NukiWrapper::checkPaired()
 {
-    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_feed(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-    if(!_paired)
+    if (_paired) return true;
+
+    Log->println("Nuki lock start pairing");
+    _preferences->getBool(preference_register_as_app) ? Log->println("Pairing as app") : Log->println("Pairing as bridge");
+    _network->publishBleAddress("");
+
+    Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
+                                       Nuki::AuthorizationIdType::App :
+                                       Nuki::AuthorizationIdType::Bridge;
+
+    if(_nukiLock.pairNuki(idType) == Nuki::PairingResult::Success)
     {
-        Log->println("Nuki lock start pairing");
-        _preferences->getBool(preference_register_as_app) ? Log->println("Pairing as app") : Log->println("Pairing as bridge");
-        _network->publishBleAddress("");
-
-        Nuki::AuthorizationIdType idType = _preferences->getBool(preference_register_as_app) ?
-                                           Nuki::AuthorizationIdType::App :
-                                           Nuki::AuthorizationIdType::Bridge;
-
-        if(_nukiLock.pairNuki(idType) == Nuki::PairingResult::Success)
-        {
-            Log->println("Nuki paired");
-            _paired = true;
-            _network->publishBleAddress(_nukiLock.getBleAddress().toString());
-        }
-        else
-        {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(200 / portTICK_PERIOD_MS);
-            return;
-        }
+        Log->println("Nuki paired");
+        _network->publishBleAddress(_nukiLock.getBleAddress().toString());
+        return true;
     }
 
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+    return false;
+}
+
+void NukiWrapper::checkRestartByBeacon(const int64_t& ts)
+{
     int64_t lastReceivedBeaconTs = _nukiLock.getLastReceivedBeaconTs();
-    int64_t ts = espMillis();
-    uint8_t queryCommands = _network->queryCommands();
 
     if(_restartBeaconTimeout > 0 &&
-            ts > 60000 &&
-            lastReceivedBeaconTs > 0 &&
-            _disableBleWatchdogTs < ts &&
-            (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
+        ts > 60000 &&
+        lastReceivedBeaconTs > 0 &&
+        _disableBleWatchdogTs < ts &&
+        (ts - lastReceivedBeaconTs > _restartBeaconTimeout * 1000))
     {
         Log->print("No BLE beacon received from the lock for ");
         Log->print((ts - lastReceivedBeaconTs) / 1000);
@@ -300,9 +294,10 @@ void NukiWrapper::update(bool reboot)
         vTaskDelay(200 / portTICK_PERIOD_MS);
         _restartController = 2;
     }
+}
 
-    _nukiLock.updateConnectionState();
-
+void NukiWrapper::checkLockAction(const int64_t& ts)
+{
     if(_nukiOfficial->getOffCommandExecutedTs() > 0 && ts >= _nukiOfficial->getOffCommandExecutedTs())
     {
         _nextLockAction = _offCommand;
@@ -357,7 +352,10 @@ void NukiWrapper::update(bool reboot)
             _nextLockAction = (NukiLock::LockAction) 0xff;
         }
     }
+}
 
+void NukiWrapper::checkDoorSensorOverride()
+{
     _requestDoorSensorOverride = _requestDoorSensorOverride == DoorSensorOverride::NoOverride ? _network->getRequestDoorSensorOverride() : _requestDoorSensorOverride;
     if (_requestDoorSensorOverride != DoorSensorOverride::NoOverride)
     {
@@ -370,7 +368,10 @@ void NukiWrapper::update(bool reboot)
         _network->publishOverrideDoorSensorOverrideResult(r == Nuki::CmdResult::Success ? "success" : "failed");
         _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     }
+}
 
+void NukiWrapper::checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCommands)
+{
     if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         Log->println("Updating Lock state based on status, timer or query");
@@ -387,73 +388,99 @@ void NukiWrapper::update(bool reboot)
             vTaskDelay(500 / portTICK_PERIOD_MS);
         }
     }
+}
+
+void NukiWrapper::checkQueries(const int64_t& ts, const uint8_t& queryCommands)
+{
+    if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
+    {
+        Log->println("Updating Lock battery state based on timer or query");
+        _nextBatteryReportTs = ts + _intervalBattery * 1000;
+        updateBatteryState();
+    }
+    if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs || (queryCommands & QUERY_COMMAND_CONFIG) > 0)
+    {
+        Log->println("Updating Lock config based on timer or query");
+        _nextConfigUpdateTs = ts + _intervalConfig * 1000;
+        updateConfig();
+        if(_isDebugging)
+        {
+            //updateDebug();
+        }
+    }
+    if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
+    {
+        _waitAuthLogUpdateTs = 0;
+        updateAuthData(true);
+    }
+    if(_waitKeypadUpdateTs != 0 && ts > _waitKeypadUpdateTs)
+    {
+        _waitKeypadUpdateTs = 0;
+        updateKeypad(true);
+    }
+    if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
+    {
+        _waitTimeControlUpdateTs = 0;
+        updateTimeControl(true);
+    }
+    if(_waitAuthUpdateTs != 0 && ts > _waitAuthUpdateTs)
+    {
+        _waitAuthUpdateTs = 0;
+        updateAuth(true);
+    }
+    if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
+    {
+        _network->setupHASS(1, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), hasKeypad());
+        _hassSetupCompleted = true;
+    }
+    if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
+    {
+        _nextRssiTs = ts + _rssiPublishInterval;
+
+        int rssi = _nukiLock.getRssi();
+        if(rssi != _lastRssi)
+        {
+            _network->publishRssi(rssi);
+            _lastRssi = rssi;
+        }
+    }
+    if(hasKeypad() && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
+    {
+        Log->println("Updating Lock keypad based on timer or query");
+        _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
+        updateKeypad(false);
+    }
+    if(_preferences->getBool(preference_update_time, false) && ts > (120 * 1000) && ts > _nextTimeUpdateTs)
+    {
+        _nextTimeUpdateTs = ts + (12 * 60 * 60 * 1000);
+        updateTime();
+    }
+}
+
+void NukiWrapper::update(bool reboot)
+{
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+    _paired = checkPaired();
+    if (!_paired) return;
+
+    int64_t ts = espMillis();
+    uint8_t queryCommands = _network->queryCommands();
+
+    checkRestartByBeacon(ts);
+    _nukiLock.updateConnectionState();
+    checkLockAction(ts);
+    checkDoorSensorOverride();
+    checkLockStateUpdate(ts, queryCommands);
+
     if(_network->mqttConnectionState() == 2)
     {
         if(!_statusUpdated)
         {
-            if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
-            {
-                Log->println("Updating Lock battery state based on timer or query");
-                _nextBatteryReportTs = ts + _intervalBattery * 1000;
-                updateBatteryState();
-            }
-            if(_nextConfigUpdateTs == 0 || ts > _nextConfigUpdateTs || (queryCommands & QUERY_COMMAND_CONFIG) > 0)
-            {
-                Log->println("Updating Lock config based on timer or query");
-                _nextConfigUpdateTs = ts + _intervalConfig * 1000;
-                updateConfig();
-                if(_isDebugging)
-                {
-                    //updateDebug();
-                }
-            }
-            if(_waitAuthLogUpdateTs != 0 && ts > _waitAuthLogUpdateTs)
-            {
-                _waitAuthLogUpdateTs = 0;
-                updateAuthData(true);
-            }
-            if(_waitKeypadUpdateTs != 0 && ts > _waitKeypadUpdateTs)
-            {
-                _waitKeypadUpdateTs = 0;
-                updateKeypad(true);
-            }
-            if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
-            {
-                _waitTimeControlUpdateTs = 0;
-                updateTimeControl(true);
-            }
-            if(_waitAuthUpdateTs != 0 && ts > _waitAuthUpdateTs)
-            {
-                _waitAuthUpdateTs = 0;
-                updateAuth(true);
-            }
-            if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
-            {
-                _network->setupHASS(1, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), hasDoorSensor(), hasKeypad());
-                _hassSetupCompleted = true;
-            }
-            if(_rssiPublishInterval > 0 && (_nextRssiTs == 0 || ts > _nextRssiTs))
-            {
-                _nextRssiTs = ts + _rssiPublishInterval;
-
-                int rssi = _nukiLock.getRssi();
-                if(rssi != _lastRssi)
-                {
-                    _network->publishRssi(rssi);
-                    _lastRssi = rssi;
-                }
-            }
-            if(hasKeypad() && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
-            {
-                Log->println("Updating Lock keypad based on timer or query");
-                _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
-                updateKeypad(false);
-            }
-            if(_preferences->getBool(preference_update_time, false) && ts > (120 * 1000) && ts > _nextTimeUpdateTs)
-            {
-                _nextTimeUpdateTs = ts + (12 * 60 * 60 * 1000);
-                updateTime();
-            }
+            checkQueries(ts, queryCommands);
         }
         if(_clearAuthData)
         {
