@@ -1630,7 +1630,7 @@ void NukiNetworkLock::publishOffAction(const int value)
 
 void NukiNetworkLock::publishOverrideDoorSensorOverrideResult(const char* result)
 {
-    _nukiPublisher->publishString(mqtt_topic_lock_action_command_result, result, true);
+    _nukiPublisher->publishString(mqtt_topic_doorsensorOverride, result, true);
 }
 
 String NukiNetworkLock::concat(String a, String b)
