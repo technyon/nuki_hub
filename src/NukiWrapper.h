@@ -166,7 +166,7 @@ private:
     uint32_t _advancedLockConfigaclPrefs[26];
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
-    DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::None;
+    DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 
     char* _buffer;

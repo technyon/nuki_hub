@@ -551,7 +551,7 @@ GpioAction Gpio::getGpioAction(const PinEntry& entry) const
         case PinRole::DoorSensorDoorOpenOnConnected:
             return digitalRead(entry.pin) == LOW ? GpioAction::DoorSensorOpen : GpioAction::DoorSensorClosed;
         case PinRole::DoorSensorDoorClosedOnConnected:
-            return digitalRead(entry.pin) == HIGH ? GpioAction::DoorSensorClosed : GpioAction::DoorSensorOpen;
+            return digitalRead(entry.pin) == LOW ? GpioAction::DoorSensorClosed : GpioAction::DoorSensorOpen;
         case PinRole::GeneralInputPullDown:
         case PinRole::GeneralInputPullUp:
             return GpioAction::GeneralInput;

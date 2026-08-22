@@ -358,18 +358,18 @@ void NukiWrapper::update(bool reboot)
         }
     }
 
-    _requestDoorSensorOverride = _requestDoorSensorOverride == DoorSensorOverride::None ? _network->getRequestDoorSensorOverride() : _requestDoorSensorOverride;
+    _requestDoorSensorOverride = _requestDoorSensorOverride == DoorSensorOverride::NoOverride ? _network->getRequestDoorSensorOverride() : _requestDoorSensorOverride;
 
-    if (_requestDoorSensorOverride != DoorSensorOverride::None)
+    if (_requestDoorSensorOverride != DoorSensorOverride::NoOverride)
     {
         Log->print("Door sensor override requested: ");
-        Log->print(_requestDoorSensorOverride);
+        Log->print(_requestDoorSensorOverride == DoorSensorOverride::DoorOpen ? "open" : "closed");
         Log->print(" ... ");
 
         Nuki::CmdResult r = _nukiLock.setDoorSensorState(_requestDoorSensorOverride == DoorSensorOverride::DoorOpen);
         Log->println(r == Nuki::CmdResult::Success ? "success" : "failed");
         _network->publishOverrideDoorSensorOverrideResult(r == Nuki::CmdResult::Success ? "success" : "failed");
-        _requestDoorSensorOverride = DoorSensorOverride::None;
+        _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     }
 
     if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)

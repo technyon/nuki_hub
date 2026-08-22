@@ -103,7 +103,7 @@ private:
     uint32_t _lastRollingLog = 0;
     uint32_t _authId = 0;
     int64_t _offLastConnected = 0;
-    DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::None;
+    DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
 
     char _nukiName[33];
     char _authName[33];

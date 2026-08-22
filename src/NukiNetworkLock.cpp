@@ -1547,7 +1547,7 @@ void NukiNetworkLock::publishStatusUpdated(const bool statusUpdated)
 DoorSensorOverride NukiNetworkLock::getRequestDoorSensorOverride()
 {
     DoorSensorOverride r = _requestDoorSensorOverride;
-    _requestDoorSensorOverride = DoorSensorOverride::None;
+    _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     return r;
 }
 
