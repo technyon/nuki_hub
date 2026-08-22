@@ -22,6 +22,7 @@
 #define mqtt_topic_lock_completionStatus (char*)"/completionStatus"
 #define mqtt_topic_lock_action_command_result (char*)"/commandResult"
 #define mqtt_topic_lock_door_sensor_state (char*)"/doorSensorState"
+#define mqtt_topic_doorsensorOverride (char*)"/doorsensorOverride"
 #define mqtt_topic_lock_rssi (char*)"/rssi"
 #define mqtt_topic_lock_address (char*)"/address"
 #define mqtt_topic_lock_retry (char*)"/retry"
