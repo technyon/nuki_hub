@@ -23,8 +23,6 @@ bool Gpio::isTriggered(const PinEntry& entry)
 {
 //    Log->println(" ------------ ");
 
-    const int threshold = 3;
-
     uint8_t state = digitalRead(entry.pin);
     uint8_t lastState = (_triggerState[entry.pin] & 0x80) >> 7;
 
@@ -59,7 +57,7 @@ bool Gpio::isTriggered(const PinEntry& entry)
         return false;
     }
 
-    if(entry.role == PinRole::GeneralInputPullDown || entry.role == PinRole::GeneralInputPullUp)
+    if(entry.role == PinRole::GeneralInputPullDown || entry.role == PinRole::GeneralInputPullUp || entry.role == PinRole::DoorSensorDoorOpenOnConnected || entry.role == PinRole::DoorSensorDoorClosedOnConnected)
     {
         return true;
     }
@@ -73,35 +71,37 @@ void Gpio::onTimer()
     {
         switch(entry.role)
         {
-        case PinRole::InputLock:
-        case PinRole::InputUnlock:
-        case PinRole::InputUnlatch:
-        case PinRole::InputLockNgo:
-        case PinRole::InputLockNgoUnlatch:
-        case PinRole::InputElectricStrikeActuation:
-        case PinRole::InputActivateRTO:
-        case PinRole::InputActivateCM:
-        case PinRole::InputDeactivateRtoCm:
-        case PinRole::InputDeactivateRTO:
-        case PinRole::InputDeactivateCM:
-        case PinRole::GeneralInputPullDown:
-        case PinRole::GeneralInputPullUp:
-            if(isTriggered(entry))
-            {
-                _inst->notify(getGpioAction(entry.role), entry.pin);
-            }
-            break;
-        case PinRole::OutputHighLocked:
-        case PinRole::OutputHighUnlocked:
-        case PinRole::OutputHighMotorBlocked:
-        case PinRole::OutputHighRtoActive:
-        case PinRole::OutputHighCmActive:
-        case PinRole::OutputHighRtoOrCmActive:
-        case PinRole::GeneralOutput:
-        case PinRole::Ethernet:
-        // ignore. This case should not occur since pins are configured as output
-        default:
-            break;
+            case PinRole::InputLock:
+            case PinRole::InputUnlock:
+            case PinRole::InputUnlatch:
+            case PinRole::InputLockNgo:
+            case PinRole::InputLockNgoUnlatch:
+            case PinRole::InputElectricStrikeActuation:
+            case PinRole::InputActivateRTO:
+            case PinRole::InputActivateCM:
+            case PinRole::InputDeactivateRtoCm:
+            case PinRole::InputDeactivateRTO:
+            case PinRole::InputDeactivateCM:
+            case PinRole::GeneralInputPullDown:
+            case PinRole::GeneralInputPullUp:
+            case PinRole::DoorSensorDoorOpenOnConnected:
+            case PinRole::DoorSensorDoorClosedOnConnected:
+                if(isTriggered(entry))
+                {
+                    _inst->notify(getGpioAction(entry), entry.pin);
+                }
+                break;
+            case PinRole::OutputHighLocked:
+            case PinRole::OutputHighUnlocked:
+            case PinRole::OutputHighMotorBlocked:
+            case PinRole::OutputHighRtoActive:
+            case PinRole::OutputHighCmActive:
+            case PinRole::OutputHighRtoOrCmActive:
+            case PinRole::GeneralOutput:
+            case PinRole::Ethernet:
+            // ignore. This case should not occur since pins are configured as output
+            default:
+                break;
         }
     }
 }
@@ -152,41 +152,43 @@ void Gpio::setPins()
 
         switch(entry.role)
         {
-        case PinRole::InputLock:
-        case PinRole::InputUnlock:
-        case PinRole::InputUnlatch:
-        case PinRole::InputLockNgo:
-        case PinRole::InputLockNgoUnlatch:
-        case PinRole::InputElectricStrikeActuation:
-        case PinRole::InputActivateRTO:
-        case PinRole::InputActivateCM:
-        case PinRole::InputDeactivateRtoCm:
-        case PinRole::InputDeactivateRTO:
-        case PinRole::InputDeactivateCM:
-        case PinRole::GeneralInputPullUp:
-            pinMode(entry.pin, INPUT_PULLUP);
-            hasInputPin = true;
-            break;
-        case PinRole::GeneralInputPullDown:
-            pinMode(entry.pin, INPUT_PULLDOWN);
-            hasInputPin = true;
-            break;
-        case PinRole::OutputHighLocked:
-        case PinRole::OutputHighUnlocked:
-        case PinRole::OutputHighMotorBlocked:
-        case PinRole::OutputHighRtoActive:
-        case PinRole::OutputHighCmActive:
-        case PinRole::OutputHighRtoOrCmActive:
-        case PinRole::GeneralOutput:
-        case PinRole::OutputHighMqttConnected:
-        case PinRole::OutputHighNetworkConnected:
-        case PinRole::OutputHighBluetoothCommError:
-        case PinRole::OutputHighBluetoothComm:
-            pinMode(entry.pin, OUTPUT);
-            break;
-        case PinRole::Ethernet:
-        default:
-            break;
+            case PinRole::InputLock:
+            case PinRole::InputUnlock:
+            case PinRole::InputUnlatch:
+            case PinRole::InputLockNgo:
+            case PinRole::InputLockNgoUnlatch:
+            case PinRole::InputElectricStrikeActuation:
+            case PinRole::InputActivateRTO:
+            case PinRole::InputActivateCM:
+            case PinRole::InputDeactivateRtoCm:
+            case PinRole::InputDeactivateRTO:
+            case PinRole::InputDeactivateCM:
+            case PinRole::GeneralInputPullUp:
+            case PinRole::DoorSensorDoorOpenOnConnected:
+            case PinRole::DoorSensorDoorClosedOnConnected:
+                pinMode(entry.pin, INPUT_PULLUP);
+                hasInputPin = true;
+                break;
+            case PinRole::GeneralInputPullDown:
+                pinMode(entry.pin, INPUT_PULLDOWN);
+                hasInputPin = true;
+                break;
+            case PinRole::OutputHighLocked:
+            case PinRole::OutputHighUnlocked:
+            case PinRole::OutputHighMotorBlocked:
+            case PinRole::OutputHighRtoActive:
+            case PinRole::OutputHighCmActive:
+            case PinRole::OutputHighRtoOrCmActive:
+            case PinRole::GeneralOutput:
+            case PinRole::OutputHighMqttConnected:
+            case PinRole::OutputHighNetworkConnected:
+            case PinRole::OutputHighBluetoothCommError:
+            case PinRole::OutputHighBluetoothComm:
+                pinMode(entry.pin, OUTPUT);
+                break;
+            case PinRole::Ethernet:
+            default:
+                break;
         }
     }
 
@@ -509,58 +511,65 @@ String Gpio::getRoleDescription(const PinRole& role) const
         return "Output: High on bluetooth communication active";
     case PinRole::OutputHighBluetoothCommError:
         return "Output: High on bluetooth communication error";
+    case PinRole::DoorSensorDoorOpenOnConnected:
+        return "Door sensor: Door open on connected";
+    case PinRole::DoorSensorDoorClosedOnConnected:
+        return "Door sensor: Door closed on connected";
     default:
         return "Unknown";
     }
 }
 
-GpioAction Gpio::getGpioAction(const PinRole &role) const
+GpioAction Gpio::getGpioAction(const PinEntry& entry) const
 {
-    switch(role)
+    switch(entry.role)
     {
-    case PinRole::Disabled:
-        return GpioAction::None;
-    case PinRole::InputLock:
-        return GpioAction::Lock;
-    case PinRole::InputUnlock:
-        return GpioAction::Unlock;
-    case PinRole::InputUnlatch:
-        return GpioAction::Unlatch;
-    case PinRole::InputLockNgo:
-        return GpioAction::LockNgo;
-    case PinRole::InputLockNgoUnlatch:
-        return GpioAction::LockNgoUnlatch;
-    case PinRole::InputElectricStrikeActuation:
-        return GpioAction::ElectricStrikeActuation;
-    case PinRole::InputActivateRTO:
-        return GpioAction::ActivateRTO;
-    case PinRole::InputActivateCM:
-        return GpioAction::ActivateCM;
-    case PinRole::InputDeactivateRtoCm:
-        return GpioAction::DeactivateRtoCm;
-    case PinRole::InputDeactivateRTO:
-        return GpioAction::DeactivateRTO;
-    case PinRole::InputDeactivateCM:
-        return GpioAction::DeactivateCM;
+        case PinRole::Disabled:
+            return GpioAction::None;
+        case PinRole::InputLock:
+            return GpioAction::Lock;
+        case PinRole::InputUnlock:
+            return GpioAction::Unlock;
+        case PinRole::InputUnlatch:
+            return GpioAction::Unlatch;
+        case PinRole::InputLockNgo:
+            return GpioAction::LockNgo;
+        case PinRole::InputLockNgoUnlatch:
+            return GpioAction::LockNgoUnlatch;
+        case PinRole::InputElectricStrikeActuation:
+            return GpioAction::ElectricStrikeActuation;
+        case PinRole::InputActivateRTO:
+            return GpioAction::ActivateRTO;
+        case PinRole::InputActivateCM:
+            return GpioAction::ActivateCM;
+        case PinRole::InputDeactivateRtoCm:
+            return GpioAction::DeactivateRtoCm;
+        case PinRole::InputDeactivateRTO:
+            return GpioAction::DeactivateRTO;
+        case PinRole::InputDeactivateCM:
+            return GpioAction::DeactivateCM;
+        case PinRole::DoorSensorDoorOpenOnConnected:
+            return digitalRead(entry.pin) == LOW ? GpioAction::DoorSensorOpen : GpioAction::DoorSensorClosed;
+        case PinRole::DoorSensorDoorClosedOnConnected:
+            return digitalRead(entry.pin) == LOW ? GpioAction::DoorSensorClosed : GpioAction::DoorSensorOpen;
+        case PinRole::GeneralInputPullDown:
+        case PinRole::GeneralInputPullUp:
+            return GpioAction::GeneralInput;
 
-    case PinRole::GeneralInputPullDown:
-    case PinRole::GeneralInputPullUp:
-        return GpioAction::GeneralInput;
-
-    case PinRole::GeneralOutput:
-    case PinRole::Ethernet:
-    case PinRole::OutputHighLocked:
-    case PinRole::OutputHighUnlocked:
-    case PinRole::OutputHighMotorBlocked:
-    case PinRole::OutputHighRtoActive:
-    case PinRole::OutputHighCmActive:
-    case PinRole::OutputHighRtoOrCmActive:
-    case PinRole::OutputHighMqttConnected:
-    case PinRole::OutputHighNetworkConnected:
-    case PinRole::OutputHighBluetoothComm:
-    case PinRole::OutputHighBluetoothCommError:
-    default:
-        return GpioAction::None;
+        case PinRole::GeneralOutput:
+        case PinRole::Ethernet:
+        case PinRole::OutputHighLocked:
+        case PinRole::OutputHighUnlocked:
+        case PinRole::OutputHighMotorBlocked:
+        case PinRole::OutputHighRtoActive:
+        case PinRole::OutputHighCmActive:
+        case PinRole::OutputHighRtoOrCmActive:
+        case PinRole::OutputHighMqttConnected:
+        case PinRole::OutputHighNetworkConnected:
+        case PinRole::OutputHighBluetoothComm:
+        case PinRole::OutputHighBluetoothCommError:
+        default:
+            return GpioAction::None;
     }
 }
 

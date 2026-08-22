@@ -281,11 +281,11 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     {
         if(strcmp(data, "0") == 0)
         {
-            _requestDoorSensorOverride = 0;
+            _requestDoorSensorOverride = DoorSensorOverride::DoorClosed;
         }
         if(strcmp(data, "1") == 0)
         {
-            _requestDoorSensorOverride = 1;
+            _requestDoorSensorOverride = DoorSensorOverride::DoorOpen;
         }
     }
 
@@ -1544,10 +1544,10 @@ void NukiNetworkLock::publishStatusUpdated(const bool statusUpdated)
     _nukiPublisher->publishBool(mqtt_topic_lock_status_updated, statusUpdated, true);
 }
 
-int8_t NukiNetworkLock::getRequestDoorSensorOverride()
+DoorSensorOverride NukiNetworkLock::getRequestDoorSensorOverride()
 {
-    int8_t r = _requestDoorSensorOverride;
-    _requestDoorSensorOverride = -1;
+    DoorSensorOverride r = _requestDoorSensorOverride;
+    _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     return r;
 }
 

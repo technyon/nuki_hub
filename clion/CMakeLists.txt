@@ -62,6 +62,7 @@ set(SRCFILES
         ../src/util/NukiHelper.cpp
         ../src/util/NukiOpenerHelper.cpp
         ../src/util/CertUtil.h
+        ../src/DoorSensorOverride.h
 )
 
 file(GLOB_RECURSE SRCFILESREC

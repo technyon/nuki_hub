@@ -60,15 +60,24 @@ private:
     static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void onAuthCommandReceivedCallback(const char* value);
-    static void gpioActionCallback(const GpioAction& action, const int& pin);
+    static void IRAM_ATTR gpioActionCallback(const GpioAction& action, const int& pin);
     LockActionResult onLockActionReceived(const char* value);
+
+    bool checkPaired();
+    void checkRestartByBeacon(const int64_t& ts);
+    void checkLockAction(const int64_t& ts);
+    void checkDoorSensorOverride();
+    void checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCommands);
+    void checkQueries(const int64_t& ts, const uint8_t& queryCommands);
+
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
-    void onGpioActionReceived(const GpioAction& action, const int& pin);
+    void onGpioActionReceived(const GpioAction& action);
+    void checkGpioAction();
 
     bool updateKeyTurnerState();
     void updateBatteryState();
@@ -166,7 +175,9 @@ private:
     uint32_t _advancedLockConfigaclPrefs[26];
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
+    DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
+    GpioAction gpioAction = GpioAction::None;
 
     char* _buffer;
     const size_t _bufferSize;
