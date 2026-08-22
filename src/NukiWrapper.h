@@ -60,7 +60,7 @@ private:
     static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void onAuthCommandReceivedCallback(const char* value);
-    static void gpioActionCallback(const GpioAction& action, const int& pin);
+    static void IRAM_ATTR gpioActionCallback(const GpioAction& action, const int& pin);
     LockActionResult onLockActionReceived(const char* value);
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onOfficialUpdateReceived(const char* topic, const char* value);
@@ -166,6 +166,7 @@ private:
     uint32_t _advancedLockConfigaclPrefs[26];
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
+    DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::None;
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
 
     char* _buffer;

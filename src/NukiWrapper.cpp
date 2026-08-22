@@ -358,16 +358,18 @@ void NukiWrapper::update(bool reboot)
         }
     }
 
-    int8_t doorSensorOverride = _network->getRequestDoorSensorOverride();
-    if (doorSensorOverride != -1)
+    _requestDoorSensorOverride = _requestDoorSensorOverride == DoorSensorOverride::None ? _network->getRequestDoorSensorOverride() : _requestDoorSensorOverride;
+
+    if (_requestDoorSensorOverride != DoorSensorOverride::None)
     {
         Log->print("Door sensor override requested: ");
-        Log->print(doorSensorOverride);
+        Log->print(_requestDoorSensorOverride);
         Log->print(" ... ");
 
-        Nuki::CmdResult r = _nukiLock.setDoorSensorState(doorSensorOverride == 1);
+        Nuki::CmdResult r = _nukiLock.setDoorSensorState(_requestDoorSensorOverride == DoorSensorOverride::DoorOpen);
         Log->println(r == Nuki::CmdResult::Success ? "success" : "failed");
         _network->publishOverrideDoorSensorOverrideResult(r == Nuki::CmdResult::Success ? "success" : "failed");
+        _requestDoorSensorOverride = DoorSensorOverride::None;
     }
 
     if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
@@ -2387,6 +2389,12 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
             _offCommand = NukiLock::LockAction::LockNgoUnlatch;
             _network->publishOffAction(5);
         }
+        break;
+    case GpioAction::DoorSensorOpen:
+        _requestDoorSensorOverride = DoorSensorOverride::DoorOpen;
+        break;
+    case GpioAction::DoorSensorClosed:
+        _requestDoorSensorOverride = DoorSensorOverride::DoorClosed;
         break;
     }
 }

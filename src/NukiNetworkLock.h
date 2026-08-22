@@ -15,6 +15,7 @@
 #include "NukiOfficial.h"
 #include "NukiPublisher.h"
 #include "EspMillis.h"
+#include "DoorSensorOverride.h"
 
 class NukiNetworkLock : public MqttReceiver
 {
@@ -49,7 +50,7 @@ public:
     void publishOffAction(const int value);
     void publishOverrideDoorSensorOverrideResult(const char* result);
 
-    int8_t getRequestDoorSensorOverride();
+    DoorSensorOverride getRequestDoorSensorOverride();
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
     void setOfficialUpdateReceivedCallback(void (*officialUpdateReceivedCallback)(const char* path, const char* value));
@@ -102,7 +103,7 @@ private:
     uint32_t _lastRollingLog = 0;
     uint32_t _authId = 0;
     int64_t _offLastConnected = 0;
-    int8_t _requestDoorSensorOverride = -1;
+    DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::None;
 
     char _nukiName[33];
     char _authName[33];

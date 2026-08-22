@@ -32,7 +32,9 @@ enum class PinRole
     OutputHighMqttConnected,
     OutputHighNetworkConnected,
     OutputHighBluetoothCommError,
-    OutputHighBluetoothComm
+    OutputHighBluetoothComm,
+    DoorSensorDoorOpenOnConnected,
+    DoorSensorDoorClosedOnConnected,
 };
 
 enum class GpioAction
@@ -49,6 +51,8 @@ enum class GpioAction
     DeactivateRTO,
     DeactivateCM,
     GeneralInput,
+    DoorSensorOpen,
+    DoorSensorClosed,
     None
 };
 
@@ -88,7 +92,7 @@ private:
     void IRAM_ATTR notify(const GpioAction& action, const int& pin);
     void IRAM_ATTR onTimer();
     bool IRAM_ATTR isTriggered(const PinEntry& pinEntry);
-    GpioAction IRAM_ATTR getGpioAction(const PinRole& role) const;
+    GpioAction IRAM_ATTR getGpioAction(const PinEntry& entry) const;
     static void IRAM_ATTR isrOnTimer();
 
 #if defined(CONFIG_IDF_TARGET_ESP32C3)
@@ -142,7 +146,9 @@ private:
         PinRole::GeneralInputPullDown,
         PinRole::GeneralInputPullUp,
         PinRole::GeneralOutput,
-        PinRole::Ethernet
+        PinRole::Ethernet,
+        PinRole::DoorSensorDoorOpenOnConnected,
+        PinRole::DoorSensorDoorClosedOnConnected
     };
 
     std::vector<PinEntry> _pinConfiguration;
