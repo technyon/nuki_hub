@@ -359,7 +359,6 @@ void NukiWrapper::update(bool reboot)
     }
 
     _requestDoorSensorOverride = _requestDoorSensorOverride == DoorSensorOverride::NoOverride ? _network->getRequestDoorSensorOverride() : _requestDoorSensorOverride;
-
     if (_requestDoorSensorOverride != DoorSensorOverride::NoOverride)
     {
         Log->print("Door sensor override requested: ");
@@ -469,8 +468,12 @@ void NukiWrapper::update(bool reboot)
         if(reboot && isPinValid())
         {
             Nuki::CmdResult cmdResult = _nukiLock.requestReboot();
+            Log->print("Lock reboot was ");
+            Log->println(cmdResult == Nuki::CmdResult::Success ? "successful" : "unsuccessful");
         }
     }
+
+    checkGpioAction();
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiLock::KeyTurnerState));
 }
@@ -2323,12 +2326,17 @@ void NukiWrapper::onAuthCommandReceivedCallback(const char *value)
 
 void NukiWrapper::gpioActionCallback(const GpioAction &action, const int& pin)
 {
-    nukiInst->onGpioActionReceived(action, pin);
+    nukiInst->onGpioActionReceived(action);
 }
 
-void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
+void NukiWrapper::onGpioActionReceived(const GpioAction &action)
 {
-    switch(action)
+    gpioAction = action;
+}
+
+void NukiWrapper::checkGpioAction()
+{
+    switch(gpioAction)
     {
     case GpioAction::Lock:
         if(!_nukiOfficial->getOffConnected())
@@ -2397,6 +2405,8 @@ void NukiWrapper::onGpioActionReceived(const GpioAction &action, const int &pin)
         _requestDoorSensorOverride = DoorSensorOverride::DoorClosed;
         break;
     }
+
+    gpioAction = GpioAction::None;
 }
 
 void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)

@@ -68,7 +68,8 @@ private:
     void onKeypadJsonCommandReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
-    void onGpioActionReceived(const GpioAction& action, const int& pin);
+    void onGpioActionReceived(const GpioAction& action);
+    void checkGpioAction();
 
     bool updateKeyTurnerState();
     void updateBatteryState();
@@ -168,6 +169,7 @@ private:
     std::string _hardwareVersion = "";
     DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
+    GpioAction gpioAction = GpioAction::None;
 
     char* _buffer;
     const size_t _bufferSize;

@@ -54,7 +54,7 @@ private:
     static void onKeypadJsonCommandReceivedCallback(const char* value);
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void onAuthCommandReceivedCallback(const char* value);
-    static void gpioActionCallback(const GpioAction& action, const int& pin);
+    static void IRAM_ATTR gpioActionCallback(const GpioAction& action, const int& pin);
 
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* value);
