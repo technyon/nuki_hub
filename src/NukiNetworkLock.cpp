@@ -68,6 +68,9 @@ void NukiNetworkLock::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
 
+    _network->initTopic(_mqttPath, mqtt_topic_doorsensorOverride, "--");
+    _network->subscribe(_mqttPath, mqtt_topic_doorsensorOverride);
+
     _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
@@ -271,6 +274,18 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         case LockActionResult::Failed:
             _nukiPublisher->publishString(mqtt_topic_lock_action, "error", false);
             break;
+        }
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_doorsensorOverride))
+    {
+        if(strcmp(data, "0") == 0)
+        {
+            _requestDoorSensorOverride = 0;
+        }
+        if(strcmp(data, "1") == 0)
+        {
+            _requestDoorSensorOverride = 1;
         }
     }
 
@@ -1529,6 +1544,13 @@ void NukiNetworkLock::publishStatusUpdated(const bool statusUpdated)
     _nukiPublisher->publishBool(mqtt_topic_lock_status_updated, statusUpdated, true);
 }
 
+int8_t NukiNetworkLock::getRequestDoorSensorOverride()
+{
+    int8_t r = _requestDoorSensorOverride;
+    _requestDoorSensorOverride = -1;
+    return r;
+}
+
 void NukiNetworkLock::setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char *))
 {
     _lockActionReceivedCallback = lockActionReceivedCallback;
@@ -1604,6 +1626,11 @@ const bool NukiNetworkLock::comparePrefixedPath(const char *fullPath, const char
 void NukiNetworkLock::publishOffAction(const int value)
 {
     _network->publishInt(_nukiOfficial->getMqttPath(), mqtt_topic_official_lock_action, value, false);
+}
+
+void NukiNetworkLock::publishOverrideDoorSensorOverrideResult(const char* result)
+{
+    _nukiPublisher->publishString(mqtt_topic_doorsensorOverride, result, true);
 }
 
 String NukiNetworkLock::concat(String a, String b)

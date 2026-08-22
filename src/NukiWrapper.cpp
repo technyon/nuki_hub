@@ -357,6 +357,19 @@ void NukiWrapper::update(bool reboot)
             _nextLockAction = (NukiLock::LockAction) 0xff;
         }
     }
+
+    int8_t doorSensorOverride = _network->getRequestDoorSensorOverride();
+    if (doorSensorOverride != -1)
+    {
+        Log->print("Door sensor override requested: ");
+        Log->print(doorSensorOverride);
+        Log->print(" ... ");
+
+        Nuki::CmdResult r = _nukiLock.setDoorSensorState(doorSensorOverride == 1);
+        Log->println(r == Nuki::CmdResult::Success ? "success" : "failed");
+        _network->publishOverrideDoorSensorOverrideResult(r == Nuki::CmdResult::Success ? "success" : "failed");
+    }
+
     if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         Log->println("Updating Lock state based on status, timer or query");

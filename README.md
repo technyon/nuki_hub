@@ -454,6 +454,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - lock/authorizationName: If enabled in the web interface, this node returns the authorization name of the last lock action.
 - lock/commandResult: Result of the last action as reported by Nuki library: success, failed, timeOut, working, notPaired, error, undefined.
 - lock/doorSensorState: State of the door sensor: unavailable, deactivated, doorClosed, doorOpened, doorStateUnknown, calibrating.
+- lock/doorsensorOverride: Allows to override the door sensor state. This can be used to update the lock from an external door sensor. Set to 0 for door closed, 1 for door open. After completion will be set to "success" or" "failed".
 - lock/rssi: The signal strenght of the Nuki Lock as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - lock/address: The BLE address of the Nuki Lock.
 - lock/retry: Reports the current number of retries for the current command. 0 when command is successful, "failed" if the number of retries is greater than the maximum configured number of retries.
