@@ -392,6 +392,8 @@ void NukiWrapper::checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCo
 
 void NukiWrapper::checkQueries(const int64_t& ts, const uint8_t& queryCommands)
 {
+    if(_statusUpdated) return;
+
     if(_nextBatteryReportTs == 0 || ts > _nextBatteryReportTs || (queryCommands & QUERY_COMMAND_BATTERY) > 0)
     {
         Log->println("Updating Lock battery state based on timer or query");
@@ -478,10 +480,7 @@ void NukiWrapper::update(bool reboot)
 
     if(_network->mqttConnectionState() == 2)
     {
-        if(!_statusUpdated)
-        {
-            checkQueries(ts, queryCommands);
-        }
+        checkQueries(ts, queryCommands);
         if(_clearAuthData)
         {
             Log->println("Clearing Lock auth data");

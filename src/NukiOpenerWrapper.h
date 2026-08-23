@@ -9,6 +9,8 @@
 #include "NukiDeviceId.h"
 #include "util/NukiRetryHandler.h"
 
+class String;
+
 class NukiOpenerWrapper : public NukiOpener::SmartlockEventHandler
 {
 public:
@@ -55,6 +57,11 @@ private:
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void onAuthCommandReceivedCallback(const char* value);
     static void IRAM_ATTR gpioActionCallback(const GpioAction& action, const int& pin);
+
+    bool checkPaired();
+    void checkRestartByBeacon(const int64_t& ts);
+    void checkLockAction(const int64_t& ts);
+    void checkQueries(const int64_t& ts, const uint8_t& queryCommands);
 
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* value);
