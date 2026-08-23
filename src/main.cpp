@@ -68,6 +68,7 @@ bool lockEnabled = false;
 bool openerEnabled = false;
 bool wifiConnected = false;
 bool rebootLock = false;
+bool whiteListed = false;
 uint8_t lockRestartControllerCount = 0;
 uint8_t openerRestartControllerCount = 0;
 char16_t buffer_size = CHAR_BUFFER_SIZE;
@@ -1108,6 +1109,122 @@ static void print_all_tasks_info(void)
     heap_caps_free_all_task_stat_arrays(&tasks_stat);
 }
 #endif
+
+void checkPairing()
+{
+    bool needsPairing = (lockStarted && !nuki->isPaired()) || (openerStarted && !nukiOpener->isPaired());
+    if (needsPairing)
+    {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(2500 / portTICK_PERIOD_MS);
+    }
+    else if (!whiteListed)
+    {
+        whiteListed = true;
+        if(lockEnabled)
+        {
+            bleScanner->whitelist(nuki->getBleAddress());
+        }
+        if(openerEnabled)
+        {
+            bleScanner->whitelist(nukiOpener->getBleAddress());
+        }
+    }
+}
+
+bool processLock()
+{
+    if(!lockStarted) return true;
+
+    if (nuki->restartController() > 0)
+    {
+        if (lockRestartControllerCount > 3)
+        {
+            if (nuki->restartController() == 1)
+            {
+                restartEsp(RestartReason::BLEError);
+            }
+            else if (nuki->restartController() == 2)
+            {
+                restartEsp(RestartReason::BLEBeaconWatchdog);
+            }
+        }
+        else
+        {
+            lockRestartControllerCount += 1;
+            restartServices(false);
+            return false;
+        }
+    }
+    else
+    {
+        if (lockRestartControllerCount > 0 && nuki->hasConnected())
+        {
+            lockRestartControllerCount = 0;
+        }
+
+        nuki->update(rebootLock);
+        rebootLock = false;
+    }
+    return true;
+}
+
+void processOpener()
+{
+    if(!openerStarted) return;
+
+    if (nukiOpener->restartController() > 0)
+    {
+        if (openerRestartControllerCount > 3)
+        {
+            if (nukiOpener->restartController() == 1)
+            {
+                restartEsp(RestartReason::BLEError);
+            }
+            else if (nukiOpener->restartController() == 2)
+            {
+                restartEsp(RestartReason::BLEBeaconWatchdog);
+            }
+        }
+        else
+        {
+            openerRestartControllerCount += 1;
+            restartServices(false);
+        }
+    }
+    else
+    {
+        if (openerRestartControllerCount > 0 && nukiOpener->hasConnected())
+        {
+            openerRestartControllerCount = 0;
+        }
+
+        nukiOpener->update();
+    }
+}
+
+void processNukiTask()
+{
+    if(!disableNetwork && !wifiConnected || !bleDone) return;
+
+    if(bleScannerStarted)
+    {
+        bleScanner->update();
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(20 / portTICK_PERIOD_MS);
+    }
+
+    checkPairing();
+    if (!processLock()) return;
+    processOpener();
+}
+
 void nukiTask(void *pvParameters)
 {
     esp_task_wdt_add(NULL);
@@ -1134,110 +1251,10 @@ void nukiTask(void *pvParameters)
 #endif
     }
     int64_t nukiLoopTs = 0;
-    bool whiteListed = false;
-    while(true)
+
+    while (true)
     {
-        if((disableNetwork || wifiConnected) && bleDone)
-        {
-            if(bleScannerStarted)
-            {
-                bleScanner->update();
-                if (esp_task_wdt_status(NULL) == ESP_OK)
-                {
-                    esp_task_wdt_reset();
-                }
-                vTaskDelay(20 / portTICK_PERIOD_MS);
-            }
-
-            bool needsPairing = (lockStarted && !nuki->isPaired()) || (openerStarted && !nukiOpener->isPaired());
-
-            if (needsPairing)
-            {
-                if (esp_task_wdt_status(NULL) == ESP_OK)
-                {
-                    esp_task_wdt_reset();
-                }
-                vTaskDelay(2500 / portTICK_PERIOD_MS);
-            }
-            else if (!whiteListed)
-            {
-                whiteListed = true;
-                if(lockEnabled)
-                {
-                    bleScanner->whitelist(nuki->getBleAddress());
-                }
-                if(openerEnabled)
-                {
-                    bleScanner->whitelist(nukiOpener->getBleAddress());
-                }
-            }
-
-            if(lockStarted)
-            {
-                if (nuki->restartController() > 0)
-                {
-                    if (lockRestartControllerCount > 3)
-                    {
-                        if (nuki->restartController() == 1)
-                        {
-                            restartEsp(RestartReason::BLEError);
-                        }
-                        else if (nuki->restartController() == 2)
-                        {
-                            restartEsp(RestartReason::BLEBeaconWatchdog);
-                        }
-                    }
-                    else
-                    {
-                        lockRestartControllerCount += 1;
-                        restartServices(false);
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (lockRestartControllerCount > 0 && nuki->hasConnected())
-                    {
-                        lockRestartControllerCount = 0;
-                    }
-
-                    nuki->update(rebootLock);
-                    rebootLock = false;
-                }
-            }
-            if(openerStarted)
-            {
-                if (nukiOpener->restartController() > 0)
-                {
-                    if (openerRestartControllerCount > 3)
-                    {
-                        if (nukiOpener->restartController() == 1)
-                        {
-                            restartEsp(RestartReason::BLEError);
-                        }
-                        else if (nukiOpener->restartController() == 2)
-                        {
-                            restartEsp(RestartReason::BLEBeaconWatchdog);
-                        }
-                    }
-                    else
-                    {
-                        openerRestartControllerCount += 1;
-                        restartServices(false);
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (openerRestartControllerCount > 0 && nukiOpener->hasConnected())
-                    {
-                        openerRestartControllerCount = 0;
-                    }
-
-                    nukiOpener->update();
-                }
-            }
-        }
+        processNukiTask();
 
         if(espMillis() - nukiLoopTs > 120000)
         {
