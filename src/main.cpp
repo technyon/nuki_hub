@@ -1538,6 +1538,7 @@ void setup()
     initializeRestartReason();
 
     preferences->putBool(preference_cred_duo_enabled, false);
+    preferences->putBool(preference_cred_duo_approval, false);
     preferences->putString(preference_cred_user, "");
     preferences->putString(preference_cred_password, "");
 
