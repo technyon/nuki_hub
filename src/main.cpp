@@ -1537,6 +1537,10 @@ void setup()
     initPreferences(preferences);
     initializeRestartReason();
 
+    preferences->putBool(preference_cred_duo_enabled, false);
+    preferences->putString(preference_cred_user, "");
+    preferences->putString(preference_cred_password, "");
+
     if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_TASK_WDT)
