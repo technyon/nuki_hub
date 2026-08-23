@@ -504,27 +504,12 @@ void setReroute()
     esp_log_level_set("*", ESP_LOG_DEBUG);
     esp_log_level_set("nvs", ESP_LOG_INFO);
     esp_log_level_set("wifi", ESP_LOG_INFO);
-#else
-    /*
-    esp_log_level_set("*", ESP_LOG_NONE);
-    esp_log_level_set("httpd", ESP_LOG_ERROR);
-    esp_log_level_set("httpd_sess", ESP_LOG_ERROR);
-    esp_log_level_set("httpd_parse", ESP_LOG_ERROR);
-    esp_log_level_set("httpd_txrx", ESP_LOG_ERROR);
-    esp_log_level_set("httpd_uri", ESP_LOG_ERROR);
-    esp_log_level_set("event", ESP_LOG_ERROR);
-    esp_log_level_set("psychic", ESP_LOG_ERROR);
-    esp_log_level_set("ARDUINO", ESP_LOG_DEBUG);
-    esp_log_level_set("nvs", ESP_LOG_ERROR);
-    esp_log_level_set("wifi", ESP_LOG_ERROR);
-    */
 #endif
 
     if(preferences->getBool(preference_mqtt_log_enabled))
     {
         esp_log_level_set("mqtt", ESP_LOG_NONE);
     }
-
 }
 
 uint8_t checkPartition()
@@ -901,140 +886,193 @@ void restartServices(bool reconnect)
 }
 #endif
 
-void networkTask(void *pvParameters)
+void initNetworkTask(const bool& connected, const bool& firstRun)
 {
-    int64_t networkLoopTs = 0;
-    bool reroute = true;
-    if(preferences->getBool(preference_show_secrets, false))
+    if(!connected || !firstRun) return;
+
+#if !defined(NUKI_HUB_UPDATER) && (defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED))
+    //if (hostedHasUpdate() || forceHostedUpdate)
+    if (forceHostedUpdate)
     {
-        preferences->putBool(preference_show_secrets, false);
+        int ret;
+        forceHostedUpdate = false;
+        preferences->putBool(preference_force_hosted_update, false);
+
+        Log->printf("Update URL: %s", hostedGetUpdateURL());
+        ret = ota_https_perform(hostedGetUpdateURL());
+        //ret = ota_https_perform("https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/hosted/network_adapter.bin");
+
+        if (ret == ESP_HOSTED_SLAVE_OTA_COMPLETED) {
+            Log->printf("Hosted OTA completed successfully");
+            ret = esp_hosted_slave_ota_activate();
+            if (ret == ESP_OK) {
+                Log->printf("Hosted Slave will reboot with new firmware");
+                Log->printf("********* Restarting host to avoid sync issues **********************");
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                esp_restart();
+            } else {
+                Log->printf("Failed to activate Hosted OTA: %s", esp_err_to_name(ret));
+            }
+        } else if (ret == ESP_HOSTED_SLAVE_OTA_NOT_REQUIRED) {
+            Log->printf("Hosted OTA not required");
+        } else {
+            Log->printf("Hosted OTA failed: %s", esp_err_to_name(ret));
+        }
     }
-    while(true)
+#endif
+
+    if(preferences->getBool(preference_update_time, false))
     {
-        int64_t ts = espMillis();
-        if(ts > 120000 && ts < 125000)
-        {
-            if(bootloopCounter > 0)
-            {
-                bootloopCounter = (int8_t)0;
-                Log->println("Bootloop counter reset");
+        esp_netif_sntp_start();
+    }
+
+    /* MDNS currently disabled for causing issues (9.10 / 2025-04-01)
+        if(webSSLStarted) {
+            if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                MDNS.addService("http", "tcp", 443);
             }
         }
-
-#ifndef NUKI_HUB_UPDATER
-        if(serialReader != nullptr)
-        {
-            serialReader->update();
+        else if(webStarted) {
+            if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
+                MDNS.addService("http", "tcp", 80);
+            }
         }
-#endif
-        network->update();
+        */
+
+    setReroute();
+}
+
+void updateWebSerial(const bool& connected)
+{
+#ifndef NUKI_HUB_UPDATER
+    if(connected && webSerialEnabled && (webSSLStarted || webStarted))
+    {
+        webCfgServerSSL->updateWebSerial();
         if (esp_task_wdt_status(NULL) == ESP_OK)
         {
             esp_task_wdt_reset();
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
-        bool connected = network->isConnected();
+    }
+#endif
+}
 
-        if(connected && reroute)
+void updateNukiNetwork(const bool& connected)
+{
+#ifndef NUKI_HUB_UPDATER
+    if (!connected) return;
+
+    if(lockStarted)
+    {
+        rebootLock = networkLock->update();
+        if (esp_task_wdt_status(NULL) == ESP_OK)
         {
-            #if !defined(NUKI_HUB_UPDATER) && (defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED))
-            //if (hostedHasUpdate() || forceHostedUpdate)
-            if (forceHostedUpdate)
-            {
-                int ret;
-                forceHostedUpdate = false;
-                preferences->putBool(preference_force_hosted_update, false);
-
-                Log->printf("Update URL: %s", hostedGetUpdateURL());
-                ret = ota_https_perform(hostedGetUpdateURL());
-                //ret = ota_https_perform("https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/hosted/network_adapter.bin");
-
-                if (ret == ESP_HOSTED_SLAVE_OTA_COMPLETED) {
-                    Log->printf("Hosted OTA completed successfully");
-                    ret = esp_hosted_slave_ota_activate();
-                    if (ret == ESP_OK) {
-                        Log->printf("Hosted Slave will reboot with new firmware");
-                        Log->printf("********* Restarting host to avoid sync issues **********************");
-                        vTaskDelay(pdMS_TO_TICKS(2000));
-                        esp_restart();
-                    } else {
-                        Log->printf("Failed to activate Hosted OTA: %s", esp_err_to_name(ret));
-                    }
-                } else if (ret == ESP_HOSTED_SLAVE_OTA_NOT_REQUIRED) {
-                    Log->printf("Hosted OTA not required");
-                } else {
-                    Log->printf("Hosted OTA failed: %s", esp_err_to_name(ret));
-                }
-            }
-            #endif
-
-            if(preferences->getBool(preference_update_time, false))
-            {
-                esp_netif_sntp_start();
-            }
-
-            /* MDNS currently disabled for causing issues (9.10 / 2025-04-01)
-            if(webSSLStarted) {
-                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                    MDNS.addService("http", "tcp", 443);
-                }
-            }
-            else if(webStarted) {
-                if (MDNS.begin(preferences->getString(preference_hostname, "nukihub").c_str())) {
-                    MDNS.addService("http", "tcp", 80);
-                }
-            }
-            */
-
-            reroute = false;
-            setReroute();
+            esp_task_wdt_reset();
         }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+
+    if(openerStarted)
+    {
+        networkOpener->update();
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+#endif
+}
+
+void checkRestartEsp()
+{
+    if(espMillis() > restartTs)
+    {
+        partitionType = checkPartition();
+
+        if(partitionType!=1)
+        {
+            esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
+        }
+
+        restartEsp(RestartReason::RestartTimer);
+    }
+}
+
+void checkBootLoopCounter(const int64_t ts)
+{
+    if(ts > 120000 && ts < 125000)
+    {
+        if(bootloopCounter > 0)
+        {
+            bootloopCounter = (int8_t)0;
+            Log->println("Bootloop counter reset");
+        }
+    }
+}
+
+void updateSerialReader()
+{
+#ifndef NUKI_HUB_UPDATER
+    if(serialReader != nullptr)
+    {
+        serialReader->update();
+    }
+#endif
+}
+
+void processNetworkTask(const bool& firstRun)
+{
+    int64_t ts = espMillis();
+
+    checkBootLoopCounter(ts);
+    updateSerialReader();
+
+
+    network->update();
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
+        esp_task_wdt_reset();
+    }
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    bool connected = network->isConnected();
+
+    initNetworkTask(connected, firstRun);
 
 #ifndef NUKI_HUB_UPDATER
-        wifiConnected = network->wifiConnected();
-        int restartServ = network->getRestartServices();
+    wifiConnected = network->wifiConnected();
+    int restartServ = network->getRestartServices();
 
-        if (restartServ == 1)
-        {
-            restartServices(false);
-        }
-        else if (restartServ == 2)
-        {
-            restartServices(true);
-        }
-        else
-        {
-            if(connected && webSerialEnabled && (webSSLStarted || webStarted))
-            {
-                webCfgServerSSL->updateWebSerial();
-                if (esp_task_wdt_status(NULL) == ESP_OK)
-                {
-                    esp_task_wdt_reset();
-                }
-                vTaskDelay(50 / portTICK_PERIOD_MS);
-            }
+    if (restartServ == 1)
+    {
+        restartServices(false);
+        return;
+    }
+    if (restartServ == 2)
+    {
+        restartServices(true);
+        return;
+    }
 
-            if(connected && lockStarted)
-            {
-                rebootLock = networkLock->update();
-                if (esp_task_wdt_status(NULL) == ESP_OK)
-                {
-                    esp_task_wdt_reset();
-                }
-                vTaskDelay(50 / portTICK_PERIOD_MS);
-            }
-
-            if(connected && openerStarted)
-            {
-                networkOpener->update();
-                if (esp_task_wdt_status(NULL) == ESP_OK)
-                {
-                    esp_task_wdt_reset();
-                }
-                vTaskDelay(50 / portTICK_PERIOD_MS);
-            }
-        }
+    updateWebSerial(connected);
+    updateNukiNetwork(connected);
 #endif
+}
+
+void networkTask(void *pvParameters)
+{
+    int64_t networkLoopTs = 0;
+    bool firstRun = true;
+
+    if(preferences->getBool(preference_show_secrets, false))
+    {
+        preferences->putBool(preference_show_secrets, false);
+    }
+
+    while (true)
+    {
+        processNetworkTask(firstRun);
+        checkRestartEsp();
 
         if(espMillis() - networkLoopTs > 120000)
         {
@@ -1042,23 +1080,13 @@ void networkTask(void *pvParameters)
             networkLoopTs = espMillis();
         }
 
-        if(espMillis() > restartTs)
-        {
-            partitionType = checkPartition();
-
-            if(partitionType!=1)
-            {
-                esp_ota_set_boot_partition(esp_ota_get_next_update_partition(NULL));
-            }
-
-            restartEsp(RestartReason::RestartTimer);
-        }
-
         if (esp_task_wdt_status(NULL) == ESP_OK)
         {
             esp_task_wdt_reset();
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
+
+        firstRun = false;
     }
 }
 
