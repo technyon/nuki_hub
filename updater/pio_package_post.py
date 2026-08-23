@@ -9,7 +9,9 @@ def get_board_name(env):
     if env.get('BOARD') == 'nuki-esp32solo1':
         board = 'esp32solo1'
     elif env.get('BOARD') == 'nuki-esp32-p4-c5':
-        board = 'esp32p4c5'        
+        board = 'esp32p4c5'
+    elif env.get('BOARD') == 'nuki-esp32-p4-v3':
+        board = 'esp32p4v3'
     elif env.get('BOARD') == 'nuki-esp32gls10':
         board = 'esp32gls10'
     elif env.get('BOARD') == 'nuki-esp32-s3-oct':
@@ -17,7 +19,7 @@ def get_board_name(env):
     elif env.get('BOARD') == 'nuki-esp32-s3-nopsram':
         board = 'esp32s3nopsram'
     elif env.get('BOARD') == 'nuki-esp32dev-nopsram':
-        board = 'esp32nopsram'        
+        board = 'esp32nopsram'
     return board
 
 def create_target_dir(env):
