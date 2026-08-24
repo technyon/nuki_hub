@@ -72,7 +72,6 @@ bool whiteListed = false;
 uint8_t lockRestartControllerCount = 0;
 uint8_t openerRestartControllerCount = 0;
 char16_t buffer_size = CHAR_BUFFER_SIZE;
-String timeserver;
 
 TaskHandle_t nukiTaskHandle = nullptr;
 
@@ -126,6 +125,7 @@ bool webSerialEnabled = false;
 bool forceHostedUpdate = false;
 uint8_t partitionType = -1;
 
+String timeserver;
 uint8_t http_err = 0;
 int lastHTTPeventId = -1;
 bool doOta = false;
