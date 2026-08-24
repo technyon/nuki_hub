@@ -72,6 +72,7 @@ bool whiteListed = false;
 uint8_t lockRestartControllerCount = 0;
 uint8_t openerRestartControllerCount = 0;
 char16_t buffer_size = CHAR_BUFFER_SIZE;
+String timeserver;
 
 TaskHandle_t nukiTaskHandle = nullptr;
 
@@ -1821,7 +1822,7 @@ void setup()
     }
 #endif
 
-    String timeserver = preferences->getString(preference_time_server, "pool.ntp.org");
+    timeserver = preferences->getString(preference_time_server, "pool.ntp.org");
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(timeserver.c_str());
     config.start = false;
     config.server_from_dhcp = true;

@@ -1088,7 +1088,6 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
 
             String basePathPrefix = "~";
             basePathPrefix.concat(basePath);
-            const char *basePathPrefixChr = basePathPrefix.c_str();
 
             std::string baseCommand = std::string("{ \"action\": \"update\", \"codeId\": \"") + std::to_string(entry.codeId);
             std::string enaCommand = baseCommand + (char*)"\", \"enabled\": \"1\" }";
@@ -1114,7 +1113,7 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
                                        "diagnostic",
                                        String("~") + mqtt_topic_keypad_json_action,
             {
-                { (char*)"json_attr_t", (char*)basePathPrefixChr },
+                { (char*)"json_attr_t", (char*)basePathPrefix.c_str() },
                 { (char*)"pl_on", (char*)enaCommand.c_str() },
                 { (char*)"pl_off", (char*)disCommand.c_str() },
                 { (char*)"val_tpl", (char*)"{{value_json.enabled}}" },

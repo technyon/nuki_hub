@@ -78,16 +78,11 @@ bool ImportExport::startDuoAuth(char* pushType)
     int64_t timeout = esp_timer_get_time() - (30 * 1000 * 1000L);
     if(!_duoActiveRequest || timeout > _duoRequestTS)
     {
-        const char* duo_host = _duoHost.c_str();
-        const char* duo_ikey = _duoIkey.c_str();
-        const char* duo_skey = _duoSkey.c_str();
-        const char* duo_user = _duoUser.c_str();
-
         DuoAuthLib duoAuth;
         bool duoRequestResult;
-        duoAuth.begin(duo_host, duo_ikey, duo_skey, &timeinfo);
+        duoAuth.begin(_duoHost.c_str(), _duoIkey.c_str(), _duoSkey.c_str(), &timeinfo);
         duoAuth.setPushType(pushType);
-        duoRequestResult = duoAuth.pushAuth((char*)duo_user, true);
+        duoRequestResult = duoAuth.pushAuth((char*)_duoUser.c_str(), true);
 
         if(duoRequestResult == true)
         {

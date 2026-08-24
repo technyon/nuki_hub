@@ -89,12 +89,10 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
         memset(&_credUser, 0, sizeof(_credUser));
         memset(&_credPassword, 0, sizeof(_credPassword));
 
-        const char *user = str.c_str();
-        memcpy(&_credUser, user, str.length());
+        memcpy(&_credUser, str.c_str(), str.length());
 
         str = _preferences->getString(preference_cred_password, "");
-        const char *pass = str.c_str();
-        memcpy(&_credPassword, pass, str.length());
+        memcpy(&_credPassword, str.c_str(), str.length());
 
         if (_preferences->getInt(preference_http_auth_type, 0) == 2)
         {
