@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -104,6 +104,8 @@ TEST_CASE("deserializeMsgPack(MemberProxy)") {
 
     REQUIRE(err == DeserializationError::Ok);
     REQUIRE(doc.as<std::string>() == "{\"hello\":\"world\",\"value\":[42]}");
-    REQUIRE(spy.log() == AllocatorLog{});
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofString("value")),
+                         });
   }
 }

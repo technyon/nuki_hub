@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -26,6 +26,15 @@
 #  endif
 #endif
 
+// Remove true and false macros defined by some cores, such as Arduino Due's
+// See issues #2181 and arduino/ArduinoCore-sam#50
+#ifdef true
+#  undef true
+#endif
+#ifdef false
+#  undef false
+#endif
+
 #include "ArduinoJson/Array/JsonArray.hpp"
 #include "ArduinoJson/Object/JsonObject.hpp"
 #include "ArduinoJson/Variant/JsonVariantConst.hpp"
@@ -36,13 +45,11 @@
 #include "ArduinoJson/Array/ElementProxy.hpp"
 #include "ArduinoJson/Array/Utilities.hpp"
 #include "ArduinoJson/Collection/CollectionImpl.hpp"
-#include "ArduinoJson/Memory/ResourceManagerImpl.hpp"
 #include "ArduinoJson/Object/MemberProxy.hpp"
 #include "ArduinoJson/Object/ObjectImpl.hpp"
 #include "ArduinoJson/Variant/ConverterImpl.hpp"
 #include "ArduinoJson/Variant/JsonVariantCopier.hpp"
 #include "ArduinoJson/Variant/VariantCompare.hpp"
-#include "ArduinoJson/Variant/VariantImpl.hpp"
 #include "ArduinoJson/Variant/VariantRefBaseImpl.hpp"
 
 #include "ArduinoJson/Json/JsonDeserializer.hpp"

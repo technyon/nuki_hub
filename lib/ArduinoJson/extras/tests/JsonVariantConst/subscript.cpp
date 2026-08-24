@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -52,12 +52,12 @@ TEST_CASE("JsonVariantConst::operator[]") {
     JsonObject object = doc.to<JsonObject>();
     object["ab"_s] = "AB";
     object["abc"_s] = "ABC";
-    object["abc\0d"_s] = "ABCD";
+    object["abcd"_s] = "ABCD";
 
     SECTION("string literal") {
       REQUIRE(var["ab"] == "AB"_s);
       REQUIRE(var["abc"] == "ABC"_s);
-      REQUIRE(var["abc\0d"] == "ABCD"_s);
+      REQUIRE(var["abcd"] == "ABCD"_s);
       REQUIRE(var["def"].isNull());
       REQUIRE(var[0].isNull());
     }
@@ -73,7 +73,7 @@ TEST_CASE("JsonVariantConst::operator[]") {
     SECTION("supports std::string") {
       REQUIRE(var["ab"_s] == "AB"_s);
       REQUIRE(var["abc"_s] == "ABC"_s);
-      REQUIRE(var["abc\0d"_s] == "ABCD"_s);
+      REQUIRE(var["abcd"_s] == "ABCD"_s);
       REQUIRE(var["def"_s].isNull());
     }
 
@@ -91,7 +91,7 @@ TEST_CASE("JsonVariantConst::operator[]") {
     SECTION("supports JsonVariant") {
       object["key1"] = "ab";
       object["key2"] = "abc";
-      object["key3"] = "abc\0d"_s;
+      object["key3"] = "abcd"_s;
       object["key4"] = "foo";
 
       REQUIRE(var[var["key1"]] == "AB"_s);

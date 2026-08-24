@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -16,20 +16,23 @@ class JsonSerializer : public VariantDataVisitor<size_t> {
  public:
   static const bool producesText = true;
 
-  JsonSerializer(TWriter writer, const ResourceManager* resources)
+  JsonSerializer(TWriter writer, ResourceManager* resources)
       : formatter_(writer), resources_(resources) {}
 
-  size_t visit(const ArrayData& array) {
+  size_t visitArray(VariantData* array) {
+    ARDUINOJSON_ASSERT(array != nullptr);
+    ARDUINOJSON_ASSERT(array->isArray());
+
     write('[');
 
-    auto slotId = array.head();
+    auto slotId = array->content.asCollection.head;
 
     while (slotId != NULL_SLOT) {
       auto slot = resources_->getVariant(slotId);
 
-      slot->accept(*this, resources_);
+      VariantImpl::accept(*this, slot, resources_);
 
-      slotId = slot->next();
+      slotId = slot->next;
 
       if (slotId != NULL_SLOT)
         write(',');
@@ -39,18 +42,21 @@ class JsonSerializer : public VariantDataVisitor<size_t> {
     return bytesWritten();
   }
 
-  size_t visit(const ObjectData& object) {
+  size_t visitObject(VariantData* object) {
+    ARDUINOJSON_ASSERT(object != nullptr);
+    ARDUINOJSON_ASSERT(object->isObject());
+
     write('{');
 
-    auto slotId = object.head();
+    auto slotId = object->content.asCollection.head;
 
     bool isKey = true;
 
     while (slotId != NULL_SLOT) {
       auto slot = resources_->getVariant(slotId);
-      slot->accept(*this, resources_);
+      VariantImpl::accept(*this, slot, resources_);
 
-      slotId = slot->next();
+      slotId = slot->next;
 
       if (slotId != NULL_SLOT)
         write(isKey ? ':' : ',');
@@ -120,7 +126,7 @@ class JsonSerializer : public VariantDataVisitor<size_t> {
   TextFormatter<TWriter> formatter_;
 
  protected:
-  const ResourceManager* resources_;
+  ResourceManager* resources_;
 };
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

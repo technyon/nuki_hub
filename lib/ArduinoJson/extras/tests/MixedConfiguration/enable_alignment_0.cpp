@@ -2,6 +2,8 @@
 #define ARDUINOJSON_ENABLE_ALIGNMENT 0
 #include <ArduinoJson.h>
 
+#include <ArduinoJson/Memory/Alignment.hpp>
+
 #include <catch.hpp>
 
 TEST_CASE("ARDUINOJSON_ENABLE_ALIGNMENT == 0") {

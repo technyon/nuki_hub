@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -28,8 +28,8 @@ inline int16_t normalize(TFloat& value) {
 
   if (value >= ARDUINOJSON_POSITIVE_EXPONENTIATION_THRESHOLD) {
     for (; index >= 0; index--) {
-      if (value >= traits::positiveBinaryPowersOfTen()[index]) {
-        value *= traits::negativeBinaryPowersOfTen()[index];
+      if (value >= traits::positiveBinaryPowersOfTen()[uint8_t(index)]) {
+        value *= traits::negativeBinaryPowersOfTen()[uint8_t(index)];
         powersOf10 = int16_t(powersOf10 + bit);
       }
       bit >>= 1;
@@ -38,8 +38,8 @@ inline int16_t normalize(TFloat& value) {
 
   if (value > 0 && value <= ARDUINOJSON_NEGATIVE_EXPONENTIATION_THRESHOLD) {
     for (; index >= 0; index--) {
-      if (value < traits::negativeBinaryPowersOfTen()[index] * 10) {
-        value *= traits::positiveBinaryPowersOfTen()[index];
+      if (value < traits::negativeBinaryPowersOfTen()[uint8_t(index)] * 10) {
+        value *= traits::positiveBinaryPowersOfTen()[uint8_t(index)];
         powersOf10 = int16_t(powersOf10 - bit);
       }
       bit >>= 1;

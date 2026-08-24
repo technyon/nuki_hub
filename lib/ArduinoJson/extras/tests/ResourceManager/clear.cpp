@@ -1,10 +1,10 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson/Memory/ResourceManager.hpp>
-#include <ArduinoJson/Memory/ResourceManagerImpl.hpp>
 #include <ArduinoJson/Strings/StringAdapters.hpp>
+
 #include <catch.hpp>
 
 using namespace ArduinoJson::detail;

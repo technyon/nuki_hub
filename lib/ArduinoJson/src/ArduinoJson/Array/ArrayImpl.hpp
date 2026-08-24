@@ -1,45 +1,50 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include <ArduinoJson/Array/ArrayData.hpp>
 #include <ArduinoJson/Variant/VariantCompare.hpp>
-#include <ArduinoJson/Variant/VariantData.hpp>
+#include <ArduinoJson/Variant/VariantImpl.hpp>
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-inline ArrayData::iterator ArrayData::at(
-    size_t index, const ResourceManager* resources) const {
-  auto it = createIterator(resources);
+inline VariantImpl::iterator VariantImpl::at(size_t index) const {
+  if (!isArray())
+    return iterator();
+
+  auto it = createIterator();
   while (!it.done() && index) {
-    it.next(resources);
+    it.move(resources_);
     --index;
   }
   return it;
 }
 
-inline VariantData* ArrayData::addElement(ResourceManager* resources) {
+inline VariantData* VariantImpl::addNewElement(VariantData* data,
+                                               ResourceManager* resources) {
+  ARDUINOJSON_ASSERT(data != nullptr);
+  ARDUINOJSON_ASSERT(data->isArray());
+  ARDUINOJSON_ASSERT(resources != nullptr);
+
   auto slot = resources->allocVariant();
   if (!slot)
     return nullptr;
-  CollectionData::appendOne(slot, resources);
+  addElement(slot, data, resources);
   return slot.ptr();
 }
 
-inline VariantData* ArrayData::getOrAddElement(size_t index,
-                                               ResourceManager* resources) {
-  auto it = createIterator(resources);
+inline VariantData* VariantImpl::getOrAddElement(size_t index) {
+  auto it = createIterator();
   while (!it.done() && index > 0) {
-    it.next(resources);
+    it.move(resources_);
     index--;
   }
   if (it.done())
     index++;
   VariantData* element = it.data();
   while (index > 0) {
-    element = addElement(resources);
+    element = addNewElement();
     if (!element)
       return nullptr;
     index--;
@@ -47,33 +52,17 @@ inline VariantData* ArrayData::getOrAddElement(size_t index,
   return element;
 }
 
-inline VariantData* ArrayData::getElement(
-    size_t index, const ResourceManager* resources) const {
-  return at(index, resources).data();
+inline VariantData* VariantImpl::getElement(size_t index) const {
+  return at(index).data();
 }
 
-inline void ArrayData::removeElement(size_t index, ResourceManager* resources) {
-  remove(at(index, resources), resources);
-}
-
-template <typename T>
-inline bool ArrayData::addValue(const T& value, ResourceManager* resources) {
-  ARDUINOJSON_ASSERT(resources != nullptr);
-  auto slot = resources->allocVariant();
-  if (!slot)
-    return false;
-  JsonVariant variant(slot.ptr(), resources);
-  if (!variant.set(value)) {
-    resources->freeVariant(slot);
-    return false;
-  }
-  CollectionData::appendOne(slot, resources);
-  return true;
+inline void VariantImpl::removeElement(size_t index) {
+  removeElement(at(index));
 }
 
 // Returns the size (in bytes) of an array with n elements.
 constexpr size_t sizeofArray(size_t n) {
-  return n * ResourceManager::slotSize;
+  return n * sizeof(VariantData);
 }
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

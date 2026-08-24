@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -14,26 +14,19 @@
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
-class VariantData;
 class VariantWithId;
 
 class ResourceManager {
-  union SlotData {
-    VariantData variant;
-#if ARDUINOJSON_USE_EXTENSIONS
-    VariantExtension extension;
-#endif
-  };
-
  public:
-  constexpr static size_t slotSize = sizeof(SlotData);
-
   ResourceManager(Allocator* allocator = DefaultAllocator::instance())
       : allocator_(allocator), overflowed_(false) {}
 
   ~ResourceManager() {
     stringPool_.clear(allocator_);
     variantPools_.clear(allocator_);
+#if ARDUINOJSON_USE_8_BYTE_POOL
+    eightBytePools_.clear(allocator_);
+#endif
   }
 
   ResourceManager(const ResourceManager&) = delete;
@@ -42,6 +35,9 @@ class ResourceManager {
   friend void swap(ResourceManager& a, ResourceManager& b) {
     swap(a.stringPool_, b.stringPool_);
     swap(a.variantPools_, b.variantPools_);
+#if ARDUINOJSON_USE_8_BYTE_POOL
+    swap(a.eightBytePools_, b.eightBytePools_);
+#endif
     swap_(a.allocator_, b.allocator_);
     swap_(a.overflowed_, b.overflowed_);
   }
@@ -58,14 +54,43 @@ class ResourceManager {
     return overflowed_;
   }
 
-  Slot<VariantData> allocVariant();
-  void freeVariant(Slot<VariantData> slot);
-  VariantData* getVariant(SlotId id) const;
+  Slot<VariantData> allocVariant() {
+    auto slot = variantPools_.allocSlot(allocator_);
+    if (!slot) {
+      overflowed_ = true;
+      return {};
+    }
+    new (slot.ptr()) VariantData();
+    return slot;
+  }
 
-#if ARDUINOJSON_USE_EXTENSIONS
-  Slot<VariantExtension> allocExtension();
-  void freeExtension(SlotId slot);
-  VariantExtension* getExtension(SlotId id) const;
+  void freeVariant(Slot<VariantData> slot) {
+    ARDUINOJSON_ASSERT(slot->type == VariantType::Null);
+    variantPools_.freeSlot(slot);
+  }
+
+  VariantData* getVariant(SlotId id) const {
+    return reinterpret_cast<VariantData*>(variantPools_.getSlot(id));
+  }
+
+#if ARDUINOJSON_USE_8_BYTE_POOL
+  Slot<EightByteValue> allocEightByte() {
+    auto slot = eightBytePools_.allocSlot(allocator_);
+    if (!slot) {
+      overflowed_ = true;
+      return {};
+    }
+    return slot;
+  }
+
+  void freeEightByte(SlotId id) {
+    auto p = getEightByte(id);
+    eightBytePools_.freeSlot({p, id});
+  }
+
+  EightByteValue* getEightByte(SlotId id) const {
+    return eightBytePools_.getSlot(id);
+  }
 #endif
 
   template <typename TAdaptedString>
@@ -115,17 +140,26 @@ class ResourceManager {
     variantPools_.clear(allocator_);
     overflowed_ = false;
     stringPool_.clear(allocator_);
+#if ARDUINOJSON_USE_8_BYTE_POOL
+    eightBytePools_.clear(allocator_);
+#endif
   }
 
   void shrinkToFit() {
     variantPools_.shrinkToFit(allocator_);
+#if ARDUINOJSON_USE_8_BYTE_POOL
+    eightBytePools_.shrinkToFit(allocator_);
+#endif
   }
 
  private:
   Allocator* allocator_;
   bool overflowed_;
   StringPool stringPool_;
-  MemoryPoolList<SlotData> variantPools_;
+  MemoryPoolList<VariantData> variantPools_;
+#if ARDUINOJSON_USE_8_BYTE_POOL
+  MemoryPoolList<EightByteValue> eightBytePools_;
+#endif
 };
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

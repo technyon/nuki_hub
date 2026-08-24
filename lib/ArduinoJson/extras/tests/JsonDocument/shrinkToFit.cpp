@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -69,17 +69,8 @@ TEST_CASE("JsonDocument::shrinkToFit()") {
     REQUIRE(spyingAllocator.log() == AllocatorLog{});
   }
 
-  SECTION("linked string") {
-    doc.set("hello");
-
-    doc.shrinkToFit();
-
-    REQUIRE(doc.as<std::string>() == "hello");
-    REQUIRE(spyingAllocator.log() == AllocatorLog{});
-  }
-
-  SECTION("owned string") {
-    doc.set("abcdefg"_s);
+  SECTION("string") {
+    doc.set("abcdefg");
     REQUIRE(doc.as<std::string>() == "abcdefg");
 
     doc.shrinkToFit();
@@ -101,20 +92,7 @@ TEST_CASE("JsonDocument::shrinkToFit()") {
                                      });
   }
 
-  SECTION("linked key") {
-    doc["key"] = 42;
-
-    doc.shrinkToFit();
-
-    REQUIRE(doc.as<std::string>() == "{\"key\":42}");
-    REQUIRE(spyingAllocator.log() ==
-            AllocatorLog{
-                Allocate(sizeofPool()),
-                Reallocate(sizeofPool(), sizeofObject(1)),
-            });
-  }
-
-  SECTION("owned key") {
+  SECTION("object key") {
     doc["abcdefg"_s] = 42;
 
     doc.shrinkToFit();
@@ -128,20 +106,7 @@ TEST_CASE("JsonDocument::shrinkToFit()") {
             });
   }
 
-  SECTION("linked string in array") {
-    doc.add("hello");
-
-    doc.shrinkToFit();
-
-    REQUIRE(doc.as<std::string>() == "[\"hello\"]");
-    REQUIRE(spyingAllocator.log() ==
-            AllocatorLog{
-                Allocate(sizeofPool()),
-                Reallocate(sizeofPool(), sizeofArray(1)),
-            });
-  }
-
-  SECTION("owned string in array") {
+  SECTION("string in array") {
     doc.add("abcdefg"_s);
 
     doc.shrinkToFit();
@@ -155,20 +120,7 @@ TEST_CASE("JsonDocument::shrinkToFit()") {
             });
   }
 
-  SECTION("linked string in object") {
-    doc["key"] = "hello";
-
-    doc.shrinkToFit();
-
-    REQUIRE(doc.as<std::string>() == "{\"key\":\"hello\"}");
-    REQUIRE(spyingAllocator.log() ==
-            AllocatorLog{
-                Allocate(sizeofPool()),
-                Reallocate(sizeofPool(), sizeofObject(1)),
-            });
-  }
-
-  SECTION("owned string in object") {
+  SECTION("string in object") {
     doc["key"] = "abcdefg"_s;
 
     doc.shrinkToFit();

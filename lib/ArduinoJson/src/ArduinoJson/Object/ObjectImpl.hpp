@@ -1,41 +1,51 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
-#include <ArduinoJson/Object/ObjectData.hpp>
 #include <ArduinoJson/Variant/VariantCompare.hpp>
-#include <ArduinoJson/Variant/VariantData.hpp>
+#include <ArduinoJson/Variant/VariantImpl.hpp>
 
 ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE
 
 template <typename TAdaptedString>
-inline VariantData* ObjectData::getMember(
-    TAdaptedString key, const ResourceManager* resources) const {
-  auto it = findKey(key, resources);
+inline VariantData* VariantImpl::getMember(TAdaptedString key,
+                                           VariantData* data,
+                                           ResourceManager* resources) {
+  auto it = findKey(key, data, resources);
   if (it.done())
     return nullptr;
-  it.next(resources);
+  it.move(resources);
   return it.data();
 }
 
 template <typename TAdaptedString>
-VariantData* ObjectData::getOrAddMember(TAdaptedString key,
-                                        ResourceManager* resources) {
-  auto data = getMember(key, resources);
-  if (data)
-    return data;
-  return addMember(key, resources);
+VariantData* VariantImpl::getOrAddMember(TAdaptedString key, VariantData* data,
+                                         ResourceManager* resources) {
+  ARDUINOJSON_ASSERT(data != nullptr);
+  ARDUINOJSON_ASSERT(data->isObject());
+  ARDUINOJSON_ASSERT(resources != nullptr);
+
+  auto member = getMember(key, data, resources);
+  if (member)
+    return member;
+  return addMember(key, data, resources);
 }
 
 template <typename TAdaptedString>
-inline ObjectData::iterator ObjectData::findKey(
-    TAdaptedString key, const ResourceManager* resources) const {
+inline VariantImpl::iterator VariantImpl::findKey(TAdaptedString key,
+                                                  VariantData* data,
+                                                  ResourceManager* resources) {
+  ARDUINOJSON_ASSERT(data != nullptr);
+  ARDUINOJSON_ASSERT(data->isObject());
+  ARDUINOJSON_ASSERT(resources != nullptr);
+
   if (key.isNull())
     return iterator();
   bool isKey = true;
-  for (auto it = createIterator(resources); !it.done(); it.next(resources)) {
+  for (auto it = createIterator(data, resources); !it.done();
+       it.move(resources)) {
     if (isKey && stringEquals(key, adaptString(it->asString())))
       return it;
     isKey = !isKey;
@@ -44,14 +54,16 @@ inline ObjectData::iterator ObjectData::findKey(
 }
 
 template <typename TAdaptedString>
-inline void ObjectData::removeMember(TAdaptedString key,
-                                     ResourceManager* resources) {
-  remove(findKey(key, resources), resources);
-}
+inline VariantData* VariantImpl::addMember(TAdaptedString key,
+                                           VariantData* data,
+                                           ResourceManager* resources) {
+  ARDUINOJSON_ASSERT(data != nullptr);
+  ARDUINOJSON_ASSERT(data->isObject());
+  ARDUINOJSON_ASSERT(resources != nullptr);
 
-template <typename TAdaptedString>
-inline VariantData* ObjectData::addMember(TAdaptedString key,
-                                          ResourceManager* resources) {
+  if (key.isNull())
+    return nullptr;  // Ignore null key
+
   auto keySlot = resources->allocVariant();
   if (!keySlot)
     return nullptr;
@@ -60,16 +72,21 @@ inline VariantData* ObjectData::addMember(TAdaptedString key,
   if (!valueSlot)
     return nullptr;
 
-  if (!keySlot->setString(key, resources))
+  if (!VariantImpl::setString(key, keySlot.ptr(), resources))
     return nullptr;
 
-  CollectionData::appendPair(keySlot, valueSlot, resources);
+  appendPair(keySlot, valueSlot, data, resources);
 
   return valueSlot.ptr();
 }
 
-inline VariantData* ObjectData::addPair(VariantData** value,
-                                        ResourceManager* resources) {
+inline VariantData* VariantImpl::addPair(VariantData** value, VariantData* data,
+                                         ResourceManager* resources) {
+  ARDUINOJSON_ASSERT(value != nullptr);
+  ARDUINOJSON_ASSERT(data != nullptr);
+  ARDUINOJSON_ASSERT(data->isObject());
+  ARDUINOJSON_ASSERT(resources != nullptr);
+
   auto keySlot = resources->allocVariant();
   if (!keySlot)
     return nullptr;
@@ -79,14 +96,14 @@ inline VariantData* ObjectData::addPair(VariantData** value,
     return nullptr;
   *value = valueSlot.ptr();
 
-  CollectionData::appendPair(keySlot, valueSlot, resources);
+  appendPair(keySlot, valueSlot, data, resources);
 
   return keySlot.ptr();
 }
 
 // Returns the size (in bytes) of an object with n members.
 constexpr size_t sizeofObject(size_t n) {
-  return 2 * n * ResourceManager::slotSize;
+  return 2 * n * sizeof(VariantData);
 }
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

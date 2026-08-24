@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -19,17 +19,25 @@ class JsonString {
   friend struct detail::StringAdapter<JsonString>;
 
  public:
-  JsonString() : str_(nullptr, 0, true) {}
+  JsonString() : str_(nullptr, 0) {}
 
-  JsonString(const char* data, bool isStatic = false)
-      : str_(data, data ? ::strlen(data) : 0, isStatic) {}
+  JsonString(const char* data) : str_(data, data ? ::strlen(data) : 0) {}
+
+  ARDUINOJSON_DEPRECATED(
+      "ArduinoJson doesn't differentiate between static and dynamic strings "
+      "anymore. Remove the second argument to fix this warning.")
+  JsonString(const char* data, bool) : JsonString(data) {}
 
   template <typename TSize,
             detail::enable_if_t<detail::is_integral<TSize>::value &&
                                     !detail::is_same<TSize, bool>::value,
                                 int> = 0>
-  JsonString(const char* data, TSize sz, bool isStatic = false)
-      : str_(data, size_t(sz), isStatic) {}
+  JsonString(const char* data, TSize sz) : str_(data, size_t(sz)) {}
+
+  ARDUINOJSON_DEPRECATED(
+      "ArduinoJson doesn't differentiate between static and dynamic strings "
+      "anymore. Remove the third argument to fix this warning.")
+  JsonString(const char* data, size_t sz, bool) : JsonString(data, sz) {}
 
   // Returns a pointer to the characters.
   const char* c_str() const {
@@ -41,10 +49,10 @@ class JsonString {
     return str_.isNull();
   }
 
-  // Returns true if the string is stored by address.
-  // Returns false if the string is stored by copy.
+  // Deprecated: always returns false.
+  ARDUINOJSON_DEPRECATED("The isStatic() was removed in v7.5")
   bool isStatic() const {
-    return str_.isStatic();
+    return false;
   }
 
   // Returns length of the string.

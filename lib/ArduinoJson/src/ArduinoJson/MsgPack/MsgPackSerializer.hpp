@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -19,7 +19,7 @@ class MsgPackSerializer : public VariantDataVisitor<size_t> {
  public:
   static const bool producesText = false;
 
-  MsgPackSerializer(TWriter writer, const ResourceManager* resources)
+  MsgPackSerializer(TWriter writer, ResourceManager* resources)
       : writer_(writer), resources_(resources) {}
 
   template <typename T>
@@ -47,8 +47,11 @@ class MsgPackSerializer : public VariantDataVisitor<size_t> {
     return bytesWritten();
   }
 
-  size_t visit(const ArrayData& array) {
-    size_t n = array.size(resources_);
+  size_t visitArray(VariantData* array) {
+    ARDUINOJSON_ASSERT(array != nullptr);
+    ARDUINOJSON_ASSERT(array->isArray());
+
+    auto n = VariantImpl::size(array, resources_);
     if (n < 0x10) {
       writeByte(uint8_t(0x90 + n));
     } else if (n < 0x10000) {
@@ -59,18 +62,21 @@ class MsgPackSerializer : public VariantDataVisitor<size_t> {
       writeInteger(uint32_t(n));
     }
 
-    auto slotId = array.head();
+    auto slotId = array->content.asCollection.head;
     while (slotId != NULL_SLOT) {
       auto slot = resources_->getVariant(slotId);
-      slot->accept(*this, resources_);
-      slotId = slot->next();
+      VariantImpl::accept(*this, slot, resources_);
+      slotId = slot->next;
     }
 
     return bytesWritten();
   }
 
-  size_t visit(const ObjectData& object) {
-    size_t n = object.size(resources_);
+  size_t visitObject(VariantData* object) {
+    ARDUINOJSON_ASSERT(object != nullptr);
+    ARDUINOJSON_ASSERT(object->isObject());
+
+    auto n = VariantImpl::size(object, resources_);
     if (n < 0x10) {
       writeByte(uint8_t(0x80 + n));
     } else if (n < 0x10000) {
@@ -81,11 +87,11 @@ class MsgPackSerializer : public VariantDataVisitor<size_t> {
       writeInteger(uint32_t(n));
     }
 
-    auto slotId = object.head();
+    auto slotId = object->content.asCollection.head;
     while (slotId != NULL_SLOT) {
       auto slot = resources_->getVariant(slotId);
-      slot->accept(*this, resources_);
-      slotId = slot->next();
+      VariantImpl::accept(*this, slot, resources_);
+      slotId = slot->next;
     }
 
     return bytesWritten();
@@ -209,7 +215,7 @@ class MsgPackSerializer : public VariantDataVisitor<size_t> {
   }
 
   CountingDecorator<TWriter> writer_;
-  const ResourceManager* resources_;
+  ResourceManager* resources_;
 };
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -20,14 +20,8 @@ struct IsChar
 class RamString {
  public:
   static const size_t typeSortKey = 2;
-#if ARDUINOJSON_SIZEOF_POINTER <= 2
-  static constexpr size_t sizeMask = size_t(-1) >> 1;
-#else
-  static constexpr size_t sizeMask = size_t(-1);
-#endif
 
-  RamString(const char* str, size_t sz, bool isStatic = false)
-      : str_(str), size_(sz & sizeMask), static_(isStatic) {
+  RamString(const char* str, size_t sz) : str_(str), size_(sz) {
     ARDUINOJSON_ASSERT(size_ == sz);
   }
 
@@ -49,21 +43,9 @@ class RamString {
     return str_;
   }
 
-  bool isStatic() const {
-    return static_;
-  }
-
  protected:
   const char* str_;
-
-#if ARDUINOJSON_SIZEOF_POINTER <= 2
-  // Use a bitfield only on 8-bit microcontrollers
-  size_t size_ : sizeof(size_t) * 8 - 1;
-  bool static_ : 1;
-#else
   size_t size_;
-  bool static_;
-#endif
 };
 
 template <typename TChar>
@@ -73,36 +55,6 @@ struct StringAdapter<TChar*, enable_if_t<IsChar<TChar>::value>> {
   static AdaptedString adapt(const TChar* p) {
     auto str = reinterpret_cast<const char*>(p);
     return AdaptedString(str, str ? ::strlen(str) : 0);
-  }
-};
-
-template <typename TChar>
-struct StringAdapter<TChar[], enable_if_t<IsChar<TChar>::value>> {
-  using AdaptedString = RamString;
-
-  static AdaptedString adapt(const TChar* p) {
-    auto str = reinterpret_cast<const char*>(p);
-    return AdaptedString(str, str ? ::strlen(str) : 0);
-  }
-};
-
-template <size_t N>
-struct StringAdapter<const char (&)[N]> {
-  using AdaptedString = RamString;
-
-  static AdaptedString adapt(const char (&p)[N]) {
-    return RamString(p, N - 1, true);
-  }
-};
-
-template <typename TChar, size_t N>
-struct StringAdapter<TChar[N], enable_if_t<IsChar<TChar>::value>> {
-  using AdaptedString = RamString;
-
-  static AdaptedString adapt(const TChar* p) {
-    ARDUINOJSON_ASSERT(p);
-    auto str = reinterpret_cast<const char*>(p);
-    return AdaptedString(str, ::strlen(str));
   }
 };
 

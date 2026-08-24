@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -220,12 +220,12 @@ inline Number parseNumber(const char* s) {
                   exponent > FloatTraits<float>::exponent_max ||
                   mantissa > FloatTraits<float>::mantissa_max;
   if (isDouble) {
-    auto final_result = make_float(double(mantissa), exponent);
+    auto final_result = multiplyByPowerOfTen(double(mantissa), exponent);
     return Number(is_negative ? -final_result : final_result);
   } else
 #endif
   {
-    auto final_result = make_float(float(mantissa), exponent);
+    auto final_result = multiplyByPowerOfTen(float(mantissa), exponent);
     return Number(is_negative ? -final_result : final_result);
   }
 }

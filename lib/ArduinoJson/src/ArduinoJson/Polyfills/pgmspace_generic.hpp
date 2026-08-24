@@ -1,10 +1,11 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <ArduinoJson/Namespace.hpp>
+#include <ArduinoJson/Polyfills/assert.hpp>
 
 #if ARDUINOJSON_ENABLE_PROGMEM
 #  include <ArduinoJson/Polyfills/pgmspace.hpp>
@@ -62,6 +63,24 @@ class pgm_ptr {
 
  private:
   const T* ptr_;
+};
+
+template <typename T, size_t N>
+class pgm_array {
+ public:
+  explicit pgm_array(const T* ptr) : ptr_(ptr) {}
+
+  T operator[](size_t index) const {
+    ARDUINOJSON_ASSERT(index < N);
+    return ptr_[intptr_t(index)];
+  }
+
+  size_t size() const {
+    return N;
+  }
+
+ private:
+  pgm_ptr<T> ptr_;
 };
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

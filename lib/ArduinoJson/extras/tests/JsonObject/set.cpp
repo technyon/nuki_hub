@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -16,7 +16,7 @@ TEST_CASE("JsonObject::set()") {
   JsonObject obj1 = doc1.to<JsonObject>();
   JsonObject obj2 = doc2.to<JsonObject>();
 
-  SECTION("doesn't copy static string in key or value") {
+  SECTION("copy key and string value") {
     obj1["hello"] = "world";
     spy.clearLog();
 
@@ -26,34 +26,8 @@ TEST_CASE("JsonObject::set()") {
     REQUIRE(obj2["hello"] == "world"_s);
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
-                         });
-  }
-
-  SECTION("copy local string value") {
-    obj1["hello"] = "world"_s;
-    spy.clearLog();
-
-    bool success = obj2.set(obj1);
-
-    REQUIRE(success == true);
-    REQUIRE(obj2["hello"] == "world"_s);
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("copy local key") {
-    obj1["hello"_s] = "world";
-    spy.clearLog();
-
-    bool success = obj2.set(obj1);
-
-    REQUIRE(success == true);
-    REQUIRE(obj2["hello"] == "world"_s);
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
                              Allocate(sizeofString("hello")),
+                             Allocate(sizeofString("world")),
                          });
   }
 
@@ -110,7 +84,7 @@ TEST_CASE("JsonObject::set()") {
   }
 
   SECTION("copy fails in the middle of an array") {
-    TimebombAllocator timebomb(1);
+    TimebombAllocator timebomb(2);
     JsonDocument doc3(&timebomb);
     JsonObject obj3 = doc3.to<JsonObject>();
 

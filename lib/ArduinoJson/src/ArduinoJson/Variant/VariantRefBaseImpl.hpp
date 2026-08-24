@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -61,31 +61,27 @@ inline JsonObject VariantRefBase<TDerived>::createNestedObject(
 }
 
 template <typename TDerived>
-inline void convertToJson(const VariantRefBase<TDerived>& src,
+inline bool convertToJson(const VariantRefBase<TDerived>& src,
                           JsonVariant dst) {
-  dst.set(src.template as<JsonVariantConst>());
+  return dst.set(src.template as<JsonVariantConst>());
 }
 
 template <typename TDerived>
 template <typename T, enable_if_t<is_same<T, JsonVariant>::value, int>>
 inline T VariantRefBase<TDerived>::add() const {
-  return JsonVariant(
-      detail::VariantData::addElement(getOrCreateData(), getResourceManager()),
-      getResourceManager());
+  return getOrCreateArray().template add<T>();
 }
 
 template <typename TDerived>
 template <typename TString, enable_if_t<IsString<TString>::value, int>>
 inline bool VariantRefBase<TDerived>::containsKey(const TString& key) const {
-  return VariantData::getMember(getData(), adaptString(key),
-                                getResourceManager()) != 0;
+  return getVariantImpl().getMember(adaptString(key)) != 0;
 }
 
 template <typename TDerived>
 template <typename TChar, enable_if_t<IsString<TChar*>::value, int>>
 inline bool VariantRefBase<TDerived>::containsKey(TChar* key) const {
-  return VariantData::getMember(getData(), adaptString(key),
-                                getResourceManager()) != 0;
+  return getVariantImpl().getMember(adaptString(key)) != 0;
 }
 
 template <typename TDerived>
@@ -97,6 +93,15 @@ inline bool VariantRefBase<TDerived>::containsKey(const TVariant& key) const {
 template <typename TDerived>
 inline JsonVariant VariantRefBase<TDerived>::getVariant() const {
   return JsonVariant(getData(), getResourceManager());
+}
+
+template <typename TDerived>
+inline JsonArray VariantRefBase<TDerived>::getOrCreateArray() const {
+  auto data = getOrCreateData();
+  auto resources = getResourceManager();
+  if (data && data->type == VariantType::Null)
+    data->toArray();
+  return JsonArray(data, resources);
 }
 
 template <typename TDerived>
@@ -119,8 +124,7 @@ inline ElementProxy<TDerived> VariantRefBase<TDerived>::operator[](
 }
 
 template <typename TDerived>
-template <typename TChar,
-          enable_if_t<IsString<TChar*>::value && !is_const<TChar>::value, int>>
+template <typename TChar, enable_if_t<IsString<TChar*>::value, int>>
 inline MemberProxy<TDerived, AdaptedString<TChar*>>
 VariantRefBase<TDerived>::operator[](TChar* key) const {
   return {derived(), adaptString(key)};
@@ -150,26 +154,25 @@ inline bool VariantRefBase<TDerived>::doSet(const T& value, true_type) const {
 template <typename TDerived>
 template <typename T, enable_if_t<is_same<T, JsonArray>::value, int>>
 inline JsonArray VariantRefBase<TDerived>::to() const {
-  return JsonArray(
-      VariantData::toArray(getOrCreateData(), getResourceManager()),
-      getResourceManager());
+  auto impl = getOrCreateVariantImpl();
+  impl.toArray();
+  return JsonArray(impl);
 }
 
 template <typename TDerived>
 template <typename T, enable_if_t<is_same<T, JsonObject>::value, int>>
 JsonObject VariantRefBase<TDerived>::to() const {
-  return JsonObject(
-      VariantData::toObject(getOrCreateData(), getResourceManager()),
-      getResourceManager());
+  auto impl = getOrCreateVariantImpl();
+  impl.toObject();
+  return JsonObject(impl);
 }
 
 template <typename TDerived>
 template <typename T, enable_if_t<is_same<T, JsonVariant>::value, int>>
 JsonVariant VariantRefBase<TDerived>::to() const {
-  auto data = getOrCreateData();
-  auto resources = getResourceManager();
-  detail::VariantData::clear(data, resources);
-  return JsonVariant(data, resources);
+  auto impl = getOrCreateVariantImpl();
+  impl.clear();
+  return JsonVariant(impl);
 }
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

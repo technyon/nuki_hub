@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -101,74 +101,12 @@ TEST_CASE("JsonObject::operator[]") {
     obj[key] = 42;
     REQUIRE(42 == obj[key]);
   }
-
-  SECTION("should not duplicate const char*") {
+  SECTION("should duplicate key and value strings") {
     obj["hello"] = "world";
-    REQUIRE(spy.log() == AllocatorLog{Allocate(sizeofPool())});
-  }
-
-  SECTION("should duplicate char* value") {
-    obj["hello"] = const_cast<char*>("world");
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("should duplicate char* key") {
-    obj[const_cast<char*>("hello")] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("hello")),
-                         });
-  }
-
-  SECTION("should duplicate char* key&value") {
-    obj[const_cast<char*>("hello")] = const_cast<char*>("world");
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
                              Allocate(sizeofString("hello")),
                              Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("should duplicate std::string value") {
-    obj["hello"] = "world"_s;
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("should duplicate std::string key") {
-    obj["hello"_s] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("hello")),
-                         });
-  }
-
-  SECTION("should duplicate std::string key&value") {
-    obj["hello"_s] = "world"_s;
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("hello")),
-                             Allocate(sizeofString("world")),
-                         });
-  }
-
-  SECTION("should duplicate a non-static JsonString key") {
-    obj[JsonString("hello", false)] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
-                             Allocate(sizeofString("hello")),
-                         });
-  }
-
-  SECTION("should not duplicate a static JsonString key") {
-    obj[JsonString("hello", true)] = "world";
-    REQUIRE(spy.log() == AllocatorLog{
-                             Allocate(sizeofPool()),
                          });
   }
 

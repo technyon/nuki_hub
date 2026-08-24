@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,7 +7,7 @@
 
 #include "Allocators.hpp"
 
-using ArduinoJson::detail::sizeofArray;
+using namespace ArduinoJson::detail;
 
 TEST_CASE("deserialize JSON array") {
   SpyingAllocator spy;
@@ -92,8 +92,12 @@ TEST_CASE("deserialize JSON array") {
       REQUIRE(arr[0].as<double>() == Approx(4.2123456));
       REQUIRE(arr[1] == -7E89);
       REQUIRE(spy.log() == AllocatorLog{
-                               Allocate(sizeofPool()),
-                               Reallocate(sizeofPool(), sizeofPool(4)),
+                               Allocate(sizeofPool<VariantData>()),
+                               Allocate(sizeofPool<EightByteValue>()),
+                               Reallocate(sizeofPool<VariantData>(),
+                                          sizeofPool<VariantData>(2)),
+                               Reallocate(sizeofPool<EightByteValue>(),
+                                          sizeofPool<EightByteValue>(2)),
                            });
     }
 

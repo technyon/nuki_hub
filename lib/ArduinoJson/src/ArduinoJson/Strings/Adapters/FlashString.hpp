@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -61,10 +61,6 @@ class FlashString {
   friend void stringGetChars(FlashString s, char* p, size_t n) {
     ARDUINOJSON_ASSERT(s.size() <= n);
     ::memcpy_P(p, s.str_, n);
-  }
-
-  bool isStatic() const {
-    return false;
   }
 
  private:
