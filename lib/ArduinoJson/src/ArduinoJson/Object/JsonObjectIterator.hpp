@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -14,7 +14,7 @@ class JsonObjectIterator {
  public:
   JsonObjectIterator() {}
 
-  explicit JsonObjectIterator(detail::ObjectData::iterator iterator,
+  explicit JsonObjectIterator(detail::VariantImpl::iterator iterator,
                               detail::ResourceManager* resources)
       : iterator_(iterator), resources_(resources) {}
 
@@ -34,13 +34,13 @@ class JsonObjectIterator {
   }
 
   JsonObjectIterator& operator++() {
-    iterator_.next(resources_);  // key
-    iterator_.next(resources_);  // value
+    iterator_.move(resources_);  // key
+    iterator_.move(resources_);  // value
     return *this;
   }
 
  private:
-  detail::ObjectData::iterator iterator_;
+  detail::VariantImpl::iterator iterator_;
   detail::ResourceManager* resources_;
 };
 
@@ -50,8 +50,8 @@ class JsonObjectConstIterator {
  public:
   JsonObjectConstIterator() {}
 
-  explicit JsonObjectConstIterator(detail::ObjectData::iterator iterator,
-                                   const detail::ResourceManager* resources)
+  explicit JsonObjectConstIterator(detail::VariantImpl::iterator iterator,
+                                   detail::ResourceManager* resources)
       : iterator_(iterator), resources_(resources) {}
 
   JsonPairConst operator*() const {
@@ -70,14 +70,14 @@ class JsonObjectConstIterator {
   }
 
   JsonObjectConstIterator& operator++() {
-    iterator_.next(resources_);  // key
-    iterator_.next(resources_);  // value
+    iterator_.move(resources_);  // key
+    iterator_.move(resources_);  // value
     return *this;
   }
 
  private:
-  detail::ObjectData::iterator iterator_;
-  const detail::ResourceManager* resources_;
+  detail::VariantImpl::iterator iterator_;
+  detail::ResourceManager* resources_;
 };
 
 ARDUINOJSON_END_PUBLIC_NAMESPACE

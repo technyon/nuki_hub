@@ -1,8 +1,9 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson/Memory/StringBuffer.hpp>
+#include <ArduinoJson/Variant/VariantImpl.hpp>
 #include <catch.hpp>
 
 #include "Allocators.hpp"
@@ -21,7 +22,7 @@ TEST_CASE("StringBuffer") {
     strcpy(ptr, "hi!");
     sb.save(&variant);
 
-    REQUIRE(variant.type() == VariantType::TinyString);
+    REQUIRE(variant.type == VariantType::TinyString);
     REQUIRE(variant.asString() == "hi!");
   }
 
@@ -30,7 +31,7 @@ TEST_CASE("StringBuffer") {
     memcpy(ptr, "a\0b", 3);
     sb.save(&variant);
 
-    REQUIRE(variant.type() == VariantType::OwnedString);
+    REQUIRE(variant.type == VariantType::LongString);
 
     auto str = variant.asString();
     REQUIRE(str.size() == 3);
@@ -44,7 +45,7 @@ TEST_CASE("StringBuffer") {
     strcpy(ptr, "alfa");
     sb.save(&variant);
 
-    REQUIRE(variant.type() == VariantType::OwnedString);
+    REQUIRE(variant.type == VariantType::LongString);
     REQUIRE(variant.asString() == "alfa");
   }
 }

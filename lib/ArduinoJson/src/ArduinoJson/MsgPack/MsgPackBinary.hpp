@@ -24,45 +24,48 @@ class MsgPackBinary {
 
 template <>
 struct Converter<MsgPackBinary> : private detail::VariantAttorney {
-  static void toJson(MsgPackBinary src, JsonVariant dst) {
+  static bool toJson(MsgPackBinary src, JsonVariant dst) {
     auto data = VariantAttorney::getData(dst);
     if (!data)
-      return;
+      return false;
+
     auto resources = getResourceManager(dst);
-    data->clear(resources);
-    if (src.data()) {
-      size_t headerSize = src.size() >= 0x10000 ? 5
-                          : src.size() >= 0x100 ? 3
-                                                : 2;
-      auto str = resources->createString(src.size() + headerSize);
-      if (str) {
-        resources->saveString(str);
-        auto ptr = reinterpret_cast<uint8_t*>(str->data);
-        switch (headerSize) {
-          case 2:
-            ptr[0] = uint8_t(0xc4);
-            ptr[1] = uint8_t(src.size() & 0xff);
-            break;
-          case 3:
-            ptr[0] = uint8_t(0xc5);
-            ptr[1] = uint8_t(src.size() >> 8 & 0xff);
-            ptr[2] = uint8_t(src.size() & 0xff);
-            break;
-          case 5:
-            ptr[0] = uint8_t(0xc6);
-            ptr[1] = uint8_t(src.size() >> 24 & 0xff);
-            ptr[2] = uint8_t(src.size() >> 16 & 0xff);
-            ptr[3] = uint8_t(src.size() >> 8 & 0xff);
-            ptr[4] = uint8_t(src.size() & 0xff);
-            break;
-          default:
-            ARDUINOJSON_ASSERT(false);
-        }
-        memcpy(ptr + headerSize, src.data(), src.size());
-        data->setRawString(str);
-        return;
-      }
+    detail::VariantImpl::clear(data, resources);
+
+    if (!src.data())
+      return true;
+
+    size_t headerSize = src.size() >= 0x10000 ? 5 : src.size() >= 0x100 ? 3 : 2;
+
+    auto str = resources->createString(src.size() + headerSize);
+    if (!str)
+      return false;
+
+    resources->saveString(str);
+    auto ptr = reinterpret_cast<uint8_t*>(str->data);
+    switch (headerSize) {
+      case 2:
+        ptr[0] = uint8_t(0xc4);
+        ptr[1] = uint8_t(src.size() & 0xff);
+        break;
+      case 3:
+        ptr[0] = uint8_t(0xc5);
+        ptr[1] = uint8_t(src.size() >> 8 & 0xff);
+        ptr[2] = uint8_t(src.size() & 0xff);
+        break;
+      case 5:
+        ptr[0] = uint8_t(0xc6);
+        ptr[1] = uint8_t(src.size() >> 24 & 0xff);
+        ptr[2] = uint8_t(src.size() >> 16 & 0xff);
+        ptr[3] = uint8_t(src.size() >> 8 & 0xff);
+        ptr[4] = uint8_t(src.size() & 0xff);
+        break;
+      default:
+        ARDUINOJSON_ASSERT(false);
     }
+    memcpy(ptr + headerSize, src.data(), src.size());
+    data->setRawString(str);
+    return true;
   }
 
   static MsgPackBinary fromJson(JsonVariantConst src) {

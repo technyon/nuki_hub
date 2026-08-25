@@ -30,53 +30,57 @@ class MsgPackExtension {
 
 template <>
 struct Converter<MsgPackExtension> : private detail::VariantAttorney {
-  static void toJson(MsgPackExtension src, JsonVariant dst) {
-    auto data = VariantAttorney::getData(dst);
+  static bool toJson(MsgPackExtension src, JsonVariant dst) {
+    auto data = getData(dst);
     if (!data)
-      return;
-    auto resources = getResourceManager(dst);
-    data->clear(resources);
-    if (src.data()) {
-      uint8_t format, sizeBytes;
-      if (src.size() >= 0x10000) {
-        format = 0xc9;  // ext 32
-        sizeBytes = 4;
-      } else if (src.size() >= 0x100) {
-        format = 0xc8;  // ext 16
-        sizeBytes = 2;
-      } else if (src.size() == 16) {
-        format = 0xd8;  // fixext 16
-        sizeBytes = 0;
-      } else if (src.size() == 8) {
-        format = 0xd7;  // fixext 8
-        sizeBytes = 0;
-      } else if (src.size() == 4) {
-        format = 0xd6;  // fixext 4
-        sizeBytes = 0;
-      } else if (src.size() == 2) {
-        format = 0xd5;  // fixext 2
-        sizeBytes = 0;
-      } else if (src.size() == 1) {
-        format = 0xd4;  // fixext 1
-        sizeBytes = 0;
-      } else {
-        format = 0xc7;  // ext 8
-        sizeBytes = 1;
-      }
+      return false;
 
-      auto str = resources->createString(src.size() + 2 + sizeBytes);
-      if (str) {
-        resources->saveString(str);
-        auto ptr = reinterpret_cast<uint8_t*>(str->data);
-        *ptr++ = uint8_t(format);
-        for (uint8_t i = 0; i < sizeBytes; i++)
-          *ptr++ = uint8_t(src.size() >> (sizeBytes - i - 1) * 8 & 0xff);
-        *ptr++ = uint8_t(src.type());
-        memcpy(ptr, src.data(), src.size());
-        data->setRawString(str);
-        return;
-      }
+    auto resources = getResourceManager(dst);
+    detail::VariantImpl::clear(data, resources);
+
+    if (!src.data())
+      return true;
+
+    uint8_t format, sizeBytes;
+    if (src.size() >= 0x10000) {
+      format = 0xc9;  // ext 32
+      sizeBytes = 4;
+    } else if (src.size() >= 0x100) {
+      format = 0xc8;  // ext 16
+      sizeBytes = 2;
+    } else if (src.size() == 16) {
+      format = 0xd8;  // fixext 16
+      sizeBytes = 0;
+    } else if (src.size() == 8) {
+      format = 0xd7;  // fixext 8
+      sizeBytes = 0;
+    } else if (src.size() == 4) {
+      format = 0xd6;  // fixext 4
+      sizeBytes = 0;
+    } else if (src.size() == 2) {
+      format = 0xd5;  // fixext 2
+      sizeBytes = 0;
+    } else if (src.size() == 1) {
+      format = 0xd4;  // fixext 1
+      sizeBytes = 0;
+    } else {
+      format = 0xc7;  // ext 8
+      sizeBytes = 1;
     }
+
+    auto str = resources->createString(src.size() + 2 + sizeBytes);
+    if (!str)
+      return false;
+
+    resources->saveString(str);
+    auto ptr = reinterpret_cast<uint8_t*>(str->data);
+    *ptr++ = uint8_t(format);
+    for (uint8_t i = 0; i < sizeBytes; i++)
+      *ptr++ = uint8_t(src.size() >> (sizeBytes - i - 1) * 8 & 0xff);
+    *ptr++ = uint8_t(src.type());
+    memcpy(ptr, src.data(), src.size());
+    data->setRawString(str);
+    return true;
   }
 
   static MsgPackExtension fromJson(JsonVariantConst src) {

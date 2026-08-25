@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -29,7 +29,7 @@ struct FloatTraits<T, 8 /*64bits*/> {
   using exponent_type = int16_t;
   static const exponent_type exponent_max = 308;
 
-  static pgm_ptr<T> positiveBinaryPowersOfTen() {
+  static pgm_array<T, 9> positiveBinaryPowersOfTen() {
     ARDUINOJSON_DEFINE_PROGMEM_ARRAY(  //
         uint64_t, factors,
         {
@@ -43,10 +43,10 @@ struct FloatTraits<T, 8 /*64bits*/> {
             0x5A827748F9301D32,  // 1e128
             0x75154FDD7F73BF3C,  // 1e256
         });
-    return pgm_ptr<T>(reinterpret_cast<const T*>(factors));
+    return pgm_array<T, 9>(reinterpret_cast<const T*>(factors));
   }
 
-  static pgm_ptr<T> negativeBinaryPowersOfTen() {
+  static pgm_array<T, 9> negativeBinaryPowersOfTen() {
     ARDUINOJSON_DEFINE_PROGMEM_ARRAY(  //
         uint64_t, factors,
         {
@@ -60,7 +60,7 @@ struct FloatTraits<T, 8 /*64bits*/> {
             0x255BBA08CF8C979D,  // 1e-128
             0x0AC8062864AC6F43   // 1e-256
         });
-    return pgm_ptr<T>(reinterpret_cast<const T*>(factors));
+    return pgm_array<T, 9>(reinterpret_cast<const T*>(factors));
   }
 
   static T nan() {
@@ -113,7 +113,7 @@ struct FloatTraits<T, 4 /*32bits*/> {
   using exponent_type = int8_t;
   static const exponent_type exponent_max = 38;
 
-  static pgm_ptr<T> positiveBinaryPowersOfTen() {
+  static pgm_array<T, 6> positiveBinaryPowersOfTen() {
     ARDUINOJSON_DEFINE_PROGMEM_ARRAY(uint32_t, factors,
                                      {
                                          0x41200000,  // 1e1f
@@ -123,10 +123,10 @@ struct FloatTraits<T, 4 /*32bits*/> {
                                          0x5a0e1bca,  // 1e16f
                                          0x749dc5ae   // 1e32f
                                      });
-    return pgm_ptr<T>(reinterpret_cast<const T*>(factors));
+    return pgm_array<T, 6>(reinterpret_cast<const T*>(factors));
   }
 
-  static pgm_ptr<T> negativeBinaryPowersOfTen() {
+  static pgm_array<T, 6> negativeBinaryPowersOfTen() {
     ARDUINOJSON_DEFINE_PROGMEM_ARRAY(uint32_t, factors,
                                      {
                                          0x3dcccccd,  // 1e-1f
@@ -136,7 +136,7 @@ struct FloatTraits<T, 4 /*32bits*/> {
                                          0x24e69595,  // 1e-16f
                                          0x0a4fb11f   // 1e-32f
                                      });
-    return pgm_ptr<T>(reinterpret_cast<const T*>(factors));
+    return pgm_array<T, 6>(reinterpret_cast<const T*>(factors));
   }
 
   static T forge(uint32_t bits) {
@@ -192,16 +192,20 @@ struct FloatTraits<T, 4 /*32bits*/> {
   }
 };
 
+// Returns m*10^e
 template <typename TFloat, typename TExponent>
-inline TFloat make_float(TFloat m, TExponent e) {
+inline TFloat multiplyByPowerOfTen(TFloat m, TExponent e) {
   using traits = FloatTraits<TFloat>;
 
   auto powersOfTen = e > 0 ? traits::positiveBinaryPowersOfTen()
                            : traits::negativeBinaryPowersOfTen();
+
   if (e <= 0)
     e = TExponent(-e);
 
   for (uint8_t index = 0; e != 0; index++) {
+    if (index >= powersOfTen.size())
+      return traits::nan();
     if (e & 1)
       m *= powersOfTen[index];
     e >>= 1;

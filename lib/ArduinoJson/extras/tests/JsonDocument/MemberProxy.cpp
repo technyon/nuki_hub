@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
@@ -25,6 +25,7 @@ TEST_CASE("MemberProxy::add()") {
     REQUIRE(doc.as<std::string>() == "{\"hello\":[42]}");
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
                          });
   }
 
@@ -34,6 +35,8 @@ TEST_CASE("MemberProxy::add()") {
     REQUIRE(doc.as<std::string>() == "{\"hello\":[\"world\"]}");
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
+                             Allocate(sizeofString("world")),
                          });
   }
 
@@ -44,6 +47,7 @@ TEST_CASE("MemberProxy::add()") {
     REQUIRE(doc.as<std::string>() == "{\"hello\":[\"world\"]}");
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
                              Allocate(sizeofString("world")),
                          });
   }
@@ -55,6 +59,7 @@ TEST_CASE("MemberProxy::add()") {
     REQUIRE(doc.as<std::string>() == "{\"hello\":[\"world\"]}");
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
                              Allocate(sizeofString("world")),
 
                          });
@@ -71,6 +76,7 @@ TEST_CASE("MemberProxy::add()") {
     REQUIRE(doc.as<std::string>() == "{\"hello\":[\"world\"]}");
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
+                             Allocate(sizeofString("hello")),
                              Allocate(sizeofString("world")),
                          });
   }

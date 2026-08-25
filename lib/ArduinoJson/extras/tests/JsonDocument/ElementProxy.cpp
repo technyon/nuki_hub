@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -31,6 +31,7 @@ TEST_CASE("ElementProxy::add()") {
     REQUIRE(doc.as<std::string>() == "[[\"world\"]]");
     REQUIRE(spy.log() == AllocatorLog{
                              Allocate(sizeofPool()),
+                             Allocate(sizeofString("world")),
                          });
   }
 

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -26,15 +26,15 @@ class VisitorAdapter {
  public:
   using result_type = typename TVisitor::result_type;
 
-  VisitorAdapter(TVisitor& visitor, const ResourceManager* resources)
+  VisitorAdapter(TVisitor& visitor, ResourceManager* resources)
       : visitor_(&visitor), resources_(resources) {}
 
-  result_type visit(const ArrayData& value) {
-    return visitor_->visit(JsonArrayConst(&value, resources_));
+  result_type visitArray(VariantData* data) {
+    return visitor_->visit(JsonArrayConst(data, resources_));
   }
 
-  result_type visit(const ObjectData& value) {
-    return visitor_->visit(JsonObjectConst(&value, resources_));
+  result_type visitObject(VariantData* data) {
+    return visitor_->visit(JsonObjectConst(data, resources_));
   }
 
   template <typename T>
@@ -44,18 +44,15 @@ class VisitorAdapter {
 
  private:
   TVisitor* visitor_;
-  const ResourceManager* resources_;
+  ResourceManager* resources_;
 };
 
 template <typename TVisitor>
 typename TVisitor::result_type accept(JsonVariantConst variant,
                                       TVisitor& visit) {
-  auto data = VariantAttorney::getData(variant);
-  if (!data)
-    return visit.visit(nullptr);
-  auto resources = VariantAttorney::getResourceManager(variant);
-  VisitorAdapter<TVisitor> adapter(visit, resources);
-  return data->accept(adapter, resources);
+  VisitorAdapter<TVisitor> adapter(
+      visit, VariantAttorney::getResourceManager(variant));
+  return VariantAttorney::getVariantImpl(variant).accept(adapter);
 }
 
 ARDUINOJSON_END_PRIVATE_NAMESPACE

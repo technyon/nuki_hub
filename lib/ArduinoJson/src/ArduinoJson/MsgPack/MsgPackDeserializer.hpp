@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -24,10 +24,10 @@ class MsgPackDeserializer {
         foundSomething_(false) {}
 
   template <typename TFilter>
-  DeserializationError parse(VariantData& variant, TFilter filter,
+  DeserializationError parse(VariantData* variant, TFilter filter,
                              DeserializationOption::NestingLimit nestingLimit) {
     DeserializationError::Code err;
-    err = parseVariant(&variant, filter, nestingLimit);
+    err = parseVariant(variant, filter, nestingLimit);
     return foundSomething_ ? err : DeserializationError::EmptyInput;
   }
 
@@ -91,7 +91,7 @@ class MsgPackDeserializer {
 
     if (code <= 0x7f || code >= 0xe0) {  // fixint
       if (allowValue)
-        variant->setInteger(static_cast<int8_t>(code), resources_);
+        VariantImpl::setInteger(static_cast<int8_t>(code), variant, resources_);
       return DeserializationError::Ok;
     }
 
@@ -231,14 +231,14 @@ class MsgPackDeserializer {
     if (isSigned) {
       auto truncatedValue = static_cast<JsonInteger>(signedValue);
       if (truncatedValue == signedValue) {
-        if (!variant->setInteger(truncatedValue, resources_))
+        if (!VariantImpl::setInteger(truncatedValue, variant, resources_))
           return DeserializationError::NoMemory;
       }
       // else set null on overflow
     } else {
       auto truncatedValue = static_cast<JsonUInt>(unsignedValue);
       if (truncatedValue == unsignedValue)
-        if (!variant->setInteger(truncatedValue, resources_))
+        if (!VariantImpl::setInteger(truncatedValue, variant, resources_))
           return DeserializationError::NoMemory;
       // else set null on overflow
     }
@@ -257,7 +257,7 @@ class MsgPackDeserializer {
       return err;
 
     fixEndianness(value);
-    variant->setFloat(value, resources_);
+    VariantImpl::setFloat(value, variant, resources_);
 
     return DeserializationError::Ok;
   }
@@ -273,7 +273,7 @@ class MsgPackDeserializer {
       return err;
 
     fixEndianness(value);
-    if (variant->setFloat(value, resources_))
+    if (VariantImpl::setFloat(value, variant, resources_))
       return DeserializationError::Ok;
     else
       return DeserializationError::NoMemory;
@@ -293,7 +293,7 @@ class MsgPackDeserializer {
 
     doubleToFloat(i, o);
     fixEndianness(value);
-    variant->setFloat(value, resources_);
+    VariantImpl::setFloat(value, variant, resources_);
 
     return DeserializationError::Ok;
   }
@@ -349,12 +349,9 @@ class MsgPackDeserializer {
 
     bool allowArray = filter.allowArray();
 
-    ArrayData* array;
     if (allowArray) {
       ARDUINOJSON_ASSERT(variant != 0);
-      array = &variant->toArray();
-    } else {
-      array = 0;
+      variant->toArray();
     }
 
     TFilter elementFilter = filter[0U];
@@ -363,8 +360,7 @@ class MsgPackDeserializer {
       VariantData* value;
 
       if (elementFilter.allow()) {
-        ARDUINOJSON_ASSERT(array != 0);
-        value = array->addElement(resources_);
+        value = VariantImpl::addNewElement(variant, resources_);
         if (!value)
           return DeserializationError::NoMemory;
       } else {
@@ -388,12 +384,9 @@ class MsgPackDeserializer {
     if (nestingLimit.reached())
       return DeserializationError::TooDeep;
 
-    ObjectData* object;
     if (filter.allowObject()) {
       ARDUINOJSON_ASSERT(variant != 0);
-      object = &variant->toObject();
-    } else {
-      object = 0;
+      variant->toObject();
     }
 
     for (; n; --n) {
@@ -406,9 +399,7 @@ class MsgPackDeserializer {
       VariantData* member = 0;
 
       if (memberFilter.allow()) {
-        ARDUINOJSON_ASSERT(object != 0);
-
-        auto keyVariant = object->addPair(&member, resources_);
+        auto keyVariant = VariantImpl::addPair(&member, variant, resources_);
         if (!keyVariant)
           return DeserializationError::NoMemory;
 

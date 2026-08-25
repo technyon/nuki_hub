@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -16,27 +16,29 @@ class JsonVariant : public detail::VariantRefBase<JsonVariant>,
 
  public:
   // Creates an unbound reference.
-  JsonVariant() : data_(0), resources_(0) {}
+  JsonVariant() {}
 
   // INTERNAL USE ONLY
   JsonVariant(detail::VariantData* data, detail::ResourceManager* resources)
-      : data_(data), resources_(resources) {}
+      : impl_(data, resources) {}
+
+  // INTERNAL USE ONLY
+  JsonVariant(detail::VariantImpl impl) : impl_(impl) {}
 
  private:
   detail::ResourceManager* getResourceManager() const {
-    return resources_;
+    return impl_.resources();
   }
 
   detail::VariantData* getData() const {
-    return data_;
+    return impl_.data();
   }
 
   detail::VariantData* getOrCreateData() const {
-    return data_;
+    return impl_.data();
   }
 
-  detail::VariantData* data_;
-  detail::ResourceManager* resources_;
+  mutable detail::VariantImpl impl_;
 };
 
 namespace detail {
@@ -45,8 +47,8 @@ bool copyVariant(JsonVariant dst, JsonVariantConst src);
 
 template <>
 struct Converter<JsonVariant> : private detail::VariantAttorney {
-  static void toJson(JsonVariantConst src, JsonVariant dst) {
-    copyVariant(dst, src);
+  static bool toJson(JsonVariantConst src, JsonVariant dst) {
+    return copyVariant(dst, src);
   }
 
   static JsonVariant fromJson(JsonVariant src) {
@@ -61,8 +63,8 @@ struct Converter<JsonVariant> : private detail::VariantAttorney {
 
 template <>
 struct Converter<JsonVariantConst> : private detail::VariantAttorney {
-  static void toJson(JsonVariantConst src, JsonVariant dst) {
-    copyVariant(dst, src);
+  static bool toJson(JsonVariantConst src, JsonVariant dst) {
+    return copyVariant(dst, src);
   }
 
   static JsonVariantConst fromJson(JsonVariantConst src) {

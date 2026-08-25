@@ -37,7 +37,9 @@ TEST_CASE("JsonDocument::set()") {
     doc.set("example");
 
     REQUIRE(doc.as<const char*>() == "example"_s);
-    REQUIRE(spy.log() == AllocatorLog{});
+    REQUIRE(spy.log() == AllocatorLog{
+                             Allocate(sizeofString("example")),
+                         });
   }
 
   SECTION("const char*") {

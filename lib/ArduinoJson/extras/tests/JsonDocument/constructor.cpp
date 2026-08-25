@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -7,8 +7,6 @@
 
 #include "Allocators.hpp"
 #include "Literals.hpp"
-
-using ArduinoJson::detail::addPadding;
 
 TEST_CASE("JsonDocument constructor") {
   SpyingAllocator spyingAllocator;
@@ -44,6 +42,8 @@ TEST_CASE("JsonDocument constructor") {
       JsonDocument doc2(std::move(doc1));
 
       REQUIRE(doc2.as<std::string>() == "The size of this string is 32!!");
+
+      // NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)
       REQUIRE(doc1.as<std::string>() == "null");
     }
     REQUIRE(spyingAllocator.log() == AllocatorLog{
@@ -62,6 +62,8 @@ TEST_CASE("JsonDocument constructor") {
     REQUIRE(doc2.as<std::string>() == "{\"hello\":\"world\"}");
     REQUIRE(spyingAllocator.log() == AllocatorLog{
                                          Allocate(sizeofPool()),
+                                         Allocate(sizeofString("hello")),
+                                         Allocate(sizeofString("world")),
                                      });
   }
 
@@ -85,6 +87,7 @@ TEST_CASE("JsonDocument constructor") {
     REQUIRE(doc2.as<std::string>() == "[\"hello\"]");
     REQUIRE(spyingAllocator.log() == AllocatorLog{
                                          Allocate(sizeofPool()),
+                                         Allocate(sizeofString("hello")),
                                      });
   }
 

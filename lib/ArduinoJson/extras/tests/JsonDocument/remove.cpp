@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -22,10 +22,10 @@ TEST_CASE("JsonDocument::remove()") {
 
   SECTION("string literal") {
     doc["a"] = 1;
-    doc["a\0b"_s] = 2;
+    doc["ab"_s] = 2;
     doc["b"] = 3;
 
-    doc.remove("a\0b");
+    doc.remove("ab");
 
     REQUIRE(doc.as<std::string>() == "{\"a\":1,\"b\":3}");
   }
