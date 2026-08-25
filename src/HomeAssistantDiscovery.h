@@ -63,7 +63,7 @@ private:
     String _hostname;
 
     JsonDocument _uidToName;
-    char _nukiHubUidString[21];
+    char _nukiHubUidString[21] = {};
 
     char* _buffer;
     const size_t _bufferSize;
