@@ -430,18 +430,6 @@ PsychicWebParameter* PsychicRequest::getParam(const char* key)
   return NULL;
 }
 
-PsychicWebParameter * PsychicRequest::getParam(int index)
-{
-  if (_params.size() > index){
-    std::list<PsychicWebParameter*>::iterator it = _params.begin();
-    for(int i=0; i<index; i++){
-        ++it;
-    }
-    return *it;
-  }
-  return NULL;
-}
-
 PsychicWebParameter* PsychicRequest::getParam(const char* key, bool isPost, bool isFile)
 {
   for (auto* param : _params)

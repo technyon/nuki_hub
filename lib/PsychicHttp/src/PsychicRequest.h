@@ -134,7 +134,6 @@ class PsychicRequest
     bool hasParam(const char* key);
     bool hasParam(const char* key, bool isPost, bool isFile = false);
     PsychicWebParameter* getParam(const char* name);
-    PsychicWebParameter* getParam(int index);
     PsychicWebParameter* getParam(const char* name, bool isPost, bool isFile = false);
 
     const String getFilename();
