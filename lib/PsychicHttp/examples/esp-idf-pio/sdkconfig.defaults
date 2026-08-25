@@ -1,0 +1,12 @@
+# Default sdkconfig overrides for the esp-idf-pio build-validation example.
+# PlatformIO merges this into the generated sdkconfig on every build.
+
+# PsychicHttp requires WebSocket support in esp_http_server.
+CONFIG_HTTPD_WS_SUPPORT=y
+
+# Enable ESP-IDF HTTPS server (required by PsychicHttpsServer.h).
+CONFIG_ESP_HTTPS_SERVER_ENABLE=y
+
+# Ensure software mbedTLS MD5 implementation is compiled (not ROM-only).
+# PsychicHttp calls mbedtls_md5_* directly for digest auth.
+# CONFIG_MBEDTLS_ROM_MD5 is not set

@@ -23,7 +23,7 @@ esp_err_t PsychicWebHandler::handleRequest(PsychicRequest* request, PsychicRespo
   /* Request body cannot be larger than a limit */
   if (request->contentLength() > request->server()->maxRequestBodySize)
   {
-    ESP_LOGE(PH_TAG, "Request body too large : %d bytes", request->contentLength());
+    ESP_LOGE(PH_TAG, "Request body too large : %zu bytes", request->contentLength());
 
     /* Respond with 400 Bad Request */
     char error[60];

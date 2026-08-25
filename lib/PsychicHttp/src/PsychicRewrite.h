@@ -7,12 +7,13 @@
  * REWRITE :: One instance can be handle any Request (done by the Server)
  * */
 
-class PsychicRewrite {
+class PsychicRewrite
+{
   protected:
-    String _fromPath;
-    String _toUri;
-    String _toPath;
-    String _toParams;
+    std::string _fromPath;
+    std::string _toUri;
+    std::string _toPath;
+    std::string _toParams;
     PsychicRequestFilterFunction _filter;
 
   public:
@@ -20,11 +21,19 @@ class PsychicRewrite {
     virtual ~PsychicRewrite();
 
     PsychicRewrite* setFilter(PsychicRequestFilterFunction fn);
-    bool filter(PsychicRequest *request) const;
-    const String& from(void) const;
-    const String& toUrl(void) const;
-    const String& params(void) const;
-    virtual bool match(PsychicRequest *request);
+    bool filter(PsychicRequest* request) const;
+#ifdef ARDUINO
+    String from(void) const;
+    String toUrl(void) const;
+    String params(void) const;
+#else
+    const char* from(void) const;
+    const char* toUrl(void) const;
+    const char* params(void) const;
+#endif
+    // Always returns const char* regardless of platform — use in library internals.
+    const char* toUrlCStr(void) const;
+    virtual bool match(PsychicRequest* request);
 };
 
 #endif

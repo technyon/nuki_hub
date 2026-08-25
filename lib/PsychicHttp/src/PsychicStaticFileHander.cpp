@@ -4,29 +4,42 @@
 /*  PsychicStaticFileHandler         */
 /*************************************/
 
-PsychicStaticFileHandler::PsychicStaticFileHandler(const char* uri, FS& fs, const char* path, const char* cache_control)
-    : _fs(fs), _uri(uri), _path(path), _default_file("index.html"), _cache_control(cache_control), _last_modified("")
+void PsychicStaticFileHandler::_initPath()
 {
   // Ensure leading '/'
-  if (_uri.length() == 0 || _uri[0] != '/')
+  if (_uri.empty() || _uri[0] != '/')
     _uri = "/" + _uri;
-  if (_path.length() == 0 || _path[0] != '/')
+  if (_path.empty() || _path[0] != '/')
     _path = "/" + _path;
 
   // If path ends with '/' we assume a hint that this is a directory to improve performance.
-  // However - if it does not end with '/' we, can't assume a file, path can still be a directory.
-  _isDir = _path[_path.length() - 1] == '/';
+  // However - if it does not end with '/' we can't assume a file, path can still be a directory.
+  _isDir = _path.back() == '/';
 
-  // Remove the trailing '/' so we can handle default file
+  // Remove the trailing '/' so we can handle default file.
   // Notice that root will be "" not "/"
-  if (_uri[_uri.length() - 1] == '/')
-    _uri = _uri.substring(0, _uri.length() - 1);
-  if (_path[_path.length() - 1] == '/')
-    _path = _path.substring(0, _path.length() - 1);
+  if (_uri.back() == '/')
+    _uri.pop_back();
+  if (_path.back() == '/')
+    _path.pop_back();
 
   // Reset stats
   _gzipFirst = false;
   _gzipStats = 0xF8;
+}
+
+#ifdef ARDUINO
+PsychicStaticFileHandler::PsychicStaticFileHandler(const char* uri, fs::FS& fs, const char* path, const char* cache_control)
+    : _fs(fs), _uri(uri), _path(path), _default_file("index.html"), _cache_control(cache_control ? cache_control : ""), _last_modified("")
+{
+  _initPath();
+}
+#endif
+
+PsychicStaticFileHandler::PsychicStaticFileHandler(const char* uri, const char* path, const char* cache_control)
+    : _uri(uri), _path(path), _default_file("index.html"), _cache_control(cache_control ? cache_control : ""), _last_modified("")
+{
+  _initPath();
 }
 
 PsychicStaticFileHandler* PsychicStaticFileHandler::setIsDir(bool isDir)
@@ -49,7 +62,7 @@ PsychicStaticFileHandler* PsychicStaticFileHandler::setCacheControl(const char* 
 
 PsychicStaticFileHandler* PsychicStaticFileHandler::setLastModified(const char* last_modified)
 {
-  _last_modified = String(last_modified);
+  _last_modified = last_modified;
   return this;
 }
 
@@ -63,12 +76,12 @@ PsychicStaticFileHandler* PsychicStaticFileHandler::setLastModified(struct tm* l
 bool PsychicStaticFileHandler::canHandle(PsychicRequest* request)
 {
   if (request->method() != HTTP_GET) {
-    ESP_LOGD(PH_TAG, "Request %s refused by PsychicStaticFileHandler: %s", request->uri().c_str(), request->methodStr().c_str());
+    ESP_LOGD(PH_TAG, "Request %s refused by PsychicStaticFileHandler: %s", request->uriCStr(), request->methodStrCStr());
     return false;
   }
 
-  if (!request->uri().startsWith(_uri)) {
-    ESP_LOGD(PH_TAG, "Request %s refused by PsychicStaticFileHandler: does not start with %s", request->uri().c_str(), _uri.c_str());
+  if (strncmp(request->uriCStr(), _uri.c_str(), _uri.length()) != 0) {
+    ESP_LOGD(PH_TAG, "Request %s refused by PsychicStaticFileHandler: does not start with %s", request->uriCStr(), _uri.c_str());
     return false;
   }
 
@@ -76,17 +89,35 @@ bool PsychicStaticFileHandler::canHandle(PsychicRequest* request)
     return true;
   }
 
-  ESP_LOGD(PH_TAG, "Request %s refused by PsychicStaticFileHandler: file not found", request->uri().c_str());
+  ESP_LOGD(PH_TAG, "Request %s refused by PsychicStaticFileHandler: file not found", request->uriCStr());
   return false;
 }
 
 bool PsychicStaticFileHandler::_getFile(PsychicRequest* request)
 {
-  // Remove the found uri
-  String path = request->uri().substring(_uri.length());
+  // Skip past the mounted prefix (_uri) to get the path relative to the mount point.
+  // uriCStr() + _uri.size() is pointer arithmetic: it advances the char* past the
+  // prefix, so the string is built from the tail only.
+  // e.g. uri "/static/css/app.css" with mount "/static/" -> "css/app.css"
+  std::string path(request->uriCStr() + _uri.size());
 
-  // We can skip the file check and look for default if request is to the root of a directory or that request path ends with '/'
-  bool canSkipFileCheck = (_isDir && path.length() == 0) || (path.length() && path[path.length() - 1] == '/');
+  // Drop any query string: the file path ends at the first '?'.
+  // e.g. "css/app.css?v=2" -> "css/app.css"
+  size_t queryStart = path.find('?');
+  if (queryStart != std::string::npos)
+    path.erase(queryStart);
+
+  // URL-decode so encoded file names (e.g. "my%20file.txt") resolve correctly.
+  path = std::string(urlDecode(path.c_str()).c_str());
+
+  // Reject any path that contains directory traversal sequences.
+  // This runs after decoding so encoded sequences (e.g. "%2e%2e") can't slip past.
+  if (path.find("..") != std::string::npos)
+    return false;
+
+  // We can skip the file check and look for default if request is to the root
+  // of a directory or that request path ends with '/'
+  bool canSkipFileCheck = (_isDir && path.empty()) || (!path.empty() && path.back() == '/');
 
   path = _path + path;
 
@@ -95,39 +126,37 @@ bool PsychicStaticFileHandler::_getFile(PsychicRequest* request)
     return true;
 
   // Can't handle if not default file
-  if (_default_file.length() == 0)
+  if (_default_file.empty())
     return false;
 
-  // Try to add default file, ensure there is a trailing '/' ot the path.
-  if (path.length() == 0 || path[path.length() - 1] != '/')
-    path += "/";
+  // Try to add default file; ensure there is a trailing '/' on the path.
+  if (path.empty() || path.back() != '/')
+    path += '/';
   path += _default_file;
 
   return _fileExists(path);
 }
 
-#define FILE_IS_REAL(f) (f == true && !f.isDirectory())
-
-bool PsychicStaticFileHandler::_fileExists(const String& path)
+bool PsychicStaticFileHandler::_fileExists(const std::string& path)
 {
   bool fileFound = false;
   bool gzipFound = false;
 
-  String gzip = path + ".gz";
+  std::string gzip = path + ".gz";
 
   if (_gzipFirst) {
-    _file = _fs.open(gzip, "r");
-    gzipFound = FILE_IS_REAL(_file);
+    _file = _fs.open(gzip.c_str(), "r");
+    gzipFound = (bool)_file;
     if (!gzipFound) {
-      _file = _fs.open(path, "r");
-      fileFound = FILE_IS_REAL(_file);
+      _file = _fs.open(path.c_str(), "r");
+      fileFound = (bool)_file;
     }
   } else {
-    _file = _fs.open(path, "r");
-    fileFound = FILE_IS_REAL(_file);
+    _file = _fs.open(path.c_str(), "r");
+    fileFound = (bool)_file;
     if (!fileFound) {
-      _file = _fs.open(gzip, "r");
-      gzipFound = FILE_IS_REAL(_file);
+      _file = _fs.open(gzip.c_str(), "r");
+      gzipFound = (bool)_file;
     }
   }
 
@@ -143,7 +172,7 @@ bool PsychicStaticFileHandler::_fileExists(const String& path)
     else if (_gzipStats == 0xFF)
       _gzipFirst = true; // All files are gzip
     else
-      _gzipFirst = _countBits(_gzipStats) > 4; // IF we have more gzip files - try gzip first
+      _gzipFirst = _countBits(_gzipStats) > 4; // IF we have more gzip files — try gzip first
   }
 
   ESP_LOGD(PH_TAG, "PsychicStaticFileHandler _fileExists(%s): %d", path.c_str(), found);
@@ -162,15 +191,15 @@ uint8_t PsychicStaticFileHandler::_countBits(const uint8_t value) const
 
 esp_err_t PsychicStaticFileHandler::handleRequest(PsychicRequest* request, PsychicResponse* res)
 {
-  if (_file == true) {
+  if (_file) {
     // is it not modified?
-    String etag = String(_file.size());
-    if (_last_modified.length() && _last_modified == request->header("If-Modified-Since")) {
+    std::string etag = std::to_string(_file.size());
+    if (_last_modified.length() && _last_modified == request->headerCStr("If-Modified-Since")) {
       _file.close();
       res->send(304); // Not modified
     }
     // does our Etag match?
-    else if (_cache_control.length() && request->hasHeader("If-None-Match") && request->header("If-None-Match").equals(etag)) {
+    else if (_cache_control.length() && request->hasHeader("If-None-Match") && etag == request->headerCStr("If-None-Match")) {
       _file.close();
 
       res->addHeader("Cache-Control", _cache_control.c_str());
@@ -180,7 +209,10 @@ esp_err_t PsychicStaticFileHandler::handleRequest(PsychicRequest* request, Psych
     }
     // nope, send them the full file.
     else {
-      PsychicFileResponse response(res, _fs, _filename);
+      // PsychicFileResponse reopens the file from _fs/_filename, so release our
+      // own handle first to avoid holding two descriptors per served file.
+      _file.close();
+      PsychicFileResponse response(res, _fs, _filename.c_str());
 
       if (_last_modified.length())
         response.addHeader("Last-Modified", _last_modified.c_str());

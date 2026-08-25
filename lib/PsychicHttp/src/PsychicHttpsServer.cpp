@@ -54,6 +54,9 @@ void PsychicHttpsServer::setCertificate(const uint8_t* cert, size_t cert_size, c
 
 esp_err_t PsychicHttpsServer::_startServer()
 {
+  // sync fields that start() calculated into our ssl_config.httpd before handing off
+  ssl_config.httpd.max_uri_handlers = config.max_uri_handlers;
+  ssl_config.httpd.stack_size = config.stack_size;
   return httpd_ssl_start(&this->server, &this->ssl_config);
 }
 

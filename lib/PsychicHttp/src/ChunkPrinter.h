@@ -1,8 +1,8 @@
 #ifndef ChunkPrinter_h
 #define ChunkPrinter_h
 
+#include "PsychicPrint.h"
 #include "PsychicResponse.h"
-#include <Print.h>
 
 class ChunkPrinter : public Print
 {
@@ -19,9 +19,11 @@ class ChunkPrinter : public Print
     size_t write(uint8_t c) override;
     size_t write(const uint8_t* buffer, size_t size) override;
 
+#ifdef ARDUINO
     size_t copyFrom(Stream& stream);
+#endif
 
     void flush() override;
 };
 
-#endif
+#endif // ChunkPrinter_h

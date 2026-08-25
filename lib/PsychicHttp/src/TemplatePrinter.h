@@ -2,7 +2,7 @@
 #define TemplatePrinter_h
 
 #include "PsychicCore.h"
-#include <Print.h>
+#include "PsychicPrint.h"
 
 /************************************************************
 
@@ -47,7 +47,9 @@ class TemplatePrinter : public Print
 
     void flush() override;
     size_t write(uint8_t data) override;
+#ifdef ARDUINO
     size_t copyFrom(Stream& stream);
+#endif
 };
 
-#endif
+#endif // TemplatePrinter_h

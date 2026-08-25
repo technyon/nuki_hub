@@ -7,19 +7,25 @@
    CONDITIONS OF ANY KIND, either express or implied.
 
 */
-#include "_secret.h"
+#if __has_include("secrets.h")
+  #include "secrets.h"
+#elif __has_include("../../../secrets.h")
+  #include "../../../secrets.h"
+#else
+  #error "Missing secrets.h (place it next to this example or in repository root)"
+#endif
 #include <Arduino.h>
-#include <ArduinoJSON.h>
+#include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <PsychicHttp.h>
 #include <PsychicHttpsServer.h>
 #include <WiFi.h>
 
 #ifndef WIFI_SSID
-  #error "You need to enter your wifi credentials. Rename secret.h to _secret.h and enter your credentials there."
+  #error "You need to enter your wifi credentials. Rename secrets.h.example to secrets.h and enter your credentials there."
 #endif
 
-// Enter your WIFI credentials in secret.h
+// Enter your WIFI credentials in secrets.h
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 
@@ -104,10 +110,8 @@ bool connectToWifi()
   int numberOfTries = 20;
 
   // Wait for the WiFi event
-  while (true)
-  {
-    switch (WiFi.status())
-    {
+  while (true) {
+    switch (WiFi.status()) {
       case WL_NO_SSID_AVAIL:
         Serial.println("[WiFi] SSID not found");
         break;
@@ -137,15 +141,12 @@ bool connectToWifi()
     }
     delay(tryDelay);
 
-    if (numberOfTries <= 0)
-    {
+    if (numberOfTries <= 0) {
       Serial.print("[WiFi] Failed to connect to WiFi!");
       // Use disconnect function to force stop trying to connect
       WiFi.disconnect();
       return false;
-    }
-    else
-    {
+    } else {
       numberOfTries--;
     }
   }
@@ -159,33 +160,25 @@ void setup()
   delay(10);
   Serial.println("PsychicHTTP Benchmark");
 
-  if (connectToWifi())
-  {
-    if (!LittleFS.begin())
-    {
+  if (connectToWifi()) {
+    if (!LittleFS.begin()) {
       Serial.println("LittleFS Mount Failed. Do Platform -> Build Filesystem Image and Platform -> Upload Filesystem Image from VSCode");
       return;
     }
 
     File fp = LittleFS.open("/server.crt");
-    if (fp)
-    {
+    if (fp) {
       server_cert = fp.readString();
-    }
-    else
-    {
+    } else {
       Serial.println("server.pem not found, SSL not available");
       return;
     }
     fp.close();
 
     File fp2 = LittleFS.open("/server.key");
-    if (fp2)
-    {
+    if (fp2) {
       server_key = fp2.readString();
-    }
-    else
-    {
+    } else {
       Serial.println("server.key not found, SSL not available");
       return;
     }
@@ -195,22 +188,19 @@ void setup()
     server.setCertificate(server_cert.c_str(), server_key.c_str());
 
     // our index
-    server.on("/", HTTP_GET, [](PsychicRequest* request)
-              { return response->send(200, "text/html", htmlContent); });
+    server.on("/", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) { return response->send(200, "text/html", htmlContent); });
 
     // serve static files from LittleFS/www on /
     server.serveStatic("/", LittleFS, "/www/");
 
     // a websocket echo server
-    websocketHandler.onFrame([](PsychicWebSocketRequest* request, httpd_ws_frame* frame)
-                             {
-      response->send(frame);
-      return ESP_OK; });
+    websocketHandler.onFrame([](PsychicWebSocketRequest* request, httpd_ws_frame* frame) {
+      return request->reply(frame);
+    });
     server.on("/ws", &websocketHandler);
 
     // api - parameters passed in via query eg. /api/endpoint?foo=bar
-    server.on("/api", HTTP_GET, [](PsychicRequest* request)
-              {
+    server.on("/api", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) {
       //create a response object
       StaticJsonDocument<128> output;
       output["msg"] = "status";
@@ -220,22 +210,24 @@ void setup()
       //work with some params
       if (request->hasParam("foo"))
       {
-        String foo = request->getParam("foo")->value();
-        output["foo"] = foo;
+        PsychicWebParameter* foo = request->getParam("foo");
+        if (foo)
+          output["foo"] = foo->value();
       }
 
       //serialize and return
       String jsonBuffer;
       serializeJson(output, jsonBuffer);
       return response->send(200, "application/json", jsonBuffer.c_str()); });
+
+    server.begin();
   }
 }
 
 unsigned long last;
 void loop()
 {
-  if (millis() - last > 1000)
-  {
+  if (millis() - last > 1000) {
     Serial.printf("Free Heap: %d\n", esp_get_free_heap_size());
     last = millis();
   }
