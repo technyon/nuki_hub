@@ -84,6 +84,8 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
     _bypassGPIOHigh = _importExport->getBypassGPIOHigh();
     _bypassGPIOLow = _importExport->getBypassGPIOLow();
 
+    _sessionProvider = new WebSessionProvider(_preferences, _importExport);
+
     if(str.length() > 0)
     {
         memset(&_credUser, 0, sizeof(_credUser));
@@ -96,17 +98,17 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
 
         if (_preferences->getInt(preference_http_auth_type, 0) == 2)
         {
-            loadSessions();
+            _sessionProvider->loadSessions();
         }
 
         if (_duoEnabled)
         {
-            loadSessions(1);
+            _sessionProvider->loadSessions(1);
         }
 
         if (_importExport->getTOTPEnabled())
         {
-            loadSessions(2);
+            _sessionProvider->loadSessions(2);
         }
     }
     _confirmCode = generateConfirmCode();
@@ -138,7 +140,7 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
     {
         String cookie = request->getCookie(cookieKey.c_str());
 
-        if ((type == 0 && _httpSessions[cookie].is<JsonVariant>()) || (type == 1 && _importExport->_duoSessions[cookie].is<JsonVariant>()) || (type == 2 && _importExport->_totpSessions[cookie].is<JsonVariant>()) || (type == 3 && _importExport->_bypassSessions[cookie].is<JsonVariant>()))
+        if ((type == 0 && _sessionProvider->httpSessions()[cookie].is<JsonVariant>()) || (type == 1 && _importExport->_duoSessions[cookie].is<JsonVariant>()) || (type == 2 && _importExport->_totpSessions[cookie].is<JsonVariant>()) || (type == 3 && _importExport->_bypassSessions[cookie].is<JsonVariant>()))
         {
             struct timeval time;
             gettimeofday(&time, NULL);
@@ -149,7 +151,7 @@ bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
                 time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
             }
 
-            if ((type == 0 && _httpSessions[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us) || (type == 3 && _importExport->_bypassSessions[cookie].as<signed long long>() > time_us))
+            if ((type == 0 && _sessionProvider->httpSessions()[cookie].as<signed long long>() > time_us) || (type == 1 && _importExport->_duoSessions[cookie].as<signed long long>() > time_us) || (type == 2 && _importExport->_totpSessions[cookie].as<signed long long>() > time_us) || (type == 3 && _importExport->_bypassSessions[cookie].as<signed long long>() > time_us))
             {
                 return true;
             }
@@ -178,8 +180,8 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
     if (request->hasCookie("sessionId"))
     {
         String cookie = request->getCookie("sessionId");
-        _httpSessions.remove(cookie);
-        saveSessions();
+        _sessionProvider->httpSessions().remove(cookie);
+        _sessionProvider->saveSessions();
     }
     else
     {
@@ -201,7 +203,7 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         {
             String cookie2 = request->getCookie("duoId");
             _importExport->_duoSessions.remove(cookie2);
-            saveSessions(1);
+            _sessionProvider->saveSessions(1);
         }
         else
         {
@@ -224,7 +226,7 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
         {
             String cookie2 = request->getCookie("totpId");
             _importExport->_totpSessions.remove(cookie2);
-            saveSessions(2);
+            _sessionProvider->saveSessions(2);
         }
         else
         {
@@ -251,118 +253,6 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
     }
 
     return buildConfirmHtml(request, resp, "Logging out", 3, true);
-}
-
-void WebCfgServer::saveSessions(int type)
-{
-    if(_preferences->getBool(preference_update_time, false))
-    {
-        if (!SPIFFS.begin(true))
-        {
-            Log->println("SPIFFS Mount Failed");
-        }
-        else
-        {
-            File file;
-
-            if (type == 0)
-            {
-                file = SPIFFS.open("/sessions.json", "w");
-                serializeJson(_httpSessions, file);
-            }
-            else if (type == 1)
-            {
-                file = SPIFFS.open("/duosessions.json", "w");
-                serializeJson(_importExport->_duoSessions, file);
-            }
-            else if (type == 2)
-            {
-                file = SPIFFS.open("/totpsessions.json", "w");
-                serializeJson(_importExport->_totpSessions, file);
-            }
-            file.close();
-        }
-    }
-}
-
-void WebCfgServer::loadSessions(int type)
-{
-    if(_preferences->getBool(preference_update_time, false))
-    {
-        if (!SPIFFS.begin(true))
-        {
-            Log->println("SPIFFS Mount Failed");
-        }
-        else
-        {
-            File file;
-
-            if (type == 0)
-            {
-                file = SPIFFS.open("/sessions.json", "r");
-
-                if (!file || file.isDirectory())
-                {
-                    Log->println("sessions.json not found");
-                }
-                else
-                {
-                    deserializeJson(_httpSessions, file);
-                }
-            }
-            else if (type == 1)
-            {
-                file = SPIFFS.open("/duosessions.json", "r");
-
-                if (!file || file.isDirectory())
-                {
-                    Log->println("duosessions.json not found");
-                }
-                else
-                {
-                    deserializeJson(_importExport->_duoSessions, file);
-                }
-            }
-            else if (type == 2)
-            {
-                file = SPIFFS.open("/totpsessions.json", "r");
-
-                if (!file || file.isDirectory())
-                {
-                    Log->println("totpsessions.json not found");
-                }
-                else
-                {
-                    deserializeJson(_importExport->_totpSessions, file);
-                }
-            }
-            file.close();
-        }
-    }
-}
-
-void WebCfgServer::clearSessions()
-{
-    if (!SPIFFS.begin(true))
-    {
-        Log->println("SPIFFS Mount Failed");
-    }
-    else
-    {
-        _httpSessions.clear();
-        _importExport->_duoSessions.clear();
-        _importExport->_totpSessions.clear();
-        File file;
-        file = SPIFFS.open("/sessions.json", "w");
-        serializeJson(_httpSessions, file);
-        file.close();
-        file = SPIFFS.open("/duosessions.json", "w");
-        serializeJson(_importExport->_duoSessions, file);
-        file.close();
-        file = SPIFFS.open("/totpsessions.json", "w");
-        serializeJson(_importExport->_totpSessions, file);
-        file.close();
-    }
 }
 
 int WebCfgServer::doAuthentication(PsychicRequest *request)
@@ -2561,8 +2451,8 @@ bool WebCfgServer::processLogin(PsychicRequest *request, PsychicResponse* resp)
                 struct timeval time;
                 gettimeofday(&time, NULL);
                 int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
-                _httpSessions[buffer] = time_us + (durationLength*1000000L);
-                saveSessions();
+                _sessionProvider->httpSessions()[buffer] = time_us + (durationLength*1000000L);
+                _sessionProvider->saveSessions();
 
                 _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = request->hasParam("totp");
 
@@ -2657,7 +2547,7 @@ bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
                 gettimeofday(&time, NULL);
                 int64_t time_us = (int64_t)time.tv_sec * 1000000L + (int64_t)time.tv_usec;
                 _importExport->_totpSessions[buffer] = time_us + (durationLength*1000000L);
-                saveSessions(2);
+                _sessionProvider->saveSessions(2);
                 return true;
             }
         }
@@ -5061,7 +4951,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
 
     if(clearSession)
     {
-        clearSessions();
+        _sessionProvider->clearSessions();
     }
 
     if(newMFA)

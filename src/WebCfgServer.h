@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include <PsychicHttp.h>
 #include "enums/NukiPinState.h"
+#include "WebSessionProvider.h"
 
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
 #include <PsychicHttpsServer.h>
@@ -109,10 +110,8 @@ private:
     String generateConfirmCode();
     String _confirmCode = "----";
 
-    void saveSessions(int type = 0);
-    void loadSessions(int type = 0);
-    void clearSessions();
     esp_err_t logoutSession(PsychicRequest *request, PsychicResponse* resp);
+
     bool isAuthenticated(PsychicRequest *request, int type = 0);
     bool processLogin(PsychicRequest *request, PsychicResponse* resp);
     bool processTOTP(PsychicRequest *request, PsychicResponse* resp);
@@ -146,7 +145,8 @@ private:
     PsychicHttpServer* _psychicServer = nullptr;
     NukiNetwork* _network = nullptr;
     Preferences* _preferences = nullptr;
-    ImportExport* _importExport;
+    ImportExport* _importExport = nullptr;
+    WebSessionProvider* _sessionProvider = nullptr;
 
     char _credUser[31] = {0};
     char _credPassword[31] = {0};
@@ -155,7 +155,6 @@ private:
     uint8_t _partitionType = 0;
     size_t _otaContentLen = 0;
     String _hostname;
-    JsonDocument _httpSessions;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;
     bool _newBypass = false;
