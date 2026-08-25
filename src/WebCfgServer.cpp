@@ -1272,14 +1272,12 @@ void WebCfgServer::initialize()
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/");
                 }
-                else
-                {
-                    resp->setCode(302);
-                    resp->addHeader("Cache-Control", "no-cache");
-                    return resp->redirect("/get?page=login");
-                }
+
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/get?page=login");
             }
-            else if (value == "totp")
+            if (value == "totp")
             {
                 bool loggedIn = processTOTP(request, resp);
                 if (loggedIn)
@@ -1288,14 +1286,12 @@ void WebCfgServer::initialize()
                     resp->addHeader("Cache-Control", "no-cache");
                     return resp->redirect("/");
                 }
-                else
-                {
-                    resp->setCode(302);
-                    resp->addHeader("Cache-Control", "no-cache");
-                    return resp->redirect("/get?page=totp");
-                }
+
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/get?page=totp");
             }
-            else if (value == "bypass")
+            if (value == "bypass")
             {
                 bool loggedIn = processBypass(request, resp);
                 if (loggedIn)
@@ -1305,15 +1301,13 @@ void WebCfgServer::initialize()
                     _newBypass = true;
                     return resp->redirect("/get?page=newbypass");
                 }
-                else
-                {
-                    resp->setCode(302);
-                    resp->addHeader("Cache-Control", "no-cache");
-                    return resp->redirect("/");
-                }
+
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/");
             }
 #ifndef NUKI_HUB_UPDATER
-            else if (value == "savecfg")
+            if (value == "savecfg")
             {
                 String message = "";
                 bool restart = processArgs(request, resp, message);
@@ -1321,16 +1315,15 @@ void WebCfgServer::initialize()
                 {
                     return buildConfirmHtml(request, resp, message, 3, true, "/get?page=mqttconfig");
                 }
-                else if(request->hasParam("httpssl"))
+                if(request->hasParam("httpssl"))
                 {
                     return buildConfirmHtml(request, resp, message, 3, true, "/get?page=ntwconfig");
                 }
-                else
-                {
-                    return buildConfirmHtml(request, resp, message, 3, true);
-                }
+
+                return buildConfirmHtml(request, resp, message, 3, true);
             }
-            else if (value == "savegpiocfg")
+
+            if (value == "savegpiocfg")
             {
                 processGpioArgs(request, resp);
                 esp_err_t res = buildConfirmHtml(request, resp, "Saving GPIO configuration. Restarting.", 3, true);
@@ -1339,19 +1332,19 @@ void WebCfgServer::initialize()
                 restartEsp(RestartReason::GpioConfigurationUpdated);
                 return res;
             }
-            else if (value == "unpairlock")
+            if (value == "unpairlock")
             {
                 return processUnpair(request, resp, false);
             }
-            else if (value == "unpairopener")
+            if (value == "unpairopener")
             {
                 return processUnpair(request, resp, true);
             }
-            else if (value == "factoryreset")
+            if (value == "factoryreset")
             {
                 return processFactoryReset(request, resp);
             }
-            else if (value == "import")
+            if (value == "import")
             {
                 String message = "";
                 bool restart = processImport(request, resp, message);
@@ -1368,10 +1361,8 @@ void WebCfgServer::initialize()
                     }
                     return res;
                 }
-                else
-                {
-                    return buildConfirmHtml(request, resp, message, 3, true);
-                }
+
+                return buildConfirmHtml(request, resp, message, 3, true);
             }
 #endif
             else
@@ -1387,10 +1378,8 @@ void WebCfgServer::initialize()
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
                 }
-                else
-                {
-                    return buildWifiConnectHtml(request, resp);
-                }
+
+                return buildWifiConnectHtml(request, resp);
 #endif
             }
         });
@@ -4856,7 +4845,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
             }
         }
     }
-    if(request->hasParam("LCKMANPAIR") && (value == "1"))
+    if(request->hasParam( "LCKMANPAIR") && (value == "1"))
     {
         manPairLck = true;
     }
@@ -7150,7 +7139,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
         //}
     }
-    else if(request->hasParam("master"))
+    if(request->hasParam("master"))
     {
         /*
         if(request->hasParam("debug"))
@@ -7168,7 +7157,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         //}
     }
 #if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32)) && !defined(CONFIG_FREERTOS_UNICORE)
-    else if(request->hasParam("other"))
+    if(request->hasParam("other"))
     {
         res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
         _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_OTHER);
