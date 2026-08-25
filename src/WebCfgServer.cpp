@@ -8,7 +8,6 @@
 #include "FS.h"
 #include "SPIFFS.h"
 #include "esp_random.h"
-#include "../../../.platformio/packages/framework-arduinoespressif32/cores/esp32/WString.h"
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
