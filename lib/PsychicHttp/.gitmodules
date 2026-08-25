@@ -1,3 +1,6 @@
+[submodule "examples/esp-idf/components/UrlEncode"]
+	path = examples/esp-idf/components/UrlEncode
+	url = https://github.com/dzungpv/UrlEncode
 [submodule "examples/esp-idf/components/ArduinoJson"]
 	path = examples/esp-idf/components/ArduinoJson
 	url = https://github.com/bblanchon/ArduinoJson

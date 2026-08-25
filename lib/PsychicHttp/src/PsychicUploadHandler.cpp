@@ -15,7 +15,8 @@ esp_err_t PsychicUploadHandler::handleRequest(PsychicRequest* request, PsychicRe
   esp_err_t err = ESP_OK;
 
   /* File cannot be larger than a limit */
-  if (request->contentLength() > request->server()->maxUploadSize) {
+  if (request->contentLength() > request->server()->maxUploadSize)
+  {
     ESP_LOGE(PH_TAG, "File too large : %d bytes", request->contentLength());
 
     /* Respond with 400 Bad Request */
@@ -38,12 +39,14 @@ esp_err_t PsychicUploadHandler::handleRequest(PsychicRequest* request, PsychicRe
     err = _basicUploadHandler(request);
 
   // we can also call onRequest for some final processing and response
-  if (err == ESP_OK) {
+  if (err == ESP_OK)
+  {
     if (_requestCallback != NULL)
       err = _requestCallback(request, response);
     else
       err = response->send("Upload Successful.");
-  } else if (err == ESP_ERR_HTTPD_INVALID_REQ)
+  }
+  else if (err == ESP_ERR_HTTPD_INVALID_REQ)
     response->send(400, "text/html", "No multipart boundary found.");
   else
     response->send(500, "text/html", "Error processing upload.");
@@ -55,7 +58,7 @@ esp_err_t PsychicUploadHandler::_basicUploadHandler(PsychicRequest* request)
 {
   esp_err_t err = ESP_OK;
 
-  const char* filename = request->getFilenameCStr();
+  String filename = request->getFilename();
 
   /* Retrieve the pointer to scratch buffer for temporary storage */
   char* buf = (char*)malloc(FILE_CHUNK_SIZE);
@@ -65,7 +68,8 @@ esp_err_t PsychicUploadHandler::_basicUploadHandler(PsychicRequest* request)
   /* Content length of the request gives the size of the file being uploaded */
   int remaining = request->contentLength();
 
-  while (remaining > 0) {
+  while (remaining > 0)
+  {
 #ifdef ENABLE_ASYNC
     httpd_sess_update_lru_counter(request->server()->server, request->client()->socket());
 #endif
@@ -73,12 +77,14 @@ esp_err_t PsychicUploadHandler::_basicUploadHandler(PsychicRequest* request)
     // ESP_LOGD(PH_TAG, "Remaining size : %d", remaining);
 
     /* Receive the file part by part into a buffer */
-    if ((received = httpd_req_recv(request->request(), buf, std::min(remaining, (int)FILE_CHUNK_SIZE))) <= 0) {
+    if ((received = httpd_req_recv(request->request(), buf, min(remaining, FILE_CHUNK_SIZE))) <= 0)
+    {
       /* Retry if timeout occurred */
       if (received == HTTPD_SOCK_ERR_TIMEOUT)
         continue;
       // bail if we got an error
-      else if (received == HTTPD_SOCK_ERR_FAIL) {
+      else if (received == HTTPD_SOCK_ERR_FAIL)
+      {
         ESP_LOGE(PH_TAG, "Socket error");
         err = ESP_FAIL;
         break;
@@ -86,21 +92,22 @@ esp_err_t PsychicUploadHandler::_basicUploadHandler(PsychicRequest* request)
     }
 
     // call our upload callback here.
-    if (_uploadCallback != NULL) {
+    if (_uploadCallback != NULL)
+    {
       err = _uploadCallback(request, filename, index, (uint8_t*)buf, received, (remaining - received == 0));
       if (err != ESP_OK)
         break;
-    } else {
+    }
+    else
+    {
       ESP_LOGE(PH_TAG, "No upload callback specified!");
       err = ESP_FAIL;
       break;
     }
 
     /* Keep track of remaining size of the file left to be uploaded */
-    if (received > 0) {
-      remaining -= received;
-      index += received;
-    }
+    remaining -= received;
+    index += received;
   }
 
   // dont forget to free our buffer

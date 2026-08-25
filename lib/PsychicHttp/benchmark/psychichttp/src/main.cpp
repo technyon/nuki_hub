@@ -7,13 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 
 */
-#if __has_include("secrets.h")
-  #include "secrets.h"
-#elif __has_include("../../../secrets.h")
-  #include "../../../secrets.h"
-#else
-  #error "Missing secrets.h (place it next to this example or in repository root)"
-#endif
+#include "_secret.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESPmDNS.h>
@@ -22,10 +16,10 @@
 #include <WiFi.h>
 
 #ifndef WIFI_SSID
-  #error "You need to enter your wifi credentials. Rename secrets.h.example to secrets.h and enter your credentials there."
+  #error "You need to enter your wifi credentials.  Copy secret.h to _secret.h and enter your credentials there."
 #endif
 
-// Enter your WIFI credentials in secrets.h
+// Enter your WIFI credentials in secret.h
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 
@@ -186,8 +180,8 @@ void setup()
       // client->sendMessage("Hello!");
     });
     websocketHandler.onFrame([](PsychicWebSocketRequest* request, httpd_ws_frame* frame) {
-      return request->reply(frame);
-    });
+      response->send(frame);
+      return ESP_OK; });
     server.on("/ws", &websocketHandler);
 
     // EventSource server
@@ -205,9 +199,8 @@ void setup()
       //work with some params
       if (request->hasParam("foo"))
       {
-        PsychicWebParameter* foo = request->getParam("foo");
-        if (foo)
-          output["foo"] = foo->value();
+        String foo = request->getParam("foo")->value();
+        output["foo"] = foo;
       }
 
       //serialize and return

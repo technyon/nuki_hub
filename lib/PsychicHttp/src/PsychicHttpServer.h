@@ -55,7 +55,8 @@ class PsychicHttpServer
       HTTP_DELETE,
       HTTP_HEAD,
       HTTP_PUT,
-      HTTP_OPTIONS};
+      HTTP_OPTIONS
+    };
 
     // esp-idf specific stuff
     httpd_handle_t server;
@@ -72,18 +73,11 @@ class PsychicHttpServer
     virtual void setPort(uint16_t port);
     virtual uint16_t getPort();
 
-    // stub functions to allow us to use a pointer to PsychicHttpServer that is really a PsychicHttpsServer
-    // for runtime selection of ssl or no ssl
-    virtual void setCertificate(const char* cert, const char* private_key) {}
-    virtual void setCertificate(const uint8_t* cert, size_t cert_size, const uint8_t* private_key, size_t private_key_size) {}
-
-    bool isConnected();
     bool isRunning() { return _running; }
     esp_err_t begin() { return start(); }
     esp_err_t end() { return stop(); }
     esp_err_t start();
     esp_err_t stop();
-    esp_err_t restart();
     void reset();
 
     httpd_uri_match_func_t getURIMatchFunction();
@@ -120,7 +114,7 @@ class PsychicHttpServer
 
     PsychicHttpServer* addMiddleware(PsychicMiddleware* middleware);
     PsychicHttpServer* addMiddleware(PsychicMiddlewareCallback fn);
-    void removeMiddleware(PsychicMiddleware* middleware);
+    void removeMiddleware(PsychicMiddleware *middleware);
 
     static esp_err_t requestHandler(httpd_req_t* req);
     static esp_err_t notFoundHandler(httpd_req_t* req, httpd_err_code_t err);
@@ -132,11 +126,7 @@ class PsychicHttpServer
     void onOpen(PsychicClientCallback handler);
     void onClose(PsychicClientCallback handler);
 
-#ifdef ARDUINO
     PsychicStaticFileHandler* serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
-#endif
-    // IDF / POSIX-VFS overload
-    PsychicStaticFileHandler* serveStatic(const char* uri, const char* path, const char* cache_control = NULL);
 };
 
 bool ON_STA_FILTER(PsychicRequest* request);

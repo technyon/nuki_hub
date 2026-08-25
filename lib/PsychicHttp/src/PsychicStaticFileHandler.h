@@ -2,7 +2,6 @@
 #define PsychicStaticFileHandler_h
 
 #include "PsychicCore.h"
-#include "PsychicFS.h"
 #include "PsychicFileResponse.h"
 #include "PsychicRequest.h"
 #include "PsychicResponse.h"
@@ -10,32 +9,29 @@
 
 class PsychicStaticFileHandler : public PsychicWebHandler
 {
+    using File = fs::File;
+    using FS = fs::FS;
+
   private:
-    void _initPath();
     bool _getFile(PsychicRequest* request);
-    bool _fileExists(const std::string& path);
+    bool _fileExists(const String& path);
     uint8_t _countBits(const uint8_t value) const;
 
   protected:
-    psychic::FS _fs;
-    psychic::File _file;
-    std::string _filename;
-    std::string _uri;
-    std::string _path;
-    std::string _default_file;
-    std::string _cache_control;
-    std::string _last_modified;
+    FS _fs;
+    File _file;
+    String _filename;
+    String _uri;
+    String _path;
+    String _default_file;
+    String _cache_control;
+    String _last_modified;
     bool _isDir;
     bool _gzipFirst;
     uint8_t _gzipStats;
 
   public:
-#ifdef ARDUINO
-    PsychicStaticFileHandler(const char* uri, fs::FS& fs, const char* path, const char* cache_control);
-#endif
-    // IDF / POSIX-VFS constructor — path must be an absolute VFS mount path
-    // (e.g. "/littlefs/www"). Users must register the VFS partition before calling.
-    PsychicStaticFileHandler(const char* uri, const char* path, const char* cache_control);
+    PsychicStaticFileHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
     bool canHandle(PsychicRequest* request) override;
     esp_err_t handleRequest(PsychicRequest* request, PsychicResponse* response) override;
     PsychicStaticFileHandler* setIsDir(bool isDir);
@@ -43,6 +39,7 @@ class PsychicStaticFileHandler : public PsychicWebHandler
     PsychicStaticFileHandler* setCacheControl(const char* cache_control);
     PsychicStaticFileHandler* setLastModified(const char* last_modified);
     PsychicStaticFileHandler* setLastModified(struct tm* last_modified);
+    // PsychicStaticFileHandler* setTemplateProcessor(AwsTemplateProcessor newCallback) {_callback = newCallback; return *this;}
 };
 
 #endif /* PsychicHttp_h */

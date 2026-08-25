@@ -13,13 +13,7 @@
  * PlatformIO -> Build Filesystem Image and then PlatformIO -> Upload Filesystem Image
  **********************************************************************************************/
 
-#if __has_include("secrets.h")
-  #include "secrets.h"
-#elif __has_include("../../../secrets.h")
-  #include "../../../secrets.h"
-#else
-  #error "Missing secrets.h (place it next to this example or in repository root)"
-#endif
+#include "_secret.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESPmDNS.h>
@@ -72,10 +66,10 @@
 #endif
 
 #ifndef WIFI_SSID
-  #error "You need to enter your wifi credentials. Rename secrets.h.example to secrets.h and enter your credentials there."
+  #error "You need to enter your wifi credentials. Rename secret.h to _secret.h and enter your credentials there."
 #endif
 
-// Enter your WIFI credentials in secrets.h
+// Enter your WIFI credentials in secret.h
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 
@@ -275,8 +269,8 @@ void setup()
   if (connectToWifi()) {
     // Setup our NTP to get the current time.
     sntp_set_time_sync_notification_cb(timeAvailable);
-#if defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
-    esp_sntp_servermode_dhcp(true); // (optional)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 2)
+    esp_sntp_servermode_dhcp(1); // (optional)
 #else
     sntp_servermode_dhcp(1); // (optional)
 #endif
@@ -328,13 +322,9 @@ void setup()
       // this creates a 2nd server listening on port 80 and redirects all requests HTTPS
       PsychicHttpServer* redirectServer = new PsychicHttpServer();
       redirectServer->config.ctrl_port = 20424; // just a random port different from the default one
-      redirectServer->config.stack_size = 4096; // we dont need a large stack size for this.
       redirectServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
-        String url = "https://";
-        url += request->host();
-        url += request->url();
+        String url = "https://" + request->host() + request->url();
         return response->redirect(url.c_str()); });
-      redirectServer->start();
     }
 #endif
 
@@ -412,7 +402,7 @@ void setup()
       output["method"] = request->methodStr();
 
       // work with some params
-      if (!input["foo"].isNull()) {
+      if (input.containsKey("foo")) {
         String foo = input["foo"];
         output["foo"] = foo;
       }
@@ -423,8 +413,7 @@ void setup()
     // ip - get info about the client
     //  curl -i http://psychic.local/ip
     server.on("/ip", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) {
-      String output = "Your IP is: ";
-      output += request->client()->remoteIP().toString();
+      String output = "Your IP is: " + request->client()->remoteIP().toString();
       return response->send(output.c_str());
     });
 
@@ -452,7 +441,7 @@ void setup()
 
       // work with some params
       if (request->hasParam("foo")) {
-        String foo = request->getParam("foo", "");
+        String foo = request->getParam("foo")->value();
         output["foo"] = foo;
       }
 
@@ -488,15 +477,9 @@ void setup()
             std::smatch matches;
             if (request->getRegexMatches(matches)) {
               String output;
-              output += "Matches: ";
-              output += matches.size();
-              output += "<br/>\n";
-              output += "Matched URI: ";
-              output += matches.str(0).c_str();
-              output += "<br/>\n";
-              output += "Match 1: ";
-              output += matches.str(1).c_str();
-              output += "<br/>\n";
+              output += "Matches: " + String(matches.size()) + "<br/>\n";
+              output += "Matched URI: " + String(matches.str(0).c_str()) + "<br/>\n";
+              output += "Match 1: " + String(matches.str(1).c_str()) + "<br/>\n";
 
               return response->send(output.c_str());
             } else
@@ -529,16 +512,14 @@ void setup()
     // how to do basic auth
     //  curl -i --user admin:admin http://psychic.local/auth-basic
     server.on("/auth-basic", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) {
-            return response->send("Auth Basic Success!");
-          })
-      ->addMiddleware(&basicAuth);
+      return response->send("Auth Basic Success!");
+    })->addMiddleware(&basicAuth);
 
     // how to do digest auth
     //  curl -i --user admin:admin http://psychic.local/auth-digest
     server.on("/auth-digest", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) {
-            return response->send("Auth Digest Success!");
-          })
-      ->addMiddleware(&digestAuth);
+      return response->send("Auth Digest Success!");
+    })->addMiddleware(&digestAuth);
 
     // example of getting / setting cookies
     //  curl -i -b cookie.txt -c cookie.txt http://psychic.local/cookies
@@ -563,12 +544,8 @@ void setup()
     //  curl -F "param1=value1" -F "param2=value2" -X POST http://psychic.local/post
     server.on("/post", HTTP_POST, [](PsychicRequest* request, PsychicResponse* response) {
       String output;
-      output += "Param 1: ";
-      output += request->getParam("param1", "");
-      output += "<br/>\n";
-      output += "Param 2: ";
-      output += request->getParam("param2", "");
-      output += "<br/>\n";
+      output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
+      output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
 
       return response->send(output.c_str());
     });
@@ -580,7 +557,7 @@ void setup()
     // handle a very basic upload as post body
     PsychicUploadHandler* uploadHandler = new PsychicUploadHandler();
     uploadHandler->onUpload([](PsychicRequest* request, const String& filename, uint64_t index, uint8_t* data, size_t len, bool last) {
-      static File file;
+      File file;
       String path = "/www/" + filename;
 
       Serial.printf("Writing %d/%d bytes to: %s\n", (int)index + (int)len, request->contentLength(), path.c_str());
@@ -588,8 +565,11 @@ void setup()
       if (last)
         Serial.printf("%s is finished. Total bytes: %llu\n", path.c_str(), (uint64_t)index + (uint64_t)len);
 
+      // our first call?
       if (!index)
         file = LittleFS.open(path, FILE_WRITE);
+      else
+        file = LittleFS.open(path, FILE_APPEND);
 
       if (!file) {
         Serial.println("Failed to open file");
@@ -601,21 +581,13 @@ void setup()
         return ESP_FAIL;
       }
 
-      if (last)
-        file.close();
-
       return ESP_OK;
     });
 
     // gets called after upload has been handled
     uploadHandler->onRequest([](PsychicRequest* request, PsychicResponse* response) {
-      String url = "/";
-      url += request->getFilename();
-      String output = "<a href=\"";
-      output += url;
-      output += "\">";
-      output += url;
-      output += "</a>";
+      String url = "/" + request->getFilename();
+      String output = "<a href=\"" + url + "\">" + url + "</a>";
 
       return response->send(output.c_str());
     });
@@ -627,7 +599,7 @@ void setup()
     // a little bit more complicated multipart form
     PsychicUploadHandler* multipartHandler = new PsychicUploadHandler();
     multipartHandler->onUpload([](PsychicRequest* request, const String& filename, uint64_t index, uint8_t* data, size_t len, bool last) {
-      static File file;
+      File file;
       String path = "/www/" + filename;
 
       // some progress over serial.
@@ -635,8 +607,11 @@ void setup()
       if (last)
         Serial.printf("%s is finished. Total bytes: %llu\n", path.c_str(), (uint64_t)index + (uint64_t)len);
 
+      // our first call?
       if (!index)
         file = LittleFS.open(path, FILE_WRITE);
+      else
+        file = LittleFS.open(path, FILE_APPEND);
 
       if (!file) {
         Serial.println("Failed to open file");
@@ -648,9 +623,6 @@ void setup()
         return ESP_FAIL;
       }
 
-      if (last)
-        file.close();
-
       return ESP_OK;
     });
 
@@ -660,28 +632,15 @@ void setup()
       if (request->hasParam("file_upload")) {
         PsychicWebParameter* file = request->getParam("file_upload");
 
-        String url = "/";
-        url += file->value();
-        output += "<a href=\"";
-        output += url;
-        output += "\">";
-        output += url;
-        output += "</a><br/>\n";
-        output += "Bytes: ";
-        output += file->size();
-        output += "<br/>\n";
+        String url = "/" + file->value();
+        output += "<a href=\"" + url + "\">" + url + "</a><br/>\n";
+        output += "Bytes: " + String(file->size()) + "<br/>\n";
       }
 
-      if (request->hasParam("param1")) {
-        output += "Param 1: ";
-        output += request->getParam("param1", "");
-        output += "<br/>\n";
-      }
-      if (request->hasParam("param2")) {
-        output += "Param 2: ";
-        output += request->getParam("param2", "");
-        output += "<br/>\n";
-      }
+      if (request->hasParam("param1"))
+        output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
+      if (request->hasParam("param2"))
+        output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
 
       return response->send(output.c_str());
     });
@@ -696,16 +655,10 @@ void setup()
     PsychicUploadHandler* multipartFormHandler = new PsychicUploadHandler();
     multipartFormHandler->onRequest([](PsychicRequest* request, PsychicResponse* response) {
       String output;
-      if (request->hasParam("param1")) {
-        output += "Param 1: ";
-        output += request->getParam("param1", "");
-        output += "<br/>\n";
-      }
-      if (request->hasParam("param2")) {
-        output += "Param 2: ";
-        output += request->getParam("param2", "");
-        output += "<br/>\n";
-      }
+      if (request->hasParam("param1"))
+        output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
+      if (request->hasParam("param2"))
+        output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
 
       return response->send(output.c_str());
     });
@@ -719,7 +672,7 @@ void setup()
       Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString().c_str());
       client->sendMessage("Hello!");
     });
-    websocketHandler.onFrame([](PsychicWebSocketRequest* request, httpd_ws_frame_t* frame) {
+    websocketHandler.onFrame([](PsychicWebSocketRequest* request, httpd_ws_frame* frame) {
       // Serial.printf("[socket] #%d sent: %s\n", request->client()->socket(), String((char*)frame->payload, frame->len).c_str());
       return request->reply(frame);
     });
@@ -740,9 +693,7 @@ void setup()
     // 404:   curl -F "foo=bar" http://psychic.local/post-filter
     server.on("/post-filter", HTTP_POST, [](PsychicRequest* request, PsychicResponse* response) {
             String output;
-            output += "Secret: ";
-            output += request->getParam("secret", "");
-            output += "<br/>\n";
+            output += "Secret: " + request->getParam("secret")->value() + "<br/>\n";
 
             return response->send(output.c_str());
           })

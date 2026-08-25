@@ -19,16 +19,15 @@
 */
 
 #include "PsychicEventSource.h"
-#include "esp_log.h"
-#include <vector>
+#include <string.h>
 
 /*****************************************/
 // PsychicEventSource - Handler
 /*****************************************/
 
 PsychicEventSource::PsychicEventSource() : PsychicHandler(),
-                                           _onOpen(nullptr),
-                                           _onClose(nullptr)
+                                           _onOpen(NULL),
+                                           _onClose(NULL)
 {
 }
 
@@ -40,8 +39,8 @@ PsychicEventSourceClient* PsychicEventSource::getClient(int socket)
 {
   PsychicClient* client = PsychicHandler::getClient(socket);
 
-  if (client == nullptr)
-    return nullptr;
+  if (client == NULL)
+    return NULL;
 
   return (PsychicEventSourceClient*)client->_friend;
 }
@@ -55,9 +54,6 @@ esp_err_t PsychicEventSource::handleRequest(PsychicRequest* request, PsychicResp
 {
   // start our open ended HTTP response
   PsychicEventSourceResponse response(resp);
-  response.addHeader("Content-Type", "text/event-stream");
-  response.addHeader("Cache-Control", "no-cache");
-  response.addHeader("Connection", "keep-alive");
   esp_err_t err = response.send();
 
   // lookup our client
@@ -66,7 +62,7 @@ esp_err_t PsychicEventSource::handleRequest(PsychicRequest* request, PsychicResp
     // did we get our last id?
     if (request->hasHeader("Last-Event-ID")) {
       PsychicEventSourceClient* buddy = getClient(client);
-      buddy->_lastId = atoi(request->headerCStr("Last-Event-ID"));
+      buddy->_lastId = atoi(request->header("Last-Event-ID").c_str());
     }
 
     // let our handler know.
@@ -96,59 +92,40 @@ void PsychicEventSource::addClient(PsychicClient* client)
 
 void PsychicEventSource::removeClient(PsychicClient* client)
 {
-  auto buddy = static_cast<PsychicEventSourceClient*>(client->_friend);
-  if (buddy) {
-    delete buddy;
-    client->_friend = nullptr;
-  }
   PsychicHandler::removeClient(client);
+  delete (PsychicEventSourceClient*)client->_friend;
+  client->_friend = NULL;
 }
 
 void PsychicEventSource::openCallback(PsychicClient* client)
 {
   PsychicEventSourceClient* buddy = getClient(client);
-  if (buddy == nullptr) {
+  if (buddy == NULL) {
     return;
   }
 
-  if (_onOpen != nullptr)
+  if (_onOpen != NULL)
     _onOpen(buddy);
 }
 
 void PsychicEventSource::closeCallback(PsychicClient* client)
 {
   PsychicEventSourceClient* buddy = getClient(client);
-  if (buddy == nullptr) {
+  if (buddy == NULL) {
     return;
   }
 
-  if (_onClose != nullptr)
+  if (_onClose != NULL)
     _onClose(getClient(buddy));
 }
 
-/**
- * @brief Sends an event to all connected clients.
- * * This function now safely handles client disconnections.
- * It iterates through all clients, attempts to send the event, and collects
- * any clients for whom the send fails. It then properly removes these
- * disconnected clients after the loop, preventing a crash from using a stale handle.
- */
 void PsychicEventSource::send(const char* message, const char* event, uint32_t id, uint32_t reconnect)
 {
-  auto ev = generateEventMessage(message, event, id, reconnect);
-  std::vector<PsychicClient*> clientsToRemove;
-
-  // First, iterate and send, collecting disconnected clients
-  for (PsychicClient* c : _clients) {
-    if (!((PsychicEventSourceClient*)c->_friend)->sendEvent(ev.c_str())) {
-      clientsToRemove.push_back(c);
-    }
-  }
-
-  // Second, iterate through the disconnected clients and clean them up
-  for (PsychicClient* c : clientsToRemove) {
-    closeCallback(c); // Let the user application know
-    removeClient(c);  // Remove from handler and clean up memory
+  String ev = generateEventMessage(message, event, id, reconnect);
+  for(PsychicClient *c : _clients) {
+    if (c && c->_friend) {
+      ((PsychicEventSourceClient*)c->_friend)->sendEvent(ev.c_str());
+    }  
   }
 }
 
@@ -165,31 +142,92 @@ PsychicEventSourceClient::~PsychicEventSourceClient()
 {
 }
 
-/**
- * @brief Returns a boolean indicating send success.
- */
-bool PsychicEventSourceClient::send(const char* message, const char* event, uint32_t id, uint32_t reconnect)
+void PsychicEventSourceClient::send(const char* message, const char* event, uint32_t id, uint32_t reconnect)
 {
-  auto ev = generateEventMessage(message, event, id, reconnect);
-  return sendEvent(ev.c_str());
+  String ev = generateEventMessage(message, event, id, reconnect);
+  sendEvent(ev.c_str());
 }
 
-/**
- * @brief Sends data and returns true on success, false on failure.
- * This prevents a crash by detecting if the underlying socket is closed.
- */
-bool PsychicEventSourceClient::sendEvent(const char* event)
+void PsychicEventSourceClient::sendEvent(const char* event)
 {
-  int result;
-  do {
-    result = httpd_socket_send(this->server(), this->socket(), event, strlen(event), 0);
-  } while (result == HTTPD_SOCK_ERR_TIMEOUT);
+  _sendEventAsync(this->server(), this->socket(), event, strlen(event));
+}
 
-  if (result < 0) {
-    ESP_LOGD(PH_TAG, "sendEvent to socket %d failed. Client likely disconnected.", this->socket());
-    return false;
+esp_err_t PsychicEventSourceClient::_sendEventAsync(httpd_handle_t handle, int socket, const char* event, size_t len)
+{
+  // create the transfer object
+  async_event_transfer_t* transfer = (async_event_transfer_t*)calloc(1, sizeof(async_event_transfer_t));
+  if (transfer == NULL) {
+    return ESP_ERR_NO_MEM;
   }
-  return true;
+
+  // populate it
+  transfer->arg = this;
+  transfer->callback = _sendEventSentCallback;
+  transfer->handle = handle;
+  transfer->socket = socket;
+  transfer->len = len;
+
+  // allocate for event text
+  transfer->event = (char*)malloc(len);
+  if (transfer->event == NULL) {
+    free(transfer);
+    return ESP_ERR_NO_MEM;
+  }
+
+  // copy over the event data
+  memcpy(transfer->event, event, len);
+
+  // queue it.
+  esp_err_t err = httpd_queue_work(handle, _sendEventWorkCallback, transfer);
+
+  // cleanup
+  if (err) {
+    free(transfer->event);
+    free(transfer);
+    return err;
+  }
+
+  return ESP_OK;
+}
+
+void PsychicEventSourceClient::_sendEventWorkCallback(void* arg)
+{
+  async_event_transfer_t* trans = (async_event_transfer_t*)arg;
+
+  // omg the error is overloaded with the number of bytes sent!
+  esp_err_t err = httpd_socket_send(trans->handle, trans->socket, trans->event, trans->len, 0);
+  if (err == trans->len)
+    err = ESP_OK;
+
+  if (trans->callback)
+    trans->callback(err, trans->socket, trans->arg);
+
+  // free our memory
+  free(trans->event);
+  free(trans);
+}
+
+void PsychicEventSourceClient::_sendEventSentCallback(esp_err_t err, int socket, void* arg)
+{
+  // PsychicEventSourceClient* client = (PsychicEventSourceClient*)arg;
+
+  if (err == ESP_OK)
+    return;
+  else if (err == ESP_FAIL)
+    ESP_LOGE(PH_TAG, "EventSource: send - socket error (#%d)", socket);
+  else if (err == ESP_ERR_INVALID_STATE)
+    ESP_LOGE(PH_TAG, "EventSource: Handshake was already done beforehand (#%d)", socket);
+  else if (err == ESP_ERR_INVALID_ARG)
+    ESP_LOGE(PH_TAG, "EventSource: Argument is invalid (#%d)", socket);
+  else if (err == HTTPD_SOCK_ERR_TIMEOUT)
+    ESP_LOGE(PH_TAG, "EventSource: Socket timeout (#%d)", socket);
+  else if (err == HTTPD_SOCK_ERR_INVALID)
+    ESP_LOGE(PH_TAG, "EventSource: Invalid socket (#%d)", socket);
+  else if (err == HTTPD_SOCK_ERR_FAIL)
+    ESP_LOGE(PH_TAG, "EventSource: Socket fail (#%d)", socket);
+  else
+    ESP_LOGE(PH_TAG, "EventSource: %#06x %s (#%d)", (int)err, esp_err_to_name(err), socket);
 }
 
 /*****************************************/
@@ -202,18 +240,24 @@ PsychicEventSourceResponse::PsychicEventSourceResponse(PsychicResponse* response
 
 esp_err_t PsychicEventSourceResponse::send()
 {
-  std::string out = "HTTP/1.1 200 OK\r\n";
+  _response->addHeader("Content-Type", "text/event-stream");
+  _response->addHeader("Cache-Control", "no-cache");
+  _response->addHeader("Connection", "keep-alive");
+
+  // build our main header
+  String out = String();
+  out.concat("HTTP/1.1 200 OK\r\n");
+
+  // get our global headers out of the way first
+  for (auto& header : DefaultHeaders::Instance().getHeaders())
+    out.concat(header.field + ": " + header.value + "\r\n");
 
   // now do our individual headers
-  for (auto& header : _response->headers()) {
-    out += header.field.c_str();
-    out += ": ";
-    out += header.value.c_str();
-    out += "\r\n";
-  }
+  for (auto& header : _response->headers())
+    out.concat(header.field + ": " + header.value + "\r\n");
 
   // separator
-  out += "\r\n";
+  out.concat("\r\n");
 
   int result;
   do {
@@ -233,45 +277,34 @@ esp_err_t PsychicEventSourceResponse::send()
 // Event Message Generator
 /*****************************************/
 
-static std::string _generateEventMessage_impl(const char* message, const char* event, uint32_t id, uint32_t reconnect)
+String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect)
 {
-  std::string ev;
+  String ev = "";
 
   if (reconnect) {
     ev += "retry: ";
-    ev += std::to_string(reconnect);
+    ev += String(reconnect);
     ev += "\r\n";
   }
 
   if (id) {
     ev += "id: ";
-    ev += std::to_string(id);
+    ev += String(id);
     ev += "\r\n";
   }
 
   if (event != NULL) {
     ev += "event: ";
-    ev += event;
+    ev += String(event);
     ev += "\r\n";
   }
 
   if (message != NULL) {
     ev += "data: ";
-    ev += message;
+    ev += String(message);
     ev += "\r\n";
   }
   ev += "\r\n";
+
   return ev;
 }
-
-#ifdef ARDUINO
-String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect)
-{
-  return _generateEventMessage_impl(message, event, id, reconnect).c_str();
-}
-#else
-std::string generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect)
-{
-  return _generateEventMessage_impl(message, event, id, reconnect);
-}
-#endif

@@ -5,15 +5,9 @@
 #include "PsychicStaticFileHandler.h"
 #include "PsychicWebHandler.h"
 #include "PsychicWebSocket.h"
-#include "esp_idf_version.h"
-#include "esp_netif.h"
-
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 5, 0)
-  #define esp_netif_next_compat(n) esp_netif_next_unsafe(n)
-#else
-  #define esp_netif_next_compat(n) esp_netif_next(n)
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+#include "WiFi.h"
 #endif
-
 PsychicHttpServer::PsychicHttpServer(uint16_t port)
 {
   maxRequestBodySize = MAX_REQUEST_BODY_SIZE;
@@ -29,7 +23,7 @@ PsychicHttpServer::PsychicHttpServer(uint16_t port)
   config.global_user_ctx = this;
   config.global_user_ctx_free_fn = PsychicHttpServer::destroy;
   config.uri_match_fn = MATCH_WILDCARD; // new internal endpoint matching - do not change this!!!
-  config.stack_size = 8192;             // file I/O via VFS/LittleFS needs a deep call chain
+  config.stack_size = 4608;             // default stack is just a little bit too small.
 
   // our internal matching function for endpoints
   _uri_match_fn = MATCH_WILDCARD; // use this change the endpoint matching function.
@@ -86,47 +80,16 @@ uint16_t PsychicHttpServer::getPort()
   return this->config.server_port;
 }
 
-static bool _netif_is_connected(esp_netif_t* netif)
-{
-  if (!esp_netif_is_netif_up(netif))
-    return false;
-  esp_netif_ip_info_t ip;
-  if (esp_netif_get_ip_info(netif, &ip) != ESP_OK)
-    return false;
-  return ip.ip.addr != 0 && (ip.ip.addr & 0xFF) != 127;
-}
-
-bool PsychicHttpServer::isConnected()
-{
-  for (esp_netif_t* netif = esp_netif_next_compat(nullptr); netif != nullptr; netif = esp_netif_next_compat(netif))
-    if (_netif_is_connected(netif))
-      return true;
-  return false;
-}
-
 esp_err_t PsychicHttpServer::start()
 {
   if (_running)
     return ESP_OK;
-
-  // starting without network will crash us
-  if (!isConnected()) {
-    ESP_LOGE(PH_TAG, "Server start failed - no network interface available.");
-    return ESP_FAIL;
-  }
 
   esp_err_t ret;
 
 #ifdef ENABLE_ASYNC
   // start workers
   start_async_req_workers();
-#endif
-
-#ifdef PSYCHIC_WS_RX_STATIC_BUFFER
-  // Pre-allocate the shared WS RX buffer now, while the heap is still fresh.
-  // (Idempotent; a lazy fallback in PsychicWebSocket.cpp covers any path that
-  // somehow receives a frame without this having run.)
-  psychic_ws_preinit_rx_buf();
 #endif
 
   // one URI handler for each http_method
@@ -246,25 +209,9 @@ void PsychicHttpServer::reset()
 
   _esp_idf_endpoints.clear();
 
-  delete _chain;
-  _chain = nullptr;
-
   onNotFound(PsychicHttpServer::defaultNotFoundHandler);
   _onOpen = nullptr;
   _onClose = nullptr;
-}
-
-esp_err_t PsychicHttpServer::restart()
-{
-  esp_err_t ret = ESP_OK;
-
-  if (_running) {
-    ret = stop();
-    if (ret != ESP_OK)
-      return ret;
-  }
-
-  return start();
 }
 
 httpd_uri_match_func_t PsychicHttpServer::getURIMatchFunction()
@@ -286,7 +233,6 @@ PsychicHandler* PsychicHttpServer::addHandler(PsychicHandler* handler)
 void PsychicHttpServer::removeHandler(PsychicHandler* handler)
 {
   _handlers.remove(handler);
-  delete handler;
 }
 
 PsychicRewrite* PsychicHttpServer::addRewrite(PsychicRewrite* rewrite)
@@ -298,7 +244,6 @@ PsychicRewrite* PsychicHttpServer::addRewrite(PsychicRewrite* rewrite)
 void PsychicHttpServer::removeRewrite(PsychicRewrite* rewrite)
 {
   _rewrites.remove(rewrite);
-  delete rewrite;
 }
 
 PsychicRewrite* PsychicHttpServer::rewrite(const char* from, const char* to)
@@ -333,8 +278,6 @@ PsychicEndpoint* PsychicHttpServer::on(const char* uri, int method, PsychicHandl
 
   // websockets need a real endpoint in esp-idf
   if (handler->isWebSocket()) {
-    if (_running)
-      ESP_LOGW(PH_TAG, "WebSocket handler for '%s' registered after server started — it will not work. Call server.on() before server.start().", uri);
     // URI handler structure
     httpd_uri_t my_uri;
     my_uri.uri = uri;
@@ -392,31 +335,31 @@ PsychicEndpoint* PsychicHttpServer::on(const char* uri, int method, PsychicJsonR
 
 bool PsychicHttpServer::removeEndpoint(const char* uri, int method)
 {
+  // some handlers (aka websockets) need actual endpoints in esp-idf http_server
+  // don't return from here, because its added to the _endpoints list too.
+  for (auto& endpoint : _esp_idf_endpoints) {
+    if (!strcmp(endpoint.uri, uri) && method == endpoint.method) {
+      ESP_LOGD(PH_TAG, "Unregistering endpoint %s | %s", endpoint.uri, http_method_str((http_method)endpoint.method));
+
+      // Register endpoint with ESP-IDF server
+      esp_err_t ret = httpd_register_uri_handler(this->server, &endpoint);
+      if (ret != ESP_OK)
+        ESP_LOGE(PH_TAG, "Add endpoint failed (%s)", esp_err_to_name(ret));
+    }
+  }
+
+  // loop through our endpoints and see if anyone matches
   for (auto* endpoint : _endpoints) {
-    if (strcmp(endpoint->uriCStr(), uri) == 0 && method == endpoint->_method)
+    if (endpoint->uri().equals(uri) && method == endpoint->_method)
       return removeEndpoint(endpoint);
   }
+
   return false;
 }
 
 bool PsychicHttpServer::removeEndpoint(PsychicEndpoint* endpoint)
 {
-  // unregister any ESP-IDF native handler (e.g. WebSocket) for this endpoint
-  for (auto it = _esp_idf_endpoints.begin(); it != _esp_idf_endpoints.end();) {
-    if (strcmp(endpoint->uriCStr(), it->uri) == 0 && endpoint->_method == (int)it->method) {
-      ESP_LOGD(PH_TAG, "Unregistering endpoint %s | %s", it->uri, http_method_str((http_method)it->method));
-      if (_running) {
-        esp_err_t ret = httpd_unregister_uri_handler(this->server, it->uri, it->method);
-        if (ret != ESP_OK)
-          ESP_LOGE(PH_TAG, "Remove endpoint failed (%s)", esp_err_to_name(ret));
-      }
-      it = _esp_idf_endpoints.erase(it);
-    } else {
-      ++it;
-    }
-  }
   _endpoints.remove(endpoint);
-  delete endpoint;
   return true;
 }
 
@@ -475,7 +418,7 @@ bool PsychicHttpServer::_rewriteRequest(PsychicRequest* request)
 {
   for (auto* r : _rewrites) {
     if (r->match(request)) {
-      request->_setUri(r->toUrlCStr());
+      request->_setUri(r->toUrl().c_str());
       return true;
     }
   }
@@ -493,7 +436,7 @@ esp_err_t PsychicHttpServer::requestHandler(httpd_req_t* req)
 
   // run it through our global server filter list
   if (!server->_filter(&request)) {
-    ESP_LOGD(PH_TAG, "Request %s refused by global filter", request.uriCStr());
+    ESP_LOGD(PH_TAG, "Request %s refused by global filter", request.uri().c_str());
     return request.response()->send(400);
   }
 
@@ -506,7 +449,7 @@ esp_err_t PsychicHttpServer::requestHandler(httpd_req_t* req)
   } else {
     ret = server->_process(&request);
   }
-  ESP_LOGD(PH_TAG, "Request %s processed by global middleware: %s", request.uriCStr(), esp_err_to_name(ret));
+  ESP_LOGD(PH_TAG, "Request %s processed by global middleware: %s", request.uri().c_str(), esp_err_to_name(ret));
 
   if (ret == HTTPD_404_NOT_FOUND) {
     return PsychicHttpServer::notFoundHandler(req, HTTPD_404_NOT_FOUND);
@@ -519,7 +462,7 @@ esp_err_t PsychicHttpServer::_process(PsychicRequest* request)
 {
   // loop through our endpoints and see if anyone wants it.
   for (auto* endpoint : _endpoints) {
-    if (endpoint->matches(request->uriCStr())) {
+    if (endpoint->matches(request->uri().c_str())) {
       if (endpoint->_method == request->method() || endpoint->_method == HTTP_ANY) {
         request->setEndpoint(endpoint);
         return endpoint->process(request);
@@ -603,8 +546,7 @@ void PsychicHttpServer::closeCallback(httpd_handle_t hd, int sockfd)
     // give our handlers a chance to handle a disconnect first
     for (PsychicEndpoint* endpoint : server->_endpoints) {
       PsychicHandler* handler = endpoint->handler();
-      if (handler != nullptr)
-        handler->checkForClosedClient(client);
+      handler->checkForClosedClient(client);
     }
 
     // do we have a callback attached?
@@ -620,19 +562,9 @@ void PsychicHttpServer::closeCallback(httpd_handle_t hd, int sockfd)
   close(sockfd);
 }
 
-#ifdef ARDUINO
 PsychicStaticFileHandler* PsychicHttpServer::serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control)
 {
   PsychicStaticFileHandler* handler = new PsychicStaticFileHandler(uri, fs, path, cache_control);
-  this->addHandler(handler);
-
-  return handler;
-}
-#endif
-
-PsychicStaticFileHandler* PsychicHttpServer::serveStatic(const char* uri, const char* path, const char* cache_control)
-{
-  PsychicStaticFileHandler* handler = new PsychicStaticFileHandler(uri, path, cache_control);
   this->addHandler(handler);
 
   return handler;
@@ -673,99 +605,56 @@ const std::list<PsychicClient*>& PsychicHttpServer::getClientList()
   return _clients;
 }
 
-#ifdef ARDUINO
-static esp_netif_t* _find_netif_by_ip(const IPAddress& addr)
-{
-  for (esp_netif_t* netif = esp_netif_next_compat(nullptr); netif != nullptr; netif = esp_netif_next_compat(netif)) {
-    esp_netif_ip_info_t ip;
-    if (esp_netif_get_ip_info(netif, &ip) != ESP_OK)
-      continue;
-    if (IPAddress(ip.ip.addr) == addr)
-      return netif;
-  }
-  return nullptr;
-}
-#else
-static esp_netif_t* _find_netif_by_ip(const esp_ip4_addr_t& addr)
-{
-  for (esp_netif_t* netif = esp_netif_next_compat(nullptr); netif != nullptr; netif = esp_netif_next_compat(netif)) {
-    esp_netif_ip_info_t ip;
-    if (esp_netif_get_ip_info(netif, &ip) != ESP_OK)
-      continue;
-    if (ip.ip.addr == addr.addr)
-      return netif;
-  }
-  return nullptr;
-}
-#endif
-
 bool ON_STA_FILTER(PsychicRequest* request)
 {
-  esp_netif_t* netif = _find_netif_by_ip(request->client()->localIP());
-  if (netif == nullptr)
-    return false;
-  return !(esp_netif_get_flags(netif) & ESP_NETIF_DHCP_SERVER);
+  #if defined(CONFIG_IDF_TARGET_ESP32H2)
+  return false;
+  #else
+  return WiFi.localIP() == request->client()->localIP();
+  #endif
 }
 
 bool ON_AP_FILTER(PsychicRequest* request)
 {
-  esp_netif_t* netif = _find_netif_by_ip(request->client()->localIP());
-  if (netif == nullptr)
-    return false;
-  return (esp_netif_get_flags(netif) & ESP_NETIF_DHCP_SERVER) != 0;
+  #if defined(CONFIG_IDF_TARGET_ESP32H2)
+  return false;
+  #else
+  return WiFi.softAPIP() == request->client()->localIP();
+  #endif
 }
 
-static std::string _urlEncode_impl(const char* str)
+String urlDecode(const char* encoded)
 {
-  static const char hex[] = "0123456789ABCDEF";
-  std::string output;
-  output.reserve(strlen(str));
-  while (*str) {
-    unsigned char c = (unsigned char)*str++;
-    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
-      output += (char)c;
-    else {
-      output += '%';
-      output += hex[c >> 4];
-      output += hex[c & 0xF];
-    }
-  }
-  return output;
-}
-
-static std::string _urlDecode_impl(const char* encoded)
-{
-  auto hexVal = [](char c) -> unsigned char {
-    if (c >= '0' && c <= '9')
-      return c - '0';
-    if (c >= 'a' && c <= 'f')
-      return c - 'a' + 10;
-    return c - 'A' + 10;
-  };
-
   size_t length = strlen(encoded);
-  std::string output;
-  output.reserve(length);
-  for (size_t i = 0; i < length; ++i) {
-    if (encoded[i] == '%' && i + 2 < length && isxdigit(encoded[i + 1]) && isxdigit(encoded[i + 2])) {
-      output += (char)((hexVal(encoded[i + 1]) << 4) | hexVal(encoded[i + 2]));
-      i += 2;
+  char* decoded = (char*)malloc(length + 1);
+  if (!decoded) {
+    return "";
+  }
+
+  size_t i, j = 0;
+  for (i = 0; i < length; ++i) {
+    if (encoded[i] == '%' && isxdigit(encoded[i + 1]) && isxdigit(encoded[i + 2])) {
+      // Valid percent-encoded sequence
+      int hex;
+      sscanf(encoded + i + 1, "%2x", &hex);
+      decoded[j++] = (char)hex;
+      i += 2; // Skip the two hexadecimal characters
     } else if (encoded[i] == '+') {
-      output += ' ';
+      // Convert '+' to space
+      decoded[j++] = ' ';
     } else {
-      output += encoded[i];
+      // Copy other characters as they are
+      decoded[j++] = encoded[i];
     }
   }
+
+  decoded[j] = '\0'; // Null-terminate the decoded string
+
+  String output(decoded);
+  free(decoded);
+
   return output;
 }
-
-#ifdef ARDUINO
-String urlEncode(const char* str) { return _urlEncode_impl(str).c_str(); }
-String urlDecode(const char* encoded) { return _urlDecode_impl(encoded).c_str(); }
-#else
-std::string urlEncode(const char* str) { return _urlEncode_impl(str); }
-std::string urlDecode(const char* encoded) { return _urlDecode_impl(encoded); }
-#endif
 
 bool psychic_uri_match_simple(const char* uri1, const char* uri2, size_t len2)
 {
@@ -776,14 +665,14 @@ bool psychic_uri_match_simple(const char* uri1, const char* uri2, size_t len2)
 #ifdef PSY_ENABLE_REGEX
 bool psychic_uri_match_regex(const char* uri1, const char* uri2, size_t len2)
 {
-  try {
-    std::regex pattern(uri1);
-    std::smatch matches;
-    std::string s(uri2, len2);
-    return std::regex_search(s, matches, pattern);
-  } catch (const std::regex_error& e) {
-    ESP_LOGE(PH_TAG, "Invalid regex pattern '%s': %s", uri1, e.what());
-    return false;
-  }
+  std::regex pattern(uri1);
+  std::smatch matches;
+  std::string s(uri2);
+
+  // len2 is passed in to tell us to match up to a point.
+  if (s.length() > len2)
+    s = s.substr(0, len2);
+
+  return std::regex_search(s, matches, pattern);
 }
 #endif

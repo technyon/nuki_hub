@@ -24,16 +24,16 @@ bool PsychicHandler::filter(PsychicRequest* request)
   // run through our filter chain.
   for (auto& filter : _filters) {
     if (!filter(request)) {
-      ESP_LOGD(PH_TAG, "Request %s refused by filter from handler", request->uriCStr());
+      ESP_LOGD(PH_TAG, "Request %s refused by filter from handler", request->uri().c_str());
       return false;
     }
   }
   return true;
 }
 
-void PsychicHandler::setSubprotocol(const char* subprotocol)
+void PsychicHandler::setSubprotocol(const String& subprotocol)
 {
-  _subprotocol = subprotocol;
+  this->_subprotocol = subprotocol;
 }
 const char* PsychicHandler::getSubprotocol() const
 {
@@ -133,7 +133,7 @@ esp_err_t PsychicHandler::process(PsychicRequest* request)
   }
 
   if (!canHandle(request)) {
-    ESP_LOGD(PH_TAG, "Request %s refused by handler", request->uriCStr());
+    ESP_LOGD(PH_TAG, "Request %s refused by handler", request->uri().c_str());
     return HTTPD_404_NOT_FOUND;
   }
 

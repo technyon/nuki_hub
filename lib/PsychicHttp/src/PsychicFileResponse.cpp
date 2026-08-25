@@ -1,88 +1,66 @@
 #include "PsychicFileResponse.h"
 #include "PsychicRequest.h"
 #include "PsychicResponse.h"
-#include <http_status.h>
 
-static inline bool endsWith(const char* str, const char* suffix)
+PsychicFileResponse::PsychicFileResponse(PsychicResponse* response, FS& fs, const String& path, const String& contentType, bool download) : PsychicResponseDelegate(response)
 {
-  size_t slen = strlen(str), plen = strlen(suffix);
-  return slen >= plen && strcmp(str + slen - plen, suffix) == 0;
-}
+  //_code = 200;
+  String _path(path);
 
-// Shared implementation called by all path-based constructors.
-void PsychicFileResponse::_initFromFS(psychic::FS fs, const char* path, const char* contentType, bool download)
-{
-  std::string spath(path);
-
-  if (!download && !fs.exists(spath.c_str()) && fs.exists((spath + ".gz").c_str())) {
-    spath += ".gz";
+  if (!download && !fs.exists(_path) && fs.exists(_path + ".gz")) {
+    _path = _path + ".gz";
     addHeader("Content-Encoding", "gzip");
   }
 
-  _content = fs.open(spath.c_str(), "r");
+  _content = fs.open(_path, "r");
   setContentLength(_content.size());
 
-  if (!contentType || !*contentType)
+  if (contentType == "")
     _setContentTypeFromPath(path);
-  else
-    setContentType(contentType);
-
-  const char* lastSlash = strrchr(path, '/');
-  const char* filename = lastSlash ? lastSlash + 1 : path;
-  std::string disposition = download ? "attachment" : "inline";
-  disposition += "; filename=\"";
-  disposition += filename;
-  disposition += "\"";
-  addHeader("Content-Disposition", disposition.c_str());
-}
-
-// PUBLIC API for IDF
-// Open a file by its full VFS path (e.g. "/littlefs/index.html").
-PsychicFileResponse::PsychicFileResponse(PsychicResponse* response, const char* path, const char* contentType, bool download)
-    : PsychicResponseDelegate(response)
-{
-  _initFromFS(psychic::FS{}, path, contentType, download);
-}
-
-// INTERNAL used by PsychicStaticFileHandler (Arduino and IDF)
-PsychicFileResponse::PsychicFileResponse(PsychicResponse* response, psychic::FS fs, const char* path, const char* contentType, bool download)
-    : PsychicResponseDelegate(response)
-{
-  _initFromFS(fs, path, contentType, download);
-}
-
-#ifdef ARDUINO
-// PUBLIC API for Arduino - replaces old ctor(FS&, String).
-PsychicFileResponse::PsychicFileResponse(PsychicResponse* response, fs::FS& fs, const String& path, const String& contentType, bool download)
-    : PsychicResponseDelegate(response)
-{
-  _initFromFS(psychic::FS(fs), path.c_str(), contentType.length() ? contentType.c_str() : nullptr, download);
-}
-
-// PUBLIC API for Arduino - replaces old ctor(File, String).
-PsychicFileResponse::PsychicFileResponse(PsychicResponse* response, fs::File content, const String& path, const String& contentType, bool download)
-    : PsychicResponseDelegate(response)
-{
-  if (!download && endsWith(content.name(), ".gz") && !endsWith(path.c_str(), ".gz"))
-    addHeader("Content-Encoding", "gzip");
-
-  _content = psychic::File(content);
-  setContentLength(_content.size());
-
-  if (contentType.length() == 0)
-    _setContentTypeFromPath(path.c_str());
   else
     setContentType(contentType.c_str());
 
-  const char* lastSlash = strrchr(path.c_str(), '/');
-  const char* filename = lastSlash ? lastSlash + 1 : path.c_str();
-  std::string disposition = download ? "attachment" : "inline";
-  disposition += "; filename=\"";
-  disposition += filename;
-  disposition += "\"";
-  addHeader("Content-Disposition", disposition.c_str());
+  int filenameStart = path.lastIndexOf('/') + 1;
+  char buf[26 + path.length() - filenameStart];
+  char* filename = (char*)path.c_str() + filenameStart;
+
+  if (download) {
+    // set filename and force download
+    snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", filename);
+  } else {
+    // set filename and force rendering
+    snprintf(buf, sizeof(buf), "inline; filename=\"%s\"", filename);
+  }
+  addHeader("Content-Disposition", buf);
 }
-#endif
+
+PsychicFileResponse::PsychicFileResponse(PsychicResponse* response, File content, const String& path, const String& contentType, bool download) : PsychicResponseDelegate(response)
+{
+  String _path(path);
+
+  if (!download && String(content.name()).endsWith(".gz") && !path.endsWith(".gz")) {
+    addHeader("Content-Encoding", "gzip");
+  }
+
+  _content = content;
+  setContentLength(_content.size());
+
+  if (contentType == "")
+    _setContentTypeFromPath(path);
+  else
+    setContentType(contentType.c_str());
+
+  int filenameStart = path.lastIndexOf('/') + 1;
+  char buf[26 + path.length() - filenameStart];
+  char* filename = (char*)path.c_str() + filenameStart;
+
+  if (download) {
+    snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", filename);
+  } else {
+    snprintf(buf, sizeof(buf), "inline; filename=\"%s\"", filename);
+  }
+  addHeader("Content-Disposition", buf);
+}
 
 PsychicFileResponse::~PsychicFileResponse()
 {
@@ -90,45 +68,45 @@ PsychicFileResponse::~PsychicFileResponse()
     _content.close();
 }
 
-void PsychicFileResponse::_setContentTypeFromPath(const char* p)
+void PsychicFileResponse::_setContentTypeFromPath(const String& path)
 {
   const char* _contentType;
 
-  if (endsWith(p, ".html"))
+  if (path.endsWith(".html"))
     _contentType = "text/html";
-  else if (endsWith(p, ".htm"))
+  else if (path.endsWith(".htm"))
     _contentType = "text/html";
-  else if (endsWith(p, ".css"))
+  else if (path.endsWith(".css"))
     _contentType = "text/css";
-  else if (endsWith(p, ".json"))
+  else if (path.endsWith(".json"))
     _contentType = "application/json";
-  else if (endsWith(p, ".js"))
+  else if (path.endsWith(".js"))
     _contentType = "application/javascript";
-  else if (endsWith(p, ".png"))
+  else if (path.endsWith(".png"))
     _contentType = "image/png";
-  else if (endsWith(p, ".gif"))
+  else if (path.endsWith(".gif"))
     _contentType = "image/gif";
-  else if (endsWith(p, ".jpg"))
+  else if (path.endsWith(".jpg"))
     _contentType = "image/jpeg";
-  else if (endsWith(p, ".ico"))
+  else if (path.endsWith(".ico"))
     _contentType = "image/x-icon";
-  else if (endsWith(p, ".svg"))
+  else if (path.endsWith(".svg"))
     _contentType = "image/svg+xml";
-  else if (endsWith(p, ".eot"))
+  else if (path.endsWith(".eot"))
     _contentType = "font/eot";
-  else if (endsWith(p, ".woff"))
+  else if (path.endsWith(".woff"))
     _contentType = "font/woff";
-  else if (endsWith(p, ".woff2"))
+  else if (path.endsWith(".woff2"))
     _contentType = "font/woff2";
-  else if (endsWith(p, ".ttf"))
+  else if (path.endsWith(".ttf"))
     _contentType = "font/ttf";
-  else if (endsWith(p, ".xml"))
+  else if (path.endsWith(".xml"))
     _contentType = "text/xml";
-  else if (endsWith(p, ".pdf"))
+  else if (path.endsWith(".pdf"))
     _contentType = "application/pdf";
-  else if (endsWith(p, ".zip"))
+  else if (path.endsWith(".zip"))
     _contentType = "application/zip";
-  else if (endsWith(p, ".gz"))
+  else if (path.endsWith(".gz"))
     _contentType = "application/x-gzip";
   else
     _contentType = "text/plain";
@@ -144,8 +122,8 @@ esp_err_t PsychicFileResponse::send()
   size_t size = getContentLength();
   if (size < FILE_CHUNK_SIZE) {
     uint8_t* buffer = (uint8_t*)malloc(size);
-    if (buffer == NULL && size > 0) {
-      ESP_LOGE(PH_TAG, "Unable to allocate %zu bytes to send chunk", size);
+    if (buffer == NULL) {
+      ESP_LOGE(PH_TAG, "Unable to allocate %" PRIu32 " bytes to send chunk", size);
       httpd_resp_send_err(request(), HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to allocate memory.");
       return ESP_FAIL;
     }
@@ -160,12 +138,11 @@ esp_err_t PsychicFileResponse::send()
     /* Retrieve the pointer to scratch buffer for temporary storage */
     char* chunk = (char*)malloc(FILE_CHUNK_SIZE);
     if (chunk == NULL) {
-      ESP_LOGE(PH_TAG, "Unable to allocate %zu bytes to send chunk", (size_t)FILE_CHUNK_SIZE);
+      ESP_LOGE(PH_TAG, "Unable to allocate %" PRIu32 " bytes to send chunk", FILE_CHUNK_SIZE);
       httpd_resp_send_err(request(), HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to allocate memory.");
       return ESP_FAIL;
     }
 
-    // now the headers
     sendHeaders();
 
     size_t chunksize;

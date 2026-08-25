@@ -1,10 +1,10 @@
 #include "PsychicJson.h"
 
 #ifdef ARDUINOJSON_6_COMPATIBILITY
-PsychicJsonResponse::PsychicJsonResponse(PsychicResponse* response, bool isArray, size_t maxJsonBufferSize) : PsychicResponseDelegate(response),
+PsychicJsonResponse::PsychicJsonResponse(PsychicResponse* response, bool isArray, size_t maxJsonBufferSize) : __response(response),
                                                                                                               _jsonBuffer(maxJsonBufferSize)
 {
-  setContentType(JSON_MIMETYPE);
+  response->setContentType(JSON_MIMETYPE);
   if (isArray)
     _root = _jsonBuffer.createNestedArray();
   else
@@ -56,9 +56,8 @@ esp_err_t PsychicJsonResponse::send()
     setContent((uint8_t*)buffer, length);
     setContentType(JSON_MIMETYPE);
 
-    err = _response->send();
+    err = send();
   } else {
-#ifdef ARDUINO
     // helper class that acts as a stream to print chunked responses
     ChunkPrinter dest(_response, (uint8_t*)buffer, buffer_size);
 
@@ -72,17 +71,6 @@ esp_err_t PsychicJsonResponse::send()
 
     // done with our chunked response too
     err = finishChunking();
-#else
-    // In native IDF, reallocate to full length and send in one shot
-    free(buffer);
-    buffer = (char*)malloc(length + 1);
-    if (!buffer)
-      return error(HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to allocate memory.");
-    serializeJson(_root, buffer, length + 1);
-    setContent((uint8_t*)buffer, length);
-    setContentType(JSON_MIMETYPE);
-    err = _response->send();
-#endif
   }
 
   // let the buffer go

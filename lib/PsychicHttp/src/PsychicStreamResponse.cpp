@@ -2,39 +2,24 @@
 #include "PsychicRequest.h"
 #include "PsychicResponse.h"
 
-#ifdef ARDUINO
 PsychicStreamResponse::PsychicStreamResponse(PsychicResponse* response, const String& contentType)
     : PsychicResponseDelegate(response), _buffer(NULL)
 {
-  setContentType(contentType.c_str());
-  addHeader("Content-Disposition", "inline");
+
+  //setContentType(contentType.c_str());
+  //addHeader("Content-Disposition", "inline");
 }
 
 PsychicStreamResponse::PsychicStreamResponse(PsychicResponse* response, const String& contentType, const String& name)
     : PsychicResponseDelegate(response), _buffer(NULL)
 {
+
   setContentType(contentType.c_str());
+
   char buf[26 + name.length()];
   snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", name.c_str());
   addHeader("Content-Disposition", buf);
 }
-#else
-PsychicStreamResponse::PsychicStreamResponse(PsychicResponse* response, const char* contentType)
-    : PsychicResponseDelegate(response), _buffer(NULL)
-{
-  setContentType(contentType);
-  addHeader("Content-Disposition", "inline");
-}
-
-PsychicStreamResponse::PsychicStreamResponse(PsychicResponse* response, const char* contentType, const char* name)
-    : PsychicResponseDelegate(response), _buffer(NULL)
-{
-  setContentType(contentType);
-  char buf[256];
-  snprintf(buf, sizeof(buf), "attachment; filename=\"%s\"", name);
-  addHeader("Content-Disposition", buf);
-}
-#endif
 
 PsychicStreamResponse::~PsychicStreamResponse()
 {
@@ -47,16 +32,17 @@ esp_err_t PsychicStreamResponse::beginSend()
     return ESP_OK;
 
   // Buffer to hold ChunkPrinter and stream buffer. Using placement new will keep us at a single allocation.
-    _buffer = (uint8_t*)malloc(STREAM_CHUNK_SIZE);
+  _buffer = (uint8_t*)malloc(STREAM_CHUNK_SIZE + sizeof(ChunkPrinter));
 
-  if (!_buffer) {
+  if (!_buffer)
+  {
     /* Respond with 500 Internal Server Error */
-    ESP_LOGE(PH_TAG, "Unable to allocate %zu bytes to send chunk", STREAM_CHUNK_SIZE);
+    ESP_LOGE(PH_TAG, "Unable to allocate %" PRIu32 " bytes to send chunk", STREAM_CHUNK_SIZE + sizeof(ChunkPrinter));
     httpd_resp_send_err(request(), HTTPD_500_INTERNAL_SERVER_ERROR, "Unable to allocate memory.");
     return ESP_FAIL;
   }
 
-  _printer = new ChunkPrinter(_response, _buffer, STREAM_CHUNK_SIZE);
+  _printer = new (_buffer) ChunkPrinter(_response, _buffer + sizeof(ChunkPrinter), STREAM_CHUNK_SIZE);
 
   sendHeaders();
   return ESP_OK;
@@ -68,9 +54,9 @@ esp_err_t PsychicStreamResponse::endSend()
 
   if (!_buffer)
     err = ESP_FAIL;
-  else {
-    delete _printer;
-    _printer = NULL;
+  else
+  {
+    _printer->~ChunkPrinter(); // flushed on destruct
     err = finishChunking();
     free(_buffer);
     _buffer = NULL;
@@ -94,7 +80,6 @@ size_t PsychicStreamResponse::write(const uint8_t* buffer, size_t size)
   return _buffer ? _printer->write(buffer, size) : 0;
 }
 
-#ifdef ARDUINO
 size_t PsychicStreamResponse::copyFrom(Stream& stream)
 {
   if (_buffer)
@@ -102,4 +87,3 @@ size_t PsychicStreamResponse::copyFrom(Stream& stream)
 
   return 0;
 }
-#endif // ARDUINO

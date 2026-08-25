@@ -24,7 +24,6 @@
 #include "PsychicCore.h"
 #include "PsychicHandler.h"
 #include "PsychicResponse.h"
-#include <functional>
 
 class PsychicEventSource;
 class PsychicEventSourceResponse;
@@ -57,8 +56,8 @@ class PsychicEventSourceClient : public PsychicClient
     ~PsychicEventSourceClient();
 
     uint32_t lastId() const { return _lastId; }
-    bool send(const char* message, const char* event = nullptr, uint32_t id = 0, uint32_t reconnect = 0);
-    bool sendEvent(const char* event);
+    void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
+    void sendEvent(const char* event);
 };
 
 class PsychicEventSource : public PsychicHandler
@@ -83,7 +82,7 @@ class PsychicEventSource : public PsychicHandler
 
     esp_err_t handleRequest(PsychicRequest* request, PsychicResponse* response) override final;
 
-    void send(const char* message, const char* event = nullptr, uint32_t id = 0, uint32_t reconnect = 0);
+    void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
 };
 
 class PsychicEventSourceResponse : public PsychicResponseDelegate
@@ -93,10 +92,6 @@ class PsychicEventSourceResponse : public PsychicResponseDelegate
     esp_err_t send();
 };
 
-#ifdef ARDUINO
 String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect);
-#else
-std::string generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect);
-#endif
 
 #endif /* PsychicEventSource_H_ */

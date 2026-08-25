@@ -1,12 +1,11 @@
 #include "PsychicResponse.h"
 #include "PsychicRequest.h"
 #include <http_status.h>
-#include <strings.h>
 
 PsychicResponse::PsychicResponse(PsychicRequest* request) : _request(request),
                                                             _code(200),
                                                             _status(""),
-                                                            _contentType(""),
+                                                            _contentType(emptyString),
                                                             _contentLength(0),
                                                             _body("")
 {
@@ -24,7 +23,7 @@ void PsychicResponse::addHeader(const char* field, const char* value)
 {
   // erase any existing ones.
   for (auto itr = _headers.begin(); itr != _headers.end();) {
-    if (strcasecmp(itr->field.c_str(), field) == 0)
+    if (itr->field.equalsIgnoreCase(field))
       itr = _headers.erase(itr);
     else
       itr++;
@@ -38,14 +37,12 @@ void PsychicResponse::setCookie(const char* name, const char* value, unsigned lo
 {
   time_t now = time(nullptr);
 
-  std::string output;
-  output = std::string(urlEncode(name).c_str()) + "=" + urlEncode(value).c_str();
+  String output;
+  output = urlEncode(name) + "=" + urlEncode(value);
 
   // if current time isn't modern, default to using max age
-  if (now < 1700000000) {
-    output += "; Max-Age=";
-    output += std::to_string(secondsFromNow);
-  }
+  if (now < 1700000000)
+    output += "; Max-Age=" + String(secondsFromNow);
   // otherwise, set an expiration date
   else {
     time_t expirationTimestamp = now + secondsFromNow;
@@ -54,15 +51,12 @@ void PsychicResponse::setCookie(const char* name, const char* value, unsigned lo
     struct tm* tmInfo = gmtime(&expirationTimestamp);
     char expires[30];
     strftime(expires, sizeof(expires), "%a, %d %b %Y %H:%M:%S GMT", tmInfo);
-    output += "; Expires=";
-    output += expires;
+    output += "; Expires=" + String(expires);
   }
 
   // did we get any extras?
-  if (strlen(extras)) {
-    output += "; ";
-    output += extras;
-  }
+  if (strlen(extras))
+    output += "; " + String(extras);
 
   // okay, add it in.
   addHeader("Set-Cookie", output.c_str());
@@ -102,8 +96,13 @@ size_t PsychicResponse::getContentLength()
 
 esp_err_t PsychicResponse::send()
 {
-  if (!_code)
-    setCode(200);
+  // esp-idf makes you set the whole status.
+  sprintf(_status, "%u %s", _code, http_status_reason(_code));
+  httpd_resp_set_status(_request->request(), _status);
+
+  // set the content type
+  httpd_resp_set_type(_request->request(), _contentType.c_str());
+
   // our headers too
   this->sendHeaders();
 
@@ -119,13 +118,6 @@ esp_err_t PsychicResponse::send()
 
 void PsychicResponse::sendHeaders()
 {
-  // esp-idf makes you set the whole status.
-  sprintf(_status, "%d %s", _code, http_status_reason(_code));
-  httpd_resp_set_status(_request->request(), _status);
-
-  // set the content type
-  httpd_resp_set_type(_request->request(), _contentType.c_str());
-
   // now do our individual headers
   for (auto& header : _headers)
     httpd_resp_set_hdr(this->_request->request(), header.field.c_str(), header.value.c_str());
@@ -154,10 +146,7 @@ esp_err_t PsychicResponse::finishChunking()
 
 esp_err_t PsychicResponse::redirect(const char* url)
 {
-  // _code defaults to 200, so treat both 200 and an explicitly-cleared 0 as
-  // "no explicit code chosen" and use 301. (Otherwise send() would emit a 200
-  // with a Location header, which browsers do not follow.)
-  if (!_code || _code == 200)
+  if (!_code)
     setCode(301);
   addHeader("Location", url);
   return send();
@@ -173,7 +162,7 @@ esp_err_t PsychicResponse::send(const char* content)
 {
   if (!_code)
     setCode(200);
-  if (_contentType.empty())
+  if (_contentType.isEmpty())
     setContentType("text/html");
   setContent(content);
   return send();

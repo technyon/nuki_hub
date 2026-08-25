@@ -1,8 +1,6 @@
 #include "PsychicMiddlewares.h"
 
-#ifdef ARDUINO
-void LoggingMiddleware::setOutput(Print& output)
-{
+void LoggingMiddleware::setOutput(Print &output) {
   _out = &output;
 }
 
@@ -52,9 +50,9 @@ esp_err_t LoggingMiddleware::run(PsychicRequest* request, PsychicResponse* respo
     while (it != response->headers().end()) {
       HTTPHeader h = *it;
       _out->print("< ");
-      _out->print(h.field.c_str());
+      _out->print(h.field);
       _out->print(": ");
-      _out->println(h.value.c_str());
+      _out->println(h.value);
       it++;
     }
 
@@ -66,33 +64,6 @@ esp_err_t LoggingMiddleware::run(PsychicRequest* request, PsychicResponse* respo
 
   return ret;
 }
-#else
-esp_err_t LoggingMiddleware::run(PsychicRequest* request, PsychicResponse* response, PsychicMiddlewareNext next)
-{
-  esp_ip4_addr_t ip = request->client()->remoteIP();
-  char ipstr[16];
-  snprintf(ipstr, sizeof(ipstr), "%d.%d.%d.%d", (int)(ip.addr & 0xFF), (int)((ip.addr >> 8) & 0xFF), (int)((ip.addr >> 16) & 0xFF), (int)((ip.addr >> 24) & 0xFF));
-  ESP_LOGI(PH_TAG, "* Connection from %s:%u", ipstr, (unsigned)request->client()->remotePort());
-  ESP_LOGI(PH_TAG, "> %s %s %s", request->methodStr(), request->uri(), request->version());
-
-  esp_err_t ret = next();
-
-  if (ret != HTTPD_404_NOT_FOUND) {
-    ESP_LOGI(PH_TAG, "* Processed!");
-    ESP_LOGI(PH_TAG, "< %s %d %s", response->version(), response->getCode(), http_status_reason(response->getCode()));
-    std::list<HTTPHeader>::iterator it = response->headers().begin();
-    while (it != response->headers().end()) {
-      HTTPHeader h = *it;
-      ESP_LOGI(PH_TAG, "< %s: %s", h.field.c_str(), h.value.c_str());
-      it++;
-    }
-  } else {
-    ESP_LOGI(PH_TAG, "* Not processed!");
-  }
-
-  return ret;
-}
-#endif
 
 AuthenticationMiddleware& AuthenticationMiddleware::setUsername(const char* username)
 {
@@ -126,7 +97,7 @@ AuthenticationMiddleware& AuthenticationMiddleware::setAuthFailureMessage(const 
 
 bool AuthenticationMiddleware::isAllowed(PsychicRequest* request) const
 {
-  if (!_username.empty() && !_password.empty()) {
+  if (!_username.isEmpty() && !_password.isEmpty()) {
     return request->authenticate(_username.c_str(), _password.c_str());
   }
 
@@ -137,7 +108,7 @@ esp_err_t AuthenticationMiddleware::run(PsychicRequest* request, PsychicResponse
 {
   bool authenticationRequired = false;
 
-  if (!_username.empty() && !_password.empty()) {
+  if (!_username.isEmpty() && !_password.isEmpty()) {
     authenticationRequired = !request->authenticate(_username.c_str(), _password.c_str());
   }
 
@@ -184,7 +155,7 @@ void CorsMiddleware::addCORSHeaders(PsychicResponse* response)
   response->addHeader("Access-Control-Allow-Methods", _methods.c_str());
   response->addHeader("Access-Control-Allow-Headers", _headers.c_str());
   response->addHeader("Access-Control-Allow-Credentials", _credentials ? "true" : "false");
-  response->addHeader("Access-Control-Max-Age", std::to_string(_maxAge).c_str());
+  response->addHeader("Access-Control-Max-Age", String(_maxAge).c_str());
 }
 
 esp_err_t CorsMiddleware::run(PsychicRequest* request, PsychicResponse* response, PsychicMiddlewareNext next)

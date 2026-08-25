@@ -1,5 +1,5 @@
 /*
-  PsychicHTTP Server Example — Native ESP-IDF (no Arduino framework)
+  PsychicHTTP Server Example
 
   This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -8,310 +8,452 @@
   CONDITIONS OF ANY KIND, either express or implied.
 */
 
-/*******************************************************************************
- * Note: this demo requires various files to be uploaded to the LittleFS
- * partition. See the README for instructions.
- *
- * Note: copy secrets.h.example to secrets.h and fill in your Wi-Fi credentials.
- ******************************************************************************/
+/**********************************************************************************************
+ * Note: this demo relies on the following libraries (Install via Library Manager)
+ * ArduinoJson UrlEncode
+ **********************************************************************************************/
 
-#if __has_include("secrets.h")
-  #include "secrets.h"
-#elif __has_include("../../../secrets.h")
-  #include "../../../secrets.h"
-#else
-  #error "Missing secrets.h (place it next to this example or in repository root)"
-#endif
+/**********************************************************************************************
+ * Note: this demo relies on various files to be uploaded on the LittleFS partition
+ * Follow instructions here: https://randomnerdtutorials.com/esp32-littlefs-arduino-ide/
+ **********************************************************************************************/
+
+#include "secret.h"
+#include <Arduino.h>
 #include <ArduinoJson.h>
+#include <ESPmDNS.h>
+#include <LittleFS.h>
 #include <PsychicHttp.h>
-#include <esp_event.h>
-#include <esp_idf_version.h>
-#include <esp_littlefs.h>
-#include <esp_log.h>
-#include <esp_netif.h>
-#include <esp_timer.h>
-#include <esp_wifi.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/event_groups.h>
-#include <freertos/task.h>
-#include <mdns.h>
-#include <nvs_flash.h>
+#include <WiFi.h>
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE // set this to y in menuconfig to enable SSL
+  #include <PsychicHttpsServer.h>
+#endif
 
-static const char* TAG = "PsychicHttp";
+#ifndef WIFI_SSID
+  #error "You need to enter your wifi credentials. Rename secret.h to _secret.h and enter your credentials there."
+#endif
 
-// Wi-Fi credentials — from secrets.h
-static const char* WIFI_SSID_STR = WIFI_SSID;
-static const char* WIFI_PASS_STR = WIFI_PASS;
+// Enter your WIFI credentials in secret.h
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
 
-// Soft-AP settings (open network, always on alongside STA)
-static const char* AP_SSID = "PsychicHttp";
-static const char* AP_PASS = ""; // empty → open network
+// Set your SoftAP credentials
+const char* softap_ssid = "PsychicHttp";
+const char* softap_password = "";
+IPAddress softap_ip(10, 0, 0, 1);
 
-// mDNS hostname — device reachable as psychic.local
-static const char* LOCAL_HOSTNAME = "psychic";
+// credentials for the /auth-basic and /auth-digest examples
+const char* app_user = "admin";
+const char* app_pass = "admin";
+const char* app_name = "Your App";
 
-// Credentials for the /auth-basic and /auth-digest examples
-static const char* APP_USER = "admin";
-static const char* APP_PASS = "admin";
-static const char* APP_NAME = "PsychicHttp Demo";
-
-// LittleFS VFS mount base path (must match sdkconfig / partition table)
-static const char* LFS_BASE = "/littlefs";
-
-// -------------------------------------------------------------------------
-// Globals
-// -------------------------------------------------------------------------
-static EventGroupHandle_t s_wifi_event_group;
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT      BIT1
-static int s_retry_num = 0;
-#define WIFI_MAX_RETRY 10
-
-PsychicHttpServer server;
-PsychicWebSocketHandler websocketHandler;
-PsychicEventSource eventSource;
 AuthenticationMiddleware basicAuth;
 AuthenticationMiddleware digestAuth;
 
-// -------------------------------------------------------------------------
-// Wi-Fi helpers
-// -------------------------------------------------------------------------
-static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-  int32_t event_id, void* event_data)
-{
-  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-    esp_wifi_connect();
-  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    if (s_retry_num < WIFI_MAX_RETRY) {
-      esp_wifi_connect();
-      s_retry_num++;
-      ESP_LOGI(TAG, "Wi-Fi: retrying… (%d/%d)", s_retry_num, WIFI_MAX_RETRY);
-    } else {
-      xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-      ESP_LOGE(TAG, "Wi-Fi: connection failed after %d attempts", WIFI_MAX_RETRY);
-    }
-  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
-    ESP_LOGI(TAG, "Wi-Fi: got IP " IPSTR, IP2STR(&event->ip_info.ip));
-    s_retry_num = 0;
-    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-  }
-}
+// hostname for mdns (psychic.local)
+const char* local_hostname = "psychic";
 
-static bool wifi_init()
-{
-  s_wifi_event_group = xEventGroupCreate();
-
-  esp_netif_create_default_wifi_sta();
-  esp_netif_create_default_wifi_ap();
-
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-  esp_event_handler_instance_t h_any, h_got_ip;
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(
-    WIFI_EVENT,
-    ESP_EVENT_ANY_ID,
-    &wifi_event_handler,
-    NULL,
-    &h_any));
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(
-    IP_EVENT,
-    IP_EVENT_STA_GOT_IP,
-    &wifi_event_handler,
-    NULL,
-    &h_got_ip));
-
-  // STA configuration
-  wifi_config_t sta_cfg = {};
-  strncpy((char*)sta_cfg.sta.ssid, WIFI_SSID_STR, sizeof(sta_cfg.sta.ssid) - 1);
-  strncpy((char*)sta_cfg.sta.password, WIFI_PASS_STR, sizeof(sta_cfg.sta.password) - 1);
-
-  // AP configuration (open network)
-  wifi_config_t ap_cfg = {};
-  strncpy((char*)ap_cfg.ap.ssid, AP_SSID, sizeof(ap_cfg.ap.ssid) - 1);
-  ap_cfg.ap.ssid_len = (uint8_t)strlen(AP_SSID);
-  ap_cfg.ap.channel = 6;
-  ap_cfg.ap.max_connection = 4;
-  ap_cfg.ap.authmode = (strlen(AP_PASS) > 0) ? WIFI_AUTH_WPA2_PSK : WIFI_AUTH_OPEN;
-
-  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
-  ESP_ERROR_CHECK(esp_wifi_start());
-
-  // Wait up to ~10 s for STA connection
-  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-    WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-    pdFALSE,
-    pdFALSE,
-    pdMS_TO_TICKS(10000));
-
-  return (bits & WIFI_CONNECTED_BIT) != 0;
-}
-
-// -------------------------------------------------------------------------
-// mDNS
-// -------------------------------------------------------------------------
-static void mdns_start()
-{
-  ESP_ERROR_CHECK(mdns_init());
-  ESP_ERROR_CHECK(mdns_hostname_set(LOCAL_HOSTNAME));
-  mdns_instance_name_set("PsychicHttp Web Server");
-  mdns_service_add(nullptr, "_http", "_tcp", 80, nullptr, 0);
-  ESP_LOGI(TAG, "mDNS: http://%s.local", LOCAL_HOSTNAME);
-}
-
-// -------------------------------------------------------------------------
-// LittleFS VFS mount
-// -------------------------------------------------------------------------
-static void lfs_mount()
-{
-  esp_vfs_littlefs_conf_t conf = {
-    .base_path = LFS_BASE,
-    .partition_label = "littlefs",
-    .partition = nullptr,
-#if ESP_LITTLEFS_HAS_BLOCKDEV
-    .blockdev = nullptr,
+// #define CONFIG_ESP_HTTPS_SERVER_ENABLE to enable ssl
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+bool app_enable_ssl = true;
+String server_cert;
+String server_key;
 #endif
-    .format_if_mount_failed = true,
-    .read_only = false,
-    .dont_mount = false,
-    .grow_on_mount = false,
-  };
-  esp_err_t ret = esp_vfs_littlefs_register(&conf);
-  if (ret != ESP_OK) {
-    ESP_LOGE(TAG, "LittleFS mount failed (%s) — static files unavailable", esp_err_to_name(ret));
-  } else {
-    size_t total = 0, used = 0;
-    esp_littlefs_info("littlefs", &total, &used);
-    ESP_LOGI(TAG, "LittleFS: %d / %d bytes used", (int)used, (int)total);
-  }
-}
 
-// -------------------------------------------------------------------------
-// HTTP server setup
-// -------------------------------------------------------------------------
-static void server_setup()
+// our main server object
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+PsychicHttpsServer server;
+#else
+PsychicHttpServer server;
+#endif
+PsychicWebSocketHandler websocketHandler;
+PsychicEventSource eventSource;
+
+bool connectToWifi()
 {
-  // ---- Auth middleware ----
-  basicAuth.setUsername(APP_USER).setPassword(APP_PASS).setRealm(APP_NAME).setAuthMethod(BASIC_AUTH).setAuthFailureMessage("Unauthorized");
-  digestAuth.setUsername(APP_USER).setPassword(APP_PASS).setRealm(APP_NAME).setAuthMethod(DIGEST_AUTH).setAuthFailureMessage("Unauthorized");
+  // dual client and AP mode
+  WiFi.mode(WIFI_AP_STA);
 
-  server.config.max_uri_handlers = 20;
+  // Configure SoftAP
+  WiFi.softAPConfig(softap_ip, softap_ip, IPAddress(255, 255, 255, 0)); // subnet FF FF FF 00
+  WiFi.softAP(softap_ssid, softap_password);
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("SoftAP IP Address: ");
+  Serial.println(myIP);
 
-  // ---- Static files from LittleFS (/littlefs/www/) ----
-  char www_path[64];
-  snprintf(www_path, sizeof(www_path), "%s/www", LFS_BASE);
-  server.serveStatic("/", www_path)->setDefaultFile("index.html");
+  Serial.println();
+  Serial.print("[WiFi] Connecting to ");
+  Serial.println(ssid);
 
-  // ---- Simple GET ----
-  server.on("/hello", HTTP_GET, [](PsychicRequest* req, PsychicResponse* res) {
-    res->setCode(200);
-    res->setContentType("text/plain");
-    res->setContent("Hello from native ESP-IDF PsychicHttp!");
-    return res->send();
-  });
+  WiFi.begin(ssid, password);
+  // Auto reconnect is set true as default
+  // To set auto connect off, use the following function
+  // WiFi.setAutoReconnect(false);
 
-  // ---- JSON info ----
-  server.on("/api/v1/info", HTTP_GET, [](PsychicRequest* req, PsychicResponse* res) {
-    JsonDocument doc;
-    doc["firmware"] = "PsychicHttp";
-    doc["uptime_ms"] = (uint64_t)(esp_timer_get_time() / 1000ULL);
-    doc["free_heap"] = esp_get_free_heap_size();
-    std::string body;
-    serializeJson(doc, body);
-    res->setCode(200);
-    res->setContentType("application/json");
-    res->setContent(body.c_str());
-    return res->send();
-  });
+  // Will try for about 10 seconds (20x 500ms)
+  int tryDelay = 500;
+  int numberOfTries = 20;
 
-  // ---- POST JSON ----
-  server.on("/api/v1/msg", HTTP_POST, [](PsychicRequest* req, PsychicResponse* res) {
-    JsonDocument doc;
-    if (deserializeJson(doc, req->body()) != DeserializationError::Ok) {
-      res->setCode(400);
-      res->setContent("Bad JSON");
-      return res->send();
-    }
-    const char* msg = doc["msg"] | "";
-    ESP_LOGI(TAG, "POST /api/v1/msg: %s", msg);
-    res->setCode(200);
-    res->setContentType("application/json");
-    res->setContent("{\"status\":\"ok\"}");
-    return res->send();
-  });
-
-  // ---- Authenticated endpoint ----
-  server.on("/auth-basic", HTTP_GET, [](PsychicRequest* req, PsychicResponse* res) {
-          res->setCode(200);
-          res->setContent("You are authenticated (basic)!");
-          return res->send();
-        })
-    ->addMiddleware(&basicAuth);
-
-  // ---- WebSocket ----
-  websocketHandler.onFrame([](PsychicWebSocketRequest* req, httpd_ws_frame_t* frame) -> esp_err_t {
-    ESP_LOGI(TAG, "WS msg (%d bytes): %.*s", (int)frame->len, (int)frame->len, frame->payload);
-    // Echo back
-    return req->reply(frame);
-  });
-  server.on("/ws", &websocketHandler);
-
-  // ---- Server-Sent Events ----
-  server.on("/events", &eventSource);
-
-  server.begin();
-
-  ESP_LOGI(TAG, "HTTP server listening on port 80");
-}
-
-// -------------------------------------------------------------------------
-// Background task: push an SSE event every 5 s
-// -------------------------------------------------------------------------
-static void sse_task(void*)
-{
+  // Wait for the WiFi event
   while (true) {
-    vTaskDelay(pdMS_TO_TICKS(5000));
-    uint64_t uptime_ms = esp_timer_get_time() / 1000ULL;
-    char payload[32];
-    snprintf(payload, sizeof(payload), "%llu", (unsigned long long)uptime_ms);
-    eventSource.send(payload, "uptime", (uint32_t)(uptime_ms / 1000), 5000);
+    switch (WiFi.status()) {
+      case WL_NO_SSID_AVAIL:
+        Serial.println("[WiFi] SSID not found");
+        break;
+      case WL_CONNECT_FAILED:
+        Serial.print("[WiFi] Failed - WiFi not connected! Reason: ");
+        return false;
+        break;
+      case WL_CONNECTION_LOST:
+        Serial.println("[WiFi] Connection was lost");
+        break;
+      case WL_SCAN_COMPLETED:
+        Serial.println("[WiFi] Scan is completed");
+        break;
+      case WL_DISCONNECTED:
+        Serial.println("[WiFi] WiFi is disconnected");
+        break;
+      case WL_CONNECTED:
+        Serial.println("[WiFi] WiFi is connected!");
+        Serial.print("[WiFi] IP address: ");
+        Serial.println(WiFi.localIP());
+        return true;
+        break;
+      default:
+        Serial.print("[WiFi] WiFi Status: ");
+        Serial.println(WiFi.status());
+        break;
+    }
+    delay(tryDelay);
+
+    if (numberOfTries <= 0) {
+      Serial.print("[WiFi] Failed to connect to WiFi!");
+      // Use disconnect function to force stop trying to connect
+      WiFi.disconnect();
+      return false;
+    } else {
+      numberOfTries--;
+    }
+  }
+
+  return false;
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(10);
+
+  // We start by connecting to a WiFi network
+  // To debug, please enable Core Debug Level to Verbose
+  if (connectToWifi()) {
+    // set up our esp32 to listen on the local_hostname.local domain
+    if (!MDNS.begin(local_hostname)) {
+      Serial.println("Error starting mDNS");
+      return;
+    }
+    MDNS.addService("http", "tcp", 80);
+
+    if (!LittleFS.begin()) {
+      Serial.println("LittleFS Mount Failed. Do Platform -> Build Filesystem Image and Platform -> Upload Filesystem Image from VSCode");
+      return;
+    }
+
+// look up our keys?
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+    if (app_enable_ssl) {
+      File fp = LittleFS.open("/server.crt");
+      if (fp) {
+        server_cert = fp.readString();
+
+        // Serial.println("Server Cert:");
+        // Serial.println(server_cert);
+      } else {
+        Serial.println("server.pem not found, SSL not available");
+        app_enable_ssl = false;
+      }
+      fp.close();
+
+      File fp2 = LittleFS.open("/server.key");
+      if (fp2) {
+        server_key = fp2.readString();
+
+        // Serial.println("Server Key:");
+        // Serial.println(server_key);
+      } else {
+        Serial.println("server.key not found, SSL not available");
+        app_enable_ssl = false;
+      }
+      fp2.close();
+    }
+#endif
+
+    // setup server config stuff here
+    server.config.max_uri_handlers = 20; // maximum number of uri handlers (.on() calls)
+
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+    server.ssl_config.httpd.max_uri_handlers = 20; // maximum number of uri handlers (.on() calls)
+
+    // do we want secure or not?
+    if (app_enable_ssl) {
+      server.setCertificate(server_cert.c_str(), server_key.c_str());
+
+      // this creates a 2nd server listening on port 80 and redirects all requests HTTPS
+      PsychicHttpServer* redirectServer = new PsychicHttpServer();
+      redirectServer->config.ctrl_port = 20424; // just a random port different from the default one
+      redirectServer->onNotFound([](PsychicRequest* request, PsychicResponse* response) {
+          String url = "https://" + request->host() + request->url();
+          return response->redirect(url.c_str()); });
+    }
+#endif
+
+    basicAuth.setUsername(app_user);
+    basicAuth.setPassword(app_pass);
+    basicAuth.setRealm(app_name);
+    basicAuth.setAuthMethod(HTTPAuthMethod::BASIC_AUTH);
+    basicAuth.setAuthFailureMessage("You must log in.");
+
+    digestAuth.setUsername(app_user);
+    digestAuth.setPassword(app_pass);
+    digestAuth.setRealm(app_name);
+    digestAuth.setAuthMethod(HTTPAuthMethod::DIGEST_AUTH);
+    digestAuth.setAuthFailureMessage("You must log in.");
+
+    // serve static files from LittleFS/www on / only to clients on same wifi network
+    // this is where our /index.html file lives
+    server.serveStatic("/", LittleFS, "/www/")->addFilter(ON_STA_FILTER);
+
+    // serve static files from LittleFS/www-ap on / only to clients on SoftAP
+    // this is where our /index.html file lives
+    server.serveStatic("/", LittleFS, "/www-ap/")->addFilter(ON_AP_FILTER);
+
+    // serve static files from LittleFS/img on /img
+    // it's more efficient to serve everything from a single www directory, but this is also possible.
+    server.serveStatic("/img", LittleFS, "/img/");
+
+    // you can also serve single files
+    server.serveStatic("/myfile.txt", LittleFS, "/custom.txt");
+
+    // example callback everytime a connection is opened
+    server.onOpen([](PsychicClient* client) { Serial.printf("[http] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str()); });
+
+    // example callback everytime a connection is closed
+    server.onClose([](PsychicClient* client) { Serial.printf("[http] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str()); });
+
+    // api - json message passed in as post body
+    server.on("/api", HTTP_POST, [](PsychicRequest* request, PsychicResponse* response) {
+      //load our JSON request
+      JsonDocument json;
+      String body = request->body();
+      DeserializationError err = deserializeJson(json, body);
+
+      //create our response json
+      JsonDocument output;
+      output["msg"] = "status";
+
+      //did it parse?
+      if (err)
+      {
+        output["status"] = "failure";
+        output["error"] = err.c_str();
+      }
+      else
+      {
+        output["status"] = "success";
+        output["millis"] = millis();
+
+        //work with some params
+        if (json.containsKey("foo"))
+        {
+          String foo = json["foo"];
+          output["foo"] = foo;
+        }
+      }
+
+      //serialize and return
+      String jsonBuffer;
+      serializeJson(output, jsonBuffer);
+      return response->send(200, "application/json", jsonBuffer.c_str()); });
+
+    // api - parameters passed in via query eg. /api/endpoint?foo=bar
+    server.on("/ip", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) {
+      String output = "Your IP is: " + request->client()->remoteIP().toString();
+      return response->send(output.c_str()); });
+
+    // api - parameters passed in via query eg. /api/endpoint?foo=bar
+    server.on("/api", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) {
+      //create a response object
+      JsonDocument output;
+      output["msg"] = "status";
+      output["status"] = "success";
+      output["millis"] = millis();
+
+      //work with some params
+      if (request->hasParam("foo"))
+      {
+        String foo = request->getParam("foo")->name();
+        output["foo"] = foo;
+      }
+
+      //serialize and return
+      String jsonBuffer;
+      serializeJson(output, jsonBuffer);
+      return response->send(200, "application/json", jsonBuffer.c_str()); });
+
+    // how to redirect a request
+    server.on("/redirect", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) { return response->redirect("/alien.png"); });
+
+    // how to do basic auth
+    server.on("/auth-basic", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) { return response->send("Auth Basic Success!"); })->addMiddleware(&basicAuth);
+
+    // how to do digest auth
+    server.on("/auth-digest", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) { return response->send("Auth Digest Success!"); })->addMiddleware(&digestAuth);
+
+    // example of getting / setting cookies
+    server.on("/cookies", HTTP_GET, [](PsychicRequest* request, PsychicResponse* response) {
+      int counter = 0;
+      char cookie[14];
+      size_t size = 14;
+      if (request->getCookie("counter", cookie, &size) == ESP_OK)
+      {
+        // value is null-terminated.
+        counter = std::stoi(cookie);
+        counter++;
+      }
+      sprintf(cookie, "%d", counter);
+
+      response->setCookie("counter", cookie);
+      response->setContent(cookie);
+      return response->send(); });
+
+    // example of getting POST variables
+    server.on("/post", HTTP_POST, [](PsychicRequest* request, PsychicResponse* response) {
+      String output;
+      output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
+      output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
+
+      return response->send(output.c_str()); });
+
+    // you can set up a custom 404 handler.
+    server.onNotFound([](PsychicRequest* request, PsychicResponse* response) { return response->send(404, "text/html", "Custom 404 Handler"); });
+
+    // handle a very basic upload as post body
+    PsychicUploadHandler* uploadHandler = new PsychicUploadHandler();
+    uploadHandler->onUpload([](PsychicRequest* request, const String& filename, uint64_t index, uint8_t* data, size_t len, bool last) {
+      File file;
+      String path = "/www/" + filename;
+
+      Serial.printf("Writing %d/%d bytes to: %s\n", (int)index+(int)len, request->contentLength(), path.c_str());
+
+      if (last)
+        Serial.printf("%s is finished. Total bytes: %d\n", path.c_str(), (int)index+(int)len);
+
+      //our first call?
+      if (!index)
+        file = LittleFS.open(path, FILE_WRITE);
+      else
+        file = LittleFS.open(path, FILE_APPEND);
+      
+      if(!file) {
+        Serial.println("Failed to open file");
+        return ESP_FAIL;
+      }
+
+      if(!file.write(data, len)) {
+        Serial.println("Write failed");
+        return ESP_FAIL;
+      }
+
+      return ESP_OK; });
+
+    // gets called after upload has been handled
+    uploadHandler->onRequest([](PsychicRequest* request, PsychicResponse* response) {
+      String url = "/" + request->getFilename();
+      String output = "<a href=\"" + url + "\">" + url + "</a>";
+
+      return response->send(output.c_str()); });
+
+    // wildcard basic file upload - POST to /upload/filename.ext
+    server.on("/upload/*", HTTP_POST, uploadHandler);
+
+    // a little bit more complicated multipart form
+    PsychicUploadHandler* multipartHandler = new PsychicUploadHandler();
+    multipartHandler->onUpload([](PsychicRequest* request, const String& filename, uint64_t index, uint8_t* data, size_t len, bool last) {
+      File file;
+      String path = "/www/" + filename;
+
+      //some progress over serial.
+      Serial.printf("Writing %d bytes to: %s\n", (int)len, path.c_str());
+      if (last)
+        Serial.printf("%s is finished. Total bytes: %d\n", path.c_str(), (int)index+(int)len);
+
+      //our first call?
+      if (!index)
+        file = LittleFS.open(path, FILE_WRITE);
+      else
+        file = LittleFS.open(path, FILE_APPEND);
+      
+      if(!file) {
+        Serial.println("Failed to open file");
+        return ESP_FAIL;
+      }
+
+      if(!file.write(data, len)) {
+        Serial.println("Write failed");
+        return ESP_FAIL;
+      }
+
+      return ESP_OK; });
+
+    // gets called after upload has been handled
+    multipartHandler->onRequest([](PsychicRequest* request, PsychicResponse* response) {
+      PsychicWebParameter *file = request->getParam("file_upload");
+
+      String url = "/" + file->value();
+      String output;
+
+      output += "<a href=\"" + url + "\">" + url + "</a><br/>\n";
+      output += "Bytes: " + String(file->size()) + "<br/>\n";
+      output += "Param 1: " + request->getParam("param1")->value() + "<br/>\n";
+      output += "Param 2: " + request->getParam("param2")->value() + "<br/>\n";
+      
+      return response->send(output.c_str()); });
+
+    // wildcard basic file upload - POST to /upload/filename.ext
+    server.on("/multipart", HTTP_POST, multipartHandler);
+
+    // a websocket echo server
+    websocketHandler.onOpen([](PsychicWebSocketClient* client) {
+      Serial.printf("[socket] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str());
+      client->sendMessage("Hello!"); });
+    websocketHandler.onFrame([](PsychicWebSocketRequest* request, httpd_ws_frame* frame) {
+        Serial.printf("[socket] #%d sent: %s\n", request->client()->socket(), (char *)frame->payload);
+        return request->reply(frame); });
+    websocketHandler.onClose([](PsychicWebSocketClient* client) { Serial.printf("[socket] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str()); });
+    server.on("/ws", &websocketHandler);
+
+    // EventSource server
+    eventSource.onOpen([](PsychicEventSourceClient* client) {
+      Serial.printf("[eventsource] connection #%u connected from %s\n", client->socket(), client->localIP().toString().c_str());
+      client->send("Hello user!", NULL, millis(), 1000); });
+    eventSource.onClose([](PsychicEventSourceClient* client) { Serial.printf("[eventsource] connection #%u closed from %s\n", client->socket(), client->localIP().toString().c_str()); });
+    server.on("/events", &eventSource);
   }
 }
 
-// -------------------------------------------------------------------------
-// Entry point
-// -------------------------------------------------------------------------
-extern "C" void app_main(void)
+unsigned long lastUpdate = 0;
+char output[60];
+
+void loop()
 {
-  // 1. NVS flash (required by Wi-Fi)
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
+  if (millis() - lastUpdate > 2000) {
+    sprintf(output, "Millis: %lu\n", millis());
+    websocketHandler.sendAll(output);
+
+    sprintf(output, "%lu", millis());
+    eventSource.send(output, "millis", millis(), 0);
+
+    lastUpdate = millis();
   }
-  ESP_ERROR_CHECK(ret);
-
-  // 2. TCP/IP stack + default event loop
-  ESP_ERROR_CHECK(esp_netif_init());
-  ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-  // 3. Mount LittleFS
-  lfs_mount();
-
-  // 4. Connect Wi-Fi (STA + AP)
-  if (!wifi_init()) {
-    ESP_LOGW(TAG, "Running in AP-only mode (STA connection failed)");
-  }
-
-  // 5. mDNS
-  mdns_start();
-
-  // 6. HTTP server + handlers
-  server_setup();
-
-  // 7. SSE background task
-  xTaskCreate(sse_task, "sse_task", 4096, nullptr, 5, nullptr);
+  vTaskDelay(1 / portTICK_PERIOD_MS); // Feed WDT
 }

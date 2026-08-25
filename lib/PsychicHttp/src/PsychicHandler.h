@@ -22,7 +22,7 @@ class PsychicHandler
     PsychicMiddlewareChain* _chain = nullptr;
     std::list<PsychicRequestFilterFunction> _filters;
 
-    std::string _subprotocol;
+    String _subprotocol;
 
     std::list<PsychicClient*> _clients;
 
@@ -32,11 +32,8 @@ class PsychicHandler
 
     virtual bool isWebSocket() { return false; };
 
-    void setSubprotocol(const char* subprotocol);
+    void setSubprotocol(const String& subprotocol);
     const char* getSubprotocol() const;
-#ifdef ARDUINO
-    void setSubprotocol(const String& subprotocol) { setSubprotocol(subprotocol.c_str()); }
-#endif
 
     PsychicClient* checkForNewClient(PsychicClient* client);
     void checkForClosedClient(PsychicClient* client);
@@ -55,13 +52,13 @@ class PsychicHandler
     // called to process this handler with its middleware chain and filers
     esp_err_t process(PsychicRequest* request);
 
-    // bool filter(PsychicRequest* request);
+    //bool filter(PsychicRequest* request);
     PsychicHandler* addFilter(PsychicRequestFilterFunction fn);
     bool filter(PsychicRequest* request);
 
     PsychicHandler* addMiddleware(PsychicMiddleware* middleware);
     PsychicHandler* addMiddleware(PsychicMiddlewareCallback fn);
-    void removeMiddleware(PsychicMiddleware* middleware);
+    void removeMiddleware(PsychicMiddleware *middleware);
 
     // derived classes must implement these functions
     virtual bool canHandle(PsychicRequest* request) { return true; };

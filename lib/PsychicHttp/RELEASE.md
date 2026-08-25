@@ -4,4 +4,5 @@
 * Bump version in library.properties
 * Make new release + tag
 	* this will get pulled in automatically by Arduino Library Indexer
-	* Platformio automatically publishes on release via .github hook
+* ~~run ```pio pkg publish``` to publish to Platform.io~~
+	* automatically publishes on release via .github hook

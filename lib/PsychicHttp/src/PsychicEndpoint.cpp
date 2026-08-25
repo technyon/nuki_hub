@@ -15,8 +15,6 @@ PsychicEndpoint::PsychicEndpoint(PsychicHttpServer* server, int method, const ch
 {
 }
 
-PsychicEndpoint::~PsychicEndpoint() = default;
-
 PsychicEndpoint* PsychicEndpoint::setHandler(PsychicHandler* handler)
 {
   // clean up old / default handler
@@ -37,21 +35,9 @@ PsychicHandler* PsychicEndpoint::handler()
   return _handler;
 }
 
-#ifdef ARDUINO
 String PsychicEndpoint::uri()
 {
-  return String(_uri.c_str());
-}
-#else
-const char* PsychicEndpoint::uri()
-{
-  return _uri.c_str();
-}
-#endif
-
-const char* PsychicEndpoint::uriCStr()
-{
-  return _uri.c_str();
+  return _uri;
 }
 
 esp_err_t PsychicEndpoint::requestCallback(httpd_req_t* req)
@@ -149,6 +135,6 @@ esp_err_t PsychicEndpoint::process(PsychicRequest* request)
   esp_err_t ret = ESP_ERR_HTTPD_INVALID_REQ;
   if (_handler != NULL)
     ret = _handler->process(request);
-  ESP_LOGD(PH_TAG, "Endpoint %s processed %s: %s", _uri.c_str(), request->uriCStr(), esp_err_to_name(ret));
+  ESP_LOGD(PH_TAG, "Endpoint %s processed %s: %s", _uri.c_str(), request->uri().c_str(), esp_err_to_name(ret));
   return ret;
 }
