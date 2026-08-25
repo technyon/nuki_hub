@@ -14,7 +14,7 @@ class PsychicResponse
     int _code;
     char _status[60];
     std::list<HTTPHeader> _headers;
-    String _contentType;
+    std::string _contentType;
     int64_t _contentLength;
     const char* _body;
 
@@ -26,9 +26,13 @@ class PsychicResponse
 
     void setCode(int code);
     int getCode() { return _code; }
-    
+
     void setContentType(const char* contentType);
-    String& getContentType() { return _contentType; }
+#ifdef ARDUINO
+    String getContentType() { return String(_contentType.c_str()); }
+#else
+    const char* getContentType() { return _contentType.c_str(); }
+#endif
 
     void setContentLength(int64_t contentLength) { _contentLength = contentLength; }
     int64_t getContentLength(int64_t contentLength) { return _contentLength; }
@@ -74,7 +78,11 @@ class PsychicResponseDelegate
     void setCode(int code) { _response->setCode(code); }
 
     void setContentType(const char* contentType) { _response->setContentType(contentType); }
-    String& getContentType() { return _response->getContentType(); }
+#ifdef ARDUINO
+    String getContentType() { return _response->getContentType(); }
+#else
+    const char* getContentType() { return _response->getContentType(); }
+#endif
 
     void setContentLength(int64_t contentLength) { _response->setContentLength(contentLength); }
     int64_t getContentLength(int64_t contentLength) { return _response->getContentLength(); }

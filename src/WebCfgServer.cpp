@@ -8,6 +8,7 @@
 #include "FS.h"
 #include "SPIFFS.h"
 #include "esp_random.h"
+#include "../../../.platformio/packages/framework-arduinoespressif32/cores/esp32/WString.h"
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
@@ -1652,75 +1653,64 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
 bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, String& message)
 {
     bool res = false;
-    int params = request->params();
+
     String ssid;
     String pass;
 
-    for(int index = 0; index < params; index++)
+    if(request->hasParam("WIFISSID"))
     {
-        const PsychicWebParameter* p = request->getParam(index);
-        String key = p->name();
-        String value = p->value();
-
-
-        if(index < params -1)
+        ssid = request->getParam("WIFISSID")->value();
+    }
+    if(request->hasParam("WIFIPASS"))
+    {
+        pass = request->getParam("WIFIPASS")->value();
+    }
+    if(request->hasParam("DHCPENA"))
+    {
+        String dhcpEna = request->getParam("DHCPENA")->value();
+        if(_preferences->getBool(preference_ip_dhcp_enabled, true) != (dhcpEna == "1"))
         {
-            const PsychicWebParameter* next = request->getParam(index+1);
-            if(key == next->name())
-            {
-                continue;
-            }
+            _preferences->putBool(preference_ip_dhcp_enabled, (dhcpEna == "1"));
         }
-
-        if(key == "WIFISSID")
+    }
+    else if(request->hasParam("IPADDR"))
+    {
+        String ipAddr = request->getParam("IPADDR")->value();
+        if(_preferences->getString(preference_ip_address, "") != ipAddr)
         {
-            ssid = value;
+            _preferences->putString(preference_ip_address, ipAddr);
         }
-        else if(key == "WIFIPASS")
+    }
+    else if(request->hasParam("IPSUB"))
+    {
+        String ipSub = request->getParam("IPSUB")->value();
+        if(_preferences->getString(preference_ip_subnet, "") != ipSub)
         {
-            pass = value;
+            _preferences->putString(preference_ip_subnet, ipSub);
         }
-        else if(key == "DHCPENA")
+    }
+    else if(request->hasParam("IPGTW"))
+    {
+        String ipGtw = request->getParam("IPGTW")->value();
+        if(_preferences->getString(preference_ip_gateway, "") != ipGtw)
         {
-            if(_preferences->getBool(preference_ip_dhcp_enabled, true) != (value == "1"))
-            {
-                _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
-            }
+            _preferences->putString(preference_ip_gateway, ipGtw);
         }
-        else if(key == "IPADDR")
+    }
+    else if(request->hasParam("DNSSRV"))
+    {
+        String dnsSrv = request->getParam("DNSSRV")->value();
+        if(_preferences->getString(preference_ip_dns_server, "") != dnsSrv)
         {
-            if(_preferences->getString(preference_ip_address, "") != value)
-            {
-                _preferences->putString(preference_ip_address, value);
-            }
+            _preferences->putString(preference_ip_dns_server, dnsSrv);
         }
-        else if(key == "IPSUB")
+    }
+    else if(request->hasParam("FINDBESTRSSI"))
+    {
+        String findBestRssi = request->getParam("FINDBESTRSSI")->value();
+        if(_preferences->getBool(preference_find_best_rssi, false) != (findBestRssi == "1"))
         {
-            if(_preferences->getString(preference_ip_subnet, "") != value)
-            {
-                _preferences->putString(preference_ip_subnet, value);
-            }
-        }
-        else if(key == "IPGTW")
-        {
-            if(_preferences->getString(preference_ip_gateway, "") != value)
-            {
-                _preferences->putString(preference_ip_gateway, value);
-            }
-        }
-        else if(key == "DNSSRV")
-        {
-            if(_preferences->getString(preference_ip_dns_server, "") != value)
-            {
-                _preferences->putString(preference_ip_dns_server, value);
-            }
-        }
-        else if(key == "FINDBESTRSSI")
-        {
-            if(_preferences->getBool(preference_find_best_rssi, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_find_best_rssi, (value == "1"));
-            }
+            _preferences->putBool(preference_find_best_rssi, (findBestRssi == "1"));
         }
     }
 
@@ -2358,15 +2348,11 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
             typeText = "Save";
             response.print((String)"<form action=\"" + request->uri() + "\" method=\"post\">");
         }
-        int params = request->params();
 
-        for(int index = 0; index < params; index++)
+        if (request->hasParam("totpkey"))
         {
-            const PsychicWebParameter* p = request->getParam(index);
-            if (p->name() != "totpkey")
-            {
-                response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
-            }
+            const PsychicWebParameter* p = request->getParam("totpkey");
+            response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
         }
     }
 
@@ -2536,15 +2522,12 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
         if (type > 1)
         {
             response.print((String)"<form id=\"frmrepost\" action=\"" + request->uri() + "\" method=\"post\">");
-            int params = request->params();
 
-            for(int index = 0; index < params; index++)
+            if (request->hasParam("submit"))
             {
-                const PsychicWebParameter* p = request->getParam(index);
-                if (p->name() != "submit")
-                {
-                    response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
-                }
+                const PsychicWebParameter* p = request->getParam("submit");
+
+                response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
             }
             response.print("</form>");
         }
@@ -2813,2076 +2796,2124 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     uint32_t advancedLockConfigAclPrefs[26] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t advancedOpenerConfigAclPrefs[22] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    int params = request->params();
-
     String pass1 = "";
     String pass2 = "";
+    
+    String value;
 
-    for(int index = 0; index < params; index++)
+    if(request->hasParam("MQTTSERVER"))
     {
-        const PsychicWebParameter* p = request->getParam(index);
-        String key = p->name();
-        String value = p->value();
-
-        if(index < params -1)
+        value = request->getParam("MQTTSERVER")->value();
+        if(_preferences->getString(preference_mqtt_broker, "") != value)
         {
-            const PsychicWebParameter* next = request->getParam(index+1);
-            if(key == next->name())
-            {
-                continue;
-            }
+            _preferences->putString(preference_mqtt_broker, value);
+
+            restartServicesReconnect = true;
         }
-
-        if(key == "MQTTSERVER")
+    }
+    if(request->hasParam("MQTTPORT"))
+    {
+        value = request->getParam("MQTTPORT")->value();
+        if(_preferences->getInt(preference_mqtt_broker_port, 0) !=  value.toInt())
         {
-            if(_preferences->getString(preference_mqtt_broker, "") != value)
+            _preferences->putInt(preference_mqtt_broker_port,  value.toInt());
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("MQTTUSER"))
+    {
+        value = request->getParam("MQTTUSER")->value();
+        if(value == "#")
+        {
+            clearMqttCredentials = true;
+        }
+        else
+        {
+            if(_preferences->getString(preference_mqtt_user, "") != value)
             {
-                _preferences->putString(preference_mqtt_broker, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_mqtt_user, value);
+
                 restartServicesReconnect = true;
             }
         }
-        else if(key == "MQTTPORT")
+    }
+    if(request->hasParam("MQTTPASS"))
+    {
+        value = request->getParam("MQTTPASS")->value();
+        if(value != "*")
         {
-            if(_preferences->getInt(preference_mqtt_broker_port, 0) !=  value.toInt())
+            if(_preferences->getString(preference_mqtt_password, "") != value)
             {
-                _preferences->putInt(preference_mqtt_broker_port,  value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_mqtt_password, value);
                 restartServicesReconnect = true;
             }
         }
-        else if(key == "MQTTUSER")
+    }
+    if(request->hasParam("MQTTPATH"))
+    {
+        value = request->getParam("MQTTPATH")->value();
+        if(_preferences->getString(preference_mqtt_lock_path, "") != value)
         {
-            if(value == "#")
-            {
-                clearMqttCredentials = true;
-            }
-            else
-            {
-                if(_preferences->getString(preference_mqtt_user, "") != value)
-                {
-                    _preferences->putString(preference_mqtt_user, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesReconnect = true;
-                }
-            }
+            _preferences->putString(preference_mqtt_lock_path, value);
+
+            restartServicesReconnect = true;
         }
-        else if(key == "MQTTPASS")
+    }
+    if(request->hasParam("MQTTCA"))
+    {
+        value = request->getParam("MQTTCA")->value();
+        if (!SPIFFS.begin(true))
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
         {
             if(value != "*")
             {
-                if(_preferences->getString(preference_mqtt_password, "") != value)
+                if(value != "")
                 {
-                    _preferences->putString(preference_mqtt_password, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesReconnect = true;
+                    File file = SPIFFS.open("/mqtt_ssl.ca", FILE_WRITE);
+                    if (!file)
+                    {
+                        Log->println("Failed to open /mqtt_ssl.ca for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /mqtt_ssl.ca");
+                        }
+                        file.close();
+                    }
                 }
-            }
-        }
-        else if(key == "MQTTPATH")
-        {
-            if(_preferences->getString(preference_mqtt_lock_path, "") != value)
-            {
-                _preferences->putString(preference_mqtt_lock_path, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
+                else
+                {
+                    if (!SPIFFS.remove("/mqtt_ssl.ca"))
+                    {
+                        Log->println("Failed to delete /mqtt_ssl.ca");
+                    }
+                }
                 restartServicesReconnect = true;
             }
         }
-        else if(key == "MQTTCA")
+    }
+    if(request->hasParam("MQTTCRT"))
+    {
+        value = request->getParam("MQTTCRT")->value();
+        if (!SPIFFS.begin(true))
         {
-            if (!SPIFFS.begin(true))
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            if(value != "*")
             {
-                Log->println("SPIFFS Mount Failed");
-            }
-            else
-            {
-                if(value != "*")
+                if(value != "")
                 {
-                    if(value != "")
+                    File file = SPIFFS.open("/mqtt_ssl.crt", FILE_WRITE);
+                    if (!file)
                     {
-                        File file = SPIFFS.open("/mqtt_ssl.ca", FILE_WRITE);
-                        if (!file)
-                        {
-                            Log->println("Failed to open /mqtt_ssl.ca for writing");
-                        }
-                        else
-                        {
-                            if (!file.print(value))
-                            {
-                                Log->println("Failed to write /mqtt_ssl.ca");
-                            }
-                            file.close();
-                        }
+                        Log->println("Failed to open /mqtt_ssl.crt for writing");
                     }
                     else
                     {
-                        if (!SPIFFS.remove("/mqtt_ssl.ca"))
+                        if (!file.print(value))
                         {
-                            Log->println("Failed to delete /mqtt_ssl.ca");
+                            Log->println("Failed to write /mqtt_ssl.crt");
                         }
+                        file.close();
                     }
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesReconnect = true;
                 }
+                else
+                {
+                    if (!SPIFFS.remove("/mqtt_ssl.crt"))
+                    {
+                        Log->println("Failed to delete /mqtt_ssl.crt");
+                    }
+                }
+                restartServicesReconnect = true;
             }
         }
-        else if(key == "MQTTCRT")
+    }
+    if(request->hasParam("MQTTKEY"))
+    {
+        value = request->getParam("MQTTKEY")->value();
+        if (!SPIFFS.begin(true))
         {
-            if (!SPIFFS.begin(true))
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            if(value != "*")
             {
-                Log->println("SPIFFS Mount Failed");
-            }
-            else
-            {
-                if(value != "*")
+                if(value != "")
                 {
-                    if(value != "")
+                    File file = SPIFFS.open("/mqtt_ssl.key", FILE_WRITE);
+                    if (!file)
                     {
-                        File file = SPIFFS.open("/mqtt_ssl.crt", FILE_WRITE);
-                        if (!file)
-                        {
-                            Log->println("Failed to open /mqtt_ssl.crt for writing");
-                        }
-                        else
-                        {
-                            if (!file.print(value))
-                            {
-                                Log->println("Failed to write /mqtt_ssl.crt");
-                            }
-                            file.close();
-                        }
+                        Log->println("Failed to open /mqtt_ssl.key for writing");
                     }
                     else
                     {
-                        if (!SPIFFS.remove("/mqtt_ssl.crt"))
+                        if (!file.print(value))
                         {
-                            Log->println("Failed to delete /mqtt_ssl.crt");
+                            Log->println("Failed to write /mqtt_ssl.key");
                         }
+                        file.close();
                     }
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesReconnect = true;
                 }
+                else
+                {
+                    if (!SPIFFS.remove("/mqtt_ssl.key"))
+                    {
+                        Log->println("Failed to delete /mqtt_ssl.key");
+                    }
+                }
+                restartServicesReconnect = true;
             }
         }
-        else if(key == "MQTTKEY")
+    }
+    if(request->hasParam("HTTPCRT") && nuki_hub_https_server_enabled)
+    {
+        value = request->getParam("HTTPCRT")->value();
+        if (!SPIFFS.begin(true))
         {
-            if (!SPIFFS.begin(true))
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            if(value != "*")
             {
-                Log->println("SPIFFS Mount Failed");
-            }
-            else
-            {
-                if(value != "*")
+                if(value != "")
                 {
-                    if(value != "")
+                    File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+                    if (!file)
                     {
-                        File file = SPIFFS.open("/mqtt_ssl.key", FILE_WRITE);
-                        if (!file)
-                        {
-                            Log->println("Failed to open /mqtt_ssl.key for writing");
-                        }
-                        else
-                        {
-                            if (!file.print(value))
-                            {
-                                Log->println("Failed to write /mqtt_ssl.key");
-                            }
-                            file.close();
-                        }
+                        Log->println("Failed to open /http_ssl.crt for writing");
                     }
                     else
                     {
-                        if (!SPIFFS.remove("/mqtt_ssl.key"))
+                        if (!file.print(value))
                         {
-                            Log->println("Failed to delete /mqtt_ssl.key");
+                            Log->println("Failed to write /http_ssl.crt");
                         }
+                        file.close();
                     }
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesReconnect = true;
                 }
+                else
+                {
+                    if (!SPIFFS.remove("/http_ssl.crt"))
+                    {
+                        Log->println("Failed to delete /http_ssl.crt");
+                    }
+                }
+                restartServicesNoReconnect = true;
             }
         }
-        else if(key == "HTTPCRT" && nuki_hub_https_server_enabled)
+    }
+    if(request->hasParam("HTTPKEY") && nuki_hub_https_server_enabled)
+    {
+        value = request->getParam("HTTPKEY")->value();
+        if (!SPIFFS.begin(true))
         {
-            if (!SPIFFS.begin(true))
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            if(value != "*")
             {
-                Log->println("SPIFFS Mount Failed");
-            }
-            else
-            {
-                if(value != "*")
+                if(value != "")
                 {
-                    if(value != "")
+                    File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+                    if (!file)
                     {
-                        File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
-                        if (!file)
-                        {
-                            Log->println("Failed to open /http_ssl.crt for writing");
-                        }
-                        else
-                        {
-                            if (!file.print(value))
-                            {
-                                Log->println("Failed to write /http_ssl.crt");
-                            }
-                            file.close();
-                        }
+                        Log->println("Failed to open /http_ssl.key for writing");
                     }
                     else
                     {
-                        if (!SPIFFS.remove("/http_ssl.crt"))
+                        if (!file.print(value))
                         {
-                            Log->println("Failed to delete /http_ssl.crt");
+                            Log->println("Failed to write /http_ssl.key");
                         }
+                        file.close();
                     }
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
                 }
-            }
-        }
-        else if(key == "HTTPKEY" && nuki_hub_https_server_enabled)
-        {
-            if (!SPIFFS.begin(true))
-            {
-                Log->println("SPIFFS Mount Failed");
-            }
-            else
-            {
-                if(value != "*")
+                else
                 {
-                    if(value != "")
+                    if (!SPIFFS.remove("/http_ssl.key"))
                     {
-                        File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
-                        if (!file)
-                        {
-                            Log->println("Failed to open /http_ssl.key for writing");
-                        }
-                        else
-                        {
-                            if (!file.print(value))
-                            {
-                                Log->println("Failed to write /http_ssl.key");
-                            }
-                            file.close();
-                        }
+                        Log->println("Failed to delete /http_ssl.key");
                     }
-                    else
-                    {
-                        if (!SPIFFS.remove("/http_ssl.key"))
-                        {
-                            Log->println("Failed to delete /http_ssl.key");
-                        }
-                    }
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
                 }
+                restartServicesNoReconnect = true;
             }
         }
-        else if(key == "HTTPGEN" && nuki_hub_https_server_enabled)
-        {
+    }
+    if(request->hasParam("HTTPGEN") && nuki_hub_https_server_enabled)
+    {
 #ifdef NUKI_HUB_HTTPS_SERVER
-            createSSLCertificate();
+        createSSLCertificate();
 #endif
-            Log->print("Setting changed: ");
-            Log->println(key);
+        configChanged = true;
+    }
+    if(request->hasParam("UPTIME"))
+    {
+        value = request->getParam("UPTIME")->value();
+        if(_preferences->getBool(preference_update_time, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_update_time, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("TIMESRV"))
+    {
+        value = request->getParam("TIMESRV")->value();
+        if(_preferences->getString(preference_time_server, "pool.ntp.org") != value)
+        {
+            _preferences->putString(preference_time_server, value);
+
             configChanged = true;
         }
-        else if(key == "UPTIME")
+    }
+    if(request->hasParam("NWHW"))
+    {
+        value = request->getParam("NWHW")->value();
+        if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
         {
-            if(_preferences->getBool(preference_update_time, false) != (value == "1"))
+            if(value.toInt() > 1)
             {
-                _preferences->putBool(preference_update_time, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
-        }
-        else if(key == "TIMESRV")
-        {
-            if(_preferences->getString(preference_time_server, "pool.ntp.org") != value)
-            {
-                _preferences->putString(preference_time_server, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWHW")
-        {
-            if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
-            {
-                if(value.toInt() > 1)
+                networkReconfigure = true;
+                if(value.toInt() != 11)
                 {
-                    networkReconfigure = true;
-                    if(value.toInt() != 11)
-                    {
-                        _preferences->putInt(preference_network_custom_phy, 0);
-                    }
-                }
-                _preferences->putInt(preference_network_hardware, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTPHY")
-        {
-            if(_preferences->getInt(preference_network_custom_phy, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_phy, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTADDR")
-        {
-            if(_preferences->getInt(preference_network_custom_addr, -1) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_addr, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTIRQ")
-        {
-            if(_preferences->getInt(preference_network_custom_irq, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_irq, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTRST")
-        {
-            if(_preferences->getInt(preference_network_custom_rst, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_rst, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTCS")
-        {
-            if(_preferences->getInt(preference_network_custom_cs, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_cs, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTSCK")
-        {
-            if(_preferences->getInt(preference_network_custom_sck, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_sck, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTMISO")
-        {
-            if(_preferences->getInt(preference_network_custom_miso, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_miso, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTMOSI")
-        {
-            if(_preferences->getInt(preference_network_custom_mosi, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_mosi, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTPWR")
-        {
-            if(_preferences->getInt(preference_network_custom_pwr, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_pwr, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTMDIO")
-        {
-            if(_preferences->getInt(preference_network_custom_mdio, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_mdio, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTMDC")
-        {
-            if(_preferences->getInt(preference_network_custom_mdc, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_mdc, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "NWCUSTCLK")
-        {
-            if(_preferences->getInt(preference_network_custom_clk, 0) != value.toInt())
-            {
-                networkReconfigure = true;
-                _preferences->putInt(preference_network_custom_clk, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "RSSI")
-        {
-            if(_preferences->getInt(preference_rssi_publish_interval, 60) != value.toInt())
-            {
-                _preferences->putInt(preference_rssi_publish_interval, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "HTTPSFQDN")
-        {
-            if(_preferences->getString(preference_https_fqdn, "") != value)
-            {
-                _preferences->putString(preference_https_fqdn, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
-        }
-        else if(key == "DUOHOST")
-        {
-            if(value != "*")
-            {
-                if(_preferences->getString(preference_cred_duo_host, "") != value)
-                {
-                    _preferences->putString(preference_cred_duo_host, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
-                    clearSession = true;
-                    newMFA = true;
+                    _preferences->putInt(preference_network_custom_phy, 0);
                 }
             }
+            _preferences->putInt(preference_network_hardware, value.toInt());
+
+            configChanged = true;
         }
-        else if(key == "DUOIKEY")
+    }
+    if(request->hasParam("NWCUSTPHY"))
+    {
+        value = request->getParam("NWCUSTPHY")->value();
+        if(_preferences->getInt(preference_network_custom_phy, 0) != value.toInt())
         {
-            if(value != "*")
-            {
-                if(_preferences->getString(preference_cred_duo_ikey, "") != value)
-                {
-                    _preferences->putString(preference_cred_duo_ikey, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
-                    clearSession = true;
-                    newMFA = true;
-                }
-            }
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_phy, value.toInt());
+
+            configChanged = true;
         }
-        else if(key == "DUOSKEY")
+    }
+    if(request->hasParam("NWCUSTADDR"))
+    {
+        value = request->getParam("NWCUSTADDR")->value();
+        if(_preferences->getInt(preference_network_custom_addr, -1) != value.toInt())
         {
-            if(value != "*")
-            {
-                if(_preferences->getString(preference_cred_duo_skey, "") != value)
-                {
-                    _preferences->putString(preference_cred_duo_skey, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
-                    clearSession = true;
-                    newMFA = true;
-                }
-            }
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_addr, value.toInt());
+
+            configChanged = true;
         }
-        else if(key == "DUOUSER")
+    }
+    if(request->hasParam("NWCUSTIRQ"))
+    {
+        value = request->getParam("NWCUSTIRQ")->value();
+        if(_preferences->getInt(preference_network_custom_irq, 0) != value.toInt())
         {
-            if(value != "*")
-            {
-                if(_preferences->getString(preference_cred_duo_user, "") != value)
-                {
-                    _preferences->putString(preference_cred_duo_user, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
-                    clearSession = true;
-                    newMFA = true;
-                }
-            }
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_irq, value.toInt());
+
+            configChanged = true;
         }
-        else if(key == "DUOENA")
+    }
+    if(request->hasParam("NWCUSTRST"))
+    {
+        value = request->getParam("NWCUSTRST")->value();
+        if(_preferences->getInt(preference_network_custom_rst, 0) != value.toInt())
         {
-            if(_preferences->getBool(preference_cred_duo_enabled, false) != (value == "1"))
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_rst, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTCS"))
+    {
+        value = request->getParam("NWCUSTCS")->value();
+        if(_preferences->getInt(preference_network_custom_cs, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_cs, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTSCK"))
+    {
+        value = request->getParam("NWCUSTSCK")->value();
+        if(_preferences->getInt(preference_network_custom_sck, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_sck, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTMISO"))
+    {
+        value = request->getParam("NWCUSTMISO")->value();
+        if(_preferences->getInt(preference_network_custom_miso, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_miso, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTMOSI"))
+    {
+        value = request->getParam("NWCUSTMOSI")->value();
+        if(_preferences->getInt(preference_network_custom_mosi, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_mosi, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTPWR"))
+    {
+        value = request->getParam("NWCUSTPWR")->value();
+        if(_preferences->getInt(preference_network_custom_pwr, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_pwr, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTMDIO"))
+    {
+        value = request->getParam("NWCUSTMDIO")->value();
+        if(_preferences->getInt(preference_network_custom_mdio, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_mdio, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTMDC"))
+    {
+        value = request->getParam("NWCUSTMDC")->value();
+        if(_preferences->getInt(preference_network_custom_mdc, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_mdc, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NWCUSTCLK"))
+    {
+        value = request->getParam("NWCUSTCLK")->value();
+        if(_preferences->getInt(preference_network_custom_clk, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_clk, value.toInt());
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("RSSI"))
+    {
+        value = request->getParam("RSSI")->value();
+        if(_preferences->getInt(preference_rssi_publish_interval, 60) != value.toInt())
+        {
+            _preferences->putInt(preference_rssi_publish_interval, value.toInt());
+
+        }
+    }
+    if(request->hasParam("HTTPSFQDN"))
+    {
+        value = request->getParam("HTTPSFQDN")->value();
+        if(_preferences->getString(preference_https_fqdn, "") != value)
+        {
+            _preferences->putString(preference_https_fqdn, value);
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DUOHOST"))
+    {
+        value = request->getParam("DUOHOST")->value();
+        if(value != "*")
+        {
+            if(_preferences->getString(preference_cred_duo_host, "") != value)
             {
-                _preferences->putBool(preference_cred_duo_enabled, (value == "1"));
-                if (value == "1")
-                {
-                    _preferences->putBool(preference_update_time, true);
-                }
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_cred_duo_host, value);
                 restartServicesNoReconnect = true;
                 clearSession = true;
                 newMFA = true;
             }
         }
-        else if(key == "DUOBYPASS")
+    }
+    if(request->hasParam("DUOIKEY"))
+    {
+        value = request->getParam("DUOIKEY")->value();
+        if(value != "*")
         {
-            if(_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) != (value == "1"))
+            if(_preferences->getString(preference_cred_duo_ikey, "") != value)
             {
-                _preferences->putBool(preference_cred_bypass_boot_btn_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
-        }
-        else if(key == "DUOBYPASSHIGH")
-        {
-            if(_preferences->getInt(preference_cred_bypass_gpio_high, -1) != value.toInt())
-            {
-                _preferences->putInt(preference_cred_bypass_gpio_high, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
-        }
-        else if(key == "DUOBYPASSLOW")
-        {
-            if(_preferences->getInt(preference_cred_bypass_gpio_low, -1) != value.toInt())
-            {
-                _preferences->putInt(preference_cred_bypass_gpio_low, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
-        }
-        else if(key == "DUOAPPROVAL")
-        {
-            if(_preferences->getBool(preference_cred_duo_approval, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_cred_duo_approval, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
-        }
-        else if(key == "CREDLFTM")
-        {
-            if(_preferences->getInt(preference_cred_session_lifetime, 3600) != value.toInt())
-            {
-                _preferences->putInt(preference_cred_session_lifetime, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_cred_duo_ikey, value);
                 restartServicesNoReconnect = true;
                 clearSession = true;
+                newMFA = true;
             }
         }
-        else if(key == "CREDLFTMRMBR")
+    }
+    if(request->hasParam("DUOSKEY"))
+    {
+        value = request->getParam("DUOSKEY")->value();
+        if(value != "*")
         {
-            if(_preferences->getInt(preference_cred_session_lifetime_remember, 720) != value.toInt())
+            if(_preferences->getString(preference_cred_duo_skey, "") != value)
             {
-                _preferences->putInt(preference_cred_session_lifetime_remember, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_cred_duo_skey, value);
                 restartServicesNoReconnect = true;
                 clearSession = true;
+                newMFA = true;
             }
         }
-        else if(key == "CREDDUOLFTM")
+    }
+    if(request->hasParam("DUOUSER"))
+    {
+        value = request->getParam("DUOUSER")->value();
+        if(value != "*")
         {
-            if(_preferences->getInt(preference_cred_session_lifetime_duo, 3600) != value.toInt())
+            if(_preferences->getString(preference_cred_duo_user, "") != value)
             {
-                _preferences->putInt(preference_cred_session_lifetime_duo, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_cred_duo_user, value);
                 restartServicesNoReconnect = true;
                 clearSession = true;
+                newMFA = true;
             }
         }
-        else if(key == "CREDDUOLFTMRMBR")
+    }
+    if(request->hasParam("DUOENA"))
+    {
+        value = request->getParam("DUOENA")->value();
+        if(_preferences->getBool(preference_cred_duo_enabled, false) != (value == "1"))
         {
-            if(_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720) != value.toInt())
+            _preferences->putBool(preference_cred_duo_enabled, (value == "1"));
+            if (value == "1")
             {
-                _preferences->putInt(preference_cred_session_lifetime_duo_remember, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-                clearSession = true;
+                _preferences->putBool(preference_update_time, true);
             }
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+            newMFA = true;
         }
-        else if(key == "CREDTOTPLFTM")
+    }
+    if(request->hasParam("DUOBYPASS"))
+    {
+        value = request->getParam("DUOBYPASS")->value();
+        if(_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) != (value == "1"))
         {
-            if(_preferences->getInt(preference_cred_session_lifetime_totp, 3600) != value.toInt())
+            _preferences->putBool(preference_cred_bypass_boot_btn_enabled, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DUOBYPASSHIGH"))
+    {
+        value = request->getParam("DUOBYPASSHIGH")->value();
+        if(_preferences->getInt(preference_cred_bypass_gpio_high, -1) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_bypass_gpio_high, value.toInt());
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DUOBYPASSLOW"))
+    {
+        value = request->getParam("DUOBYPASSLOW")->value();
+        if(_preferences->getInt(preference_cred_bypass_gpio_low, -1) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_bypass_gpio_low, value.toInt());
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DUOAPPROVAL"))
+    {
+        value = request->getParam("DUOAPPROVAL")->value();
+        if(_preferences->getBool(preference_cred_duo_approval, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_cred_duo_approval, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("CREDLFTM"))
+    {
+        value = request->getParam("CREDLFTM")->value();
+        if(_preferences->getInt(preference_cred_session_lifetime, 3600) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_session_lifetime, value.toInt());
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+        }
+    }
+    if(request->hasParam("CREDLFTMRMBR"))
+    {
+        value = request->getParam("CREDLFTMRMBR")->value();
+        if(_preferences->getInt(preference_cred_session_lifetime_remember, 720) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_session_lifetime_remember, value.toInt());
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+        }
+    }
+    if(request->hasParam("CREDDUOLFTM"))
+    {
+        value = request->getParam("CREDDUOLFTM")->value();
+        if(_preferences->getInt(preference_cred_session_lifetime_duo, 3600) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_session_lifetime_duo, value.toInt());
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+        }
+    }
+    if(request->hasParam("CREDDUOLFTMRMBR"))
+    {
+        value = request->getParam("CREDDUOLFTMRMBR")->value();
+        if(_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_session_lifetime_duo_remember, value.toInt());
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+        }
+    }
+    if(request->hasParam("CREDTOTPLFTM"))
+    {
+        value = request->getParam("CREDTOTPLFTM")->value();
+        if(_preferences->getInt(preference_cred_session_lifetime_totp, 3600) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_session_lifetime_totp, value.toInt());
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+        }
+    }
+    if(request->hasParam("CREDTOTPLFTMRMBR"))
+    {
+        value = request->getParam("CREDTOTPLFTMRMBR")->value();
+        if(_preferences->getInt(preference_cred_session_lifetime_totp_remember, 720) != value.toInt())
+        {
+            _preferences->putInt(preference_cred_session_lifetime_totp_remember, value.toInt());
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+        }
+    }
+    if(request->hasParam("HADEVDISC"))
+    {
+        value = request->getParam("HADEVDISC")->value();
+        if(_preferences->getBool(preference_hass_device_discovery, false) != (value == "1"))
+        {
+            _network->disableHASS();
+            _preferences->putBool(preference_hass_device_discovery, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("ENHADISC"))
+    {
+        value = request->getParam("ENHADISC")->value();
+        if(_preferences->getBool(preference_mqtt_hass_enabled, false) != (value == "1"))
+        {
+            _network->disableHASS();
+            _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("HASSDISCOVERY"))
+    {
+        value = request->getParam("HASSDISCOVERY")->value();
+        if(_preferences->getString(preference_mqtt_hass_discovery, "") != value)
+        {
+            _network->disableHASS();
+            _preferences->putString(preference_mqtt_hass_discovery, value);
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("OPENERCONT"))
+    {
+        value = request->getParam("OPENERCONT")->value();
+        if(_preferences->getBool(preference_opener_continuous_mode, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_opener_continuous_mode, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("HASSCUURL"))
+    {
+        value = request->getParam("HASSCUURL")->value();
+        if(_preferences->getString(preference_mqtt_hass_cu_url, "") != value)
+        {
+            _preferences->putString(preference_mqtt_hass_cu_url, value);
+
+        }
+    }
+    if(request->hasParam("HOSTNAME"))
+    {
+        value = request->getParam("HOSTNAME")->value();
+        if(_preferences->getString(preference_hostname, "") != value)
+        {
+            _preferences->putString(preference_hostname, value);
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("NETTIMEOUT"))
+    {
+        value = request->getParam("NETTIMEOUT")->value();
+        if(_preferences->getInt(preference_network_timeout, 60) != value.toInt())
+        {
+            _preferences->putInt(preference_network_timeout, value.toInt());
+
+        }
+    }
+    if(request->hasParam("FINDBESTRSSI"))
+    {
+        value = request->getParam("FINDBESTRSSI")->value();
+        if(_preferences->getBool(preference_find_best_rssi, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_find_best_rssi, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("RSTDISC"))
+    {
+        value = request->getParam("RSTDISC")->value();
+        if(_preferences->getBool(preference_restart_on_disconnect, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("MQTTLOG"))
+    {
+        value = request->getParam("MQTTLOG")->value();
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("MQTTSENA"))
+    {
+        value = request->getParam("MQTTSENA")->value();
+        if(_preferences->getBool(preference_mqtt_ssl_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_mqtt_ssl_enabled, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("WEBLOG"))
+    {
+        value = request->getParam("WEBLOG")->value();
+        if(_preferences->getBool(preference_webserial_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_webserial_enabled, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("FRCHSTUPD"))
+    {
+        value = request->getParam("FRCHSTUPD")->value();
+        if(_preferences->getBool(preference_force_hosted_update, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_force_hosted_update, (value == "1"));
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("CHECKUPDATE"))
+    {
+        value = request->getParam("CHECKUPDATE")->value();
+        if(_preferences->getBool(preference_check_updates, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_check_updates, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("UPDATEMQTT"))
+    {
+        value = request->getParam("UPDATEMQTT")->value();
+        if(_preferences->getBool(preference_update_from_mqtt, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_update_from_mqtt, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("OFFHYBRID"))
+    {
+        value = request->getParam("OFFHYBRID")->value();
+        if(_preferences->getBool(preference_official_hybrid_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_official_hybrid_enabled, (value == "1"));
+            if((value == "1"))
             {
-                _preferences->putInt(preference_cred_session_lifetime_totp, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-                clearSession = true;
+                _preferences->putBool(preference_register_as_app, true);
             }
+
+            restartServicesReconnect = true;
         }
-        else if(key == "CREDTOTPLFTMRMBR")
+    }
+    if(request->hasParam("HYBRIDACT"))
+    {
+        value = request->getParam("HYBRIDACT")->value();
+        if(_preferences->getBool(preference_official_hybrid_actions, false) != (value == "1"))
         {
-            if(_preferences->getInt(preference_cred_session_lifetime_totp_remember, 720) != value.toInt())
+            _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
+            if(value == "1")
             {
-                _preferences->putInt(preference_cred_session_lifetime_totp_remember, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-                clearSession = true;
+                _preferences->putBool(preference_register_as_app, true);
             }
+
         }
-        else if(key == "HADEVDISC")
+    }
+    if(request->hasParam("HYBRIDTIMER"))
+    {
+        value = request->getParam("HYBRIDTIMER")->value();
+        if(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600) != value.toInt())
         {
-            if(_preferences->getBool(preference_hass_device_discovery, false) != (value == "1"))
-            {
-                _network->disableHASS();
-                _preferences->putBool(preference_hass_device_discovery, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
+            _preferences->putInt(preference_query_interval_hybrid_lockstate, value.toInt());
+
         }
-        else if(key == "ENHADISC")
+    }
+    if(request->hasParam("HYBRIDRETRY"))
+    {
+        value = request->getParam("HYBRIDRETRY")->value();
+        if(_preferences->getBool(preference_official_hybrid_retry, false) != (value == "1"))
         {
-            if(_preferences->getBool(preference_mqtt_hass_enabled, false) != (value == "1"))
-            {
-                _network->disableHASS();
-                _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
+            _preferences->putBool(preference_official_hybrid_retry, (value == "1"));
+
         }
-        else if(key == "HASSDISCOVERY")
+    }
+    if(request->hasParam("HYBRIDREBOOT"))
+    {
+        value = request->getParam("HYBRIDREBOOT")->value();
+        if(_preferences->getBool(preference_hybrid_reboot_on_disconnect, false) != (value == "1"))
         {
-            if(_preferences->getString(preference_mqtt_hass_discovery, "") != value)
-            {
-                _network->disableHASS();
-                _preferences->putString(preference_mqtt_hass_discovery, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
+            _preferences->putBool(preference_hybrid_reboot_on_disconnect, (value == "1"));
+
+            restartServicesReconnect = true;
         }
-        else if(key == "OPENERCONT")
+    }
+    if(request->hasParam("DISNONJSON"))
+    {
+        value = request->getParam("DISNONJSON")->value();
+        if(_preferences->getBool(preference_disable_non_json, false) != (value == "1"))
         {
-            if(_preferences->getBool(preference_opener_continuous_mode, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_opener_continuous_mode, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
+            _preferences->putBool(preference_disable_non_json, (value == "1"));
+
+            restartServicesReconnect = true;
         }
-        else if(key == "HASSCUURL")
+    }
+    if(request->hasParam("DHCPENA"))
+    {
+        value = request->getParam("DHCPENA")->value();
+        if(_preferences->getBool(preference_ip_dhcp_enabled, true) != (value == "1"))
         {
-            if(_preferences->getString(preference_mqtt_hass_cu_url, "") != value)
-            {
-                _preferences->putString(preference_mqtt_hass_cu_url, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
+            _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
+
+            configChanged = true;
         }
-        else if(key == "HOSTNAME")
+    }
+    if(request->hasParam("IPADDR"))
+    {
+        value = request->getParam("IPADDR")->value();
+        if(_preferences->getString(preference_ip_address, "") != value)
         {
-            if(_preferences->getString(preference_hostname, "") != value)
-            {
-                _preferences->putString(preference_hostname, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
+            _preferences->putString(preference_ip_address, value);
+
+            configChanged = true;
         }
-        else if(key == "NETTIMEOUT")
+    }
+    if(request->hasParam("IPSUB"))
+    {
+        value = request->getParam("IPSUB")->value();
+        if(_preferences->getString(preference_ip_subnet, "") != value)
         {
-            if(_preferences->getInt(preference_network_timeout, 60) != value.toInt())
-            {
-                _preferences->putInt(preference_network_timeout, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
+            _preferences->putString(preference_ip_subnet, value);
+
+            configChanged = true;
         }
-        else if(key == "FINDBESTRSSI")
+    }
+    if(request->hasParam("IPGTW"))
+    {
+        value = request->getParam("IPGTW")->value();
+        if(_preferences->getString(preference_ip_gateway, "") != value)
         {
-            if(_preferences->getBool(preference_find_best_rssi, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_find_best_rssi, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
+            _preferences->putString(preference_ip_gateway, value);
+
+            configChanged = true;
         }
-        else if(key == "RSTDISC")
+    }
+    if(request->hasParam("DNSSRV"))
+    {
+        value = request->getParam("DNSSRV")->value();
+        if(_preferences->getString(preference_ip_dns_server, "") != value)
         {
-            if(_preferences->getBool(preference_restart_on_disconnect, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
+            _preferences->putString(preference_ip_dns_server, value);
+
+            configChanged = true;
         }
-        else if(key == "MQTTLOG")
+    }
+    if(request->hasParam("LSTINT"))
+    {
+        value = request->getParam("LSTINT")->value();
+        if(_preferences->getInt(preference_query_interval_lockstate, 1800) != value.toInt())
         {
-            if(_preferences->getBool(preference_mqtt_log_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
+            _preferences->putInt(preference_query_interval_lockstate, value.toInt());
+
         }
-        else if(key == "MQTTSENA")
+    }
+    if(request->hasParam("CFGINT"))
+    {
+        value = request->getParam("CFGINT")->value();
+        if(_preferences->getInt(preference_query_interval_configuration, 3600) != value.toInt())
         {
-            if(_preferences->getBool(preference_mqtt_ssl_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_mqtt_ssl_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
+            _preferences->putInt(preference_query_interval_configuration, value.toInt());
+
         }
-        else if(key == "WEBLOG")
+    }
+    if(request->hasParam("BATINT"))
+    {
+        value = request->getParam("BATINT")->value();
+        if(_preferences->getInt(preference_query_interval_battery, 1800) != value.toInt())
         {
-            if(_preferences->getBool(preference_webserial_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_webserial_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
+            _preferences->putInt(preference_query_interval_battery, value.toInt());
+
         }
-        else if(key == "FRCHSTUPD")
+    }
+    if(request->hasParam("KPINT"))
+    {
+        value = request->getParam("KPINT")->value();
+        if(_preferences->getInt(preference_query_interval_keypad, 1800) != value.toInt())
         {
-            if(_preferences->getBool(preference_force_hosted_update, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_force_hosted_update, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
+            _preferences->putInt(preference_query_interval_keypad, value.toInt());
+
         }
-        else if(key == "CHECKUPDATE")
+    }
+    if(request->hasParam("NRTRY"))
+    {
+        value = request->getParam("NRTRY")->value();
+        if(_preferences->getInt(preference_command_nr_of_retries, 3) != value.toInt())
         {
-            if(_preferences->getBool(preference_check_updates, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_check_updates, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
+            _preferences->putInt(preference_command_nr_of_retries, value.toInt());
+
         }
-        else if(key == "UPDATEMQTT")
+    }
+    if(request->hasParam("TRYDLY"))
+    {
+        value = request->getParam("TRYDLY")->value();
+        if(_preferences->getInt(preference_command_retry_delay, 100) != value.toInt())
         {
-            if(_preferences->getBool(preference_update_from_mqtt, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_update_from_mqtt, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
+            _preferences->putInt(preference_command_retry_delay, value.toInt());
+
         }
-        else if(key == "OFFHYBRID")
-        {
-            if(_preferences->getBool(preference_official_hybrid_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_official_hybrid_enabled, (value == "1"));
-                if((value == "1"))
-                {
-                    _preferences->putBool(preference_register_as_app, true);
-                }
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "HYBRIDACT")
-        {
-            if(_preferences->getBool(preference_official_hybrid_actions, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
-                if(value == "1")
-                {
-                    _preferences->putBool(preference_register_as_app, true);
-                }
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "HYBRIDTIMER")
-        {
-            if(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600) != value.toInt())
-            {
-                _preferences->putInt(preference_query_interval_hybrid_lockstate, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "HYBRIDRETRY")
-        {
-            if(_preferences->getBool(preference_official_hybrid_retry, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_official_hybrid_retry, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "HYBRIDREBOOT")
-        {
-            if(_preferences->getBool(preference_hybrid_reboot_on_disconnect, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_hybrid_reboot_on_disconnect, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "DISNONJSON")
-        {
-            if(_preferences->getBool(preference_disable_non_json, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_disable_non_json, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "DHCPENA")
-        {
-            if(_preferences->getBool(preference_ip_dhcp_enabled, true) != (value == "1"))
-            {
-                _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "IPADDR")
-        {
-            if(_preferences->getString(preference_ip_address, "") != value)
-            {
-                _preferences->putString(preference_ip_address, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "IPSUB")
-        {
-            if(_preferences->getString(preference_ip_subnet, "") != value)
-            {
-                _preferences->putString(preference_ip_subnet, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "IPGTW")
-        {
-            if(_preferences->getString(preference_ip_gateway, "") != value)
-            {
-                _preferences->putString(preference_ip_gateway, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "DNSSRV")
-        {
-            if(_preferences->getString(preference_ip_dns_server, "") != value)
-            {
-                _preferences->putString(preference_ip_dns_server, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                configChanged = true;
-            }
-        }
-        else if(key == "LSTINT")
-        {
-            if(_preferences->getInt(preference_query_interval_lockstate, 1800) != value.toInt())
-            {
-                _preferences->putInt(preference_query_interval_lockstate, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "CFGINT")
-        {
-            if(_preferences->getInt(preference_query_interval_configuration, 3600) != value.toInt())
-            {
-                _preferences->putInt(preference_query_interval_configuration, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "BATINT")
-        {
-            if(_preferences->getInt(preference_query_interval_battery, 1800) != value.toInt())
-            {
-                _preferences->putInt(preference_query_interval_battery, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "KPINT")
-        {
-            if(_preferences->getInt(preference_query_interval_keypad, 1800) != value.toInt())
-            {
-                _preferences->putInt(preference_query_interval_keypad, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "NRTRY")
-        {
-            if(_preferences->getInt(preference_command_nr_of_retries, 3) != value.toInt())
-            {
-                _preferences->putInt(preference_command_nr_of_retries, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "TRYDLY")
-        {
-            if(_preferences->getInt(preference_command_retry_delay, 100) != value.toInt())
-            {
-                _preferences->putInt(preference_command_retry_delay, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "TXPWR")
-        {
+    }
+    if(request->hasParam("TXPWR"))
+    {
+        value = request->getParam("TXPWR")->value();
 #if defined(CONFIG_IDF_TARGET_ESP32)
-            if(value.toInt() >= -12 && value.toInt() <= 9)
+        if(value.toInt() >= -12 && value.toInt() <= 9)
 #else
-            if(value.toInt() >= -12 && value.toInt() <= 20)
+        if(value.toInt() >= -12 && value.toInt() <= 20)
 #endif
+        {
+            if(_preferences->getInt(preference_ble_tx_power, 9) != value.toInt())
             {
-                if(_preferences->getInt(preference_ble_tx_power, 9) != value.toInt())
-                {
-                    _preferences->putInt(preference_ble_tx_power, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
+                _preferences->putInt(preference_ble_tx_power, value.toInt());
             }
         }
-        else if(key == "RSBC")
+    }
+    if(request->hasParam("RSBC"))
+    {
+        value = request->getParam("RSBC")->value();
+        if(_preferences->getInt(preference_restart_ble_beacon_lost, 60) != value.toInt())
         {
-            if(_preferences->getInt(preference_restart_ble_beacon_lost, 60) != value.toInt())
-            {
-                _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
+            _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
+
         }
-        else if(key == "TSKNTWK")
+    }
+    if(request->hasParam("TSKNTWK"))
+    {
+        value = request->getParam("TSKNTWK")->value();
+        if(value.toInt() > 12287 && value.toInt() < 65537)
         {
-            if(value.toInt() > 12287 && value.toInt() < 65537)
+            if(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE) != value.toInt())
             {
-                if(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE) != value.toInt())
-                {
-                    _preferences->putInt(preference_task_size_network, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    configChanged = true;
-                }
-            }
-        }
-        else if(key == "TSKNUKI")
-        {
-            if(value.toInt() > 8191 && value.toInt() < 65537)
-            {
-                if(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE) != value.toInt())
-                {
-                    _preferences->putInt(preference_task_size_nuki, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    configChanged = true;
-                }
-            }
-        }
-        else if(key == "BLEGENTIMEOUT")
-        {
-            if(value.toInt() > 2999 && value.toInt() < 65537)
-            {
-                if(_preferences->getInt(preference_ble_general_timeout, 10000) != value.toInt())
-                {
-                    _preferences->putInt(preference_ble_general_timeout, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
-            }
-        }
-        else if(key == "BLECMDTIMEOUT")
-        {
-            if(value.toInt() > 2999 && value.toInt() < 65537)
-            {
-                if(_preferences->getInt(preference_ble_command_timeout, 3000) != value.toInt())
-                {
-                    _preferences->putInt(preference_ble_command_timeout, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
-            }
-        }
-        else if(key == "ALMAX")
-        {
-            if(value.toInt() > 0 && value.toInt() < 101)
-            {
-                if(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG) != value.toInt())
-                {
-                    _preferences->putInt(preference_authlog_max_entries, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
-            }
-        }
-        else if(key == "KPMAX")
-        {
-            if(value.toInt() > 0 && value.toInt() < 201)
-            {
-                if(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD) != value.toInt())
-                {
-                    _preferences->putInt(preference_keypad_max_entries, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
-            }
-        }
-        else if(key == "TCMAX")
-        {
-            if(value.toInt() > 0 && value.toInt() < 101)
-            {
-                if(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL) != value.toInt())
-                {
-                    _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
-            }
-        }
-        else if(key == "AUTHMAX")
-        {
-            if(value.toInt() > 0 && value.toInt() < 101)
-            {
-                if(_preferences->getInt(preference_auth_max_entries, MAX_AUTH) != value.toInt())
-                {
-                    _preferences->putInt(preference_auth_max_entries, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
-            }
-        }
-        else if(key == "BUFFSIZE")
-        {
-            if(value.toInt() > 4095 && value.toInt() < 65537)
-            {
-                if(_preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) != value.toInt())
-                {
-                    _preferences->putInt(preference_buffer_size, value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    configChanged = true;
-                }
-            }
-        }
-        else if(key == "BTLPRST")
-        {
-            if(_preferences->getBool(preference_enable_bootloop_reset, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "DISNTWNOCON")
-        {
-            if(_preferences->getBool(preference_disable_network_not_connected, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_disable_network_not_connected, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "OTAUPD")
-        {
-            if(_preferences->getString(preference_ota_updater_url, "") != value)
-            {
-                _preferences->putString(preference_ota_updater_url, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putInt(preference_task_size_network, value.toInt());
                 configChanged = true;
             }
         }
-        else if(key == "OTAMAIN")
+    }
+    if(request->hasParam("TSKNUKI"))
+    {
+        value = request->getParam("TSKNUKI")->value();
+        if(value.toInt() > 8191 && value.toInt() < 65537)
         {
-            if(_preferences->getString(preference_ota_main_url, "") != value)
+            if(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE) != value.toInt())
             {
-                _preferences->putString(preference_ota_main_url, value);
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putInt(preference_task_size_nuki, value.toInt());
                 configChanged = true;
             }
         }
-        else if(key == "SHOWSECRETS")
+    }
+    if(request->hasParam("BLEGENTIMEOUT"))
+    {
+        value = request->getParam("BLEGENTIMEOUT")->value();
+        if(value.toInt() > 2999 && value.toInt() < 65537)
         {
-            if(_preferences->getBool(preference_show_secrets, false) != (value == "1"))
+            if(_preferences->getInt(preference_ble_general_timeout, 10000) != value.toInt())
             {
-                _preferences->putBool(preference_show_secrets, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putInt(preference_ble_general_timeout, value.toInt());
             }
         }
-        else if(key == "DBGCONN")
+    }
+    if(request->hasParam("BLECMDTIMEOUT"))
+    {
+        value = request->getParam("BLECMDTIMEOUT")->value();
+        if(value.toInt() > 2999 && value.toInt() < 65537)
         {
-            if(_preferences->getBool(preference_debug_connect, false) != (value == "1"))
+            if(_preferences->getInt(preference_ble_command_timeout, 3000) != value.toInt())
             {
-                _preferences->putBool(preference_debug_connect, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
+                _preferences->putInt(preference_ble_command_timeout, value.toInt());
             }
         }
-        else if(key == "DBGCOMMU")
+    }
+    if(request->hasParam("ALMAX"))
+    {
+        value = request->getParam("ALMAX")->value();
+        if(value.toInt() > 0 && value.toInt() < 101)
         {
-            if(_preferences->getBool(preference_debug_communication, false) != (value == "1"))
+            if(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG) != value.toInt())
             {
-                _preferences->putBool(preference_debug_communication, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
+                _preferences->putInt(preference_authlog_max_entries, value.toInt());
             }
         }
-        else if(key == "DBGHEAP")
+    }
+    if(request->hasParam("KPMAX"))
+    {
+        value = request->getParam("KPMAX")->value();
+        if(value.toInt() > 0 && value.toInt() < 201)
         {
-            if(_preferences->getBool(preference_publish_debug_info, false) != (value == "1"))
+            if(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD) != value.toInt())
             {
-                _preferences->putBool(preference_publish_debug_info, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
+                _preferences->putInt(preference_keypad_max_entries, value.toInt());
             }
         }
-        else if(key == "DBGREAD")
+    }
+    if(request->hasParam("TCMAX"))
+    {
+        value = request->getParam("TCMAX")->value();
+        if(value.toInt() > 0 && value.toInt() < 101)
         {
-            if(_preferences->getBool(preference_debug_readable_data, false) != (value == "1"))
+            if(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL) != value.toInt())
             {
-                _preferences->putBool(preference_debug_readable_data, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
+                _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
             }
         }
-        else if(key == "DBGHEX")
+    }
+    if(request->hasParam("AUTHMAX"))
+    {
+        value = request->getParam("AUTHMAX")->value();
+        if(value.toInt() > 0 && value.toInt() < 101)
         {
-            if(_preferences->getBool(preference_debug_hex_data, false) != (value == "1"))
+            if(_preferences->getInt(preference_auth_max_entries, MAX_AUTH) != value.toInt())
             {
-                _preferences->putBool(preference_debug_hex_data, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
+                _preferences->putInt(preference_auth_max_entries, value.toInt());
             }
         }
-        else if(key == "DBGCOMM")
+    }
+    if(request->hasParam("BUFFSIZE"))
+    {
+        value = request->getParam("BUFFSIZE")->value();
+        if(value.toInt() > 4095 && value.toInt() < 65537)
         {
-            if(_preferences->getBool(preference_debug_command, false) != (value == "1"))
+            if(_preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) != value.toInt())
             {
-                _preferences->putBool(preference_debug_command, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
+                _preferences->putInt(preference_buffer_size, value.toInt());
+                configChanged = true;
             }
         }
-        else if(key == "LCKFORCEID")
+    }
+    if(request->hasParam("BTLPRST"))
+    {
+        value = request->getParam("BTLPRST")->value();
+        if(_preferences->getBool(preference_enable_bootloop_reset, false) != (value == "1"))
         {
-            if(_preferences->getBool(preference_lock_force_id, false) != (value == "1"))
+            _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("DISNTWNOCON"))
+    {
+        value = request->getParam("DISNTWNOCON")->value();
+        if(_preferences->getBool(preference_disable_network_not_connected, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_disable_network_not_connected, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("OTAUPD"))
+    {
+        value = request->getParam("OTAUPD")->value();
+        if(_preferences->getString(preference_ota_updater_url, "") != value)
+        {
+            _preferences->putString(preference_ota_updater_url, value);
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("OTAMAIN"))
+    {
+        value = request->getParam("OTAMAIN")->value();
+        if(_preferences->getString(preference_ota_main_url, "") != value)
+        {
+            _preferences->putString(preference_ota_main_url, value);
+
+            configChanged = true;
+        }
+    }
+    if(request->hasParam("SHOWSECRETS"))
+    {
+        value = request->getParam("SHOWSECRETS")->value();
+        if(_preferences->getBool(preference_show_secrets, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_show_secrets, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("DBGCONN"))
+    {
+        value = request->getParam("DBGCONN")->value();
+        if(_preferences->getBool(preference_debug_connect, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_debug_connect, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DBGCOMMU"))
+    {
+        value = request->getParam("DBGCOMMU")->value();
+        if(_preferences->getBool(preference_debug_communication, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_debug_communication, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DBGHEAP"))
+    {
+        value = request->getParam("DBGHEAP")->value();
+        if(_preferences->getBool(preference_publish_debug_info, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_publish_debug_info, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DBGREAD"))
+    {
+        value = request->getParam("DBGREAD")->value();
+        if(_preferences->getBool(preference_debug_readable_data, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_debug_readable_data, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DBGHEX"))
+    {
+        value = request->getParam("DBGHEX")->value();
+        if(_preferences->getBool(preference_debug_hex_data, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_debug_hex_data, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("DBGCOMM"))
+    {
+        value = request->getParam("DBGCOMM")->value();
+        if(_preferences->getBool(preference_debug_command, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_debug_command, (value == "1"));
+
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("LCKFORCEID"))
+    {
+        value = request->getParam("LCKFORCEID")->value();
+        if(_preferences->getBool(preference_lock_force_id, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_lock_force_id, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("LCKFORCEKP"))
+    {
+        value = request->getParam("LCKFORCEKP")->value();
+        if(_preferences->getBool(preference_lock_force_keypad, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_lock_force_keypad, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("LCKFORCEDS"))
+    {
+        value = request->getParam("LCKFORCEDS")->value();
+        if(_preferences->getBool(preference_lock_force_doorsensor, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_lock_force_doorsensor, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("OPFORCEID"))
+    {
+        value = request->getParam("OPFORCEID")->value();
+        if(_preferences->getBool(preference_opener_force_id, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_opener_force_id, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("OPFORCEKP"))
+    {
+        value = request->getParam("OPFORCEKP")->value();
+        if(_preferences->getBool(preference_opener_force_keypad, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_opener_force_keypad, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("ACLLVLCHANGED"))
+    {
+        aclLvlChanged = true;
+    }
+    if(request->hasParam("CONFPUB"))
+    {
+        value = request->getParam("CONFPUB")->value();
+        if(_preferences->getBool(preference_conf_info_enabled, true) != (value == "1"))
+        {
+            _preferences->putBool(preference_conf_info_enabled, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("CONFNHPUB"))
+    {
+        value = request->getParam("CONFNHPUB")->value();
+        if(_preferences->getBool(preference_publish_config, false) != (value == "1"))
+        {
+            if(_preferences->getBool(preference_config_from_mqtt, false) && _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) < 8192)
             {
-                _preferences->putBool(preference_lock_force_id, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putInt(preference_buffer_size, 8192);
             }
+            _preferences->putBool(preference_publish_config, (value == "1"));
+
+            restartServicesReconnect = true;
         }
-        else if(key == "LCKFORCEKP")
+    }
+    if(request->hasParam("CONFNHCTRL"))
+    {
+        value = request->getParam("CONFNHCTRL")->value();
+        if(_preferences->getBool(preference_config_from_mqtt, false) != (value == "1"))
         {
-            if(_preferences->getBool(preference_lock_force_keypad, false) != (value == "1"))
+            if(_preferences->getBool(preference_config_from_mqtt, false) && _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) < 8192)
             {
-                _preferences->putBool(preference_lock_force_keypad, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putInt(preference_buffer_size, 8192);
             }
+            _preferences->putBool(preference_config_from_mqtt, (value == "1"));
+
+            restartServicesReconnect = true;
         }
-        else if(key == "LCKFORCEDS")
+    }
+    if(request->hasParam("KPPUB"))
+    {
+        value = request->getParam("KPPUB")->value();
+        if(_preferences->getBool(preference_keypad_info_enabled, false) != (value == "1"))
         {
-            if(_preferences->getBool(preference_lock_force_doorsensor, false) != (value == "1"))
+            _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("KPCODE"))
+    {
+        value = request->getParam("KPCODE")->value();
+        if(_preferences->getBool(preference_keypad_publish_code, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_keypad_publish_code, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("KPCHECK"))
+    {
+        value = request->getParam("KPCHECK")->value();
+        if(_preferences->getBool(preference_keypad_check_code_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_keypad_check_code_enabled, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("KPENA"))
+    {
+        value = request->getParam("KPENA")->value();
+        if(_preferences->getBool(preference_keypad_control_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("TCPUB"))
+    {
+        value = request->getParam("TCPUB")->value();
+        if(_preferences->getBool(preference_timecontrol_info_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("AUTHPUB"))
+    {
+        value = request->getParam("AUTHPUB")->value();
+        if(_preferences->getBool(preference_auth_info_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_auth_info_enabled, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("KPPER"))
+    {
+        value = request->getParam("KPPER")->value();
+        if(_preferences->getBool(preference_keypad_topic_per_entry, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("TCPER"))
+    {
+        value = request->getParam("TCPER")->value();
+        if(_preferences->getBool(preference_timecontrol_topic_per_entry, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_timecontrol_topic_per_entry, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("TCENA"))
+    {
+        value = request->getParam("TCENA")->value();
+        if(_preferences->getBool(preference_timecontrol_control_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("AUTHPER"))
+    {
+        value = request->getParam("AUTHPER")->value();
+        if(_preferences->getBool(preference_auth_topic_per_entry, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_auth_topic_per_entry, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("AUTHENA"))
+    {
+        value = request->getParam("AUTHENA")->value();
+        if(_preferences->getBool(preference_auth_control_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_auth_control_enabled, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("PUBAUTH"))
+    {
+        value = request->getParam("PUBAUTH")->value();
+        if(_preferences->getBool(preference_publish_authdata, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_publish_authdata, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("SAVELOGNUM"))
+    {
+        value = request->getParam("SAVELOGNUM")->value();
+        if(_preferences->getBool(preference_save_log_num, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_save_log_num, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("CREDDIGEST"))
+    {
+        value = request->getParam("CREDDIGEST")->value();
+        if(_preferences->getInt(preference_http_auth_type, 0) != value.toInt())
+        {
+            _preferences->putInt(preference_http_auth_type, value.toInt());
+
+            restartServicesNoReconnect = true;
+            clearSession = true;
+        }
+    }
+    if(request->hasParam("CREDTRUSTPROXY"))
+    {
+        value = request->getParam("CREDTRUSTPROXY")->value();
+        if(value != "*")
+        {
+            if(_preferences->getString(preference_bypass_proxy, "") != value)
             {
-                _preferences->putBool(preference_lock_force_doorsensor, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "OPFORCEID")
-        {
-            if(_preferences->getBool(preference_opener_force_id, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_opener_force_id, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "OPFORCEKP")
-        {
-            if(_preferences->getBool(preference_opener_force_keypad, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_opener_force_keypad, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "ACLLVLCHANGED")
-        {
-            aclLvlChanged = true;
-        }
-        else if(key == "CONFPUB")
-        {
-            if(_preferences->getBool(preference_conf_info_enabled, true) != (value == "1"))
-            {
-                _preferences->putBool(preference_conf_info_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "CONFNHPUB")
-        {
-            if(_preferences->getBool(preference_publish_config, false) != (value == "1"))
-            {
-                if(_preferences->getBool(preference_config_from_mqtt, false) && _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) < 8192)
-                {
-                    _preferences->putInt(preference_buffer_size, 8192);
-                }
-                _preferences->putBool(preference_publish_config, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "CONFNHCTRL")
-        {
-            if(_preferences->getBool(preference_config_from_mqtt, false) != (value == "1"))
-            {
-                if(_preferences->getBool(preference_config_from_mqtt, false) && _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) < 8192)
-                {
-                    _preferences->putInt(preference_buffer_size, 8192);
-                }
-                _preferences->putBool(preference_config_from_mqtt, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "KPPUB")
-        {
-            if(_preferences->getBool(preference_keypad_info_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "KPCODE")
-        {
-            if(_preferences->getBool(preference_keypad_publish_code, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_keypad_publish_code, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "KPCHECK")
-        {
-            if(_preferences->getBool(preference_keypad_check_code_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_keypad_check_code_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "KPENA")
-        {
-            if(_preferences->getBool(preference_keypad_control_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "TCPUB")
-        {
-            if(_preferences->getBool(preference_timecontrol_info_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "AUTHPUB")
-        {
-            if(_preferences->getBool(preference_auth_info_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_auth_info_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "KPPER")
-        {
-            if(_preferences->getBool(preference_keypad_topic_per_entry, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "TCPER")
-        {
-            if(_preferences->getBool(preference_timecontrol_topic_per_entry, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_timecontrol_topic_per_entry, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "TCENA")
-        {
-            if(_preferences->getBool(preference_timecontrol_control_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "AUTHPER")
-        {
-            if(_preferences->getBool(preference_auth_topic_per_entry, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_auth_topic_per_entry, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "AUTHENA")
-        {
-            if(_preferences->getBool(preference_auth_control_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_auth_control_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "PUBAUTH")
-        {
-            if(_preferences->getBool(preference_publish_authdata, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_publish_authdata, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "SAVELOGNUM")
-        {
-            if(_preferences->getBool(preference_save_log_num, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_save_log_num, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "CREDDIGEST")
-        {
-            if(_preferences->getInt(preference_http_auth_type, 0) != value.toInt())
-            {
-                _preferences->putInt(preference_http_auth_type, value.toInt());
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_bypass_proxy, value);
                 restartServicesNoReconnect = true;
                 clearSession = true;
             }
         }
-        else if(key == "CREDTRUSTPROXY")
+    }
+    if(request->hasParam("ACLLCKLCK"))
+    {
+        value = request->getParam("ACLLCKLCK")->value();
+        aclPrefs[0] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKUNLCK"))
+    {
+        value = request->getParam("ACLLCKUNLCK")->value();
+        aclPrefs[1] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKUNLTCH"))
+    {
+        value = request->getParam("ACLLCKUNLTCH")->value();
+        aclPrefs[2] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKLNG"))
+    {
+        value = request->getParam("ACLLCKLNG")->value();
+        aclPrefs[3] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKLNGU"))
+    {
+        value = request->getParam("ACLLCKLNGU")->value();
+        aclPrefs[4] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKFLLCK"))
+    {
+        value = request->getParam("ACLLCKFLLCK")->value();
+        aclPrefs[5] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKFOB1"))
+    {
+        value = request->getParam("ACLLCKFOB1")->value();
+        aclPrefs[6] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKFOB2"))
+    {
+        value = request->getParam("ACLLCKFOB2")->value();
+        aclPrefs[7] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLLCKFOB3"))
+    {
+        value = request->getParam("ACLLCKFOB3")->value();
+        aclPrefs[8] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNUNLCK"))
+    {
+        value = request->getParam("ACLOPNUNLCK")->value();
+        aclPrefs[9] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNLCK"))
+    {
+        value = request->getParam("ACLOPNLCK")->value();
+        aclPrefs[10] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNUNLTCH"))
+    {
+        value = request->getParam("ACLOPNUNLTCH")->value();
+        aclPrefs[11] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNUNLCKCM"))
+    {
+        value = request->getParam("ACLOPNUNLCKCM")->value();
+        aclPrefs[12] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNLCKCM"))
+    {
+        value = request->getParam("ACLOPNLCKCM")->value();
+        aclPrefs[13] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNFOB1"))
+    {
+        value = request->getParam("ACLOPNFOB1")->value();
+        aclPrefs[14] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNFOB2"))
+    {
+        value = request->getParam("ACLOPNFOB2")->value();
+        aclPrefs[15] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("ACLOPNFOB3"))
+    {
+        value = request->getParam("ACLOPNFOB3")->value();
+        aclPrefs[16] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKNAME"))
+    {
+        value = request->getParam("CONFLCKNAME")->value();
+        basicLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKLAT"))
+    {
+        value = request->getParam("CONFLCKLAT")->value();
+        basicLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKLONG"))
+    {
+        value = request->getParam("CONFLCKLONG")->value();
+        basicLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKAUNL"))
+    {
+        value = request->getParam("CONFLCKAUNL")->value();
+        basicLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKPRENA"))
+    {
+        value = request->getParam("CONFLCKPRENA")->value();
+        basicLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKBTENA"))
+    {
+        value = request->getParam("CONFLCKBTENA")->value();
+        basicLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKLEDENA"))
+    {
+        value = request->getParam("CONFLCKLEDENA")->value();
+        basicLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKLEDBR"))
+    {
+        value = request->getParam("CONFLCKLEDBR")->value();
+        basicLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKTZOFF"))
+    {
+        value = request->getParam("CONFLCKTZOFF")->value();
+        basicLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKDSTM"))
+    {
+        value = request->getParam("CONFLCKDSTM")->value();
+        basicLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKFOB1"))
+    {
+        value = request->getParam("CONFLCKFOB1")->value();
+        basicLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKFOB2"))
+    {
+        value = request->getParam("CONFLCKFOB2")->value();
+        basicLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKFOB3"))
+    {
+        value = request->getParam("CONFLCKFOB3")->value();
+        basicLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKSGLLCK"))
+    {
+        value = request->getParam("CONFLCKSGLLCK")->value();
+        basicLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKADVM"))
+    {
+        value = request->getParam("CONFLCKADVM")->value();
+        basicLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKTZID"))
+    {
+        value = request->getParam("CONFLCKTZID")->value();
+        basicLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKUPOD"))
+    {
+        value = request->getParam("CONFLCKUPOD")->value();
+        advancedLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKLPOD"))
+    {
+        value = request->getParam("CONFLCKLPOD")->value();
+        advancedLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKSLPOD"))
+    {
+        value = request->getParam("CONFLCKSLPOD")->value();
+        advancedLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKUTLTOD"))
+    {
+        value = request->getParam("CONFLCKUTLTOD")->value();
+        advancedLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKLNGT"))
+    {
+        value = request->getParam("CONFLCKLNGT")->value();
+        advancedLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKSBPA"))
+    {
+        value = request->getParam("CONFLCKSBPA")->value();
+        advancedLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKDBPA"))
+    {
+        value = request->getParam("CONFLCKDBPA")->value();
+        advancedLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKDC"))
+    {
+        value = request->getParam("CONFLCKDC")->value();
+        advancedLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKBATT"))
+    {
+        value = request->getParam("CONFLCKBATT")->value();
+        advancedLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKABTD"))
+    {
+        value = request->getParam("CONFLCKABTD")->value();
+        advancedLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKUNLD"))
+    {
+        value = request->getParam("CONFLCKUNLD")->value();
+        advancedLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKALT"))
+    {
+        value = request->getParam("CONFLCKALT")->value();
+        advancedLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKAUNLD"))
+    {
+        value = request->getParam("CONFLCKAUNLD")->value();
+        advancedLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKNMENA"))
+    {
+        value = request->getParam("CONFLCKNMENA")->value();
+        advancedLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKNMST"))
+    {
+        value = request->getParam("CONFLCKNMST")->value();
+        advancedLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKNMET"))
+    {
+        value = request->getParam("CONFLCKNMET")->value();
+        advancedLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKNMALENA"))
+    {
+        value = request->getParam("CONFLCKNMALENA")->value();
+        advancedLockConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKNMAULD"))
+    {
+        value = request->getParam("CONFLCKNMAULD")->value();
+        advancedLockConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKNMLOS"))
+    {
+        value = request->getParam("CONFLCKNMLOS")->value();
+        advancedLockConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKALENA"))
+    {
+        value = request->getParam("CONFLCKALENA")->value();
+        advancedLockConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKIALENA"))
+    {
+        value = request->getParam("CONFLCKIALENA")->value();
+        advancedLockConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKAUENA"))
+    {
+        value = request->getParam("CONFLCKAUENA")->value();
+        advancedLockConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKRBTNUKI"))
+    {
+        value = request->getParam("CONFLCKRBTNUKI")->value();
+        advancedLockConfigAclPrefs[22] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKMTRSPD"))
+    {
+        value = request->getParam("CONFLCKMTRSPD")->value();
+        advancedLockConfigAclPrefs[23] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKESSDNM"))
+    {
+        value = request->getParam("CONFLCKESSDNM")->value();
+        advancedLockConfigAclPrefs[24] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFLCKRCBRTNUKI"))
+    {
+        value = request->getParam("CONFLCKRCBRTNUKI")->value();
+        advancedLockConfigAclPrefs[25] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNNAME"))
+    {
+        value = request->getParam("CONFOPNNAME")->value();
+        basicOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNLAT"))
+    {
+        value = request->getParam("CONFOPNLAT")->value();
+        basicOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNLONG"))
+    {
+        value = request->getParam("CONFOPNLONG")->value();
+        basicOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNPRENA"))
+    {
+        value = request->getParam("CONFOPNPRENA")->value();
+        basicOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNBTENA"))
+    {
+        value = request->getParam("CONFOPNBTENA")->value();
+        basicOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNLEDENA"))
+    {
+        value = request->getParam("CONFOPNLEDENA")->value();
+        basicOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNTZOFF"))
+    {
+        value = request->getParam("CONFOPNTZOFF")->value();
+        basicOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNDSTM"))
+    {
+        value = request->getParam("CONFOPNDSTM")->value();
+        basicOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNFOB1"))
+    {
+        value = request->getParam("CONFOPNFOB1")->value();
+        basicOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNFOB2"))
+    {
+        value = request->getParam("CONFOPNFOB2")->value();
+        basicOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNFOB3"))
+    {
+        value = request->getParam("CONFOPNFOB3")->value();
+        basicOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNOPM"))
+    {
+        value = request->getParam("CONFOPNOPM")->value();
+        basicOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNADVM"))
+    {
+        value = request->getParam("CONFOPNADVM")->value();
+        basicOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNTZID"))
+    {
+        value = request->getParam("CONFOPNTZID")->value();
+        basicOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNICID"))
+    {
+        value = request->getParam("CONFOPNICID")->value();
+        advancedOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNBUSMS"))
+    {
+        value = request->getParam("CONFOPNBUSMS")->value();
+        advancedOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSCDUR"))
+    {
+        value = request->getParam("CONFOPNSCDUR")->value();
+        advancedOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNESD"))
+    {
+        value = request->getParam("CONFOPNESD")->value();
+        advancedOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNRESD"))
+    {
+        value = request->getParam("CONFOPNRESD")->value();
+        advancedOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNESDUR"))
+    {
+        value = request->getParam("CONFOPNESDUR")->value();
+        advancedOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNDRTOAR"))
+    {
+        value = request->getParam("CONFOPNDRTOAR")->value();
+        advancedOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNRTOT"))
+    {
+        value = request->getParam("CONFOPNRTOT")->value();
+        advancedOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNDRBSUP"))
+    {
+        value = request->getParam("CONFOPNDRBSUP")->value();
+        advancedOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNDRBSUPDUR"))
+    {
+        value = request->getParam("CONFOPNDRBSUPDUR")->value();
+        advancedOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSRING"))
+    {
+        value = request->getParam("CONFOPNSRING")->value();
+        advancedOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSOPN"))
+    {
+        value = request->getParam("CONFOPNSOPN")->value();
+        advancedOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSRTO"))
+    {
+        value = request->getParam("CONFOPNSRTO")->value();
+        advancedOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSCM"))
+    {
+        value = request->getParam("CONFOPNSCM")->value();
+        advancedOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSCFRM"))
+    {
+        value = request->getParam("CONFOPNSCFRM")->value();
+        advancedOpenerConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSLVL"))
+    {
+        value = request->getParam("CONFOPNSLVL")->value();
+        advancedOpenerConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNSBPA"))
+    {
+        value = request->getParam("CONFOPNSBPA")->value();
+        advancedOpenerConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNDBPA"))
+    {
+        value = request->getParam("CONFOPNDBPA")->value();
+        advancedOpenerConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNBATT"))
+    {
+        value = request->getParam("CONFOPNBATT")->value();
+        advancedOpenerConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNABTD"))
+    {
+        value = request->getParam("CONFOPNABTD")->value();
+        advancedOpenerConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNRBTNUKI"))
+    {
+        value = request->getParam("CONFOPNRBTNUKI")->value();
+        advancedOpenerConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("CONFOPNRCBRTNUKI"))
+    {
+        value = request->getParam("CONFOPNRCBRTNUKI")->value();
+        advancedOpenerConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
+    }
+    if(request->hasParam("REGAPP"))
+    {
+        value = request->getParam("REGAPP")->value();
+        if(_preferences->getBool(preference_register_as_app, false) != (value == "1"))
         {
-            if(value != "*")
+            _preferences->putBool(preference_register_as_app, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("REGAPPOPN"))
+    {
+        value = request->getParam("REGAPPOPN")->value();
+        if(_preferences->getBool(preference_register_opener_as_app, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_register_opener_as_app, (value == "1"));
+
+        }
+    }
+    if(request->hasParam("LOCKENA"))
+    {
+        value = request->getParam("LOCKENA")->value();
+        if(_preferences->getBool(preference_lock_enabled, true) != (value == "1"))
+        {
+            _preferences->putBool(preference_lock_enabled, (value == "1"));
+
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("GEMINIENA"))
+    {
+        value = request->getParam("GEMINIENA")->value();
+        if(_preferences->getBool(preference_lock_gemini_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_lock_gemini_enabled, (value == "1"));
+            if (value == "1")
             {
-                if(_preferences->getString(preference_bypass_proxy, "") != value)
-                {
-                    _preferences->putString(preference_bypass_proxy, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
-                    clearSession = true;
-                }
+                _preferences->putBool(preference_register_as_app, true);
+                _preferences->putBool(preference_lock_enabled, true);
+                _preferences->putBool(preference_official_hybrid_enabled, true);
+                _preferences->putBool(preference_official_hybrid_actions, true);
+            }
+            restartServicesNoReconnect = true;
+        }
+    }
+    if(request->hasParam("OPENA"))
+    {
+        value = request->getParam("OPENA")->value();
+        if(_preferences->getBool(preference_opener_enabled, false) != (value == "1"))
+        {
+            _preferences->putBool(preference_opener_enabled, (value == "1"));
+            restartServicesReconnect = true;
+        }
+    }
+    if(request->hasParam("CREDUSER"))
+    {
+        value = request->getParam("CREDUSER")->value();
+        if(value == "#")
+        {
+            clearCredentials = true;
+        }
+        else
+        {
+            if(_preferences->getString(preference_cred_user, "") != value)
+            {
+                _preferences->putString(preference_cred_user, value);
+                restartServicesNoReconnect = true;
+                clearSession = true;
             }
         }
-        else if(key == "ACLLCKLCK")
-        {
-            aclPrefs[0] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKUNLCK")
-        {
-            aclPrefs[1] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKUNLTCH")
-        {
-            aclPrefs[2] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKLNG")
-        {
-            aclPrefs[3] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKLNGU")
-        {
-            aclPrefs[4] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKFLLCK")
-        {
-            aclPrefs[5] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKFOB1")
-        {
-            aclPrefs[6] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKFOB2")
-        {
-            aclPrefs[7] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLLCKFOB3")
-        {
-            aclPrefs[8] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNUNLCK")
-        {
-            aclPrefs[9] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNLCK")
-        {
-            aclPrefs[10] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNUNLTCH")
-        {
-            aclPrefs[11] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNUNLCKCM")
-        {
-            aclPrefs[12] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNLCKCM")
-        {
-            aclPrefs[13] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNFOB1")
-        {
-            aclPrefs[14] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNFOB2")
-        {
-            aclPrefs[15] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "ACLOPNFOB3")
-        {
-            aclPrefs[16] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKNAME")
-        {
-            basicLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKLAT")
-        {
-            basicLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKLONG")
-        {
-            basicLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKAUNL")
-        {
-            basicLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKPRENA")
-        {
-            basicLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKBTENA")
-        {
-            basicLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKLEDENA")
-        {
-            basicLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKLEDBR")
-        {
-            basicLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKTZOFF")
-        {
-            basicLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKDSTM")
-        {
-            basicLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKFOB1")
-        {
-            basicLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKFOB2")
-        {
-            basicLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKFOB3")
-        {
-            basicLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKSGLLCK")
-        {
-            basicLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKADVM")
-        {
-            basicLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKTZID")
-        {
-            basicLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKUPOD")
-        {
-            advancedLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKLPOD")
-        {
-            advancedLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKSLPOD")
-        {
-            advancedLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKUTLTOD")
-        {
-            advancedLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKLNGT")
-        {
-            advancedLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKSBPA")
-        {
-            advancedLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKDBPA")
-        {
-            advancedLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKDC")
-        {
-            advancedLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKBATT")
-        {
-            advancedLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKABTD")
-        {
-            advancedLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKUNLD")
-        {
-            advancedLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKALT")
-        {
-            advancedLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKAUNLD")
-        {
-            advancedLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKNMENA")
-        {
-            advancedLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKNMST")
-        {
-            advancedLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKNMET")
-        {
-            advancedLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKNMALENA")
-        {
-            advancedLockConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKNMAULD")
-        {
-            advancedLockConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKNMLOS")
-        {
-            advancedLockConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKALENA")
-        {
-            advancedLockConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKIALENA")
-        {
-            advancedLockConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKAUENA")
-        {
-            advancedLockConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKRBTNUKI")
-        {
-            advancedLockConfigAclPrefs[22] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKMTRSPD")
-        {
-            advancedLockConfigAclPrefs[23] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKESSDNM")
-        {
-            advancedLockConfigAclPrefs[24] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFLCKRCBRTNUKI")
-        {
-            advancedLockConfigAclPrefs[25] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNNAME")
-        {
-            basicOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNLAT")
-        {
-            basicOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNLONG")
-        {
-            basicOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNPRENA")
-        {
-            basicOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNBTENA")
-        {
-            basicOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNLEDENA")
-        {
-            basicOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNTZOFF")
-        {
-            basicOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNDSTM")
-        {
-            basicOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNFOB1")
-        {
-            basicOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNFOB2")
-        {
-            basicOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNFOB3")
-        {
-            basicOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNOPM")
-        {
-            basicOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNADVM")
-        {
-            basicOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNTZID")
-        {
-            basicOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNICID")
-        {
-            advancedOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNBUSMS")
-        {
-            advancedOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSCDUR")
-        {
-            advancedOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNESD")
-        {
-            advancedOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNRESD")
-        {
-            advancedOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNESDUR")
-        {
-            advancedOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNDRTOAR")
-        {
-            advancedOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNRTOT")
-        {
-            advancedOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNDRBSUP")
-        {
-            advancedOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNDRBSUPDUR")
-        {
-            advancedOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSRING")
-        {
-            advancedOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSOPN")
-        {
-            advancedOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSRTO")
-        {
-            advancedOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSCM")
-        {
-            advancedOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSCFRM")
-        {
-            advancedOpenerConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSLVL")
-        {
-            advancedOpenerConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNSBPA")
-        {
-            advancedOpenerConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNDBPA")
-        {
-            advancedOpenerConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNBATT")
-        {
-            advancedOpenerConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNABTD")
-        {
-            advancedOpenerConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNRBTNUKI")
-        {
-            advancedOpenerConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "CONFOPNRCBRTNUKI")
-        {
-            advancedOpenerConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
-        }
-        else if(key == "REGAPP")
-        {
-            if(_preferences->getBool(preference_register_as_app, false) != (value == "1"))
+    }
+    if(request->hasParam("CREDPASS"))
+    {
+        pass1 = request->getParam("CREDPASS")->value();
+    }
+    if(request->hasParam("CREDPASSRE"))
+    {
+        pass2 = request->getParam("CREDPASSRE")->value();
+    }
+    if(request->hasParam("CREDTOTP"))
+    {
+        value = request->getParam("CREDTOTP")->value();
+        if(value != "*")
+        {
+            if(_preferences->getString(preference_totp_secret, "") != value)
             {
-                _preferences->putBool(preference_register_as_app, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_totp_secret, value);
+                restartServicesNoReconnect = true;
+                clearSession = true;
+                newMFA = true;
+                _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
             }
         }
-        else if(key == "REGAPPOPN")
+    }
+    if(request->hasParam("CREDBYPASS"))
+    {
+        value = request->getParam("CREDBYPASS")->value();
+        if(value != "*")
         {
-            if(_preferences->getBool(preference_register_opener_as_app, false) != (value == "1"))
+            if(_preferences->getString(preference_bypass_secret, "") != value)
             {
-                _preferences->putBool(preference_register_opener_as_app, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-            }
-        }
-        else if(key == "LOCKENA")
-        {
-            if(_preferences->getBool(preference_lock_enabled, true) != (value == "1"))
-            {
-                _preferences->putBool(preference_lock_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
-            }
-        }
-        else if(key == "GEMINIENA")
-        {
-            if(_preferences->getBool(preference_lock_gemini_enabled, false) != (value == "1"))
-            {
-                _preferences->putBool(preference_lock_gemini_enabled, (value == "1"));
-                if (value == "1")
-                {
-                    _preferences->putBool(preference_register_as_app, true);
-                    _preferences->putBool(preference_lock_enabled, true);
-                    _preferences->putBool(preference_official_hybrid_enabled, true);
-                    _preferences->putBool(preference_official_hybrid_actions, true);
-                }
-                Log->print("Setting changed: ");
-                Log->println(key);
+                _preferences->putString(preference_bypass_secret, value);
                 restartServicesNoReconnect = true;
             }
         }
-        else if(key == "OPENA")
+    }
+    if(request->hasParam("CREDADMIN"))
+    {
+        value = request->getParam("CREDADMIN")->value();
+        if(value != "*")
         {
-            if(_preferences->getBool(preference_opener_enabled, false) != (value == "1"))
+            if(_preferences->getString(preference_admin_secret, "") != value)
             {
-                _preferences->putBool(preference_opener_enabled, (value == "1"));
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesReconnect = true;
+                _preferences->putString(preference_admin_secret, value);
             }
         }
-        else if(key == "CREDUSER")
+    }
+    if(request->hasParam("NUKIPIN") && _nuki != nullptr)
+    {
+        value = request->getParam("NUKIPIN")->value();
+        if(value == "#")
         {
-            if(value == "#")
+            if (_preferences->getBool(preference_lock_gemini_enabled, false))
             {
-                clearCredentials = true;
+                message = "Nuki Lock Ultra/Go/5th gen PIN cleared";
+                _nuki->setUltraPin(0xffffffff);
+                _preferences->putInt(preference_lock_gemini_pin, 0);
             }
             else
             {
-                if(_preferences->getString(preference_cred_user, "") != value)
+                message = "Nuki Lock PIN cleared";
+                _nuki->setPin(0xffff);
+            }
+            restartServicesNoReconnect = true;
+        }
+        else
+        {
+            if (_preferences->getBool(preference_lock_gemini_enabled, false))
+            {
+                if(_nuki->getUltraPin() != value.toInt())
                 {
-                    _preferences->putString(preference_cred_user, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
+                    message = "Nuki Lock Ultra/Go/5th gen PIN saved";
+                    _nuki->setUltraPin(value.toInt());
+                    _preferences->putInt(preference_lock_gemini_pin, value.toInt());
                     restartServicesNoReconnect = true;
-                    clearSession = true;
                 }
             }
-        }
-        else if(key == "CREDPASS")
-        {
-            pass1 = value;
-        }
-        else if(key == "CREDPASSRE")
-        {
-            pass2 = value;
-        }
-        else if(key == "CREDTOTP")
-        {
-            if(value != "*")
+            else
             {
-                if(_preferences->getString(preference_totp_secret, "") != value)
+                if(_nuki->getPin() != value.toInt())
                 {
-                    _preferences->putString(preference_totp_secret, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
-                    clearSession = true;
-                    newMFA = true;
-                    _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] = true;
-                }
-            }
-        }
-        else if(key == "CREDBYPASS")
-        {
-            if(value != "*")
-            {
-                if(_preferences->getString(preference_bypass_secret, "") != value)
-                {
-                    _preferences->putString(preference_bypass_secret, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
+                    message = "Nuki Lock PIN saved";
+                    _nuki->setPin(value.toInt());
                     restartServicesNoReconnect = true;
                 }
             }
         }
-        else if(key == "CREDADMIN")
+    }
+    if(request->hasParam("NUKIOPPIN") && _nukiOpener != nullptr)
+    {
+        value = request->getParam("NUKIOPPIN")->value();
+        if(value == "#")
         {
-            if(value != "*")
-            {
-                if(_preferences->getString(preference_admin_secret, "") != value)
-                {
-                    _preferences->putString(preference_admin_secret, value);
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                }
-            }
+            message = "Nuki Opener PIN cleared";
+            _nukiOpener->setPin(0xffff);
+            restartServicesNoReconnect = true;
         }
-        else if(key == "NUKIPIN" && _nuki != nullptr)
+        else
         {
-            if(value == "#")
+            if(_nukiOpener->getPin() != value.toInt())
             {
-                if (_preferences->getBool(preference_lock_gemini_enabled, false))
-                {
-                    message = "Nuki Lock Ultra/Go/5th gen PIN cleared";
-                    _nuki->setUltraPin(0xffffffff);
-                    _preferences->putInt(preference_lock_gemini_pin, 0);
-                }
-                else
-                {
-                    message = "Nuki Lock PIN cleared";
-                    _nuki->setPin(0xffff);
-                }
-                Log->print("Setting changed: ");
-                Log->println(key);
+                message = "Nuki Opener PIN saved";
+                _nukiOpener->setPin(value.toInt());
                 restartServicesNoReconnect = true;
             }
-            else
+        }
+    }
+    if(request->hasParam("LCKMANPAIR") && (value == "1"))
+    {
+        manPairLck = true;
+    }
+    if(request->hasParam("OPNMANPAIR") && (value == "1"))
+    {
+        manPairOpn = true;
+    }
+    if(request->hasParam("LCKBLEADDR"))
+    {
+        value = request->getParam("LCKBLEADDR")->value();
+        if(value.length() == 12) for(int i=0; i<value.length(); i+=2)
             {
-                if (_preferences->getBool(preference_lock_gemini_enabled, false))
-                {
-                    if(_nuki->getUltraPin() != value.toInt())
-                    {
-                        message = "Nuki Lock Ultra/Go/5th gen PIN saved";
-                        _nuki->setUltraPin(value.toInt());
-                        _preferences->putInt(preference_lock_gemini_pin, value.toInt());
-                        Log->print("Setting changed: ");
-                        Log->println(key);
-                        restartServicesNoReconnect = true;
-                    }
-                }
-                else
-                {
-                    if(_nuki->getPin() != value.toInt())
-                    {
-                        message = "Nuki Lock PIN saved";
-                        _nuki->setPin(value.toInt());
-                        Log->print("Setting changed: ");
-                        Log->println(key);
-                        restartServicesNoReconnect = true;
-                    }
-                }
+                currentBleAddress[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
             }
-        }
-        else if(key == "NUKIOPPIN" && _nukiOpener != nullptr)
+    }
+    if(request->hasParam("LCKSECRETK"))
+    {
+        value = request->getParam("LCKSECRETK")->value();
+        if(value.length() == 64) for(int i=0; i<value.length(); i+=2)
         {
-            if(value == "#")
-            {
-                message = "Nuki Opener PIN cleared";
-                _nukiOpener->setPin(0xffff);
-                Log->print("Setting changed: ");
-                Log->println(key);
-                restartServicesNoReconnect = true;
-            }
-            else
-            {
-                if(_nukiOpener->getPin() != value.toInt())
-                {
-                    message = "Nuki Opener PIN saved";
-                    _nukiOpener->setPin(value.toInt());
-                    Log->print("Setting changed: ");
-                    Log->println(key);
-                    restartServicesNoReconnect = true;
-                }
-            }
+            secretKeyK[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
         }
-        else if(key == "LCKMANPAIR" && (value == "1"))
+    }
+    if(request->hasParam("LCKAUTHID"))
+    {
+        value = request->getParam("LCKAUTHID")->value();
+        if(value.length() == 8) for(int i=0; i<value.length(); i+=2)
         {
-            manPairLck = true;
+            authorizationId[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
         }
-        else if(key == "OPNMANPAIR" && (value == "1"))
+    }
+    else if(request->hasParam("LCKISULTRA") && (value == "1"))
+    {
+        isUltra = true;
+    }
+    if(request->hasParam("OPNBLEADDR"))
+    {
+        value = request->getParam("OPNBLEADDR")->value();
+        if(value.length() == 12) for(int i=0; i<value.length(); i+=2)
         {
-            manPairOpn = true;
+            currentBleAddressOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
         }
-        else if(key == "LCKBLEADDR")
+    }
+    if(request->hasParam("OPNSECRETK"))
+    {
+        value = request->getParam("OPNSECRETK")->value();
+        if(value.length() == 64) for(int i=0; i<value.length(); i+=2)
         {
-            if(value.length() == 12) for(int i=0; i<value.length(); i+=2)
-                {
-                    currentBleAddress[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
-                }
+            secretKeyKOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
         }
-        else if(key == "LCKSECRETK")
+    }
+    if(request->hasParam("OPNAUTHID"))
+    {
+        value = request->getParam("OPNAUTHID")->value();
+        if(value.length() == 8) for(int i=0; i<value.length(); i+=2)
         {
-            if(value.length() == 64) for(int i=0; i<value.length(); i+=2)
-                {
-                    secretKeyK[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
-                }
-        }
-        else if(key == "LCKAUTHID")
-        {
-            if(value.length() == 8) for(int i=0; i<value.length(); i+=2)
-                {
-                    authorizationId[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
-                }
-        }
-        else if(key == "LCKISULTRA" && (value == "1"))
-        {
-            isUltra = true;
-        }
-        else if(key == "OPNBLEADDR")
-        {
-            if(value.length() == 12) for(int i=0; i<value.length(); i+=2)
-                {
-                    currentBleAddressOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
-                }
-        }
-        else if(key == "OPNSECRETK")
-        {
-            if(value.length() == 64) for(int i=0; i<value.length(); i+=2)
-                {
-                    secretKeyKOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
-                }
-        }
-        else if(key == "OPNAUTHID")
-        {
-            if(value.length() == 8) for(int i=0; i<value.length(); i+=2)
-                {
-                    authorizationIdOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
-                }
+            authorizationIdOpn[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
         }
     }
 
@@ -5088,27 +5119,23 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
 bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp, String& message)
 {
     bool configChanged = false;
-    int params = request->params();
 
-    for(int index = 0; index < params; index++)
+    if(request->hasParam("importjson"))
     {
-        const PsychicWebParameter* p = request->getParam(index);
-        if(p->name() == "importjson")
+        const PsychicWebParameter* p = request->getParam("importjson");
+        JsonDocument doc;
+
+        DeserializationError error = deserializeJson(doc, p->value());
+        if (error)
         {
-            JsonDocument doc;
-
-            DeserializationError error = deserializeJson(doc, p->value());
-            if (error)
-            {
-                Log->println("Invalid JSON for import");
-                message = "Invalid JSON, config not changed";
-                return configChanged;
-            }
-
-            _importExport->importJson(doc);
-
-            configChanged = true;
+            Log->println("Invalid JSON for import");
+            message = "Invalid JSON, config not changed";
+            return configChanged;
         }
+
+        _importExport->importJson(doc);
+
+        configChanged = true;
     }
 
     if(configChanged)
@@ -5126,30 +5153,31 @@ bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp,
 
 void WebCfgServer::processGpioArgs(PsychicRequest *request, PsychicResponse* resp)
 {
-    int params = request->params();
     std::vector<PinEntry> pinConfiguration;
 
-    for(int index = 0; index < params; index++)
+    if(request->hasParam("RETGPIO"))
     {
-        const PsychicWebParameter* p = request->getParam(index);
+        const PsychicWebParameter* p = request->getParam("RETGPIO");
 
-        if(p->name() == "RETGPIO")
+        if(_preferences->getBool(preference_retain_gpio, false) != (p->value() == "1"))
         {
-            if(_preferences->getBool(preference_retain_gpio, false) != (p->value() == "1"))
-            {
-                _preferences->putBool(preference_retain_gpio, (p->value() == "1"));
-            }
+            _preferences->putBool(preference_retain_gpio, (p->value() == "1"));
         }
-        else
+    }
+
+    for (int i=0; i < 100; i++)
+    {
+        String gpio = String(i);
+        if (!request->hasParam(gpio.c_str())) continue;
+        const PsychicWebParameter* p = request->getParam(gpio.c_str());
+
+        PinRole role = (PinRole)p->value().toInt();
+        if(role != PinRole::Disabled)
         {
-            PinRole role = (PinRole)p->value().toInt();
-            if(role != PinRole::Disabled)
-            {
-                PinEntry entry;
-                entry.pin = p->name().toInt();
-                entry.role = role;
-                pinConfiguration.push_back(entry);
-            }
+            PinEntry entry;
+            entry.pin = p->name().toInt();
+            entry.role = role;
+            pinConfiguration.push_back(entry);
         }
     }
 

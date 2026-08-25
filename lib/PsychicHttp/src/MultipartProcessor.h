@@ -2,6 +2,7 @@
 #define MULTIPART_PROCESSOR_H
 
 #include "PsychicCore.h"
+#include <string>
 
 /*
  * MultipartProcessor - handle parsing and processing a multipart form.
@@ -13,17 +14,17 @@ class MultipartProcessor
     PsychicRequest* _request;
     PsychicUploadCallback _uploadCallback;
 
-    String _temp;
+    std::string _temp;
     size_t _parsedLength;
     uint8_t _multiParseState;
-    String _boundary;
+    std::string _boundary;
     uint8_t _boundaryPosition;
     size_t _itemStartIndex;
     size_t _itemSize;
-    String _itemName;
-    String _itemFilename;
-    String _itemType;
-    String _itemValue;
+    std::string _itemName;
+    std::string _itemFilename;
+    std::string _itemType;
+    std::string _itemValue;
     uint8_t* _itemBuffer;
     size_t _itemBufferIndex;
     bool _itemIsFile;

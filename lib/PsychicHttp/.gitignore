@@ -1,4 +1,6 @@
-_secret.h
+**/secrets.h
+.venv/
+idf_component.yml.disabled
 .$request flow.drawio.bkp
 .$request flow.drawio.dtmp
 .clang_complete
@@ -47,9 +49,13 @@ benchmark/psychic-http-loadtest.log
 benchmark/psychic-websocket-loadtest.json
 benchmark/psychic-websocket-loadtest.log
 benchmark/websocket-loadtest-results.csv
-examples/arduino/
 examples/platformio/lib/PsychicHttp
+examples/platformio/src/idf_component.yml.orig
+examples/esp-idf-pio/sdkconfig.s3
+examples/pio-arduino/src/idf_component.yml.orig
+benchmark/**/src/idf_component.yml
+benchmark/**/src/idf_component.yml.orig
 examples/websockets/lib/PsychicHttp
 src/cookie.txt
-src/secret.h
 Visual\ Micro
+MIGRATION.md

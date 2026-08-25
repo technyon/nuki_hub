@@ -16,7 +16,7 @@ class PsychicEndpoint
 
   private:
     PsychicHttpServer* _server;
-    String _uri;
+    std::string _uri;
     int _method;
     PsychicHandler* _handler;
     httpd_uri_match_func_t _uri_match_fn = nullptr; // use this change the endpoint matching function.
@@ -24,6 +24,7 @@ class PsychicEndpoint
   public:
     PsychicEndpoint();
     PsychicEndpoint(PsychicHttpServer* server, int method, const char* uri);
+    ~PsychicEndpoint();
 
     PsychicEndpoint* setHandler(PsychicHandler* handler);
     PsychicHandler* handler();
@@ -42,7 +43,13 @@ class PsychicEndpoint
     PsychicEndpoint* addMiddleware(PsychicMiddlewareCallback fn);
     void removeMiddleware(PsychicMiddleware* middleware);
 
+#ifdef ARDUINO
     String uri();
+#else
+    const char* uri();
+#endif
+    // Always returns const char* regardless of platform — use in library internals.
+    const char* uriCStr();
 
     static esp_err_t requestCallback(httpd_req_t* req);
 };

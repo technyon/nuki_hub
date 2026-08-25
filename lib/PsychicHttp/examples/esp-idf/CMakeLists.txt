@@ -9,11 +9,14 @@ else()
   #these both work
   set(HTTP_PATH "../../")
   #set(HTTP_PATH ${CMAKE_CURRENT_LIST_DIR}/../../../)
-  
+
   #this does not work for me...
   #set(HTTP_PATH ${CMAKE_CURRENT_LIST_DIR}/../../../PsychicHttp)
 endif(DEFINED ENV{HTTP_PATH})
 
 set(EXTRA_COMPONENT_DIRS ${HTTP_PATH})
+if(${IDF_VERSION_MAJOR} LESS "5")
+  include_directories("managed_components/joltwallet__littlefs/include")
+endif()
 
 project(PsychicHttp_IDF)

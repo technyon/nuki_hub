@@ -1,0 +1,3 @@
+dependencies:
+  idf: ">=4.4"
+  bblanchon/arduinojson: "^7"

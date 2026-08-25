@@ -9,6 +9,13 @@
 #define ASYNC_WORKER_TASK_STACK_SIZE (4 * 1024)
 #define ASYNC_WORKER_COUNT           8
 
+// Detect presence of async API in your ESP-IDF
+#if defined(ESP_IDF_VERSION_MAJOR)
+  #if (ESP_IDF_VERSION_MAJOR > 5) || (ESP_IDF_VERSION_MAJOR == 5 && ESP_IDF_VERSION_MINOR >= 1)
+    #define ESP_HTTPD_HAS_ASYNC_API 1
+  #endif
+#endif
+
 // Async requests are queued here while they wait to be processed by the workers
 static QueueHandle_t async_req_queue;
 
@@ -31,7 +38,14 @@ esp_err_t submit_async_req(httpd_req_t* req, httpd_req_handler_t handler);
 void async_req_worker_task(void* p);
 void start_async_req_workers(void);
 
+/****
+ *
+ * This code is backported from the 5.1.x branch
+ *
+ ****/
+#ifndef ESP_HTTPD_HAS_ASYNC_API
 esp_err_t httpd_req_async_handler_begin(httpd_req_t* r, httpd_req_t** out);
 esp_err_t httpd_req_async_handler_complete(httpd_req_t* r);
+#endif
 
 #endif // async_worker_h

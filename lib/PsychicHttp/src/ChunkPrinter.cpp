@@ -1,4 +1,3 @@
-
 #include "ChunkPrinter.h"
 
 ChunkPrinter::ChunkPrinter(PsychicResponse* response, uint8_t* buffer, size_t len) : _response(response),
@@ -18,8 +17,7 @@ size_t ChunkPrinter::write(uint8_t c)
   esp_err_t err;
 
   // if we're full, send a chunk
-  if (_pos == _length)
-  {
+  if (_pos == _length) {
     _pos = 0;
     err = _response->sendChunk(_buffer, _length);
 
@@ -36,16 +34,14 @@ size_t ChunkPrinter::write(const uint8_t* buffer, size_t size)
 {
   size_t written = 0;
 
-  while (written < size)
-  {
+  while (written < size) {
     size_t space = _length - _pos;
     size_t blockSize = std::min(space, size - written);
 
     memcpy(_buffer + _pos, buffer + written, blockSize);
     _pos += blockSize;
 
-    if (_pos == _length)
-    {
+    if (_pos == _length) {
       _pos = 0;
 
       if (_response->sendChunk(_buffer, _length) != ESP_OK)
@@ -58,22 +54,20 @@ size_t ChunkPrinter::write(const uint8_t* buffer, size_t size)
 
 void ChunkPrinter::flush()
 {
-  if (_pos)
-  {
+  if (_pos) {
     _response->sendChunk(_buffer, _pos);
     _pos = 0;
   }
 }
 
+#ifdef ARDUINO
 size_t ChunkPrinter::copyFrom(Stream& stream)
 {
   size_t count = 0;
 
-  while (stream.available())
-  {
+  while (stream.available()) {
 
-    if (_pos == _length)
-    {
+    if (_pos == _length) {
       _response->sendChunk(_buffer, _length);
       _pos = 0;
     }
@@ -84,3 +78,4 @@ size_t ChunkPrinter::copyFrom(Stream& stream)
   }
   return count;
 }
+#endif // ARDUINO

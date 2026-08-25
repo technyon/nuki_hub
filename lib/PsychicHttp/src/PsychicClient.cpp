@@ -32,6 +32,7 @@ esp_err_t PsychicClient::close()
   return err;
 }
 
+#ifdef ARDUINO
 IPAddress PsychicClient::localIP()
 {
   IPAddress address(0, 0, 0, 0);
@@ -52,6 +53,20 @@ IPAddress PsychicClient::localIP()
 
   return address;
 }
+#else
+esp_ip4_addr_t PsychicClient::localIP()
+{
+  esp_ip4_addr_t address = {0};
+  struct sockaddr_in6 addr;
+  socklen_t addr_size = sizeof(addr);
+  if (getsockname(_socket, (struct sockaddr*)&addr, &addr_size) < 0) {
+    ESP_LOGE(PH_TAG, "Error getting client IP");
+    return address;
+  }
+  address.addr = addr.sin6_addr.un.u32_addr[3];
+  return address;
+}
+#endif
 
 uint16_t PsychicClient::localPort() const
 {
@@ -62,6 +77,7 @@ uint16_t PsychicClient::localPort() const
   return ntohs(s->sin_port);
 }
 
+#ifdef ARDUINO
 IPAddress PsychicClient::remoteIP()
 {
   IPAddress address(0, 0, 0, 0);
@@ -82,6 +98,20 @@ IPAddress PsychicClient::remoteIP()
 
   return address;
 }
+#else
+esp_ip4_addr_t PsychicClient::remoteIP()
+{
+  esp_ip4_addr_t address = {0};
+  struct sockaddr_in6 addr;
+  socklen_t addr_size = sizeof(addr);
+  if (getpeername(_socket, (struct sockaddr*)&addr, &addr_size) < 0) {
+    ESP_LOGE(PH_TAG, "Error getting client IP");
+    return address;
+  }
+  address.addr = addr.sin6_addr.un.u32_addr[3];
+  return address;
+}
+#endif
 
 uint16_t PsychicClient::remotePort() const
 {
