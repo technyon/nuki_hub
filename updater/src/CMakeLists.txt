@@ -12,6 +12,7 @@ list(APPEND app_sources ../../src/Logger.cpp)
 list(APPEND app_sources ../../src/NukiNetwork.cpp)
 list(APPEND app_sources ../../src/WebCfgServer.cpp)
 list(APPEND app_sources ../../src/ImportExport.cpp)
+list(APPEND app_sources ../../src/WebSessionProvider.cpp)
 
 list(APPEND app_sources ../../src/enums/NetworkDeviceType.h)
 list(APPEND app_sources ../../src/networkDevices/EthernetDevice.h)
