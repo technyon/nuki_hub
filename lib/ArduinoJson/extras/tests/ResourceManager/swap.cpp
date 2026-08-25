@@ -1,10 +1,10 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson/Memory/Alignment.hpp>
 #include <ArduinoJson/Memory/ResourceManager.hpp>
-#include <ArduinoJson/Memory/ResourceManagerImpl.hpp>
+
 #include <catch.hpp>
 
 #include "Allocators.hpp"

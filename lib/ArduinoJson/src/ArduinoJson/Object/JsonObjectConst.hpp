@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -19,47 +19,47 @@ class JsonObjectConst : public detail::VariantOperators<JsonObjectConst> {
   using iterator = JsonObjectConstIterator;
 
   // Creates an unbound reference.
-  JsonObjectConst() : data_(0), resources_(0) {}
+  JsonObjectConst() {}
 
   // INTERNAL USE ONLY
-  JsonObjectConst(const detail::ObjectData* data,
-                  const detail::ResourceManager* resources)
-      : data_(data), resources_(resources) {}
+  JsonObjectConst(detail::VariantData* data, detail::ResourceManager* resources)
+      : impl_(data, resources) {}
+
+  // INTERNAL USE ONLY
+  JsonObjectConst(const detail::VariantImpl& impl) : impl_(impl) {}
 
   operator JsonVariantConst() const {
-    return JsonVariantConst(getData(), resources_);
+    return JsonVariantConst(impl_.data(), impl_.resources());
   }
 
   // Returns true if the reference is unbound.
   // https://arduinojson.org/v7/api/jsonobjectconst/isnull/
   bool isNull() const {
-    return data_ == 0;
+    return impl_.isNull();
   }
 
   // Returns true if the reference is bound.
   // https://arduinojson.org/v7/api/jsonobjectconst/isnull/
   operator bool() const {
-    return data_ != 0;
+    return !isNull();
   }
 
   // Returns the depth (nesting level) of the object.
   // https://arduinojson.org/v7/api/jsonobjectconst/nesting/
   size_t nesting() const {
-    return detail::VariantData::nesting(getData(), resources_);
+    return impl_.nesting();
   }
 
   // Returns the number of members in the object.
   // https://arduinojson.org/v7/api/jsonobjectconst/size/
   size_t size() const {
-    return data_ ? data_->size(resources_) : 0;
+    return impl_.size();
   }
 
   // Returns an iterator to the first key-value pair of the object.
   // https://arduinojson.org/v7/api/jsonobjectconst/begin/
   iterator begin() const {
-    if (!data_)
-      return iterator();
-    return iterator(data_->createIterator(resources_), resources_);
+    return iterator(impl_.createIterator(), impl_.resources());
   }
 
   // Returns an iterator following the last key-value pair of the object.
@@ -74,8 +74,7 @@ class JsonObjectConst : public detail::VariantOperators<JsonObjectConst> {
             detail::enable_if_t<detail::IsString<TString>::value, int> = 0>
   ARDUINOJSON_DEPRECATED("use obj[key].is<T>() instead")
   bool containsKey(const TString& key) const {
-    return detail::ObjectData::getMember(data_, detail::adaptString(key),
-                                         resources_) != 0;
+    return impl_.getMember(detail::adaptString(key)) != 0;
   }
 
   // DEPRECATED: use obj["key"].is<T>() instead
@@ -83,8 +82,7 @@ class JsonObjectConst : public detail::VariantOperators<JsonObjectConst> {
   template <typename TChar>
   ARDUINOJSON_DEPRECATED("use obj[\"key\"].is<T>() instead")
   bool containsKey(TChar* key) const {
-    return detail::ObjectData::getMember(data_, detail::adaptString(key),
-                                         resources_) != 0;
+    return impl_.getMember(detail::adaptString(key)) != 0;
   }
 
   // DEPRECATED: use obj[key].is<T>() instead
@@ -101,21 +99,17 @@ class JsonObjectConst : public detail::VariantOperators<JsonObjectConst> {
   template <typename TString,
             detail::enable_if_t<detail::IsString<TString>::value, int> = 0>
   JsonVariantConst operator[](const TString& key) const {
-    return JsonVariantConst(detail::ObjectData::getMember(
-                                data_, detail::adaptString(key), resources_),
-                            resources_);
+    return JsonVariantConst(impl_.getMember(detail::adaptString(key)),
+                            impl_.resources());
   }
 
   // Gets the member with specified key.
   // https://arduinojson.org/v7/api/jsonobjectconst/subscript/
   template <typename TChar,
-            detail::enable_if_t<detail::IsString<TChar*>::value &&
-                                    !detail::is_const<TChar>::value,
-                                int> = 0>
+            detail::enable_if_t<detail::IsString<TChar*>::value, int> = 0>
   JsonVariantConst operator[](TChar* key) const {
-    return JsonVariantConst(detail::ObjectData::getMember(
-                                data_, detail::adaptString(key), resources_),
-                            resources_);
+    return JsonVariantConst(impl_.getMember(detail::adaptString(key)),
+                            impl_.resources());
   }
 
   // Gets the member with specified key.
@@ -137,11 +131,10 @@ class JsonObjectConst : public detail::VariantOperators<JsonObjectConst> {
 
  private:
   const detail::VariantData* getData() const {
-    return collectionToVariant(data_);
+    return impl_.data();
   }
 
-  const detail::ObjectData* data_;
-  const detail::ResourceManager* resources_;
+  detail::VariantImpl impl_;
 };
 
 inline bool operator==(JsonObjectConst lhs, JsonObjectConst rhs) {

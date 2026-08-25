@@ -1,6 +1,53 @@
 ArduinoJson: change log
 =======================
 
+HEAD
+----
+
+* Don't store string literals by pointer anymore (issue #2189)
+  Version 7.3 introduced a new way to detect string literals, but it fails in some edge cases.
+  I could not find a way to fix it, so I chose to remove the optimization rather than keep it broken.
+* Replace the "extension slots" mechanism with a memory pool dedicated to 8-byte values.
+* Speed up character escaping in `serializeJson()` (issue #2226 by @florentbr)
+
+> ### BREAKING CHANGES
+>
+> #### `JsonString` constructor's boolean parameter
+>
+> Since version 7.3, you could pass a boolean to `JsonString`'s constructor to force the string to be stored by pointer.
+> This optimization has been removed, and you'll get a deprecation warning if you use it.
+> To fix the issue, you must remove the boolean argument from the constructor, or better yet, remove `JsonString` altogether.
+>
+> ```diff
+>   char name[] = "ArduinoJson";
+> - doc["name"] = JsonString(name, true);
+> + doc["name"] = name;
+> ```
+>
+> #### NUL characters in string literals
+> 
+> Since version 7.3, ArduinoJson has supported NUL characters (`\0`) in string literals.
+> This feature has been removed as part of the storage policy change.
+>
+> If you do need to include NULs in your string, you must use a `JsonString` instead:
+>
+> ```diff
+> - doc["strings"] = "hello\0world"
+> + doc["strings"] = JsonString("hello\0world", 11)
+> ```
+
+v7.4.3 (2026-03-02)
+------
+
+* Fix a buffer overrun in `as<T>()` when `T` is a numeric type and
+  the variant contains a string representing a floating point number
+  with a large number of digits (issue #2220)
+
+v7.4.2 (2025-06-20)
+------
+
+* Fix truncated strings on Arduino Due (issue #2181)
+
 v7.4.1 (2025-04-11)
 ------
 

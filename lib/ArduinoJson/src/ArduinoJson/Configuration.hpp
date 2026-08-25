@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -274,9 +274,9 @@
 #endif
 
 #if ARDUINOJSON_USE_LONG_LONG || ARDUINOJSON_USE_DOUBLE
-#  define ARDUINOJSON_USE_EXTENSIONS 1
+#  define ARDUINOJSON_USE_8_BYTE_POOL 1
 #else
-#  define ARDUINOJSON_USE_EXTENSIONS 0
+#  define ARDUINOJSON_USE_8_BYTE_POOL 0
 #endif
 
 #if defined(nullptr)

@@ -8,7 +8,10 @@ all: \
 	$(OUT)/json_fuzzer.options \
 	$(OUT)/msgpack_fuzzer \
 	$(OUT)/msgpack_fuzzer_seed_corpus.zip \
-	$(OUT)/msgpack_fuzzer.options
+	$(OUT)/msgpack_fuzzer.options \
+	$(OUT)/number_fuzzer \
+	$(OUT)/number_fuzzer_seed_corpus.zip \
+	$(OUT)/number_fuzzer.options
 
 $(OUT)/%_fuzzer: %_fuzzer.cpp $(shell find ../../src -type f)
 	$(CXX) $(CXXFLAGS) $< -o$@ $(LIB_FUZZING_ENGINE)
@@ -18,5 +21,5 @@ $(OUT)/%_fuzzer_seed_corpus.zip: %_seed_corpus/*
 
 $(OUT)/%_fuzzer.options:
 	@echo "[libfuzzer]" > $@
-	@echo "max_len = 256" >> $@
+	@echo "max_len = 4096" >> $@
 	@echo "timeout = 10" >> $@

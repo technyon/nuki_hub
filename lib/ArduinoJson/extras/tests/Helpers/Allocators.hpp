@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -269,10 +269,10 @@ inline size_t sizeofPoolList(size_t n = ARDUINOJSON_INITIAL_POOL_COUNT) {
   return sizeof(MemoryPool<VariantData>) * n;
 }
 
+template <typename T = ArduinoJson::detail::VariantData>
 inline size_t sizeofPool(
     ArduinoJson::detail::SlotCount n = ARDUINOJSON_POOL_CAPACITY) {
-  using namespace ArduinoJson::detail;
-  return MemoryPool<VariantData>::slotsToBytes(n);
+  return ArduinoJson::detail::MemoryPool<T>::slotsToBytes(n);
 }
 
 inline size_t sizeofStringBuffer(size_t iteration = 1) {

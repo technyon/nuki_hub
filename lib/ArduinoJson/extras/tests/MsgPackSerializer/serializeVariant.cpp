@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -137,11 +137,12 @@ TEST_CASE("serialize MsgPack value") {
     checkVariant(longest.c_str(), "\xDA\xFF\xFF"_s + longest);
   }
 
+#if ARDUINOJSON_STRING_LENGTH_SIZE > 2
   SECTION("str 32") {
     std::string shortest(65536, '?');
-    checkVariant(JsonString(shortest.c_str(), true),  // force store by pointer
-                 "\xDB\x00\x01\x00\x00"_s + shortest);
+    checkVariant(shortest.c_str(), "\xDB\x00\x01\x00\x00"_s + shortest);
   }
+#endif
 
   SECTION("serialized(const char*)") {
     checkVariant(serialized("\xDA\xFF\xFF"), "\xDA\xFF\xFF");

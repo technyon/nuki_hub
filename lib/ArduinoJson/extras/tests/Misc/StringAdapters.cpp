@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <Arduino.h>
@@ -21,8 +21,7 @@ TEST_CASE("adaptString()") {
     auto s = adaptString("bravo\0alpha");
 
     CHECK(s.isNull() == false);
-    CHECK(s.size() == 11);
-    CHECK(s.isStatic() == true);
+    CHECK(s.size() == 5);
   }
 
   SECTION("null const char*") {
@@ -38,7 +37,6 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isStatic() == false);
     CHECK(s.data() == p);
   }
 
@@ -46,7 +44,6 @@ TEST_CASE("adaptString()") {
     auto s = adaptString(static_cast<const char*>(0), 10);
 
     CHECK(s.isNull() == true);
-    CHECK(s.isStatic() == false);
   }
 
   SECTION("non-null const char* + size") {
@@ -54,7 +51,6 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isStatic() == false);
   }
 
   SECTION("null Flash string") {
@@ -62,7 +58,6 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == true);
     CHECK(s.size() == 0);
-    CHECK(s.isStatic() == false);
   }
 
   SECTION("non-null Flash string") {
@@ -70,7 +65,6 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isStatic() == false);
   }
 
   SECTION("std::string") {
@@ -79,7 +73,6 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isStatic() == false);
   }
 
   SECTION("Arduino String") {
@@ -88,7 +81,6 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isStatic() == false);
   }
 
   SECTION("custom_string") {
@@ -97,25 +89,14 @@ TEST_CASE("adaptString()") {
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isStatic() == false);
   }
 
-  SECTION("JsonString linked") {
-    JsonString orig("hello", true);
+  SECTION("JsonString") {
+    JsonString orig("hello");
     auto s = adaptString(orig);
 
     CHECK(s.isNull() == false);
     CHECK(s.size() == 5);
-    CHECK(s.isStatic() == true);
-  }
-
-  SECTION("JsonString copied") {
-    JsonString orig("hello", false);
-    auto s = adaptString(orig);
-
-    CHECK(s.isNull() == false);
-    CHECK(s.size() == 5);
-    CHECK(s.isStatic() == false);
   }
 }
 

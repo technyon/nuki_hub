@@ -1,5 +1,5 @@
 # ArduinoJson - https://arduinojson.org
-# Copyright © 2014-2025, Benoit BLANCHON
+# Copyright © 2014-2026, Benoit BLANCHON
 # MIT License
 
 set(CMAKE_CXX_STANDARD 11)
@@ -9,26 +9,12 @@ if(MSVC)
 	add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
-add_executable(msgpack_reproducer
-	msgpack_fuzzer.cpp
-	reproducer.cpp
-)
-target_link_libraries(msgpack_reproducer
-	ArduinoJson
-)
-
-add_executable(json_reproducer
-	json_fuzzer.cpp
-	reproducer.cpp
-)
-target_link_libraries(json_reproducer
-	ArduinoJson
-)
-
-macro(add_fuzzer name)
+function(add_fuzzer name)
 	set(FUZZER "${name}_fuzzer")
+	set(REPRODUCER "${FUZZER}_reproducer")
 	set(CORPUS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${name}_corpus")
 	set(SEED_CORPUS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${name}_seed_corpus")
+
 	add_executable("${FUZZER}"
 		"${name}_fuzzer.cpp"
 	)
@@ -45,12 +31,19 @@ macro(add_fuzzer name)
 		NAME "${FUZZER}"
 		COMMAND "${FUZZER}" "${CORPUS_DIR}" "${SEED_CORPUS_DIR}" -max_total_time=5 -timeout=1
 	)
-
 	set_tests_properties("${FUZZER}"
 		PROPERTIES
 		LABELS "Fuzzing"
 	)
-endmacro()
+
+	add_executable("${REPRODUCER}"
+		"${name}_fuzzer.cpp"
+		reproducer.cpp
+	)
+	target_link_libraries("${REPRODUCER}"
+		ArduinoJson
+	)
+endfunction()
 
 # Needs Clang 6+ to compile
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6)
@@ -64,4 +57,5 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION
 
 	add_fuzzer(json)
 	add_fuzzer(msgpack)
+	add_fuzzer(number)
 endif()

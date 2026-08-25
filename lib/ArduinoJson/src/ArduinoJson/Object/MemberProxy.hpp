@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -39,7 +39,7 @@ class MemberProxy
     return *this;
   }
 
-  template <typename T, enable_if_t<!is_const<T>::value, int> = 0>
+  template <typename T>
   MemberProxy& operator=(T* src) {
     this->set(src);
     return *this;
@@ -56,17 +56,15 @@ class MemberProxy
   }
 
   VariantData* getData() const {
-    return VariantData::getMember(
-        VariantAttorney::getData(upstream_), key_,
-        VariantAttorney::getResourceManager(upstream_));
+    return VariantAttorney::getVariantImpl(upstream_).getMember(key_);
   }
 
   VariantData* getOrCreateData() const {
     auto data = VariantAttorney::getOrCreateData(upstream_);
-    if (!data)
-      return nullptr;
-    return data->getOrAddMember(key_,
-                                VariantAttorney::getResourceManager(upstream_));
+    auto resources = VariantAttorney::getResourceManager(upstream_);
+    if (data && data->type == VariantType::Null)
+      data->toObject();
+    return VariantImpl(data, resources).getOrAddMember(key_);
   }
 
  private:

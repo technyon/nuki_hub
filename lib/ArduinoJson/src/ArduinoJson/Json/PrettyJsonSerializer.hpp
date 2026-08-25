@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -16,20 +16,24 @@ class PrettyJsonSerializer : public JsonSerializer<TWriter> {
   using base = JsonSerializer<TWriter>;
 
  public:
-  PrettyJsonSerializer(TWriter writer, const ResourceManager* resources)
+  PrettyJsonSerializer(TWriter writer, ResourceManager* resources)
       : base(writer, resources), nesting_(0) {}
 
-  size_t visit(const ArrayData& array) {
-    auto it = array.createIterator(base::resources_);
-    if (!it.done()) {
+  size_t visitArray(VariantData* array) {
+    ARDUINOJSON_ASSERT(array != nullptr);
+    ARDUINOJSON_ASSERT(array->isArray());
+
+    auto slotId = array->content.asCollection.head;
+    if (slotId != NULL_SLOT) {
       base::write("[\r\n");
       nesting_++;
-      while (!it.done()) {
+      while (slotId != NULL_SLOT) {
         indent();
-        it->accept(*this, base::resources_);
+        auto slot = base::resources_->getVariant(slotId);
+        VariantImpl::accept(*this, slot, base::resources_);
 
-        it.next(base::resources_);
-        base::write(it.done() ? "\r\n" : ",\r\n");
+        slotId = slot->next;
+        base::write(slotId == NULL_SLOT ? "\r\n" : ",\r\n");
       }
       nesting_--;
       indent();
@@ -40,21 +44,25 @@ class PrettyJsonSerializer : public JsonSerializer<TWriter> {
     return this->bytesWritten();
   }
 
-  size_t visit(const ObjectData& object) {
-    auto it = object.createIterator(base::resources_);
-    if (!it.done()) {
+  size_t visitObject(VariantData* object) {
+    ARDUINOJSON_ASSERT(object != nullptr);
+    ARDUINOJSON_ASSERT(object->isObject());
+
+    auto slotId = object->content.asCollection.head;
+    if (slotId != NULL_SLOT) {
       base::write("{\r\n");
       nesting_++;
       bool isKey = true;
-      while (!it.done()) {
+      while (slotId != NULL_SLOT) {
         if (isKey)
           indent();
-        it->accept(*this, base::resources_);
-        it.next(base::resources_);
+        auto slot = base::resources_->getVariant(slotId);
+        VariantImpl::accept(*this, slot, base::resources_);
+        slotId = slot->next;
         if (isKey)
           base::write(": ");
         else
-          base::write(it.done() ? "\r\n" : ",\r\n");
+          base::write(slotId == NULL_SLOT ? "\r\n" : ",\r\n");
         isKey = !isKey;
       }
       nesting_--;

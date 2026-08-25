@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -69,6 +69,8 @@ TEST_CASE("JsonDocument assignment") {
       doc2 = std::move(doc1);
 
       REQUIRE(doc2.as<std::string>() == "{\"hello\":\"world\"}");
+
+      // NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)
       REQUIRE(doc1.as<std::string>() == "null");
     }
     REQUIRE(spyingAllocator.log() == AllocatorLog{

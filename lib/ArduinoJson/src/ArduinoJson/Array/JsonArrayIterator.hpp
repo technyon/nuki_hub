@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -30,7 +30,7 @@ class JsonArrayIterator {
 
  public:
   JsonArrayIterator() {}
-  explicit JsonArrayIterator(detail::ArrayData::iterator iterator,
+  explicit JsonArrayIterator(detail::CollectionIterator iterator,
                              detail::ResourceManager* resources)
       : iterator_(iterator), resources_(resources) {}
 
@@ -50,12 +50,12 @@ class JsonArrayIterator {
   }
 
   JsonArrayIterator& operator++() {
-    iterator_.next(resources_);
+    iterator_.move(resources_);
     return *this;
   }
 
  private:
-  detail::ArrayData::iterator iterator_;
+  detail::CollectionIterator iterator_;
   detail::ResourceManager* resources_;
 };
 
@@ -64,8 +64,8 @@ class JsonArrayConstIterator {
 
  public:
   JsonArrayConstIterator() {}
-  explicit JsonArrayConstIterator(detail::ArrayData::iterator iterator,
-                                  const detail::ResourceManager* resources)
+  explicit JsonArrayConstIterator(detail::CollectionIterator iterator,
+                                  detail::ResourceManager* resources)
       : iterator_(iterator), resources_(resources) {}
 
   JsonVariantConst operator*() const {
@@ -84,13 +84,13 @@ class JsonArrayConstIterator {
   }
 
   JsonArrayConstIterator& operator++() {
-    iterator_.next(resources_);
+    iterator_.move(resources_);
     return *this;
   }
 
  private:
-  detail::ArrayData::iterator iterator_;
-  const detail::ResourceManager* resources_;
+  mutable detail::CollectionIterator iterator_;
+  mutable detail::ResourceManager* resources_;
 };
 
 ARDUINOJSON_END_PUBLIC_NAMESPACE

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -20,24 +20,25 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
   using iterator = JsonArrayIterator;
 
   // Constructs an unbound reference.
-  JsonArray() : data_(0), resources_(0) {}
+  JsonArray() {}
 
   // INTERNAL USE ONLY
-  JsonArray(detail::ArrayData* data, detail::ResourceManager* resources)
-      : data_(data), resources_(resources) {}
+  JsonArray(detail::VariantData* data, detail::ResourceManager* resources)
+      : impl_(data, resources) {}
+
+  // INTERNAL USE ONLY
+  JsonArray(const detail::VariantImpl& impl) : impl_(impl) {}
 
   // Returns a JsonVariant pointing to the array.
   // https://arduinojson.org/v7/api/jsonvariant/
   operator JsonVariant() {
-    void* data = data_;  // prevent warning cast-align
-    return JsonVariant(reinterpret_cast<detail::VariantData*>(data),
-                       resources_);
+    return JsonVariant(getData(), getResourceManager());
   }
 
   // Returns a read-only reference to the array.
   // https://arduinojson.org/v7/api/jsonarrayconst/
   operator JsonArrayConst() const {
-    return JsonArrayConst(data_, resources_);
+    return JsonArrayConst(getData(), getResourceManager());
   }
 
   // Appends a new (empty) element to the array.
@@ -55,15 +56,16 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
   template <typename T, detail::enable_if_t<
                             detail::is_same<T, JsonVariant>::value, int> = 0>
   JsonVariant add() const {
-    return JsonVariant(detail::ArrayData::addElement(data_, resources_),
-                       resources_);
+    return JsonVariant(impl_.addNewElement(), impl_.resources());
   }
 
   // Appends a value to the array.
   // https://arduinojson.org/v7/api/jsonarray/add/
   template <typename T>
   bool add(const T& value) const {
-    return detail::ArrayData::addValue(data_, value, resources_);
+    if (!impl_.isArray())
+      return false;
+    return addValue(value, impl_.data(), impl_.resources());
   }
 
   // Appends a value to the array.
@@ -71,15 +73,15 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
   template <typename T,
             detail::enable_if_t<!detail::is_const<T>::value, int> = 0>
   bool add(T* value) const {
-    return detail::ArrayData::addValue(data_, value, resources_);
+    if (!impl_.isArray())
+      return false;
+    return addValue(value, impl_.data(), impl_.resources());
   }
 
   // Returns an iterator to the first element of the array.
   // https://arduinojson.org/v7/api/jsonarray/begin/
   iterator begin() const {
-    if (!data_)
-      return iterator();
-    return iterator(data_->createIterator(resources_), resources_);
+    return iterator(impl_.createIterator(), impl_.resources());
   }
 
   // Returns an iterator following the last element of the array.
@@ -91,9 +93,6 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
   // Copies an array.
   // https://arduinojson.org/v7/api/jsonarray/set/
   bool set(JsonArrayConst src) const {
-    if (!data_)
-      return false;
-
     clear();
     for (auto element : src) {
       if (!add(element))
@@ -106,13 +105,13 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
   // Removes the element at the specified iterator.
   // https://arduinojson.org/v7/api/jsonarray/remove/
   void remove(iterator it) const {
-    detail::ArrayData::remove(data_, it.iterator_, resources_);
+    impl_.removeElement(it.iterator_);
   }
 
   // Removes the element at the specified index.
   // https://arduinojson.org/v7/api/jsonarray/remove/
   void remove(size_t index) const {
-    detail::ArrayData::removeElement(data_, index, resources_);
+    impl_.removeElement(index);
   }
 
   // Removes the element at the specified index.
@@ -127,7 +126,7 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
   // Removes all the elements of the array.
   // https://arduinojson.org/v7/api/jsonarray/clear/
   void clear() const {
-    detail::ArrayData::clear(data_, resources_);
+    impl_.empty();
   }
 
   // Gets or sets the element at the specified index.
@@ -150,31 +149,31 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
   }
 
   operator JsonVariantConst() const {
-    return JsonVariantConst(collectionToVariant(data_), resources_);
+    return JsonVariantConst(getData(), getResourceManager());
   }
 
   // Returns true if the reference is unbound.
   // https://arduinojson.org/v7/api/jsonarray/isnull/
   bool isNull() const {
-    return data_ == 0;
+    return impl_.isNull();
   }
 
   // Returns true if the reference is bound.
   // https://arduinojson.org/v7/api/jsonarray/isnull/
   operator bool() const {
-    return data_ != 0;
+    return !isNull();
   }
 
   // Returns the depth (nesting level) of the array.
   // https://arduinojson.org/v7/api/jsonarray/nesting/
   size_t nesting() const {
-    return detail::VariantData::nesting(collectionToVariant(data_), resources_);
+    return impl_.nesting();
   }
 
   // Returns the number of elements in the array.
   // https://arduinojson.org/v7/api/jsonarray/size/
   size_t size() const {
-    return data_ ? data_->size(resources_) : 0;
+    return impl_.size();
   }
 
   // DEPRECATED: use add<JsonVariant>() instead
@@ -201,19 +200,40 @@ class JsonArray : public detail::VariantOperators<JsonArray> {
 
  private:
   detail::ResourceManager* getResourceManager() const {
-    return resources_;
+    return impl_.resources();
   }
 
   detail::VariantData* getData() const {
-    return collectionToVariant(data_);
+    return impl_.data();
   }
 
   detail::VariantData* getOrCreateData() const {
-    return collectionToVariant(data_);
+    return impl_.data();
   }
 
-  detail::ArrayData* data_;
-  detail::ResourceManager* resources_;
+  // HACK: this function has been pulled out of VariantImpl to avoid the
+  // circular dependency between VariantImpl and JsonVariant
+  template <typename T>
+  static bool addValue(const T& value, detail::VariantData* data,
+                       detail::ResourceManager* resources) {
+    ARDUINOJSON_ASSERT(data != nullptr);
+    ARDUINOJSON_ASSERT(data->isArray());
+    ARDUINOJSON_ASSERT(resources != nullptr);
+
+    auto slot = resources->allocVariant();
+    if (!slot)
+      return false;
+
+    if (!JsonVariant(slot.ptr(), resources).set(value)) {
+      detail::VariantImpl::freeVariant(slot, resources);
+      return false;
+    }
+
+    detail::VariantImpl::addElement(slot, data, resources);
+    return true;
+  }
+
+  mutable detail::VariantImpl impl_;
 };
 
 ARDUINOJSON_END_PUBLIC_NAMESPACE

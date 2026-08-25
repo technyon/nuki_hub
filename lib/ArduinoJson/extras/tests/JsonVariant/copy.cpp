@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -38,13 +38,15 @@ TEST_CASE("JsonVariant::set(JsonVariant)") {
     REQUIRE(var1.as<std::string>() == "{\"value\":[42]}");
   }
 
-  SECTION("stores const char* by reference") {
+  SECTION("stores string literals by copy") {
     var1.set("hello!!");
     spyingAllocator.clearLog();
 
     var2.set(var1);
 
-    REQUIRE(spyingAllocator.log() == AllocatorLog{});
+    REQUIRE(spyingAllocator.log() == AllocatorLog{
+                                         Allocate(sizeofString("hello!!")),
+                                     });
   }
 
   SECTION("stores char* by copy") {

@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #define ARDUINOJSON_DECODE_UNICODE 1
@@ -121,7 +121,7 @@ TEST_CASE("deserializeJson() returns NoMemory if string length overflows") {
   }
 }
 
-TEST_CASE("deserializeJson() returns NoMemory if extension allocation fails") {
+TEST_CASE("deserializeJson() returns NoMemory if 8-bit slot allocation fails") {
   JsonDocument doc(FailingAllocator::instance());
 
   SECTION("uint32_t should pass") {

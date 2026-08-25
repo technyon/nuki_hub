@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -55,17 +55,15 @@ class ElementProxy : public VariantRefBase<ElementProxy<TUpstream>>,
   }
 
   FORCE_INLINE VariantData* getData() const {
-    return VariantData::getElement(
-        VariantAttorney::getData(upstream_), index_,
-        VariantAttorney::getResourceManager(upstream_));
+    return VariantAttorney::getVariantImpl(upstream_).getElement(index_);
   }
 
   VariantData* getOrCreateData() const {
     auto data = VariantAttorney::getOrCreateData(upstream_);
-    if (!data)
-      return nullptr;
-    return data->getOrAddElement(
-        index_, VariantAttorney::getResourceManager(upstream_));
+    auto resources = VariantAttorney::getResourceManager(upstream_);
+    if (data && data->type == VariantType::Null)
+      data->toArray();
+    return VariantImpl(data, resources).getOrAddElement(index_);
   }
 
   TUpstream upstream_;

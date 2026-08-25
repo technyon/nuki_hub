@@ -1,5 +1,5 @@
 // ArduinoJson - https://arduinojson.org
-// Copyright © 2014-2025, Benoit BLANCHON
+// Copyright © 2014-2026, Benoit BLANCHON
 // MIT License
 
 #include <ArduinoJson.h>
@@ -185,7 +185,6 @@ TEST_CASE("JsonVariant::as()") {
     REQUIRE(variant.as<long>() == 42L);
     REQUIRE(variant.as<double>() == 42);
     REQUIRE(variant.as<JsonString>() == "42");
-    REQUIRE(variant.as<JsonString>().isStatic() == true);
   }
 
   SECTION("set(\"hello\")") {
@@ -208,7 +207,6 @@ TEST_CASE("JsonVariant::as()") {
     REQUIRE(variant.as<const char*>() == "4.2"_s);
     REQUIRE(variant.as<std::string>() == "4.2"_s);
     REQUIRE(variant.as<JsonString>() == "4.2");
-    REQUIRE(variant.as<JsonString>().isStatic() == false);
   }
 
   SECTION("set(std::string(\"123.45\"))") {
@@ -220,7 +218,6 @@ TEST_CASE("JsonVariant::as()") {
     REQUIRE(variant.as<const char*>() == "123.45"_s);
     REQUIRE(variant.as<std::string>() == "123.45"_s);
     REQUIRE(variant.as<JsonString>() == "123.45");
-    REQUIRE(variant.as<JsonString>().isStatic() == false);
   }
 
   SECTION("set(\"true\")") {
