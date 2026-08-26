@@ -6,7 +6,7 @@
 #include "PsychicEndpoint.h"
 #include "PsychicHttpServer.h"
 #include "PsychicWebParameter.h"
-#include "../../../../../.platformio/packages/toolchain-xtensa-esp-elf/xtensa-esp-elf/include/c++/14.2.0/vector"
+#include <vector>
 
 #ifdef PSY_ENABLE_REGEX
   #include <regex>
