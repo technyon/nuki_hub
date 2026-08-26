@@ -4966,12 +4966,12 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     else if (restartServicesReconnect)
     {
-        message = "Configuration saved, restart services required to apply some settings";
+        message = "Configuration saved, reboot required to apply some settings";
         _restartServicesRequired = 2;
     }
     else if (restartServicesNoReconnect)
     {
-        message = "Configuration saved, restart services required to apply some settings";
+        message = "Configuration saved, reboot required to apply some settings";
         _restartServicesRequired = 1;
     }
     else
@@ -5125,11 +5125,11 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     buildHtmlHeader(&response, header);
     if(_rebootRequired)
     {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SOME SETTINGS</td></tr></tbody></table>");
+        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
     }
     if(_restartServicesRequired > 0)
     {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RESTART SERVICES REQUIRED TO APPLY SOME SETTINGS</td></tr></tbody></table>");
+        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
     }
 #ifdef DEBUG_NUKIHUB
     response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RUNNING DEBUG BUILD, SWITCH TO RELEASE BUILD ASAP</td></tr></tbody></table>");
@@ -5214,8 +5214,10 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     buildNavigationMenuEntry(&response, "Info page", "/get?page=info");
     String rebootUrl = "/get?page=reboot&CONFIRMTOKEN=" + _confirmCode;
     buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebootUrl.c_str());
+/*
     String restartServicesUrl = "/get?page=restartservices&CONFIRMTOKEN=" + _confirmCode;
     buildNavigationMenuEntry(&response, "Restart Services", restartServicesUrl.c_str());
+*/
     if (_preferences->getInt(preference_http_auth_type, 0) == 2)
     {
         buildNavigationMenuEntry(&response, "Logout", "/get?page=logout");
