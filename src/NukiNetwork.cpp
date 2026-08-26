@@ -1188,11 +1188,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
     }
     else if(comparePrefixedPath(topic, mqtt_topic_webserver_action) && !mqttRecentlyConnected())
     {
-        if(strcmp(data, "") == 0 ||
-                strcmp(data, "--") == 0)
-        {
-            return;
-        }
+        if(strcmp(data, "") == 0 || strcmp(data, "--") == 0) return;
 
         if(strcmp(data, "1") == 0)
         {
