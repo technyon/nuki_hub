@@ -96,6 +96,7 @@ private:
     const String pinStateToString(const NukiPinState& value) const;
 
     void printParameter(PsychicStreamResponse *response, const char* description, const char* value, const char *link = "", const char *id = "");
+    bool isParameterTrue(PsychicRequest *request, const char* key);
 
     NukiWrapper* _nuki = nullptr;
     NukiOpenerWrapper* _nukiOpener = nullptr;

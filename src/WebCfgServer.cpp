@@ -4636,6 +4636,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     {
         pass2 = request->getParam("CREDPASSRE")->value();
     }
+    if(request->hasParam("TOTPENA"))
+    {
+        _preferences->putBool(preference_totp_enabled, isParameterTrue(request, "TOTPENA"));
+    }
     if(request->hasParam("CREDTOTP"))
     {
         value = request->getParam("CREDTOTP")->value();
@@ -5278,6 +5282,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
     printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
     printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
+    printCheckBox(&response, "TOTPENA", "TOTP authentication enabled", _preferences->getBool(preference_totp_enabled, false), "");
     printInputField(&response, "CREDTOTP", "TOTP Secret Key", "*", 16, "", true, false);
     response.print("<tr id=\"totpgentr\" ><td><input type=\"button\" id=\"totpgen\" onclick=\"document.getElementsByName('CREDTOTP')[0].type='text'; document.getElementsByName('CREDTOTP')[0].value='");
     response.print(randomstr);
@@ -7267,6 +7272,22 @@ void WebCfgServer::printParameter(PsychicStreamResponse *response, const char *d
     response->print("</td>");
     response->print("</tr>");
 
+}
+
+bool WebCfgServer::isParameterTrue(PsychicRequest* request, const char* key)
+{
+    if(request->hasParam(key))
+    {
+        const std::vector<PsychicWebParameter*> parameters = request->getAllParam(key);
+        for (PsychicWebParameter* parameter : parameters)
+        {
+            if(parameter->value() == "1")
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const
