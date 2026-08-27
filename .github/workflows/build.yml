@@ -1,12 +1,12 @@
 name: NukiHub
 on:
-  push:
-    branches: ["*"]
-    tags: ["*"]
-  pull_request:
-    branches: ["*"]
-    tags: ["*"]
   workflow_dispatch:
+#  push:
+#    branches: ["*"]
+#    tags: ["*"]
+#  pull_request:
+#    branches: ["*"]
+#    tags: ["*"]
 
 permissions:
   contents: write
