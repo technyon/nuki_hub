@@ -29,7 +29,7 @@ When compared to the official MQTT implementation this adds many many features t
 - ESP32 running Nuki Hub 9.08 or higher
 - For WiFi: Nuki lock 3.0 Pro, Nuki Lock 4.0 Pro, Nuki Lock 5.0 Pro, Nuki Lock Go or Nuki Lock Ultra
 - For Thread: Nuki Lock 4.0, Nuki Lock 4.0 Pro, Nuki Lock 5.0 Pro, Nuki Lock Go or Nuki Lock Ultra. Note that you do ***NOT*** need to buy the remote access addon for the Nuki Lock 4.0 or Nuki Lock Go
-- For Thread: The Nuki Lock needs to have network access to the same MQTT server as the one that Nuki Hub is conected to. Depending if the MQTT server is reachable over IPv6 you might need an OpenThread Border router that supports NAT64 and has this enabled. Currently this means an Apple Device or Home Assistant with the Matter server and OpenThread Border Router
+- For Thread: The Nuki Lock needs to have network access to the same MQTT server as the one that Nuki Hub is connected to. Depending if the MQTT server is reachable over IPv6 you might need an OpenThread Border router that supports NAT64 and has this enabled. Currently this means an Apple Device or Home Assistant with the Matter server and OpenThread Border Router
 - The Nuki Opener does not have WiFI or Thread and thus doesn't benefit from the hybrid solutions added speed. You can however use and connect a Nuki Opener as usual which will function over regular BLE and can still connect Nuki Hub as a bridge to an Opener.
 
 ### Resources ###
