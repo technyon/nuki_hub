@@ -155,6 +155,7 @@
 #define preference_timecontrol_control_enabled (char*)"tcCntrlEnabled"
 #define preference_hybrid_reboot_on_disconnect (char*)"hybridRbtLck"
 #define preference_bypass_secret (char*)"bypassecret"
+#define preference_totp_enabled (char*)"totpena"
 #define preference_totp_secret (char*)"totpsecret"
 #define preference_mqtt_ssl_enabled (char*)"mqttSSLena"
 #define preference_mqtt_ca (char*)"mqttca"

@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include "ArduinoJson.h"
 #include <PsychicHttp.h>
+#include <vector>
 
 class ImportExport
 {

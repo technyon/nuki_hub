@@ -716,6 +716,8 @@ void startNuki(bool lock)
 
 void restartServices(bool reconnect)
 {
+    restartEsp(RestartReason::RestartServices);
+/*
     bleDone = false;
     lockEnabled = preferences->getBool(preference_lock_enabled);
     openerEnabled = preferences->getBool(preference_opener_enabled);
@@ -884,6 +886,7 @@ void restartServices(bool reconnect)
             Log->println("Starting web server done");
         }
     }
+*/
 }
 #endif
 

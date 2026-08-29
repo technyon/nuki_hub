@@ -438,6 +438,15 @@ PsychicWebParameter* PsychicRequest::getParam(const char* key, bool isPost, bool
   return NULL;
 }
 
+std::vector<PsychicWebParameter*> PsychicRequest::getAllParam(const char* name)
+{
+  std::vector<PsychicWebParameter*> results;
+  for (auto* param : _params)
+    if (param->name().equals(name))
+      results.push_back(param);
+  return results;
+}
+
 bool PsychicRequest::hasSessionKey(const String& key)
 {
   return this->_session->find(key) != this->_session->end();

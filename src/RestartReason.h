@@ -28,7 +28,8 @@ enum class RestartReason
     NukiHubReset,
     ReconfigureWebServer,
     DisableNetworkIfNotConnected,
-    NotApplicable
+    RestartServices,
+    NotApplicable,
 };
 
 #define RESTART_REASON_VALID_DETECT 0xa00ab00bc00bd00d;
@@ -123,6 +124,8 @@ inline static String getRestartReason()
         return "NetworkDisabledOnNotConnected";
     case RestartReason::NotApplicable:
         return "NotApplicable";
+    case RestartReason::RestartServices:
+        return "RestartServices";
     default:
         return "Unknown: " + restartReason;
     }

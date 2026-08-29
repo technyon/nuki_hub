@@ -2937,13 +2937,7 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("UPTIME"))
     {
-        value = request->getParam("UPTIME")->value();
-        if(_preferences->getBool(preference_update_time, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_update_time, (value == "1"));
-
-            restartServicesNoReconnect = true;
-        }
+        _preferences->putBool(preference_update_time, isParameterTrue(request, "UPTIME"));
     }
     if(request->hasParam("TIMESRV"))
     {
@@ -3182,11 +3176,11 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("DUOENA"))
     {
-        value = request->getParam("DUOENA")->value();
-        if(_preferences->getBool(preference_cred_duo_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DUOENA");
+        if(_preferences->getBool(preference_cred_duo_enabled, false) != v)
         {
-            _preferences->putBool(preference_cred_duo_enabled, (value == "1"));
-            if (value == "1")
+            _preferences->putBool(preference_cred_duo_enabled, v);
+            if (v)
             {
                 _preferences->putBool(preference_update_time, true);
             }
@@ -3198,11 +3192,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("DUOBYPASS"))
     {
-        value = request->getParam("DUOBYPASS")->value();
-        if(_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DUOBYPASS");
+        if(_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) != v)
         {
-            _preferences->putBool(preference_cred_bypass_boot_btn_enabled, (value == "1"));
-
+            _preferences->putBool(preference_cred_bypass_boot_btn_enabled, v);
             restartServicesNoReconnect = true;
         }
     }
@@ -3228,11 +3221,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("DUOAPPROVAL"))
     {
-        value = request->getParam("DUOAPPROVAL")->value();
-        if(_preferences->getBool(preference_cred_duo_approval, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DUOAPPROVAL");
+        if(_preferences->getBool(preference_cred_duo_approval, false) != v)
         {
-            _preferences->putBool(preference_cred_duo_approval, (value == "1"));
-
+            _preferences->putBool(preference_cred_duo_approval, v);
             restartServicesNoReconnect = true;
         }
     }
@@ -3304,22 +3296,21 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("HADEVDISC"))
     {
-        value = request->getParam("HADEVDISC")->value();
-        if(_preferences->getBool(preference_hass_device_discovery, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DUOAPPROVAL");
+        if(_preferences->getBool(preference_hass_device_discovery, false) != v)
         {
             _network->disableHASS();
-            _preferences->putBool(preference_hass_device_discovery, (value == "1"));
-
+            _preferences->putBool(preference_hass_device_discovery, v);
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("ENHADISC"))
     {
-        value = request->getParam("ENHADISC")->value();
-        if(_preferences->getBool(preference_mqtt_hass_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "ENHADISC");
+        if(_preferences->getBool(preference_mqtt_hass_enabled, false) != v)
         {
             _network->disableHASS();
-            _preferences->putBool(preference_mqtt_hass_enabled, (value == "1"));
+            _preferences->putBool(preference_mqtt_hass_enabled, v);
 
             restartServicesReconnect = true;
         }
@@ -3337,11 +3328,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("OPENERCONT"))
     {
-        value = request->getParam("OPENERCONT")->value();
-        if(_preferences->getBool(preference_opener_continuous_mode, false) != (value == "1"))
+        bool v = isParameterTrue(request, "OPENERCONT");
+        if(_preferences->getBool(preference_opener_continuous_mode, false) != v)
         {
-            _preferences->putBool(preference_opener_continuous_mode, (value == "1"));
-
+            _preferences->putBool(preference_opener_continuous_mode, v);
         }
     }
     if(request->hasParam("HASSCUURL"))
@@ -3374,89 +3364,80 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("FINDBESTRSSI"))
     {
-        value = request->getParam("FINDBESTRSSI")->value();
-        if(_preferences->getBool(preference_find_best_rssi, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_find_best_rssi, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "FINDBESTRSSI");
+        _preferences->putBool(preference_find_best_rssi, v);
     }
     if(request->hasParam("RSTDISC"))
     {
-        value = request->getParam("RSTDISC")->value();
-        if(_preferences->getBool(preference_restart_on_disconnect, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_restart_on_disconnect, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "RSTDISC");
+        _preferences->putBool(preference_restart_on_disconnect, v);
     }
     if(request->hasParam("MQTTLOG"))
     {
-        value = request->getParam("MQTTLOG")->value();
-        if(_preferences->getBool(preference_mqtt_log_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "MQTTLOG");
+        if(_preferences->getBool(preference_mqtt_log_enabled, false) != v)
         {
-            _preferences->putBool(preference_mqtt_log_enabled, (value == "1"));
-
+            _preferences->putBool(preference_mqtt_log_enabled, v);
             configChanged = true;
         }
     }
     if(request->hasParam("MQTTSENA"))
     {
-        value = request->getParam("MQTTSENA")->value();
-        if(_preferences->getBool(preference_mqtt_ssl_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "MQTTSENA");
+        if(_preferences->getBool(preference_mqtt_ssl_enabled, false) != v)
         {
-            _preferences->putBool(preference_mqtt_ssl_enabled, (value == "1"));
+            _preferences->putBool(preference_mqtt_ssl_enabled, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("WEBLOG"))
     {
-        value = request->getParam("WEBLOG")->value();
-        if(_preferences->getBool(preference_webserial_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "WEBLOG");
+        if(_preferences->getBool(preference_webserial_enabled, false) != v)
         {
-            _preferences->putBool(preference_webserial_enabled, (value == "1"));
+            _preferences->putBool(preference_webserial_enabled, v);
 
             restartServicesNoReconnect = true;
         }
     }
     if(request->hasParam("FRCHSTUPD"))
     {
-        value = request->getParam("FRCHSTUPD")->value();
-        if(_preferences->getBool(preference_force_hosted_update, false) != (value == "1"))
+        bool v = isParameterTrue(request, "FRCHSTUPD");
+        if(_preferences->getBool(preference_force_hosted_update, false) != v)
         {
-            _preferences->putBool(preference_force_hosted_update, (value == "1"));
+            _preferences->putBool(preference_force_hosted_update, v);
 
             configChanged = true;
         }
     }
     if(request->hasParam("CHECKUPDATE"))
     {
-        value = request->getParam("CHECKUPDATE")->value();
-        if(_preferences->getBool(preference_check_updates, false) != (value == "1"))
+        bool v = isParameterTrue(request, "CHECKUPDATE");
+        if(_preferences->getBool(preference_check_updates, false) != v)
         {
-            _preferences->putBool(preference_check_updates, (value == "1"));
+            _preferences->putBool(preference_check_updates, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("UPDATEMQTT"))
     {
-        value = request->getParam("UPDATEMQTT")->value();
-        if(_preferences->getBool(preference_update_from_mqtt, false) != (value == "1"))
+        bool v = isParameterTrue(request, "UPDATEMQTT");
+        if(_preferences->getBool(preference_update_from_mqtt, false) != v)
         {
-            _preferences->putBool(preference_update_from_mqtt, (value == "1"));
+            _preferences->putBool(preference_update_from_mqtt, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("OFFHYBRID"))
     {
-        value = request->getParam("OFFHYBRID")->value();
-        if(_preferences->getBool(preference_official_hybrid_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "OFFHYBRID");
+        if(_preferences->getBool(preference_official_hybrid_enabled, false) != v)
         {
-            _preferences->putBool(preference_official_hybrid_enabled, (value == "1"));
-            if((value == "1"))
+            _preferences->putBool(preference_official_hybrid_enabled, v);
+            if(v)
             {
                 _preferences->putBool(preference_register_as_app, true);
             }
@@ -3466,15 +3447,14 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("HYBRIDACT"))
     {
-        value = request->getParam("HYBRIDACT")->value();
-        if(_preferences->getBool(preference_official_hybrid_actions, false) != (value == "1"))
+        bool v = isParameterTrue(request, "HYBRIDACT");
+        if(_preferences->getBool(preference_official_hybrid_actions, false) != v)
         {
-            _preferences->putBool(preference_official_hybrid_actions, (value == "1"));
-            if(value == "1")
+            _preferences->putBool(preference_official_hybrid_actions, v);
+            if(v)
             {
                 _preferences->putBool(preference_register_as_app, true);
             }
-
         }
     }
     if(request->hasParam("HYBRIDTIMER"))
@@ -3497,30 +3477,30 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("HYBRIDREBOOT"))
     {
-        value = request->getParam("HYBRIDREBOOT")->value();
-        if(_preferences->getBool(preference_hybrid_reboot_on_disconnect, false) != (value == "1"))
+        bool v = isParameterTrue(request, "HYBRIDACT");
+        if(_preferences->getBool(preference_hybrid_reboot_on_disconnect, false) != v)
         {
-            _preferences->putBool(preference_hybrid_reboot_on_disconnect, (value == "1"));
+            _preferences->putBool(preference_hybrid_reboot_on_disconnect, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("DISNONJSON"))
     {
-        value = request->getParam("DISNONJSON")->value();
-        if(_preferences->getBool(preference_disable_non_json, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DISNONJSON");
+        if(_preferences->getBool(preference_disable_non_json, false) != v)
         {
-            _preferences->putBool(preference_disable_non_json, (value == "1"));
+            _preferences->putBool(preference_disable_non_json, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("DHCPENA"))
     {
-        value = request->getParam("DHCPENA")->value();
-        if(_preferences->getBool(preference_ip_dhcp_enabled, true) != (value == "1"))
+        bool v = isParameterTrue(request, "DHCPENA");
+        if(_preferences->getBool(preference_ip_dhcp_enabled, true) != v)
         {
-            _preferences->putBool(preference_ip_dhcp_enabled, (value == "1"));
+            _preferences->putBool(preference_ip_dhcp_enabled, v);
 
             configChanged = true;
         }
@@ -3747,19 +3727,19 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("BTLPRST"))
     {
-        value = request->getParam("BTLPRST")->value();
-        if(_preferences->getBool(preference_enable_bootloop_reset, false) != (value == "1"))
+        bool v = isParameterTrue(request, "BTLPRST");
+        if(_preferences->getBool(preference_enable_bootloop_reset, false) != v)
         {
-            _preferences->putBool(preference_enable_bootloop_reset, (value == "1"));
+            _preferences->putBool(preference_enable_bootloop_reset, v);
 
         }
     }
     if(request->hasParam("DISNTWNOCON"))
     {
-        value = request->getParam("DISNTWNOCON")->value();
-        if(_preferences->getBool(preference_disable_network_not_connected, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DISNTWNOCON");
+        if(_preferences->getBool(preference_disable_network_not_connected, false) != v)
         {
-            _preferences->putBool(preference_disable_network_not_connected, (value == "1"));
+            _preferences->putBool(preference_disable_network_not_connected, v);
 
             restartServicesReconnect = true;
         }
@@ -3786,117 +3766,96 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("SHOWSECRETS"))
     {
-        value = request->getParam("SHOWSECRETS")->value();
-        if(_preferences->getBool(preference_show_secrets, false) != (value == "1"))
+        bool v = isParameterTrue(request, "SHOWSECRETS");
+        if(_preferences->getBool(preference_show_secrets, false) != v)
         {
-            _preferences->putBool(preference_show_secrets, (value == "1"));
-
+            _preferences->putBool(preference_show_secrets, v);
         }
     }
     if(request->hasParam("DBGCONN"))
     {
-        value = request->getParam("DBGCONN")->value();
-        if(_preferences->getBool(preference_debug_connect, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DBGCONN");
+        if(_preferences->getBool(preference_debug_connect, false) != v)
         {
-            _preferences->putBool(preference_debug_connect, (value == "1"));
+            _preferences->putBool(preference_debug_connect, v);
 
             restartServicesNoReconnect = true;
         }
     }
     if(request->hasParam("DBGCOMMU"))
     {
-        value = request->getParam("DBGCOMMU")->value();
-        if(_preferences->getBool(preference_debug_communication, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DBGCOMMU");
+        if(_preferences->getBool(preference_debug_communication, false) != v)
         {
-            _preferences->putBool(preference_debug_communication, (value == "1"));
+            _preferences->putBool(preference_debug_communication, v);
 
             restartServicesNoReconnect = true;
         }
     }
     if(request->hasParam("DBGHEAP"))
     {
-        value = request->getParam("DBGHEAP")->value();
-        if(_preferences->getBool(preference_publish_debug_info, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DBGHEAP");
+        if(_preferences->getBool(preference_publish_debug_info, false) != v)
         {
-            _preferences->putBool(preference_publish_debug_info, (value == "1"));
+            _preferences->putBool(preference_publish_debug_info, v);
 
             restartServicesNoReconnect = true;
         }
     }
     if(request->hasParam("DBGREAD"))
     {
-        value = request->getParam("DBGREAD")->value();
-        if(_preferences->getBool(preference_debug_readable_data, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DBGREAD");
+        if(_preferences->getBool(preference_debug_readable_data, false) != v)
         {
-            _preferences->putBool(preference_debug_readable_data, (value == "1"));
+            _preferences->putBool(preference_debug_readable_data, v);
 
             restartServicesNoReconnect = true;
         }
     }
     if(request->hasParam("DBGHEX"))
     {
-        value = request->getParam("DBGHEX")->value();
-        if(_preferences->getBool(preference_debug_hex_data, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DBGHEX");
+        if(_preferences->getBool(preference_debug_hex_data, false) != v)
         {
-            _preferences->putBool(preference_debug_hex_data, (value == "1"));
+            _preferences->putBool(preference_debug_hex_data, v);
 
             restartServicesNoReconnect = true;
         }
     }
     if(request->hasParam("DBGCOMM"))
     {
-        value = request->getParam("DBGCOMM")->value();
-        if(_preferences->getBool(preference_debug_command, false) != (value == "1"))
+        bool v = isParameterTrue(request, "DBGCOMM");
+        if(_preferences->getBool(preference_debug_command, false) != v)
         {
-            _preferences->putBool(preference_debug_command, (value == "1"));
+            _preferences->putBool(preference_debug_command, v);
 
             restartServicesNoReconnect = true;
         }
     }
     if(request->hasParam("LCKFORCEID"))
     {
-        value = request->getParam("LCKFORCEID")->value();
-        if(_preferences->getBool(preference_lock_force_id, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_lock_force_id, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "LCKFORCEID");
+        _preferences->putBool(preference_lock_force_id, v);
     }
     if(request->hasParam("LCKFORCEKP"))
     {
-        value = request->getParam("LCKFORCEKP")->value();
-        if(_preferences->getBool(preference_lock_force_keypad, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_lock_force_keypad, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "LCKFORCEKP");
+        _preferences->putBool(preference_lock_force_keypad, v);
     }
     if(request->hasParam("LCKFORCEDS"))
     {
-        value = request->getParam("LCKFORCEDS")->value();
-        if(_preferences->getBool(preference_lock_force_doorsensor, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_lock_force_doorsensor, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "LCKFORCEDS");
+        _preferences->putBool(preference_lock_force_doorsensor, v);
     }
     if(request->hasParam("OPFORCEID"))
     {
-        value = request->getParam("OPFORCEID")->value();
-        if(_preferences->getBool(preference_opener_force_id, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_opener_force_id, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "OPFORCEID");
+        _preferences->putBool(preference_opener_force_id, v);
     }
     if(request->hasParam("OPFORCEKP"))
     {
-        value = request->getParam("OPFORCEKP")->value();
-        if(_preferences->getBool(preference_opener_force_keypad, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_opener_force_keypad, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "OPFORCEKP");
+        _preferences->putBool(preference_opener_force_keypad, v);
     }
     if(request->hasParam("ACLLVLCHANGED"))
     {
@@ -3904,160 +3863,115 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("CONFPUB"))
     {
-        value = request->getParam("CONFPUB")->value();
-        if(_preferences->getBool(preference_conf_info_enabled, true) != (value == "1"))
-        {
-            _preferences->putBool(preference_conf_info_enabled, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "CONFPUB");
+        _preferences->putBool(preference_conf_info_enabled, v);
     }
     if(request->hasParam("CONFNHPUB"))
     {
-        value = request->getParam("CONFNHPUB")->value();
-        if(_preferences->getBool(preference_publish_config, false) != (value == "1"))
+        bool v = isParameterTrue(request, "CONFNHPUB");
+        if(_preferences->getBool(preference_publish_config, false) != v)
         {
             if(_preferences->getBool(preference_config_from_mqtt, false) && _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) < 8192)
             {
                 _preferences->putInt(preference_buffer_size, 8192);
             }
-            _preferences->putBool(preference_publish_config, (value == "1"));
+            _preferences->putBool(preference_publish_config, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("CONFNHCTRL"))
     {
-        value = request->getParam("CONFNHCTRL")->value();
-        if(_preferences->getBool(preference_config_from_mqtt, false) != (value == "1"))
+        bool v = isParameterTrue(request, "CONFNHCTRL");
+        if(_preferences->getBool(preference_config_from_mqtt, false) != v)
         {
             if(_preferences->getBool(preference_config_from_mqtt, false) && _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) < 8192)
             {
                 _preferences->putInt(preference_buffer_size, 8192);
             }
-            _preferences->putBool(preference_config_from_mqtt, (value == "1"));
+            _preferences->putBool(preference_config_from_mqtt, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("KPPUB"))
     {
-        value = request->getParam("KPPUB")->value();
-        if(_preferences->getBool(preference_keypad_info_enabled, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_keypad_info_enabled, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "KPPUB");
+        _preferences->putBool(preference_keypad_info_enabled, v);
     }
     if(request->hasParam("KPCODE"))
     {
-        value = request->getParam("KPCODE")->value();
-        if(_preferences->getBool(preference_keypad_publish_code, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_keypad_publish_code, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "KPCODE");
+        _preferences->putBool(preference_keypad_publish_code, v);
     }
     if(request->hasParam("KPCHECK"))
     {
-        value = request->getParam("KPCHECK")->value();
-        if(_preferences->getBool(preference_keypad_check_code_enabled, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_keypad_check_code_enabled, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "KPCHECK");
+        _preferences->putBool(preference_keypad_check_code_enabled, v);
     }
     if(request->hasParam("KPENA"))
     {
-        value = request->getParam("KPENA")->value();
-        if(_preferences->getBool(preference_keypad_control_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "KPENA");
+        if(_preferences->getBool(preference_keypad_control_enabled, false) != v)
         {
-            _preferences->putBool(preference_keypad_control_enabled, (value == "1"));
-
+            _preferences->putBool(preference_keypad_control_enabled, v);
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("TCPUB"))
     {
-        value = request->getParam("TCPUB")->value();
-        if(_preferences->getBool(preference_timecontrol_info_enabled, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_timecontrol_info_enabled, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "TCPUB");
+        _preferences->putBool(preference_timecontrol_info_enabled, v);
     }
     if(request->hasParam("AUTHPUB"))
     {
-        value = request->getParam("AUTHPUB")->value();
-        if(_preferences->getBool(preference_auth_info_enabled, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_auth_info_enabled, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "AUTHPUB");
+        _preferences->putBool(preference_auth_info_enabled, v);
     }
     if(request->hasParam("KPPER"))
     {
-        value = request->getParam("KPPER")->value();
-        if(_preferences->getBool(preference_keypad_topic_per_entry, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_keypad_topic_per_entry, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "KPPER");
+        _preferences->putBool(preference_keypad_topic_per_entry, v);
     }
     if(request->hasParam("TCPER"))
     {
-        value = request->getParam("TCPER")->value();
-        if(_preferences->getBool(preference_timecontrol_topic_per_entry, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_timecontrol_topic_per_entry, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "TCPER");
+        _preferences->putBool(preference_timecontrol_topic_per_entry, v);
     }
     if(request->hasParam("TCENA"))
     {
-        value = request->getParam("TCENA")->value();
-        if(_preferences->getBool(preference_timecontrol_control_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "TCENA");
+        if(_preferences->getBool(preference_timecontrol_control_enabled, false) != v)
         {
-            _preferences->putBool(preference_timecontrol_control_enabled, (value == "1"));
+            _preferences->putBool(preference_timecontrol_control_enabled, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("AUTHPER"))
     {
-        value = request->getParam("AUTHPER")->value();
-        if(_preferences->getBool(preference_auth_topic_per_entry, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_auth_topic_per_entry, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "AUTHPER");
+        _preferences->putBool(preference_auth_topic_per_entry, v);
     }
     if(request->hasParam("AUTHENA"))
     {
-        value = request->getParam("AUTHENA")->value();
-        if(_preferences->getBool(preference_auth_control_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "AUTHENA");
+        if(_preferences->getBool(preference_auth_control_enabled, false) != v)
         {
-            _preferences->putBool(preference_auth_control_enabled, (value == "1"));
+            _preferences->putBool(preference_auth_control_enabled, v);
 
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("PUBAUTH"))
     {
-        value = request->getParam("PUBAUTH")->value();
-        if(_preferences->getBool(preference_publish_authdata, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_publish_authdata, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "PUBAUTH");
+        _preferences->putBool(preference_publish_authdata, v);
     }
     if(request->hasParam("SAVELOGNUM"))
     {
-        value = request->getParam("SAVELOGNUM")->value();
-        if(_preferences->getBool(preference_save_log_num, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_save_log_num, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "SAVELOGNUM");
+        _preferences->putBool(preference_save_log_num, v);
     }
     if(request->hasParam("CREDDIGEST"))
     {
@@ -4560,39 +4474,30 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("REGAPP"))
     {
-        value = request->getParam("REGAPP")->value();
-        if(_preferences->getBool(preference_register_as_app, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_register_as_app, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "REGAPP");
+        _preferences->putBool(preference_register_as_app, v);
     }
     if(request->hasParam("REGAPPOPN"))
     {
-        value = request->getParam("REGAPPOPN")->value();
-        if(_preferences->getBool(preference_register_opener_as_app, false) != (value == "1"))
-        {
-            _preferences->putBool(preference_register_opener_as_app, (value == "1"));
-
-        }
+        bool v = isParameterTrue(request, "REGAPPOPN");
+        _preferences->putBool(preference_register_opener_as_app, v);
     }
     if(request->hasParam("LOCKENA"))
     {
-        value = request->getParam("LOCKENA")->value();
-        if(_preferences->getBool(preference_lock_enabled, true) != (value == "1"))
+        bool v = isParameterTrue(request, "LOCKENA");
+        if(_preferences->getBool(preference_lock_enabled, true) != v)
         {
-            _preferences->putBool(preference_lock_enabled, (value == "1"));
-
+            _preferences->putBool(preference_lock_enabled, v);
             restartServicesReconnect = true;
         }
     }
     if(request->hasParam("GEMINIENA"))
     {
-        value = request->getParam("GEMINIENA")->value();
-        if(_preferences->getBool(preference_lock_gemini_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "GEMINIENA");
+        if(_preferences->getBool(preference_lock_gemini_enabled, false) != v)
         {
-            _preferences->putBool(preference_lock_gemini_enabled, (value == "1"));
-            if (value == "1")
+            _preferences->putBool(preference_lock_gemini_enabled, v);
+            if (v)
             {
                 _preferences->putBool(preference_register_as_app, true);
                 _preferences->putBool(preference_lock_enabled, true);
@@ -4604,10 +4509,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("OPENA"))
     {
-        value = request->getParam("OPENA")->value();
-        if(_preferences->getBool(preference_opener_enabled, false) != (value == "1"))
+        bool v = isParameterTrue(request, "OPENA");
+        if(_preferences->getBool(preference_opener_enabled, false) != v)
         {
-            _preferences->putBool(preference_opener_enabled, (value == "1"));
+            _preferences->putBool(preference_opener_enabled, v);
             restartServicesReconnect = true;
         }
     }
@@ -4635,6 +4540,10 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     if(request->hasParam("CREDPASSRE"))
     {
         pass2 = request->getParam("CREDPASSRE")->value();
+    }
+    if(request->hasParam("TOTPENA"))
+    {
+        _preferences->putBool(preference_totp_enabled, isParameterTrue(request, "TOTPENA"));
     }
     if(request->hasParam("CREDTOTP"))
     {
@@ -4966,12 +4875,12 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     else if (restartServicesReconnect)
     {
-        message = "Configuration saved, restart services required to apply some settings";
+        message = "Configuration saved, reboot required to apply some settings";
         _restartServicesRequired = 2;
     }
     else if (restartServicesNoReconnect)
     {
-        message = "Configuration saved, restart services required to apply some settings";
+        message = "Configuration saved, reboot required to apply some settings";
         _restartServicesRequired = 1;
     }
     else
@@ -5125,11 +5034,11 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     buildHtmlHeader(&response, header);
     if(_rebootRequired)
     {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SOME SETTINGS</td></tr></tbody></table>");
+        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
     }
     if(_restartServicesRequired > 0)
     {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RESTART SERVICES REQUIRED TO APPLY SOME SETTINGS</td></tr></tbody></table>");
+        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
     }
 #ifdef DEBUG_NUKIHUB
     response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RUNNING DEBUG BUILD, SWITCH TO RELEASE BUILD ASAP</td></tr></tbody></table>");
@@ -5214,8 +5123,10 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     buildNavigationMenuEntry(&response, "Info page", "/get?page=info");
     String rebootUrl = "/get?page=reboot&CONFIRMTOKEN=" + _confirmCode;
     buildNavigationMenuEntry(&response, "Reboot Nuki Hub", rebootUrl.c_str());
+/*
     String restartServicesUrl = "/get?page=restartservices&CONFIRMTOKEN=" + _confirmCode;
     buildNavigationMenuEntry(&response, "Restart Services", restartServicesUrl.c_str());
+*/
     if (_preferences->getInt(preference_http_auth_type, 0) == 2)
     {
         buildNavigationMenuEntry(&response, "Logout", "/get?page=logout");
@@ -5276,6 +5187,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
     printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
     printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
+    printCheckBox(&response, "TOTPENA", "TOTP authentication enabled", _preferences->getBool(preference_totp_enabled, false), "");
     printInputField(&response, "CREDTOTP", "TOTP Secret Key", "*", 16, "", true, false);
     response.print("<tr id=\"totpgentr\" ><td><input type=\"button\" id=\"totpgen\" onclick=\"document.getElementsByName('CREDTOTP')[0].type='text'; document.getElementsByName('CREDTOTP')[0].value='");
     response.print(randomstr);
@@ -7265,6 +7177,22 @@ void WebCfgServer::printParameter(PsychicStreamResponse *response, const char *d
     response->print("</td>");
     response->print("</tr>");
 
+}
+
+bool WebCfgServer::isParameterTrue(PsychicRequest* request, const char* key)
+{
+    if(request->hasParam(key))
+    {
+        const std::vector<PsychicWebParameter*> parameters = request->getAllParam(key);
+        for (PsychicWebParameter* parameter : parameters)
+        {
+            if(parameter->value() == "1")
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const
