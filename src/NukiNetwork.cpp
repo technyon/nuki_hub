@@ -202,7 +202,9 @@ void NukiNetwork::initialize()
         esp_efuse_mac_get_default(mac);
         uint64_t curDevId;
         memcpy(&curDevId, &mac, 8);
-        sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
+
+        snprintf(_nukiHubUidString, sizeof(_nukiHubUidString), "%llu", (unsigned long long)curDevId);
+
         _hostname = (String)"NH" + _nukiHubUidString;
         _preferences->putString(preference_hostname, _hostname);
     }
@@ -245,7 +247,7 @@ void NukiNetwork::initialize()
             esp_efuse_mac_get_default(mac);
             uint64_t curDevId;
             memcpy(&curDevId, &mac, 8);
-            sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
+            snprintf(_nukiHubUidString, sizeof(_nukiHubUidString), "%llu", (unsigned long long)curDevId);
             _hostname = (String)"NH" + _nukiHubUidString;
             _preferences->putString(preference_hostname, _hostname);
         }

@@ -83,7 +83,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
         vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 
-    sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
+    snprintf(_nukiHubUidString, sizeof(_nukiHubUidString), "%llu", (unsigned long long)curDevId);
 
     char uidString[20];
     itoa(nukiId, uidString, 16);
