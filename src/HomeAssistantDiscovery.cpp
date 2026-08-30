@@ -84,6 +84,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
     }
 
     sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
+    Log->printf("_nukiHubUidString: %s\n", _nukiHubUidString);
 
     char uidString[20];
     itoa(nukiId, uidString, 16);
