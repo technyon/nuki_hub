@@ -3999,478 +3999,478 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     }
     if(request->hasParam("ACLLCKLCK"))
     {
-        value = request->getParam("ACLLCKLCK")->value();
-        aclPrefs[0] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKLCK");
+        aclPrefs[0] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKUNLCK"))
     {
-        value = request->getParam("ACLLCKUNLCK")->value();
-        aclPrefs[1] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKUNLCK");
+        aclPrefs[1] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKUNLTCH"))
     {
-        value = request->getParam("ACLLCKUNLTCH")->value();
-        aclPrefs[2] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKUNLTCH");
+        aclPrefs[2] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKLNG"))
     {
-        value = request->getParam("ACLLCKLNG")->value();
-        aclPrefs[3] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKLNG");
+        aclPrefs[3] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKLNGU"))
     {
-        value = request->getParam("ACLLCKLNGU")->value();
-        aclPrefs[4] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKLNGU");
+        aclPrefs[4] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKFLLCK"))
     {
-        value = request->getParam("ACLLCKFLLCK")->value();
-        aclPrefs[5] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKFLLCK");
+        aclPrefs[5] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKFOB1"))
     {
-        value = request->getParam("ACLLCKFOB1")->value();
-        aclPrefs[6] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKFOB1");
+        aclPrefs[6] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKFOB2"))
     {
-        value = request->getParam("ACLLCKFOB2")->value();
-        aclPrefs[7] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKFOB2");
+        aclPrefs[7] = v ? 1 : 0;
     }
     if(request->hasParam("ACLLCKFOB3"))
     {
-        value = request->getParam("ACLLCKFOB3")->value();
-        aclPrefs[8] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLLCKFOB3");
+        aclPrefs[8] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNUNLCK"))
     {
-        value = request->getParam("ACLOPNUNLCK")->value();
-        aclPrefs[9] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNUNLCK");
+        aclPrefs[9] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNLCK"))
     {
-        value = request->getParam("ACLOPNLCK")->value();
-        aclPrefs[10] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNLCK");
+        aclPrefs[10] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNUNLTCH"))
     {
-        value = request->getParam("ACLOPNUNLTCH")->value();
-        aclPrefs[11] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNUNLTCH");
+        aclPrefs[11] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNUNLCKCM"))
     {
-        value = request->getParam("ACLOPNUNLCKCM")->value();
-        aclPrefs[12] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNUNLCKCM");
+        aclPrefs[12] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNLCKCM"))
     {
-        value = request->getParam("ACLOPNLCKCM")->value();
-        aclPrefs[13] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNLCKCM");
+        aclPrefs[13] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNFOB1"))
     {
-        value = request->getParam("ACLOPNFOB1")->value();
-        aclPrefs[14] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNFOB1");
+        aclPrefs[14] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNFOB2"))
     {
-        value = request->getParam("ACLOPNFOB2")->value();
-        aclPrefs[15] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNFOB2");
+        aclPrefs[15] = v ? 1 : 0;
     }
     if(request->hasParam("ACLOPNFOB3"))
     {
-        value = request->getParam("ACLOPNFOB3")->value();
-        aclPrefs[16] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "ACLOPNFOB3");
+        aclPrefs[16] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKNAME"))
     {
-        value = request->getParam("CONFLCKNAME")->value();
-        basicLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKNAME");
+        basicLockConfigAclPrefs[0] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKLAT"))
     {
-        value = request->getParam("CONFLCKLAT")->value();
-        basicLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKLAT");
+        basicLockConfigAclPrefs[1] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKLONG"))
     {
-        value = request->getParam("CONFLCKLONG")->value();
-        basicLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKLONG");
+        basicLockConfigAclPrefs[2] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKAUNL"))
     {
-        value = request->getParam("CONFLCKAUNL")->value();
-        basicLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKAUNL");
+        basicLockConfigAclPrefs[3] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKPRENA"))
     {
-        value = request->getParam("CONFLCKPRENA")->value();
-        basicLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKPRENA");
+        basicLockConfigAclPrefs[4] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKBTENA"))
     {
-        value = request->getParam("CONFLCKBTENA")->value();
-        basicLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKBTENA");
+        basicLockConfigAclPrefs[5] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKLEDENA"))
     {
-        value = request->getParam("CONFLCKLEDENA")->value();
-        basicLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKLEDENA");
+        basicLockConfigAclPrefs[6] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKLEDBR"))
     {
-        value = request->getParam("CONFLCKLEDBR")->value();
-        basicLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKLEDBR");
+        basicLockConfigAclPrefs[7] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKTZOFF"))
     {
-        value = request->getParam("CONFLCKTZOFF")->value();
-        basicLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKTZOFF");
+        basicLockConfigAclPrefs[8] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKDSTM"))
     {
-        value = request->getParam("CONFLCKDSTM")->value();
-        basicLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKDSTM");
+        basicLockConfigAclPrefs[9] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKFOB1"))
     {
-        value = request->getParam("CONFLCKFOB1")->value();
-        basicLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKFOB1");
+        basicLockConfigAclPrefs[10] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKFOB2"))
     {
-        value = request->getParam("CONFLCKFOB2")->value();
-        basicLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKFOB2");
+        basicLockConfigAclPrefs[11] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKFOB3"))
     {
-        value = request->getParam("CONFLCKFOB3")->value();
-        basicLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKFOB3");
+        basicLockConfigAclPrefs[12] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKSGLLCK"))
     {
-        value = request->getParam("CONFLCKSGLLCK")->value();
-        basicLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKSGLLCK");
+        basicLockConfigAclPrefs[13] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKADVM"))
     {
-        value = request->getParam("CONFLCKADVM")->value();
-        basicLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKADVM");
+        basicLockConfigAclPrefs[14] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKTZID"))
     {
-        value = request->getParam("CONFLCKTZID")->value();
-        basicLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKTZID");
+        basicLockConfigAclPrefs[15] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKUPOD"))
     {
-        value = request->getParam("CONFLCKUPOD")->value();
-        advancedLockConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKUPOD");
+        advancedLockConfigAclPrefs[0] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKLPOD"))
     {
-        value = request->getParam("CONFLCKLPOD")->value();
-        advancedLockConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKLPOD");
+        advancedLockConfigAclPrefs[1] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKSLPOD"))
     {
-        value = request->getParam("CONFLCKSLPOD")->value();
-        advancedLockConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKSLPOD");
+        advancedLockConfigAclPrefs[2] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKUTLTOD"))
     {
-        value = request->getParam("CONFLCKUTLTOD")->value();
-        advancedLockConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKUTLTOD");
+        advancedLockConfigAclPrefs[3] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKLNGT"))
     {
-        value = request->getParam("CONFLCKLNGT")->value();
-        advancedLockConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKLNGT");
+        advancedLockConfigAclPrefs[4] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKSBPA"))
     {
-        value = request->getParam("CONFLCKSBPA")->value();
-        advancedLockConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKSBPA");
+        advancedLockConfigAclPrefs[5] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKDBPA"))
     {
-        value = request->getParam("CONFLCKDBPA")->value();
-        advancedLockConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKDBPA");
+        advancedLockConfigAclPrefs[6] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKDC"))
     {
-        value = request->getParam("CONFLCKDC")->value();
-        advancedLockConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKDC");
+        advancedLockConfigAclPrefs[7] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKBATT"))
     {
-        value = request->getParam("CONFLCKBATT")->value();
-        advancedLockConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKBATT");
+        advancedLockConfigAclPrefs[8] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKABTD"))
     {
-        value = request->getParam("CONFLCKABTD")->value();
-        advancedLockConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKABTD");
+        advancedLockConfigAclPrefs[9] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKUNLD"))
     {
-        value = request->getParam("CONFLCKUNLD")->value();
-        advancedLockConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKUNLD");
+        advancedLockConfigAclPrefs[10] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKALT"))
     {
-        value = request->getParam("CONFLCKALT")->value();
-        advancedLockConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKALT");
+        advancedLockConfigAclPrefs[11] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKAUNLD"))
     {
-        value = request->getParam("CONFLCKAUNLD")->value();
-        advancedLockConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKAUNLD");
+        advancedLockConfigAclPrefs[12] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKNMENA"))
     {
-        value = request->getParam("CONFLCKNMENA")->value();
-        advancedLockConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKNMENA");
+        advancedLockConfigAclPrefs[13] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKNMST"))
     {
-        value = request->getParam("CONFLCKNMST")->value();
-        advancedLockConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKNMST");
+        advancedLockConfigAclPrefs[14] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKNMET"))
     {
-        value = request->getParam("CONFLCKNMET")->value();
-        advancedLockConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKNMET");
+        advancedLockConfigAclPrefs[15] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKNMALENA"))
     {
-        value = request->getParam("CONFLCKNMALENA")->value();
-        advancedLockConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKNMALENA");
+        advancedLockConfigAclPrefs[16] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKNMAULD"))
     {
-        value = request->getParam("CONFLCKNMAULD")->value();
-        advancedLockConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKNMAULD");
+        advancedLockConfigAclPrefs[17] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKNMLOS"))
     {
-        value = request->getParam("CONFLCKNMLOS")->value();
-        advancedLockConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKNMLOS");
+        advancedLockConfigAclPrefs[18] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKALENA"))
     {
-        value = request->getParam("CONFLCKALENA")->value();
-        advancedLockConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKALENA");
+        advancedLockConfigAclPrefs[19] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKIALENA"))
     {
-        value = request->getParam("CONFLCKIALENA")->value();
-        advancedLockConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKIALENA");
+        advancedLockConfigAclPrefs[20] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKAUENA"))
     {
-        value = request->getParam("CONFLCKAUENA")->value();
-        advancedLockConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKAUENA");
+        advancedLockConfigAclPrefs[21] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKRBTNUKI"))
     {
-        value = request->getParam("CONFLCKRBTNUKI")->value();
-        advancedLockConfigAclPrefs[22] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKRBTNUKI");
+        advancedLockConfigAclPrefs[22] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKMTRSPD"))
     {
-        value = request->getParam("CONFLCKMTRSPD")->value();
-        advancedLockConfigAclPrefs[23] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKMTRSPD");
+        advancedLockConfigAclPrefs[23] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKESSDNM"))
     {
-        value = request->getParam("CONFLCKESSDNM")->value();
-        advancedLockConfigAclPrefs[24] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKESSDNM");
+        advancedLockConfigAclPrefs[24] = v ? 1 : 0;
     }
     if(request->hasParam("CONFLCKRCBRTNUKI"))
     {
-        value = request->getParam("CONFLCKRCBRTNUKI")->value();
-        advancedLockConfigAclPrefs[25] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFLCKRCBRTNUKI");
+        advancedLockConfigAclPrefs[25] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNNAME"))
     {
-        value = request->getParam("CONFOPNNAME")->value();
-        basicOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNNAME");
+        basicOpenerConfigAclPrefs[0] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNLAT"))
     {
-        value = request->getParam("CONFOPNLAT")->value();
-        basicOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNLAT");
+        basicOpenerConfigAclPrefs[1] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNLONG"))
     {
-        value = request->getParam("CONFOPNLONG")->value();
-        basicOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNLONG");
+        basicOpenerConfigAclPrefs[2] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNPRENA"))
     {
-        value = request->getParam("CONFOPNPRENA")->value();
-        basicOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNPRENA");
+        basicOpenerConfigAclPrefs[3] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNBTENA"))
     {
-        value = request->getParam("CONFOPNBTENA")->value();
-        basicOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNBTENA");
+        basicOpenerConfigAclPrefs[4] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNLEDENA"))
     {
-        value = request->getParam("CONFOPNLEDENA")->value();
-        basicOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNLEDENA");
+        basicOpenerConfigAclPrefs[5] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNTZOFF"))
     {
-        value = request->getParam("CONFOPNTZOFF")->value();
-        basicOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNTZOFF");
+        basicOpenerConfigAclPrefs[6] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNDSTM"))
     {
-        value = request->getParam("CONFOPNDSTM")->value();
-        basicOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNDSTM");
+        basicOpenerConfigAclPrefs[7] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNFOB1"))
     {
-        value = request->getParam("CONFOPNFOB1")->value();
-        basicOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNFOB1");
+        basicOpenerConfigAclPrefs[8] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNFOB2"))
     {
-        value = request->getParam("CONFOPNFOB2")->value();
-        basicOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNFOB2");
+        basicOpenerConfigAclPrefs[9] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNFOB3"))
     {
-        value = request->getParam("CONFOPNFOB3")->value();
-        basicOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNFOB3");
+        basicOpenerConfigAclPrefs[10] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNOPM"))
     {
-        value = request->getParam("CONFOPNOPM")->value();
-        basicOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNOPM");
+        basicOpenerConfigAclPrefs[11] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNADVM"))
     {
-        value = request->getParam("CONFOPNADVM")->value();
-        basicOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNADVM");
+        basicOpenerConfigAclPrefs[12] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNTZID"))
     {
-        value = request->getParam("CONFOPNTZID")->value();
-        basicOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNTZID");
+        basicOpenerConfigAclPrefs[13] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNICID"))
     {
-        value = request->getParam("CONFOPNICID")->value();
-        advancedOpenerConfigAclPrefs[0] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNICID");
+        advancedOpenerConfigAclPrefs[0] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNBUSMS"))
     {
-        value = request->getParam("CONFOPNBUSMS")->value();
-        advancedOpenerConfigAclPrefs[1] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNBUSMS");
+        advancedOpenerConfigAclPrefs[1] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSCDUR"))
     {
-        value = request->getParam("CONFOPNSCDUR")->value();
-        advancedOpenerConfigAclPrefs[2] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSCDUR");
+        advancedOpenerConfigAclPrefs[2] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNESD"))
     {
-        value = request->getParam("CONFOPNESD")->value();
-        advancedOpenerConfigAclPrefs[3] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNESD");
+        advancedOpenerConfigAclPrefs[3] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNRESD"))
     {
-        value = request->getParam("CONFOPNRESD")->value();
-        advancedOpenerConfigAclPrefs[4] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNRESD");
+        advancedOpenerConfigAclPrefs[4] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNESDUR"))
     {
-        value = request->getParam("CONFOPNESDUR")->value();
-        advancedOpenerConfigAclPrefs[5] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNESDUR");
+        advancedOpenerConfigAclPrefs[5] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNDRTOAR"))
     {
-        value = request->getParam("CONFOPNDRTOAR")->value();
-        advancedOpenerConfigAclPrefs[6] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNDRTOAR");
+        advancedOpenerConfigAclPrefs[6] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNRTOT"))
     {
-        value = request->getParam("CONFOPNRTOT")->value();
-        advancedOpenerConfigAclPrefs[7] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNRTOT");
+        advancedOpenerConfigAclPrefs[7] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNDRBSUP"))
     {
-        value = request->getParam("CONFOPNDRBSUP")->value();
-        advancedOpenerConfigAclPrefs[8] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNDRBSUP");
+        advancedOpenerConfigAclPrefs[8] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNDRBSUPDUR"))
     {
-        value = request->getParam("CONFOPNDRBSUPDUR")->value();
-        advancedOpenerConfigAclPrefs[9] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNDRBSUPDUR");
+        advancedOpenerConfigAclPrefs[9] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSRING"))
     {
-        value = request->getParam("CONFOPNSRING")->value();
-        advancedOpenerConfigAclPrefs[10] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSRING");
+        advancedOpenerConfigAclPrefs[10] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSOPN"))
     {
-        value = request->getParam("CONFOPNSOPN")->value();
-        advancedOpenerConfigAclPrefs[11] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSOPN");
+        advancedOpenerConfigAclPrefs[11] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSRTO"))
     {
-        value = request->getParam("CONFOPNSRTO")->value();
-        advancedOpenerConfigAclPrefs[12] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSRTO");
+        advancedOpenerConfigAclPrefs[12] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSCM"))
     {
-        value = request->getParam("CONFOPNSCM")->value();
-        advancedOpenerConfigAclPrefs[13] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSCM");
+        advancedOpenerConfigAclPrefs[13] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSCFRM"))
     {
-        value = request->getParam("CONFOPNSCFRM")->value();
-        advancedOpenerConfigAclPrefs[14] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSCFRM");
+        advancedOpenerConfigAclPrefs[14] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSLVL"))
     {
-        value = request->getParam("CONFOPNSLVL")->value();
-        advancedOpenerConfigAclPrefs[15] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSLVL");
+        advancedOpenerConfigAclPrefs[15] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNSBPA"))
     {
-        value = request->getParam("CONFOPNSBPA")->value();
-        advancedOpenerConfigAclPrefs[16] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNSBPA");
+        advancedOpenerConfigAclPrefs[16] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNDBPA"))
     {
-        value = request->getParam("CONFOPNDBPA")->value();
-        advancedOpenerConfigAclPrefs[17] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNDBPA");
+        advancedOpenerConfigAclPrefs[17] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNBATT"))
     {
-        value = request->getParam("CONFOPNBATT")->value();
-        advancedOpenerConfigAclPrefs[18] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNBATT");
+        advancedOpenerConfigAclPrefs[18] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNABTD"))
     {
-        value = request->getParam("CONFOPNABTD")->value();
-        advancedOpenerConfigAclPrefs[19] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNABTD");
+        advancedOpenerConfigAclPrefs[19] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNRBTNUKI"))
     {
-        value = request->getParam("CONFOPNRBTNUKI")->value();
-        advancedOpenerConfigAclPrefs[20] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNRBTNUKI");
+        advancedOpenerConfigAclPrefs[20] = v ? 1 : 0;
     }
     if(request->hasParam("CONFOPNRCBRTNUKI"))
     {
-        value = request->getParam("CONFOPNRCBRTNUKI")->value();
-        advancedOpenerConfigAclPrefs[21] = ((value == "1") ? 1 : 0);
+        bool v = isParameterTrue(request, "CONFOPNRCBRTNUKI");
+        advancedOpenerConfigAclPrefs[21] = v ? 1 : 0;
     }
     if(request->hasParam("REGAPP"))
     {
