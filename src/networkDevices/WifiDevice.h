@@ -6,6 +6,8 @@
 #include "esp_wifi.h"
 #include <WiFi.h>
 
+class Preferences;
+
 class WifiDevice : public NetworkDevice
 {
 public:
@@ -32,6 +34,7 @@ private:
     bool connect();
     bool isWifiConfigured() const;
 
+    void finalizeScan();
     void onWifiEvent(const WiFiEvent_t& event, const WiFiEventInfo_t& info);
 
     Preferences* _preferences = nullptr;

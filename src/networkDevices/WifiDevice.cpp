@@ -96,6 +96,21 @@ void WifiDevice::scan(bool passive, bool async)
     {
         WiFi.scanNetworks(async);
     }
+
+    while (_foundNetworks == 0 && loop < 50)
+    {
+        if (esp_task_wdt_status(NULL) == ESP_OK)
+        {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        loop++;
+    }
+
+    if (_openAP && _foundNetworks == 0)
+    {
+        finalizeScan();
+    }
 }
 
 void WifiDevice::openAP()
@@ -238,6 +253,35 @@ bool WifiDevice::isWifiConfigured() const
     return ssid.length() > 0 && pass.length() > 0;
 }
 
+void WifiDevice::finalizeScan()
+{
+    _foundNetworks = WiFi.scanComplete();
+
+    for (int i = 0; i < _foundNetworks; i++)
+    {
+        Log->println(String("SSID ") + WiFi.SSID(i) + String(" found with RSSI: ") +
+                     String(WiFi.RSSI(i)) + String(("(")) +
+                     String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
+                     String(" %) and BSSID: ") + WiFi.BSSIDstr(i) +
+                     String(" and channel: ") + String(WiFi.channel(i)));
+    }
+
+    if (_openAP)
+    {
+        openAP();
+    }
+    else if (_foundNetworks > 0 || _preferences->getBool(preference_find_best_rssi, false))
+    {
+        esp_wifi_scan_stop();
+        connect();
+    }
+    else
+    {
+        Log->println("No networks found, restarting scan");
+        scan(false, true);
+    }
+}
+
 void WifiDevice::reconfigure()
 {
     _preferences->putString(preference_wifi_ssid, "");
@@ -304,31 +348,7 @@ void WifiDevice::onWifiEvent(const WiFiEvent_t &event, const WiFiEventInfo_t &in
         break;
     case ARDUINO_EVENT_WIFI_SCAN_DONE:
         Log->println("Completed scan for access points");
-        _foundNetworks = WiFi.scanComplete();
-
-        for (int i = 0; i < _foundNetworks; i++)
-        {
-            Log->println(String("SSID ") + WiFi.SSID(i) + String(" found with RSSI: ") +
-                         String(WiFi.RSSI(i)) + String(("(")) +
-                         String(constrain((100.0 + WiFi.RSSI(i)) * 2, 0, 100)) +
-                         String(" %) and BSSID: ") + WiFi.BSSIDstr(i) +
-                         String(" and channel: ") + String(WiFi.channel(i)));
-        }
-
-        if (_openAP)
-        {
-            openAP();
-        }
-        else if (_foundNetworks > 0 || _preferences->getBool(preference_find_best_rssi, false))
-        {
-            esp_wifi_scan_stop();
-            connect();
-        }
-        else
-        {
-            Log->println("No networks found, restarting scan");
-            scan(false, true);
-        }
+        finalizeScan();
         break;
     case ARDUINO_EVENT_WIFI_STA_START:
         Log->println("WiFi client started");
