@@ -1,0 +1,26 @@
+{
+    "release": {
+        "time": "2026-09-05",
+        "version": "9.17",
+        "version_int": "917",
+        "fullversion": "9.17",
+        "build": "33964278354.22.1",
+        "number": 1
+    },
+    "beta": {
+        "time": "0000-00-00",
+        "version": "No beta available",
+        "version_int": "No beta available",
+        "fullversion": "No beta available",
+        "build": "",
+        "number": "0"
+    },
+    "master": {
+        "time": "2026-09-05",
+        "version": "9.17",
+        "version_int": "917",
+        "fullversion": "9.17-master2",
+        "build": "33962694532.857.1",
+        "number": 2
+    }
+}
