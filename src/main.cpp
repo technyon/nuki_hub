@@ -1032,13 +1032,12 @@ void processNetworkTask(const bool& firstRun)
     checkBootLoopCounter(ts);
     updateSerialReader();
 
-
     network->update();
     if (esp_task_wdt_status(NULL) == ESP_OK)
     {
         esp_task_wdt_reset();
     }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    espDelay(50);
     bool connected = network->isConnected();
 
     initNetworkTask(connected, firstRun);
@@ -1088,7 +1087,7 @@ void networkTask(void *pvParameters)
         {
             esp_task_wdt_reset();
         }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        espDelay(50);
 
         firstRun = false;
     }
@@ -1151,7 +1150,7 @@ void checkPairing()
         {
             esp_task_wdt_reset();
         }
-        vTaskDelay(2500 / portTICK_PERIOD_MS);
+        espDelay(2500);
     }
     else if (!whiteListed)
     {
@@ -1249,7 +1248,7 @@ void processNukiTask()
         {
             esp_task_wdt_reset();
         }
-        vTaskDelay(20 / portTICK_PERIOD_MS);
+        espDelay(20);
     }
 
     checkPairing();
@@ -1279,7 +1278,7 @@ void nukiTask(void *pvParameters)
         {
             esp_task_wdt_reset();
         }
-        vTaskDelay(20000 / portTICK_PERIOD_MS);
+        espDelay(20000);
 #endif
     }
     int64_t nukiLoopTs = 0;
@@ -1297,7 +1296,7 @@ void nukiTask(void *pvParameters)
         {
             esp_task_wdt_reset();
         }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        espDelay(50);
     }
 }
 

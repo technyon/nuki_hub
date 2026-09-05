@@ -1,9 +1,11 @@
 #include "esp_task_wdt.h"
 #include "WifiDevice.h"
+
 #include "../PreferencesKeys.h"
 #include "../Logger.h"
 #include "../RestartReason.h"
 #include "../EspMillis.h"
+#include "enums/NetworkDeviceType.h"
 
 WifiDevice::WifiDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration)
     : NetworkDevice(hostname, preferences, ipConfiguration),
@@ -68,11 +70,7 @@ void WifiDevice::scan(bool passive, bool async)
     int loop = 0;
     while (!_wifiClientStarted && loop < 50)
     {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        espDelayAck(100);
         loop++;
     }
 
@@ -99,11 +97,7 @@ void WifiDevice::scan(bool passive, bool async)
 
     while (_foundNetworks == 0 && loop < 50)
     {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        espDelayAck(100);
         loop++;
     }
 
@@ -120,17 +114,9 @@ void WifiDevice::openAP()
         Log->println("Starting AP with SSID NukiHub and Password NukiHubESP32");
         _startAP = false;
         WiFi.mode(WIFI_AP);
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        espDelayAck(500);
         WiFi.softAPsetHostname(_hostname.c_str());
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        espDelayAck(500);
         WiFi.softAP("NukiHub", "NukiHubESP32");
 
         //if(MDNS.begin(_hostname.c_str())){
@@ -144,11 +130,7 @@ bool WifiDevice::connect()
     int loop = 0;
     while (!_wifiClientStarted && loop < 50)
     {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        espDelayAck(100);
         loop++;
     }
 
@@ -213,11 +195,7 @@ bool WifiDevice::connect()
     while(!isConnected() && loop < 600)
     {
         Log->print(".");
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(25 / portTICK_PERIOD_MS);
+        espDelayAck(25);
         loop++;
     }
     Log->println("");
@@ -229,11 +207,7 @@ bool WifiDevice::connect()
         if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
         {
             Log->println("Restart on disconnect watchdog triggered, rebooting");
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            espDelayAck(100);
             restartEsp(RestartReason::RestartOnDisconnectWatchdog);
         }
         else
@@ -286,11 +260,7 @@ void WifiDevice::reconfigure()
 {
     _preferences->putString(preference_wifi_ssid, "");
     _preferences->putString(preference_wifi_pass, "");
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    espDelayAck(200);
     restartEsp(RestartReason::ReconfigureWifi);
 }
 

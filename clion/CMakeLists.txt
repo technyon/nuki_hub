@@ -65,6 +65,7 @@ set(SRCFILES
         ../src/DoorSensorOverride.h
         ../src/WebSessionProvider.cpp
         ../src/WebSessionProvider.h
+        ../src/espDelay.h
 )
 
 file(GLOB_RECURSE SRCFILESREC

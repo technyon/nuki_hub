@@ -491,11 +491,7 @@ bool NukiNetwork::update()
         bool success = reconnect();
         if(!success)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(2000 / portTICK_PERIOD_MS);
+            espDelayAck(2000);
             _mqttConnectCounter++;
             return false;
         }
@@ -504,22 +500,14 @@ bool NukiNetwork::update()
         if(forceEnableWebServer && !_webEnabled)
         {
             forceEnableWebServer = false;
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(200 / portTICK_PERIOD_MS);
+            espDelayAck(200);
             setRestartServices(false);
         }
         else if(!_webEnabled)
         {
             forceEnableWebServer = false;
         }
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        espDelayAck(2000);
     }
 
     if(!_device->isConnected() || !_device->mqttConnected() )
@@ -531,18 +519,10 @@ bool NukiNetwork::update()
                 forceEnableWebServer = true;
             }
             Log->println("Network timeout has been reached, restarting ...");
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(200 / portTICK_PERIOD_MS);
+            espDelayAck(200);
             restartEsp(RestartReason::NetworkTimeoutWatchdog);
         }
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        espDelayAck(2000);
         return false;
     }
 
@@ -791,11 +771,7 @@ bool NukiNetwork::reconnect(bool force)
 
         while(!_connectReplyReceived && espMillis() < timeout)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(50 / portTICK_PERIOD_MS);
+            espDelayAck(50);
             _device->update();
             if(_keepAliveCallback != nullptr)
             {
@@ -808,11 +784,7 @@ bool NukiNetwork::reconnect(bool force)
             Log->println("MQTT connected");
             _mqttConnectedTs = espMillis();
             _mqttConnectionState = 1;
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            espDelayAck(100);
             _device->mqttOnMessage(onMqttDataReceivedCallback);
 
             if(_firstConnect)
@@ -1058,11 +1030,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
     {
         Log->println("Restart requested via MQTT.");
         clearWifiFallback();
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        espDelayAck(200);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false) && !mqttRecentlyConnected() && _hasInternet)
@@ -1115,11 +1083,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
                     Log->println("Updating to latest release version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK)
-                    {
-                        esp_task_wdt_reset();
-                    }
-                    vTaskDelay(200 / portTICK_PERIOD_MS);
+                    espDelayAck(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1134,11 +1098,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
                     Log->println("Updating to latest beta version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK)
-                    {
-                        esp_task_wdt_reset();
-                    }
-                    vTaskDelay(200 / portTICK_PERIOD_MS);
+                    espDelayAck(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1153,11 +1113,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
                     Log->println("Updating to latest developmemt version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK)
-                    {
-                        esp_task_wdt_reset();
-                    }
-                    vTaskDelay(200 / portTICK_PERIOD_MS);
+                    espDelayAck(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1172,11 +1128,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                     _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
                     _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
                     Log->println("Updating to latest release version.");
-                    if (esp_task_wdt_status(NULL) == ESP_OK)
-                    {
-                        esp_task_wdt_reset();
-                    }
-                    vTaskDelay(200 / portTICK_PERIOD_MS);
+                    espDelayAck(200);
                     restartEsp(RestartReason::OTAReboot);
                 }
             }
@@ -1209,11 +1161,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
             _preferences->putBool(preference_webserver_enabled, false);
         }
         clearWifiFallback();
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        espDelayAck(200);
         setRestartServices(false);
     }
     else if(comparePrefixedPath(topic, mqtt_topic_nuki_hub_config_action) && !mqttRecentlyConnected())
@@ -1265,11 +1213,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                             while (duoResult == 2)
                             {
                                 duoResult = _importExport->checkDuoApprove();
-                                if (esp_task_wdt_status(NULL) == ESP_OK)
-                                {
-                                    esp_task_wdt_reset();
-                                }
-                                vTaskDelay(2000 / portTICK_PERIOD_MS);
+                                espDelayAck(2000);
                             }
                         }
 
@@ -1386,11 +1330,7 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                         serializeJson(json, _buffer, _bufferSize);
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_json, _buffer, false);
                         publishString(_maintenancePathPrefix, mqtt_topic_nuki_hub_config_action, "--", true);
-                        if (esp_task_wdt_status(NULL) == ESP_OK)
-                        {
-                            esp_task_wdt_reset();
-                        }
-                        vTaskDelay(200 / portTICK_PERIOD_MS);
+                        espDelayAck(200);
                         restartEsp(RestartReason::ConfigurationUpdated);
                     }
                     else
