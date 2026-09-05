@@ -9,6 +9,14 @@ inline int64_t espMillis()
     return esp_timer_get_time() / 1000;
 }
 
+inline static void wdtReset()
+{
+    if (esp_task_wdt_status(NULL) == ESP_OK)
+    {
+        esp_task_wdt_reset();
+    }
+}
+
 inline static void espDelay(TickType_t durationMs)
 {
     vTaskDelay(durationMs / portTICK_PERIOD_MS);
@@ -16,9 +24,19 @@ inline static void espDelay(TickType_t durationMs)
 
 inline static void espDelayAck(TickType_t durationMs)
 {
-    if (esp_task_wdt_status(NULL) == ESP_OK)
+//  Watchdog is at default of 5 seconds. 4 seconds is a safe threshold to reset the watchdog and avoid a reset during long delays.
+    if (durationMs <= 4000)
     {
-        esp_task_wdt_reset();
+        wdtReset();
+        espDelay(durationMs);
+        return;
     }
-    espDelay(durationMs);
+
+//  Long delay, keep watchdog updated
+    int64_t ts = espMillis();
+    while (espMillis() - ts < durationMs)
+    {
+        wdtReset();
+        espDelay(20);
+    }
 }

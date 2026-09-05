@@ -249,11 +249,7 @@ bool NukiOpenerWrapper::checkPaired()
         return true;
     }
 
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    espDelayAck(200);
 
     return false;
 }
@@ -271,11 +267,7 @@ void NukiOpenerWrapper::checkRestartByBeacon(const int64_t& ts)
         Log->print("No BLE beacon received from the opener for ");
         Log->print((ts - lastReceivedBeaconTs) / 1000);
         Log->println(" seconds, signalling to restart BLE controller.");
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        espDelayAck(200);
         _restartController = 2;
     }
 }
@@ -412,11 +404,7 @@ void NukiOpenerWrapper::update()
 
         if(_statusUpdated)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(500 / portTICK_PERIOD_MS);
+            espDelayAck(500);
         }
     }
     if(_network->mqttConnectionState() == 2)
@@ -776,11 +764,7 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            espDelayAck(100);
 
             std::list<NukiOpener::LogEntry> log;
             _nukiOpener.getLogEntries(&log);
@@ -2566,11 +2550,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 
                         if(resultKp == Nuki::CmdResult::Success)
                         {
-                            if (esp_task_wdt_status(NULL) == ESP_OK)
-                            {
-                                esp_task_wdt_reset();
-                            }
-                            vTaskDelay(5000 / portTICK_PERIOD_MS);
+                            espDelayAck(5000);
                             std::list<NukiOpener::KeypadEntry> entries;
                             _nukiOpener.getKeypadEntries(&entries);
 
@@ -2936,11 +2916,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK)
-                        {
-                            esp_task_wdt_reset();
-                        }
-                        vTaskDelay(5000 / portTICK_PERIOD_MS);
+                        espDelayAck(5000);
                         std::list<NukiOpener::TimeControlEntry> timeControlEntries;
                         _nukiOpener.getTimeControlEntries(&timeControlEntries);
 
@@ -3396,11 +3372,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK)
-                        {
-                            esp_task_wdt_reset();
-                        }
-                        vTaskDelay(5000 / portTICK_PERIOD_MS);
+                        espDelayAck(5000);
                         std::list<NukiOpener::AuthorizationEntry> entries;
                         _nukiOpener.getAuthorizationEntries(&entries);
 

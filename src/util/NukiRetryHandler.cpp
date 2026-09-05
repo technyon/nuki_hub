@@ -21,10 +21,7 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
 
     while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
     {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
+        wdtReset();
 
         cmdResult = func();
 
@@ -41,7 +38,7 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
             Log->print(" of ");
             Log->println(_nrOfRetries);
 
-            vTaskDelay(_retryDelay / portTICK_PERIOD_MS);
+            espDelayAck(_retryDelay);
         }
     }
     setCommPins(LOW);
