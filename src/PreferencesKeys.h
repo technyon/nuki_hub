@@ -433,18 +433,17 @@ inline void initPreferences(Preferences* preferences)
         {
             Log->println("Migration 9.07");
 
-            int size = certSize();
+            // Allocate on the heap: with PSRAM certSize() is 8000 bytes and three
+            // stack buffers of that size (24000 bytes) overflow the 12 KB loopTask
+            // stack (stack canary watchpoint on every boot of a fresh install).
+            const size_t size = certSize();
 
-            char ca[size];
-            char cert[size];
-            char key[size];
-
-            for (int i = 0; i < certSize(); i++)
-            {
-                ca[i] = 0;
-                cert[i] = 0;
-                key[i] = 0;
-            }
+            std::vector<char> caBuf(size, 0);
+            std::vector<char> certBuf(size, 0);
+            std::vector<char> keyBuf(size, 0);
+            char* ca = caBuf.data();
+            char* cert = certBuf.data();
+            char* key = keyBuf.data();
 
             size_t caLength = preferences->getString(preference_mqtt_ca, ca, size);
             size_t crtLength = preferences->getString(preference_mqtt_crt, cert, size);
