@@ -266,11 +266,7 @@ bool NukiWrapper::checkPaired()
         return true;
     }
 
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    espDelayAck(200);
     return false;
 }
 
@@ -287,11 +283,7 @@ void NukiWrapper::checkRestartByBeacon(const int64_t& ts)
         Log->print("No BLE beacon received from the lock for ");
         Log->print((ts - lastReceivedBeaconTs) / 1000);
         Log->println(" seconds, signalling to restart BLE controller.");
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        espDelayAck(200);
         _restartController = 2;
     }
 }
@@ -381,11 +373,7 @@ void NukiWrapper::checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCo
 
         if(_statusUpdated)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(500 / portTICK_PERIOD_MS);
+            espDelayAck(500);
         }
     }
 }
@@ -842,11 +830,7 @@ void NukiWrapper::updateDebug()
     count = 0;
     while (count < 5)
     {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        espDelayAck(1000);
         count++;
     }
 
@@ -863,16 +847,7 @@ void NukiWrapper::updateDebug()
     Log->print("Result: ");
     Log->println(result);
 
-    count = 0;
-    while (count < 15)
-    {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        count++;
-    }
+    espDelayAck(15000);
 
     std::list<NukiLock::InternalLogEntry> internalLogEntries;
     _nukiLock.getInternalLogEntries(&internalLogEntries);
@@ -887,16 +862,7 @@ void NukiWrapper::updateDebug()
     Log->print("Result: ");
     Log->println(result);
 
-    count = 0;
-    while (count < 20)
-    {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        count++;
-    }
+    espDelayAck(20000);
 
     std::list<NukiLock::WifiScanEntry> wifiScanEntries;
     _nukiLock.getWifiScanEntries(&wifiScanEntries);
@@ -965,11 +931,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            espDelayAck(100);
 
             std::list<NukiLock::LogEntry> log;
             _nukiLock.getLogEntries(&log);
@@ -2979,11 +2941,7 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 
                         if(resultKp == Nuki::CmdResult::Success)
                         {
-                            if (esp_task_wdt_status(NULL) == ESP_OK)
-                            {
-                                esp_task_wdt_reset();
-                            }
-                            vTaskDelay(5000 / portTICK_PERIOD_MS);
+                            espDelayAck(5000);
                             std::list<NukiLock::KeypadEntry> entries;
                             _nukiLock.getKeypadEntries(&entries);
 
@@ -3350,11 +3308,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     if(resultTc == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK)
-                        {
-                            esp_task_wdt_reset();
-                        }
-                        vTaskDelay(5000 / portTICK_PERIOD_MS);
+                        espDelayAck(5000);
                         std::list<NukiLock::TimeControlEntry> timeControlEntries;
                         _nukiLock.getTimeControlEntries(&timeControlEntries);
 
@@ -3570,11 +3524,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                 if(idExists)
                 {
                     result = _nukiLock.deleteAuthorizationEntry(authId);
-                    if (esp_task_wdt_status(NULL) == ESP_OK)
-                    {
-                        esp_task_wdt_reset();
-                    }
-                    vTaskDelay(250 / portTICK_PERIOD_MS);
+                    espDelayAck(250);
                     Log->print("Delete authorization: ");
                     Log->println((int)result);
                 }
@@ -3794,11 +3744,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiLock.addAuthorizationEntry(entry);
-                    if (esp_task_wdt_status(NULL) == ESP_OK)
-                    {
-                        esp_task_wdt_reset();
-                    }
-                    vTaskDelay(250 / portTICK_PERIOD_MS);
+                    espDelayAck(250);
                     Log->print("Add authorization: ");
                     Log->println((int)result);
                 }
@@ -3821,11 +3767,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
 
                     if(resultAuth == Nuki::CmdResult::Success)
                     {
-                        if (esp_task_wdt_status(NULL) == ESP_OK)
-                        {
-                            esp_task_wdt_reset();
-                        }
-                        vTaskDelay(5000 / portTICK_PERIOD_MS);
+                        espDelayAck(5000);
                         std::list<NukiLock::AuthorizationEntry> entries;
                         _nukiLock.getAuthorizationEntries(&entries);
 
@@ -3968,11 +3910,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     }
 
                     result = _nukiLock.updateAuthorizationEntry(entry);
-                    if (esp_task_wdt_status(NULL) == ESP_OK)
-                    {
-                        esp_task_wdt_reset();
-                    }
-                    vTaskDelay(250 / portTICK_PERIOD_MS);
+                    espDelay(250);
                     Log->print("Update authorization: ");
                     Log->println((int)result);
                 }

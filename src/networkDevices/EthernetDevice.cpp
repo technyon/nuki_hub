@@ -69,22 +69,14 @@ const String EthernetDevice::deviceName() const
 
 void EthernetDevice::initialize()
 {
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(250 / portTICK_PERIOD_MS);
+    espDelayAck(250);
     if(ethCriticalFailure)
     {
         ethCriticalFailure = false;
         Log->println("Failed to initialize ethernet hardware");
         Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
         wifiFallback = true;
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        espDelayAck(200);
         restartEsp(RestartReason::NetworkDeviceCriticalFailure);
         return;
     }
@@ -149,13 +141,8 @@ void EthernetDevice::initialize()
         Log->println("Failed to initialize ethernet hardware");
         Log->println("Network device has a critical failure, enable fallback to Wi-Fi and reboot.");
         wifiFallback = true;
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(200 / portTICK_PERIOD_MS);
+        espDelayAck(200);
         restartEsp(RestartReason::NetworkDeviceCriticalFailure);
-        return;
     }
 }
 
@@ -235,11 +222,7 @@ void EthernetDevice::onNetworkEvent(arduino_event_id_t event, arduino_event_info
 
 void EthernetDevice::reconfigure()
 {
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    espDelayAck(200);
     restartEsp(RestartReason::ReconfigureETH);
 }
 

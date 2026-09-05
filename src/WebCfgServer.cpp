@@ -1612,11 +1612,7 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
         int loop = 0;
         while(!_network->isConnected() && loop < 150)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            espDelayAck(100);
             loop++;
         }
 
@@ -1933,7 +1929,7 @@ void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
         }
         else
         {
-            vTaskDelay(50 / portTICK_PERIOD_MS);
+            espDelayAck(50);
         }
     }
 }

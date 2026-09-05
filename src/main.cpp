@@ -952,11 +952,7 @@ void updateWebSerial(const bool& connected)
     if(connected && webSerialEnabled && (webSSLStarted || webStarted))
     {
         webCfgServerSSL->updateWebSerial();
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        espDelayAck(50);
     }
 #endif
 }
@@ -969,21 +965,13 @@ void updateNukiNetwork(const bool& connected)
     if(lockStarted)
     {
         rebootLock = networkLock->update();
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        espDelayAck(50);
     }
 
     if(openerStarted)
     {
         networkOpener->update();
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        espDelayAck(50);
     }
 #endif
 }
@@ -1032,13 +1020,8 @@ void processNetworkTask(const bool& firstRun)
     checkBootLoopCounter(ts);
     updateSerialReader();
 
-
     network->update();
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    espDelayAck(50);
     bool connected = network->isConnected();
 
     initNetworkTask(connected, firstRun);
@@ -1084,11 +1067,7 @@ void networkTask(void *pvParameters)
             networkLoopTs = espMillis();
         }
 
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        espDelayAck(50);
 
         firstRun = false;
     }
@@ -1147,11 +1126,7 @@ void checkPairing()
     bool needsPairing = (lockStarted && !nuki->isPaired()) || (openerStarted && !nukiOpener->isPaired());
     if (needsPairing)
     {
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(2500 / portTICK_PERIOD_MS);
+        espDelayAck(2500);
     }
     else if (!whiteListed)
     {
@@ -1245,11 +1220,7 @@ void processNukiTask()
     if(bleScannerStarted)
     {
         bleScanner->update();
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(20 / portTICK_PERIOD_MS);
+        espDelayAck(20);
     }
 
     checkPairing();
@@ -1267,19 +1238,11 @@ void nukiTask(void *pvParameters)
         if (esp_psram_get_size() <= 0)
         {
             Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(20000 / portTICK_PERIOD_MS);
+            espDelayAck(20000);
         }
 #else
         Log->println("Waiting 20 seconds to start BLE because of MQTT SSL");
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(20000 / portTICK_PERIOD_MS);
+        espDelayAck(20000);
 #endif
     }
     int64_t nukiLoopTs = 0;
@@ -1293,11 +1256,7 @@ void nukiTask(void *pvParameters)
             Log->println("nukiTask is running");
             nukiLoopTs = espMillis();
         }
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        espDelayAck(50);
     }
 }
 
@@ -1363,7 +1322,7 @@ void otaTask(void *pvParameter)
     while(!network->isConnected())
     {
         Log->println("OTA waiting for network");
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        espDelayAck(5000);
     }
 
     Log->println("Starting OTA task");
@@ -1399,20 +1358,12 @@ void otaTask(void *pvParameter)
         {
             Log->println("Firmware upgrade failed, retrying in 5 seconds");
             retryCount++;
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
+            espDelayAck(5000);
             continue;
         }
-        while (1)
+        while (true)
         {
-            if (esp_task_wdt_status(NULL) == ESP_OK)
-            {
-                esp_task_wdt_reset();
-            }
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            espDelayAck(1000);
         }
     }
     Log->println("Firmware upgrade failed, restarting");
@@ -1461,11 +1412,7 @@ void setupTasks(bool ota)
 void logCoreDump()
 {
     coredumpPrinted = false;
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(500 / portTICK_PERIOD_MS);
+    espDelayAck(500);
     Log->println("Printing coredump and saving to coredump.hex on SPIFFS");
     size_t size = 0;
     size_t address = 0;
