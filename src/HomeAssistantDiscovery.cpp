@@ -1,5 +1,6 @@
 #include "HomeAssistantDiscovery.h"
 #include "Config.h"
+#include "EspMillis.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
@@ -52,11 +53,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
         char uidString[20];
         itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
         removeHASSConfig(uidString);
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        espDelayAck(3000);
     }
     else if(savedDevId != curDevId)
     {
@@ -69,18 +66,10 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
         char uidString[20];
         itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
         removeHASSConfig(uidString);
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        espDelayAck(3000);
         itoa(savedDevId, uidString, 10);
         removeHASSConfig(uidString);
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        espDelayAck(3000);
     }
 
     sprintf(_nukiHubUidString, "%" PRIu64, curDevId);
@@ -130,11 +119,7 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
 void HomeAssistantDiscovery::disableHASS()
 {
     removeHASSConfig(_nukiHubUidString);
-    if (esp_task_wdt_status(NULL) == ESP_OK)
-    {
-        esp_task_wdt_reset();
-    }
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    espDelayAck(3000);
 
     char uidString[20];
 
@@ -142,21 +127,13 @@ void HomeAssistantDiscovery::disableHASS()
     {
         itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
         removeHASSConfig(uidString);
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        espDelayAck(3000);
     }
     if(_preferences->getUInt(preference_nuki_id_opener, 0) != 0)
     {
         itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
         removeHASSConfig(uidString);
-        if (esp_task_wdt_status(NULL) == ESP_OK)
-        {
-            esp_task_wdt_reset();
-        }
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        espDelayAck(3000);
     }
 }
 
