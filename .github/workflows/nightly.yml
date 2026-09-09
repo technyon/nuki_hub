@@ -109,6 +109,12 @@ jobs:
           echo "$command" | tee ${FILES}/flash.sh
           chmod a+x ${FILES}/flash.sh
 
+      - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
+          path: ${{ matrix.build }}/${{ env.VARIANT }}
+
   ota-nightly:
     name: Create nightly from latest master
     needs: [check-commits, build]
