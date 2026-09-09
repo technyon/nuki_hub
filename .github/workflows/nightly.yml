@@ -42,6 +42,11 @@ jobs:
       VARIANT: ${{ matrix.name || matrix.board }}
       BUILD: ${{ matrix.build }}
     steps:
+      - name: Install tree
+        run: |
+          apt update
+          apt install tree
+
       - name: Fix variant name
         run: |
           # remove dash character
@@ -142,6 +147,7 @@ jobs:
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
+          tree
           mkdir -p ota/beta/
           mkdir -p ota/master/
           mkdir -p resources/
