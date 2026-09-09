@@ -44,8 +44,8 @@ jobs:
     steps:
       - name: Install tree
         run: |
-          apt update
-          apt install tree
+          sudo apt update
+          sudo apt install -y tree
 
       - name: Fix variant name
         run: |
