@@ -35,7 +35,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: [esp32, esp32-nopsram, esp32-s3, esp32-s3-nopsram, esp32-s3-oct, esp32-c3, esp32-c5, esp32-c6, esp32-c61, esp32-h2, esp32-solo1, esp32-gl-s10, esp32-p4, esp32-p4-v3, esp32-p4c5, esp32-p4c5-v3]
+#        board: [esp32, esp32-nopsram, esp32-s3, esp32-s3-nopsram, esp32-s3-oct, esp32-c3, esp32-c5, esp32-c6, esp32-c61, esp32-h2, esp32-solo1, esp32-gl-s10, esp32-p4, esp32-p4-v3, esp32-p4c5, esp32-p4c5-v3]
+        board: [esp32]
         build: [release]
     env:
       BOARD: ${{ matrix.board }}
@@ -147,7 +148,7 @@ jobs:
         env:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
-          tree
+          tree -a
           mkdir -p ota/beta/
           mkdir -p ota/master/
           mkdir -p resources/
