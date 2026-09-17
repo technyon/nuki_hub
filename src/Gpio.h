@@ -5,6 +5,8 @@
 #include <Preferences.h>
 #include <vector>
 
+class String;
+
 enum class PinRole
 {
     Disabled,
@@ -35,6 +37,8 @@ enum class PinRole
     OutputHighBluetoothComm,
     DoorSensorDoorOpenOnConnected,
     DoorSensorDoorClosedOnConnected,
+    OutputHighDoorOpen,
+    OutputHighDoorClosed,
 };
 
 enum class GpioAction
@@ -86,6 +90,7 @@ public:
     const std::vector<PinRole>& getAllRoles() const;
 
     void setPinOutput(const uint8_t& pin, const uint8_t& state);
+    void setPinOutput(const std::vector<uint8_t>& pins, const uint8_t& state);
     void setPins();
 
 private:
@@ -148,7 +153,9 @@ private:
         PinRole::GeneralOutput,
         PinRole::Ethernet,
         PinRole::DoorSensorDoorOpenOnConnected,
-        PinRole::DoorSensorDoorClosedOnConnected
+        PinRole::DoorSensorDoorClosedOnConnected,
+        PinRole::OutputHighDoorOpen,
+        PinRole::OutputHighDoorClosed,
     };
 
     std::vector<PinEntry> _pinConfiguration;

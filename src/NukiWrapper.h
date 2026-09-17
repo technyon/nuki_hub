@@ -178,6 +178,8 @@ private:
     DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
     GpioAction gpioAction = GpioAction::None;
+    std::vector<uint8_t> _pinsHighWhenDoorOpen;
+    std::vector<uint8_t> _pinsHighWhenDoorClosed;
 
     char* _buffer;
     const size_t _bufferSize;

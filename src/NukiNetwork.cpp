@@ -665,14 +665,8 @@ void NukiNetwork::updateNetworkStatusLeds()
     bool mqttConnected = _device->mqttConnected();
     bool networkConnected = _device->isConnected();
 
-    for (uint8_t pin : _pinsMqttConnected)
-    {
-        _gpio->setPinOutput(pin, mqttConnected ? HIGH : LOW);
-    }
-    for (uint8_t pin : _pinsNetworkConnected)
-    {
-        _gpio->setPinOutput(pin, networkConnected ? HIGH : LOW);
-    }
+    _gpio->setPinOutput(_pinsMqttConnected, mqttConnected ? HIGH : LOW);
+    _gpio->setPinOutput(_pinsNetworkConnected, networkConnected ? HIGH : LOW);
 }
 
 void NukiNetwork::checkInternetConnectivity()

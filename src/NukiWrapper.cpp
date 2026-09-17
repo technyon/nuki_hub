@@ -38,6 +38,11 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, 
     memset(&_keyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
     _keyTurnerState.lockState = NukiLock::LockState::Undefined;
 
+#ifndef NUKI_HUB_UPDATER
+    _pinsHighWhenDoorClosed = _gpio->getPinsWithRole(PinRole::OutputHighDoorClosed);
+    _pinsHighWhenDoorOpen = _gpio->getPinsWithRole(PinRole::OutputHighDoorOpen);
+#endif
+
     network->setLockActionReceivedCallback(nukiInst->onLockActionReceivedCallback);
     network->setOfficialUpdateReceivedCallback(nukiInst->onOfficialUpdateReceivedCallback);
     network->setConfigUpdateReceivedCallback(nukiInst->onConfigUpdateReceivedCallback);
@@ -595,10 +600,8 @@ bool NukiWrapper::updateKeyTurnerState()
         _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
         return false;
     }
-    else if (!_hasConnected)
-    {
-        _hasConnected = true;
-    }
+
+    _hasConnected = true;
 
     _retryLockstateCount = 0;
 
@@ -637,6 +640,8 @@ bool NukiWrapper::updateKeyTurnerState()
         }
     }
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+    _gpio->setPinOutput(_pinsHighWhenDoorOpen, _keyTurnerState.doorSensorState == NukiLock::DoorSensorState::DoorOpened ? HIGH : LOW);
+    _gpio->setPinOutput(_pinsHighWhenDoorClosed, _keyTurnerState.doorSensorState == NukiLock::DoorSensorState::DoorClosed ? HIGH : LOW);
 
     char lockStateStr[20];
     lockstateToString(lockState, lockStateStr);

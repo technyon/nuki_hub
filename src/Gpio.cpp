@@ -184,6 +184,8 @@ void Gpio::setPins()
             case PinRole::OutputHighNetworkConnected:
             case PinRole::OutputHighBluetoothCommError:
             case PinRole::OutputHighBluetoothComm:
+            case PinRole::OutputHighDoorOpen:
+            case PinRole::OutputHighDoorClosed:
                 pinMode(entry.pin, OUTPUT);
                 break;
             case PinRole::Ethernet:
@@ -515,6 +517,10 @@ String Gpio::getRoleDescription(const PinRole& role) const
         return "Door sensor: Door open on connected";
     case PinRole::DoorSensorDoorClosedOnConnected:
         return "Door sensor: Door closed on connected";
+    case PinRole::OutputHighDoorOpen:
+        return "Output: High when door is open";
+    case PinRole::OutputHighDoorClosed:
+        return "Output: High when door is closed";
     default:
         return "Unknown";
     }
@@ -568,6 +574,8 @@ GpioAction Gpio::getGpioAction(const PinEntry& entry) const
         case PinRole::OutputHighNetworkConnected:
         case PinRole::OutputHighBluetoothComm:
         case PinRole::OutputHighBluetoothCommError:
+        case PinRole::OutputHighDoorOpen:
+        case PinRole::OutputHighDoorClosed:
         default:
             return GpioAction::None;
     }
@@ -614,4 +622,12 @@ void Gpio::addCallback(std::function<void(const GpioAction&, const int&)> callba
 void Gpio::setPinOutput(const uint8_t& pin, const uint8_t& state)
 {
     digitalWrite(pin, state);
+}
+
+void Gpio::setPinOutput(const std::vector<uint8_t>& pins, const uint8_t& state)
+{
+    for(const auto& pin : pins)
+    {
+        digitalWrite(pin, state);
+    }
 }
