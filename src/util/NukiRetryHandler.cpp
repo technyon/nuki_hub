@@ -49,18 +49,12 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
 
 void NukiRetryHandler::setCommPins(const uint8_t& value)
 {
-    for (uint8_t pin : _pinsComm)
-    {
-        _gpio->setPinOutput(pin, value);
-    }
+    _gpio->setPinOutput(_pinsComm, value);
 }
 
 void NukiRetryHandler::setCommErrorPins(const uint8_t& value)
 {
-    for (uint8_t pin : _pinsCommError)
-    {
-        _gpio->setPinOutput(pin, value);
-    }
+    _gpio->setPinOutput(_pinsCommError, value);
 }
 
 
