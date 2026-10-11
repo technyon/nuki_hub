@@ -892,7 +892,13 @@ void restartServices(bool reconnect)
 
 void initNetworkTask(const bool& connected, const bool& firstRun)
 {
-    if(!connected || !firstRun) return;
+    static bool initialised = false;
+    (void) firstRun;
+    if(!connected || initialised)
+    {
+        return;
+    }
+    initialised = true;
 
 #if !defined(NUKI_HUB_UPDATER) && (defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED))
     //if (hostedHasUpdate() || forceHostedUpdate)
