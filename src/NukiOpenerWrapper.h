@@ -76,6 +76,8 @@ private:
     void updateBatteryState();
     void updateConfig();
     void updateAuthData(bool retrieved);
+    bool retrieveMissingLogEntries(std::list<NukiOpener::LogEntry>& log);
+    void waitForLogEntries(uint32_t count);
     void updateKeypad(bool retrieved);
     void updateTimeControl(bool retrieved);
     void updateAuth(bool retrieved);
