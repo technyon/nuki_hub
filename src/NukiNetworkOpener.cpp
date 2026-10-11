@@ -903,6 +903,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
     baseTopic.concat("/opener");
     JsonDocument json;
+    json.to<JsonArray>();
 
     for(const auto& entry : entries)
     {

@@ -74,6 +74,9 @@ private:
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
+    void checkKeypadJsonCommand();
+    void publishKeypadCache();
+    void executeKeypadJsonCommand(const char* value);
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
     void onGpioActionReceived(const GpioAction& action);
@@ -88,7 +91,7 @@ private:
     void updateTimeControl(bool retrieved);
     void updateAuth(bool retrieved);
     void postponeBleWatchdog();
-    void updateTime();
+    bool updateTime();
 
     void updateGpioOutputs();
 
@@ -177,6 +180,12 @@ private:
     std::string _hardwareVersion = "";
     DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
+    std::list<NukiLock::KeypadEntry> _keypadEntriesCache;
+    std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
+    bool _keypadCacheDirty = false;
+    int64_t _nextCachePublishTs = 0;
+    volatile bool _keypadJsonPending = false;
+    std::string _pendingKeypadJson;
     GpioAction gpioAction = GpioAction::None;
     std::vector<uint8_t> _pinsHighWhenDoorOpen;
     std::vector<uint8_t> _pinsHighWhenDoorClosed;
