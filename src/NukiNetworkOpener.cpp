@@ -351,7 +351,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
 
     lockstateToString(keyTurnerState.lockState, str);
 
-    if((_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState || keyTurnerState.nukiState != lastKeyTurnerState.nukiState) && keyTurnerState.lockState != NukiOpener::LockState::Undefined)
+    if(_firstTunerStatePublish || keyTurnerState.lockState != lastKeyTurnerState.lockState || keyTurnerState.nukiState != lastKeyTurnerState.nukiState)
     {
         _nukiPublisher->publishString(mqtt_topic_lock_state, str, true);
 
@@ -359,15 +359,6 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
         {
             publishState(keyTurnerState);
         }
-    }
-
-    if(strcmp(str, "undefined") == 0)
-    {
-        _nukiPublisher->publishString(mqtt_topic_lock_availability, "offline", true);
-    }
-    else
-    {
-        _nukiPublisher->publishString(mqtt_topic_lock_availability, "online", true);
     }
 
     json["lock_state"] = str;
@@ -500,6 +491,11 @@ void NukiNetworkOpener::publishState(NukiOpener::OpenerState lockState)
             break;
         }
     }
+}
+
+void NukiNetworkOpener::publishAvailability(const bool available)
+{
+    _nukiPublisher->publishString(mqtt_topic_lock_availability, available ? "online" : "offline", true);
 }
 
 void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries, bool latest)

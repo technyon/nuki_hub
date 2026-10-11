@@ -602,14 +602,19 @@ bool NukiWrapper::updateKeyTurnerState()
         else
         {
             _nextLockStateUpdateTs = espMillis() + (_retryLockstateCount * 333);
+            _network->publishAvailability(false);
         }
-        _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+        if(_hasConnected)
+        {
+            _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+        }
         return false;
     }
 
     _hasConnected = true;
 
     _retryLockstateCount = 0;
+    _network->publishAvailability(true);
 
     const NukiLock::LockState& lockState = _keyTurnerState.lockState;
 

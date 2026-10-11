@@ -18,6 +18,7 @@ public:
     void update();
 
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
+    void publishAvailability(const bool available);
     void publishRing(const bool locked);
     void publishState(NukiOpener::OpenerState lockState);
     void publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries, bool latest);

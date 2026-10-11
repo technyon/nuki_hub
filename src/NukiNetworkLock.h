@@ -27,6 +27,7 @@ public:
     bool update();
 
     void publishKeyTurnerState(const NukiLock::KeyTurnerState& keyTurnerState, const NukiLock::KeyTurnerState& lastKeyTurnerState);
+    void publishAvailability(const bool available);
     void publishState(NukiLock::LockState lockState);
     void publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries, bool latest);
     void clearAuthorizationInfo();
