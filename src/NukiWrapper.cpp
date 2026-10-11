@@ -3049,43 +3049,40 @@ void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
                         entry.enabled = enabled;
                         entry.timeLimited = timeLimited;
 
-                        if(enabled == 1)
+                        if(timeLimited == 1)
                         {
-                            if(timeLimited == 1)
+                            if(allowedFrom.length() > 0)
                             {
-                                if(allowedFrom.length() > 0)
-                                {
-                                    entry.allowedFromYear = allowedFromAr[0];
-                                    entry.allowedFromMonth = allowedFromAr[1];
-                                    entry.allowedFromDay = allowedFromAr[2];
-                                    entry.allowedFromHour = allowedFromAr[3];
-                                    entry.allowedFromMin = allowedFromAr[4];
-                                    entry.allowedFromSec = allowedFromAr[5];
-                                }
+                                entry.allowedFromYear = allowedFromAr[0];
+                                entry.allowedFromMonth = allowedFromAr[1];
+                                entry.allowedFromDay = allowedFromAr[2];
+                                entry.allowedFromHour = allowedFromAr[3];
+                                entry.allowedFromMin = allowedFromAr[4];
+                                entry.allowedFromSec = allowedFromAr[5];
+                            }
 
-                                if(allowedUntil.length() > 0)
-                                {
-                                    entry.allowedUntilYear = allowedUntilAr[0];
-                                    entry.allowedUntilMonth = allowedUntilAr[1];
-                                    entry.allowedUntilDay = allowedUntilAr[2];
-                                    entry.allowedUntilHour = allowedUntilAr[3];
-                                    entry.allowedUntilMin = allowedUntilAr[4];
-                                    entry.allowedUntilSec = allowedUntilAr[5];
-                                }
+                            if(allowedUntil.length() > 0)
+                            {
+                                entry.allowedUntilYear = allowedUntilAr[0];
+                                entry.allowedUntilMonth = allowedUntilAr[1];
+                                entry.allowedUntilDay = allowedUntilAr[2];
+                                entry.allowedUntilHour = allowedUntilAr[3];
+                                entry.allowedUntilMin = allowedUntilAr[4];
+                                entry.allowedUntilSec = allowedUntilAr[5];
+                            }
 
-                                entry.allowedWeekdays = allowedWeekdaysInt;
+                            entry.allowedWeekdays = allowedWeekdaysInt;
 
-                                if(allowedFromTime.length() > 0)
-                                {
-                                    entry.allowedFromTimeHour = allowedFromTimeAr[0];
-                                    entry.allowedFromTimeMin = allowedFromTimeAr[1];
-                                }
+                            if(allowedFromTime.length() > 0)
+                            {
+                                entry.allowedFromTimeHour = allowedFromTimeAr[0];
+                                entry.allowedFromTimeMin = allowedFromTimeAr[1];
+                            }
 
-                                if(allowedUntilTime.length() > 0)
-                                {
-                                    entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
-                                    entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
-                                }
+                            if(allowedUntilTime.length() > 0)
+                            {
+                                entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
+                                entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
                             }
                         }
 
@@ -3874,43 +3871,40 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     entry.enabled = enabled;
                     entry.timeLimited = timeLimited;
 
-                    if(enabled == 1)
+                    if(timeLimited == 1)
                     {
-                        if(timeLimited == 1)
+                        if(allowedFrom.length() > 0)
                         {
-                            if(allowedFrom.length() > 0)
-                            {
-                                entry.allowedFromYear = allowedFromAr[0];
-                                entry.allowedFromMonth = allowedFromAr[1];
-                                entry.allowedFromDay = allowedFromAr[2];
-                                entry.allowedFromHour = allowedFromAr[3];
-                                entry.allowedFromMinute = allowedFromAr[4];
-                                entry.allowedFromSecond = allowedFromAr[5];
-                            }
+                            entry.allowedFromYear = allowedFromAr[0];
+                            entry.allowedFromMonth = allowedFromAr[1];
+                            entry.allowedFromDay = allowedFromAr[2];
+                            entry.allowedFromHour = allowedFromAr[3];
+                            entry.allowedFromMinute = allowedFromAr[4];
+                            entry.allowedFromSecond = allowedFromAr[5];
+                        }
 
-                            if(allowedUntil.length() > 0)
-                            {
-                                entry.allowedUntilYear = allowedUntilAr[0];
-                                entry.allowedUntilMonth = allowedUntilAr[1];
-                                entry.allowedUntilDay = allowedUntilAr[2];
-                                entry.allowedUntilHour = allowedUntilAr[3];
-                                entry.allowedUntilMinute = allowedUntilAr[4];
-                                entry.allowedUntilSecond = allowedUntilAr[5];
-                            }
+                        if(allowedUntil.length() > 0)
+                        {
+                            entry.allowedUntilYear = allowedUntilAr[0];
+                            entry.allowedUntilMonth = allowedUntilAr[1];
+                            entry.allowedUntilDay = allowedUntilAr[2];
+                            entry.allowedUntilHour = allowedUntilAr[3];
+                            entry.allowedUntilMinute = allowedUntilAr[4];
+                            entry.allowedUntilSecond = allowedUntilAr[5];
+                        }
 
-                            entry.allowedWeekdays = allowedWeekdaysInt;
+                        entry.allowedWeekdays = allowedWeekdaysInt;
 
-                            if(allowedFromTime.length() > 0)
-                            {
-                                entry.allowedFromTimeHour = allowedFromTimeAr[0];
-                                entry.allowedFromTimeMin = allowedFromTimeAr[1];
-                            }
+                        if(allowedFromTime.length() > 0)
+                        {
+                            entry.allowedFromTimeHour = allowedFromTimeAr[0];
+                            entry.allowedFromTimeMin = allowedFromTimeAr[1];
+                        }
 
-                            if(allowedUntilTime.length() > 0)
-                            {
-                                entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
-                                entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
-                            }
+                        if(allowedUntilTime.length() > 0)
+                        {
+                            entry.allowedUntilTimeHour = allowedUntilTimeAr[0];
+                            entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
                         }
                     }
 
