@@ -66,6 +66,9 @@ private:
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* value);
     void onKeypadJsonCommandReceived(const char* value);
+    void checkKeypadJsonCommand();
+    void publishKeypadCache();
+    void executeKeypadJsonCommand(const char* value);
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
 
@@ -77,7 +80,7 @@ private:
     void updateTimeControl(bool retrieved);
     void updateAuth(bool retrieved);
     void postponeBleWatchdog();
-    void updateTime();
+    bool updateTime();
 
     void updateGpioOutputs();
 
@@ -160,6 +163,12 @@ private:
     std::string _firmwareVersion = "";
     std::string _hardwareVersion = "";
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
+    std::list<NukiOpener::KeypadEntry> _keypadEntriesCache;
+    std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
+    bool _keypadCacheDirty = false;
+    int64_t _nextCachePublishTs = 0;
+    volatile bool _keypadJsonPending = false;
+    std::string _pendingKeypadJson;
 
     char* _buffer;
     const size_t _bufferSize;

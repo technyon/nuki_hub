@@ -343,8 +343,7 @@ void NukiOpenerWrapper::checkQueries(const int64_t& ts, const uint8_t& queryComm
     }
     if(_preferences->getBool(preference_update_time, false) && ts > (120 * 1000) && ts > _nextTimeUpdateTs)
     {
-        _nextTimeUpdateTs = ts + (12 * 60 * 60 * 1000);
-        updateTime();
+        _nextTimeUpdateTs = ts + (updateTime() ? (12 * 60 * 60 * 1000) : 60000);
     }
     if(_waitTimeControlUpdateTs != 0 && ts > _waitTimeControlUpdateTs)
     {
@@ -374,8 +373,15 @@ void NukiOpenerWrapper::checkQueries(const int64_t& ts, const uint8_t& queryComm
     }
     if(hasKeypad() && _keypadEnabled && (_nextKeypadUpdateTs == 0 || ts > _nextKeypadUpdateTs || (queryCommands & QUERY_COMMAND_KEYPAD) > 0))
     {
-        _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
-        updateKeypad(false);
+        if(_keypadJsonPending)
+        {
+            _nextKeypadUpdateTs = ts + 3000;
+        }
+        else
+        {
+            _nextKeypadUpdateTs = ts + _intervalKeypad * 1000;
+            updateKeypad(false);
+        }
     }
 }
 
@@ -395,6 +401,13 @@ void NukiOpenerWrapper::update()
     checkRestartByBeacon(ts);
     _nukiOpener.updateConnectionState();
     checkLockAction(ts);
+    checkKeypadJsonCommand();
+    if(_keypadCacheDirty && ts > _nextCachePublishTs)
+    {
+        _keypadCacheDirty = false;
+        _nextCachePublishTs = ts + 2000;
+        publishKeypadCache();
+    }
 
     if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
@@ -835,7 +848,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         });
 
         NukiOpenerHelper::printCommandResult(result);
-        if(result == Nuki::CmdResult::Success)
+        if(result == Nuki::CmdResult::Success && _waitKeypadUpdateTs == 0)
         {
             _waitKeypadUpdateTs = espMillis() + 5000;
         }
@@ -844,6 +857,42 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
     {
         std::list<NukiOpener::KeypadEntry> entries;
         _nukiOpener.getKeypadEntries(&entries);
+        {
+            int64_t nowTs = espMillis();
+            auto d = _keypadDeleted.begin();
+            while(d != _keypadDeleted.end())
+            {
+                if(nowTs - d->second > 300000)
+                {
+                    d = _keypadDeleted.erase(d);
+                }
+                else
+                {
+                    ++d;
+                }
+            }
+            auto e = entries.begin();
+            while(e != entries.end())
+            {
+                bool deleted = false;
+                for(const auto& del : _keypadDeleted)
+                {
+                    if(del.first == e->codeId)
+                    {
+                        deleted = true;
+                        break;
+                    }
+                }
+                if(deleted)
+                {
+                    e = entries.erase(e);
+                }
+                else
+                {
+                    ++e;
+                }
+            }
+        }
 
         Log->print("Opener keypad codes: ");
         Log->println(entries.size());
@@ -866,6 +915,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
         }
 
         _network->publishKeypad(entries, _maxKeypadCodeCount);
+        _keypadEntriesCache = entries;
 
         _keypadCodeIds.clear();
         _keypadCodes.clear();
@@ -2148,6 +2198,29 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
 
 void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
 {
+    if(_keypadJsonPending)
+    {
+        _network->publishKeypadJsonCommandResult("busy");
+        return;
+    }
+    _pendingKeypadJson = value;
+    _keypadJsonPending = true;
+}
+
+void NukiOpenerWrapper::checkKeypadJsonCommand()
+{
+    if(!_keypadJsonPending)
+    {
+        return;
+    }
+    std::string cmd = _pendingKeypadJson;
+    _keypadJsonPending = false;
+    executeKeypadJsonCommand(cmd.c_str());
+    postponeBleWatchdog();
+}
+
+void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
+{
     if(!isPinValid())
     {
         _network->publishKeypadJsonCommandResult("noValidPinSet");
@@ -2321,6 +2394,23 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                     if(idExists)
                     {
                         result = _nukiOpener.deleteKeypadEntry(codeId);
+                        if(result == Nuki::CmdResult::Success)
+                        {
+                            _keypadDeleted.push_back(std::make_pair(codeId, espMillis()));
+                            auto it = _keypadEntriesCache.begin();
+                            while(it != _keypadEntriesCache.end())
+                            {
+                                if(it->codeId == codeId)
+                                {
+                                    it = _keypadEntriesCache.erase(it);
+                                }
+                                else
+                                {
+                                    ++it;
+                                }
+                            }
+                            _keypadCacheDirty = true;
+                        }
                         Log->print("Delete keypad code: ");
                         Log->println((int)result);
                     }
@@ -2545,14 +2635,27 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                             return;
                         }
 
-                        Nuki::CmdResult resultKp = _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+                        std::list<NukiOpener::KeypadEntry> entries;
+                        _nukiOpener.getKeypadEntries(&entries);
+                        bool cachedEntry = false;
+                        for(const auto& entry : entries)
+                        {
+                            if(entry.codeId == codeId)
+                            {
+                                cachedEntry = true;
+                                break;
+                            }
+                        }
+                        Nuki::CmdResult resultKp = cachedEntry ? Nuki::CmdResult::Success
+                            : _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
                         bool foundExisting = false;
 
                         if(resultKp == Nuki::CmdResult::Success)
                         {
-                            espDelayAck(5000);
-                            std::list<NukiOpener::KeypadEntry> entries;
-                            _nukiOpener.getKeypadEntries(&entries);
+                            if(!cachedEntry)
+                            {
+                                _nukiOpener.getKeypadEntries(&entries);
+                            }
 
                             for(const auto& entry : entries)
                             {
@@ -2691,6 +2794,38 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                         }
 
                         result = _nukiOpener.updateKeypadEntry(entry);
+                        if(result == Nuki::CmdResult::Success)
+                        {
+                            for(auto& e : _keypadEntriesCache)
+                            {
+                                if(e.codeId != entry.codeId)
+                                {
+                                    continue;
+                                }
+                                e.code = entry.code;
+                                e.enabled = entry.enabled;
+                                e.timeLimited = entry.timeLimited;
+                                e.allowedFromYear = entry.allowedFromYear;
+                                e.allowedFromMonth = entry.allowedFromMonth;
+                                e.allowedFromDay = entry.allowedFromDay;
+                                e.allowedFromHour = entry.allowedFromHour;
+                                e.allowedFromMin = entry.allowedFromMin;
+                                e.allowedFromSec = entry.allowedFromSec;
+                                e.allowedUntilYear = entry.allowedUntilYear;
+                                e.allowedUntilMonth = entry.allowedUntilMonth;
+                                e.allowedUntilDay = entry.allowedUntilDay;
+                                e.allowedUntilHour = entry.allowedUntilHour;
+                                e.allowedUntilMin = entry.allowedUntilMin;
+                                e.allowedUntilSec = entry.allowedUntilSec;
+                                e.allowedWeekdays = entry.allowedWeekdays;
+                                e.allowedFromTimeHour = entry.allowedFromTimeHour;
+                                e.allowedFromTimeMin = entry.allowedFromTimeMin;
+                                e.allowedUntilTimeHour = entry.allowedUntilTimeHour;
+                                e.allowedUntilTimeMin = entry.allowedUntilTimeMin;
+                                memcpy(e.name, entry.name, sizeof(e.name));
+                                _keypadCacheDirty = true;
+                            }
+                        }
                         Log->print("Update keypad code: ");
                         Log->println((int)result);
                     }
@@ -2711,8 +2846,6 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 }
             }
 
-            updateKeypad(false);
-
             if((int)result != -1)
             {
                 char resultStr[15];
@@ -2720,6 +2853,7 @@ void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
                 NukiOpener::cmdResultToString(result, resultStr);
                 _network->publishKeypadJsonCommandResult(resultStr);
             }
+            _nextKeypadUpdateTs = espMillis() + 3000;
         }
     }
     else
@@ -3680,12 +3814,12 @@ void NukiOpenerWrapper::updateGpioOutputs()
     }
 }
 
-void NukiOpenerWrapper::updateTime()
+bool NukiOpenerWrapper::updateTime()
 {
     if(!isPinValid())
     {
         Log->println("No valid PIN set");
-        return;
+        return false;
     }
 
     time_t now;
@@ -3696,7 +3830,7 @@ void NukiOpenerWrapper::updateTime()
     if (int(tm.tm_year + 1900) < int(2025))
     {
         Log->println("NTP Time not valid, not updating Nuki device");
-        return;
+        return false;
     }
 
     Nuki::TimeValue nukiTime;
@@ -3717,4 +3851,22 @@ void NukiOpenerWrapper::updateTime()
 
     Log->print("Opener time update result: ");
     Log->println(resultStr);
+    return true;
+}
+
+void NukiOpenerWrapper::publishKeypadCache()
+{
+    std::list<NukiOpener::KeypadEntry> entries = _keypadEntriesCache;
+    entries.sort([](const NukiOpener::KeypadEntry& a, const NukiOpener::KeypadEntry& b)
+    {
+        return a.codeId < b.codeId;
+    });
+    _network->publishKeypad(entries, _maxKeypadCodeCount);
+    _keypadCodeIds.clear();
+    _keypadCodes.clear();
+    for(const auto& entry : entries)
+    {
+        _keypadCodeIds.push_back(entry.codeId);
+        _keypadCodes.push_back(entry.code);
+    }
 }
