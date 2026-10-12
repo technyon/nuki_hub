@@ -428,16 +428,11 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     if(!_nukiOfficial->getOffConnected())
     {
         lockstateToString(keyTurnerState.lockState, str);
+        _nukiPublisher->publishString(mqtt_topic_lock_state, str, true);
 
-        if(keyTurnerState.lockState != NukiLock::LockState::Undefined)
+        if(_haEnabled)
         {
-
-            _nukiPublisher->publishString(mqtt_topic_lock_state, str, true);
-
-            if(_haEnabled)
-            {
-                publishState(keyTurnerState.lockState);
-            }
+            publishState(keyTurnerState.lockState);
         }
 
         json["lock_state"] = str;
@@ -446,15 +441,6 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     {
         lockstateToString((NukiLock::LockState)_nukiOfficial->getOffState(), str);
         json["lock_state"] = str;
-    }
-
-    if(strcmp(str, "undefined") == 0)
-    {
-        _nukiPublisher->publishString(mqtt_topic_lock_availability, "offline", true);
-    }
-    else
-    {
-        _nukiPublisher->publishString(mqtt_topic_lock_availability, "online", true);
     }
 
     json["lockngo_state"] = keyTurnerState.lockNgoTimer != 255 ? keyTurnerState.lockNgoTimer : 0;
@@ -648,11 +634,17 @@ void NukiNetworkLock::publishState(NukiLock::LockState lockState)
     case NukiLock::LockState::Calibration:
     case NukiLock::LockState::BootRun:
     case NukiLock::LockState::MotorBlocked:
+    case NukiLock::LockState::Undefined:
         _nukiPublisher->publishString(mqtt_topic_lock_ha_state, "jammed", true);
         break;
     default:
         break;
     }
+}
+
+void NukiNetworkLock::publishAvailability(const bool available)
+{
+    _nukiPublisher->publishString(mqtt_topic_lock_availability, available ? "online" : "offline", true);
 }
 
 void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntry>& logEntries, bool latest)

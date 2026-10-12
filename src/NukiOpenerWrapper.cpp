@@ -538,8 +538,12 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
         else
         {
             _nextLockStateUpdateTs = espMillis() + (_retryLockstateCount * 333);
+            _network->publishAvailability(false);
         }
-        _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+        if(_hasConnected)
+        {
+            _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
+        }
         return false;
     }
     else if (!_hasConnected)
@@ -548,6 +552,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
     }
 
     _retryLockstateCount = 0;
+    _network->publishAvailability(true);
 
     const NukiOpener::LockState& lockState = _keyTurnerState.lockState;
 
