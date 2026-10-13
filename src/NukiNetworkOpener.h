@@ -22,6 +22,7 @@ public:
     void publishRing(const bool locked);
     void publishState(NukiOpener::OpenerState lockState);
     void publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries, bool latest);
+    uint32_t getLastRollingLog() const;
     void clearAuthorizationInfo();
     void publishCommandResult(const char* resultStr);
     void publishLockstateCommandResult(const char* resultStr);

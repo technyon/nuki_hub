@@ -947,7 +947,7 @@ void NukiWrapper::updateAuthData(bool retrieved)
         if(result == Nuki::CmdResult::Success)
         {
             _waitAuthLogUpdateTs = espMillis() + 5000;
-            espDelayAck(100);
+            waitForLogEntries(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG));
 
             std::list<NukiLock::LogEntry> log;
             _nukiLock.getLogEntries(&log);
@@ -964,6 +964,11 @@ void NukiWrapper::updateAuthData(bool retrieved)
 
             if(log.size() > 0)
             {
+                if(retrieveMissingLogEntries(log))
+                {
+                    _waitAuthLogUpdateTs = 0;
+                    _network->publishAuthorizationInfo(log, false);
+                }
                 _network->publishAuthorizationInfo(log, true);
             }
         }
@@ -993,6 +998,80 @@ void NukiWrapper::updateAuthData(bool retrieved)
     }
 
     postponeBleWatchdog();
+}
+
+void NukiWrapper::waitForLogEntries(uint32_t count)
+{
+    std::list<NukiLock::LogEntry> log;
+    size_t lastSize = 0;
+    int64_t startTs = espMillis();
+    int64_t changedTs = startTs;
+
+    while(espMillis() - startTs < 5000)
+    {
+        espDelayAck(100);
+        _nukiLock.getLogEntries(&log);
+
+        if(log.size() >= count)
+        {
+            break;
+        }
+
+        if(log.size() != lastSize)
+        {
+            lastSize = log.size();
+            changedTs = espMillis();
+        }
+        else if(espMillis() - changedTs > 500)
+        {
+            break;
+        }
+    }
+}
+
+bool NukiWrapper::retrieveMissingLogEntries(std::list<NukiLock::LogEntry>& log)
+{
+    uint32_t lastRollingLog = _network->getLastRollingLog();
+
+    if(log.size() == 0 || lastRollingLog == 0 || log.front().index <= lastRollingLog + 1)
+    {
+        return false;
+    }
+
+    uint32_t count = log.front().index - lastRollingLog - 1;
+    uint32_t maxEntries = _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG);
+
+    if(count > maxEntries)
+    {
+        count = maxEntries;
+    }
+
+    uint32_t startIndex = log.front().index - count;
+    Log->print("Retrieving missing log entries: ");
+
+    Nuki::CmdResult result = _nukiRetryHandler->retryComm([&]()
+    {
+        return _nukiLock.retrieveLogEntries(startIndex, count, 0, false);
+    });
+
+    NukiHelper::printCommandResult(result);
+
+    if(result == Nuki::CmdResult::Success)
+    {
+        waitForLogEntries(count);
+
+        std::list<NukiLock::LogEntry> missing;
+        _nukiLock.getLogEntries(&missing);
+        Log->print("Missing log entries received: ");
+        Log->println(missing.size());
+        log.splice(log.begin(), missing);
+        log.sort([](const NukiLock::LogEntry& a, const NukiLock::LogEntry& b)
+        {
+            return a.index < b.index;
+        });
+    }
+
+    return true;
 }
 
 void NukiWrapper::updateKeypad(bool retrieved)

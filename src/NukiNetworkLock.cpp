@@ -816,6 +816,11 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
     }
 }
 
+uint32_t NukiNetworkLock::getLastRollingLog() const
+{
+    return _lastRollingLog;
+}
+
 void NukiNetworkLock::clearAuthorizationInfo()
 {
     _nukiPublisher->publishString(mqtt_topic_lock_log, "--", true);
