@@ -63,6 +63,7 @@ NukiWrapper::~NukiWrapper()
 
 void NukiWrapper::initialize()
 {
+    _keypadJsonQueue = xQueueCreate(KEYPAD_JSON_QUEUE_SIZE, KEYPAD_JSON_MAX_LENGTH);
     _nukiLock.setDebugConnect(_preferences->getBool(preference_debug_connect, false));
     _nukiLock.setDebugCommunication(_preferences->getBool(preference_debug_communication, false));
     _nukiLock.setDebugReadableData(_preferences->getBool(preference_debug_readable_data, false));
@@ -2672,24 +2673,32 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
 
 void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
 {
-    if(_keypadJsonPending)
+    char cmd[KEYPAD_JSON_MAX_LENGTH];
+
+    if(strlen(value) >= sizeof(cmd))
     {
-        _network->publishKeypadJsonCommandResult("busy");
+        _network->publishKeypadJsonCommandResult("invalidJson");
         return;
     }
-    _pendingKeypadJson = value;
-    _keypadJsonPending = true;
+
+    strcpy(cmd, value);
+
+    if(xQueueSend(_keypadJsonQueue, cmd, 0) != pdTRUE)
+    {
+        _network->publishKeypadJsonCommandResult("busy");
+    }
 }
 
 void NukiWrapper::checkKeypadJsonCommand()
 {
-    if(!_keypadJsonPending)
+    char cmd[KEYPAD_JSON_MAX_LENGTH];
+
+    if(xQueueReceive(_keypadJsonQueue, cmd, 0) != pdTRUE)
     {
         return;
     }
-    std::string cmd = _pendingKeypadJson;
-    _keypadJsonPending = false;
-    executeKeypadJsonCommand(cmd.c_str());
+
+    executeKeypadJsonCommand(cmd);
     postponeBleWatchdog();
 }
 
