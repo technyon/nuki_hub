@@ -642,6 +642,7 @@ void NukiOpenerWrapper::updateBatteryState()
     {
         return _nukiOpener.requestBatteryReport(&_batteryReport);
     });
+    NukiOpenerHelper::printCommandResult(result);
 
     if(result == Nuki::CmdResult::Success)
     {
@@ -771,13 +772,13 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
+        Log->print("Retrieving log entries: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
         });
 
-        Log->println(result);
         NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
@@ -925,6 +926,7 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
+        Log->print("Querying opener keypad: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
@@ -1037,6 +1039,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         {
             return _nukiOpener.retrieveTimeControlEntries();
         });
+        NukiOpenerHelper::printCommandResult(result);
 
         if(result == Nuki::CmdResult::Success)
         {
@@ -1103,6 +1106,7 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
         {
             return _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
         });
+        NukiOpenerHelper::printCommandResult(result);
 
         if(result == Nuki::CmdResult::Success)
         {
@@ -2200,7 +2204,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             entry.code = codeInt;
             result = _nukiOpener.addKeypadEntry(entry);
             Log->print("Add keypad code: ");
-            Log->println((int)result);
+            NukiOpenerHelper::printCommandResult(result);
             updateKeypad(false);
         }
         else if(strcmp(command, "delete") == 0)
@@ -2213,7 +2217,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
 
             result = _nukiOpener.deleteKeypadEntry(id);
             Log->print("Delete keypad code: ");
-            Log->println((int)result);
+            NukiOpenerHelper::printCommandResult(result);
             updateKeypad(false);
         }
         else if(strcmp(command, "update") == 0)
@@ -2248,7 +2252,7 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             entry.enabled = enabled == 0 ? 0 : 1;
             result = _nukiOpener.updateKeypadEntry(entry);
             Log->print("Update keypad code: ");
-            Log->println((int)result);
+            NukiOpenerHelper::printCommandResult(result);
             updateKeypad(false);
         }
         else if(strcmp(command, "--") == 0)
@@ -2496,7 +2500,7 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
                             _keypadCacheDirty = true;
                         }
                         Log->print("Delete keypad code: ");
-                        Log->println((int)result);
+                        NukiOpenerHelper::printCommandResult(result);
                     }
                     else
                     {
@@ -2703,7 +2707,7 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
 
                         result = _nukiOpener.addKeypadEntry(entry);
                         Log->print("Add keypad code: ");
-                        Log->println((int)result);
+                        NukiOpenerHelper::printCommandResult(result);
                     }
                     else if (strcmp(action, "update") == 0)
                     {
@@ -2911,7 +2915,7 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
                             }
                         }
                         Log->print("Update keypad code: ");
-                        Log->println((int)result);
+                        NukiOpenerHelper::printCommandResult(result);
                     }
                 }
                 else
@@ -3037,7 +3041,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                 {
                     result = _nukiOpener.removeTimeControlEntry(entryId);
                     Log->print("Delete timecontrol: ");
-                    Log->println((int)result);
+                    NukiOpenerHelper::printCommandResult(result);
                 }
                 else
                 {
@@ -3116,7 +3120,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.addTimeControlEntry(entry);
                     Log->print("Add timecontrol: ");
-                    Log->println((int)result);
+                    NukiOpenerHelper::printCommandResult(result);
                 }
                 else if (strcmp(action, "update") == 0)
                 {
@@ -3193,7 +3197,7 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                     entry.lockAction = timeControlLockAction;
                     result = _nukiOpener.updateTimeControlEntry(entry);
                     Log->print("Update timecontrol: ");
-                    Log->println((int)result);
+                    NukiOpenerHelper::printCommandResult(result);
                 }
             }
             else
@@ -3347,7 +3351,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                 {
                     result = _nukiOpener.deleteAuthorizationEntry(authId);
                     Log->print("Delete authorization: ");
-                    Log->println((int)result);
+                    NukiOpenerHelper::printCommandResult(result);
                 }
                 else
                 {
@@ -3566,7 +3570,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
                     result = _nukiOpener.addAuthorizationEntry(entry);
                     Log->print("Add authorization: ");
-                    Log->println((int)result);
+                    NukiOpenerHelper::printCommandResult(result);
                 }
                 else if (strcmp(action, "update") == 0)
                 {
@@ -3728,7 +3732,7 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
 
                     result = _nukiOpener.updateAuthorizationEntry(entry);
                     Log->print("Update authorization: ");
-                    Log->println((int)result);
+                    NukiOpenerHelper::printCommandResult(result);
                 }
             }
             else

@@ -1203,6 +1203,7 @@ void NukiWrapper::updateTimeControl(bool retrieved)
         {
             return _nukiLock.retrieveTimeControlEntries();
         });
+        NukiHelper::printCommandResult(result);
 
         NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
@@ -1270,6 +1271,7 @@ void NukiWrapper::updateAuth(bool retrieved)
         {
             return _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
         });
+        NukiHelper::printCommandResult(result);
 
         NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
@@ -2588,7 +2590,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             entry.code = codeInt;
             result = _nukiLock.addKeypadEntry(entry);
             Log->print("Add keypad code: ");
-            Log->println((int)result);
+            NukiHelper::printCommandResult(result);
             updateKeypad(false);
         }
         else if(strcmp(command, "delete") == 0)
@@ -2601,7 +2603,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
 
             result = _nukiLock.deleteKeypadEntry(id);
             Log->print("Delete keypad code: ");
-            Log->println((int)result);
+            NukiHelper::printCommandResult(result);
             updateKeypad(false);
         }
         else if(strcmp(command, "update") == 0)
@@ -2636,7 +2638,7 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             entry.enabled = enabled == 0 ? 0 : 1;
             result = _nukiLock.updateKeypadEntry(entry);
             Log->print("Update keypad code: ");
-            Log->println((int)result);
+            NukiHelper::printCommandResult(result);
             updateKeypad(false);
         }
         else if(strcmp(command, "--") == 0)
@@ -2885,7 +2887,7 @@ void NukiWrapper::executeKeypadJsonCommand(const char *value)
                             _keypadCacheDirty = true;
                         }
                         Log->print("Delete keypad code: ");
-                        Log->println((int)result);
+                        NukiHelper::printCommandResult(result);
                     }
                     else
                     {
@@ -3092,7 +3094,7 @@ void NukiWrapper::executeKeypadJsonCommand(const char *value)
 
                         result = _nukiLock.addKeypadEntry(entry);
                         Log->print("Add keypad code: ");
-                        Log->println((int)result);
+                        NukiHelper::printCommandResult(result);
                     }
                     else if (strcmp(action, "update") == 0)
                     {
@@ -3300,7 +3302,7 @@ void NukiWrapper::executeKeypadJsonCommand(const char *value)
                             }
                         }
                         Log->print("Update keypad code: ");
-                        Log->println((int)result);
+                        NukiHelper::printCommandResult(result);
                     }
                 }
                 else
@@ -3426,7 +3428,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                 {
                     result = _nukiLock.removeTimeControlEntry(entryId);
                     Log->print("Delete timecontrol: ");
-                    Log->println((int)result);
+                    NukiHelper::printCommandResult(result);
                 }
                 else
                 {
@@ -3506,7 +3508,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     result = _nukiLock.addTimeControlEntry(entry);
                     Log->print("Add timecontrol: ");
-                    Log->println((int)result);
+                    NukiHelper::printCommandResult(result);
                 }
                 else if (strcmp(action, "update") == 0)
                 {
@@ -3584,7 +3586,7 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
 
                     result = _nukiLock.updateTimeControlEntry(entry);
                     Log->print("Update timecontrol: ");
-                    Log->println((int)result);
+                    NukiHelper::printCommandResult(result);
                 }
             }
             else
@@ -3739,7 +3741,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     result = _nukiLock.deleteAuthorizationEntry(authId);
                     espDelayAck(250);
                     Log->print("Delete authorization: ");
-                    Log->println((int)result);
+                    NukiHelper::printCommandResult(result);
                 }
                 else
                 {
@@ -3959,7 +3961,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     result = _nukiLock.addAuthorizationEntry(entry);
                     espDelayAck(250);
                     Log->print("Add authorization: ");
-                    Log->println((int)result);
+                    NukiHelper::printCommandResult(result);
                 }
                 else if (strcmp(action, "update") == 0)
                 {
@@ -4122,7 +4124,7 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                     result = _nukiLock.updateAuthorizationEntry(entry);
                     espDelay(250);
                     Log->print("Update authorization: ");
-                    Log->println((int)result);
+                    NukiHelper::printCommandResult(result);
                 }
             }
             else
