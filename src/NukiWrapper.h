@@ -184,8 +184,7 @@ private:
     std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;
-    volatile bool _keypadJsonPending = false;
-    std::string _pendingKeypadJson;
+    QueueHandle_t _keypadJsonQueue = nullptr;
     GpioAction gpioAction = GpioAction::None;
     std::vector<uint8_t> _pinsHighWhenDoorOpen;
     std::vector<uint8_t> _pinsHighWhenDoorClosed;

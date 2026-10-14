@@ -167,8 +167,7 @@ private:
     std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;
-    volatile bool _keypadJsonPending = false;
-    std::string _pendingKeypadJson;
+    QueueHandle_t _keypadJsonQueue = nullptr;
 
     char* _buffer;
     const size_t _bufferSize;
