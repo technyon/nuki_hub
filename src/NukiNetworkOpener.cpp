@@ -530,7 +530,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                 if(authName[sizeName - 1] != '\0' && _authEntries.count(_authId) > 0)
                 {
                     memset(_authName, 0, sizeof(_authName));
-                    memcpy(_authName, _authEntries[_authId].c_str(), sizeof(_authEntries[_authId].c_str()));
+                    strncpy(_authName, _authEntries[_authId].c_str(), sizeof(_authName) - 1);
                 }
             }
         }

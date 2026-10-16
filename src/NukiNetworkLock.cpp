@@ -680,7 +680,7 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
                 if(authName[sizeName - 1] != '\0' && _authEntries.count(getAuthId()) > 0)
                 {
                     memset(_authName, 0, sizeof(_authName));
-                    memcpy(_authName, _authEntries[getAuthId()].c_str(), sizeof(_authEntries[getAuthId()].c_str()));
+                    strncpy(_authName, _authEntries[getAuthId()].c_str(), sizeof(_authName) - 1);
                 }
             }
         }
@@ -1666,7 +1666,7 @@ const uint32_t NukiNetworkLock::getAuthId() const
 
 const char* NukiNetworkLock::getAuthName()
 {
-    if(_nukiOfficial->getOffConnected() && _nukiOfficial->hasAuthId())
+    if(_nukiOfficial->getOffConnected() && _nukiOfficial->hasAuthId() && _authEntries.count(getAuthId()) > 0)
     {
         return _authEntries[getAuthId()].c_str();
     }
