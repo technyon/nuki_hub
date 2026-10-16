@@ -164,6 +164,8 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last) && !_saveLogEnabled)
     {
+        _lastRollingLogReceived = true;
+
         if(strcmp(data, "") == 0 ||
                 strcmp(data, "--") == 0)
         {
@@ -672,7 +674,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
             break;
         }
 
-        if(log.index > _lastRollingLog)
+        if(log.index > _lastRollingLog && !(_lastRollingLog == 0 && !_lastRollingLogReceived && espMillis() < 60000))
         {
             serializeJson(entry, _buffer, _bufferSize);
             _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, true);

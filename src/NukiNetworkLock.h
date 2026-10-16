@@ -103,6 +103,7 @@ private:
     int _keypadCommandEnabled = 1;
     uint8_t _queryCommands = 0;
     uint32_t _lastRollingLog = 0;
+    bool _lastRollingLogReceived = false;
     uint32_t _authId = 0;
     int64_t _offLastConnected = 0;
     DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;

@@ -87,6 +87,7 @@ private:
     uint32_t _authId = 0;
     char _authName[33];
     uint32_t _lastRollingLog = 0;
+    bool _lastRollingLogReceived = false;
 
     char* _buffer;
     const size_t _bufferSize;
