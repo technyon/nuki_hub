@@ -2204,7 +2204,10 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             size_t nameLen = name.length();
             memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
             entry.code = codeInt;
-            result = _nukiOpener.addKeypadEntry(entry);
+            result = _nukiRetryHandler->retryComm([&]()
+            {
+                return _nukiOpener.addKeypadEntry(entry);
+            });
             Log->print("Add keypad code: ");
             NukiOpenerHelper::printCommandResult(result);
             updateKeypad(false);
@@ -2217,7 +2220,10 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
                 return;
             }
 
-            result = _nukiOpener.deleteKeypadEntry(id);
+            result = _nukiRetryHandler->retryComm([&]()
+            {
+                return _nukiOpener.deleteKeypadEntry(id);
+            });
             Log->print("Delete keypad code: ");
             NukiOpenerHelper::printCommandResult(result);
             updateKeypad(false);
@@ -2252,7 +2258,10 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             memcpy(&entry.name, name.c_str(), nameLen > 20 ? 20 : nameLen);
             entry.code = codeInt;
             entry.enabled = enabled == 0 ? 0 : 1;
-            result = _nukiOpener.updateKeypadEntry(entry);
+            result = _nukiRetryHandler->retryComm([&]()
+            {
+                return _nukiOpener.updateKeypadEntry(entry);
+            });
             Log->print("Update keypad code: ");
             NukiOpenerHelper::printCommandResult(result);
             updateKeypad(false);
@@ -2492,7 +2501,10 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
                 {
                     if(idExists)
                     {
-                        result = _nukiOpener.deleteKeypadEntry(codeId);
+                        result = _nukiRetryHandler->retryComm([&]()
+                        {
+                            return _nukiOpener.deleteKeypadEntry(codeId);
+                        });
                         if(result == Nuki::CmdResult::Success)
                         {
                             _keypadDeleted.push_back(std::make_pair(codeId, espMillis()));
@@ -2716,7 +2728,10 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
                             entry.allowedUntilTimeMin = allowedUntilTimeAr[1];
                         }
 
-                        result = _nukiOpener.addKeypadEntry(entry);
+                        result = _nukiRetryHandler->retryComm([&]()
+                        {
+                            return _nukiOpener.addKeypadEntry(entry);
+                        });
                         Log->print("Add keypad code: ");
                         NukiOpenerHelper::printCommandResult(result);
                     }
@@ -2745,8 +2760,14 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
                                 break;
                             }
                         }
-                        Nuki::CmdResult resultKp = cachedEntry ? Nuki::CmdResult::Success
-                            : _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+                        Nuki::CmdResult resultKp = Nuki::CmdResult::Success;
+                        if(!cachedEntry)
+                        {
+                            resultKp = _nukiRetryHandler->retryComm([&]()
+                            {
+                                return _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
+                            });
+                        }
                         bool foundExisting = false;
 
                         if(resultKp == Nuki::CmdResult::Success)
@@ -2892,7 +2913,10 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
                             }
                         }
 
-                        result = _nukiOpener.updateKeypadEntry(entry);
+                        result = _nukiRetryHandler->retryComm([&]()
+                        {
+                            return _nukiOpener.updateKeypadEntry(entry);
+                        });
                         if(result == Nuki::CmdResult::Success)
                         {
                             for(auto& e : _keypadEntriesCache)
