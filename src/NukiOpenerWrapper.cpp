@@ -626,6 +626,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 
         char lockStateStr[20];
         lockstateToString(_keyTurnerState.lockState, lockStateStr);
+        Log->print("Opener state: ");
         Log->println(lockStateStr);
     }
 
@@ -637,12 +638,12 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 void NukiOpenerWrapper::updateBatteryState()
 {
     Nuki::CmdResult result = (Nuki::CmdResult)-1;
-    Log->print("Querying opener battery state: ");
 
     result = _nukiRetryHandler->retryComm([&]()
     {
         return _nukiOpener.requestBatteryReport(&_batteryReport);
     });
+    Log->print("Querying opener battery state: ");
     NukiOpenerHelper::printCommandResult(result);
 
     if(result == Nuki::CmdResult::Success)
@@ -773,13 +774,13 @@ void NukiOpenerWrapper::updateAuthData(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        Log->print("Retrieving log entries: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiOpener.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
         });
 
+        Log->print("Retrieving log entries: ");
         NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
@@ -927,13 +928,13 @@ void NukiOpenerWrapper::updateKeypad(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        Log->print("Querying opener keypad: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiOpener.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
         });
 
+        Log->print("Querying opener keypad: ");
         NukiOpenerHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success && _waitKeypadUpdateTs == 0)
         {
@@ -1034,12 +1035,12 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        Log->print("Querying opener timecontrol: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiOpener.retrieveTimeControlEntries();
         });
+        Log->print("Querying opener timecontrol: ");
         NukiOpenerHelper::printCommandResult(result);
 
         if(result == Nuki::CmdResult::Success)
@@ -1101,12 +1102,12 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
     if(!retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
-        Log->print("Querying opener authorization: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiOpener.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
         });
+        Log->print("Querying opener authorization: ");
         NukiOpenerHelper::printCommandResult(result);
 
         if(result == Nuki::CmdResult::Success)

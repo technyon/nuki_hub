@@ -3929,6 +3929,11 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         bool v = isParameterTrue(request, "KPPER");
         _preferences->putBool(preference_keypad_topic_per_entry, v);
     }
+    if(request->hasParam("KPHAID"))
+    {
+        bool v = isParameterTrue(request, "KPHAID");
+        _preferences->putBool(preference_keypad_ha_by_code_id, v);
+    }
     if(request->hasParam("TCPER"))
     {
         bool v = isParameterTrue(request, "TCPER");
@@ -5794,6 +5799,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
     {
         printCheckBox(&response, "KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
         printCheckBox(&response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
+        printCheckBox(&response, "KPHAID", "Identify the HA keypad entities by code id instead of list position", _preferences->getBool(preference_keypad_ha_by_code_id), "");
         printCheckBox(&response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
         printCheckBox(&response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
         printCheckBox(&response, "KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");

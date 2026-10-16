@@ -987,16 +987,26 @@ void NukiNetwork::registerMqttReceiver(MqttReceiver* receiver)
 
 void NukiNetwork::onMqttDataReceivedCallback(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total)
 {
-    uint8_t value[800] = {0};
+    static uint8_t value[800] = {0};
 
-    size_t l = min(len, sizeof(value)-1);
-
-    for(int i=0; i<l; i++)
+    if(index == 0)
     {
-        value[i] = payload[i];
+        memset(value, 0, sizeof(value));
     }
 
-    _inst->onMqttDataReceived(properties, topic, value, len, index, total);
+    for(size_t i = 0; i < len && index + i < sizeof(value) - 1; i++)
+    {
+        value[index + i] = payload[i];
+    }
+
+    if(index + len < total)
+    {
+        return;
+    }
+
+    size_t complete = min(total, sizeof(value) - 1);
+    size_t start = 0;
+    _inst->onMqttDataReceived(properties, topic, value, complete, start, total);
 }
 
 void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t& len, size_t& index, size_t& total)

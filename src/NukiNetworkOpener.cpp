@@ -701,15 +701,16 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
         }
     }
 
-    serializeJson(json, _buffer, _bufferSize);
+    std::string jsonString;
+    serializeJson(json, jsonString);
 
     if(latest)
     {
-        _nukiPublisher->publishString(mqtt_topic_lock_log_latest, _buffer, true);
+        _nukiPublisher->publishString(mqtt_topic_lock_log_latest, jsonString, true);
     }
     else
     {
-        _nukiPublisher->publishString(mqtt_topic_lock_log, _buffer, true);
+        _nukiPublisher->publishString(mqtt_topic_lock_log, jsonString, true);
     }
 
     if(authIndex > 0)
@@ -900,6 +901,8 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
 {
     bool publishCode = _preferences->getBool(preference_keypad_publish_code, false);
     bool topicPerEntry = _preferences->getBool(preference_keypad_topic_per_entry, false);
+    bool haByCodeId = _preferences->getBool(preference_keypad_ha_by_code_id, false);
+    std::vector<std::string> haSlots;
     uint index = 0;
     char uidString[20];
     itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
@@ -925,7 +928,6 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
         }
         jsonEntry["enabled"] = entry.enabled;
         jsonEntry["name"] = entry.name;
-        _authEntries[jsonEntry["codeId"]] = jsonEntry["name"].as<String>();
         char createdDT[20];
         sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateCreatedYear, entry.dateCreatedMonth, entry.dateCreatedDay, entry.dateCreatedHour, entry.dateCreatedMin, entry.dateCreatedSec);
         jsonEntry["dateCreated"] = createdDT;
@@ -999,9 +1001,11 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
 
         if(topicPerEntry)
         {
+            std::string slot = haByCodeId ? std::to_string(entry.codeId) : std::to_string(index);
+            haSlots.push_back(slot);
             basePath = mqtt_topic_keypad;
             basePath.concat("/codes/");
-            basePath.concat(std::to_string(index).c_str());
+            basePath.concat(slot.c_str());
             jsonEntry["name_ha"] = entry.name;
             jsonEntry["index"] = index;
             serializeJson(jsonEntry, _buffer, _bufferSize);
@@ -1014,7 +1018,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
             std::string baseCommand = std::string("{ \"action\": \"update\", \"codeId\": \"") + std::to_string(entry.codeId);
             std::string enaCommand = baseCommand + (char*)"\", \"enabled\": \"1\" }";
             std::string disCommand = baseCommand + (char*)"\", \"enabled\": \"0\" }";
-            std::string mqttDeviceName = std::string("keypad_") + std::to_string(index);
+            std::string mqttDeviceName = std::string("keypad_") + slot;
             std::string uidStringPostfix = std::string("_") + mqttDeviceName;
             char codeName[33];
             memcpy(codeName, entry.name, sizeof(entry.name));
@@ -1047,8 +1051,9 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
         ++index;
     }
 
-    serializeJson(json, _buffer, _bufferSize);
-    _nukiPublisher->publishString(mqtt_topic_keypad_json, _buffer, true);
+    std::string jsonString;
+    serializeJson(json, jsonString);
+    _nukiPublisher->publishString(mqtt_topic_keypad_json, jsonString, true);
 
     if(!_disableNonJSON)
     {
@@ -1102,15 +1107,45 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
                 _network->removeTopic(codeTopic, "lockCount");
             }
         }
+    }
 
-        for(int j=entries.size(); j<maxKeypadCodeCount; j++)
+    if(topicPerEntry)
+    {
+        for(const auto& slot : _keypadHaSlots)
         {
-            String codesTopic = _mqttPath;
-            codesTopic.concat(mqtt_topic_keypad_codes);
-            codesTopic.concat("/");
-            _network->removeTopic(codesTopic, (char*)std::to_string(j).c_str());
-            std::string mqttDeviceName = std::string("keypad_") + std::to_string(j);
-            _network->removeHassTopic((char*)"switch", (char*)mqttDeviceName.c_str(), uidString);
+            bool stillThere = false;
+            for(const auto& current : haSlots)
+            {
+                if(current == slot)
+                {
+                    stillThere = true;
+                    break;
+                }
+            }
+            if(!stillThere)
+            {
+                String codesTopic = _mqttPath;
+                codesTopic.concat(mqtt_topic_keypad_codes);
+                codesTopic.concat("/");
+                _network->removeTopic(codesTopic, slot.c_str());
+                std::string mqttDeviceName = std::string("keypad_") + slot;
+                _network->removeHassTopic((char*)"switch", (char*)mqttDeviceName.c_str(), uidString);
+            }
+        }
+        _keypadHaSlots = haSlots;
+
+        if(!haByCodeId || _clearKeypadSlotEntities)
+        {
+            _clearKeypadSlotEntities = false;
+            for(int j = haByCodeId ? 0 : entries.size(); j<maxKeypadCodeCount; j++)
+            {
+                String codesTopic = _mqttPath;
+                codesTopic.concat(mqtt_topic_keypad_codes);
+                codesTopic.concat("/");
+                _network->removeTopic(codesTopic, (char*)std::to_string(j).c_str());
+                std::string mqttDeviceName = std::string("keypad_") + std::to_string(j);
+                _network->removeHassTopic((char*)"switch", (char*)mqttDeviceName.c_str(), uidString);
+            }
         }
     }
 }
@@ -1233,8 +1268,9 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
         ++index;
     }
 
-    serializeJson(json, _buffer, _bufferSize);
-    _nukiPublisher->publishString(mqtt_topic_timecontrol_json, _buffer, true);
+    std::string jsonString;
+    serializeJson(json, jsonString);
+    _nukiPublisher->publishString(mqtt_topic_timecontrol_json, jsonString, true);
 
     for(int j=timeControlEntries.size(); j<maxTimeControlEntryCount; j++)
     {
@@ -1340,8 +1376,9 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
         ++index;
     }
 
-    serializeJson(json, _buffer, _bufferSize);
-    _nukiPublisher->publishString(mqtt_topic_auth_json, _buffer, true);
+    std::string jsonString;
+    serializeJson(json, jsonString);
+    _nukiPublisher->publishString(mqtt_topic_auth_json, jsonString, true);
 
     for(int j=authEntries.size(); j<maxAuthEntryCount; j++)
     {

@@ -71,6 +71,7 @@
 #define preference_enable_bootloop_reset (char*)"enabtlprst"
 #define preference_keypad_info_enabled (char*)"kpInfoEnabled"
 #define preference_keypad_topic_per_entry (char*)"kpPerEntry"
+#define preference_keypad_ha_by_code_id (char*)"kpHaCodeId"
 #define preference_keypad_publish_code (char*)"kpPubCode"
 #define preference_timecontrol_topic_per_entry (char*)"tcPerEntry"
 #define preference_timecontrol_info_enabled (char*)"tcInfoEnabled"
@@ -243,6 +244,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_conf_info_enabled, true);
         preferences->putBool(preference_keypad_info_enabled, false);
         preferences->putBool(preference_keypad_topic_per_entry, false);
+        preferences->putBool(preference_keypad_ha_by_code_id, false);
         preferences->putBool(preference_keypad_publish_code, false);
         preferences->putBool(preference_keypad_control_enabled, false);
         preferences->putBool(preference_timecontrol_info_enabled, false);
@@ -554,7 +556,7 @@ private:
         preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
         preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_http_auth_type, preference_lock_gemini_pin,
         preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_hybrid_reboot_on_disconnect,
-        preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry,
+        preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_keypad_ha_by_code_id,
         preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
         preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
         preference_register_as_app, preference_register_opener_as_app, preference_command_nr_of_retries, preference_command_retry_delay, preference_cred_user,
@@ -584,7 +586,7 @@ private:
     std::vector<char*> _boolPrefs =
     {
         preference_started_before, preference_mqtt_log_enabled, preference_check_updates, preference_lock_enabled, preference_opener_enabled, preference_opener_continuous_mode,
-        preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_enable_bootloop_reset, preference_webserver_enabled, preference_update_time,
+        preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_keypad_ha_by_code_id, preference_enable_bootloop_reset, preference_webserver_enabled, preference_update_time,
         preference_restart_on_disconnect, preference_keypad_control_enabled, preference_keypad_info_enabled, preference_keypad_publish_code, preference_show_secrets,
         preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_register_as_app, preference_register_opener_as_app, preference_ip_dhcp_enabled,
         preference_publish_authdata, preference_publish_debug_info, preference_official_hybrid_enabled, preference_mqtt_hass_enabled, preference_retain_gpio,

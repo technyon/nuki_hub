@@ -657,6 +657,7 @@ bool NukiWrapper::updateKeyTurnerState()
 
     char lockStateStr[20];
     lockstateToString(lockState, lockStateStr);
+    Log->print("Lock state: ");
     Log->println(lockStateStr);
 
     postponeBleWatchdog();
@@ -937,13 +938,13 @@ void NukiWrapper::updateAuthData(bool retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         int retryCount = 0;
-        Log->print("Retrieving log entries: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiLock.retrieveLogEntries(0, _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 1, false);
         });
 
+        Log->print("Retrieving log entries: ");
         NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
@@ -1092,12 +1093,13 @@ void NukiWrapper::updateKeypad(bool retrieved)
     {
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
         int retryCount = 0;
-        Log->print("Querying lock keypad: ");
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiLock.retrieveKeypadEntries(0, _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
         });
+        Log->print("Querying lock keypad: ");
+        NukiHelper::printCommandResult(result);
 
         if(result == Nuki::CmdResult::Success && _waitKeypadUpdateTs == 0)
         {
@@ -1197,16 +1199,15 @@ void NukiWrapper::updateTimeControl(bool retrieved)
 
     if(!retrieved)
     {
-        Log->print("Querying lock timecontrol: ");
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiLock.retrieveTimeControlEntries();
         });
+        Log->print("Querying lock timecontrol: ");
         NukiHelper::printCommandResult(result);
 
-        NukiHelper::printCommandResult(result);
         if(result == Nuki::CmdResult::Success)
         {
             _waitTimeControlUpdateTs = espMillis() + 5000;
@@ -1265,13 +1266,13 @@ void NukiWrapper::updateAuth(bool retrieved)
 
     if(!retrieved)
     {
-        Log->print("Querying lock authorization: ");
         Nuki::CmdResult result = (Nuki::CmdResult)-1;
 
         result = _nukiRetryHandler->retryComm([&]()
         {
             return _nukiLock.retrieveAuthorizationEntries(0, _preferences->getInt(preference_auth_max_entries, MAX_AUTH));
         });
+        Log->print("Querying lock authorization: ");
         NukiHelper::printCommandResult(result);
 
         NukiHelper::printCommandResult(result);
