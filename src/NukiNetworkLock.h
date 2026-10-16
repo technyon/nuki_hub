@@ -93,6 +93,8 @@ private:
     bool _saveLogEnabled = false;
     bool _disableNonJSON = false;
     bool _clearNonJsonKeypad = true;
+    bool _clearKeypadSlotEntities = true;
+    std::vector<std::string> _keypadHaSlots;
     bool _offConnected = false;
     bool _hybridRebootOnDisconnect = false;
     bool _isUltra = false;
