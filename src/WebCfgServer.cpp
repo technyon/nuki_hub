@@ -6942,7 +6942,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
         //}
     }
-    if(request->hasParam("master"))
+    else if(request->hasParam("master"))
     {
         /*
         if(request->hasParam("debug"))
@@ -6960,7 +6960,7 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         //}
     }
 #if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32)) && !defined(CONFIG_FREERTOS_UNICORE)
-    if(request->hasParam("other"))
+    else if(request->hasParam("other"))
     {
         res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
         _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_OTHER);
