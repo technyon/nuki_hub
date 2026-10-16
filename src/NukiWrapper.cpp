@@ -79,7 +79,7 @@ void NukiWrapper::initialize()
     _nukiLock.initialize();
     _nukiLock.registerBleScanner(_bleScanner);
     _nukiLock.setEventHandler(this);
-    _nukiLock.setConnectTimeout(2);
+    _nukiLock.setConnectTimeout(3);
     _nukiLock.setDisconnectTimeout(2000);
     _nukiLock.setGeneralTimeout(_preferences->getInt(preference_ble_general_timeout, 10000));
     _nukiLock.setCommandTimeout(_preferences->getInt(preference_ble_command_timeout, 3000));
@@ -370,7 +370,7 @@ void NukiWrapper::checkDoorSensorOverride()
 
 void NukiWrapper::checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCommands)
 {
-    if(_nukiOfficial->getStatusUpdated() || _statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
+    if(_nukiOfficial->getStatusUpdated() || (_statusUpdated && ts >= _nextStatusPollTs) || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         Log->println("Updating Lock state based on status, timer or query");
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
@@ -379,7 +379,7 @@ void NukiWrapper::checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCo
 
         if(_statusUpdated)
         {
-            espDelayAck(500);
+            _nextStatusPollTs = ts + 4000;
         }
     }
 }
@@ -2652,13 +2652,14 @@ void NukiWrapper::onKeypadCommandReceived(const char *command, const uint &id, c
             return;
         }
 
-        if(result != Nuki::CmdResult::Success)
-        {
-            ++retryCount;
-        }
-        else
+        if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
         {
             break;
+        }
+        ++retryCount;
+        if(retryCount <= _nrOfRetries)
+        {
+            espDelayAck(_retryDelay);
         }
     }
 
@@ -3320,13 +3321,14 @@ void NukiWrapper::executeKeypadJsonCommand(const char *value)
                     return;
                 }
 
-                if(result != Nuki::CmdResult::Success)
-                {
-                    ++retryCount;
-                }
-                else
+                if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
                 {
                     break;
+                }
+                ++retryCount;
+                if(retryCount <= _nrOfRetries)
+                {
+                    espDelayAck(_retryDelay);
                 }
             }
 
@@ -3604,13 +3606,14 @@ void NukiWrapper::onTimeControlCommandReceived(const char *value)
                 return;
             }
 
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
+            if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
             {
                 break;
+            }
+            ++retryCount;
+            if(retryCount <= _nrOfRetries)
+            {
+                espDelayAck(_retryDelay);
             }
         }
 
@@ -4142,13 +4145,14 @@ void NukiWrapper::onAuthCommandReceived(const char *value)
                 return;
             }
 
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
+            if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
             {
                 break;
+            }
+            ++retryCount;
+            if(retryCount <= _nrOfRetries)
+            {
+                espDelayAck(_retryDelay);
             }
         }
 

@@ -68,7 +68,7 @@ void NukiOpenerWrapper::initialize()
     _nukiOpener.initialize();
     _nukiOpener.registerBleScanner(_bleScanner);
     _nukiOpener.setEventHandler(this);
-    _nukiOpener.setConnectTimeout(2);
+    _nukiOpener.setConnectTimeout(3);
     _nukiOpener.setDisconnectTimeout(2000);
     _nukiOpener.setGeneralTimeout(_preferences->getInt(preference_ble_general_timeout, 10000));
     _nukiOpener.setCommandTimeout(_preferences->getInt(preference_ble_command_timeout, 3000));
@@ -410,7 +410,7 @@ void NukiOpenerWrapper::update()
         publishKeypadCache();
     }
 
-    if(_statusUpdated || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
+    if((_statusUpdated && ts >= _nextStatusPollTs) || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
         _statusUpdated = updateKeyTurnerState();
@@ -418,7 +418,7 @@ void NukiOpenerWrapper::update()
 
         if(_statusUpdated)
         {
-            espDelayAck(500);
+            _nextStatusPollTs = ts + 4000;
         }
     }
     if(_network->mqttConnectionState() == 2)
@@ -595,7 +595,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
     }
     else
     {
-        if(_publishAuthData)
+        if(_publishAuthData && _keyTurnerState.lockState != NukiOpener::LockState::Open && _keyTurnerState.lockState != NukiOpener::LockState::Opening)
         {
             Log->println("Publishing auth data");
             updateAuthData(false);
@@ -2266,13 +2266,14 @@ void NukiOpenerWrapper::onKeypadCommandReceived(const char *command, const uint 
             return;
         }
 
-        if(result != Nuki::CmdResult::Success)
-        {
-            ++retryCount;
-        }
-        else
+        if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
         {
             break;
+        }
+        ++retryCount;
+        if(retryCount <= _nrOfRetries)
+        {
+            espDelayAck(_retryDelay);
         }
     }
 
@@ -2933,13 +2934,14 @@ void NukiOpenerWrapper::executeKeypadJsonCommand(const char *value)
                     return;
                 }
 
-                if(result != Nuki::CmdResult::Success)
-                {
-                    ++retryCount;
-                }
-                else
+                if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
                 {
                     break;
+                }
+                ++retryCount;
+                if(retryCount <= _nrOfRetries)
+                {
+                    espDelayAck(_retryDelay);
                 }
             }
 
@@ -3215,13 +3217,14 @@ void NukiOpenerWrapper::onTimeControlCommandReceived(const char *value)
                 return;
             }
 
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
+            if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
             {
                 break;
+            }
+            ++retryCount;
+            if(retryCount <= _nrOfRetries)
+            {
+                espDelayAck(_retryDelay);
             }
         }
 
@@ -3750,13 +3753,14 @@ void NukiOpenerWrapper::onAuthCommandReceived(const char *value)
                 return;
             }
 
-            if(result != Nuki::CmdResult::Success)
-            {
-                ++retryCount;
-            }
-            else
+            if(result == Nuki::CmdResult::Success || result == Nuki::CmdResult::Failed || result == Nuki::CmdResult::NotPaired)
             {
                 break;
+            }
+            ++retryCount;
+            if(retryCount <= _nrOfRetries)
+            {
+                espDelayAck(_retryDelay);
             }
         }
 

@@ -30,6 +30,11 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
             setCommErrorPins(HIGH);
             ++retryCount;
 
+            if (retryCount > _nrOfRetries || cmdResult == Nuki::CmdResult::Failed || cmdResult == Nuki::CmdResult::NotPaired)
+            {
+                break;
+            }
+
             Log->print(_reference.c_str());
             Log->print(": Last command failed, retrying after ");
             Log->print(_retryDelay);

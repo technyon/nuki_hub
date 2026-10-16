@@ -214,6 +214,8 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
 
     if(comparePrefixedPath(topic, mqtt_topic_lock_log_rolling_last) && !_saveLogEnabled)
     {
+        _lastRollingLogReceived = true;
+
         if(strcmp(data, "") == 0 ||
                 strcmp(data, "--") == 0)
         {
@@ -786,7 +788,7 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
             break;
         }
 
-        if(log.index > _lastRollingLog)
+        if(log.index > _lastRollingLog && !(_lastRollingLog == 0 && !_lastRollingLogReceived && espMillis() < 60000))
         {
             _lastRollingLog = log.index;
             if (_saveLogEnabled) {
