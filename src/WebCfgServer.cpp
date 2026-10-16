@@ -6492,12 +6492,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         if(_nuki->hasKeypad())
         {
             response.print("\nKeypad highest entries count: ");
-            response.print(_preferences->getInt(preference_lock_max_keypad_code_count, 0));
+            response.print(_preferences->getUInt(preference_lock_max_keypad_code_count, 0));
         }
         response.print("\nTimecontrol highest entries count: ");
-        response.print(_preferences->getInt(preference_lock_max_timecontrol_entry_count, 0));
+        response.print(_preferences->getUInt(preference_lock_max_timecontrol_entry_count, 0));
         response.print("\nAuthorizations highest entries count: ");
-        response.print(_preferences->getInt(preference_lock_max_auth_entry_count, 0));
+        response.print(_preferences->getUInt(preference_lock_max_auth_entry_count, 0));
         response.print("\nRegister as: ");
         response.print(_preferences->getBool(preference_register_as_app, false) ? "App" : "Bridge");
         response.print("\nForce Lock ID: ");
@@ -6705,12 +6705,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         if(_nukiOpener->hasKeypad())
         {
             response.print("\nKeypad highest entries count: ");
-            response.print(_preferences->getInt(preference_opener_max_keypad_code_count, 0));
+            response.print(_preferences->getUInt(preference_opener_max_keypad_code_count, 0));
         }
         response.print("\nTimecontrol highest entries count: ");
-        response.print(_preferences->getInt(preference_opener_max_timecontrol_entry_count, 0));
+        response.print(_preferences->getUInt(preference_opener_max_timecontrol_entry_count, 0));
         response.print("\nAuthorizations highest entries count: ");
-        response.print(_preferences->getInt(preference_opener_max_auth_entry_count, 0));
+        response.print(_preferences->getUInt(preference_opener_max_auth_entry_count, 0));
         response.print("\nRegister as: ");
         response.print(_preferences->getBool(preference_register_opener_as_app, false) ? "App" : "Bridge");
         response.print("\nNuki Opener Lock/Unlock action set to Continuous mode in Home Assistant: ");
