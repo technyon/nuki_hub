@@ -1551,7 +1551,7 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putBool(preference_ip_dhcp_enabled, (dhcpEna == "1"));
         }
     }
-    else if(request->hasParam("IPADDR"))
+    if(request->hasParam("IPADDR"))
     {
         String ipAddr = request->getParam("IPADDR")->value();
         if(_preferences->getString(preference_ip_address, "") != ipAddr)
@@ -1559,7 +1559,7 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_ip_address, ipAddr);
         }
     }
-    else if(request->hasParam("IPSUB"))
+    if(request->hasParam("IPSUB"))
     {
         String ipSub = request->getParam("IPSUB")->value();
         if(_preferences->getString(preference_ip_subnet, "") != ipSub)
@@ -1567,7 +1567,7 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_ip_subnet, ipSub);
         }
     }
-    else if(request->hasParam("IPGTW"))
+    if(request->hasParam("IPGTW"))
     {
         String ipGtw = request->getParam("IPGTW")->value();
         if(_preferences->getString(preference_ip_gateway, "") != ipGtw)
@@ -1575,7 +1575,7 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_ip_gateway, ipGtw);
         }
     }
-    else if(request->hasParam("DNSSRV"))
+    if(request->hasParam("DNSSRV"))
     {
         String dnsSrv = request->getParam("DNSSRV")->value();
         if(_preferences->getString(preference_ip_dns_server, "") != dnsSrv)
@@ -1583,7 +1583,7 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
             _preferences->putString(preference_ip_dns_server, dnsSrv);
         }
     }
-    else if(request->hasParam("FINDBESTRSSI"))
+    if(request->hasParam("FINDBESTRSSI"))
     {
         String findBestRssi = request->getParam("FINDBESTRSSI")->value();
         if(_preferences->getBool(preference_find_best_rssi, false) != (findBestRssi == "1"))
