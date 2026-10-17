@@ -54,6 +54,7 @@ jobs:
           Version: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         run: |
           sed -i "s/unknownbuildnr/$Version/g" src/Config.h
+          python3 resources/config_version.py beta
 
       - name: Build ${{ matrix.build }} PlatformIO Project ${{ matrix.board }}
         run: |
