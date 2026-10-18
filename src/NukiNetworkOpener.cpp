@@ -603,13 +603,17 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
             memset(str, 0, sizeof(str));
 
-            if(log.data[2] == 9)
+            if(log.data[2] == (uint8_t)NukiOpener::LogEntryCompletionStatus::NotAuthorized)
             {
                 entry["completionStatus"] = "notAuthorized";
             }
-            else if (log.data[2] == 224)
+            else if (log.data[2] == (uint8_t)NukiOpener::LogEntryCompletionStatus::InvalidCode)
             {
                 entry["completionStatus"] = "invalidCode";
+            }
+            else if (log.data[2] == (uint8_t)NukiOpener::LogEntryCompletionStatus::InvalidFingerprint)
+            {
+                entry["completionStatus"] = "invalidFingerprint";
             }
             else
             {
