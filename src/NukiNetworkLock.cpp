@@ -753,13 +753,17 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
 
             memset(str, 0, sizeof(str));
 
-            if(log.data[2] == 9)
+            if(log.data[2] == (uint8_t)NukiLock::LogEntryCompletionStatus::NotAuthorized)
             {
                 entry["completionStatus"] = "notAuthorized";
             }
-            else if (log.data[2] == 224)
+            else if (log.data[2] == (uint8_t)NukiLock::LogEntryCompletionStatus::InvalidCode)
             {
                 entry["completionStatus"] = "invalidCode";
+            }
+            else if (log.data[2] == (uint8_t)NukiLock::LogEntryCompletionStatus::InvalidFingerprint)
+            {
+                entry["completionStatus"] = "invalidFingerprint";
             }
             else
             {
