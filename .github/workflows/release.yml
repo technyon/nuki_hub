@@ -86,7 +86,7 @@ jobs:
           chmod a+x ${FILES}/flash.sh
 
       - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
           path: ${{ matrix.build }}/${{ env.VARIANT }}
@@ -118,7 +118,7 @@ jobs:
         id: get_version
         run: echo "VERSION=$(cat master/src/Config.h | grep -oP '(?<=#define NUKI_HUB_VERSION \")(.*)(?=\")')" >> $GITHUB_OUTPUT
       - name: Download release assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: release
           pattern: '*-release-assets'
