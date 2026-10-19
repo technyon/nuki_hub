@@ -74,6 +74,7 @@ void NukiNetworkLock::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_lock_log_rolling, "");
     _network->initTopic(_mqttPath, mqtt_topic_lock_retry, "0");
 
     _network->removeTopic(_mqttPath, mqtt_topic_hybrid_state);
@@ -799,7 +800,7 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
                 _preferences->putInt(preference_lock_log_num, _lastRollingLog);
             }
             serializeJson(entry, _buffer, _bufferSize);
-            _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, true);
+            _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, false);
             _nukiPublisher->publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
         }
     }

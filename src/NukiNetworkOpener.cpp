@@ -58,6 +58,7 @@ void NukiNetworkOpener::initialize()
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
 
     _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
+    _network->initTopic(_mqttPath, mqtt_topic_lock_log_rolling, "");
     _network->initTopic(_mqttPath, mqtt_topic_timecontrol_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_auth_action, "--");
     _network->initTopic(_mqttPath, mqtt_topic_lock_retry, "0");
@@ -681,7 +682,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
         if(log.index > _lastRollingLog && !(_lastRollingLog == 0 && !_lastRollingLogReceived && espMillis() < 60000))
         {
             serializeJson(entry, _buffer, _bufferSize);
-            _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, true);
+            _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, false);
             _nukiPublisher->publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
 
             if(log.loggingType == NukiOpener::LoggingType::DoorbellRecognition && _lastRollingLog > 0)
