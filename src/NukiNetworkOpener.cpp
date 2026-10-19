@@ -29,6 +29,7 @@ void NukiNetworkOpener::initialize()
         _lastRollingLog = _preferences->getInt(preference_opener_log_num, 0);
         _saveLogEnabled = true;
     }
+    _publishAuthData = _preferences->getBool(preference_publish_authdata, false);
 
     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
     mqttPath.concat("/opener");
@@ -132,10 +133,7 @@ void NukiNetworkOpener::initialize()
         _network->subscribe(_mqttPath, mqtt_topic_auth_action);
     }
 
-    if(_preferences->getBool(preference_publish_authdata, false))
-    {
-        _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
-    }
+    _network->subscribe(_mqttPath, mqtt_topic_lock_log_rolling_last);
 }
 
 void NukiNetworkOpener::update()
@@ -509,6 +507,21 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
     JsonDocument json;
 
+    if(_lastRollingLog == 0 && (_lastRollingLogReceived || espMillis() >= 60000))
+    {
+        for(const auto& log : logEntries)
+        {
+            if(log.index > _lastRollingLog)
+            {
+                _lastRollingLog = log.index;
+            }
+        }
+        _nukiPublisher->publishInt(mqtt_topic_lock_log_rolling_last, _lastRollingLog, true);
+        if (_saveLogEnabled) {
+            _preferences->putInt(preference_opener_log_num, _lastRollingLog);
+        }
+    }
+
     for(const auto& log : logEntries)
     {
         memset(authName, 0, sizeof(authName));
@@ -681,8 +694,11 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
 
         if(log.index > _lastRollingLog && !(_lastRollingLog == 0 && !_lastRollingLogReceived && espMillis() < 60000))
         {
-            serializeJson(entry, _buffer, _bufferSize);
-            _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, false);
+            if(_publishAuthData)
+            {
+                serializeJson(entry, _buffer, _bufferSize);
+                _nukiPublisher->publishString(mqtt_topic_lock_log_rolling, _buffer, false);
+            }
             _nukiPublisher->publishInt(mqtt_topic_lock_log_rolling_last, log.index, true);
 
             if(log.loggingType == NukiOpener::LoggingType::DoorbellRecognition && _lastRollingLog > 0)
@@ -704,6 +720,11 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
                 _preferences->putInt(preference_opener_log_num, _lastRollingLog);
             }
         }
+    }
+
+    if(!_publishAuthData)
+    {
+        return;
     }
 
     std::string jsonString;
@@ -733,6 +754,7 @@ uint32_t NukiNetworkOpener::getLastRollingLog() const
 void NukiNetworkOpener::clearAuthorizationInfo()
 {
     _nukiPublisher->publishString(mqtt_topic_lock_log, "--", true);
+    _nukiPublisher->publishString(mqtt_topic_lock_log_latest, "--", true);
     _nukiPublisher->publishUInt(mqtt_topic_lock_auth_id, 0, true);
     _nukiPublisher->publishString(mqtt_topic_lock_auth_name, "--", true);
 }
