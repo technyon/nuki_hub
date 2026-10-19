@@ -87,7 +87,7 @@ jobs:
           chmod a+x ${FILES}/flash.sh
 
       - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ format('{0}-{1}-assets', env.VARIANT, matrix.build) }}
           path: ${{ matrix.build }}/${{ env.VARIANT }}
@@ -116,7 +116,7 @@ jobs:
           git branch -M binary
           git rm --cached --ignore-unmatch -r *
       - name: Download release assets
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           path: release
           pattern: '*-release-assets'
