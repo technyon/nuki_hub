@@ -162,7 +162,7 @@ jobs:
           touch ota/beta/empty
           touch ota/master/empty
       - name: Commit binaries to binary
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Update binaries"
           file_pattern: 'ota/* ota/master/* ota/beta/*'
