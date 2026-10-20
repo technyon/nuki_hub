@@ -1447,26 +1447,27 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[basicKeys[i]].is<JsonVariantConst>())
         {
             JsonVariantConst jsonKey = json[basicKeys[i]];
-            char *jsonchar;
+            char jsonValue[16] = {0};
+            const char *jsonchar = jsonValue;
 
             if (jsonKey.is<float>())
             {
-                itoa(jsonKey, jsonchar, 10);
+                itoa(jsonKey, jsonValue, 10);
             }
             else if (jsonKey.is<bool>())
             {
                 if (jsonKey)
                 {
-                    itoa(1, jsonchar, 10);
+                    itoa(1, jsonValue, 10);
                 }
                 else
                 {
-                    itoa(0, jsonchar, 10);
+                    itoa(0, jsonValue, 10);
                 }
             }
             else if (jsonKey.is<const char*>())
             {
-                jsonchar = (char*)jsonKey.as<const char*>();
+                jsonchar = jsonKey.as<const char*>();
             }
 
             if(strlen(jsonchar) == 0)
@@ -1835,26 +1836,27 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
         if(json[advancedKeys[j]].is<JsonVariantConst>())
         {
             JsonVariantConst jsonKey = json[advancedKeys[j]];
-            char *jsonchar;
+            char jsonValue[16] = {0};
+            const char *jsonchar = jsonValue;
 
             if (jsonKey.is<float>())
             {
-                itoa(jsonKey, jsonchar, 10);
+                itoa(jsonKey, jsonValue, 10);
             }
             else if (jsonKey.is<bool>())
             {
                 if (jsonKey)
                 {
-                    itoa(1, jsonchar, 10);
+                    itoa(1, jsonValue, 10);
                 }
                 else
                 {
-                    itoa(0, jsonchar, 10);
+                    itoa(0, jsonValue, 10);
                 }
             }
             else if (jsonKey.is<const char*>())
             {
-                jsonchar = (char*)jsonKey.as<const char*>();
+                jsonchar = jsonKey.as<const char*>();
             }
 
             if(strlen(jsonchar) == 0)
