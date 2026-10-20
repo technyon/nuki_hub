@@ -84,7 +84,7 @@ void NukiOpenerWrapper::readSettings()
 {
     esp_power_level_t powerLevel;
 
-    int pwrLvl = _preferences->getInt(preference_ble_tx_power, 0);
+    int pwrLvl = _preferences->getInt(preference_ble_tx_power, 9);
 
     if(pwrLvl >= 9)
     {
@@ -119,11 +119,11 @@ void NukiOpenerWrapper::readSettings()
     }
     else if(pwrLvl >= 3)
     {
-        powerLevel = ESP_PWR_LVL_P6;
+        powerLevel = ESP_PWR_LVL_P3;
     }
     else if(pwrLvl >= 0)
     {
-        powerLevel = ESP_PWR_LVL_P3;
+        powerLevel = ESP_PWR_LVL_N0;
     }
     else if(pwrLvl >= -3)
     {
@@ -137,7 +137,7 @@ void NukiOpenerWrapper::readSettings()
     {
         powerLevel = ESP_PWR_LVL_N9;
     }
-    else if(pwrLvl >= -12)
+    else
     {
         powerLevel = ESP_PWR_LVL_N12;
     }
