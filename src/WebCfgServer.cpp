@@ -5599,8 +5599,8 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.print("</td></tr>");
     printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
-    printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_force_hosted_update, false), "");
-    printCheckBox(&response, "FRCHSTUPD", "Force slave Hosted update on next boot", _preferences->getBool(preference_webserial_enabled), "");
+    printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
+    printCheckBox(&response, "FRCHSTUPD", "Force slave Hosted update on next boot", _preferences->getBool(preference_force_hosted_update, false), "");
     printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
     printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 65536)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
     response.print("<tr><td>Advised minimum char buffer size based on current settings</td><td id=\"mincharbuffer\"></td>");
@@ -6119,8 +6119,14 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_updater_date, ""));
     #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
     response.printf("\nHost hosted firmware version: %u.%u.%u", host_version_struct.major1, host_version_struct.minor1, host_version_struct.patch1);
-    esp_hosted_get_coprocessor_fwversion(&slave_version_struct);
-    response.printf("\nSlave hosted firmware version: %u.%u.%u", slave_version_struct.major1, slave_version_struct.minor1, slave_version_struct.patch1);
+    if(esp_hosted_get_coprocessor_fwversion(&slave_version_struct) == ESP_OK)
+    {
+        response.printf("\nSlave hosted firmware version: %u.%u.%u", slave_version_struct.major1, slave_version_struct.minor1, slave_version_struct.patch1);
+    }
+    else
+    {
+        response.print("\nSlave hosted firmware version: unknown");
+    }
     #endif
     response.print("\nUptime (min): ");
     response.print(espMillis() / 1000 / 60);
