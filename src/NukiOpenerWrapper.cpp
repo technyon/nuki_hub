@@ -562,7 +562,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
         _statusUpdatedTs = espMillis();
     }
 
-    if((!isPinValid() || !_publishAuthData) &&
+    if(!isPinValid() &&
             _statusUpdated &&
             _keyTurnerState.nukiState == NukiOpener::State::ContinuousMode &&
             _keyTurnerState.trigger == NukiOpener::Trigger::Manual &&
@@ -574,7 +574,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
         Log->println("Nuki opener: Ring detected (CM)");
         _network->publishRing(false);
     }
-    else if((!isPinValid() || !_publishAuthData) &&
+    else if(!isPinValid() &&
             _statusUpdated &&
             _keyTurnerState.trigger == NukiOpener::Trigger::Manual &&
             (_keyTurnerState.lockState == NukiOpener::LockState::Open ||
@@ -584,7 +584,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
         Log->println("Nuki opener: Ring detected (RTO)");
         _network->publishRing(false);
     }
-    else if((!isPinValid() || !_publishAuthData) &&
+    else if(!isPinValid() &&
             _statusUpdated &&
             _keyTurnerState.lockState == NukiOpener::LockState::Locked &&
             _lastKeyTurnerState.lockState == NukiOpener::LockState::Locked &&
@@ -595,7 +595,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
     }
     else
     {
-        if(_publishAuthData && _keyTurnerState.lockState != NukiOpener::LockState::Open && _keyTurnerState.lockState != NukiOpener::LockState::Opening)
+        if(isPinValid() && _keyTurnerState.lockState != NukiOpener::LockState::Open && _keyTurnerState.lockState != NukiOpener::LockState::Opening)
         {
             Log->println("Publishing auth data");
             updateAuthData(false);
