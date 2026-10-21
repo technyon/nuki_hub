@@ -9,12 +9,12 @@ dependencies:
   espressif/libsodium: "^1.0.20~2"
 
   espressif/esp_hosted:
-    version: "*"
+    version: "2.12.13"
     rules:
       - if: "target in [esp32p4]"
 
   espressif/esp_wifi_remote:
-    version: "*"
+    version: "1.6.3"
     rules:
       - if: "target in [esp32p4]"
 
