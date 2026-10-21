@@ -2471,8 +2471,11 @@ void NukiWrapper::checkGpioAction()
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
-            _offCommand = NukiLock::LockAction::Lock;
+            if(_preferences->getBool(preference_official_hybrid_retry, false))
+            {
+                _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
+                _offCommand = NukiLock::LockAction::Lock;
+            }
             _network->publishOffAction(2);
         }
         break;
@@ -2483,8 +2486,11 @@ void NukiWrapper::checkGpioAction()
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
-            _offCommand = NukiLock::LockAction::Unlock;
+            if(_preferences->getBool(preference_official_hybrid_retry, false))
+            {
+                _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
+                _offCommand = NukiLock::LockAction::Unlock;
+            }
             _network->publishOffAction(1);
         }
         break;
@@ -2495,8 +2501,11 @@ void NukiWrapper::checkGpioAction()
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
-            _offCommand = NukiLock::LockAction::Unlatch;
+            if(_preferences->getBool(preference_official_hybrid_retry, false))
+            {
+                _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
+                _offCommand = NukiLock::LockAction::Unlatch;
+            }
             _network->publishOffAction(3);
         }
         break;
@@ -2507,8 +2516,11 @@ void NukiWrapper::checkGpioAction()
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
-            _offCommand = NukiLock::LockAction::LockNgo;
+            if(_preferences->getBool(preference_official_hybrid_retry, false))
+            {
+                _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
+                _offCommand = NukiLock::LockAction::LockNgo;
+            }
             _network->publishOffAction(4);
         }
         break;
@@ -2519,8 +2531,11 @@ void NukiWrapper::checkGpioAction()
         }
         else
         {
-            _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
-            _offCommand = NukiLock::LockAction::LockNgoUnlatch;
+            if(_preferences->getBool(preference_official_hybrid_retry, false))
+            {
+                _nukiOfficial->setOffCommandExecutedTs(espMillis() + 2000);
+                _offCommand = NukiLock::LockAction::LockNgoUnlatch;
+            }
             _network->publishOffAction(5);
         }
         break;

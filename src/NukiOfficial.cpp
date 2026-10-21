@@ -102,6 +102,7 @@ void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value
     {
         offState = atoi(value);
         _statusUpdated = true;
+        clearOffCommandExecutedTs();
         Log->println("Lock: Updating status on Hybrid state change");
         _publisher->publishBool(mqtt_topic_hybrid_state, offConnected, true);
         NukiLock::lockstateToString((NukiLock::LockState)offState, str);
