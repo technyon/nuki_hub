@@ -3251,13 +3251,17 @@ JsonDocument HomeAssistantDiscovery::createHassJson(const String& uidString,
         json["cmd_t"] = commandTopic;
     }
 
-    json["avty"][0]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
     json["dev"]["name"] = _uidToName[uidString];
 
-    if (displayName != "Query lock state" && uidString.length() < 10)
+    if (displayName != "Rolling authorization log")
     {
-        json["avty"][1]["t"] = String("~") + String(mqtt_topic_lock_availability);
-        json["avty_mode"] = "all";
+        json["avty"][0]["t"] = _baseTopic + mqtt_topic_mqtt_connection_state;
+
+        if (displayName != "Query lock state" && uidString.length() < 10)
+        {
+            json["avty"][1]["t"] = String("~") + String(mqtt_topic_lock_availability);
+            json["avty_mode"] = "all";
+        }
     }
 
     for(const auto& entry : additionalEntries)
