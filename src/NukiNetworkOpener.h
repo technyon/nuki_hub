@@ -79,6 +79,7 @@ private:
     bool _disableNonJSON = false;
     bool _clearNonJsonKeypad = true;
     bool _clearKeypadSlotEntities = true;
+    uint _publishedKeypadCount = 0;
     std::vector<std::string> _keypadHaSlots;
 
     String _keypadCommandName = "";

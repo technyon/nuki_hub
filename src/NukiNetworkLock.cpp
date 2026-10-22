@@ -1140,28 +1140,32 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
 
     if(!_disableNonJSON)
     {
-        while(index < maxKeypadCodeCount)
+        if(_clearNonJsonKeypad || index < _publishedKeypadCount)
         {
-            NukiLock::KeypadEntry entry;
-            memset(&entry, 0, sizeof(entry));
-            String basePath = mqtt_topic_keypad;
-            basePath.concat("/code_");
-            basePath.concat(std::to_string(index).c_str());
-            publishKeypadEntry(basePath, entry);
-
-            ++index;
-        }
-
-        if(!publishCode)
-        {
-            for(int i=0; i<maxKeypadCodeCount; i++)
+            _clearNonJsonKeypad = false;
+            while(index < maxKeypadCodeCount)
             {
-                String codeTopic = _mqttPath;
-                codeTopic.concat(mqtt_topic_keypad);
-                codeTopic.concat("/code_");
-                codeTopic.concat(std::to_string(i).c_str());
-                codeTopic.concat("/");
-                _network->removeTopic(codeTopic, "code");
+                NukiLock::KeypadEntry entry;
+                memset(&entry, 0, sizeof(entry));
+                String basePath = mqtt_topic_keypad;
+                basePath.concat("/code_");
+                basePath.concat(std::to_string(index).c_str());
+                publishKeypadEntry(basePath, entry);
+
+                ++index;
+            }
+
+            if(!publishCode)
+            {
+                for(int i=0; i<maxKeypadCodeCount; i++)
+                {
+                    String codeTopic = _mqttPath;
+                    codeTopic.concat(mqtt_topic_keypad);
+                    codeTopic.concat("/code_");
+                    codeTopic.concat(std::to_string(i).c_str());
+                    codeTopic.concat("/");
+                    _network->removeTopic(codeTopic, "code");
+                }
             }
         }
     }
@@ -1217,7 +1221,7 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
         }
         _keypadHaSlots = haSlots;
 
-        if(!haByCodeId || _clearKeypadSlotEntities)
+        if(_clearKeypadSlotEntities || entries.size() < _publishedKeypadCount)
         {
             _clearKeypadSlotEntities = false;
             for(int j = haByCodeId ? 0 : entries.size(); j<maxKeypadCodeCount; j++)
@@ -1231,6 +1235,8 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
             }
         }
     }
+
+    _publishedKeypadCount = entries.size();
 }
 
 void NukiNetworkLock::publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry)
