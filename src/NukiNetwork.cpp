@@ -787,10 +787,10 @@ bool NukiNetwork::reconnect(bool force)
 
                 if(_preferences->getBool(preference_reset_mqtt_topics, false))
                 {
-                    char mqttLockPath[181] = {0};
-                    char mqttOpenerPath[181] = {0};
-                    char mqttOldOpenerPath[181] = {0};
-                    char mqttOldOpenerPath2[181] = {0};
+                    char mqttLockPath[200] = {0};
+                    char mqttOpenerPath[200] = {0};
+                    char mqttOldOpenerPath[200] = {0};
+                    char mqttOldOpenerPath2[200] = {0};
                     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
                     mqttPath.concat("/lock");
 
@@ -1454,7 +1454,7 @@ void NukiNetwork::publishString(const char* prefix, const char *topic, const cha
 
 void NukiNetwork::publish(const char* prefix, const char *topic, const char *value, bool retain)
 {
-    char path[200] = {0};
+    char path[500] = {0};
     buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value);
 }
