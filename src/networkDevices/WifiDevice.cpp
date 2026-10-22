@@ -27,6 +27,7 @@ void WifiDevice::initialize()
     pass = _preferences->getString(preference_wifi_pass, "");
     pass.trim();
     WiFi.setHostname(_hostname.c_str());
+    WiFi.setSleep(!_preferences->getBool(preference_wifi_power_save_disabled, false));
 
     WiFi.onEvent([&](WiFiEvent_t event, WiFiEventInfo_t info)
     {
@@ -180,28 +181,44 @@ bool WifiDevice::connect()
         WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
     }
 
-    if (bestConnection == -1)
+    int attempt = 0;
+    while(!isConnected() && attempt < 3)
     {
-        WiFi.begin(ssid, pass);
-    }
-    else
-    {
-        WiFi.begin(ssid, pass, WiFi.channel(bestConnection), WiFi.BSSID(bestConnection), 1);
-    }
+        if (attempt > 0)
+        {
+            WiFi.disconnect();
+            espDelayAck(100);
+        }
 
-    Log->print("WiFi connecting");
-    loop = 0;
-    while(!isConnected() && loop < 600)
-    {
-        Log->print(".");
-        espDelayAck(25);
-        loop++;
+        if (bestConnection == -1)
+        {
+            WiFi.begin(ssid, pass);
+        }
+        else
+        {
+            WiFi.begin(ssid, pass, WiFi.channel(bestConnection), WiFi.BSSID(bestConnection), 1);
+        }
+
+        wifi_config_t conf;
+        esp_wifi_get_config(WIFI_IF_STA, &conf);
+        conf.sta.failure_retry_cnt = 5;
+        esp_wifi_set_config(WIFI_IF_STA, &conf);
+
+        Log->print("WiFi connecting");
+        loop = 0;
+        while(!isConnected() && loop < 600)
+        {
+            Log->print(".");
+            espDelayAck(25);
+            loop++;
+        }
+        Log->println("");
+        attempt++;
     }
-    Log->println("");
 
     if (!isConnected())
     {
-        Log->println("Failed to connect within 15 seconds");
+        Log->println("Failed to connect within 3 attempts of 15 seconds");
 
         if(_preferences->getBool(preference_restart_on_disconnect, false) && (espMillis() > 60000))
         {

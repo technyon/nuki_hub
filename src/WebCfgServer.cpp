@@ -1511,6 +1511,7 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
     printInputField(&response, "WIFISSID", "SSID", "", 32, "id=\"inputssid\"", false, true);
     printInputField(&response, "WIFIPASS", "Secret key", "", 63, "id=\"inputpass\"", false, true);
     printCheckBox(&response, "FINDBESTRSSI", "Find AP with best signal (disable for hidden SSID)", _preferences->getBool(preference_find_best_rssi, true), "");
+    printCheckBox(&response, "WIFIPSDIS", "Disable Wi-Fi power save (improves weak connections)", _preferences->getBool(preference_wifi_power_save_disabled, false), "");
     response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
@@ -1589,6 +1590,14 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
         if(_preferences->getBool(preference_find_best_rssi, false) != (findBestRssi == "1"))
         {
             _preferences->putBool(preference_find_best_rssi, (findBestRssi == "1"));
+        }
+    }
+    if(request->hasParam("WIFIPSDIS"))
+    {
+        String wifiPowerSaveDisabled = request->getParam("WIFIPSDIS")->value();
+        if(_preferences->getBool(preference_wifi_power_save_disabled, false) != (wifiPowerSaveDisabled == "1"))
+        {
+            _preferences->putBool(preference_wifi_power_save_disabled, (wifiPowerSaveDisabled == "1"));
         }
     }
 
@@ -3362,6 +3371,11 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     {
         bool v = isParameterTrue(request, "FINDBESTRSSI");
         _preferences->putBool(preference_find_best_rssi, v);
+    }
+    if(request->hasParam("WIFIPSDIS"))
+    {
+        bool v = isParameterTrue(request, "WIFIPSDIS");
+        _preferences->putBool(preference_wifi_power_save_disabled, v);
     }
     if(request->hasParam("RSTDISC"))
     {
@@ -5298,6 +5312,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
     printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
     printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");
+    printCheckBox(&response, "WIFIPSDIS", "Disable Wi-Fi power save (improves weak connections)", _preferences->getBool(preference_wifi_power_save_disabled, false), "");
     if(nuki_hub_https_server_enabled)
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
@@ -6334,6 +6349,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
 
         response.print("\nFind WiFi AP with strongest signal: ");
         response.print(_preferences->getBool(preference_find_best_rssi, false) ? "Yes" : "No");
+        response.print("\nWi-Fi power save disabled: ");
+        response.print(_preferences->getBool(preference_wifi_power_save_disabled, false) ? "Yes" : "No");
     }
     /*
     else if(network->networkDeviceType() == NetworkDeviceType::CUSTOM)
