@@ -1632,7 +1632,7 @@ void NukiNetworkLock::setAuthCommandReceivedCallback(void (*authCommandReceivedR
 void NukiNetworkLock::buildMqttPath(const char* path, char* outPath)
 {
     int offset = 0;
-    char inPath[181] = {0};
+    char inPath[200] = {0};
 
     memcpy(inPath, _mqttPath, sizeof(_mqttPath));
 

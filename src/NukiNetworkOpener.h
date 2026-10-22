@@ -71,7 +71,7 @@ private:
     NukiPublisher* _nukiPublisher = nullptr;
 
     std::map<uint32_t, String> _authEntries;
-    char _mqttPath[181] = {0};
+    char _mqttPath[200] = {0};
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
     bool _saveLogEnabled = false;
