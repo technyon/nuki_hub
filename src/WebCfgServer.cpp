@@ -1597,14 +1597,11 @@ bool WebCfgServer::processWiFi(PsychicRequest *request, PsychicResponse* resp, S
 
     if (ssid.length() > 0 && pass.length() > 0)
     {
-        if (_preferences->getBool(preference_ip_dhcp_enabled, true) && _preferences->getString(preference_ip_address, "").length() <= 0)
-        {
-            const IPConfiguration* _ipConfiguration = new IPConfiguration(_preferences);
+        const IPConfiguration* _ipConfiguration = new IPConfiguration(_preferences);
 
-            if(!_ipConfiguration->dhcpEnabled())
-            {
-                WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
-            }
+        if(!_ipConfiguration->dhcpEnabled())
+        {
+            WiFi.config(_ipConfiguration->ipAddress(), _ipConfiguration->dnsServer(), _ipConfiguration->defaultGateway(), _ipConfiguration->subnet());
         }
 
         WiFi.begin(ssid, pass);
