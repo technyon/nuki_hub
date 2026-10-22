@@ -1076,10 +1076,10 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
 
         NukiHelper::weekdaysToJsonArray(allowedWeekdaysInt, weekdays);
 
-        char allowedFromTimeT[5];
+        char allowedFromTimeT[6];
         sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
         jsonEntry["allowedFromTime"] = allowedFromTimeT;
-        char allowedUntilTimeT[5];
+        char allowedUntilTimeT[6];
         sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
         jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
 
@@ -1328,7 +1328,7 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
             }
         }
 
-        char timeT[5];
+        char timeT[6];
         sprintf(timeT, "%02d:%02d", entry.timeHour, entry.timeMin);
         jsonEntry["time"] = timeT;
 
@@ -1481,10 +1481,10 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
             }
         }
 
-        char allowedFromTimeT[5];
+        char allowedFromTimeT[6];
         sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
         jsonEntry["allowedFromTime"] = allowedFromTimeT;
-        char allowedUntilTimeT[5];
+        char allowedUntilTimeT[6];
         sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
         jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
 
