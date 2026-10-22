@@ -6142,6 +6142,10 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(getEspRestartReason());
     response.print("\nFree internal heap: ");
     response.print(ESP.getFreeHeap());
+    response.print("\nLargest free internal block: ");
+    response.print(ESP.getMaxAllocHeap());
+    response.print("\nMinimum free internal heap since boot: ");
+    response.print(ESP.getMinFreeHeap());
     response.print("\nTotal internal heap: ");
     response.print(ESP.getHeapSize());
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
