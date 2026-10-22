@@ -54,6 +54,7 @@
 // CHANGE DOES NOT REQUIRE REBOOT TO TAKE EFFECT
 #define preference_find_best_rssi (char*)"nwbestrssi"
 #define preference_wifi_power_save_disabled (char*)"nwpsdis"
+#define preference_wifi_preferred_bssid (char*)"nwprefbssid"
 #define preference_auth_max_entries (char*)"authmaxentry"
 #define preference_auth_info_enabled (char*)"authInfoEna"
 #define preference_auth_topic_per_entry (char*)"authPerEntry"
@@ -565,7 +566,7 @@ private:
         preference_cred_password, preference_disable_non_json, preference_publish_authdata, preference_publish_debug_info, preference_mqtt_ssl_enabled, preference_enable_debug_mode,
         preference_official_hybrid_enabled, preference_query_interval_hybrid_lockstate, preference_official_hybrid_actions, preference_official_hybrid_retry,
         preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
-        preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_webserial_enabled, preference_find_best_rssi, preference_wifi_power_save_disabled, preference_lock_gemini_enabled,
+        preference_update_from_mqtt, preference_show_secrets, preference_ble_tx_power, preference_webserial_enabled, preference_find_best_rssi, preference_wifi_power_save_disabled, preference_wifi_preferred_bssid, preference_lock_gemini_enabled,
         preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr, preference_network_custom_irq,
         preference_network_custom_rst, preference_network_custom_cs, preference_network_custom_sck, preference_network_custom_miso, preference_network_custom_mosi,
         preference_network_custom_pwr, preference_network_custom_mdio, preference_lock_max_auth_entry_count, preference_opener_max_auth_entry_count,

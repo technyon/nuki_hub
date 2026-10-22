@@ -135,8 +135,15 @@ bool WifiDevice::connect()
     }
 
     int bestConnection = -1;
+    uint8_t preferredBssid[6];
+    String preferredBssidStr = _preferences->getString(preference_wifi_preferred_bssid, "");
+    bool usePreferredBssid = sscanf(preferredBssidStr.c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &preferredBssid[0], &preferredBssid[1], &preferredBssid[2], &preferredBssid[3], &preferredBssid[4], &preferredBssid[5]) == 6;
 
-    if(_preferences->getBool(preference_find_best_rssi, false))
+    if(usePreferredBssid)
+    {
+        Log->println(String("Trying to connect to SSID ") + ssid + String(" with preferred BSSID ") + preferredBssidStr);
+    }
+    else if(_preferences->getBool(preference_find_best_rssi, false))
     {
         for (int i = 0; i < _foundNetworks; i++)
         {
@@ -190,7 +197,16 @@ bool WifiDevice::connect()
             espDelayAck(100);
         }
 
-        if (bestConnection == -1)
+        if (usePreferredBssid && attempt < 2)
+        {
+            WiFi.begin(ssid, pass, 0, preferredBssid);
+        }
+        else if (usePreferredBssid)
+        {
+            Log->println("Preferred BSSID not reachable, connecting to any AP with the saved SSID");
+            WiFi.begin(ssid, pass);
+        }
+        else if (bestConnection == -1)
         {
             WiFi.begin(ssid, pass);
         }
