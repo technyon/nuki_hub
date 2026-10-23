@@ -1522,6 +1522,10 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
+    response.print("<h3>Import configuration</h3>");
+    response.print("<form method=\"post\" action=\"post\"><textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
+    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form>");
     response.print("<form action=\"/reboot\" method=\"get\"><br>");
     response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><input type=\"submit\" value=\"Reboot\" /></form>");
     response.print("</body></html>");
