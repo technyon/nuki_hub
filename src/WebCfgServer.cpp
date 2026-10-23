@@ -5432,12 +5432,7 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
             else
             {
                 Log->println("Reading mqtt_ssl.ca");
-                size_t filesize = file.size();
-                char ca[filesize + 1];
-
-                file.read((uint8_t *)ca, sizeof(ca));
                 file.close();
-                ca[filesize] = '\0';
 
                 printTextarea(&response, "MQTTCA", "MQTT SSL CA Certificate", "*", certSize(), true, true);
                 found = true;
@@ -5467,12 +5462,7 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
             else
             {
                 Log->println("Reading mqtt_ssl.crt");
-                size_t filesize = file.size();
-                char cert[filesize + 1];
-
-                file.read((uint8_t *)cert, sizeof(cert));
                 file.close();
-                cert[filesize] = '\0';
 
                 printTextarea(&response, "MQTTCRT", "MQTT SSL Client Certificate", "*", certSize(), true, true);
                 found = true;
@@ -5502,12 +5492,7 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
             else
             {
                 Log->println("Reading mqtt_ssl.key");
-                size_t filesize = file.size();
-                char key[filesize + 1];
-
-                file.read((uint8_t *)key, sizeof(key));
                 file.close();
-                key[filesize] = '\0';
 
                 printTextarea(&response, "MQTTKEY", "MQTT SSL Client Key", "*", certSize(), true, true);
                 found = true;
@@ -5556,12 +5541,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
             else
             {
                 Log->println("Reading http_ssl.crt");
-                size_t filesize = file.size();
-                char cert[filesize + 1];
-
-                file.read((uint8_t *)cert, sizeof(cert));
                 file.close();
-                cert[filesize] = '\0';
 
                 printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate", "*", 4400, true, true);
                 found = true;
@@ -5591,12 +5571,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
             else
             {
                 Log->println("Reading http_ssl.key");
-                size_t filesize = file.size();
-                char key[filesize + 1];
-
-                file.read((uint8_t *)key, sizeof(key));
                 file.close();
-                key[filesize] = '\0';
 
                 printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "*", certSize(), true, true);
                 found = true;
