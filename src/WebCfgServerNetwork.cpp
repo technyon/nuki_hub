@@ -73,6 +73,11 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printSetting(&response, networkSettings, networkSettingsCount, "IPGTW");
     printSetting(&response, networkSettings, networkSettingsCount, "DNSSRV");
     response.print("</table>");
+    response.print("<h3>Nuki Bridge HTTP API</h3>");
+    response.print("<table>");
+    printCheckBox(&response, "BRIDGEAPI", "Enable Nuki Bridge HTTP API (/list, /lockState, /lockAction, callbacks)", _preferences->getBool(preference_bridge_api_enabled, false), "");
+    printInputField(&response, "BRIDGETOKEN", "Nuki Bridge HTTP API token (6-20 characters)", _preferences->getString(preference_bridge_api_token, "").c_str(), 20, "");
+    response.print("</table>");
     response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
     buildHtmlFooter(&response);
@@ -403,6 +408,24 @@ void WebCfgServer::processNetworkArgs(PsychicRequest *request, ProcessArgsState&
         state.configChanged = true;
     }
 
+    if(request->hasParam("BRIDGEAPI"))
+    {
+        bool v = isParameterTrue(request, "BRIDGEAPI");
+        if(_preferences->getBool(preference_bridge_api_enabled, false) != v)
+        {
+            _preferences->putBool(preference_bridge_api_enabled, v);
+            state.configChanged = true;
+        }
+    }
+    if(request->hasParam("BRIDGETOKEN"))
+    {
+        String value = request->getParam("BRIDGETOKEN")->value();
+        if(value.length() >= 6 && value.length() <= 20 && _preferences->getString(preference_bridge_api_token, "") != value)
+        {
+            _preferences->putString(preference_bridge_api_token, value);
+            state.configChanged = true;
+        }
+    }
     if(request->hasParam("NWHW"))
     {
         value = request->getParam("NWHW")->value();

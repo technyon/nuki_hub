@@ -45,6 +45,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 #include "WebCfgServer.h"
+#include "BridgeApi.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
@@ -100,6 +101,7 @@ PsychicWebSocketHandler* websocketHandler = nullptr;
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 WebCfgServer* webCfgServerSSL = nullptr;
+BridgeApi* bridgeApi = nullptr;
 Preferences* preferences = nullptr;
 ImportExport* importExport = nullptr;
 
@@ -663,6 +665,11 @@ void startWebServer()
                     webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
 #endif
                     webCfgServerSSL->initialize();
+                    if(preferences->getBool(preference_bridge_api_enabled, false))
+                    {
+                        bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkOpener, preferences);
+                        bridgeApi->initialize(psychicSSLServer);
+                    }
                     psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
                     {
                         return response->redirect("/");
@@ -685,6 +692,11 @@ void startWebServer()
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
 #endif
         webCfgServer->initialize();
+        if(preferences->getBool(preference_bridge_api_enabled, false))
+        {
+            bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkOpener, preferences);
+            bridgeApi->initialize(psychicServer);
+        }
         psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
         {
             return response->redirect("/");
@@ -1056,6 +1068,10 @@ void processNetworkTask(const bool& firstRun)
     }
 
     updateWebSerial(connected);
+    if(connected && bridgeApi != nullptr)
+    {
+        bridgeApi->update();
+    }
     updateNukiNetwork(connected);
 #endif
 }

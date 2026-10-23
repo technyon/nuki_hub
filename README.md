@@ -265,6 +265,11 @@ Settings that need a reboot of the Nuki Hub to take effect are marked with a "re
 - Generate self-signed HTTP SSL Certificate and key: Optionally generate a self-signed SSL certificate and key for the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
 - Nuki Hub FQDN for HTTP redirect: FQDN hostname of the Nuki Hub device used for redirecting from HTTP to HTTPS.
 
+#### Nuki Bridge HTTP API
+
+- Enable Nuki Bridge HTTP API: Enable to let Nuki Hub answer the HTTP API of the official Nuki Bridge on the Web Configurator port, see the "[Nuki Bridge HTTP API](#nuki-bridge-http-api-optional)" section of this README.
+- Nuki Bridge HTTP API token: The token clients have to send with every request (6-20 characters).
+
 #### IP Address assignment
 
 - Enable DHCP: Enable to use DHCP for obtaining an IP address, disable to use the static IP settings below
@@ -744,6 +749,16 @@ Example:
 ### Home Assistant discovery
 
 If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings.
+
+## Nuki Bridge HTTP API (Optional)
+
+Nuki Hub can answer the HTTP API of the official Nuki Bridge, so integrations written for the Nuki Bridge can be used without MQTT, for example the Nuki integration that is part of Home Assistant core.<br>
+Enable the API and set a token on the Network Configuration page. The API is served on the same port as the Web Configurator (80, or 443 when the HTTPS server is enabled), so use that port instead of 8080 when adding the bridge to an integration.<br>
+<br>
+Supported endpoints: `/info`, `/list`, `/lockState`, `/lockAction`, `/lock`, `/unlock`, `/callback/add`, `/callback/list`, `/callback/remove`, `/reboot`, `/log` (always empty) and `/fwupdate` (always unsuccessful, use the Web Configurator to update). The opener state includes `ringactionState` and `ringactionTimestamp` of the last detected ring.<br>
+The token can be sent in plain text (`token=`) or hashed (`ts=`, `rnr=`, `hash=`) as described in the Nuki Bridge API documentation. Lock actions use the Nuki Bridge numbering (lock: 1 unlock, 2 lock, 3 unlatch, 4 lock 'n' go, 5 lock 'n' go with unlatch; opener: 1 activate RTO, 2 deactivate RTO, 3 electric strike actuation, 4 activate continuous mode, 5 deactivate continuous mode).<br>
+Up to three callback URLs can be registered; Nuki Hub posts the lock state JSON to all of them whenever the state of the lock or opener changes.<br>
+Pairing, unpairing, the authorization log and firmware updates are not available through this API, use the Web Configurator or MQTT for those.
 
 ## Upgrading using Over-the-air Update (OTA)
 

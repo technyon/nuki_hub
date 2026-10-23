@@ -352,6 +352,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     {
         response.print("Disabled");
     }
+    response.print("\n\n------------ BRIDGE API ------------");
+    response.print("\nNuki Bridge HTTP API enabled: ");
+    response.print(_preferences->getBool(preference_bridge_api_enabled, false) ? "Yes" : "No");
+    response.print("\nNuki Bridge HTTP API callbacks: <span class=\"redact\">");
+    response.print(_preferences->getString(preference_bridge_api_callbacks, "[]"));
+    response.print("</span>");
     response.print("\n\n------------ BLUETOOTH ------------");
     response.print("\nBluetooth TX power (dB): ");
     response.print(_preferences->getInt(preference_ble_tx_power, 9));

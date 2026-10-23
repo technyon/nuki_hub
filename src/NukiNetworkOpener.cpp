@@ -468,6 +468,18 @@ void NukiNetworkOpener::publishRing(const bool locked)
 
     _nukiPublisher->publishString(mqtt_topic_lock_binary_ring, "ring", true);
     _resetRingStateTs = espMillis() + 2000;
+    _lastRingTs = espMillis();
+    time(&_lastRingTime);
+}
+
+const int64_t NukiNetworkOpener::lastRingTs() const
+{
+    return _lastRingTs;
+}
+
+const time_t NukiNetworkOpener::lastRingTime() const
+{
+    return _lastRingTime;
 }
 
 void NukiNetworkOpener::publishState(NukiOpener::OpenerState lockState)
