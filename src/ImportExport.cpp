@@ -826,7 +826,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
         if(doc["securityPinCodeLock"].as<String>().length() > 0)
         {
             json["securityPinCodeLock"] = "changed";
-            nukiBlePref.putBytes("securityPinCode", (byte*)(doc["securityPinCodeLock"].as<int>()), 2);
+            uint16_t pincode = doc["securityPinCodeLock"].as<int>();
+            nukiBlePref.putBytes("securityPinCode", &pincode, 2);
             //_nuki->setPin(doc["securityPinCodeLock"].as<int>());
         }
         else
@@ -842,7 +843,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
         if(doc["ultraPinCodeLock"].as<String>().length() > 0)
         {
             json["ultraPinCodeLock"] = "changed";
-            nukiBlePref.putBytes("ultraPinCode", (byte*)(doc["ultraPinCodeLock"].as<int>()), 4);
+            uint32_t ultraPincode = doc["ultraPinCodeLock"].as<int>();
+            nukiBlePref.putBytes("ultraPinCode", &ultraPincode, 4);
             //_nuki->setUltraPin(doc["ultraPinCodeLock"].as<int>());
             _preferences->putInt(preference_lock_gemini_pin, doc["ultraPinCodeLock"].as<int>());
         }
@@ -901,7 +903,8 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
         if(doc["securityPinCodeOpener"].as<String>().length() > 0)
         {
             json["securityPinCodeOpener"] = "changed";
-            nukiBlePref.putBytes("securityPinCode", (byte*)(doc["securityPinCodeOpener"].as<int>()), 2);
+            uint16_t pincode = doc["securityPinCodeOpener"].as<int>();
+            nukiBlePref.putBytes("securityPinCode", &pincode, 2);
             //_nukiOpener->setPin(doc["securityPinCodeOpener"].as<int>());
         }
         else
