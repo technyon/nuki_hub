@@ -705,7 +705,7 @@ void NukiOpenerWrapper::updateConfig()
             if(result != Nuki::CmdResult::Success)
             {
                 Log->println("Nuki opener PIN is invalid or not set");
-                if(pinStatus != 2)
+                if(result == Nuki::CmdResult::Failed && pinStatus != 2)
                 {
                     _preferences->putInt(preference_opener_pin_status, (int)NukiPinState::Invalid);
                 }
