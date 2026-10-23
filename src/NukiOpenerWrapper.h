@@ -44,13 +44,14 @@ public:
 
     const std::string firmwareVersion() const;
     const std::string hardwareVersion() const;
+    const std::string name() const;
+    static LockActionResult onLockActionReceivedCallback(const char* value);
 
     const BleScanner::Scanner* bleScanner();
 
     void notify(NukiOpener::EventType eventType) override;
 
 private:
-    static LockActionResult onLockActionReceivedCallback(const char* value);
     static void onConfigUpdateReceivedCallback(const char* value);
     static void onKeypadCommandReceivedCallback(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     static void onKeypadJsonCommandReceivedCallback(const char* value);

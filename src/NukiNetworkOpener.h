@@ -20,6 +20,8 @@ public:
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
     void publishAvailability(const bool available);
     void publishRing(const bool locked);
+    const int64_t lastRingTs() const;
+    const time_t lastRingTime() const;
     void publishState(NukiOpener::OpenerState lockState);
     void publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries, bool latest);
     uint32_t getLastRollingLog() const;
@@ -89,6 +91,8 @@ private:
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
     int64_t _resetRingStateTs = 0;
+    int64_t _lastRingTs = 0;
+    time_t _lastRingTime = 0;
     uint8_t _queryCommands = 0;
     uint32_t _authId = 0;
     char _authName[33];

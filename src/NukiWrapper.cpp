@@ -4317,6 +4317,11 @@ const std::string NukiWrapper::firmwareVersion() const
     return _firmwareVersion;
 }
 
+const std::string NukiWrapper::name() const
+{
+    return std::string((const char*)_nukiConfig.name);
+}
+
 const std::string NukiWrapper::hardwareVersion() const
 {
     return _hardwareVersion;

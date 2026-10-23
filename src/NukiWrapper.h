@@ -47,6 +47,8 @@ public:
     const uint8_t restartController() const;
 
     const std::string firmwareVersion() const;
+    const std::string name() const;
+    LockActionResult onLockActionReceived(const char* value);
     const std::string hardwareVersion() const;
 
 
@@ -61,7 +63,6 @@ private:
     static void onTimeControlCommandReceivedCallback(const char* value);
     static void onAuthCommandReceivedCallback(const char* value);
     static void IRAM_ATTR gpioActionCallback(const GpioAction& action, const int& pin);
-    LockActionResult onLockActionReceived(const char* value);
 
     bool checkPaired();
     void checkRestartByBeacon(const int64_t& ts);
