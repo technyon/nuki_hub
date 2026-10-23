@@ -158,6 +158,16 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
         Log->println("MQTT recently connected, ignoring opener action.");
+        if(strcmp(data, "") != 0 &&
+                strcmp(data, "--") != 0 &&
+                strcmp(data, "ack") != 0 &&
+                strcmp(data, "unknown_action") != 0 &&
+                strcmp(data, "denied") != 0 &&
+                strcmp(data, "error") != 0 &&
+                strcmp(data, "ignored") != 0)
+        {
+            _nukiPublisher->publishString(mqtt_topic_lock_action, "ignored", false);
+        }
         return;
     }
 
@@ -184,7 +194,8 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
                 strcmp(data, "ack") == 0 ||
                 strcmp(data, "unknown_action") == 0 ||
                 strcmp(data, "denied") == 0 ||
-                strcmp(data, "error") == 0)
+                strcmp(data, "error") == 0 ||
+                strcmp(data, "ignored") == 0)
         {
             return;
         }

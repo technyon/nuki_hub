@@ -210,6 +210,16 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
         Log->println("MQTT recently connected, ignoring lock action.");
+        if(strcmp(data, "") != 0 &&
+                strcmp(data, "--") != 0 &&
+                strcmp(data, "ack") != 0 &&
+                strcmp(data, "unknown_action") != 0 &&
+                strcmp(data, "denied") != 0 &&
+                strcmp(data, "error") != 0 &&
+                strcmp(data, "ignored") != 0)
+        {
+            _nukiPublisher->publishString(mqtt_topic_lock_action, "ignored", false);
+        }
         return;
     }
 
@@ -250,7 +260,8 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
                 strcmp(data, "ack") == 0 ||
                 strcmp(data, "unknown_action") == 0 ||
                 strcmp(data, "denied") == 0 ||
-                strcmp(data, "error") == 0)
+                strcmp(data, "error") == 0 ||
+                strcmp(data, "ignored") == 0)
         {
             return;
         }
