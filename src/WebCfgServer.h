@@ -54,10 +54,11 @@ public:
     void initialize();
 
 private:
-#ifndef NUKI_HUB_UPDATER
+    bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
+
+    #ifndef NUKI_HUB_UPDATER
     esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey = false);
     bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
-    bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
     void processGpioArgs(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildAccLvlHtml(PsychicRequest *request, PsychicResponse* resp);
@@ -102,10 +103,10 @@ private:
     NukiOpenerWrapper* _nukiOpener = nullptr;
     Gpio* _gpio = nullptr;
     bool _brokerConfigured = false;
-    bool _rebootRequired = false;
     int _restartServicesRequired = 0;
 #endif
 
+    bool _rebootRequired = false;
     std::vector<String> _ssidList;
     std::vector<int> _rssiList;
     String generateConfirmCode();

@@ -2584,6 +2584,42 @@ bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
     return false;
 }
 
+
+bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp, String& message)
+{
+    bool configChanged = false;
+
+    if(request->hasParam("importjson"))
+    {
+        const PsychicWebParameter* p = request->getParam("importjson");
+        JsonDocument doc;
+
+        DeserializationError error = deserializeJson(doc, p->value());
+        if (error)
+        {
+            Log->println("Invalid JSON for import");
+            message = "Invalid JSON, config not changed";
+            return configChanged;
+        }
+
+        _importExport->importJson(doc);
+
+        configChanged = true;
+    }
+
+    if(configChanged)
+    {
+        message = "Configuration saved, reboot is required to apply.";
+        _rebootRequired = true;
+    }
+    else
+    {
+        message = "Configuration saved and applied.";
+    }
+
+    return configChanged;
+}
+
 #ifndef NUKI_HUB_UPDATER
 esp_err_t WebCfgServer::sendWebSerial(PsychicRequest* request, PsychicResponse* resp)
 {
@@ -4947,41 +4983,6 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     if(_nukiOpener != nullptr)
     {
         _nukiOpener->readSettings();
-    }
-
-    return configChanged;
-}
-
-bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp, String& message)
-{
-    bool configChanged = false;
-
-    if(request->hasParam("importjson"))
-    {
-        const PsychicWebParameter* p = request->getParam("importjson");
-        JsonDocument doc;
-
-        DeserializationError error = deserializeJson(doc, p->value());
-        if (error)
-        {
-            Log->println("Invalid JSON for import");
-            message = "Invalid JSON, config not changed";
-            return configChanged;
-        }
-
-        _importExport->importJson(doc);
-
-        configChanged = true;
-    }
-
-    if(configChanged)
-    {
-        message = "Configuration saved, reboot is required to apply.";
-        _rebootRequired = true;
-    }
-    else
-    {
-        message = "Configuration saved and applied.";
     }
 
     return configChanged;
