@@ -54,9 +54,8 @@ public:
     void initialize();
 
 private:
-    bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
-
     #ifndef NUKI_HUB_UPDATER
+    bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
     esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey = false);
     bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
     void processGpioArgs(PsychicRequest *request, PsychicResponse* resp);

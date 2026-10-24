@@ -546,6 +546,7 @@ void WebCfgServer::initialize()
                     return resp->redirect("/get?page=login");
                 }
             }
+#ifndef NUKI_HUB_UPDATER
             else if (value == "import")
             {
                 String message = "";
@@ -559,6 +560,7 @@ void WebCfgServer::initialize()
                 }
                 return res;
             }
+#endif
             else
             {
                 return buildWifiConnectHtml(request, resp);
@@ -1537,11 +1539,13 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
+#ifndef NUKI_HUB_UPDATER
     response.print("<h3>Import configuration</h3>");
     response.print("<form method=\"post\" action=\"post\"><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" onchange=\"var reader = new FileReader(); reader.onload = function(e) { document.getElementById('importjson').value = e.target.result; }; reader.readAsText(this.files[0]);\"><br/>");
     response.print("<textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\" style=\"display: none;\"></textarea>");
     response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form>");
+#endif
     response.print("<form action=\"/reboot\" method=\"get\"><br>");
     response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><input type=\"submit\" value=\"Reboot\" /></form>");
     response.print("</body></html>");
@@ -2585,6 +2589,7 @@ bool WebCfgServer::processTOTP(PsychicRequest *request, PsychicResponse* resp)
 }
 
 
+#ifndef NUKI_HUB_UPDATER
 bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp, String& message)
 {
     bool configChanged = false;
@@ -2619,6 +2624,7 @@ bool WebCfgServer::processImport(PsychicRequest *request, PsychicResponse* resp,
 
     return configChanged;
 }
+#endif
 
 #ifndef NUKI_HUB_UPDATER
 esp_err_t WebCfgServer::sendWebSerial(PsychicRequest* request, PsychicResponse* resp)
