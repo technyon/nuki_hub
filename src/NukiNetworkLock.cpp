@@ -1,4 +1,5 @@
 #include "NukiNetworkLock.h"
+#include "PsramJsonAllocator.h"
 #include "Arduino.h"
 #include "Config.h"
 #include "MqttTopics.h"
@@ -667,7 +668,8 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
     char authName[33];
     uint32_t authIndex = 0;
 
-    JsonDocument json;
+    PsramJsonAllocator allocator;
+    JsonDocument json(&allocator);
 
     for(const auto& log : logEntries)
     {
@@ -1047,7 +1049,8 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
     itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
     baseTopic.concat("/lock");
-    JsonDocument json;
+    PsramJsonAllocator allocator;
+    JsonDocument json(&allocator);
     json.to<JsonArray>();
 
     for(const auto& entry : entries)
@@ -1288,7 +1291,8 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
     itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
     baseTopic.concat("/lock");
-    JsonDocument json;
+    PsramJsonAllocator allocator;
+    JsonDocument json(&allocator);
 
     for(const auto& entry : timeControlEntries)
     {
@@ -1422,7 +1426,8 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
     itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
     String baseTopic = _preferences->getString(preference_mqtt_lock_path);
     baseTopic.concat("/lock");
-    JsonDocument json;
+    PsramJsonAllocator allocator;
+    JsonDocument json(&allocator);
 
     for(const auto& entry : authEntries)
     {
