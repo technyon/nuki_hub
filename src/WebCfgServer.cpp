@@ -5032,9 +5032,9 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form><br><br></div>");
     response.print("<div id=\"gitdiv\">");
     response.print("<h4>Export configuration</h4><br>");
-    response.print("<button title=\"Basic export\" onclick=\" window.open('/get?page=export', '_self'); return false;\">Basic export</button>");
-    response.print("<br><br><button title=\"Export with redacted settings\" onclick=\" window.open('/get?page=export&redacted=1'); return false;\">Export with redacted settings</button>");
-    response.print("<br><br><button title=\"Export with redacted settings and pairing data\" onclick=\" window.open('/get?page=export&redacted=1&pairing=1'); return false;\">Export with redacted settings and pairing data</button>");
+    response.print("<button title=\"Export without sensitive settings\" onclick=\" window.open('/get?page=export', '_self'); return false;\">Export without sensitive settings</button>");
+    response.print("<br><br><button title=\"Export including sensitive settings\" onclick=\" window.open('/get?page=export&redacted=1'); return false;\">Export including sensitive settings</button>");
+    response.print("<br><br><button title=\"Export including sensitive settings and pairing data\" onclick=\" window.open('/get?page=export&redacted=1&pairing=1'); return false;\">Export including sensitive settings and pairing data</button>");
     if(nuki_hub_https_server_enabled)
     {
         response.print("<br><br><button title=\"Export HTTP SSL certificate and key\" onclick=\" window.open('/get?page=export&type=https'); return false;\">Export HTTP SSL certificate and key</button>");
