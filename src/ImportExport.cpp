@@ -347,13 +347,8 @@ void ImportExport::exportHttpsJson(JsonDocument &json)
         else
         {
             Log->println("Reading http_ssl.crt");
-            size_t filesize = file.size();
-            char cert[filesize + 1];
-
-            file.read((uint8_t *)cert, sizeof(cert));
+            json["http_ssl.crt"] = file.readString();
             file.close();
-            cert[filesize] = '\0';
-            json["http_ssl.crt"] = cert;
         }
     }
 
@@ -371,13 +366,8 @@ void ImportExport::exportHttpsJson(JsonDocument &json)
         else
         {
             Log->println("Reading http_ssl.key");
-            size_t filesize = file.size();
-            char key[filesize + 1];
-
-            file.read((uint8_t *)key, sizeof(key));
+            json["http_ssl.key"] = file.readString();
             file.close();
-            key[filesize] = '\0';
-            json["http_ssl.key"] = key;
         }
     }
 }
@@ -398,13 +388,8 @@ void ImportExport::exportMqttsJson(JsonDocument &json)
         else
         {
             Log->println("Reading mqtt_ssl.ca");
-            size_t filesize = file.size();
-            char ca[filesize + 1];
-
-            file.read((uint8_t *)ca, sizeof(ca));
+            json["mqtt_ssl.ca"] = file.readString();
             file.close();
-            ca[filesize] = '\0';
-            json["mqtt_ssl.ca"] = ca;
         }
     }
 
@@ -422,13 +407,8 @@ void ImportExport::exportMqttsJson(JsonDocument &json)
         else
         {
             Log->println("Reading mqtt_ssl.crt");
-            size_t filesize = file.size();
-            char cert[filesize + 1];
-
-            file.read((uint8_t *)cert, sizeof(cert));
+            json["mqtt_ssl.crt"] = file.readString();
             file.close();
-            cert[filesize] = '\0';
-            json["mqtt_ssl.crt"] = cert;
         }
     }
 
@@ -446,13 +426,8 @@ void ImportExport::exportMqttsJson(JsonDocument &json)
         else
         {
             Log->println("Reading mqtt_ssl.key");
-            size_t filesize = file.size();
-            char key[filesize + 1];
-
-            file.read((uint8_t *)key, sizeof(key));
+            json["mqtt_ssl.key"] = file.readString();
             file.close();
-            key[filesize] = '\0';
-            json["mqtt_ssl.key"] = key;
         }
     }
 }

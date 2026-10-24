@@ -618,9 +618,9 @@ void startWebServer()
             {
                 Log->println("Reading http_ssl.crt");
                 size_t filesize = file.size();
-                char cert[filesize + 1];
+                char* cert = new char[filesize + 1];
 
-                file.read((uint8_t *)cert, sizeof(cert));
+                file.read((uint8_t *)cert, filesize);
                 file.close();
                 cert[filesize] = '\0';
 
@@ -633,9 +633,9 @@ void startWebServer()
                 {
                     Log->println("Reading http_ssl.key");
                     size_t filesize2 = file2.size();
-                    char key[filesize2 + 1];
+                    char* key = new char[filesize2 + 1];
 
-                    file2.read((uint8_t *)key, sizeof(key));
+                    file2.read((uint8_t *)key, filesize2);
                     file2.close();
                     key[filesize2] = '\0';
 
@@ -1622,9 +1622,9 @@ void setup()
                 {
                     Log->println("Reading http_ssl.crt");
                     size_t filesize = file.size();
-                    char cert[filesize + 1];
+                    char* cert = new char[filesize + 1];
 
-                    file.read((uint8_t *)cert, sizeof(cert));
+                    file.read((uint8_t *)cert, filesize);
                     file.close();
                     cert[filesize] = '\0';
 
@@ -1637,9 +1637,9 @@ void setup()
                     {
                         Log->println("Reading http_ssl.key");
                         size_t filesize2 = file2.size();
-                        char key[filesize2 + 1];
+                        char* key = new char[filesize2 + 1];
 
-                        file2.read((uint8_t *)key, sizeof(key));
+                        file2.read((uint8_t *)key, filesize2);
                         file2.close();
                         key[filesize2] = '\0';
 
