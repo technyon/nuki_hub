@@ -735,7 +735,7 @@ void NukiWrapper::updateConfig()
             if(result != Nuki::CmdResult::Success)
             {
                 Log->println("Nuki Lock PIN is invalid or not set");
-                if(pinStatus != 2)
+                if(result == Nuki::CmdResult::Failed && pinStatus != 2)
                 {
                     _preferences->putInt(preference_lock_pin_status, (int)NukiPinState::Invalid);
                 }
