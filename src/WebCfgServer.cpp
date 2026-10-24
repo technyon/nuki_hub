@@ -546,6 +546,19 @@ void WebCfgServer::initialize()
                     return resp->redirect("/get?page=login");
                 }
             }
+            else if (value == "import")
+            {
+                String message = "";
+                bool restart = processImport(request, resp, message);
+                esp_err_t res = buildConfirmHtml(request, resp, message, 10, true);
+
+                if(restart)
+                {
+                    waitAndProcess(true, 3000);
+                    restartEsp(RestartReason::RequestedViaWebServer);
+                }
+                return res;
+            }
             else
             {
                 return buildWifiConnectHtml(request, resp);
@@ -1525,7 +1538,8 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
     response.print("<h3>Import configuration</h3>");
-    response.print("<form method=\"post\" action=\"post\"><textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
+    response.print("<form method=\"post\" action=\"post\"><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" onchange=\"var reader = new FileReader(); reader.onload = function(e) { document.getElementById('importjson').value = e.target.result; }; reader.readAsText(this.files[0]);\"><br/>");
+    response.print("<textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\" style=\"display: none;\"></textarea>");
     response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form>");
     response.print("<form action=\"/reboot\" method=\"get\"><br>");
@@ -5012,7 +5026,8 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     response.beginSend();
     buildHtmlHeader(&response);
     response.print("<div id=\"upform\"><h4>Import configuration</h4>");
-    response.print("<form method=\"post\" action=\"post\"><textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
+    response.print("<form method=\"post\" action=\"post\"><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" onchange=\"var reader = new FileReader(); reader.onload = function(e) { document.getElementById('importjson').value = e.target.result; }; reader.readAsText(this.files[0]);\"><br/><br/>");
+    response.print("<textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
     response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form><br><br></div>");
     response.print("<div id=\"gitdiv\">");
