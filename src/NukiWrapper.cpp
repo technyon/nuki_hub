@@ -370,7 +370,12 @@ void NukiWrapper::checkDoorSensorOverride()
 
 void NukiWrapper::checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCommands)
 {
-    if(_nukiOfficial->getStatusUpdated() || (_statusUpdated && ts >= _nextStatusPollTs) || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
+    if(_nukiOfficial->getStatusUpdated())
+    {
+        _statusUpdated = true;
+    }
+
+    if((_statusUpdated && ts >= _nextStatusPollTs) || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         Log->println("Updating Lock state based on status, timer or query");
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
