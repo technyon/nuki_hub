@@ -859,6 +859,26 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         removeHassTopic((char*)"button", (char*)"lockngo", uidString);
     }
 
+    // Lock 'n' Go active
+    publishHassTopic("binary_sensor",
+                     "lock_n_go_active",
+                     uidString,
+                     "_lock_n_go_active",
+                     "Lock 'n' Go active",
+                     name,
+                     baseTopic,
+                     String("~") + mqtt_topic_lock_state,
+                     deviceType,
+                     "running",
+                     "",
+                     "",
+                     "",
+    {
+        {(char*)"pl_on", (char*)"1"},
+        {(char*)"pl_off", (char*)"0"},
+        {(char*)"val_tpl", (char*)"{{1 if value == 'unlockedLnga' else 0}}" }
+    });
+
     if((int)aclPrefs[4])
     {
         // Lock 'n' Go with unlatch
@@ -3119,6 +3139,7 @@ void HomeAssistantDiscovery::removeHASSConfig(char* uidString)
     removeHassTopic((char*)"button", (char*)"unlatch", uidString);
     removeHassTopic((char*)"button", (char*)"lockngo", uidString);
     removeHassTopic((char*)"button", (char*)"lockngounlatch", uidString);
+    removeHassTopic((char*)"binary_sensor", (char*)"lock_n_go_active", uidString);
     removeHassTopic((char*)"sensor", (char*)"battery_level", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"door_sensor", uidString);
     removeHassTopic((char*)"binary_sensor", (char*)"ring_detect", uidString);
