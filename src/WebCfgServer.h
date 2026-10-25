@@ -118,6 +118,7 @@ private:
     bool processTOTP(PsychicRequest *request, PsychicResponse* resp);
     bool processBypass(PsychicRequest *request, PsychicResponse* resp);
     int doAuthentication(PsychicRequest *request);
+    bool useTOTP(PsychicRequest *request);
     esp_err_t buildCoredumpHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildLoginHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildBypassHtml(PsychicRequest *request, PsychicResponse* resp);
