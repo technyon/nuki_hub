@@ -255,6 +255,18 @@ esp_err_t WebCfgServer::logoutSession(PsychicRequest *request, PsychicResponse* 
     return buildConfirmHtml(request, resp, "Logging out", 3, true);
 }
 
+bool WebCfgServer::useTOTP(PsychicRequest *request)
+{
+    // Use TOTP when Duo is not enabled; when both are enabled, use the method chosen at login.
+    // Basic/Digest auth has no login form to choose, so the session flag is never set there.
+    if(!_importExport->getTOTPEnabled())
+    {
+        return false;
+    }
+
+    return !_duoEnabled || _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"].as<bool>();
+}
+
 int WebCfgServer::doAuthentication(PsychicRequest *request)
 {
     if (!_network->isApOpen() && _preferences->getString(preference_bypass_proxy, "") != "" && request->client()->localIP().toString() == _preferences->getString(preference_bypass_proxy, ""))
@@ -326,7 +338,7 @@ int WebCfgServer::doAuthentication(PsychicRequest *request)
 
             Log->println("Authentication Failed");
 
-            if(_importExport->getTOTPEnabled() && _importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"])
+            if(useTOTP(request))
             {
                 return 5;
             }
@@ -881,7 +893,7 @@ void WebCfgServer::initialize()
                     }
                 }
 
-                if(_importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] && _importExport->getTOTPEnabled())
+                if(useTOTP(request))
                 {
                     return buildTOTPHtml(request, resp, 1);
                 }
@@ -1149,7 +1161,7 @@ void WebCfgServer::initialize()
                                 posttype = 2;
                             }
 
-                            if(_importExport->_sessionsOpts[request->client()->localIP().toString() + "totp"] && _importExport->getTOTPEnabled())
+                            if(useTOTP(request))
                             {
 
                                 return buildTOTPHtml(request, resp, posttype);
