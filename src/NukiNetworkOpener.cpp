@@ -5,6 +5,7 @@
 #include "Arduino.h"
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
+#include "util/StringUtil.h"
 #include "Logger.h"
 #include "Config.h"
 #include <ArduinoJson.h>
@@ -36,12 +37,7 @@ void NukiNetworkOpener::initialize()
 
     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
     mqttPath.concat("/opener");
-
-    size_t len = mqttPath.length();
-    for(int i=0; i < len; i++)
-    {
-        _mqttPath[i] = mqttPath.charAt(i);
-    }
+    copyBounded(_mqttPath, mqttPath, sizeof(_mqttPath), "MQTT opener path");
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
