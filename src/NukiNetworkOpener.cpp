@@ -1397,7 +1397,10 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
             std::string disCommand = baseCommand + (char*)"\", \"enabled\": \"0\" }";
             std::string mqttDeviceName = std::string("auth_") + std::to_string(index);
             std::string uidStringPostfix = std::string("_") + mqttDeviceName;
-            std::string displayName = std::string("Authorization - ") + std::to_string(entry.authId);
+            char authName[sizeof(entry.name) + 1];
+            memset(authName, 0, sizeof(authName));
+            memcpy(authName, entry.name, sizeof(entry.name));
+            std::string displayName = std::string("Authorization - ") + std::string(authName) + " - " + std::to_string(entry.authId);
 
             _network->publishHassTopic("switch",
                                        mqttDeviceName.c_str(),
