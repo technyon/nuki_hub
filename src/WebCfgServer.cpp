@@ -46,14 +46,9 @@ static esp_hosted_coprocessor_fwver_t host_version_struct = {
 #include "ArduinoJson.h"
 #include <freertos/queue.h>
 
-typedef struct
-{
-    int socket;
-    char *buffer;
-    size_t len;
-} WebsocketMessage;
-
-QueueHandle_t wsMessages;
+// WebsocketMessage and wsMessages are declared in MqttLogger.h (included via
+// Logger.h) and defined in main.cpp, so the logging path can enqueue lines that
+// updateWebSerial() broadcasts from the httpd task.
 
 WebCfgServer::WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport)
     : _nuki(nuki),
@@ -172,8 +167,8 @@ void WebCfgServer::initialize()
             return sendWebSerial(request, resp);
         });
 
-        //prepare our message queue of 10 messages
-        wsMessages = xQueueCreate(10, sizeof(WebsocketMessage));
+        //prepare our message queue (log lines can burst, so keep some headroom)
+        wsMessages = xQueueCreate(32, sizeof(WebsocketMessage));
         if (wsMessages == 0)
         {
             Log->printf("Failed to create queue= %p\n", wsMessages);
@@ -181,6 +176,7 @@ void WebCfgServer::initialize()
 
         websocketHandler->onOpen([](PsychicWebSocketClient *client)
         {
+            webSerialClientCount++;
             Log->printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString());
             client->sendMessage("NukiHub WebSerial started");
         });
@@ -220,6 +216,10 @@ void WebCfgServer::initialize()
         });
         websocketHandler->onClose([](PsychicWebSocketClient *client)
         {
+            if (webSerialClientCount > 0)
+            {
+                webSerialClientCount--;
+            }
             Log->printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString());
         });
 
@@ -1452,21 +1452,53 @@ esp_err_t WebCfgServer::sendWebSerial(PsychicRequest* request, PsychicResponse* 
 
 void WebCfgServer::updateWebSerial()
 {
-    if (websocketHandler != nullptr)
+    // Called from the network task. The queue is drained as httpd work, because
+    // sendAll()/getClient() walk the websocket client list that the httpd task
+    // modifies (and frees entries of) on connect/disconnect.
+    if (websocketHandler == nullptr || wsMessages == nullptr || _psychicServer->server == nullptr)
     {
-        WebsocketMessage message;
-        while (xQueueReceive(wsMessages, &message, 0) == pdTRUE)
-        {
-            PsychicWebSocketClient *client = websocketHandler->getClient(message.socket);
-            if (client == NULL)
-            {
-                Log->printf("[socket] client #%d bad, bailing\n", message.socket);
-                return;
-            }
+        return;
+    }
+    if (uxQueueMessagesWaiting(wsMessages) == 0 || _webSerialDrainQueued.exchange(true))
+    {
+        return; // nothing to send, or a drain is already pending
+    }
+    if (httpd_queue_work(_psychicServer->server, drainWebSerialWork, this) != ESP_OK)
+    {
+        _webSerialDrainQueued = false;
+    }
+}
 
-            client->sendMessage(HTTPD_WS_TYPE_TEXT, message.buffer, message.len);
+void WebCfgServer::drainWebSerialWork(void* arg)
+{
+    WebCfgServer* self = static_cast<WebCfgServer*>(arg);
+    self->drainWebSerialQueue();
+    self->_webSerialDrainQueued = false;
+}
+
+void WebCfgServer::drainWebSerialQueue()
+{
+    WebsocketMessage message;
+    while (xQueueReceive(wsMessages, &message, 0) == pdTRUE)
+    {
+        if (message.socket == -1)
+        {
+            // Log line: broadcast to every connected WebSerial client.
+            websocketHandler->sendAll(HTTPD_WS_TYPE_TEXT, message.buffer, message.len);
             free(message.buffer);
+            continue;
         }
+
+        PsychicWebSocketClient *client = websocketHandler->getClient(message.socket);
+        if (client == NULL)
+        {
+            Log->printf("[socket] client #%d bad, skipping\n", message.socket);
+            free(message.buffer);
+            continue;
+        }
+
+        client->sendMessage(HTTPD_WS_TYPE_TEXT, message.buffer, message.len);
+        free(message.buffer);
     }
 }
 
