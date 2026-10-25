@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RtcState.h"
+
 enum class RestartReason
 {
     RequestedViaMqtt,
@@ -34,9 +36,10 @@ enum class RestartReason
 
 #define RESTART_REASON_VALID_DETECT 0xa00ab00bc00bd00d;
 
-extern int restartReason;
-extern uint64_t restartReasonValidDetect;
-extern bool rebuildGpioRequested;
+// Aliases for fields of rtcState (RtcState.h).
+extern int& restartReason;
+extern uint64_t& restartReasonValidDetect;
+extern bool& rebuildGpioRequested;
 extern RestartReason currentRestartReason;
 extern bool restartReason_isValid;
 

@@ -109,16 +109,19 @@ BridgeApi* bridgeApi = nullptr;
 Preferences* preferences = nullptr;
 ImportExport* importExport = nullptr;
 
-RTC_NOINIT_ATTR int espRunning;
-RTC_NOINIT_ATTR int restartReason;
-RTC_NOINIT_ATTR uint64_t restartReasonValidDetect;
-RTC_NOINIT_ATTR bool rebuildGpioRequested;
-RTC_NOINIT_ATTR uint64_t bootloopValidDetect;
-RTC_NOINIT_ATTR int8_t bootloopCounter;
-RTC_NOINIT_ATTR bool forceEnableWebServer;
-RTC_NOINIT_ATTR bool disableNetwork;
-RTC_NOINIT_ATTR bool wifiFallback;
-RTC_NOINIT_ATTR bool ethCriticalFailure;
+// One RTC object with a fixed layout, see RtcState.h. The names below are
+// aliases for its fields so the rest of the code is unchanged.
+RTC_NOINIT_ATTR RtcNoInitState rtcState;
+int& espRunning = rtcState.espRunning;
+int& restartReason = rtcState.restartReason;
+uint64_t& restartReasonValidDetect = rtcState.restartReasonValidDetect;
+bool& rebuildGpioRequested = rtcState.rebuildGpioRequested;
+uint64_t& bootloopValidDetect = rtcState.bootloopValidDetect;
+int8_t& bootloopCounter = rtcState.bootloopCounter;
+bool& forceEnableWebServer = rtcState.forceEnableWebServer;
+bool& disableNetwork = rtcState.disableNetwork;
+bool& wifiFallback = rtcState.wifiFallback;
+bool& ethCriticalFailure = rtcState.ethCriticalFailure;
 
 bool coredumpPrinted = true;
 bool timeSynced = false;
