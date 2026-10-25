@@ -7,7 +7,6 @@
 #include "Logger.h"
 #include "RestartReason.h"
 #include <ArduinoJson.h>
-#include <algorithm>
 #include <ctype.h>
 #include "hal/wdt_hal.h"
 #include "util/NukiHelper.h"
@@ -1570,7 +1569,16 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
     {
         for(const auto& slot : _authHaSlots)
         {
-            if(std::find(haSlots.begin(), haSlots.end(), slot) == haSlots.end())
+            bool stillThere = false;
+            for(const auto& current : haSlots)
+            {
+                if(current == slot)
+                {
+                    stillThere = true;
+                    break;
+                }
+            }
+            if(!stillThere)
             {
                 String entriesTopic = _mqttPath;
                 entriesTopic.concat(mqtt_topic_auth_entries);
@@ -1588,7 +1596,16 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
     _clearAuthSlotEntities = false;
     for(int j=firstStale; j<maxAuthEntryCount; j++)
     {
-        if(std::find(haSlots.begin(), haSlots.end(), std::to_string(j)) != haSlots.end())
+        bool inUse = false;
+        for(const auto& current : haSlots)
+        {
+            if(current == std::to_string(j))
+            {
+                inUse = true;
+                break;
+            }
+        }
+        if(inUse)
         {
             continue;
         }

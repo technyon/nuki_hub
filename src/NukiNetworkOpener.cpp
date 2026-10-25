@@ -6,7 +6,6 @@
 #include "Logger.h"
 #include "Config.h"
 #include <ArduinoJson.h>
-#include <algorithm>
 #include "hal/wdt_hal.h"
 #include "util/NukiHelper.h"
 #include "util/NukiOpenerHelper.h"
@@ -1439,7 +1438,16 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
     {
         for(const auto& slot : _authHaSlots)
         {
-            if(std::find(haSlots.begin(), haSlots.end(), slot) == haSlots.end())
+            bool stillThere = false;
+            for(const auto& current : haSlots)
+            {
+                if(current == slot)
+                {
+                    stillThere = true;
+                    break;
+                }
+            }
+            if(!stillThere)
             {
                 String entriesTopic = _mqttPath;
                 entriesTopic.concat(mqtt_topic_auth_entries);
@@ -1457,7 +1465,16 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
     _clearAuthSlotEntities = false;
     for(int j=firstStale; j<maxAuthEntryCount; j++)
     {
-        if(std::find(haSlots.begin(), haSlots.end(), std::to_string(j)) != haSlots.end())
+        bool inUse = false;
+        for(const auto& current : haSlots)
+        {
+            if(current == std::to_string(j))
+            {
+                inUse = true;
+                break;
+            }
+        }
+        if(inUse)
         {
             continue;
         }
