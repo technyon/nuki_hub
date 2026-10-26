@@ -43,14 +43,14 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Basic Nuki Configuration</h3>");
     response.print("<table>");
     printSetting(&response, nukiSettings, nukiSettingsCount, "LOCKENA");
     printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra/Go/5th gen enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
     printSetting(&response, nukiSettings, nukiSettingsCount, "OPENA");
-    response.print("</table><br>");
+    response.print("</table>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
     response.print("<table>");
 
@@ -81,9 +81,9 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     printInputField(&response, "TIMESRV", "NTP server", _preferences->getString(preference_time_server, "pool.ntp.org").c_str(), 255, "");
 
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
-    response.print("</body></html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -123,8 +123,8 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
     printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHENA");
     printSetting(&response, nukiSettings, nukiSettingsCount, "PUBAUTH");
     printSetting(&response, nukiSettings, nukiSettingsCount, "SAVELOGNUM");
-    response.print("</table><br>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("</table>");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
 
     if(_nuki != nullptr)
     {
@@ -134,10 +134,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
         _preferences->getBytes(preference_conf_lock_advanced_acl, &advancedLockConfigAclPrefs, sizeof(advancedLockConfigAclPrefs));
 
         response.print("<h3>Nuki Lock Access Control</h3>");
-        response.print("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.print("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_access_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        response.print("<div class=\"actions\"><button type=\"button\" data-check=\"chk_access_lock\" data-value=\"1\">Allow all</button><button type=\"button\" data-check=\"chk_access_lock\" data-value=\"0\">Disallow all</button></div>");
         response.print("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
         printCheckBox(&response, "ACLLCKLCK", "Lock", ((int)aclPrefs[0] == 1), "chk_access_lock");
@@ -149,13 +146,10 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
         printCheckBox(&response, "ACLLCKFOB1", "Fob Action 1", ((int)aclPrefs[6] == 1), "chk_access_lock");
         printCheckBox(&response, "ACLLCKFOB2", "Fob Action 2", ((int)aclPrefs[7] == 1), "chk_access_lock");
         printCheckBox(&response, "ACLLCKFOB3", "Fob Action 3", ((int)aclPrefs[8] == 1), "chk_access_lock");
-        response.print("</table><br>");
+        response.print("</table>");
 
         response.print("<h3>Nuki Lock Config Control (Requires PIN to be set)</h3>");
-        response.print("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.print("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_config_lock')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        response.print("<div class=\"actions\"><button type=\"button\" data-check=\"chk_config_lock\" data-value=\"1\">Allow all</button><button type=\"button\" data-check=\"chk_config_lock\" data-value=\"0\">Disallow all</button></div>");
         response.print("<table><tr><th>Change</th><th>Allowed</th></tr>");
 
         printCheckBox(&response, "CONFLCKNAME", "Name", ((int)basicLockConfigAclPrefs[0] == 1), "chk_config_lock");
@@ -201,8 +195,8 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
         printCheckBox(&response, "CONFLCKMTRSPD", "Motor speed", ((int)advancedLockConfigAclPrefs[23] == 1), "chk_config_lock");
         printCheckBox(&response, "CONFLCKESSDNM", "Enable slow speed during nightmode", ((int)advancedLockConfigAclPrefs[24] == 1), "chk_config_lock");
         printCheckBox(&response, "CONFLCKRCBRTNUKI", "Recalibrate Nuki", ((int)advancedLockConfigAclPrefs[25] == 1), "chk_config_lock");
-        response.print("</table><br>");
-        response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        response.print("</table>");
+        response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     }
     if(_nukiOpener != nullptr)
     {
@@ -212,10 +206,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
         _preferences->getBytes(preference_conf_opener_advanced_acl, &advancedOpenerConfigAclPrefs, sizeof(advancedOpenerConfigAclPrefs));
 
         response.print("<h3>Nuki Opener Access Control</h3>");
-        response.print("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.print("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_access_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        response.print("<div class=\"actions\"><button type=\"button\" data-check=\"chk_access_opener\" data-value=\"1\">Allow all</button><button type=\"button\" data-check=\"chk_access_opener\" data-value=\"0\">Disallow all</button></div>");
         response.print("<table><tr><th>Action</th><th>Allowed</th></tr>");
 
         printCheckBox(&response, "ACLOPNUNLCK", "Activate Ring-to-Open", ((int)aclPrefs[9] == 1), "chk_access_opener");
@@ -226,13 +217,10 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
         printCheckBox(&response, "ACLOPNFOB1", "Fob Action 1", ((int)aclPrefs[14] == 1), "chk_access_opener");
         printCheckBox(&response, "ACLOPNFOB2", "Fob Action 2", ((int)aclPrefs[15] == 1), "chk_access_opener");
         printCheckBox(&response, "ACLOPNFOB3", "Fob Action 3", ((int)aclPrefs[16] == 1), "chk_access_opener");
-        response.print("</table><br>");
+        response.print("</table>");
 
         response.print("<h3>Nuki Opener Config Control (Requires PIN to be set)</h3>");
-        response.print("<input type=\"button\" value=\"Allow all\" style=\"margin-right: 10px;\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=true;}\">");
-        response.print("<input type=\"button\" value=\"Disallow all\" onclick=\"");
-        response.print("for(el of document.getElementsByClassName('chk_config_opener')){if(el.constructor.name==='HTMLInputElement'&amp;&amp;el.type==='checkbox')el.checked=false;}\">");
+        response.print("<div class=\"actions\"><button type=\"button\" data-check=\"chk_config_opener\" data-value=\"1\">Allow all</button><button type=\"button\" data-check=\"chk_config_opener\" data-value=\"0\">Disallow all</button></div>");
         response.print("<table><tr><th>Change</th><th>Allowed</th></tr>");
 
         printCheckBox(&response, "CONFOPNNAME", "Name", ((int)basicOpenerConfigAclPrefs[0] == 1), "chk_config_opener");
@@ -272,11 +260,11 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
         printCheckBox(&response, "CONFOPNABTD", "Automatic battery type detection", ((int)advancedOpenerConfigAclPrefs[19] == 1), "chk_config_opener");
         printCheckBox(&response, "CONFOPNRBTNUKI", "Reboot Nuki", ((int)advancedOpenerConfigAclPrefs[20] == 1), "chk_config_opener");
         printCheckBox(&response, "CONFOPNRCBRTNUKI", "Recalibrate Nuki", ((int)advancedOpenerConfigAclPrefs[21] == 1), "chk_config_opener");
-        response.print("</table><br>");
-        response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        response.print("</table>");
+        response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     }
     response.print("</form>");
-    response.print("</body></html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

@@ -144,11 +144,18 @@ private:
     esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
+#ifndef NUKI_HUB_UPDATER
+    void printOtaForm(PsychicStreamResponse* response, const char* channel, const char* compareTo, const char* sameBuild, const char* confirmMessage, const char* buttonClass, const char* label, const char* channelValue);
+#endif
     esp_err_t sendCss(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendJs(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendStatic(PsychicResponse* resp, const char* contentType, const uint8_t* content, size_t length);
     esp_err_t sendWebSerial(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t sendFavicon(PsychicRequest *request, PsychicResponse* resp);
     void createSsidList();
-    void buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader = "");
+    void buildHtmlHeader(PsychicStreamResponse *response, const String& additionalHeader = "", const String& bodyAttributes = "");
+    void buildHtmlFooter(PsychicStreamResponse *response);
+    static String htmlEscape(const char* value);
     void waitAndProcess(const bool blocking, const uint32_t duration);
     esp_err_t handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final);
     void printCheckBox(PsychicStreamResponse *response, const char* token, const char* description, const bool value, const char* htmlClass);

@@ -1,302 +1,475 @@
-/*
-escaped by https://www.cescaper.com/
-source: https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css
-*/
-
-/*
- * Usage:
- * Compact / minify this code with any tool
- * Copy one-line string to src/WebCfgServerConstants.h as stylecss
- * TODO: automate this process upon building :)
-*/
-
 :root {
-    --nc-font-sans: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';
-    --nc-font-mono: Consolas,monaco,'Ubuntu Mono','Liberation Mono','Courier New',Courier,monospace;
-    --nc-tx-1: #000;
-    --nc-tx-2: #1a1a1a;
-    --nc-bg-1: #fff;
-    --nc-bg-2: #f6f8fa;
-    --nc-bg-3: #e5e7eb;
-    --nc-lk-1: #0070f3;
-    --nc-lk-2: #0366d6;
-    --nc-lk-tx: #fff;
-    --nc-ac-1: #79ffe1;
-    --nc-ac-tx: #0c4047
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --bg: #f3f5f8;
+    --card: #ffffff;
+    --line: #d9dee6;
+    --tx: #1b2430;
+    --tx-2: #5a6878;
+    --accent: #1f6fd6;
+    --accent-2: #185cb3;
+    --accent-tx: #ffffff;
+    --ok: #1f8a4c;
+    --warn: #b8740b;
+    --danger: #c73a3a;
+    --focus: rgba(31, 111, 214, .35);
+    --radius: 10px;
+    color-scheme: light dark;
 }
 
-@media(prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
     :root {
-        --nc-tx-1:#fff;
-        --nc-tx-2: #eee;
-        --nc-bg-1: #000;
-        --nc-bg-2: #111;
-        --nc-bg-3: #222;
-        --nc-lk-1: #3291ff;
-        --nc-lk-2: #0070f3;
-        --nc-lk-tx: #fff;
-        --nc-ac-1: #7928ca;
-        --nc-ac-tx: #fff
+        --bg: #0f1419;
+        --card: #171d25;
+        --line: #2a333f;
+        --tx: #e6ebf1;
+        --tx-2: #98a4b3;
+        --accent: #4d8fe8;
+        --accent-2: #6ea3ee;
+        --accent-tx: #0f1419;
+        --ok: #3fb56f;
+        --warn: #e0a030;
+        --danger: #e05a5a;
+        --focus: rgba(77, 143, 232, .4);
     }
 }
 
 * {
-    margin: 0;
-    padding: 0
+    box-sizing: border-box;
 }
 
-img,input,option,p,table,textarea,ul {
-    margin-bottom: 1rem
+[hidden] {
+    display: none !important;
 }
 
-button,html,input,select {
-    font-family: var(--nc-font-sans)
+html {
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-    margin: 0 auto;
-    max-width: 750px;
-    padding: 2rem;
-    border-radius: 6px;
-    overflow-x: hidden;
-    word-break: normal;
+    margin: 0;
+    background: var(--bg);
+    color: var(--tx);
     overflow-wrap: anywhere;
-    background: var(--nc-bg-1);
-    color: var(--nc-tx-2);
-    font-size: 1.03rem;
-    line-height: 1.5
-}
-
-::selection {
-    background: var(--nc-ac-1);
-    color: var(--nc-ac-tx)
-}
-
-h1,h2,h3,h4,h5,h6 {
-    line-height: 1;
-    color: var(--nc-tx-1);
-    padding-top: .875rem
-}
-
-h1,h2,h3 {
-    color: var(--nc-tx-1);
-    padding-bottom: 2px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid var(--nc-bg-2)
-}
-
-h4,h5,h6 {
-    margin-bottom: .3rem
-}
-
-h1 {
-    font-size: 2.25rem
-}
-
-h2 {
-    font-size: 1.85rem
-}
-
-h3 {
-    font-size: 1.55rem
-}
-
-h4 {
-    font-size: 1.25rem
-}
-
-h5 {
-    font-size: 1rem
-}
-
-h6 {
-    font-size: .875rem
 }
 
 a {
-    color: var(--nc-lk-1)
+    color: var(--accent);
 }
 
 a:hover {
-    color: var(--nc-lk-2) !important;
+    color: var(--accent-2);
 }
 
-abbr {
-    cursor: help
+header.top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: .75rem 1.25rem;
+    flex-wrap: wrap;
+    padding: .65rem 1rem;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
 }
 
-abbr:hover {
-    cursor: help
-}
-
-a button,button,input[type=button],input[type=reset],input[type=submit] {
-    font-size: 1rem;
-    display: inline-block;
-    padding: 6px 12px;
-    text-align: center;
+header.top .brand {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--tx);
     text-decoration: none;
-    white-space: nowrap;
-    background: var(--nc-lk-1);
-    color: var(--nc-lk-tx);
-    border: 0;
-    border-radius: 4px;
-    box-sizing: border-box;
-    cursor: pointer;
-    color: var(--nc-lk-tx)
 }
 
-a button[disabled],button[disabled],input[type=button][disabled],input[type=reset][disabled],input[type=submit][disabled] {
-    cursor: default;
-    opacity: .5;
-    cursor: not-allowed
+header.top .brand::before {
+    content: "";
+    display: inline-block;
+    width: .7rem;
+    height: .7rem;
+    margin-right: .5rem;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: baseline;
 }
 
-.button:focus,.button:hover,button:focus,button:hover,input[type=button]:focus,input[type=button]:hover,input[type=reset]:focus,input[type=reset]:hover,input[type=submit]:focus,input[type=submit]:hover {
-    background: var(--nc-lk-2)
+header.top .host {
+    color: var(--tx-2);
+    font-family: var(--mono);
+    font-size: .85rem;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%
+header.top .version {
+    color: var(--tx-2);
+    font-size: .85rem;
 }
 
-td,th {
-    border: 1px solid var(--nc-bg-3);
-    text-align: left;
-    padding: .5rem
+header.top nav {
+    margin-left: auto;
+    display: flex;
+    gap: .25rem;
+    flex-wrap: wrap;
 }
 
-th {
-    background: var(--nc-bg-2)
+header.top nav a {
+    padding: .35rem .7rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--tx);
+    font-size: .95rem;
 }
 
-tr:nth-child(even) {
-    background: var(--nc-bg-2)
+header.top nav a:hover {
+    background: var(--bg);
 }
 
-textarea {
-    max-width: 100%
+body.auth header.top nav {
+    display: none;
 }
 
-input,select,textarea {
-    padding: 6px 12px;
-    margin-bottom: .5rem;
-    background: var(--nc-bg-2);
-    color: var(--nc-tx-2);
-    border: 1px solid var(--nc-bg-3);
-    border-radius: 4px;
-    box-shadow: none;
-    box-sizing: border-box
+body.auth main {
+    max-width: 440px;
 }
 
-img {
-    max-width: 100%
+main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 3rem;
 }
 
-td>input {
-    margin-top: 0;
-    margin-bottom: 0
+main.narrow {
+    max-width: 440px;
 }
 
-td>textarea {
-    margin-top: 0;
-    margin-bottom: 0
+h1, h2, h3, h4 {
+    line-height: 1.25;
+    text-wrap: balance;
 }
 
-td>select {
-    margin-top: 0;
-    margin-bottom: 0
+h2 {
+    font-size: 1.5rem;
+    margin: 0 0 1rem;
+}
+
+h3 {
+    font-size: 1.15rem;
+    margin: 1.75rem 0 .6rem;
+}
+
+h3:first-child, form > h3:first-of-type, main > h3:first-of-type {
+    margin-top: .25rem;
+}
+
+h4 {
+    font-size: 1rem;
+    margin: 1.25rem 0 .5rem;
+}
+
+p {
+    margin: 0 0 1rem;
 }
 
 .warning {
-    color: red
+    color: var(--danger);
 }
 
-@media only screen and (max-width: 600px) {
-    .adapt td {
-        display:block
-    }
-
-    .adapt input[type=text],.adapt input[type=password],.adapt input[type=submit],.adapt textarea,.adapt select {
-        width: 100%
-    }
-
-    .adapt td:has(input[type=checkbox]) {
-        text-align: center
-    }
-
-    .adapt input[type=checkbox] {
-        width: 1.5em;
-        height: 1.5em
-    }
-
-    .adapt table td:first-child {
-        border-bottom: 0
-    }
-
-    .adapt table td:last-child {
-        border-top: 0
-    }
-
-    #tblnav a li>span {
-        max-width: 140px
-    }
+.banner {
+    padding: .8rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-weight: 600;
 }
 
-#tblnav a {
-    border: 0;
-    border-bottom: 1px solid;
-    display: block;
-    font-size: 1rem;
-    font-weight: bold;
-    padding: .6rem 0;
-    line-height: 1;
-    color: var(--nc-tx-1);
-    text-decoration: none;
-    background: linear-gradient(to left,transparent 50%,rgba(255,255,255,0.4) 50%) right;
-    background-size: 200% 100%;
-    transition: all .2s ease
+.banner.danger {
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
-#tblnav a {
-    background: linear-gradient(to left,var(--nc-bg-2) 50%,rgba(255,255,255,0.4) 50%) right;
-    background-size: 200% 100%
+.banner.warn {
+    border-color: var(--warn);
+    color: var(--warn);
 }
 
-#tblnav a:hover {
-    background-position: left;
-    transition: all .45s ease
+.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
 }
 
-#tblnav a:active {
-    background: var(--nc-lk-1);
-    transition: all .15s ease
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
 }
 
-#tblnav a li {
-    list-style: none;
-    padding: .5rem;
+th, td {
+    text-align: left;
+    vertical-align: middle;
+    padding: .6rem .9rem;
+    border-bottom: 1px solid var(--line);
+}
+
+tr:last-child > td {
+    border-bottom: 0;
+}
+
+th {
+    color: var(--tx-2);
+    font-size: .8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+td:first-child {
+    width: 52%;
+    color: var(--tx);
+}
+
+td:last-child {
+    color: var(--tx-2);
+}
+
+td:last-child > a {
+    color: var(--accent);
+}
+
+tr.trssid {
+    cursor: pointer;
+}
+
+tr.trssid:hover > td {
+    color: var(--accent);
+}
+
+pre {
+    font-family: var(--mono);
+    font-size: .85rem;
+    line-height: 1.45;
+    padding: 1rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow-x: auto;
+}
+
+input, select, textarea, button {
+    font: inherit;
+    color: inherit;
+}
+
+input[type=text], input[type=password], input[type=number], input[type=file], select, textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: .45rem .65rem;
+    background: var(--bg);
+    color: var(--tx);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    outline: none;
+}
+
+input[type=file] {
+    padding: .3rem .5rem;
+}
+
+textarea {
+    min-height: 8rem;
+    font-family: var(--mono);
+    font-size: .85rem;
+}
+
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus);
+}
+
+input[type=checkbox] {
+    width: 1.3rem;
+    height: 1.3rem;
+    margin: 0;
+    accent-color: var(--accent);
+    vertical-align: middle;
+}
+
+input[disabled], select[disabled], textarea[disabled] {
+    opacity: .55;
+}
+
+button, .btn, input[type=submit], input[type=button] {
     display: inline-block;
-    width: 100%
+    padding: .5rem .95rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--tx);
+    text-decoration: none;
+    font-weight: 600;
+    line-height: 1.3;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
-#tblnav a li>span {
-    float: right;
-    text-align: right;
-    margin-right: 10px;
-    color: #f70;
-    font-weight: 100;
-    font-style: italic;
-    display: block
+button:hover, .btn:hover, input[type=submit]:hover, input[type=button]:hover {
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
-.tdbtn {
-    text-align: center;
-    vertical-align: middle
+input[type=submit], .primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-tx);
 }
 
-.naventry {
-    float: left;
-    max-width: 375px;
-    width: 100%
+input[type=submit]:hover, .primary:hover {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    color: var(--accent-tx);
+}
+
+.ok {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: #fff;
+}
+
+.warn.btn, input[type=submit].warn {
+    background: var(--warn);
+    border-color: var(--warn);
+    color: #fff;
+}
+
+.danger.btn, input[type=submit].danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+}
+
+.ok:hover, .warn.btn:hover, .danger.btn:hover, input[type=submit].warn:hover, input[type=submit].danger:hover {
+    color: #fff;
+    filter: brightness(1.08);
+}
+
+button[disabled], input[type=submit][disabled], input[type=button][disabled] {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin: .5rem 0 1.5rem;
+}
+
+.actions.stack {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+nav.menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: .6rem;
+    margin-top: .5rem;
+}
+
+nav.menu a {
+    display: block;
+    padding: .85rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--tx);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+nav.menu a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+nav.menu a span {
+    display: block;
+    margin-top: .15rem;
+    font-size: .85rem;
+    font-weight: 400;
+    color: var(--warn);
+}
+
+.auth-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.auth-card label {
+    display: block;
+    font-weight: 600;
+    margin: .75rem 0 .25rem;
+}
+
+.auth-card label.inline {
+    font-weight: 400;
+    margin-top: 1rem;
+}
+
+.auth-card button {
+    width: 100%;
+    margin-top: .75rem;
+}
+
+.auth-card .primary + .primary {
+    margin-top: .5rem;
+}
+
+@media (max-width: 640px) {
+    html {
+        font-size: 15px;
+    }
+
+    main {
+        padding: 1rem .75rem 2.5rem;
+    }
+
+    th, td {
+        display: block;
+        width: 100%;
+    }
+
+    td:first-child {
+        width: 100%;
+        padding-bottom: .15rem;
+        border-bottom: 0;
+    }
+
+    td:last-child {
+        padding-top: .15rem;
+    }
+
+    td:only-child {
+        padding: .6rem .9rem;
+    }
+
+    th + th {
+        display: none;
+    }
+
+    .actions > * {
+        width: 100%;
+        text-align: center;
+    }
 }

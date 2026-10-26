@@ -1,9 +1,15 @@
 #pragma once
 
 // converted to char array by bin2array
-const char stylecss[] =
+const uint8_t stylecss[] =
 {
 #include "webServerConstants/style.h"
+};
+
+// converted to char array by bin2array
+const uint8_t appjs[] =
+{
+#include "webServerConstants/app.h"
 };
 
 // converted to char array by bin2array

@@ -15,6 +15,41 @@
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
+#ifndef NUKI_HUB_UPDATER
+void WebCfgServer::printOtaForm(PsychicStreamResponse* response, const char* channel, const char* compareTo, const char* sameBuild, const char* confirmMessage, const char* buttonClass, const char* label, const char* channelValue)
+{
+    response->print("<form action=\"/get\" method=\"get\" data-confirm=\"");
+    response->print(confirmMessage);
+    response->print("\"");
+    if(strcmp(compareTo, "") != 0)
+    {
+        response->print(" data-same-as=\"");
+        response->print(compareTo);
+        response->print("\" data-same-build=\"");
+        response->print(sameBuild);
+        response->print("\"");
+    }
+    response->print("><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"");
+    response->print(channel);
+    response->print("\" value=\"");
+    response->print(strcmp(channel, "other") == 0 ? channelValue : "1");
+    response->print("\"><input type=\"hidden\" name=\"");
+    response->print(strcmp(channel, "other") == 0 ? "release" : channelValue);
+    response->print("\" value=\"1\"><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"");
+    response->print(_confirmCode);
+    response->print("\"><input type=\"submit\"");
+    if(strcmp(buttonClass, "") != 0)
+    {
+        response->print(" class=\"");
+        response->print(buttonClass);
+        response->print("\"");
+    }
+    response->print(" value=\"");
+    response->print(label);
+    response->print("\"></form>");
+}
+#endif
+
 esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug)
 {
     PsychicStreamResponse response(resp, "text/html");
@@ -34,15 +69,16 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 
     if(errored)
     {
-        response.print("<div>Over-the-air update errored. Please check the logs for more info</div><br/>");
+        response.print("<div class=\"banner danger\">Over-the-air update errored. Please check the logs for more info</div>");
     }
 
     if(_partitionType == 0)
     {
         response.print("<h4 class=\"warning\">You are currently running Nuki Hub with an outdated partition scheme. Because of this you cannot use OTA to update to 9.00 or higher. Please check GitHub for instructions on how to update to 9.00 and the new partition scheme</h4>");
-        response.print("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+        response.print("<div class=\"actions\"><a class=\"btn\" target=\"_blank\" href=\"");
         response.print(GITHUB_LATEST_RELEASE_URL);
-        response.print("', '_blank'); return false;\">Open latest release on GitHub</button>");
+        response.print("\">Open latest release on GitHub</a></div>");
+        buildHtmlFooter(&response);
         return response.endSend();
     }
 
@@ -81,10 +117,10 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         }
     }
 
-    response.print("<div id=\"msgdiv\" style=\"visibility:hidden\">Initiating Over-the-air update. This will take about two minutes, please be patient.<br>You will be forwarded automatically when the update is complete.</div>");
-    response.print("<div id=\"autoupdform\"><h4>Update Nuki Hub</h4>");
-    response.print("Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub");
-    response.print("<div style=\"clear: both\"></div>");
+    response.print("<div id=\"msgdiv\" class=\"banner warn\" hidden>Initiating Over-the-air update. This will take about two minutes, please be patient. You will be forwarded automatically when the update is complete.</div>");
+    response.print("<div id=\"autoupdform\"><h3>Update Nuki Hub</h3>");
+    response.print("<p>Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub</p>");
+    response.print("<div class=\"actions\">");
 
     String release_type;
 
@@ -102,58 +138,59 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 #else
     String build_type = "debug";
 #endif
-    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('latestver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest release?'); } \" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: green\" value=\"Update to latest release\"></form>");
-    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('betaver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"beta\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"color: black; background: yellow\"  value=\"Update to latest beta\"></form>");
-    response.print("<form onsubmit=\"if(document.getElementById('currentver').innerHTML == document.getElementById('devver').innerHTML && '" + release_type + "' == '" + build_type + "') { alert('You are already on this version, build and build type'); return false; } else { return confirm('Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial'); }\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"master\" value=\"1\" /><input type=\"hidden\" name=\"" + release_type + "\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: red\"  value=\"Update to latest development version\"></form>");
+    String sameBuild = release_type == build_type ? "1" : "0";
+    printOtaForm(&response, "release", "latestver", sameBuild.c_str(), "Do you really want to update to the latest release?", "ok", "Update to latest release", release_type.c_str());
+    printOtaForm(&response, "beta", "betaver", sameBuild.c_str(), "Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial", "warn", "Update to latest beta", release_type.c_str());
+    printOtaForm(&response, "master", "devver", sameBuild.c_str(), "Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial", "danger", "Update to latest development version", release_type.c_str());
 #if defined(CONFIG_IDF_TARGET_ESP32S3) && defined(CONFIG_SPIRAM)
     if(esp_psram_get_size() <= 0)
     {
-        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to other PSRAM release version\"></form>");
-        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to No PSRAM release version\"></form>");
+        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to other PSRAM release version", "1");
+        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to No PSRAM release version", "2");
     }
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
-    response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to Quad PSRAM release version\"></form>");
-    response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to Octal PSRAM release version\"></form>");
+    printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Quad PSRAM release version", "1");
+    printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Octal PSRAM release version", "2");
 #elif defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_SPIRAM) && !defined(NUKI_TARGET_GL_S10)
     if(_preferences->getInt(preference_network_hardware) == 8)
     {
-        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to specific GL-S10 release version\"></form>");
+        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to specific GL-S10 release version", "1");
     }
     if(esp_psram_get_size() <= 0)
     {
-        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to No PSRAM release version\"></form>");
+        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to No PSRAM release version", "2");
     }
 #elif defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
     if(_preferences->getInt(preference_network_hardware) == 8)
     {
-        response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"1\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to specific GL-S10 release version\"></form>");
+        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to specific GL-S10 release version", "1");
     }
-    response.print("<form onsubmit=\"return confirm('Do you really want to update to the latest release?');\" action=\"/get\" method=\"get\" style=\"float: left; margin-right: 10px\"><input type=\"hidden\" name=\"page\" value=\"autoupdate\"><input type=\"hidden\" name=\"other\" value=\"2\" /><input type=\"hidden\" name=\"release\" value=\"1\" /><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><br><input type=\"submit\" style=\"background: blue\"  value=\"Update to Quad PSRAM release version\"></form>");
+    printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Quad PSRAM release version", "2");
 #endif
-    response.print("<div style=\"clear: both\"></div><br>");
+    response.print("</div>");
 
-    response.print("<b>Current version: </b><span id=\"currentver\">");
+    response.print("<table><tr><td>Current version</td><td><span id=\"currentver\">");
     response.print(NUKI_HUB_VERSION);
     response.print(" (");
     response.print(NUKI_HUB_BUILD);
     response.print(")</span>, ");
     response.print(NUKI_HUB_DATE);
-    response.print("<br>");
+    response.print("</td></tr>");
 
     if(!manifestSuccess)
     {
-        response.print("<span id=\"currentver\" style=\"display: none;\">currentver</span><span id=\"latestver\" style=\"display: none;\">latestver</span><span id=\"devver\" style=\"display: none;\">devver</span><span id=\"betaver\" style=\"display: none;\">betaver</span>");
+        response.print("<tr><td>Latest versions</td><td>Could not be retrieved from GitHub<span id=\"latestver\" hidden>latestver</span><span id=\"devver\" hidden>devver</span><span id=\"betaver\" hidden>betaver</span></td></tr></table>");
     }
     else
     {
-        response.print("<b>Latest release version: </b><span id=\"latestver\">");
+        response.print("<tr><td>Latest release version</td><td><span id=\"latestver\">");
         response.print(doc["release"]["fullversion"].as<const char*>());
         response.print(" (");
         response.print(doc["release"]["build"].as<const char*>());
         response.print(")</span>, ");
         response.print(doc["release"]["time"].as<const char*>());
-        response.print("<br>");
-        response.print("<b>Latest beta version: </b><span id=\"betaver\">");
+        response.print("</td></tr>");
+        response.print("<tr><td>Latest beta version</td><td><span id=\"betaver\">");
         if(doc["beta"]["fullversion"] != "No beta available")
         {
             response.print(doc["beta"]["fullversion"].as<const char*>());
@@ -167,14 +204,14 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
             response.print(doc["beta"]["fullversion"].as<const char*>());
             response.print("</span>");
         }
-        response.print("<br>");
-        response.print("<b>Latest development version: </b><span id=\"devver\">");
+        response.print("</td></tr>");
+        response.print("<tr><td>Latest development version</td><td><span id=\"devver\">");
         response.print(doc["master"]["fullversion"].as<const char*>());
         response.print(" (");
         response.print(doc["master"]["build"].as<const char*>());
         response.print(")</span>, ");
         response.print(doc["master"]["time"].as<const char*>());
-        response.print("<br>");
+        response.print("</td></tr></table>");
 
         String currentVersion = NUKI_HUB_VERSION;
         const char* latestVersion;
@@ -202,66 +239,45 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         }
     }
 #endif
-    response.print("<br></div>");
+    response.print("</div>");
 
     if(_partitionType == 1)
     {
-        response.print("<h4><a onclick=\"hideshowmanual();\">Manually update Nuki Hub</a></h4><div id=\"manualupdate\" style=\"display: none\">");
+        response.print("<h3><a href=\"#manualupdate\" data-toggle=\"#manualupdate\">Manually update Nuki Hub</a></h3><div id=\"manualupdate\" hidden>");
         response.print("<div id=\"rebootform\"><h4>Reboot to Nuki Hub Updater</h4>");
-        response.print("Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update");
-        response.print("<form action=\"/get\" method=\"get\"><br>");
+        response.print("<p>Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update</p>");
+        response.print("<form action=\"/get\" method=\"get\">");
         response.print("<input type=\"hidden\" name=\"page\" value=\"reboottoota\">");
-        response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\" /></form><br><br></div>");
+        response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><div class=\"actions\"><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\"></div></form></div>");
         response.print("<div id=\"upform\"><h4>Update Nuki Hub Updater</h4>");
-        response.print("Select the latest Nuki Hub updater binary to update the Nuki Hub updater");
-        response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub_updater.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+        response.print("<p>Select the latest Nuki Hub updater binary to update the Nuki Hub updater</p>");
+        response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><table><tr><td>nuki_hub_updater.bin file</td><td><input name=\"uploadedfile\" type=\"file\" accept=\".bin\"></td></tr></table>");
     }
     else
     {
         response.print("<div id=\"manualupdate\">");
-        response.print("<div id=\"rebootform\"><h4>Reboot to Nuki Hub</h4>");
-        response.print("Click on the button to reboot to Nuki Hub");
-        response.print("<form action=\"/get\" method=\"get\"><br>");
+        response.print("<div id=\"rebootform\"><h3>Reboot to Nuki Hub</h3>");
+        response.print("<p>Click on the button to reboot to Nuki Hub</p>");
+        response.print("<form action=\"/get\" method=\"get\">");
         response.print("<input type=\"hidden\" name=\"page\" value=\"reboottoota\">");
-        response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><input type=\"submit\" value=\"Reboot to Nuki Hub\" /></form><br><br></div>");
-        response.print("<div id=\"upform\"><h4>Update Nuki Hub</h4>");
-        response.print("Select the latest Nuki Hub binary to update Nuki Hub");
-        response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\">Choose the nuki_hub.bin file to upload: <input name=\"uploadedfile\" type=\"file\" accept=\".bin\" /><br/>");
+        response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><div class=\"actions\"><input type=\"submit\" value=\"Reboot to Nuki Hub\"></div></form></div>");
+        response.print("<div id=\"upform\"><h3>Update Nuki Hub</h3>");
+        response.print("<p>Select the latest Nuki Hub binary to update Nuki Hub</p>");
+        response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><table><tr><td>nuki_hub.bin file</td><td><input name=\"uploadedfile\" type=\"file\" accept=\".bin\"></td></tr></table>");
     }
-    response.print("<br><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\" /></form><br><br></div>");
+    response.print("<div class=\"actions\"><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\"></div></form></div>");
     response.print("<div id=\"gitdiv\">");
-    response.print("<h4>GitHub</h4><br>");
-    response.print("<button title=\"Open latest release on GitHub\" onclick=\" window.open('");
+    response.print("<h4>GitHub</h4>");
+    response.print("<div class=\"actions stack\"><a class=\"btn\" target=\"_blank\" href=\"");
     response.print(GITHUB_LATEST_RELEASE_URL);
-    response.print("', '_blank'); return false;\">Open latest release on GitHub</button>");
-    response.print("<br><br><button title=\"Download latest binary from GitHub\" onclick=\" window.open('");
+    response.print("\">Open latest release on GitHub</a>");
+    response.print("<a class=\"btn\" href=\"");
     response.print(GITHUB_LATEST_RELEASE_BINARY_URL);
-    response.print("'); return false;\">Download latest binary from GitHub</button>");
-    response.print("<br><br><button title=\"Download latest updater binary from GitHub\" onclick=\" window.open('");
+    response.print("\">Download latest binary from GitHub</a>");
+    response.print("<a class=\"btn\" href=\"");
     response.print(GITHUB_LATEST_UPDATER_BINARY_URL);
-    response.print("'); return false;\">Download latest updater binary from GitHub</button></div></div>");
-    response.print("<script type=\"text/javascript\">");
-    response.print("window.addEventListener('load', function () {");
-    response.print("	var button = document.getElementById(\"submitbtn\");");
-    response.print("	button.addEventListener('click',hideshow,false);");
-    response.print("	function hideshow() {");
-    response.print("		document.getElementById('autoupdform').style.visibility = 'hidden';");
-    response.print("		document.getElementById('rebootform').style.visibility = 'hidden';");
-    response.print("		document.getElementById('upform').style.visibility = 'hidden';");
-    response.print("		document.getElementById('gitdiv').style.visibility = 'hidden';");
-    response.print("		document.getElementById('msgdiv').style.visibility = 'visible';");
-    response.print("	}");
-    response.print("});");
-    response.print("function hideshowmanual() {");
-    response.print("	var x = document.getElementById(\"manualupdate\");");
-    response.print("	if (x.style.display === \"none\") {");
-    response.print("	    x.style.display = \"block\";");
-    response.print("	} else {");
-    response.print("	    x.style.display = \"none\";");
-    response.print("    }");
-    response.print("}");
-    response.print("</script>");
-    response.print("</body></html>");
+    response.print("\">Download latest updater binary from GitHub</a></div></div></div>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
