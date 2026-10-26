@@ -1,3 +1,4 @@
+#include <functional>
 #include <algorithm>
 #include "NukiWrapper.h"
 #include "PreferencesKeys.h"
@@ -12,6 +13,40 @@
 #include "esp_sntp.h"
 #include "util/NukiHelper.h"
 #include "util/NukiRetryHandler.h"
+
+void NukiWrapper::updateConfigBool(JsonDocument& jsonResult, const char* key, const char* value, uint8_t current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(bool)> setter)
+{
+    const int keyvalue = atoi(value);
+
+    if(keyvalue != 0 && keyvalue != 1)
+    {
+        jsonResult[key] = "invalidValue";
+        return;
+    }
+    if(current == keyvalue)
+    {
+        jsonResult[key] = "unchanged";
+        return;
+    }
+    cmdResult = setter(keyvalue > 0);
+}
+
+void NukiWrapper::updateConfigInt(JsonDocument& jsonResult, const char* key, const char* value, int min, int max, int current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(int)> setter)
+{
+    const int keyvalue = atoi(value);
+
+    if(keyvalue < min || keyvalue > max)
+    {
+        jsonResult[key] = "invalidValue";
+        return;
+    }
+    if(current == keyvalue)
+    {
+        jsonResult[key] = "unchanged";
+        return;
+    }
+    cmdResult = setter(keyvalue);
+}
 
 void NukiWrapper::onConfigUpdateReceived(const char *value)
 {
@@ -151,143 +186,31 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "autoUnlatch") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiConfig.autoUnlatch == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableAutoUnlatch((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, basicKeys[i], jsonchar, _nukiConfig.autoUnlatch, cmdResult, [&](bool value) { return _nukiLock.enableAutoUnlatch(value); });
                     }
                     else if(strcmp(basicKeys[i], "pairingEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiConfig.pairingEnabled == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enablePairing((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, basicKeys[i], jsonchar, _nukiConfig.pairingEnabled, cmdResult, [&](bool value) { return _nukiLock.enablePairing(value); });
                     }
                     else if(strcmp(basicKeys[i], "buttonEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiConfig.buttonEnabled == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableButton((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, basicKeys[i], jsonchar, _nukiConfig.buttonEnabled, cmdResult, [&](bool value) { return _nukiLock.enableButton(value); });
                     }
                     else if(strcmp(basicKeys[i], "ledEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiConfig.ledEnabled == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableLedFlash((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, basicKeys[i], jsonchar, _nukiConfig.ledEnabled, cmdResult, [&](bool value) { return _nukiLock.enableLedFlash(value); });
                     }
                     else if(strcmp(basicKeys[i], "ledBrightness") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= 0 && keyvalue <= 5)
-                        {
-                            if(_nukiConfig.ledBrightness == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setLedBrightness(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, basicKeys[i], jsonchar, 0, 5, _nukiConfig.ledBrightness, cmdResult, [&](int value) { return _nukiLock.setLedBrightness(value); });
                     }
                     else if(strcmp(basicKeys[i], "timeZoneOffset") == 0)
                     {
-                        const int16_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= 0 && keyvalue <= 60)
-                        {
-                            if(_nukiConfig.timeZoneOffset == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setTimeZoneOffset(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, basicKeys[i], jsonchar, 0, 60, _nukiConfig.timeZoneOffset, cmdResult, [&](int value) { return _nukiLock.setTimeZoneOffset(value); });
                     }
                     else if(strcmp(basicKeys[i], "dstMode") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiConfig.dstMode == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableDst((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, basicKeys[i], jsonchar, _nukiConfig.dstMode, cmdResult, [&](bool value) { return _nukiLock.enableDst(value); });
                     }
                     else if(strcmp(basicKeys[i], "fobAction1") == 0)
                     {
@@ -351,23 +274,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(basicKeys[i], "singleLock") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiConfig.singleLock == keyvalue)
-                            {
-                                jsonResult[basicKeys[i]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableSingleLock((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[basicKeys[i]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, basicKeys[i], jsonchar, _nukiConfig.singleLock, cmdResult, [&](bool value) { return _nukiLock.enableSingleLock(value); });
                     }
                     else if(strcmp(basicKeys[i], "advertisingMode") == 0)
                     {
@@ -482,103 +389,23 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                 {
                     if(strcmp(advancedKeys[j], "unlockedPositionOffsetDegrees") == 0)
                     {
-                        const int16_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= -90 && keyvalue <= 180)
-                        {
-                            if(_nukiAdvancedConfig.unlockedPositionOffsetDegrees == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setUnlockedPositionOffsetDegrees(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, advancedKeys[j], jsonchar, -90, 180, _nukiAdvancedConfig.unlockedPositionOffsetDegrees, cmdResult, [&](int value) { return _nukiLock.setUnlockedPositionOffsetDegrees(value); });
                     }
                     else if(strcmp(advancedKeys[j], "lockedPositionOffsetDegrees") == 0)
                     {
-                        const int16_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= -180 && keyvalue <= 90)
-                        {
-                            if(_nukiAdvancedConfig.lockedPositionOffsetDegrees == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setLockedPositionOffsetDegrees(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, advancedKeys[j], jsonchar, -180, 90, _nukiAdvancedConfig.lockedPositionOffsetDegrees, cmdResult, [&](int value) { return _nukiLock.setLockedPositionOffsetDegrees(value); });
                     }
                     else if(strcmp(advancedKeys[j], "singleLockedPositionOffsetDegrees") == 0)
                     {
-                        const int16_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= -180 && keyvalue <= 180)
-                        {
-                            if(_nukiAdvancedConfig.singleLockedPositionOffsetDegrees == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setSingleLockedPositionOffsetDegrees(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, advancedKeys[j], jsonchar, -180, 180, _nukiAdvancedConfig.singleLockedPositionOffsetDegrees, cmdResult, [&](int value) { return _nukiLock.setSingleLockedPositionOffsetDegrees(value); });
                     }
                     else if(strcmp(advancedKeys[j], "unlockedToLockedTransitionOffsetDegrees") == 0)
                     {
-                        const int16_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= -180 && keyvalue <= 180)
-                        {
-                            if(_nukiAdvancedConfig.unlockedToLockedTransitionOffsetDegrees == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setUnlockedToLockedTransitionOffsetDegrees(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, advancedKeys[j], jsonchar, -180, 180, _nukiAdvancedConfig.unlockedToLockedTransitionOffsetDegrees, cmdResult, [&](int value) { return _nukiLock.setUnlockedToLockedTransitionOffsetDegrees(value); });
                     }
                     else if(strcmp(advancedKeys[j], "lockNgoTimeout") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= 5 && keyvalue <= 60)
-                        {
-                            if(_nukiAdvancedConfig.lockNgoTimeout == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setLockNgoTimeout(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, advancedKeys[j], jsonchar, 5, 60, _nukiAdvancedConfig.lockNgoTimeout, cmdResult, [&](int value) { return _nukiLock.setLockNgoTimeout(value); });
                     }
                     else if(strcmp(advancedKeys[j], "singleButtonPressAction") == 0)
                     {
@@ -622,23 +449,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "detachedCylinder") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.detachedCylinder == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableDetachedCylinder((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.detachedCylinder, cmdResult, [&](bool value) { return _nukiLock.enableDetachedCylinder(value); });
                     }
                     else if(strcmp(advancedKeys[j], "batteryType") == 0)
                     {
@@ -682,83 +493,19 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "unlatchDuration") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= 1 && keyvalue <= 30)
-                        {
-                            if(_nukiAdvancedConfig.unlatchDuration == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setUnlatchDuration(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, advancedKeys[j], jsonchar, 1, 30, _nukiAdvancedConfig.unlatchDuration, cmdResult, [&](int value) { return _nukiLock.setUnlatchDuration(value); });
                     }
                     else if(strcmp(advancedKeys[j], "autoLockTimeOut") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue >= 30 && keyvalue <= 1800)
-                        {
-                            if(_nukiAdvancedConfig.autoLockTimeOut == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.setAutoLockTimeOut(keyvalue);
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigInt(jsonResult, advancedKeys[j], jsonchar, 30, 1800, _nukiAdvancedConfig.autoLockTimeOut, cmdResult, [&](int value) { return _nukiLock.setAutoLockTimeOut(value); });
                     }
                     else if(strcmp(advancedKeys[j], "autoUnLockDisabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.autoUnLockDisabled == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.disableAutoUnlock((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.autoUnLockDisabled, cmdResult, [&](bool value) { return _nukiLock.disableAutoUnlock(value); });
                     }
                     else if(strcmp(advancedKeys[j], "nightModeEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.nightModeEnabled == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableNightMode((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.nightModeEnabled, cmdResult, [&](bool value) { return _nukiLock.enableNightMode(value); });
                     }
                     else if(strcmp(advancedKeys[j], "nightModeStartTime") == 0)
                     {
@@ -806,123 +553,27 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "nightModeAutoLockEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.nightModeAutoLockEnabled == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableNightModeAutoLock((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.nightModeAutoLockEnabled, cmdResult, [&](bool value) { return _nukiLock.enableNightModeAutoLock(value); });
                     }
                     else if(strcmp(advancedKeys[j], "nightModeAutoUnlockDisabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.nightModeAutoUnlockDisabled == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.disableNightModeAutoUnlock((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.nightModeAutoUnlockDisabled, cmdResult, [&](bool value) { return _nukiLock.disableNightModeAutoUnlock(value); });
                     }
                     else if(strcmp(advancedKeys[j], "nightModeImmediateLockOnStart") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.nightModeImmediateLockOnStart == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableNightModeImmediateLockOnStart((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.nightModeImmediateLockOnStart, cmdResult, [&](bool value) { return _nukiLock.enableNightModeImmediateLockOnStart(value); });
                     }
                     else if(strcmp(advancedKeys[j], "autoLockEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.autoLockEnabled == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableAutoLock((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.autoLockEnabled, cmdResult, [&](bool value) { return _nukiLock.enableAutoLock(value); });
                     }
                     else if(strcmp(advancedKeys[j], "immediateAutoLockEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.immediateAutoLockEnabled == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableImmediateAutoLock((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.immediateAutoLockEnabled, cmdResult, [&](bool value) { return _nukiLock.enableImmediateAutoLock(value); });
                     }
                     else if(strcmp(advancedKeys[j], "autoUpdateEnabled") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.autoUpdateEnabled == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableAutoUpdate((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.autoUpdateEnabled, cmdResult, [&](bool value) { return _nukiLock.enableAutoUpdate(value); });
                     }
                     else if(strcmp(advancedKeys[j], "rebootNuki") == 0)
                     {
@@ -972,23 +623,7 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
                     }
                     else if(strcmp(advancedKeys[j], "enableSlowSpeedDuringNightMode") == 0)
                     {
-                        const uint8_t keyvalue = atoi(jsonchar);
-
-                        if(keyvalue == 0 || keyvalue == 1)
-                        {
-                            if(_nukiAdvancedConfig.enableSlowSpeedDuringNightMode == keyvalue)
-                            {
-                                jsonResult[advancedKeys[j]] = "unchanged";
-                            }
-                            else
-                            {
-                                cmdResult = _nukiLock.enableSlowSpeedDuringNightMode((keyvalue > 0));
-                            }
-                        }
-                        else
-                        {
-                            jsonResult[advancedKeys[j]] = "invalidValue";
-                        }
+                        updateConfigBool(jsonResult, advancedKeys[j], jsonchar, _nukiAdvancedConfig.enableSlowSpeedDuringNightMode, cmdResult, [&](bool value) { return _nukiLock.enableSlowSpeedDuringNightMode(value); });
                     }
 
                     if(cmdResult != Nuki::CmdResult::Success)
