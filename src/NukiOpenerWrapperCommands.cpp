@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "NukiOpenerWrapper.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"

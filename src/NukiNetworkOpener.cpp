@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "NukiNetworkOpener.h"
 #include "PsramJsonAllocator.h"
 #include "Arduino.h"
@@ -1158,16 +1159,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
     {
         for(const auto& slot : _keypadHaSlots)
         {
-            bool stillThere = false;
-            for(const auto& current : haSlots)
-            {
-                if(current == slot)
-                {
-                    stillThere = true;
-                    break;
-                }
-            }
-            if(!stillThere)
+            if(std::find(haSlots.begin(), haSlots.end(), slot) == haSlots.end())
             {
                 String codesTopic = _mqttPath;
                 codesTopic.concat(mqtt_topic_keypad_codes);
