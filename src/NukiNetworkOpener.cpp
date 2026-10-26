@@ -1581,24 +1581,8 @@ void NukiNetworkOpener::publishKeypadEntry(const String topic, NukiLock::KeypadE
 
 void NukiNetworkOpener::buildMqttPath(const char* path, char* outPath)
 {
-    int offset = 0;
-    for(const char& c : _mqttPath)
-    {
-        if(c == 0x00)
-        {
-            break;
-        }
-        outPath[offset] = c;
-        ++offset;
-    }
-    int i=0;
-    while(path[i] != 0x00)
-    {
-        outPath[offset] = path[i];
-        ++i;
-        ++offset;
-    }
-    outPath[offset] = 0x00;
+    strcpy(outPath, _mqttPath);
+    strcat(outPath, path);
 }
 
 void NukiNetworkOpener::subscribe(const char *path)
@@ -1610,10 +1594,8 @@ void NukiNetworkOpener::subscribe(const char *path)
 
 bool NukiNetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
-    char prefixedPath[500];
-    buildMqttPath(subPath, prefixedPath);
-
-    return strcmp(fullPath, prefixedPath) == 0;
+    const size_t prefixLength = strlen(_mqttPath);
+    return strncmp(fullPath, _mqttPath, prefixLength) == 0 && strcmp(fullPath + prefixLength, subPath) == 0;
 }
 
 String NukiNetworkOpener::concat(String a, String b)
