@@ -58,6 +58,19 @@ private:
     bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
     esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey = false);
     bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
+    struct ProcessArgsState
+    {
+        bool configChanged = false;
+        bool clearSession = false;
+        bool newMFA = false;
+        bool restartServicesNoReconnect = false;
+        bool restartServicesReconnect = false;
+    };
+    void processMqttArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processNetworkArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processCredentialsArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processNukiArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processAdvancedArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
     void processGpioArgs(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildAccLvlHtml(PsychicRequest *request, PsychicResponse* resp);
