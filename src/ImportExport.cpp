@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "ImportExport.h"
 #include "EspMillis.h"
 #include "SPIFFS.h"
