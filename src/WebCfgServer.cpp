@@ -4056,6 +4056,11 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
         bool v = isParameterTrue(request, "AUTHPER");
         _preferences->putBool(preference_auth_topic_per_entry, v);
     }
+    if(request->hasParam("AUTHHAID"))
+    {
+        bool v = isParameterTrue(request, "AUTHHAID");
+        _preferences->putBool(preference_auth_ha_by_auth_id, v);
+    }
     if(request->hasParam("AUTHENA"))
     {
         bool v = isParameterTrue(request, "AUTHENA");
@@ -5858,6 +5863,7 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
     printCheckBox(&response, "TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
     printCheckBox(&response, "AUTHPUB", "Publish authorization entries information", _preferences->getBool(preference_auth_info_enabled), "");
     printCheckBox(&response, "AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
+    printCheckBox(&response, "AUTHHAID", "Identify the HA authorization entities by authorization id instead of list position", _preferences->getBool(preference_auth_ha_by_auth_id), "");
     printCheckBox(&response, "AUTHENA", "Modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
     printCheckBox(&response, "PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
     printCheckBox(&response, "SAVELOGNUM", "Save auth log number to flash", _preferences->getBool(preference_save_log_num), "");

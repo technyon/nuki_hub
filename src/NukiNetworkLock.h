@@ -96,6 +96,8 @@ private:
     bool _clearKeypadSlotEntities = true;
     uint _publishedKeypadCount = 0;
     std::vector<std::string> _keypadHaSlots;
+    bool _clearAuthSlotEntities = true;
+    std::vector<std::string> _authHaSlots;
     bool _offConnected = false;
     bool _hybridRebootOnDisconnect = false;
     bool _isUltra = false;

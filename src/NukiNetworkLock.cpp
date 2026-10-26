@@ -1420,6 +1420,9 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
 
 void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>& authEntries, uint maxAuthEntryCount)
 {
+    bool topicPerEntry = _preferences->getBool(preference_auth_topic_per_entry, false);
+    bool haByAuthId = _preferences->getBool(preference_auth_ha_by_auth_id, false);
+    std::vector<std::string> haSlots;
     uint index = 0;
     char str[50];
     char uidString[20];
@@ -1510,11 +1513,13 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
         sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
         jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
 
-        if(_preferences->getBool(preference_auth_topic_per_entry, false))
+        if(topicPerEntry)
         {
+            std::string slot = haByAuthId ? std::to_string(entry.authId) : std::to_string(index);
+            haSlots.push_back(slot);
             String basePath = mqtt_topic_auth;
             basePath.concat("/entries/");
-            basePath.concat(std::to_string(index).c_str());
+            basePath.concat(slot.c_str());
             jsonEntry["index"] = index;
             serializeJson(jsonEntry, _buffer, _bufferSize);
             _nukiPublisher->publishString(basePath.c_str(), _buffer, true);
@@ -1526,7 +1531,7 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
             std::string baseCommand = std::string("{ \"action\": \"update\", \"authId\": \"") + std::to_string(entry.authId);
             std::string enaCommand = baseCommand + (char*)"\", \"enabled\": \"1\" }";
             std::string disCommand = baseCommand + (char*)"\", \"enabled\": \"0\" }";
-            std::string mqttDeviceName = std::string("auth_") + std::to_string(index);
+            std::string mqttDeviceName = std::string("auth_") + slot;
             std::string uidStringPostfix = std::string("_") + mqttDeviceName;
             char authName[sizeof(entry.name) + 1];
             memset(authName, 0, sizeof(authName));
@@ -1563,8 +1568,50 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
     serializeJson(json, jsonString);
     _nukiPublisher->publishString(mqtt_topic_auth_json, jsonString, true);
 
-    for(int j=authEntries.size(); j<maxAuthEntryCount; j++)
+    if(topicPerEntry)
     {
+        for(const auto& slot : _authHaSlots)
+        {
+            bool stillThere = false;
+            for(const auto& current : haSlots)
+            {
+                if(current == slot)
+                {
+                    stillThere = true;
+                    break;
+                }
+            }
+            if(!stillThere)
+            {
+                String entriesTopic = _mqttPath;
+                entriesTopic.concat(mqtt_topic_auth_entries);
+                entriesTopic.concat("/");
+                _network->removeTopic(entriesTopic, slot.c_str());
+                std::string mqttDeviceName = std::string("auth_") + slot;
+                _network->removeHassTopic((char*)"switch", (char*)mqttDeviceName.c_str(), uidString);
+            }
+        }
+        _authHaSlots = haSlots;
+    }
+
+    // Remove list-position entries left over (all of them once after switching to ids)
+    uint firstStale = (haByAuthId && topicPerEntry) ? (_clearAuthSlotEntities ? 0 : maxAuthEntryCount) : authEntries.size();
+    _clearAuthSlotEntities = false;
+    for(int j=firstStale; j<maxAuthEntryCount; j++)
+    {
+        bool inUse = false;
+        for(const auto& current : haSlots)
+        {
+            if(current == std::to_string(j))
+            {
+                inUse = true;
+                break;
+            }
+        }
+        if(inUse)
+        {
+            continue;
+        }
         String entriesTopic = _mqttPath;
         entriesTopic.concat(mqtt_topic_auth_entries);
         entriesTopic.concat("/");
