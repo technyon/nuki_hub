@@ -1,4 +1,5 @@
 #include "NukiOpenerWrapper.h"
+#include "UpdateRequest.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
 #include "Logger.h"
@@ -410,6 +411,31 @@ void NukiOpenerWrapper::update()
         publishKeypadCache();
     }
 
+    if(_requestedUpdates != 0)
+    {
+        uint8_t requested = _requestedUpdates;
+        _requestedUpdates = 0;
+        if((requested & UPDATE_REQUEST_LOCKSTATE) > 0)
+        {
+            _nextLockStateUpdateTs = 0;
+        }
+        if((requested & UPDATE_REQUEST_CONFIG) > 0)
+        {
+            _nextConfigUpdateTs = 0;
+        }
+        if((requested & UPDATE_REQUEST_KEYPAD) > 0)
+        {
+            _nextKeypadUpdateTs = 0;
+        }
+        if((requested & UPDATE_REQUEST_TIMECONTROL) > 0)
+        {
+            updateTimeControl(false);
+        }
+        if((requested & UPDATE_REQUEST_AUTH) > 0)
+        {
+            updateAuth(false);
+        }
+    }
     if((_statusUpdated && ts >= _nextStatusPollTs) || _nextLockStateUpdateTs == 0 || ts >= _nextLockStateUpdateTs || (queryCommands & QUERY_COMMAND_LOCKSTATE) > 0)
     {
         _nextLockStateUpdateTs = ts + _intervalLockstate * 1000;
@@ -1074,6 +1100,7 @@ void NukiOpenerWrapper::updateTimeControl(bool retrieved)
         }
 
         _network->publishTimeControl(timeControlEntries, _maxTimeControlEntryCount);
+        _timeControlEntriesCache = timeControlEntries;
 
         _timeControlIds.clear();
         _timeControlIds.reserve(timeControlEntries.size());
@@ -1141,6 +1168,7 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
         }
 
         _network->publishAuth(authEntries, _maxAuthEntryCount);
+        _authEntriesCache = authEntries;
 
         _authIds.clear();
         _authIds.reserve(authEntries.size());
@@ -1151,6 +1179,26 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
     }
 
     postponeBleWatchdog();
+}
+
+void NukiOpenerWrapper::requestUpdate(uint8_t updates)
+{
+    _requestedUpdates |= updates;
+}
+
+const std::list<NukiOpener::KeypadEntry>& NukiOpenerWrapper::keypadEntries() const
+{
+    return _keypadEntriesCache;
+}
+
+const std::list<NukiOpener::TimeControlEntry>& NukiOpenerWrapper::timeControlEntries() const
+{
+    return _timeControlEntriesCache;
+}
+
+const std::list<NukiOpener::AuthorizationEntry>& NukiOpenerWrapper::authEntries() const
+{
+    return _authEntriesCache;
 }
 
 void NukiOpenerWrapper::postponeBleWatchdog()

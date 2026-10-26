@@ -46,6 +46,14 @@ public:
     const std::string hardwareVersion() const;
     const std::string name() const;
     static LockActionResult onLockActionReceivedCallback(const char* value);
+    void onConfigUpdateReceived(const char* value);
+    void onKeypadJsonCommandReceived(const char* value);
+    void onTimeControlCommandReceived(const char* value);
+    void onAuthCommandReceived(const char* value);
+    void requestUpdate(uint8_t updates);
+    const std::list<NukiOpener::KeypadEntry>& keypadEntries() const;
+    const std::list<NukiOpener::TimeControlEntry>& timeControlEntries() const;
+    const std::list<NukiOpener::AuthorizationEntry>& authEntries() const;
 
     const BleScanner::Scanner* bleScanner();
 
@@ -65,13 +73,9 @@ private:
     void checkQueries(const int64_t& ts, const uint8_t& queryCommands);
 
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
-    void onConfigUpdateReceived(const char* value);
-    void onKeypadJsonCommandReceived(const char* value);
     void checkKeypadJsonCommand();
     void publishKeypadCache();
     void executeKeypadJsonCommand(const char* value);
-    void onTimeControlCommandReceived(const char* value);
-    void onAuthCommandReceived(const char* value);
 
     bool updateKeyTurnerState();
     void updateBatteryState();
@@ -168,6 +172,9 @@ private:
     std::string _hardwareVersion = "";
     NukiOpener::LockAction _nextLockAction = (NukiOpener::LockAction)0xff;
     std::list<NukiOpener::KeypadEntry> _keypadEntriesCache;
+    std::list<NukiOpener::TimeControlEntry> _timeControlEntriesCache;
+    std::list<NukiOpener::AuthorizationEntry> _authEntriesCache;
+    volatile uint8_t _requestedUpdates = 0;
     std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;
