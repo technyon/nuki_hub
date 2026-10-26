@@ -3,6 +3,31 @@
 #include <ArduinoJson.h>
 #include "networkDevices/NetworkDevice.h"
 
+enum class HassAcl
+{
+    None,
+    Action,
+    Basic,
+    Advanced
+};
+
+struct HassEntity
+{
+    const char* component;
+    const char* name;
+    const char* displayName;
+    const char* stateTopic;
+    const char* deviceClass;
+    const char* stateClass;
+    const char* entityCategory;
+    const char* commandTopic;
+    HassAcl acl;
+    int aclIndex;
+    int aclIndex2;
+    int gemini;
+    std::vector<std::pair<const char*, const char*>> additionalEntries;
+};
+
 class HomeAssistantDiscovery
 {
 public:
@@ -23,7 +48,7 @@ public:
                           const String& stateClass = "",
                           const String& entityCat = "",
                           const String& commandTopic = "",
-                          std::vector<std::pair<char*, char*>> additionalEntries = {}
+                          const std::vector<std::pair<const char*, const char*>>& additionalEntries = {}
                          );
 private:
     void publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction, char *unlockAction, char *openAction);
@@ -31,6 +56,8 @@ private:
     void publishHASSNukiHubConfig();
 
     void publishHASSConfigAdditionalLockEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
+
+    void publishHassEntities(const HassEntity* entities, size_t count, char* deviceType, const char* baseTopic, char* name, char* uidString, const uint32_t* aclPrefs, const uint32_t* basicAclPrefs, const uint32_t* advancedAclPrefs);
     void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAdditionalOpenerEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
@@ -53,7 +80,7 @@ private:
                                 const String& stateClass = "",
                                 const String& entityCat = "",
                                 const String& commandTopic = "",
-                                std::vector<std::pair<char*, char*>> additionalEntries = {}
+                                const std::vector<std::pair<const char*, const char*>>& additionalEntries = {}
                                );
 
     NetworkDevice* _device = nullptr;
