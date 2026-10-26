@@ -5,6 +5,39 @@
 #include "RestartReason.h"
 
 #ifndef NUKI_HUB_UPDATER
+static const Setting nukiSettings[] =
+{
+    {"LSTINT", "Query interval lock state (seconds)", preference_query_interval_lockstate, SettingType::Int, 1800, 0, 0, 10, "", SettingEffect::None},
+    {"CFGINT", "Query interval configuration (seconds)", preference_query_interval_configuration, SettingType::Int, 3600, 0, 0, 10, "", SettingEffect::None},
+    {"BATINT", "Query interval battery (seconds)", preference_query_interval_battery, SettingType::Int, 1800, 0, 0, 10, "", SettingEffect::None},
+    {"KPINT", "Query interval keypad (seconds)", preference_query_interval_keypad, SettingType::Int, 1800, 0, 0, 10, "", SettingEffect::None},
+    {"NRTRY", "Number of retries if command failed", preference_command_nr_of_retries, SettingType::Int, 3, 0, 0, 10, "", SettingEffect::None},
+    {"TRYDLY", "Delay between retries (milliseconds)", preference_command_retry_delay, SettingType::Int, 100, 0, 0, 10, "", SettingEffect::None},
+    {"RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", preference_restart_ble_beacon_lost, SettingType::Int, 60, 0, 0, 10, "", SettingEffect::None},
+    {"CONFPUB", "Publish Nuki configuration information", preference_conf_info_enabled, SettingType::Bool, 1, 0, 0, 0, "", SettingEffect::None},
+    {"KPPUB", "Publish keypad entries information", preference_keypad_info_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", preference_keypad_publish_code, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", preference_keypad_check_code_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"KPENA", "Add, modify and delete keypad codes", preference_keypad_control_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"TCPUB", "Publish time control entries information", preference_timecontrol_info_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"AUTHPUB", "Publish authorization entries information", preference_auth_info_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"KPPER", "Publish a topic per keypad entry and create HA sensor", preference_keypad_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"KPHAID", "Identify the HA keypad entities by code id instead of list position", preference_keypad_ha_by_code_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"TCPER", "Publish a topic per time control entry and create HA sensor", preference_timecontrol_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"TCENA", "Add, modify and delete time control entries", preference_timecontrol_control_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"AUTHPER", "Publish a topic per authorization entry and create HA sensor", preference_auth_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"AUTHHAID", "Identify the HA authorization entities by authorization id instead of list position", preference_auth_ha_by_auth_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"AUTHENA", "Modify and delete authorization entries", preference_auth_control_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"PUBAUTH", "Publish authorization log", preference_publish_authdata, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"SAVELOGNUM", "Save auth log number to flash", preference_save_log_num, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", preference_register_as_app, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", preference_register_opener_as_app, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"LOCKENA", "Nuki Lock enabled", preference_lock_enabled, SettingType::Bool, 1, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"OPENA", "Nuki Opener enabled", preference_opener_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+};
+
+static const size_t nukiSettingsCount = sizeof(nukiSettings) / sizeof(nukiSettings[0]);
+
 esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     PsychicStreamResponse response(resp, "text/html");
@@ -14,31 +47,31 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Basic Nuki Configuration</h3>");
     response.print("<table>");
-    printCheckBox(&response, "LOCKENA", "Nuki Lock enabled", _preferences->getBool(preference_lock_enabled, true), "");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "LOCKENA");
     printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra/Go/5th gen enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
-    printCheckBox(&response, "OPENA", "Nuki Opener enabled", _preferences->getBool(preference_opener_enabled, false), "");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "OPENA");
     response.print("</table><br>");
     response.print("<h3>Advanced Nuki Configuration</h3>");
     response.print("<table>");
 
-    printInputField(&response, "LSTINT", "Query interval lock state (seconds)", _preferences->getInt(preference_query_interval_lockstate), 10, "");
-    printInputField(&response, "CFGINT", "Query interval configuration (seconds)", _preferences->getInt(preference_query_interval_configuration), 10, "");
-    printInputField(&response, "BATINT", "Query interval battery (seconds)", _preferences->getInt(preference_query_interval_battery), 10, "");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "LSTINT");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "CFGINT");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "BATINT");
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
-        printInputField(&response, "KPINT", "Query interval keypad (seconds)", _preferences->getInt(preference_query_interval_keypad), 10, "");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPINT");
     }
-    printInputField(&response, "NRTRY", "Number of retries if command failed", _preferences->getInt(preference_command_nr_of_retries), 10, "");
-    printInputField(&response, "TRYDLY", "Delay between retries (milliseconds)", _preferences->getInt(preference_command_retry_delay), 10, "");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "NRTRY");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TRYDLY");
     if(_preferences->getBool(preference_lock_enabled, true) && !_preferences->getBool(preference_lock_gemini_enabled, false))
     {
-        printCheckBox(&response, "REGAPP", "Lock: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_as_app), "");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "REGAPP");
     }
     if(_preferences->getBool(preference_opener_enabled, false))
     {
-        printCheckBox(&response, "REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", _preferences->getBool(preference_register_opener_as_app), "");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "REGAPPOPN");
     }
-    printInputField(&response, "RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", _preferences->getInt(preference_restart_ble_beacon_lost), 10, "");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "RSBC");
 #if defined(CONFIG_IDF_TARGET_ESP32)
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
 #else
@@ -70,26 +103,26 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
     response.print("<table><tr><th>Setting</th><th>Enabled</th></tr>");
     printCheckBox(&response, "CONFNHPUB", "Publish Nuki Hub configuration information", _preferences->getBool(preference_publish_config, false), "");
     printCheckBox(&response, "CONFNHCTRL", "Modify Nuki Hub configuration over MQTT", _preferences->getBool(preference_config_from_mqtt, false), "");
-    printCheckBox(&response, "CONFPUB", "Publish Nuki configuration information", _preferences->getBool(preference_conf_info_enabled, true), "");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "CONFPUB");
 
     if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
     {
-        printCheckBox(&response, "KPPUB", "Publish keypad entries information", _preferences->getBool(preference_keypad_info_enabled), "");
-        printCheckBox(&response, "KPPER", "Publish a topic per keypad entry and create HA sensor", _preferences->getBool(preference_keypad_topic_per_entry), "");
-        printCheckBox(&response, "KPHAID", "Identify the HA keypad entities by code id instead of list position", _preferences->getBool(preference_keypad_ha_by_code_id), "");
-        printCheckBox(&response, "KPCODE", "Also publish keypad codes (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_publish_code, false), "");
-        printCheckBox(&response, "KPENA", "Add, modify and delete keypad codes", _preferences->getBool(preference_keypad_control_enabled), "");
-        printCheckBox(&response, "KPCHECK", "Allow checking if keypad codes are valid (<span class=\"warning\">Disadvised for security reasons</span>)", _preferences->getBool(preference_keypad_check_code_enabled, false), "");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPPUB");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPPER");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPHAID");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPCODE");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPENA");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPCHECK");
     }
-    printCheckBox(&response, "TCPUB", "Publish time control entries information", _preferences->getBool(preference_timecontrol_info_enabled), "");
-    printCheckBox(&response, "TCPER", "Publish a topic per time control entry and create HA sensor", _preferences->getBool(preference_timecontrol_topic_per_entry), "");
-    printCheckBox(&response, "TCENA", "Add, modify and delete time control entries", _preferences->getBool(preference_timecontrol_control_enabled), "");
-    printCheckBox(&response, "AUTHPUB", "Publish authorization entries information", _preferences->getBool(preference_auth_info_enabled), "");
-    printCheckBox(&response, "AUTHPER", "Publish a topic per authorization entry and create HA sensor", _preferences->getBool(preference_auth_topic_per_entry), "");
-    printCheckBox(&response, "AUTHHAID", "Identify the HA authorization entities by authorization id instead of list position", _preferences->getBool(preference_auth_ha_by_auth_id), "");
-    printCheckBox(&response, "AUTHENA", "Modify and delete authorization entries", _preferences->getBool(preference_auth_control_enabled), "");
-    printCheckBox(&response, "PUBAUTH", "Publish authorization log", _preferences->getBool(preference_publish_authdata), "");
-    printCheckBox(&response, "SAVELOGNUM", "Save auth log number to flash", _preferences->getBool(preference_save_log_num), "");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TCPUB");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TCPER");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TCENA");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHPUB");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHPER");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHHAID");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHENA");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "PUBAUTH");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "SAVELOGNUM");
     response.print("</table><br>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
 
@@ -325,65 +358,7 @@ void WebCfgServer::processNukiArgs(PsychicRequest *request, ProcessArgsState& st
         }
     }
 
-    if(request->hasParam("LSTINT"))
-    {
-        value = request->getParam("LSTINT")->value();
-        if(_preferences->getInt(preference_query_interval_lockstate, 1800) != value.toInt())
-        {
-            _preferences->putInt(preference_query_interval_lockstate, value.toInt());
-
-        }
-    }
-
-    if(request->hasParam("CFGINT"))
-    {
-        value = request->getParam("CFGINT")->value();
-        if(_preferences->getInt(preference_query_interval_configuration, 3600) != value.toInt())
-        {
-            _preferences->putInt(preference_query_interval_configuration, value.toInt());
-
-        }
-    }
-
-    if(request->hasParam("BATINT"))
-    {
-        value = request->getParam("BATINT")->value();
-        if(_preferences->getInt(preference_query_interval_battery, 1800) != value.toInt())
-        {
-            _preferences->putInt(preference_query_interval_battery, value.toInt());
-
-        }
-    }
-
-    if(request->hasParam("KPINT"))
-    {
-        value = request->getParam("KPINT")->value();
-        if(_preferences->getInt(preference_query_interval_keypad, 1800) != value.toInt())
-        {
-            _preferences->putInt(preference_query_interval_keypad, value.toInt());
-
-        }
-    }
-
-    if(request->hasParam("NRTRY"))
-    {
-        value = request->getParam("NRTRY")->value();
-        if(_preferences->getInt(preference_command_nr_of_retries, 3) != value.toInt())
-        {
-            _preferences->putInt(preference_command_nr_of_retries, value.toInt());
-
-        }
-    }
-
-    if(request->hasParam("TRYDLY"))
-    {
-        value = request->getParam("TRYDLY")->value();
-        if(_preferences->getInt(preference_command_retry_delay, 100) != value.toInt())
-        {
-            _preferences->putInt(preference_command_retry_delay, value.toInt());
-
-        }
-    }
+    applySettings(request, nukiSettings, nukiSettingsCount, state);
 
     if(request->hasParam("TXPWR"))
     {
@@ -401,25 +376,9 @@ void WebCfgServer::processNukiArgs(PsychicRequest *request, ProcessArgsState& st
         }
     }
 
-    if(request->hasParam("RSBC"))
-    {
-        value = request->getParam("RSBC")->value();
-        if(_preferences->getInt(preference_restart_ble_beacon_lost, 60) != value.toInt())
-        {
-            _preferences->putInt(preference_restart_ble_beacon_lost, value.toInt());
-
-        }
-    }
-
     if(request->hasParam("ACLLVLCHANGED"))
     {
         aclLvlChanged = true;
-    }
-
-    if(request->hasParam("CONFPUB"))
-    {
-        bool v = isParameterTrue(request, "CONFPUB");
-        _preferences->putBool(preference_conf_info_enabled, v);
     }
 
     if(request->hasParam("CONFNHPUB"))
@@ -450,109 +409,6 @@ void WebCfgServer::processNukiArgs(PsychicRequest *request, ProcessArgsState& st
 
             state.restartServicesReconnect = true;
         }
-    }
-
-    if(request->hasParam("KPPUB"))
-    {
-        bool v = isParameterTrue(request, "KPPUB");
-        _preferences->putBool(preference_keypad_info_enabled, v);
-    }
-
-    if(request->hasParam("KPCODE"))
-    {
-        bool v = isParameterTrue(request, "KPCODE");
-        _preferences->putBool(preference_keypad_publish_code, v);
-    }
-
-    if(request->hasParam("KPCHECK"))
-    {
-        bool v = isParameterTrue(request, "KPCHECK");
-        _preferences->putBool(preference_keypad_check_code_enabled, v);
-    }
-
-    if(request->hasParam("KPENA"))
-    {
-        bool v = isParameterTrue(request, "KPENA");
-        if(_preferences->getBool(preference_keypad_control_enabled, false) != v)
-        {
-            _preferences->putBool(preference_keypad_control_enabled, v);
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("TCPUB"))
-    {
-        bool v = isParameterTrue(request, "TCPUB");
-        _preferences->putBool(preference_timecontrol_info_enabled, v);
-    }
-
-    if(request->hasParam("AUTHPUB"))
-    {
-        bool v = isParameterTrue(request, "AUTHPUB");
-        _preferences->putBool(preference_auth_info_enabled, v);
-    }
-
-    if(request->hasParam("KPPER"))
-    {
-        bool v = isParameterTrue(request, "KPPER");
-        _preferences->putBool(preference_keypad_topic_per_entry, v);
-    }
-
-    if(request->hasParam("KPHAID"))
-    {
-        bool v = isParameterTrue(request, "KPHAID");
-        _preferences->putBool(preference_keypad_ha_by_code_id, v);
-    }
-
-    if(request->hasParam("TCPER"))
-    {
-        bool v = isParameterTrue(request, "TCPER");
-        _preferences->putBool(preference_timecontrol_topic_per_entry, v);
-    }
-
-    if(request->hasParam("TCENA"))
-    {
-        bool v = isParameterTrue(request, "TCENA");
-        if(_preferences->getBool(preference_timecontrol_control_enabled, false) != v)
-        {
-            _preferences->putBool(preference_timecontrol_control_enabled, v);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("AUTHPER"))
-    {
-        bool v = isParameterTrue(request, "AUTHPER");
-        _preferences->putBool(preference_auth_topic_per_entry, v);
-    }
-    if(request->hasParam("AUTHHAID"))
-    {
-        bool v = isParameterTrue(request, "AUTHHAID");
-        _preferences->putBool(preference_auth_ha_by_auth_id, v);
-    }
-
-    if(request->hasParam("AUTHENA"))
-    {
-        bool v = isParameterTrue(request, "AUTHENA");
-        if(_preferences->getBool(preference_auth_control_enabled, false) != v)
-        {
-            _preferences->putBool(preference_auth_control_enabled, v);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("PUBAUTH"))
-    {
-        bool v = isParameterTrue(request, "PUBAUTH");
-        _preferences->putBool(preference_publish_authdata, v);
-    }
-
-    if(request->hasParam("SAVELOGNUM"))
-    {
-        bool v = isParameterTrue(request, "SAVELOGNUM");
-        _preferences->putBool(preference_save_log_num, v);
     }
 
     if(request->hasParam("ACLLCKLCK"))
@@ -1125,28 +981,6 @@ void WebCfgServer::processNukiArgs(PsychicRequest *request, ProcessArgsState& st
         advancedOpenerConfigAclPrefs[21] = v ? 1 : 0;
     }
 
-    if(request->hasParam("REGAPP"))
-    {
-        bool v = isParameterTrue(request, "REGAPP");
-        _preferences->putBool(preference_register_as_app, v);
-    }
-
-    if(request->hasParam("REGAPPOPN"))
-    {
-        bool v = isParameterTrue(request, "REGAPPOPN");
-        _preferences->putBool(preference_register_opener_as_app, v);
-    }
-
-    if(request->hasParam("LOCKENA"))
-    {
-        bool v = isParameterTrue(request, "LOCKENA");
-        if(_preferences->getBool(preference_lock_enabled, true) != v)
-        {
-            _preferences->putBool(preference_lock_enabled, v);
-            state.restartServicesReconnect = true;
-        }
-    }
-
     if(request->hasParam("GEMINIENA"))
     {
         bool v = isParameterTrue(request, "GEMINIENA");
@@ -1161,16 +995,6 @@ void WebCfgServer::processNukiArgs(PsychicRequest *request, ProcessArgsState& st
                 _preferences->putBool(preference_official_hybrid_actions, true);
             }
             state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("OPENA"))
-    {
-        bool v = isParameterTrue(request, "OPENA");
-        if(_preferences->getBool(preference_opener_enabled, false) != v)
-        {
-            _preferences->putBool(preference_opener_enabled, v);
-            state.restartServicesReconnect = true;
         }
     }
 

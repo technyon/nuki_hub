@@ -11,6 +11,26 @@
 #endif
 
 #ifndef NUKI_HUB_UPDATER
+static const Setting networkSettings[] =
+{
+    {"RSSI", "RSSI Publish interval (seconds; -1 to disable)", preference_rssi_publish_interval, SettingType::Int, 60, 0, 0, 6, "", SettingEffect::None},
+    {"HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", preference_https_fqdn, SettingType::String, 0, 0, 0, 255, "", SettingEffect::RestartNoReconnect},
+    {"HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", preference_mqtt_hass_cu_url, SettingType::String, 0, 0, 0, 261, "", SettingEffect::None},
+    {"HOSTNAME", "Hostname (needs to be unique)", preference_hostname, SettingType::String, 0, 0, 0, 100, "", SettingEffect::ConfigChanged},
+    {"FINDBESTRSSI", "Find WiFi AP with strongest signal", preference_find_best_rssi, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"WIFIPSDIS", "Disable Wi-Fi power save (improves weak connections)", preference_wifi_power_save_disabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"WIFIBSSID", "Preferred access point MAC address (BSSID, e.g. aa:bb:cc:dd:ee:ff, falls back to any access point after two failed attempts)", preference_wifi_preferred_bssid, SettingType::String, 0, 0, 0, 17, "", SettingEffect::ConfigChanged},
+    {"RSTDISC", "Restart on disconnect", preference_restart_on_disconnect, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"CHECKUPDATE", "Check for Firmware Updates every 24h", preference_check_updates, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"DHCPENA", "Enable DHCP", preference_ip_dhcp_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::ConfigChanged},
+    {"IPADDR", "Static IP address", preference_ip_address, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+    {"IPSUB", "Subnet", preference_ip_subnet, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+    {"IPGTW", "Default gateway", preference_ip_gateway, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+    {"DNSSRV", "DNS Server", preference_ip_dns_server, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+};
+
+static const size_t networkSettingsCount = sizeof(networkSettings) / sizeof(networkSettings[0]);
+
 esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     PsychicStreamResponse response(resp, "text/html");
@@ -20,32 +40,32 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Network Configuration</h3>");
     response.print("<table>");
-    printInputField(&response, "HOSTNAME", "Hostname (needs to be unique)", _preferences->getString(preference_hostname).c_str(), 100, "");
+    printSetting(&response, networkSettings, networkSettingsCount, "HOSTNAME");
     printDropDown(&response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions(), "");
-    printInputField(&response, "HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", _preferences->getString(preference_mqtt_hass_cu_url).c_str(), 261, "");
+    printSetting(&response, networkSettings, networkSettingsCount, "HASSCUURL");
 #ifndef CONFIG_IDF_TARGET_ESP32H2
-    printInputField(&response, "RSSI", "RSSI Publish interval (seconds; -1 to disable)", _preferences->getInt(preference_rssi_publish_interval), 6, "");
+    printSetting(&response, networkSettings, networkSettingsCount, "RSSI");
 #endif
-    printCheckBox(&response, "RSTDISC", "Restart on disconnect", _preferences->getBool(preference_restart_on_disconnect), "");
-    printCheckBox(&response, "CHECKUPDATE", "Check for Firmware Updates every 24h", _preferences->getBool(preference_check_updates), "");
-    printCheckBox(&response, "FINDBESTRSSI", "Find WiFi AP with strongest signal", _preferences->getBool(preference_find_best_rssi, false), "");
-    printCheckBox(&response, "WIFIPSDIS", "Disable Wi-Fi power save (improves weak connections)", _preferences->getBool(preference_wifi_power_save_disabled, false), "");
-    printInputField(&response, "WIFIBSSID", "Preferred access point MAC address (BSSID, e.g. aa:bb:cc:dd:ee:ff, falls back to any access point after two failed attempts)", _preferences->getString(preference_wifi_preferred_bssid).c_str(), 17, "");
+    printSetting(&response, networkSettings, networkSettingsCount, "RSTDISC");
+    printSetting(&response, networkSettings, networkSettingsCount, "CHECKUPDATE");
+    printSetting(&response, networkSettings, networkSettingsCount, "FINDBESTRSSI");
+    printSetting(&response, networkSettings, networkSettingsCount, "WIFIPSDIS");
+    printSetting(&response, networkSettings, networkSettingsCount, "WIFIBSSID");
     if(nuki_hub_https_server_enabled)
     {
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
         response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><button title=\"Generate HTTP SSL Certificate and key\" onclick=\" window.open('/get?page=selfsignhttps', '_self'); return false;\">Generate</button></td></tr>");
-        printInputField(&response, "HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", _preferences->getString(preference_https_fqdn, "").c_str(), 255, "");
+        printSetting(&response, networkSettings, networkSettingsCount, "HTTPSFQDN");
     }
     response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
-    printCheckBox(&response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
-    printInputField(&response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15, "");
-    printInputField(&response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15, "");
-    printInputField(&response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
-    printInputField(&response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
+    printSetting(&response, networkSettings, networkSettingsCount, "DHCPENA");
+    printSetting(&response, networkSettings, networkSettingsCount, "IPADDR");
+    printSetting(&response, networkSettings, networkSettingsCount, "IPSUB");
+    printSetting(&response, networkSettings, networkSettingsCount, "IPGTW");
+    printSetting(&response, networkSettings, networkSettingsCount, "DNSSRV");
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form>");
@@ -542,142 +562,7 @@ void WebCfgServer::processNetworkArgs(PsychicRequest *request, ProcessArgsState&
         }
     }
 
-    if(request->hasParam("RSSI"))
-    {
-        value = request->getParam("RSSI")->value();
-        if(_preferences->getInt(preference_rssi_publish_interval, 60) != value.toInt())
-        {
-            _preferences->putInt(preference_rssi_publish_interval, value.toInt());
-
-        }
-    }
-
-    if(request->hasParam("HTTPSFQDN"))
-    {
-        value = request->getParam("HTTPSFQDN")->value();
-        if(_preferences->getString(preference_https_fqdn, "") != value)
-        {
-            _preferences->putString(preference_https_fqdn, value);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("HASSCUURL"))
-    {
-        value = request->getParam("HASSCUURL")->value();
-        if(_preferences->getString(preference_mqtt_hass_cu_url, "") != value)
-        {
-            _preferences->putString(preference_mqtt_hass_cu_url, value);
-
-        }
-    }
-
-    if(request->hasParam("HOSTNAME"))
-    {
-        value = request->getParam("HOSTNAME")->value();
-        if(_preferences->getString(preference_hostname, "") != value)
-        {
-            _preferences->putString(preference_hostname, value);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("FINDBESTRSSI"))
-    {
-        bool v = isParameterTrue(request, "FINDBESTRSSI");
-        _preferences->putBool(preference_find_best_rssi, v);
-    }
-
-    if(request->hasParam("WIFIPSDIS"))
-    {
-        bool v = isParameterTrue(request, "WIFIPSDIS");
-        _preferences->putBool(preference_wifi_power_save_disabled, v);
-    }
-
-    if(request->hasParam("WIFIBSSID"))
-    {
-        value = request->getParam("WIFIBSSID")->value();
-        if(_preferences->getString(preference_wifi_preferred_bssid, "") != value)
-        {
-            _preferences->putString(preference_wifi_preferred_bssid, value);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("RSTDISC"))
-    {
-        bool v = isParameterTrue(request, "RSTDISC");
-        _preferences->putBool(preference_restart_on_disconnect, v);
-    }
-
-    if(request->hasParam("CHECKUPDATE"))
-    {
-        bool v = isParameterTrue(request, "CHECKUPDATE");
-        if(_preferences->getBool(preference_check_updates, false) != v)
-        {
-            _preferences->putBool(preference_check_updates, v);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DHCPENA"))
-    {
-        bool v = isParameterTrue(request, "DHCPENA");
-        if(_preferences->getBool(preference_ip_dhcp_enabled, true) != v)
-        {
-            _preferences->putBool(preference_ip_dhcp_enabled, v);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("IPADDR"))
-    {
-        value = request->getParam("IPADDR")->value();
-        if(_preferences->getString(preference_ip_address, "") != value)
-        {
-            _preferences->putString(preference_ip_address, value);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("IPSUB"))
-    {
-        value = request->getParam("IPSUB")->value();
-        if(_preferences->getString(preference_ip_subnet, "") != value)
-        {
-            _preferences->putString(preference_ip_subnet, value);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("IPGTW"))
-    {
-        value = request->getParam("IPGTW")->value();
-        if(_preferences->getString(preference_ip_gateway, "") != value)
-        {
-            _preferences->putString(preference_ip_gateway, value);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("DNSSRV"))
-    {
-        value = request->getParam("DNSSRV")->value();
-        if(_preferences->getString(preference_ip_dns_server, "") != value)
-        {
-            _preferences->putString(preference_ip_dns_server, value);
-
-            state.configChanged = true;
-        }
-    }
+    applySettings(request, networkSettings, networkSettingsCount, state);
 
     if(networkReconfigure)
     {

@@ -7,6 +7,39 @@
 #include "SPIFFS.h"
 
 #ifndef NUKI_HUB_UPDATER
+static const Setting advancedSettings[] =
+{
+    {"WEBLOG", "Enable WebSerial logging", preference_webserial_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"FRCHSTUPD", "Force slave Hosted update on next boot", preference_force_hosted_update, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::ConfigChanged},
+    {"TSKNTWK", "Task size Network (min 12288, max 65536)", preference_task_size_network, SettingType::Int, NETWORK_TASK_SIZE, 12288, 65536, 6, "", SettingEffect::ConfigChanged},
+    {"TSKNUKI", "Task size Nuki (min 8192, max 65536)", preference_task_size_nuki, SettingType::Int, NUKI_TASK_SIZE, 8192, 65536, 6, "", SettingEffect::ConfigChanged},
+    {"BLEGENTIMEOUT", "BLE General timeout in ms (min 10000, max 65536)", preference_ble_general_timeout, SettingType::Int, 10000, 3000, 65536, 6, "", SettingEffect::None},
+    {"BLECMDTIMEOUT", "BLE Command timeout in ms (min 3000, max 65536)", preference_ble_command_timeout, SettingType::Int, 3000, 3000, 65536, 6, "", SettingEffect::None},
+    {"ALMAX", "Max auth log entries (min 1, max 100)", preference_authlog_max_entries, SettingType::Int, MAX_AUTHLOG, 1, 100, 3, "id=\"inputmaxauthlog\"", SettingEffect::None},
+    {"KPMAX", "Max keypad entries (min 1, max 200)", preference_keypad_max_entries, SettingType::Int, MAX_KEYPAD, 1, 200, 3, "id=\"inputmaxkeypad\"", SettingEffect::None},
+    {"TCMAX", "Max timecontrol entries (min 1, max 100)", preference_timecontrol_max_entries, SettingType::Int, MAX_TIMECONTROL, 1, 100, 3, "id=\"inputmaxtimecontrol\"", SettingEffect::None},
+    {"AUTHMAX", "Max authorization entries (min 1, max 100)", preference_auth_max_entries, SettingType::Int, MAX_AUTH, 1, 100, 3, "id=\"inputmaxauth\"", SettingEffect::None},
+    {"BUFFSIZE", "Char buffer size (min 4096, max 65536)", preference_buffer_size, SettingType::Int, CHAR_BUFFER_SIZE, 4096, 65536, 6, "", SettingEffect::ConfigChanged},
+    {"BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", preference_enable_bootloop_reset, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"DISNTWNOCON", "Disable Network if not connected within 60s", preference_disable_network_not_connected, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"OTAUPD", "Custom URL to update Nuki Hub updater", preference_ota_updater_url, SettingType::String, 0, 0, 0, 255, "", SettingEffect::ConfigChanged},
+    {"OTAMAIN", "Custom URL to update Nuki Hub", preference_ota_main_url, SettingType::String, 0, 0, 0, 255, "", SettingEffect::ConfigChanged},
+    {"SHOWSECRETS", "Show Pairing secrets on Info page", preference_show_secrets, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"DBGCONN", "Enable Nuki connect debug logging", preference_debug_connect, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"DBGCOMMU", "Enable Nuki communication debug logging", preference_debug_communication, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"DBGHEAP", "Publish free heap over MQTT", preference_publish_debug_info, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"DBGREAD", "Enable Nuki readable data debug logging", preference_debug_readable_data, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"DBGHEX", "Enable Nuki hex data debug logging", preference_debug_hex_data, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"DBGCOMM", "Enable Nuki command debug logging", preference_debug_command, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"LCKFORCEID", "", preference_lock_force_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"LCKFORCEKP", "Force Lock Keypad connected", preference_lock_force_keypad, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"LCKFORCEDS", "Force Lock Doorsensor connected", preference_lock_force_doorsensor, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"OPFORCEID", "", preference_opener_force_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"OPFORCEKP", "Force Opener Keypad", preference_opener_force_keypad, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+};
+
+static const size_t advancedSettingsCount = sizeof(advancedSettings) / sizeof(advancedSettings[0]);
+
 esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     PsychicStreamResponse response(resp, "text/html");
@@ -20,26 +53,26 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     response.print("<tr><td>Current bootloop prevention state</td><td>");
     response.print(_preferences->getBool(preference_enable_bootloop_reset, false) ? "Enabled" : "Disabled");
     response.print("</td></tr>");
-    printCheckBox(&response, "DISNTWNOCON", "Disable Network if not connected within 60s", _preferences->getBool(preference_disable_network_not_connected, false), "");
-    printCheckBox(&response, "WEBLOG", "Enable WebSerial logging", _preferences->getBool(preference_webserial_enabled), "");
-    printCheckBox(&response, "FRCHSTUPD", "Force slave Hosted update on next boot", _preferences->getBool(preference_force_hosted_update, false), "");
-    printCheckBox(&response, "BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", true, "");
-    printInputField(&response, "BUFFSIZE", "Char buffer size (min 4096, max 65536)", _preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE), 6, "");
-    printInputField(&response, "TSKNTWK", "Task size Network (min 12288, max 65536)", _preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE), 6, "");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DISNTWNOCON");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "WEBLOG");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "FRCHSTUPD");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "BTLPRST");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "BUFFSIZE");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "TSKNTWK");
     response.print("<tr><td>Measured peak network task stack usage since boot</td><td>");
     response.print(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE) - uxTaskGetStackHighWaterMark(networkTaskHandle));
     response.print("</td></tr>");
-    printInputField(&response, "TSKNUKI", "Task size Nuki (min 8192, max 65536)", _preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE), 6, "");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "TSKNUKI");
     response.print("<tr><td>Measured peak Nuki task stack usage since boot</td><td>");
     response.print(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE) - uxTaskGetStackHighWaterMark(nukiTaskHandle));
     response.print("</td></tr>");
-    printInputField(&response, "BLEGENTIMEOUT", "BLE General timeout in ms (min 10000, max 65536)", _preferences->getInt(preference_ble_general_timeout, 10000), 6, "");
-    printInputField(&response, "BLECMDTIMEOUT", "BLE Command timeout in ms (min 3000, max 65536)", _preferences->getInt(preference_ble_command_timeout, 3000), 6, "");
-    printInputField(&response, "ALMAX", "Max auth log entries (min 1, max 100)", _preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG), 3, "id=\"inputmaxauthlog\"");
-    printInputField(&response, "KPMAX", "Max keypad entries (min 1, max 200)", _preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD), 3, "id=\"inputmaxkeypad\"");
-    printInputField(&response, "TCMAX", "Max timecontrol entries (min 1, max 100)", _preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL), 3, "id=\"inputmaxtimecontrol\"");
-    printInputField(&response, "AUTHMAX", "Max authorization entries (min 1, max 100)", _preferences->getInt(preference_auth_max_entries, MAX_AUTH), 3, "id=\"inputmaxauth\"");
-    printCheckBox(&response, "SHOWSECRETS", "Show Pairing secrets on Info page", _preferences->getBool(preference_show_secrets), "");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "BLEGENTIMEOUT");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "BLECMDTIMEOUT");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "ALMAX");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "KPMAX");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "TCMAX");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "AUTHMAX");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "SHOWSECRETS");
     if(_preferences->getBool(preference_lock_enabled, true))
     {
         printCheckBox(&response, "LCKMANPAIR", "Manually set lock pairing data (enable to save values below)", false, "");
@@ -55,16 +88,16 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
         printInputField(&response, "OPNSECRETK", "secretKeyK", "", 64, "");
         printInputField(&response, "OPNAUTHID", "authorizationId", "", 8, "");
     }
-    printInputField(&response, "OTAUPD", "Custom URL to update Nuki Hub updater", "", 255, "");
-    printInputField(&response, "OTAMAIN", "Custom URL to update Nuki Hub", "", 255, "");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "OTAUPD");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "OTAMAIN");
 
     if(_nuki != nullptr)
     {
         char uidString[20];
         itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
         printCheckBox(&response, "LCKFORCEID", ((String)"Force Lock ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_lock_force_id, false), "");
-        printCheckBox(&response, "LCKFORCEKP", "Force Lock Keypad connected", _preferences->getBool(preference_lock_force_keypad, false), "");
-        printCheckBox(&response, "LCKFORCEDS", "Force Lock Doorsensor connected", _preferences->getBool(preference_lock_force_doorsensor, false), "");
+        printSetting(&response, advancedSettings, advancedSettingsCount, "LCKFORCEKP");
+        printSetting(&response, advancedSettings, advancedSettingsCount, "LCKFORCEDS");
     }
 
     if(_nukiOpener != nullptr)
@@ -72,15 +105,15 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
         char uidString[20];
         itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
         printCheckBox(&response, "OPFORCEID", ((String)"Force Opener ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_opener_force_id, false), "");
-        printCheckBox(&response, "OPFORCEKP", "Force Opener Keypad", _preferences->getBool(preference_opener_force_keypad, false), "");
+        printSetting(&response, advancedSettings, advancedSettingsCount, "OPFORCEKP");
     }
 
-    printCheckBox(&response, "DBGCONN", "Enable Nuki connect debug logging", _preferences->getBool(preference_debug_connect, false), "");
-    printCheckBox(&response, "DBGCOMMU", "Enable Nuki communication debug logging", _preferences->getBool(preference_debug_communication, false), "");
-    printCheckBox(&response, "DBGREAD", "Enable Nuki readable data debug logging", _preferences->getBool(preference_debug_readable_data, false), "");
-    printCheckBox(&response, "DBGHEX", "Enable Nuki hex data debug logging", _preferences->getBool(preference_debug_hex_data, false), "");
-    printCheckBox(&response, "DBGCOMM", "Enable Nuki command debug logging", _preferences->getBool(preference_debug_command, false), "");
-    printCheckBox(&response, "DBGHEAP", "Publish free heap over MQTT", _preferences->getBool(preference_publish_debug_info, false), "");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DBGCONN");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DBGCOMMU");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DBGREAD");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DBGHEX");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DBGCOMM");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DBGHEAP");
     response.print("</table>");
 
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
@@ -175,286 +208,7 @@ void WebCfgServer::processAdvancedArgs(PsychicRequest *request, ProcessArgsState
     unsigned char secretKeyKOpn[32] = {0x00};
     String value;
 
-    if(request->hasParam("WEBLOG"))
-    {
-        bool v = isParameterTrue(request, "WEBLOG");
-        if(_preferences->getBool(preference_webserial_enabled, false) != v)
-        {
-            _preferences->putBool(preference_webserial_enabled, v);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("FRCHSTUPD"))
-    {
-        bool v = isParameterTrue(request, "FRCHSTUPD");
-        if(_preferences->getBool(preference_force_hosted_update, false) != v)
-        {
-            _preferences->putBool(preference_force_hosted_update, v);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("TSKNTWK"))
-    {
-        value = request->getParam("TSKNTWK")->value();
-        if(value.toInt() > 12287 && value.toInt() < 65537)
-        {
-            if(_preferences->getInt(preference_task_size_network, NETWORK_TASK_SIZE) != value.toInt())
-            {
-                _preferences->putInt(preference_task_size_network, value.toInt());
-                state.configChanged = true;
-            }
-        }
-    }
-
-    if(request->hasParam("TSKNUKI"))
-    {
-        value = request->getParam("TSKNUKI")->value();
-        if(value.toInt() > 8191 && value.toInt() < 65537)
-        {
-            if(_preferences->getInt(preference_task_size_nuki, NUKI_TASK_SIZE) != value.toInt())
-            {
-                _preferences->putInt(preference_task_size_nuki, value.toInt());
-                state.configChanged = true;
-            }
-        }
-    }
-
-    if(request->hasParam("BLEGENTIMEOUT"))
-    {
-        value = request->getParam("BLEGENTIMEOUT")->value();
-        if(value.toInt() > 2999 && value.toInt() < 65537)
-        {
-            if(_preferences->getInt(preference_ble_general_timeout, 10000) != value.toInt())
-            {
-                _preferences->putInt(preference_ble_general_timeout, value.toInt());
-            }
-        }
-    }
-
-    if(request->hasParam("BLECMDTIMEOUT"))
-    {
-        value = request->getParam("BLECMDTIMEOUT")->value();
-        if(value.toInt() > 2999 && value.toInt() < 65537)
-        {
-            if(_preferences->getInt(preference_ble_command_timeout, 3000) != value.toInt())
-            {
-                _preferences->putInt(preference_ble_command_timeout, value.toInt());
-            }
-        }
-    }
-
-    if(request->hasParam("ALMAX"))
-    {
-        value = request->getParam("ALMAX")->value();
-        if(value.toInt() > 0 && value.toInt() < 101)
-        {
-            if(_preferences->getInt(preference_authlog_max_entries, MAX_AUTHLOG) != value.toInt())
-            {
-                _preferences->putInt(preference_authlog_max_entries, value.toInt());
-            }
-        }
-    }
-
-    if(request->hasParam("KPMAX"))
-    {
-        value = request->getParam("KPMAX")->value();
-        if(value.toInt() > 0 && value.toInt() < 201)
-        {
-            if(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD) != value.toInt())
-            {
-                _preferences->putInt(preference_keypad_max_entries, value.toInt());
-            }
-        }
-    }
-
-    if(request->hasParam("TCMAX"))
-    {
-        value = request->getParam("TCMAX")->value();
-        if(value.toInt() > 0 && value.toInt() < 101)
-        {
-            if(_preferences->getInt(preference_timecontrol_max_entries, MAX_TIMECONTROL) != value.toInt())
-            {
-                _preferences->putInt(preference_timecontrol_max_entries, value.toInt());
-            }
-        }
-    }
-
-    if(request->hasParam("AUTHMAX"))
-    {
-        value = request->getParam("AUTHMAX")->value();
-        if(value.toInt() > 0 && value.toInt() < 101)
-        {
-            if(_preferences->getInt(preference_auth_max_entries, MAX_AUTH) != value.toInt())
-            {
-                _preferences->putInt(preference_auth_max_entries, value.toInt());
-            }
-        }
-    }
-
-    if(request->hasParam("BUFFSIZE"))
-    {
-        value = request->getParam("BUFFSIZE")->value();
-        if(value.toInt() > 4095 && value.toInt() < 65537)
-        {
-            if(_preferences->getInt(preference_buffer_size, CHAR_BUFFER_SIZE) != value.toInt())
-            {
-                _preferences->putInt(preference_buffer_size, value.toInt());
-                state.configChanged = true;
-            }
-        }
-    }
-
-    if(request->hasParam("BTLPRST"))
-    {
-        bool v = isParameterTrue(request, "BTLPRST");
-        if(_preferences->getBool(preference_enable_bootloop_reset, false) != v)
-        {
-            _preferences->putBool(preference_enable_bootloop_reset, v);
-
-        }
-    }
-
-    if(request->hasParam("DISNTWNOCON"))
-    {
-        bool v = isParameterTrue(request, "DISNTWNOCON");
-        if(_preferences->getBool(preference_disable_network_not_connected, false) != v)
-        {
-            _preferences->putBool(preference_disable_network_not_connected, v);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("OTAUPD"))
-    {
-        value = request->getParam("OTAUPD")->value();
-        if(_preferences->getString(preference_ota_updater_url, "") != value)
-        {
-            _preferences->putString(preference_ota_updater_url, value);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("OTAMAIN"))
-    {
-        value = request->getParam("OTAMAIN")->value();
-        if(_preferences->getString(preference_ota_main_url, "") != value)
-        {
-            _preferences->putString(preference_ota_main_url, value);
-
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("SHOWSECRETS"))
-    {
-        bool v = isParameterTrue(request, "SHOWSECRETS");
-        if(_preferences->getBool(preference_show_secrets, false) != v)
-        {
-            _preferences->putBool(preference_show_secrets, v);
-        }
-    }
-
-    if(request->hasParam("DBGCONN"))
-    {
-        bool v = isParameterTrue(request, "DBGCONN");
-        if(_preferences->getBool(preference_debug_connect, false) != v)
-        {
-            _preferences->putBool(preference_debug_connect, v);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DBGCOMMU"))
-    {
-        bool v = isParameterTrue(request, "DBGCOMMU");
-        if(_preferences->getBool(preference_debug_communication, false) != v)
-        {
-            _preferences->putBool(preference_debug_communication, v);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DBGHEAP"))
-    {
-        bool v = isParameterTrue(request, "DBGHEAP");
-        if(_preferences->getBool(preference_publish_debug_info, false) != v)
-        {
-            _preferences->putBool(preference_publish_debug_info, v);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DBGREAD"))
-    {
-        bool v = isParameterTrue(request, "DBGREAD");
-        if(_preferences->getBool(preference_debug_readable_data, false) != v)
-        {
-            _preferences->putBool(preference_debug_readable_data, v);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DBGHEX"))
-    {
-        bool v = isParameterTrue(request, "DBGHEX");
-        if(_preferences->getBool(preference_debug_hex_data, false) != v)
-        {
-            _preferences->putBool(preference_debug_hex_data, v);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DBGCOMM"))
-    {
-        bool v = isParameterTrue(request, "DBGCOMM");
-        if(_preferences->getBool(preference_debug_command, false) != v)
-        {
-            _preferences->putBool(preference_debug_command, v);
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("LCKFORCEID"))
-    {
-        bool v = isParameterTrue(request, "LCKFORCEID");
-        _preferences->putBool(preference_lock_force_id, v);
-    }
-
-    if(request->hasParam("LCKFORCEKP"))
-    {
-        bool v = isParameterTrue(request, "LCKFORCEKP");
-        _preferences->putBool(preference_lock_force_keypad, v);
-    }
-
-    if(request->hasParam("LCKFORCEDS"))
-    {
-        bool v = isParameterTrue(request, "LCKFORCEDS");
-        _preferences->putBool(preference_lock_force_doorsensor, v);
-    }
-
-    if(request->hasParam("OPFORCEID"))
-    {
-        bool v = isParameterTrue(request, "OPFORCEID");
-        _preferences->putBool(preference_opener_force_id, v);
-    }
-
-    if(request->hasParam("OPFORCEKP"))
-    {
-        bool v = isParameterTrue(request, "OPFORCEKP");
-        _preferences->putBool(preference_opener_force_keypad, v);
-    }
+    applySettings(request, advancedSettings, advancedSettingsCount, state);
 
     if(request->hasParam( "LCKMANPAIR") && (value == "1"))
     {

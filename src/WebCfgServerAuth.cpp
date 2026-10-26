@@ -5,6 +5,22 @@
 #include "RestartReason.h"
 extern bool timeSynced;
 
+static const Setting credentialsSettings[] =
+{
+    {"DUOBYPASS", "Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button while logging in", preference_cred_bypass_boot_btn_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"DUOBYPASSHIGH", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO High", preference_cred_bypass_gpio_high, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect},
+    {"DUOBYPASSLOW", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low", preference_cred_bypass_gpio_low, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect},
+    {"DUOAPPROVAL", "Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)", preference_cred_duo_approval, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"CREDLFTM", "Session validity (in seconds)", preference_cred_session_lifetime, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
+    {"CREDLFTMRMBR", "Session validity remember (in hours)", preference_cred_session_lifetime_remember, SettingType::Int, 720, 0, 0, 12, "", SettingEffect::ClearSession},
+    {"CREDDUOLFTM", "Duo Session validity (in seconds)", preference_cred_session_lifetime_duo, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
+    {"CREDDUOLFTMRMBR", "Duo Session validity remember (in hours)", preference_cred_session_lifetime_duo_remember, SettingType::Int, 720, 0, 0, 12, "", SettingEffect::ClearSession},
+    {"CREDTOTPLFTM", "TOTP Session validity (in seconds)", preference_cred_session_lifetime_totp, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
+    {"CREDTOTPLFTMRMBR", "TOTP Session validity remember (in hours)", preference_cred_session_lifetime_totp_remember, SettingType::Int, 720, 0, 0, 12, "", SettingEffect::ClearSession},
+};
+
+static const size_t credentialsSettingsCount = sizeof(credentialsSettings) / sizeof(credentialsSettings[0]);
+
 bool WebCfgServer::isAuthenticated(PsychicRequest *request, int type)
 {
     String cookieKey = "sessionId";
@@ -650,10 +666,10 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printDropDown(&response, "CREDDIGEST", "HTTP Authentication type", String(_preferences->getInt(preference_http_auth_type, 0)), httpAuthOptions, "");
     printInputField(&response, "CREDTRUSTPROXY", "Bypass authentication for reverse proxy with IP", _preferences->getString(preference_bypass_proxy, "").c_str(), 255, "");
     printCheckBox(&response, "DUOENA", "Duo Push authentication enabled", _preferences->getBool(preference_cred_duo_enabled, false), "");
-    printCheckBox(&response, "DUOAPPROVAL", "Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)", _preferences->getBool(preference_cred_duo_approval, false), "");
-    printCheckBox(&response, "DUOBYPASS", "Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button while logging in", _preferences->getBool(preference_cred_bypass_boot_btn_enabled, false), "");
-    printInputField(&response, "DUOBYPASSHIGH", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO High", _preferences->getInt(preference_cred_bypass_gpio_high, -1), 2, "");
-    printInputField(&response, "DUOBYPASSLOW", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low", _preferences->getInt(preference_cred_bypass_gpio_low, -1), 2, "");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOAPPROVAL");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOBYPASS");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOBYPASSHIGH");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOBYPASSLOW");
     printInputField(&response, "DUOHOST", "Duo API hostname", "*", 255, "", true, false);
     printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
     printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
@@ -671,12 +687,12 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     response.print("<tr id=\"admingentr\" ><td><input type=\"button\" id=\"admingen\" onclick=\"document.getElementsByName('CREDADMIN')[0].type='text'; document.getElementsByName('CREDADMIN')[0].value='");
     response.print(randomstr3);
     response.print("'; document.getElementById('admingentr').style.display='none';\" value=\"Generate new Admin key\"></td></tr>");
-    printInputField(&response, "CREDLFTM", "Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime, 3600), 12, "");
-    printInputField(&response, "CREDLFTMRMBR", "Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_remember, 720), 12, "");
-    printInputField(&response, "CREDDUOLFTM", "Duo Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_duo, 3600), 12, "");
-    printInputField(&response, "CREDDUOLFTMRMBR", "Duo Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_duo_remember, 720), 12, "");
-    printInputField(&response, "CREDTOTPLFTM", "TOTP Session validity (in seconds)",  _preferences->getInt(preference_cred_session_lifetime_totp, 3600), 12, "");
-    printInputField(&response, "CREDTOTPLFTMRMBR", "TOTP Session validity remember (in hours)", _preferences->getInt(preference_cred_session_lifetime_totp_remember, 720), 12, "");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDLFTM");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDLFTMRMBR");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDDUOLFTM");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDDUOLFTMRMBR");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDTOTPLFTM");
+    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDTOTPLFTMRMBR");
     response.print("</table>");
     response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
     response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var input_pass2 = document.getElementById(\"inputpass2\").value; var pattern = /^[ -~]*$/; if(input_user == '#' || input_user == '') { return true; } if (input_pass != input_pass2) { alert('Passwords do not match'); return false;} if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
@@ -834,119 +850,7 @@ void WebCfgServer::processCredentialsArgs(PsychicRequest *request, ProcessArgsSt
         }
     }
 
-    if(request->hasParam("DUOBYPASS"))
-    {
-        bool v = isParameterTrue(request, "DUOBYPASS");
-        if(_preferences->getBool(preference_cred_bypass_boot_btn_enabled, false) != v)
-        {
-            _preferences->putBool(preference_cred_bypass_boot_btn_enabled, v);
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DUOBYPASSHIGH"))
-    {
-        value = request->getParam("DUOBYPASSHIGH")->value();
-        if(_preferences->getInt(preference_cred_bypass_gpio_high, -1) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_bypass_gpio_high, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DUOBYPASSLOW"))
-    {
-        value = request->getParam("DUOBYPASSLOW")->value();
-        if(_preferences->getInt(preference_cred_bypass_gpio_low, -1) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_bypass_gpio_low, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DUOAPPROVAL"))
-    {
-        bool v = isParameterTrue(request, "DUOAPPROVAL");
-        if(_preferences->getBool(preference_cred_duo_approval, false) != v)
-        {
-            _preferences->putBool(preference_cred_duo_approval, v);
-            state.restartServicesNoReconnect = true;
-        }
-    }
-
-    if(request->hasParam("CREDLFTM"))
-    {
-        value = request->getParam("CREDLFTM")->value();
-        if(_preferences->getInt(preference_cred_session_lifetime, 3600) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_session_lifetime, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-            state.clearSession = true;
-        }
-    }
-
-    if(request->hasParam("CREDLFTMRMBR"))
-    {
-        value = request->getParam("CREDLFTMRMBR")->value();
-        if(_preferences->getInt(preference_cred_session_lifetime_remember, 720) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_session_lifetime_remember, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-            state.clearSession = true;
-        }
-    }
-
-    if(request->hasParam("CREDDUOLFTM"))
-    {
-        value = request->getParam("CREDDUOLFTM")->value();
-        if(_preferences->getInt(preference_cred_session_lifetime_duo, 3600) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_session_lifetime_duo, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-            state.clearSession = true;
-        }
-    }
-
-    if(request->hasParam("CREDDUOLFTMRMBR"))
-    {
-        value = request->getParam("CREDDUOLFTMRMBR")->value();
-        if(_preferences->getInt(preference_cred_session_lifetime_duo_remember, 720) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_session_lifetime_duo_remember, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-            state.clearSession = true;
-        }
-    }
-
-    if(request->hasParam("CREDTOTPLFTM"))
-    {
-        value = request->getParam("CREDTOTPLFTM")->value();
-        if(_preferences->getInt(preference_cred_session_lifetime_totp, 3600) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_session_lifetime_totp, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-            state.clearSession = true;
-        }
-    }
-
-    if(request->hasParam("CREDTOTPLFTMRMBR"))
-    {
-        value = request->getParam("CREDTOTPLFTMRMBR")->value();
-        if(_preferences->getInt(preference_cred_session_lifetime_totp_remember, 720) != value.toInt())
-        {
-            _preferences->putInt(preference_cred_session_lifetime_totp_remember, value.toInt());
-
-            state.restartServicesNoReconnect = true;
-            state.clearSession = true;
-        }
-    }
+    applySettings(request, credentialsSettings, credentialsSettingsCount, state);
 
     if(request->hasParam("CREDDIGEST"))
     {
