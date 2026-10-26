@@ -46,37 +46,16 @@ const char *NukiOfficial::getMqttPath() const
     return mqttPath;
 }
 
-void NukiOfficial::buildMqttPath(const char *path, char *outPath)
+void NukiOfficial::buildMqttPath(const char* path, char* outPath)
 {
-    int offset = 0;
-    char inPath[181] = {0};
-
-    memcpy(inPath, mqttPath, sizeof(mqttPath));
-
-    for(const char& c : inPath)
-    {
-        if(c == 0x00)
-        {
-            break;
-        }
-        outPath[offset] = c;
-        ++offset;
-    }
-    int i=0;
-    while(outPath[i] != 0x00)
-    {
-        outPath[offset] = path[i];
-        ++i;
-        ++offset;
-    }
-    outPath[i+1] = 0x00;
+    strcpy(outPath, mqttPath);
+    strcat(outPath, path);
 }
 
 bool NukiOfficial::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
-    char prefixedPath[500];
-    buildMqttPath(subPath, prefixedPath);
-    return strcmp(fullPath, prefixedPath) == 0;
+    const size_t prefixLength = strlen(mqttPath);
+    return strncmp(fullPath, mqttPath, prefixLength) == 0 && strcmp(fullPath + prefixLength, subPath) == 0;
 }
 
 void NukiOfficial::onOfficialUpdateReceived(const char *topic, const char *value)

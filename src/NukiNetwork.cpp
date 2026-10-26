@@ -928,30 +928,10 @@ void NukiNetwork::initTopic(const char *prefix, const char *path, const char *va
     _initTopics[pathStr] = valueStr;
 }
 
-void NukiNetwork::buildMqttPath(const char *path, char *outPath)
+void NukiNetwork::buildMqttPath(const char* path, char* outPath)
 {
-    int offset = 0;
-    char inPath[181] = {0};
-
-    memcpy(inPath, _nukiHubPath, sizeof(_nukiHubPath));
-
-    for(const char& c : inPath)
-    {
-        if(c == 0x00)
-        {
-            break;
-        }
-        outPath[offset] = c;
-        ++offset;
-    }
-    int i=0;
-    while(outPath[i] != 0x00)
-    {
-        outPath[offset] = path[i];
-        ++i;
-        ++offset;
-    }
-    outPath[i+1] = 0x00;
+    strcpy(outPath, _nukiHubPath);
+    strcat(outPath, path);
 }
 
 void NukiNetwork::buildMqttPath(char* outPath, std::initializer_list<const char*> paths)
@@ -1714,10 +1694,8 @@ const uint16_t NukiNetwork::subscribe(const char *topic, uint8_t qos)
 
 const bool NukiNetwork::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
-    char prefixedPath[500];
-    buildMqttPath(subPath, prefixedPath);
-
-    return strcmp(fullPath, prefixedPath) == 0;
+    const size_t prefixLength = strlen(_nukiHubPath);
+    return strncmp(fullPath, _nukiHubPath, prefixLength) == 0 && strcmp(fullPath + prefixLength, subPath) == 0;
 }
 
 void NukiNetwork::addReconnectedCallback(std::function<void()> reconnectedCallback)

@@ -193,6 +193,7 @@ private:
     int64_t _nextRssiTs = 0;
     int64_t _lastRssi = 0;
     int64_t _disableBleWatchdogTs = 0;
+    uint32_t _aclPrefs[17] = {0};
     uint32_t _basicOpenerConfigAclPrefs[16];
     uint32_t _advancedOpenerConfigAclPrefs[22];
     std::string _firmwareVersion = "";

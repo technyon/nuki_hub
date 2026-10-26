@@ -176,6 +176,7 @@ void NukiWrapper::readSettings()
     _isUltra = _preferences->getBool(preference_lock_gemini_enabled, false);
     _isDebugging = _preferences->getBool(preference_debug_hex_data, false);
 
+    _preferences->getBytes(preference_acl, &_aclPrefs, sizeof(_aclPrefs));
     _preferences->getBytes(preference_conf_lock_basic_acl, &_basicLockConfigaclPrefs, sizeof(_basicLockConfigaclPrefs));
     _preferences->getBytes(preference_conf_lock_advanced_acl, &_advancedLockConfigaclPrefs, sizeof(_advancedLockConfigaclPrefs));
 
@@ -1356,8 +1357,7 @@ LockActionResult NukiWrapper::onLockActionReceived(const char *value)
         return LockActionResult::UnknownAction;
     }
 
-    uint32_t aclPrefs[17];
-    _preferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    const uint32_t* aclPrefs = nukiInst->_aclPrefs;
 
     if((action == NukiLock::LockAction::Lock && (int)aclPrefs[0] == 1) || (action == NukiLock::LockAction::Unlock && (int)aclPrefs[1] == 1) || (action == NukiLock::LockAction::Unlatch && (int)aclPrefs[2] == 1) || (action == NukiLock::LockAction::LockNgo && (int)aclPrefs[3] == 1) || (action == NukiLock::LockAction::LockNgoUnlatch && (int)aclPrefs[4] == 1) || (action == NukiLock::LockAction::FullLock && (int)aclPrefs[5] == 1) || (action == NukiLock::LockAction::FobAction1 && (int)aclPrefs[6] == 1) || (action == NukiLock::LockAction::FobAction2 && (int)aclPrefs[7] == 1) || (action == NukiLock::LockAction::FobAction3 && (int)aclPrefs[8] == 1))
     {

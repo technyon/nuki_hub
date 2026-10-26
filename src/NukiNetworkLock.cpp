@@ -1695,35 +1695,14 @@ void NukiNetworkLock::setAuthCommandReceivedCallback(void (*authCommandReceivedR
 
 void NukiNetworkLock::buildMqttPath(const char* path, char* outPath)
 {
-    int offset = 0;
-    char inPath[200] = {0};
-
-    memcpy(inPath, _mqttPath, sizeof(_mqttPath));
-
-    for(const char& c : inPath)
-    {
-        if(c == 0x00)
-        {
-            break;
-        }
-        outPath[offset] = c;
-        ++offset;
-    }
-    int i=0;
-    while(outPath[i] != 0x00)
-    {
-        outPath[offset] = path[i];
-        ++i;
-        ++offset;
-    }
-    outPath[i+1] = 0x00;
+    strcpy(outPath, _mqttPath);
+    strcat(outPath, path);
 }
 
 const bool NukiNetworkLock::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
-    char prefixedPath[500];
-    buildMqttPath(subPath, prefixedPath);
-    return strcmp(fullPath, prefixedPath) == 0;
+    const size_t prefixLength = strlen(_mqttPath);
+    return strncmp(fullPath, _mqttPath, prefixLength) == 0 && strcmp(fullPath + prefixLength, subPath) == 0;
 }
 
 void NukiNetworkLock::publishOffAction(const int value)

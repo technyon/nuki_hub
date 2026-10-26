@@ -14,7 +14,6 @@
 #include "util/NukiHelper.h"
 
 NukiOpenerWrapper* nukiOpenerInst;
-Preferences* nukiOpenerPreferences = nullptr;
 
 NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkOpener* network, Gpio* gpio, Preferences* preferences, char* buffer, size_t bufferSize)
     : _deviceName(deviceName),
@@ -161,6 +160,7 @@ void NukiOpenerWrapper::readSettings()
     _forceKeypad = _preferences->getBool(preference_opener_force_keypad, false);
     _forceId = _preferences->getBool(preference_opener_force_id, false);
 
+    _preferences->getBytes(preference_acl, &_aclPrefs, sizeof(_aclPrefs));
     _preferences->getBytes(preference_conf_opener_basic_acl, &_basicOpenerConfigAclPrefs, sizeof(_basicOpenerConfigAclPrefs));
     _preferences->getBytes(preference_conf_opener_advanced_acl, &_advancedOpenerConfigAclPrefs, sizeof(_advancedOpenerConfigAclPrefs));
 
@@ -1179,19 +1179,14 @@ LockActionResult NukiOpenerWrapper::onLockActionReceivedCallback(const char *val
         return LockActionResult::UnknownAction;
     }
 
-    nukiOpenerPreferences = new Preferences();
-    nukiOpenerPreferences->begin("nukihub", true);
-    uint32_t aclPrefs[17];
-    nukiOpenerPreferences->getBytes(preference_acl, &aclPrefs, sizeof(aclPrefs));
+    const uint32_t* aclPrefs = nukiOpenerInst->_aclPrefs;
 
     if((action == NukiOpener::LockAction::ActivateRTO && (int)aclPrefs[9] == 1) || (action == NukiOpener::LockAction::DeactivateRTO && (int)aclPrefs[10] == 1) || (action == NukiOpener::LockAction::ElectricStrikeActuation && (int)aclPrefs[11] == 1) || (action == NukiOpener::LockAction::ActivateCM && (int)aclPrefs[12] == 1) || (action == NukiOpener::LockAction::DeactivateCM && (int)aclPrefs[13] == 1) || (action == NukiOpener::LockAction::FobAction1 && (int)aclPrefs[14] == 1) || (action == NukiOpener::LockAction::FobAction2 && (int)aclPrefs[15] == 1) || (action == NukiOpener::LockAction::FobAction3 && (int)aclPrefs[16] == 1))
     {
-        nukiOpenerPreferences->end();
         nukiOpenerInst->_nextLockAction = action;
         return LockActionResult::Success;
     }
 
-    nukiOpenerPreferences->end();
     return LockActionResult::AccessDenied;
 }
 
