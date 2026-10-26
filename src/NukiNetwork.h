@@ -86,7 +86,7 @@ public:
                           const String& stateClass,
                           const String& entityCat,
                           const String& commandTopic,
-                          std::vector<std::pair<char*, char*>> additionalEntries
+                          const std::vector<std::pair<const char*, const char*>>& additionalEntries
                          );
     void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
 
