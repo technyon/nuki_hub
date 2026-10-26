@@ -1698,3 +1698,110 @@ bool WebCfgServer::processArgs(PsychicRequest *request, PsychicResponse* resp, S
     return state.configChanged;
 }
 #endif
+
+#ifndef NUKI_HUB_UPDATER
+void WebCfgServer::applySettings(PsychicRequest *request, const Setting* settings, size_t count, ProcessArgsState& state)
+{
+    for(size_t i = 0; i < count; i++)
+    {
+        const Setting& setting = settings[i];
+
+        if(!request->hasParam(setting.token))
+        {
+            continue;
+        }
+
+        String value = request->getParam(setting.token)->value();
+        bool changed = false;
+
+        switch(setting.type)
+        {
+        case SettingType::Bool:
+        {
+            bool v = isParameterTrue(request, setting.token);
+            if(_preferences->getBool(setting.preference, setting.defaultValue != 0) != v)
+            {
+                _preferences->putBool(setting.preference, v);
+                changed = true;
+            }
+            break;
+        }
+        case SettingType::Int:
+        {
+            int v = value.toInt();
+            if((setting.minValue != 0 || setting.maxValue != 0) && (v < setting.minValue || v > setting.maxValue))
+            {
+                break;
+            }
+            if(_preferences->getInt(setting.preference, setting.defaultValue) != v)
+            {
+                _preferences->putInt(setting.preference, v);
+                changed = true;
+            }
+            break;
+        }
+        case SettingType::String:
+            if(_preferences->getString(setting.preference, "") != value)
+            {
+                _preferences->putString(setting.preference, value);
+                changed = true;
+            }
+            break;
+        }
+
+        if(!changed)
+        {
+            continue;
+        }
+
+        Log->print("Setting changed: ");
+        Log->println(setting.token);
+
+        switch(setting.effect)
+        {
+        case SettingEffect::ConfigChanged:
+            state.configChanged = true;
+            break;
+        case SettingEffect::RestartReconnect:
+            state.restartServicesReconnect = true;
+            break;
+        case SettingEffect::RestartNoReconnect:
+            state.restartServicesNoReconnect = true;
+            break;
+        case SettingEffect::ClearSession:
+            state.restartServicesNoReconnect = true;
+            state.clearSession = true;
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void WebCfgServer::printSetting(PsychicStreamResponse* response, const Setting* settings, size_t count, const char* token)
+{
+    for(size_t i = 0; i < count; i++)
+    {
+        const Setting& setting = settings[i];
+
+        if(strcmp(setting.token, token) != 0)
+        {
+            continue;
+        }
+
+        switch(setting.type)
+        {
+        case SettingType::Bool:
+            printCheckBox(response, setting.token, setting.label, _preferences->getBool(setting.preference, setting.defaultValue != 0), setting.args);
+            break;
+        case SettingType::Int:
+            printInputField(response, setting.token, setting.label, _preferences->getInt(setting.preference, setting.defaultValue), setting.maxLength, setting.args);
+            break;
+        case SettingType::String:
+            printInputField(response, setting.token, setting.label, _preferences->getString(setting.preference).c_str(), setting.maxLength, setting.args);
+            break;
+        }
+        return;
+    }
+}
+#endif

@@ -4,6 +4,7 @@
 #include <PsychicHttp.h>
 #include "enums/NukiPinState.h"
 #include "WebSessionProvider.h"
+#include "WebCfgSettings.h"
 
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
 #include <PsychicHttpsServer.h>
@@ -66,6 +67,8 @@ private:
         bool restartServicesNoReconnect = false;
         bool restartServicesReconnect = false;
     };
+    void applySettings(PsychicRequest *request, const Setting* settings, size_t count, ProcessArgsState& state);
+    void printSetting(PsychicStreamResponse* response, const Setting* settings, size_t count, const char* token);
     void processMqttArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
     void processNetworkArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
     void processCredentialsArgs(PsychicRequest *request, ProcessArgsState& state, String& message);

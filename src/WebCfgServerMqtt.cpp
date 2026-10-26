@@ -7,6 +7,22 @@
 #include "SPIFFS.h"
 
 #ifndef NUKI_HUB_UPDATER
+static const Setting mqttSettings[] =
+{
+    {"MQTTSERVER", "MQTT Broker", preference_mqtt_broker, SettingType::String, 0, 0, 0, 100, "", SettingEffect::RestartReconnect},
+    {"MQTTPORT", "MQTT Broker port", preference_mqtt_broker_port, SettingType::Int, 0, 0, 0, 5, "", SettingEffect::RestartReconnect},
+    {"MQTTPATH", "MQTT Nuki Hub Path", preference_mqtt_lock_path, SettingType::String, 0, 0, 0, 180, "", SettingEffect::RestartReconnect},
+    {"OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", preference_opener_continuous_mode, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", preference_network_timeout, SettingType::Int, 60, 0, 0, 5, "", SettingEffect::None},
+    {"MQTTLOG", "Enable MQTT logging", preference_mqtt_log_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::ConfigChanged},
+    {"MQTTSENA", "Enable MQTT SSL", preference_mqtt_ssl_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"UPDATEMQTT", "Allow updating using MQTT", preference_update_from_mqtt, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", preference_query_interval_hybrid_lockstate, SettingType::Int, 600, 0, 0, 5, "", SettingEffect::None},
+    {"DISNONJSON", "Disable some extraneous non-JSON topics", preference_disable_non_json, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+};
+
+static const size_t mqttSettingsCount = sizeof(mqttSettings) / sizeof(mqttSettings[0]);
+
 esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     PsychicStreamResponse response(resp, "text/html");
@@ -16,11 +32,11 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Basic MQTT Configuration</h3>");
     response.print("<table>");
-    printInputField(&response, "MQTTSERVER", "MQTT Broker", _preferences->getString(preference_mqtt_broker).c_str(), 100, "");
-    printInputField(&response, "MQTTPORT", "MQTT Broker port", _preferences->getInt(preference_mqtt_broker_port), 5, "");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTSERVER");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTPORT");
     printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 40, "", true, true);
-    printInputField(&response, "MQTTPATH", "MQTT Nuki Hub Path", _preferences->getString(preference_mqtt_lock_path).c_str(), 180, "");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTPATH");
     printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
     response.print("</table><br>");
 
@@ -30,19 +46,19 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     //printCheckBox(&response, "HADEVDISC", "Use Home Assistant device based discovery (2024.11+)", _preferences->getBool(preference_hass_device_discovery), "");
     if(_preferences->getBool(preference_opener_enabled, false))
     {
-        printCheckBox(&response, "OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", _preferences->getBool(preference_opener_continuous_mode), "");
+        printSetting(&response, mqttSettings, mqttSettingsCount, "OPENERCONT");
     }
-    printCheckBox(&response, "MQTTSENA", "Enable MQTT SSL", _preferences->getBool(preference_mqtt_ssl_enabled, false), "");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTSENA");
     response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><button title=\"Set MQTT SSL CA Certificate\" onclick=\" window.open('/get?page=mqttcaconfig', '_self'); return false;\">Change</button></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");
-    printInputField(&response, "NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", _preferences->getInt(preference_network_timeout), 5, "");
-    printCheckBox(&response, "MQTTLOG", "Enable MQTT logging", _preferences->getBool(preference_mqtt_log_enabled), "");
-    printCheckBox(&response, "UPDATEMQTT", "Allow updating using MQTT", _preferences->getBool(preference_update_from_mqtt), "");
-    printCheckBox(&response, "DISNONJSON", "Disable some extraneous non-JSON topics", _preferences->getBool(preference_disable_non_json), "");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "NETTIMEOUT");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTLOG");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "UPDATEMQTT");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "DISNONJSON");
     printCheckBox(&response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid_enabled), "");
     printCheckBox(&response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
-    printInputField(&response, "HYBRIDTIMER", "Time between status updates when official MQTT is offline (seconds)", _preferences->getInt(preference_query_interval_hybrid_lockstate), 5, "");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "HYBRIDTIMER");
     printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
     printCheckBox(&response, "HYBRIDREBOOT", "Reboot Nuki lock on official MQTT failure", _preferences->getBool(preference_hybrid_reboot_on_disconnect, false), "");
     response.print("</table>");
@@ -168,27 +184,7 @@ void WebCfgServer::processMqttArgs(PsychicRequest *request, ProcessArgsState& st
     bool clearMqttCredentials = false;
     String value;
 
-    if(request->hasParam("MQTTSERVER"))
-    {
-        value = request->getParam("MQTTSERVER")->value();
-        if(_preferences->getString(preference_mqtt_broker, "") != value)
-        {
-            _preferences->putString(preference_mqtt_broker, value);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("MQTTPORT"))
-    {
-        value = request->getParam("MQTTPORT")->value();
-        if(_preferences->getInt(preference_mqtt_broker_port, 0) !=  value.toInt())
-        {
-            _preferences->putInt(preference_mqtt_broker_port,  value.toInt());
-
-            state.restartServicesReconnect = true;
-        }
-    }
+    applySettings(request, mqttSettings, mqttSettingsCount, state);
 
     if(request->hasParam("MQTTUSER"))
     {
@@ -218,17 +214,6 @@ void WebCfgServer::processMqttArgs(PsychicRequest *request, ProcessArgsState& st
                 _preferences->putString(preference_mqtt_password, value);
                 state.restartServicesReconnect = true;
             }
-        }
-    }
-
-    if(request->hasParam("MQTTPATH"))
-    {
-        value = request->getParam("MQTTPATH")->value();
-        if(_preferences->getString(preference_mqtt_lock_path, "") != value)
-        {
-            _preferences->putString(preference_mqtt_lock_path, value);
-
-            state.restartServicesReconnect = true;
         }
     }
 
@@ -384,57 +369,6 @@ void WebCfgServer::processMqttArgs(PsychicRequest *request, ProcessArgsState& st
         }
     }
 
-    if(request->hasParam("OPENERCONT"))
-    {
-        bool v = isParameterTrue(request, "OPENERCONT");
-        if(_preferences->getBool(preference_opener_continuous_mode, false) != v)
-        {
-            _preferences->putBool(preference_opener_continuous_mode, v);
-        }
-    }
-
-    if(request->hasParam("NETTIMEOUT"))
-    {
-        value = request->getParam("NETTIMEOUT")->value();
-        if(_preferences->getInt(preference_network_timeout, 60) != value.toInt())
-        {
-            _preferences->putInt(preference_network_timeout, value.toInt());
-
-        }
-    }
-
-    if(request->hasParam("MQTTLOG"))
-    {
-        bool v = isParameterTrue(request, "MQTTLOG");
-        if(_preferences->getBool(preference_mqtt_log_enabled, false) != v)
-        {
-            _preferences->putBool(preference_mqtt_log_enabled, v);
-            state.configChanged = true;
-        }
-    }
-
-    if(request->hasParam("MQTTSENA"))
-    {
-        bool v = isParameterTrue(request, "MQTTSENA");
-        if(_preferences->getBool(preference_mqtt_ssl_enabled, false) != v)
-        {
-            _preferences->putBool(preference_mqtt_ssl_enabled, v);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("UPDATEMQTT"))
-    {
-        bool v = isParameterTrue(request, "UPDATEMQTT");
-        if(_preferences->getBool(preference_update_from_mqtt, false) != v)
-        {
-            _preferences->putBool(preference_update_from_mqtt, v);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
     if(request->hasParam("OFFHYBRID"))
     {
         bool v = isParameterTrue(request, "OFFHYBRID");
@@ -463,16 +397,6 @@ void WebCfgServer::processMqttArgs(PsychicRequest *request, ProcessArgsState& st
         }
     }
 
-    if(request->hasParam("HYBRIDTIMER"))
-    {
-        value = request->getParam("HYBRIDTIMER")->value();
-        if(_preferences->getInt(preference_query_interval_hybrid_lockstate, 600) != value.toInt())
-        {
-            _preferences->putInt(preference_query_interval_hybrid_lockstate, value.toInt());
-
-        }
-    }
-
     if(request->hasParam("HYBRIDRETRY"))
     {
         value = request->getParam("HYBRIDRETRY")->value();
@@ -489,17 +413,6 @@ void WebCfgServer::processMqttArgs(PsychicRequest *request, ProcessArgsState& st
         if(_preferences->getBool(preference_hybrid_reboot_on_disconnect, false) != v)
         {
             _preferences->putBool(preference_hybrid_reboot_on_disconnect, v);
-
-            state.restartServicesReconnect = true;
-        }
-    }
-
-    if(request->hasParam("DISNONJSON"))
-    {
-        bool v = isParameterTrue(request, "DISNONJSON");
-        if(_preferences->getBool(preference_disable_non_json, false) != v)
-        {
-            _preferences->putBool(preference_disable_non_json, v);
 
             state.restartServicesReconnect = true;
         }
