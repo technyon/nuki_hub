@@ -1637,6 +1637,11 @@ const std::string NukiWrapper::firmwareVersion() const
     return _firmwareVersion;
 }
 
+NukiLock::NukiLock& NukiWrapper::nukiDevice()
+{
+    return _nukiLock;
+}
+
 const std::string NukiWrapper::hardwareVersion() const
 {
     return _hardwareVersion;

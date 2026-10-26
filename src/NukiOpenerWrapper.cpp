@@ -1354,6 +1354,11 @@ const std::string NukiOpenerWrapper::firmwareVersion() const
     return _firmwareVersion;
 }
 
+NukiOpener::NukiOpener& NukiOpenerWrapper::nukiDevice()
+{
+    return _nukiOpener;
+}
+
 const std::string NukiOpenerWrapper::hardwareVersion() const
 {
     return _hardwareVersion;

@@ -12,10 +12,42 @@
 #include "NukiOfficial.h"
 #include "EspMillis.h"
 #include "util/NukiRetryHandler.h"
+#include "util/NukiHelper.h"
+#include <NukiLockUtils.h>
+#include "NukiCommandHandler.h"
 
-class NukiWrapper : public Nuki::SmartlockEventHandler
+struct NukiLockCommandTraits
+{
+    using KeypadEntry = NukiLock::KeypadEntry;
+    using NewKeypadEntry = NukiLock::NewKeypadEntry;
+    using UpdatedKeypadEntry = NukiLock::UpdatedKeypadEntry;
+    using AuthorizationEntry = NukiLock::AuthorizationEntry;
+    using NewAuthorizationEntry = NukiLock::NewAuthorizationEntry;
+    using UpdatedAuthorizationEntry = NukiLock::UpdatedAuthorizationEntry;
+    using TimeControlEntry = NukiLock::TimeControlEntry;
+    using NewTimeControlEntry = NukiLock::NewTimeControlEntry;
+    using LockAction = NukiLock::LockAction;
+
+    static void cmdResultToString(const Nuki::CmdResult result, char* str)
+    {
+        NukiLock::cmdResultToString(result, str);
+    }
+
+    static void printCommandResult(const Nuki::CmdResult result)
+    {
+        NukiHelper::printCommandResult(result);
+    }
+
+    static LockAction lockActionToEnum(const char* str)
+    {
+        return NukiHelper::lockActionToEnum(str);
+    }
+};
+
+class NukiWrapper : public Nuki::SmartlockEventHandler, public NukiCommandHandler<NukiWrapper, NukiLockCommandTraits>
 {
 public:
+    friend class NukiCommandHandler<NukiWrapper, NukiLockCommandTraits>;
     NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, BleScanner::Scanner* scanner, NukiNetworkLock* network, NukiOfficial* nukiOfficial, Gpio* gpio, Preferences* preferences, char* buffer, size_t bufferSize);
     virtual ~NukiWrapper();
 
@@ -48,6 +80,7 @@ public:
     const uint8_t restartController() const;
 
     const std::string firmwareVersion() const;
+    NukiLock::NukiLock& nukiDevice();
     const std::string hardwareVersion() const;
 
 
@@ -71,7 +104,6 @@ private:
     void checkLockStateUpdate(const int64_t& ts, const uint8_t& queryCommands);
     void checkQueries(const int64_t& ts, const uint8_t& queryCommands);
 
-    void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void onConfigUpdateReceived(const char* value);
     void updateConfigBool(JsonDocument& jsonResult, const char* key, const char* value, uint8_t current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(bool)> setter);
@@ -79,9 +111,6 @@ private:
     void onKeypadJsonCommandReceived(const char* value);
     void checkKeypadJsonCommand();
     void publishKeypadCache();
-    void executeKeypadJsonCommand(const char* value);
-    void onTimeControlCommandReceived(const char* value);
-    void onAuthCommandReceived(const char* value);
     void onGpioActionReceived(const GpioAction& action);
     void checkGpioAction();
 
