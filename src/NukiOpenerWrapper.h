@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include "NukiOpener.h"
 #include "NukiNetworkOpener.h"
 #include "NukiOpenerConstants.h"
@@ -65,6 +66,8 @@ private:
 
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
     void onConfigUpdateReceived(const char* value);
+    void updateConfigBool(JsonDocument& jsonResult, const char* key, const char* value, uint8_t current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(bool)> setter);
+    void updateConfigInt(JsonDocument& jsonResult, const char* key, const char* value, int min, int max, int current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(int)> setter);
     void onKeypadJsonCommandReceived(const char* value);
     void checkKeypadJsonCommand();
     void publishKeypadCache();
