@@ -83,6 +83,12 @@ public:
     NukiLock::NukiLock& nukiDevice();
     const std::string name() const;
     LockActionResult onLockActionReceived(const char* value);
+    void onConfigUpdateReceived(const char* value);
+    void onKeypadJsonCommandReceived(const char* value);
+    void requestUpdate(uint8_t updates);
+    const std::list<NukiLock::KeypadEntry>& keypadEntries() const;
+    const std::list<NukiLock::TimeControlEntry>& timeControlEntries() const;
+    const std::list<NukiLock::AuthorizationEntry>& authEntries() const;
     const std::string hardwareVersion() const;
 
 
@@ -106,10 +112,8 @@ private:
     void checkQueries(const int64_t& ts, const uint8_t& queryCommands);
 
     void onOfficialUpdateReceived(const char* topic, const char* value);
-    void onConfigUpdateReceived(const char* value);
     void updateConfigBool(JsonDocument& jsonResult, const char* key, const char* value, uint8_t current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(bool)> setter);
     void updateConfigInt(JsonDocument& jsonResult, const char* key, const char* value, int min, int max, int current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(int)> setter);
-    void onKeypadJsonCommandReceived(const char* value);
     void checkKeypadJsonCommand();
     void publishKeypadCache();
     void onGpioActionReceived(const GpioAction& action);
@@ -218,6 +222,9 @@ private:
     DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
     volatile NukiLock::LockAction _nextLockAction = (NukiLock::LockAction)0xff;
     std::list<NukiLock::KeypadEntry> _keypadEntriesCache;
+    std::list<NukiLock::TimeControlEntry> _timeControlEntriesCache;
+    std::list<NukiLock::AuthorizationEntry> _authEntriesCache;
+    volatile uint8_t _requestedUpdates = 0;
     std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;

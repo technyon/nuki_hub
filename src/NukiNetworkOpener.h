@@ -43,6 +43,8 @@ public:
     void publishKeypadJsonCommandResult(const char* result);
     void publishTimeControlCommandResult(const char* result);
     void publishAuthCommandResult(const char* result);
+    const String& lastCommandResult() const;
+    uint32_t commandResultCounter() const;
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* value));
@@ -72,7 +74,11 @@ private:
     NukiNetwork* _network = nullptr;
     NukiPublisher* _nukiPublisher = nullptr;
 
+    void recordCommandResult(const char* result);
+
     std::map<uint32_t, String> _authEntries;
+    String _lastCommandResult;
+    uint32_t _commandResultCounter = 0;
     char _mqttPath[200] = {0};
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;

@@ -667,7 +667,7 @@ void startWebServer()
                     webCfgServerSSL->initialize();
                     if(preferences->getBool(preference_bridge_api_enabled, false))
                     {
-                        bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkOpener, preferences);
+                        bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkLock, networkOpener, preferences, importExport);
                         bridgeApi->initialize(psychicSSLServer);
                     }
                     psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
@@ -694,7 +694,7 @@ void startWebServer()
         webCfgServer->initialize();
         if(preferences->getBool(preference_bridge_api_enabled, false))
         {
-            bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkOpener, preferences);
+            bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkLock, networkOpener, preferences, importExport);
             bridgeApi->initialize(psychicServer);
         }
         psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)

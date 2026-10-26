@@ -758,7 +758,13 @@ Enable the API and set a token on the Network Configuration page. The API is ser
 Supported endpoints: `/info`, `/list`, `/lockState`, `/lockAction`, `/lock`, `/unlock`, `/callback/add`, `/callback/list`, `/callback/remove`, `/reboot`, `/log` (always empty) and `/fwupdate` (always unsuccessful, use the Web Configurator to update). The opener state includes `ringactionState` and `ringactionTimestamp` of the last detected ring.<br>
 The token can be sent in plain text (`token=`) or hashed (`ts=`, `rnr=`, `hash=`) as described in the Nuki Bridge API documentation. Lock actions use the Nuki Bridge numbering (lock: 1 unlock, 2 lock, 3 unlatch, 4 lock 'n' go, 5 lock 'n' go with unlatch; opener: 1 activate RTO, 2 deactivate RTO, 3 electric strike actuation, 4 activate continuous mode, 5 deactivate continuous mode).<br>
 Up to three callback URLs can be registered; Nuki Hub posts the lock state JSON to all of them whenever the state of the lock or opener changes.<br>
-Pairing, unpairing, the authorization log and firmware updates are not available through this API, use the Web Configurator or MQTT for those.
+Pairing, unpairing, the authorization log and firmware updates are not available through this API, use the Web Configurator or MQTT for those.<br>
+<br>
+On top of the Nuki Bridge endpoints, Nuki Hub adds a REST API with the same token and the same `nukiId`/`deviceType` selection:<br>
+- `/keypad`, `/timecontrol`, `/authorization`: return the entries last read from the device as `{"success": true, "entries": [...]}`. Keypad codes are only included when "Publish keypad codes" is enabled.<br>
+- `/keypad/add`, `/keypad/update`, `/keypad/delete`, `/keypad/check`, `/timecontrol/add`, `/timecontrol/update`, `/timecontrol/delete`, `/authorization/update`, `/authorization/delete` and `/config/update`: the query parameters of the matching MQTT JSON command are passed on (for example `/keypad/add?name=Guest&code=482913&enabled=1`, `/timecontrol/add?weekdays=mon,tue&time=08:00&lockAction=lock`); a complete command object can be sent as `json=` instead, which is how `/config/update?json={"ledBrightness":3}` works, the call waits for the device and returns `{"success": true|false, "result": "<command result>"}`. Keypad, time control and authorization control have to be enabled on the Access Level Configuration page, as for MQTT.<br>
+- `/refresh?what=state,config,keypad,timecontrol,auth`: asks the hub to read the given data from the device again.<br>
+- `/settings` (GET): the configuration export, with `sensitive=1` and `pairing=1` as on the Import/Export page. `/settings` (POST, JSON body): imports a configuration export, a reboot applies it.
 
 ## Upgrading using Over-the-air Update (OTA)
 

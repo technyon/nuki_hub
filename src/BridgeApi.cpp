@@ -6,13 +6,25 @@
 #include "RestartReason.h"
 #include "esp_http_client.h"
 #include "mbedtls/sha256.h"
+#include "NukiJson.h"
+#include "PsramJsonAllocator.h"
+#include "UpdateRequest.h"
+#include "PreferencesKeys.h"
 
-BridgeApi::BridgeApi(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, NukiNetworkOpener* networkOpener, Preferences* preferences)
+#define REST_KIND_KEYPAD 0
+#define REST_KIND_TIMECONTROL 1
+#define REST_KIND_AUTH 2
+#define REST_KIND_CONFIG 3
+#define REST_COMMAND_TIMEOUT_MS 20000
+
+BridgeApi::BridgeApi(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, NukiNetworkLock* networkLock, NukiNetworkOpener* networkOpener, Preferences* preferences, ImportExport* importExport)
     : _nuki(nuki),
       _nukiOpener(nukiOpener),
       _network(network),
+      _networkLock(networkLock),
       _networkOpener(networkOpener),
-      _preferences(preferences)
+      _preferences(preferences),
+      _importExport(importExport)
 {
 }
 
@@ -301,7 +313,358 @@ void BridgeApi::initialize(PsychicHttpServer* server)
         return sendJson(resp, json, 200);
     });
 
+    initializeRestApi(server);
+
     Log->println("Nuki Bridge HTTP API enabled");
+}
+
+void BridgeApi::initializeRestApi(PsychicHttpServer* server)
+{
+    server->on("/keypad", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return sendEntries(request, resp, REST_KIND_KEYPAD);
+    });
+    server->on("/keypad/add", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_KEYPAD, "add");
+    });
+    server->on("/keypad/update", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_KEYPAD, "update");
+    });
+    server->on("/keypad/delete", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_KEYPAD, "delete");
+    });
+    server->on("/keypad/check", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_KEYPAD, "check");
+    });
+    server->on("/timecontrol", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return sendEntries(request, resp, REST_KIND_TIMECONTROL);
+    });
+    server->on("/timecontrol/add", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_TIMECONTROL, "add");
+    });
+    server->on("/timecontrol/update", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_TIMECONTROL, "update");
+    });
+    server->on("/timecontrol/delete", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_TIMECONTROL, "delete");
+    });
+    server->on("/authorization", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return sendEntries(request, resp, REST_KIND_AUTH);
+    });
+    server->on("/authorization/update", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_AUTH, "update");
+    });
+    server->on("/authorization/delete", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_AUTH, "delete");
+    });
+    server->on("/config/update", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return runCommand(request, resp, REST_KIND_CONFIG, "");
+    });
+
+    server->on("/refresh", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        if(!checkToken(request))
+        {
+            return sendUnauthorized(resp);
+        }
+
+        int type = deviceType(request);
+        JsonDocument json;
+
+        if(type < 0 || !request->hasParam("what"))
+        {
+            json["success"] = false;
+            return sendJson(resp, json, type < 0 ? 404 : 400);
+        }
+
+        String what = request->getParam("what")->value();
+        uint8_t updates = 0;
+        if(what.indexOf("state") >= 0)
+        {
+            updates |= UPDATE_REQUEST_LOCKSTATE;
+        }
+        if(what.indexOf("config") >= 0)
+        {
+            updates |= UPDATE_REQUEST_CONFIG;
+        }
+        if(what.indexOf("keypad") >= 0)
+        {
+            updates |= UPDATE_REQUEST_KEYPAD;
+        }
+        if(what.indexOf("timecontrol") >= 0)
+        {
+            updates |= UPDATE_REQUEST_TIMECONTROL;
+        }
+        if(what.indexOf("auth") >= 0)
+        {
+            updates |= UPDATE_REQUEST_AUTH;
+        }
+
+        if(type == 2)
+        {
+            _nukiOpener->requestUpdate(updates);
+        }
+        else
+        {
+            _nuki->requestUpdate(updates);
+        }
+
+        json["success"] = updates != 0;
+        return sendJson(resp, json, updates != 0 ? 200 : 400);
+    });
+
+    server->on("/settings", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        if(!checkToken(request))
+        {
+            return sendUnauthorized(resp);
+        }
+
+        bool sensitive = request->hasParam("sensitive") && request->getParam("sensitive")->value() == "1";
+        bool pairing = request->hasParam("pairing") && request->getParam("pairing")->value() == "1";
+        PsramJsonAllocator allocator;
+        JsonDocument json(&allocator);
+        _importExport->exportNukiHubJson(json, sensitive, pairing, _nuki != nullptr, _nukiOpener != nullptr);
+        return sendJson(resp, json, 200);
+    });
+
+    server->on("/settings", HTTP_POST, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        if(!checkToken(request))
+        {
+            return sendUnauthorized(resp);
+        }
+
+        JsonDocument json;
+        PsramJsonAllocator allocator;
+        JsonDocument settings(&allocator);
+        String body = request->hasParam("settings") ? request->getParam("settings")->value() : request->body();
+
+        if(deserializeJson(settings, body) || !settings.is<JsonObject>())
+        {
+            json["success"] = false;
+            json["result"] = "invalidJson";
+            return sendJson(resp, json, 400);
+        }
+
+        _importExport->importJson(settings);
+        json["success"] = true;
+        json["rebootRequired"] = true;
+        return sendJson(resp, json, 200);
+    });
+}
+
+esp_err_t BridgeApi::sendEntries(PsychicRequest* request, PsychicResponse* resp, int kind)
+{
+    if(!checkToken(request))
+    {
+        return sendUnauthorized(resp);
+    }
+
+    int type = deviceType(request);
+    PsramJsonAllocator allocator;
+    JsonDocument json(&allocator);
+
+    if(type < 0)
+    {
+        json["success"] = false;
+        return sendJson(resp, json, 404);
+    }
+
+    JsonArray entries = json["entries"].to<JsonArray>();
+    bool includeCode = _preferences->getBool(preference_keypad_publish_code, false);
+
+    if(kind == REST_KIND_KEYPAD)
+    {
+        if(type == 2)
+        {
+            for(const auto& entry : _nukiOpener->keypadEntries())
+            {
+                NukiJson::keypadEntry(entry, entries.add<JsonVariant>(), includeCode);
+            }
+        }
+        else
+        {
+            for(const auto& entry : _nuki->keypadEntries())
+            {
+                NukiJson::keypadEntry(entry, entries.add<JsonVariant>(), includeCode);
+            }
+        }
+    }
+    else if(kind == REST_KIND_TIMECONTROL)
+    {
+        if(type == 2)
+        {
+            for(const auto& entry : _nukiOpener->timeControlEntries())
+            {
+                NukiJson::timeControlEntry(entry, entries.add<JsonVariant>(), NukiOpener::lockactionToString);
+            }
+        }
+        else
+        {
+            for(const auto& entry : _nuki->timeControlEntries())
+            {
+                NukiJson::timeControlEntry(entry, entries.add<JsonVariant>(), NukiLock::lockactionToString);
+            }
+        }
+    }
+    else
+    {
+        if(type == 2)
+        {
+            for(const auto& entry : _nukiOpener->authEntries())
+            {
+                NukiJson::authEntry(entry, entries.add<JsonVariant>());
+            }
+        }
+        else
+        {
+            for(const auto& entry : _nuki->authEntries())
+            {
+                NukiJson::authEntry(entry, entries.add<JsonVariant>());
+            }
+        }
+    }
+
+    json["success"] = true;
+    json["nukiId"] = _preferences->getUInt(type == 2 ? preference_nuki_id_opener : preference_nuki_id_lock, 0);
+    json["deviceType"] = type;
+    return sendJson(resp, json, 200);
+}
+
+void BridgeApi::commandJson(PsychicRequest* request, int kind, const char* action, String& out)
+{
+    static const char* keypadKeys[] = {"codeId", "code", "name", "enabled", "timeLimited", "allowedFrom", "allowedUntil", "allowedWeekdays", "allowedFromTime", "allowedUntilTime", nullptr};
+    static const char* timeControlKeys[] = {"entryId", "enabled", "weekdays", "time", "lockAction", nullptr};
+    static const char* authKeys[] = {"authId", "name", "enabled", "remoteAllowed", "timeLimited", "allowedFrom", "allowedUntil", "allowedWeekdays", "allowedFromTime", "allowedUntilTime", nullptr};
+
+    JsonDocument json;
+
+    if(request->hasParam("json"))
+    {
+        deserializeJson(json, request->getParam("json")->value());
+        if(!json.is<JsonObject>())
+        {
+            json.to<JsonObject>();
+        }
+    }
+
+    if(strlen(action) > 0)
+    {
+        json["action"] = action;
+    }
+
+    const char** keys = kind == REST_KIND_KEYPAD ? keypadKeys : kind == REST_KIND_TIMECONTROL ? timeControlKeys : kind == REST_KIND_AUTH ? authKeys : nullptr;
+
+    for(int i = 0; keys != nullptr && keys[i] != nullptr; i++)
+    {
+        if(request->hasParam(keys[i]))
+        {
+            json[keys[i]] = request->getParam(keys[i])->value();
+        }
+    }
+
+    serializeJson(json, out);
+}
+
+uint32_t BridgeApi::resultCounter(int deviceType)
+{
+    return deviceType == 2 ? _networkOpener->commandResultCounter() : _networkLock->commandResultCounter();
+}
+
+const String& BridgeApi::lastResult(int deviceType)
+{
+    return deviceType == 2 ? _networkOpener->lastCommandResult() : _networkLock->lastCommandResult();
+}
+
+void BridgeApi::dispatchCommand(int deviceType, int kind, const char* json)
+{
+    if(deviceType == 2)
+    {
+        switch(kind)
+        {
+        case REST_KIND_KEYPAD:
+            _nukiOpener->onKeypadJsonCommandReceived(json);
+            break;
+        case REST_KIND_TIMECONTROL:
+            _nukiOpener->onTimeControlCommandReceived(json);
+            break;
+        case REST_KIND_AUTH:
+            _nukiOpener->onAuthCommandReceived(json);
+            break;
+        default:
+            _nukiOpener->onConfigUpdateReceived(json);
+        }
+        return;
+    }
+
+    switch(kind)
+    {
+    case REST_KIND_KEYPAD:
+        _nuki->onKeypadJsonCommandReceived(json);
+        break;
+    case REST_KIND_TIMECONTROL:
+        _nuki->onTimeControlCommandReceived(json);
+        break;
+    case REST_KIND_AUTH:
+        _nuki->onAuthCommandReceived(json);
+        break;
+    default:
+        _nuki->onConfigUpdateReceived(json);
+    }
+}
+
+esp_err_t BridgeApi::runCommand(PsychicRequest* request, PsychicResponse* resp, int kind, const char* action)
+{
+    if(!checkToken(request))
+    {
+        return sendUnauthorized(resp);
+    }
+
+    int type = deviceType(request);
+    JsonDocument json;
+
+    if(type < 0)
+    {
+        json["success"] = false;
+        return sendJson(resp, json, 404);
+    }
+
+    String command;
+    commandJson(request, kind, action, command);
+
+    uint32_t before = resultCounter(type);
+    int64_t deadline = espMillis() + REST_COMMAND_TIMEOUT_MS;
+    dispatchCommand(type, kind, command.c_str());
+
+    while(resultCounter(type) == before && espMillis() < deadline)
+    {
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    if(resultCounter(type) == before)
+    {
+        json["success"] = false;
+        json["result"] = "timeout";
+        return sendJson(resp, json, 504);
+    }
+
+    const String& result = lastResult(type);
+    json["success"] = result == "success" || result == "codeValid";
+    json["result"] = result;
+    return sendJson(resp, json, 200);
 }
 
 void BridgeApi::update()
