@@ -45,7 +45,9 @@ bool nuki_hub_https_server_enabled = false;
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 #include "WebCfgServer.h"
+#ifndef NUKI_HUB_UPDATER
 #include "BridgeApi.h"
+#endif
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
@@ -101,7 +103,9 @@ PsychicWebSocketHandler* websocketHandler = nullptr;
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 WebCfgServer* webCfgServerSSL = nullptr;
+#ifndef NUKI_HUB_UPDATER
 BridgeApi* bridgeApi = nullptr;
+#endif
 Preferences* preferences = nullptr;
 ImportExport* importExport = nullptr;
 
@@ -667,8 +671,13 @@ void startWebServer()
                     webCfgServerSSL->initialize();
                     if(preferences->getBool(preference_bridge_api_enabled, false))
                     {
+#ifndef NUKI_HUB_UPDATER
+                    if(preferences->getBool(preference_bridge_api_enabled, false))
+                    {
                         bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkLock, networkOpener, preferences, importExport);
                         bridgeApi->initialize(psychicSSLServer);
+                    }
+#endif
                     }
                     psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
                     {
@@ -692,11 +701,13 @@ void startWebServer()
         webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
 #endif
         webCfgServer->initialize();
+#ifndef NUKI_HUB_UPDATER
         if(preferences->getBool(preference_bridge_api_enabled, false))
         {
             bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkLock, networkOpener, preferences, importExport);
             bridgeApi->initialize(psychicServer);
         }
+#endif
         psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
         {
             return response->redirect("/");
