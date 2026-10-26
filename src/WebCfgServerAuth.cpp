@@ -256,28 +256,28 @@ esp_err_t WebCfgServer::buildLoginHtml(PsychicRequest *request, PsychicResponse*
 {
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
-    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-    response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
-    response.print("</head><body><center><h2>Nuki Hub login</h2><form action=\"/post?page=login\" method=\"post\">");
-    response.print("<div class=\"container\"><label for=\"username\"><b>Username</b></label><input type=\"text\" placeholder=\"Enter Username\" name=\"username\" required>");
-    response.print("<label for=\"password\"><b>Password</b></label><input type=\"password\" placeholder=\"Enter Password\" name=\"password\" required>");
+    buildHtmlHeader(&response, "", "class=\"auth\"");
+    response.print("<div class=\"auth-card\"><h2>Nuki Hub login</h2><form action=\"/post?page=login\" method=\"post\">");
+    response.print("<label for=\"username\">Username</label><input type=\"text\" id=\"username\" placeholder=\"Enter Username\" name=\"username\" required>");
+    response.print("<label for=\"password\">Password</label><input type=\"password\" id=\"password\" placeholder=\"Enter Password\" name=\"password\" required>");
     if (_importExport->getTOTPEnabled() || _duoEnabled)
     {
         if (_importExport->getTOTPEnabled())
         {
-            response.print("<button name=\"totp\" type=\"submit\" formaction=\"/post?page=login&totp=1\">Login with TOTP</button>");
+            response.print("<button class=\"primary\" name=\"totp\" type=\"submit\" formaction=\"/post?page=login&totp=1\">Login with TOTP</button>");
         }
         if (_duoEnabled)
         {
-            response.print("<button name=\"duo\" type=\"submit\">Login with Duo</button>");
+            response.print("<button class=\"primary\" name=\"duo\" type=\"submit\">Login with Duo</button>");
         }
     }
     else
     {
-        response.print("<button type=\"submit\">Login</button>");
+        response.print("<button class=\"primary\" type=\"submit\">Login</button>");
     }
-    response.print("<label><input type=\"checkbox\" name=\"remember\"> Remember me</label></div>");
-    response.print("</form></center></body></html>");
+    response.print("<label class=\"inline\"><input type=\"checkbox\" name=\"remember\"> Remember me</label>");
+    response.print("</form></div>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -295,9 +295,8 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
-    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-    response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
-    response.print("</head><body><center><h2>Nuki Hub TOTP</h2>");
+    buildHtmlHeader(&response, "", "class=\"auth\"");
+    response.print("<div class=\"auth-card\"><h2>Nuki Hub TOTP</h2>");
 
     String typeText = "Login";
 
@@ -326,19 +325,19 @@ esp_err_t WebCfgServer::buildTOTPHtml(PsychicRequest *request, PsychicResponse* 
         if (request->hasParam("totpkey"))
         {
             const PsychicWebParameter* p = request->getParam("totpkey");
-            response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
+            response.print((String)"<input type=\"hidden\" name=\"" + htmlEscape(p->name().c_str()) + "\" value=\"" + htmlEscape(p->value().c_str()) + "\">");
         }
     }
 
-    response.print("<div class=\"container\">");
-    response.print("<label for=\"totpkey\"><b>TOTP</b></label><input type=\"text\" placeholder=\"Enter TOTP code\" name=\"totpkey\">");
-    response.print("<button type=\"submit\" ");
+    response.print("<label for=\"totpkey\">TOTP</label><input type=\"text\" id=\"totpkey\" placeholder=\"Enter TOTP code\" name=\"totpkey\">");
+    response.print("<button class=\"primary\" type=\"submit\"");
     if(type == 1)
     {
-        response.print("onclick=\"setTimeout(function() { window.location.href = '/' }, 1000);\"");
+        response.print(" data-redirect-after=\"/\"");
     }
-    response.print((String)">" + typeText + "</button></div>");
-    response.print("</form></center></body></html>");
+    response.print((String)">" + typeText + "</button>");
+    response.print("</form></div>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -356,15 +355,13 @@ esp_err_t WebCfgServer::buildBypassHtml(PsychicRequest *request, PsychicResponse
 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
-    response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-    response.print("<style>form{border:3px solid #f1f1f1; max-width: 400px;}input[type=password],input[type=text]{width:100%;padding:12px 20px;margin:8px 0;display:inline-block;border:1px solid #ccc;box-sizing:border-box}button{background-color:#04aa6d;color:#fff;padding:14px 20px;margin:8px 0;border:none;cursor:pointer;width:100%}button:hover{opacity:.8}.container{padding:16px}span.password{float:right;padding-top:16px}@media screen and (max-width:300px){span.psw{display:block;float:none}}</style>");
-    response.print("</head><body><center><h2>Nuki Hub One-time Bypass</h2>");
+    buildHtmlHeader(&response, "", "class=\"auth\"");
+    response.print("<div class=\"auth-card\"><h2>Nuki Hub One-time Bypass</h2>");
     response.print("<form action=\"/post?page=bypass\" method=\"post\">");
-    response.print("<div class=\"container\">");
-    response.print("<label for=\"bypass\"><b>Bypass code</b></label><input type=\"text\" placeholder=\"Enter bypass code\" name=\"bypass\">");
-    response.print("<button type=\"submit\" ");
-    response.print(">Login</button></div>");
-    response.print("</form></center></body></html>");
+    response.print("<label for=\"bypass\">Bypass code</label><input type=\"text\" id=\"bypass\" placeholder=\"Enter bypass code\" name=\"bypass\">");
+    response.print("<button class=\"primary\" type=\"submit\">Login</button>");
+    response.print("</form></div>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -443,39 +440,28 @@ esp_err_t WebCfgServer::buildDuoHtml(PsychicRequest *request, PsychicResponse* r
         _importExport->setDuoCheckId(buffer);
 
         response.beginSend();
-        response.print("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-        response.print("<style>.container{border:3px solid #f1f1f1; max-width: 400px; padding:16px}</style>");
-        response.print((String)"<script>let intervalId; let stop = 0; window.onload = function() { intervalId = setInterval(updateInfo, 2000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=duocheck&id=" + String(buffer) + "&type=" + type + "', true); request.onload = () => { const obj = request.responseText; if ((obj == \"1\" || obj == \"0\") && stop == 0) { stop = 1; clearInterval(intervalId); if (obj == \"1\") { document.getElementById('duoresult').innerHTML = '" + duoText + " approved<br>Redirecting...'; ");
-        if(type == 0)
+        String bodyAttributes = "class=\"auth\" data-duo=\"/get?page=duocheck&id=" + String(buffer) + "&type=" + String(type) + "\" data-duo-type=\"" + String(type) + "\" data-duo-label=\"" + duoText + "\"";
+        if (type == 1)
         {
-            response.print("setTimeout(function() { window.location.href = \"/\"");
+            bodyAttributes += " data-duo-open=\"" + htmlEscape(request->uri().c_str()) + "\"";
         }
-        else if (type == 1)
-        {
-            response.print((String)"window.open('" + request->uri() + "'); setTimeout(function() { window.location.href = \"/\"");
-        }
-        else
-        {
-            response.print("setTimeout(function() { document.getElementById('frmrepost').submit()");
-        }
-        response.print("; }, 2000); } else { document.getElementById('duoresult').innerHTML = '" + duoText + " failed<br>Refresh to retry'; } } }; request.send(); }</script>");
-        response.print("</head><body><center><h2>Nuki Hub " + duoText + "</h2>");
-        response.print("<div class=\"container\">Duo Push sent<br><br>");
-        response.print("Please confirm " + duoText + " in the Duo app<br><br><div id=\"duoresult\"></div></div>");
-        response.print("</div>");
+        buildHtmlHeader(&response, "", bodyAttributes);
+        response.print("<div class=\"auth-card\"><h2>Nuki Hub " + duoText + "</h2>");
+        response.print("<p>Duo Push sent. Please confirm " + duoText + " in the Duo app.</p><p id=\"duoresult\"></p>");
         if (type > 1)
         {
-            response.print((String)"<form id=\"frmrepost\" action=\"" + request->uri() + "\" method=\"post\">");
+            response.print((String)"<form id=\"frmrepost\" action=\"" + htmlEscape(request->uri().c_str()) + "\" method=\"post\">");
 
             if (request->hasParam("submit"))
             {
                 const PsychicWebParameter* p = request->getParam("submit");
 
-                response.print((String)"<input type=\"hidden\" name=\"" + p->name() + "\" value='" + p->value() + "' />");
+                response.print((String)"<input type=\"hidden\" name=\"" + htmlEscape(p->name().c_str()) + "\" value=\"" + htmlEscape(p->value().c_str()) + "\">");
             }
             response.print("</form>");
         }
-        response.print("</center></body></html>");
+        response.print("</div>");
+        buildHtmlFooter(&response);
 
         return response.endSend();
     }
@@ -652,7 +638,7 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form id=\"credfrm\" class=\"adapt\" onsubmit=\"return testcreds();\" method=\"post\" action=\"post\">");
+    response.print("<form id=\"credfrm\" method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Credentials</h3>");
     response.print("<table>");
@@ -676,17 +662,17 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
     printCheckBox(&response, "TOTPENA", "TOTP authentication enabled", _preferences->getBool(preference_totp_enabled, false), "");
     printInputField(&response, "CREDTOTP", "TOTP Secret Key", "*", 16, "", true, false);
-    response.print("<tr id=\"totpgentr\" ><td><input type=\"button\" id=\"totpgen\" onclick=\"document.getElementsByName('CREDTOTP')[0].type='text'; document.getElementsByName('CREDTOTP')[0].value='");
+    response.print("<tr id=\"totpgentr\"><td colspan=\"2\"><button type=\"button\" data-gen=\"CREDTOTP\" data-value=\"");
     response.print(randomstr);
-    response.print("'; document.getElementById('totpgentr').style.display='none';\" value=\"Generate new TOTP key\"></td></tr>");
+    response.print("\">Generate new TOTP key</button></td></tr>");
     printInputField(&response, "CREDBYPASS", "One-time MFA Bypass", "*", 32, "", true, false);
-    response.print("<tr id=\"bypassgentr\" ><td><input type=\"button\" id=\"bypassgen\" onclick=\"document.getElementsByName('CREDBYPASS')[0].type='text'; document.getElementsByName('CREDBYPASS')[0].value='");
+    response.print("<tr id=\"bypassgentr\"><td colspan=\"2\"><button type=\"button\" data-gen=\"CREDBYPASS\" data-value=\"");
     response.print(randomstr2);
-    response.print("'; document.getElementById('bypassgentr').style.display='none';\" value=\"Generate new Bypass\"></td></tr>");
+    response.print("\">Generate new Bypass</button></td></tr>");
     printInputField(&response, "CREDADMIN", "Admin key", "*", 32, "", true, false);
-    response.print("<tr id=\"admingentr\" ><td><input type=\"button\" id=\"admingen\" onclick=\"document.getElementsByName('CREDADMIN')[0].type='text'; document.getElementsByName('CREDADMIN')[0].value='");
+    response.print("<tr id=\"admingentr\"><td colspan=\"2\"><button type=\"button\" data-gen=\"CREDADMIN\" data-value=\"");
     response.print(randomstr3);
-    response.print("'; document.getElementById('admingentr').style.display='none';\" value=\"Generate new Admin key\"></td></tr>");
+    response.print("\">Generate new Admin key</button></td></tr>");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDLFTM");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDLFTMRMBR");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDDUOLFTM");
@@ -694,34 +680,34 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDTOTPLFTM");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDTOTPLFTMRMBR");
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
-    response.print("</form><script>function testcreds() { var input_user = document.getElementById(\"inputuser\").value; var input_pass = document.getElementById(\"inputpass\").value; var input_pass2 = document.getElementById(\"inputpass2\").value; var pattern = /^[ -~]*$/; if(input_user == '#' || input_user == '') { return true; } if (input_pass != input_pass2) { alert('Passwords do not match'); return false;} if(!pattern.test(input_user) || !pattern.test(input_pass)) { alert('Only non unicode characters are allowed in username and password'); return false;} else { return true; } }</script>");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
+    response.print("</form>");
     if(_nuki != nullptr)
     {
-        response.print("<br><br><form class=\"adapt\" method=\"post\" action=\"post\">");
+        response.print("<form method=\"post\" action=\"post\">");
         response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
         response.print("<h3>Nuki Lock PIN</h3>");
         response.print("<table>");
         printInputField(&response, "NUKIPIN", "PIN Code (# to clear)", "*", 20, "", true);
         response.print("</table>");
-        response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
         response.print("</form>");
     }
     if(_nukiOpener != nullptr)
     {
-        response.print("<br><br><form class=\"adapt\" method=\"post\" action=\"post\">");
+        response.print("<form method=\"post\" action=\"post\">");
         response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
         response.print("<h3>Nuki Opener PIN</h3>");
         response.print("<table>");
         printInputField(&response, "NUKIOPPIN", "PIN Code (# to clear)", "*", 20, "", true);
         response.print("</table>");
-        response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+        response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
         response.print("</form>");
     }
     if(_nuki != nullptr)
     {
-        response.print("<br><br><h3>Unpair Nuki Lock</h3>");
-        response.print("<form class=\"adapt\" method=\"post\" action=\"/post\">");
+        response.print("<h3>Unpair Nuki Lock</h3>");
+        response.print("<form method=\"post\" action=\"/post\">");
         response.print("<input type=\"hidden\" name=\"page\" value=\"unpairlock\">");
         response.print("<table>");
         String message = "Type ";
@@ -729,12 +715,12 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
         message.concat(" to confirm unpair");
         printInputField(&response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
         response.print("</table>");
-        response.print("<br><button type=\"submit\">OK</button></form>");
+        response.print("<div class=\"actions\"><button type=\"submit\" class=\"primary\">OK</button></div></form>");
     }
     if(_nukiOpener != nullptr)
     {
-        response.print("<br><br><h3>Unpair Nuki Opener</h3>");
-        response.print("<form class=\"adapt\" method=\"post\" action=\"/post\">");
+        response.print("<h3>Unpair Nuki Opener</h3>");
+        response.print("<form method=\"post\" action=\"/post\">");
         response.print("<input type=\"hidden\" name=\"page\" value=\"unpairopener\">");
         response.print("<table>");
         String message = "Type ";
@@ -742,15 +728,15 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
         message.concat(" to confirm unpair");
         printInputField(&response, "CONFIRMTOKEN", message.c_str(), "", 10, "");
         response.print("</table>");
-        response.print("<br><button type=\"submit\">OK</button></form>");
+        response.print("<div class=\"actions\"><button type=\"submit\" class=\"primary\">OK</button></div></form>");
     }
-    response.print("<br><br><h3>Factory reset Nuki Hub</h3>");
+    response.print("<h3>Factory reset Nuki Hub</h3>");
     response.print("<h4 class=\"warning\">This will reset all settings to default and unpair Nuki Lock and/or Opener.");
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     response.print(" Optionally will also reset WiFi settings and reopen WiFi manager portal.");
 #endif
     response.print("</h4>");
-    response.print("<form class=\"adapt\" method=\"post\" action=\"/post\">");
+    response.print("<form method=\"post\" action=\"/post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"factoryreset\">");
     response.print("<table>");
     String message = "Type ";
@@ -761,8 +747,8 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     printCheckBox(&response, "WIFI", "Also reset WiFi settings", false, "");
 #endif
     response.print("</table>");
-    response.print("<br><button type=\"submit\">OK</button></form>");
-    response.print("</body></html>");
+    response.print("<div class=\"actions\"><button type=\"submit\" class=\"btn danger\">OK</button></div></form>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

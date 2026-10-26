@@ -19,7 +19,7 @@ esp_err_t WebCfgServer::buildSSIDListHtml(PsychicRequest *request, PsychicRespon
 
     for (int i = 0; i < _ssidList.size(); i++)
     {
-        response.print("<tr class=\"trssid\" onclick=\"document.getElementById('inputssid').value = '" + _ssidList[i] + "';\"><td colspan=\"2\">" + _ssidList[i] + String((" (")) + String(_rssiList[i]) + String((" %)")) + "</td></tr>");
+        response.print("<tr class=\"trssid\" data-ssid=\"" + htmlEscape(_ssidList[i].c_str()) + "\"><td>" + htmlEscape(_ssidList[i].c_str()) + " (" + String(_rssiList[i]) + " %)</td></tr>");
     }
     return response.endSend();
 }
@@ -65,19 +65,18 @@ void WebCfgServer::createSsidList()
 
 esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    String header = "<style>.trssid:hover { cursor: pointer; color: blue; }</style><script>let intervalId; window.onload = function() { intervalId = setInterval(updateSSID, 3000); }; function updateSSID() { var request = new XMLHttpRequest(); request.open('GET', '/ssidlist', true); request.onload = () => { if (document.getElementById(\"aplist\") !== null) { document.getElementById(\"aplist\").innerHTML = request.responseText; } }; request.send(); }</script>";
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
-    buildHtmlHeader(&response, header);
+    buildHtmlHeader(&response);
     response.print("<h3>Available WiFi networks</h3>");
     response.print("<table id=\"aplist\">");
     createSsidList();
     for (int i = 0; i < _ssidList.size(); i++)
     {
-        response.print("<tr class=\"trssid\" onclick=\"document.getElementById('inputssid').value = '" + _ssidList[i] + "';\"><td colspan=\"2\">" + _ssidList[i] + String((" (")) + String(_rssiList[i]) + String((" %)")) + "</td></tr>");
+        response.print("<tr class=\"trssid\" data-ssid=\"" + htmlEscape(_ssidList[i].c_str()) + "\"><td>" + htmlEscape(_ssidList[i].c_str()) + " (" + String(_rssiList[i]) + " %)</td></tr>");
     }
     response.print("</table>");
-    response.print("<form class=\"adapt\" method=\"post\" action=\"savewifi\">");
+    response.print("<form method=\"post\" action=\"savewifi\">");
     response.print("<h3>WiFi credentials</h3>");
     response.print("<table>");
     printInputField(&response, "WIFISSID", "SSID", "", 32, "id=\"inputssid\"", false, true);
@@ -94,18 +93,19 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
     printInputField(&response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
     printInputField(&response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
 #ifndef NUKI_HUB_UPDATER
     response.print("<h3>Import configuration</h3>");
-    response.print("<form method=\"post\" action=\"post\"><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" onchange=\"var reader = new FileReader(); reader.onload = function(e) { document.getElementById('importjson').value = e.target.result; }; reader.readAsText(this.files[0]);\"><br/>");
-    response.print("<textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\" style=\"display: none;\"></textarea>");
+    response.print("<form method=\"post\" action=\"post\"><table><tr><td>Configuration file</td><td><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" data-fill=\"#importjson\"></td></tr></table>");
+    response.print("<textarea id=\"importjson\" name=\"importjson\" hidden></textarea>");
     response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form>");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Import\"></div></form>");
 #endif
-    response.print("<form action=\"/reboot\" method=\"get\"><br>");
-    response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><input type=\"submit\" value=\"Reboot\" /></form>");
-    response.print("</body></html>");
+    response.print("<h3>Reboot</h3>");
+    response.print("<form action=\"/reboot\" method=\"get\">");
+    response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><div class=\"actions\"><input type=\"submit\" value=\"Reboot\"></div></form>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -260,10 +260,9 @@ esp_err_t WebCfgServer::buildConfigureWifiHtml(PsychicRequest *request, PsychicR
     response.print("<form method=\"get\" action=\"get\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"wifimanager\">");
     response.print("<h3>Wi-Fi</h3>");
-    response.print("Click confirm to remove saved WiFi settings and restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.<br><br><br>");
-    response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\" /><input type=\"submit\" value=\"Reboot\" /></form>");
-    response.print("</form>");
-    response.print("</body></html>");
+    response.print("<p>Click confirm to remove saved WiFi settings and restart ESP into Wi-Fi configuration mode. After restart, connect to ESP access point to reconfigure Wi-Fi.</p>");
+    response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><div class=\"actions\"><input type=\"submit\" value=\"Reboot\"></div></form>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

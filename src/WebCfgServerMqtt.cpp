@@ -28,7 +28,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Basic MQTT Configuration</h3>");
     response.print("<table>");
@@ -38,7 +38,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 40, "", true, true);
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTPATH");
     printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
-    response.print("</table><br>");
+    response.print("</table>");
 
     response.print("<h3>Advanced MQTT Configuration</h3>");
     response.print("<table>");
@@ -49,9 +49,9 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
         printSetting(&response, mqttSettings, mqttSettingsCount, "OPENERCONT");
     }
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTSENA");
-    response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><button title=\"Set MQTT SSL CA Certificate\" onclick=\" window.open('/get?page=mqttcaconfig', '_self'); return false;\">Change</button></td></tr>");
-    response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><button title=\"Set MQTT Client Certificate\" onclick=\" window.open('/get?page=mqttcrtconfig', '_self'); return false;\">Change</button></td></tr>");
-    response.print("<tr><td>Set MQTT SSL Client Key</td><td><button title=\"Set MQTT SSL Client Key\" onclick=\" window.open('/get?page=mqttkeyconfig', '_self'); return false;\">Change</button></td></tr>");
+    response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><a class=\"btn\" href=\"/get?page=mqttcaconfig\">Change</a></td></tr>");
+    response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><a class=\"btn\" href=\"/get?page=mqttcrtconfig\">Change</a></td></tr>");
+    response.print("<tr><td>Set MQTT SSL Client Key</td><td><a class=\"btn\" href=\"/get?page=mqttkeyconfig\">Change</a></td></tr>");
     printSetting(&response, mqttSettings, mqttSettingsCount, "NETTIMEOUT");
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTLOG");
     printSetting(&response, mqttSettings, mqttSettingsCount, "UPDATEMQTT");
@@ -62,11 +62,9 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
     printCheckBox(&response, "HYBRIDREBOOT", "Reboot Nuki lock on official MQTT failure", _preferences->getBool(preference_hybrid_reboot_on_disconnect, false), "");
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
-    response.print("</body>");
-    response.print("<script>window.onload = function() { var hassChk; var hassTxt; for (var el of document.getElementsByClassName('chkHass')) { if (el.constructor.name === 'HTMLInputElement' && el.type === 'checkbox') { hassChk = el; el.addEventListener('change', hassChkChange); } else if (el.constructor.name==='HTMLInputElement' && el.type==='text') { hassTxt=el; el.addEventListener('keyup', hassTxtChange); } } function hassChkChange() { if(hassChk.checked == true) { if(hassTxt.value.length == 0) { hassTxt.value = 'homeassistant'; } } else { hassTxt.value = ''; } } function hassTxtChange() { if(hassTxt.value.length == 0) { hassChk.checked = false; } else { hassChk.checked = true; } } };</script>");
-    response.print("</html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -75,7 +73,7 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<input type=\"hidden\" name=\"mqttssl\" value=\"1\">");
     response.print("<h3>MQTT SSL Configuration</h3>");
@@ -172,10 +170,9 @@ esp_err_t WebCfgServer::buildMqttSSLConfigHtml(PsychicRequest *request, PsychicR
         }
     }
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
-    response.print("</body>");
-    response.print("</html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

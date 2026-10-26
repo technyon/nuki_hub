@@ -36,7 +36,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<button onclick=\"copyFunction()\">Copy for GitHub issue with all personal information redacted</button><br /><br /><h3>System Information</h3><pre id=\"preInfo\">");
+    response.print("<h3>System Information</h3><div class=\"actions\"><button type=\"button\" data-copy=\"#preInfo\">Copy for GitHub issue with all personal information redacted</button></div><pre id=\"preInfo\">");
     response.print("------------ NUKI HUB ------------");
     response.print("\nDevice: ");
     response.print(NUKI_HUB_HW);
@@ -821,8 +821,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response.print(gpioStr);
-    response.print("</pre><script>function copyToClipboard(textToCopy) {if (navigator.clipboard && window.isSecureContext){navigator.clipboard.writeText(textToCopy);}else {const textArea = document.createElement(\"textarea\");textArea.value = textToCopy;textArea.style.position =\"absolute\";textArea.style.left = \"-999999px\";document.body.prepend(textArea);textArea.select();try {document.execCommand('copy');} catch (error) {console.error(error);} finally {textArea.remove(); window.location.reload();}}} function copyFunction() { var copyText = document.getElementById(\"preInfo\");  var replaceClasses = copyText.getElementsByClassName(\"redact\"); for (var i = 0; i < replaceClasses.length; i++) { replaceClasses[i].innerHTML = \"***\"; } try {copyToClipboard(copyText.innerText);}catch(error) {console.error(error);} }");
-    response.print("</script></body></html>");
+    response.print("</pre>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

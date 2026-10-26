@@ -16,46 +16,33 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<table>");
     printCheckBox(&response, "RETGPIO", "Retain Input GPIO MQTT state", _preferences->getBool(preference_retain_gpio, false), "");
 
-    std::vector<std::pair<String, String>> options;
-    String gpiopreselects = "var gpio = []; ";
-
     const auto& availablePins = _gpio->availablePins();
     const auto& disabledPins = _gpio->getDisabledPins();
 
     for(const auto& pin : availablePins)
     {
         String pinStr = String(pin);
-        String pinDesc = "Gpio " + pinStr;
-        printDropDown(&response, pinStr.c_str(), pinDesc.c_str(), "", options, "gpioselect");
-        if(std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end())
-        {
-            gpiopreselects.concat("gpio[" + pinStr + "] = '21';");
-        }
-        else
-        {
-            gpiopreselects.concat("gpio[" + pinStr + "] = '" + getPreselectionForGpio(pin) + "';");
-        }
+        bool disabled = std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end();
+        response.print("<tr><td>Gpio " + pinStr + "</td><td><select class=\"gpioselect\" name=\"" + pinStr + "\" data-value=\"" + (disabled ? String("21") : getPreselectionForGpio(pin)) + "\"></select></td></tr>");
     }
 
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
 
-    options = getGpioOptions();
+    response.print("<template id=\"gpiooptions\">");
 
-    response.print("<script type=\"text/javascript\">" + gpiopreselects + "var gpiooptions = '");
-
-    for(const auto& option : options)
+    for(const auto& option : getGpioOptions())
     {
         response.print("<option value=\"");
-        response.print(option.first);
+        response.print(htmlEscape(option.first.c_str()));
         response.print("\">");
-        response.print(option.second);
+        response.print(htmlEscape(option.second.c_str()));
         response.print("</option>");
     }
 
-    response.print("'; var gpioselects = document.getElementsByClassName('gpioselect'); for (let i = 0; i < gpioselects.length; i++) { gpioselects[i].options.length = 0; gpioselects[i].innerHTML = gpiooptions; gpioselects[i].value = gpio[gpioselects[i].name]; if(gpioselects[i].value == 21) { gpioselects[i].disabled = true; } }</script>");
-    response.print("</body></html>");
+    response.print("</template>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

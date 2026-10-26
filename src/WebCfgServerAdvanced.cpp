@@ -45,7 +45,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Advanced Configuration</h3>");
     response.print("<h4 class=\"warning\">Warning: Changing these settings can lead to bootloops that might require you to erase the ESP32 and reflash Nuki Hub using USB/serial</h4>");
@@ -116,9 +116,9 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printSetting(&response, advancedSettings, advancedSettingsCount, "DBGHEAP");
     response.print("</table>");
 
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
-    response.print("</body></html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

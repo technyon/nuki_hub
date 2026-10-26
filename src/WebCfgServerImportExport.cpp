@@ -11,23 +11,25 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<div id=\"upform\"><h4>Import configuration</h4>");
-    response.print("<form method=\"post\" action=\"post\"><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" onchange=\"var reader = new FileReader(); reader.onload = function(e) { document.getElementById('importjson').value = e.target.result; }; reader.readAsText(this.files[0]);\"><br/><br/>");
-    response.print("<textarea id=\"importjson\" name=\"importjson\" rows=\"10\" cols=\"50\"></textarea><br/>");
+    response.print("<h3>Import configuration</h3>");
+    response.print("<form method=\"post\" action=\"post\"><table>");
+    response.print("<tr><td>Configuration file</td><td><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" data-fill=\"#importjson\"></td></tr>");
+    response.print("<tr><td>Configuration JSON</td><td><textarea id=\"importjson\" name=\"importjson\"></textarea></td></tr></table>");
     response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Import\"></form><br><br></div>");
-    response.print("<div id=\"gitdiv\">");
-    response.print("<h4>Export configuration</h4><br>");
-    response.print("<button title=\"Export without sensitive settings\" onclick=\" window.open('/get?page=export', '_self'); return false;\">Export without sensitive settings</button>");
-    response.print("<br><br><button title=\"Export including sensitive settings\" onclick=\" window.open('/get?page=export&redacted=1'); return false;\">Export including sensitive settings</button>");
-    response.print("<br><br><button title=\"Export including sensitive settings and pairing data\" onclick=\" window.open('/get?page=export&redacted=1&pairing=1'); return false;\">Export including sensitive settings and pairing data</button>");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Import\"></div></form>");
+    response.print("<h3>Export configuration</h3>");
+    response.print("<div class=\"actions stack\">");
+    response.print("<a class=\"btn\" href=\"/get?page=export\">Export without sensitive settings</a>");
+    response.print("<a class=\"btn\" href=\"/get?page=export&redacted=1\">Export including sensitive settings</a>");
+    response.print("<a class=\"btn\" href=\"/get?page=export&redacted=1&pairing=1\">Export including sensitive settings and pairing data</a>");
     if(nuki_hub_https_server_enabled)
     {
-        response.print("<br><br><button title=\"Export HTTP SSL certificate and key\" onclick=\" window.open('/get?page=export&type=https'); return false;\">Export HTTP SSL certificate and key</button>");
+        response.print("<a class=\"btn\" href=\"/get?page=export&type=https\">Export HTTP SSL certificate and key</a>");
     }
-    response.print("<br><br><button title=\"Export MQTT SSL CA, client certificate and client key\" onclick=\" window.open('/get?page=export&type=mqtts'); return false;\">Export MQTT SSL CA, client certificate and client key</button>");
-    response.print("<br><br><button title=\"Export Coredump\" onclick=\" window.open('/get?page=coredump'); return false;\">Export Coredump</button>");
-    response.print("</div></body></html>");
+    response.print("<a class=\"btn\" href=\"/get?page=export&type=mqtts\">Export MQTT SSL CA, client certificate and client key</a>");
+    response.print("<a class=\"btn\" href=\"/get?page=coredump\">Export Coredump</a>");
+    response.print("</div>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

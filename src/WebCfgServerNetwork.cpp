@@ -36,7 +36,7 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Network Configuration</h3>");
     response.print("<table>");
@@ -53,9 +53,9 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printSetting(&response, networkSettings, networkSettingsCount, "WIFIBSSID");
     if(nuki_hub_https_server_enabled)
     {
-        response.print("<tr><td>Set HTTP SSL Certificate</td><td><button title=\"Set HTTP SSL Certificate\" onclick=\" window.open('/get?page=httpcrtconfig', '_self'); return false;\">Change</button></td></tr>");
-        response.print("<tr><td>Set HTTP SSL Key</td><td><button title=\"Set HTTP SSL Key\" onclick=\" window.open('/get?page=httpkeyconfig', '_self'); return false;\">Change</button></td></tr>");
-        response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><button title=\"Generate HTTP SSL Certificate and key\" onclick=\" window.open('/get?page=selfsignhttps', '_self'); return false;\">Generate</button></td></tr>");
+        response.print("<tr><td>Set HTTP SSL Certificate</td><td><a class=\"btn\" href=\"/get?page=httpcrtconfig\">Change</a></td></tr>");
+        response.print("<tr><td>Set HTTP SSL Key</td><td><a class=\"btn\" href=\"/get?page=httpkeyconfig\">Change</a></td></tr>");
+        response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><a class=\"btn\" href=\"/get?page=selfsignhttps\">Generate</a></td></tr>");
         printSetting(&response, networkSettings, networkSettingsCount, "HTTPSFQDN");
     }
     response.print("</table>");
@@ -67,19 +67,18 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printSetting(&response, networkSettings, networkSettingsCount, "IPGTW");
     printSetting(&response, networkSettings, networkSettingsCount, "DNSSRV");
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
-    response.print("</body></html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
 esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    String header = "<script>window.onload=function(){var physelect=document.getElementsByName('NWCUSTPHY')[0];hideshowopt(physelect.value);physelect.addEventListener('change', function(event){var select=event.target;var selectedOption=select.options[select.selectedIndex];hideshowopt(selectedOption.getAttribute('value'));});};function hideshowopt(value){if(value>=1&&value<=3){hideopt('internalopt',true);hideopt('externalopt',false);}else if(value>=4&&value<=9){hideopt('internalopt', false);hideopt('externalopt', true);}else {hideopt('internalopt', true);hideopt('externalopt', true);}}function hideopt(opts,hide){var hideopts = document.getElementsByClassName(opts);for(var i=0;i<hideopts.length;i++){if(hide==true){hideopts[i].style.display='none';}else{hideopts[i].style.display='block';}}}</script>";
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
-    buildHtmlHeader(&response, header);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    buildHtmlHeader(&response);
+    response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<h3>Custom Ethernet Configuration</h3>");
     response.print("<table>");
@@ -98,9 +97,9 @@ esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, Ps
     printInputField(&response, "NWCUSTMISO", "MISO", _preferences->getInt(preference_network_custom_miso, -1), 6, "class=\"externalopt\"");
     printInputField(&response, "NWCUSTMOSI", "MOSI", _preferences->getInt(preference_network_custom_mosi, -1), 6, "class=\"externalopt\"");
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
-    response.print("</body></html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -169,7 +168,7 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<form class=\"adapt\" method=\"post\" action=\"post\">");
+    response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<input type=\"hidden\" name=\"httpssl\" value=\"1\">");
     response.print("<h3>HTTP SSL Configuration</h3>");
@@ -241,10 +240,9 @@ esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicR
         response.print("<tr><td>Click save to generate a HTTPS SSL Certificate and key</td></tr>");
     }
     response.print("</table>");
-    response.print("<br><input type=\"submit\" name=\"submit\" value=\"Save\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
-    response.print("</body>");
-    response.print("</html>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 

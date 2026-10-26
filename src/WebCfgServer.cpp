@@ -128,6 +128,11 @@ void WebCfgServer::initialize()
         return sendCss(request, resp);
     });
 
+    _psychicServer->on("/app.js", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return sendJs(request, resp);
+    });
+
     if(_preferences->getBool(preference_webserial_enabled, false))
     {
 #ifndef NUKI_HUB_UPDATER
@@ -1214,32 +1219,65 @@ void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *to
     response->print(description);
     response->print("</td><td>");
 
-    response->print("<input type=hidden name=\"");
+    response->print("<input type=\"hidden\" name=\"");
     response->print(token);
-    response->print("\" value=\"0\"");
-    response->print("/>");
+    response->print("\" value=\"0\">");
 
-    response->print("<input type=checkbox name=\"");
+    response->print("<input type=\"checkbox\" name=\"");
     response->print(token);
-
-    response->print("\" class=\"");
-    response->print(htmlClass);
-
-    response->print("\" value=\"1\"");
-    response->print(value ? " checked=\"checked\"" : "");
-    response->print("/></td></tr>");
+    response->print("\"");
+    if(strcmp(htmlClass, "") != 0)
+    {
+        response->print(" class=\"");
+        response->print(htmlClass);
+        response->print("\"");
+    }
+    response->print(" value=\"1\"");
+    response->print(value ? " checked" : "");
+    response->print("></td></tr>");
 }
 
-void WebCfgServer::buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader)
+void WebCfgServer::buildHtmlHeader(PsychicStreamResponse *response, const String& additionalHeader, const String& bodyAttributes)
 {
-    response->print("<html><head>");
-    response->print("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-    if(strcmp(additionalHeader.c_str(), "") != 0)
+    response->print("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
+    response->print("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    if(additionalHeader.length() > 0)
     {
         response->print(additionalHeader);
     }
-    response->print("<link rel='stylesheet' href='/style.css'>");
-    response->print("<title>Nuki Hub</title></head><body>");
+    response->print("<link rel=\"stylesheet\" href=\"/style.css\"><script src=\"/app.js\" defer></script>");
+    response->print("<title>Nuki Hub</title></head><body");
+    if(bodyAttributes.length() > 0)
+    {
+        response->print(" ");
+        response->print(bodyAttributes);
+    }
+    response->print("><header class=\"top\"><a class=\"brand\" href=\"/\">Nuki Hub</a>");
+    if(_hostname.length() > 0)
+    {
+        response->print("<span class=\"host\">");
+        response->print(htmlEscape(_hostname.c_str()));
+        response->print("</span>");
+    }
+    response->print("<span class=\"version\">");
+    response->print(NUKI_HUB_VERSION);
+    response->print("</span><nav><a href=\"/\">Overview</a>");
+#ifndef NUKI_HUB_UPDATER
+    if(!_network->isApOpen())
+    {
+        response->print("<a href=\"/get?page=info\">Info</a>");
+    }
+#endif
+    if(_preferences->getInt(preference_http_auth_type, 0) == 2)
+    {
+        response->print("<a href=\"/get?page=logout\">Logout</a>");
+    }
+    response->print("</nav></header><main>");
+}
+
+void WebCfgServer::buildHtmlFooter(PsychicStreamResponse *response)
+{
+    response->print("</main></body></html>");
 }
 
 void WebCfgServer::waitAndProcess(const bool blocking, const uint32_t duration)
@@ -1262,32 +1300,63 @@ esp_err_t WebCfgServer::buildConfirmHtml(PsychicRequest *request, PsychicRespons
 {
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
-    String header;
-
-    if(!redirect)
-    {
-        String delay(redirectDelay);
-        header = "<meta http-equiv=\"Refresh\" content=\"" + delay + "; url=/\" />";
-    }
-    else
-    {
-        String delay(redirectDelay * 1000);
-        header = "<script type=\"text/JavaScript\">function Redirect() { window.location.href = \"" + redirectTo + "\"; } setTimeout(function() { Redirect(); }, " + delay + "); </script>";
-    }
+    String header = "<meta http-equiv=\"Refresh\" content=\"" + String(redirectDelay) + "; url=" + (redirect ? redirectTo : String("/")) + "\">";
     buildHtmlHeader(&response, header);
+    response.print("<div class=\"card\">");
     response.print(message);
-    response.print("</body></html>");
+    response.print("</div>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
 esp_err_t WebCfgServer::sendCss(PsychicRequest* request, PsychicResponse* resp)
 {
-    // escaped by https://www.cescaper.com/
-    resp->addHeader("Cache-Control", "public, max-age=3600");
+    return sendStatic(resp, "text/css", stylecss, sizeof(stylecss));
+}
+
+esp_err_t WebCfgServer::sendJs(PsychicRequest* request, PsychicResponse* resp)
+{
+    return sendStatic(resp, "application/javascript", appjs, sizeof(appjs));
+}
+
+esp_err_t WebCfgServer::sendStatic(PsychicResponse* resp, const char* contentType, const uint8_t* content, size_t length)
+{
+    resp->addHeader("Cache-Control", "public, max-age=86400");
+    resp->addHeader("Content-Encoding", "gzip");
     resp->setCode(200);
-    resp->setContentType("text/css");
-    resp->setContent(stylecss);
+    resp->setContentType(contentType);
+    resp->setContent(content, length);
     return resp->send();
+}
+
+String WebCfgServer::htmlEscape(const char* value)
+{
+    String escaped;
+    escaped.reserve(strlen(value) + 8);
+    for(const char* p = value; *p != '\0'; ++p)
+    {
+        switch(*p)
+        {
+        case '&':
+            escaped += "&amp;";
+            break;
+        case '<':
+            escaped += "&lt;";
+            break;
+        case '>':
+            escaped += "&gt;";
+            break;
+        case '"':
+            escaped += "&quot;";
+            break;
+        case '\'':
+            escaped += "&#39;";
+            break;
+        default:
+            escaped += *p;
+        }
+    }
+    return escaped;
 }
 
 esp_err_t WebCfgServer::sendFavicon(PsychicRequest* request, PsychicResponse* resp)
@@ -1339,13 +1408,14 @@ void WebCfgServer::printInputField(PsychicStreamResponse* response,
     if(strcmp(value, "") != 0)
     {
         response->print(" value=\"");
-        response->print(value);
+        response->print(htmlEscape(value));
+        response->print("\"");
     }
-    response->print("\" name=\"");
+    response->print(" name=\"");
     response->print(token);
-    response->print("\" size=\"25\" maxlength=\"");
+    response->print("\" maxlength=\"");
     response->print(maxLengthStr);
-    response->print("\"/>");
+    response->print("\">");
     response->print("</td></tr>");
 }
 
@@ -1394,22 +1464,17 @@ void WebCfgServer::updateWebSerial()
 
 esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp)
 {
-    String header = (String)"<script>let intervalId; window.onload = function() { updateInfo(); intervalId = setInterval(updateInfo, 3000); }; function updateInfo() { var request = new XMLHttpRequest(); request.open('GET', '/get?page=status', true); request.onload = () => { const obj = JSON.parse(request.responseText); if (obj.stop == 1) { clearInterval(intervalId); } for (var key of Object.keys(obj)) { if(key=='ota' && document.getElementById(key) !== null) { document.getElementById(key).innerText = \"<a href='/ota'>\" + obj[key] + \"</a>\"; } else if(document.getElementById(key) !== null) { document.getElementById(key).innerText = obj[key]; } } }; request.send(); }</script>";
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
-    buildHtmlHeader(&response, header);
-    if(_rebootRequired)
+    buildHtmlHeader(&response, "", "data-status=\"/get?page=status\"");
+    if(_rebootRequired || _restartServicesRequired > 0)
     {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
-    }
-    if(_restartServicesRequired > 0)
-    {
-        response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">REBOOT REQUIRED TO APPLY SETTINGS</td></tr></tbody></table>");
+        response.print("<div class=\"banner danger\">Reboot required to apply settings</div>");
     }
 #ifdef DEBUG_NUKIHUB
-    response.print("<table><tbody><tr><td colspan=\"2\" style=\"border: 0; color: red; font-size: 32px; font-weight: bold; text-align: center;\">RUNNING DEBUG BUILD, SWITCH TO RELEASE BUILD ASAP</td></tr></tbody></table>");
+    response.print("<div class=\"banner danger\">Running debug build, switch to release build as soon as possible</div>");
 #endif
-    response.print("<h3>Info</h3><br>");
+    response.print("<h3>Status</h3>");
     response.print("<table>");
     printParameter(&response, "Hostname", _hostname.c_str(), "", "hostname");
     printParameter(&response, "MQTT Connected", _network->mqttConnectionState() > 0 ? "Yes" : "No", "", "mqttState");
@@ -1457,9 +1522,10 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     {
         printParameter(&response, "Latest Firmware", _preferences->getString(preference_latest_version).c_str(), "/get?page=ota", "ota");
     }
-    response.print("</table><br>");
+    response.print("</table>");
 
-    response.print("<ul id=\"tblnav\">");
+    response.print("<h3>Configuration</h3>");
+    response.print("<nav class=\"menu\">");
     buildNavigationMenuEntry(&response, "Network Configuration", "/get?page=ntwconfig");
     buildNavigationMenuEntry(&response, "MQTT Configuration", "/get?page=mqttconfig",  _brokerConfigured ? "" : "Please configure MQTT broker");
     buildNavigationMenuEntry(&response, "Nuki Configuration", "/get?page=nukicfg");
@@ -1497,7 +1563,8 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     {
         buildNavigationMenuEntry(&response, "Logout", "/get?page=logout");
     }
-    response.print("</ul></body></html>");
+    response.print("</nav>");
+    buildHtmlFooter(&response);
     return response.endSend();
 }
 
@@ -1532,7 +1599,7 @@ void WebCfgServer::printTextarea(PsychicStreamResponse *response,
     response->print("\" maxlength=\"");
     response->print(maxLengthStr);
     response->print("\">");
-    response->print(value);
+    response->print(htmlEscape(value));
     response->print("</textarea>");
     response->print("</td></tr>");
 }
@@ -1557,15 +1624,15 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
     {
         if(option.first == preselectedValue)
         {
-            response->print("<option selected=\"selected\" value=\"");
+            response->print("<option selected value=\"");
         }
         else
         {
             response->print("<option value=\"");
         }
-        response->print(option.first);
+        response->print(htmlEscape(option.first.c_str()));
         response->print("\">");
-        response->print(option.second);
+        response->print(htmlEscape(option.second.c_str()));
         response->print("</option>");
     }
 
@@ -1575,10 +1642,9 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
 
 void WebCfgServer::buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage)
 {
-    response->print("<a class=\"naventry\" href=\"");
+    response->print("<a href=\"");
     response->print(targetPath);
     response->print("\">");
-    response->print("<li>");
     response->print(title);
     if(strcmp(warningMessage, "") != 0)
     {
@@ -1586,7 +1652,7 @@ void WebCfgServer::buildNavigationMenuEntry(PsychicStreamResponse *response, con
         response->print(warningMessage);
         response->print("</span>");
     }
-    response->print("</li></a>");
+    response->print("</a>");
 }
 
 void WebCfgServer::printParameter(PsychicStreamResponse *response, const char *description, const char *value, const char *link, const char *id)
@@ -1607,14 +1673,14 @@ void WebCfgServer::printParameter(PsychicStreamResponse *response, const char *d
     }
     if(strcmp(link, "") == 0)
     {
-        response->print(value);
+        response->print(htmlEscape(value));
     }
     else
     {
         response->print("<a href=\"");
         response->print(link);
-        response->print("\"> ");
-        response->print(value);
+        response->print("\">");
+        response->print(htmlEscape(value));
         response->print("</a>");
     }
     response->print("</td>");
