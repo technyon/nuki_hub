@@ -236,9 +236,9 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_opener_continuous_mode, false);
         preferences->putBool(preference_official_hybrid_enabled, false);
         preferences->putBool(preference_official_hybrid_actions, false);
-        preferences->putBool(preference_official_hybrid_retry, false);
+        preferences->putBool(preference_official_hybrid_retry, true);
         preferences->putBool(preference_hybrid_reboot_on_disconnect, false);
-        preferences->putBool(preference_disable_non_json, false);
+        preferences->putBool(preference_disable_non_json, true);
         preferences->putBool(preference_update_from_mqtt, false);
         preferences->putBool(preference_ip_dhcp_enabled, true);
         preferences->putBool(preference_enable_bootloop_reset, false);

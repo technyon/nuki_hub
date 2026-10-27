@@ -175,6 +175,21 @@ p {
     color: var(--danger);
 }
 
+.tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--tx-2);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
 .banner {
     padding: .8rem 1rem;
     margin-bottom: 1rem;

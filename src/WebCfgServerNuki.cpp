@@ -34,6 +34,15 @@ static const Setting nukiSettings[] =
     {"REGAPPOPN", "Opener: Nuki Bridge is running alongside Nuki Hub (needs re-pairing if changed)", preference_register_opener_as_app, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
     {"LOCKENA", "Nuki Lock enabled", preference_lock_enabled, SettingType::Bool, 1, 0, 0, 0, "", SettingEffect::RestartReconnect},
     {"OPENA", "Nuki Opener enabled", preference_opener_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"ALMAX", "Max auth log entries (min 1, max 100)", preference_authlog_max_entries, SettingType::Int, MAX_AUTHLOG, 1, 100, 3, "id=\"inputmaxauthlog\"", SettingEffect::None},
+    {"KPMAX", "Max keypad entries (min 1, max 200)", preference_keypad_max_entries, SettingType::Int, MAX_KEYPAD, 1, 200, 3, "id=\"inputmaxkeypad\"", SettingEffect::None},
+    {"TCMAX", "Max timecontrol entries (min 1, max 100)", preference_timecontrol_max_entries, SettingType::Int, MAX_TIMECONTROL, 1, 100, 3, "id=\"inputmaxtimecontrol\"", SettingEffect::None},
+    {"AUTHMAX", "Max authorization entries (min 1, max 100)", preference_auth_max_entries, SettingType::Int, MAX_AUTH, 1, 100, 3, "id=\"inputmaxauth\"", SettingEffect::None},
+    {"LCKFORCEID", "", preference_lock_force_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"LCKFORCEKP", "Force Lock Keypad connected", preference_lock_force_keypad, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"LCKFORCEDS", "Force Lock Doorsensor connected", preference_lock_force_doorsensor, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"OPFORCEID", "", preference_opener_force_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"OPFORCEKP", "Force Opener Keypad", preference_opener_force_keypad, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
 };
 
 static const size_t nukiSettingsCount = sizeof(nukiSettings) / sizeof(nukiSettings[0]);
@@ -45,24 +54,13 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     buildHtmlHeader(&response);
     response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
-    response.print("<h3>Basic Nuki Configuration</h3>");
+    bool hasKeypad = (_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad());
+
+    response.print("<h3>Devices and pairing</h3>");
     response.print("<table>");
     printSetting(&response, nukiSettings, nukiSettingsCount, "LOCKENA");
     printCheckBox(&response, "GEMINIENA", "Nuki Smartlock Ultra/Go/5th gen enabled", _preferences->getBool(preference_lock_gemini_enabled, false), "");
     printSetting(&response, nukiSettings, nukiSettingsCount, "OPENA");
-    response.print("</table>");
-    response.print("<h3>Advanced Nuki Configuration</h3>");
-    response.print("<table>");
-
-    printSetting(&response, nukiSettings, nukiSettingsCount, "LSTINT");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "CFGINT");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "BATINT");
-    if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
-    {
-        printSetting(&response, nukiSettings, nukiSettingsCount, "KPINT");
-    }
-    printSetting(&response, nukiSettings, nukiSettingsCount, "NRTRY");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "TRYDLY");
     if(_preferences->getBool(preference_lock_enabled, true) && !_preferences->getBool(preference_lock_gemini_enabled, false))
     {
         printSetting(&response, nukiSettings, nukiSettingsCount, "REGAPP");
@@ -71,15 +69,89 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     {
         printSetting(&response, nukiSettings, nukiSettingsCount, "REGAPPOPN");
     }
+    if(_nuki != nullptr)
+    {
+        char uidString[20];
+        itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
+        printCheckBox(&response, "LCKFORCEID", ((String)"Force Lock ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_lock_force_id, false), "");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "LCKFORCEKP");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "LCKFORCEDS");
+    }
+    if(_nukiOpener != nullptr)
+    {
+        char uidString[20];
+        itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
+        printCheckBox(&response, "OPFORCEID", ((String)"Force Opener ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_opener_force_id, false), "");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "OPFORCEKP");
+    }
+    response.print("</table>");
+
+    response.print("<h3>Polling and Bluetooth</h3>");
+    response.print("<table>");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "LSTINT");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "CFGINT");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "BATINT");
+    if(hasKeypad)
+    {
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPINT");
+    }
+    printSetting(&response, nukiSettings, nukiSettingsCount, "NRTRY");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TRYDLY");
     printSetting(&response, nukiSettings, nukiSettingsCount, "RSBC");
 #if defined(CONFIG_IDF_TARGET_ESP32)
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
 #else
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 20)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");
 #endif
+    response.print("</table>");
+
+    response.print("<h3>Time</h3>");
+    response.print("<table>");
     printCheckBox(&response, "UPTIME", "Update Nuki Hub and Lock/Opener time using NTP", _preferences->getBool(preference_update_time, false), "");
     printInputField(&response, "TIMESRV", "NTP server", _preferences->getString(preference_time_server, "pool.ntp.org").c_str(), 255, "");
+    response.print("</table>");
 
+    response.print("<h3>Nuki configuration</h3>");
+    response.print("<table>");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "CONFPUB");
+    response.print("</table>");
+
+    if(hasKeypad)
+    {
+        response.print("<h3>Keypad</h3>");
+        response.print("<table>");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPPUB");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPENA");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPCODE");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPCHECK");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPPER");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPHAID");
+        printSetting(&response, nukiSettings, nukiSettingsCount, "KPMAX");
+        response.print("</table>");
+    }
+
+    response.print("<h3>Time control</h3>");
+    response.print("<table>");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TCPUB");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TCENA");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TCPER");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "TCMAX");
+    response.print("</table>");
+
+    response.print("<h3>Authorizations</h3>");
+    response.print("<table>");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHPUB");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHENA");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHPER");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHHAID");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHMAX");
+    response.print("</table>");
+
+    response.print("<h3>Authorization log</h3>");
+    response.print("<table>");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "PUBAUTH");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "SAVELOGNUM");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "ALMAX");
     response.print("</table>");
     response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
@@ -99,32 +171,6 @@ esp_err_t WebCfgServer::buildAccLvlHtml(PsychicRequest *request, PsychicResponse
     response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
     response.print("<input type=\"hidden\" name=\"ACLLVLCHANGED\" value=\"1\">");
-    response.print("<h3>Nuki General Access Control</h3>");
-    response.print("<table><tr><th>Setting</th><th>Enabled</th></tr>");
-    printCheckBox(&response, "CONFNHPUB", "Publish Nuki Hub configuration information", _preferences->getBool(preference_publish_config, false), "");
-    printCheckBox(&response, "CONFNHCTRL", "Modify Nuki Hub configuration over MQTT", _preferences->getBool(preference_config_from_mqtt, false), "");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "CONFPUB");
-
-    if((_nuki != nullptr && _nuki->hasKeypad()) || (_nukiOpener != nullptr && _nukiOpener->hasKeypad()))
-    {
-        printSetting(&response, nukiSettings, nukiSettingsCount, "KPPUB");
-        printSetting(&response, nukiSettings, nukiSettingsCount, "KPPER");
-        printSetting(&response, nukiSettings, nukiSettingsCount, "KPHAID");
-        printSetting(&response, nukiSettings, nukiSettingsCount, "KPCODE");
-        printSetting(&response, nukiSettings, nukiSettingsCount, "KPENA");
-        printSetting(&response, nukiSettings, nukiSettingsCount, "KPCHECK");
-    }
-    printSetting(&response, nukiSettings, nukiSettingsCount, "TCPUB");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "TCPER");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "TCENA");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHPUB");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHPER");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHHAID");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "AUTHENA");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "PUBAUTH");
-    printSetting(&response, nukiSettings, nukiSettingsCount, "SAVELOGNUM");
-    response.print("</table>");
-    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
 
     if(_nuki != nullptr)
     {

@@ -15,10 +15,6 @@ static const Setting advancedSettings[] =
     {"TSKNUKI", "Task size Nuki (min 8192, max 65536)", preference_task_size_nuki, SettingType::Int, NUKI_TASK_SIZE, 8192, 65536, 6, "", SettingEffect::ConfigChanged},
     {"BLEGENTIMEOUT", "BLE General timeout in ms (min 10000, max 65536)", preference_ble_general_timeout, SettingType::Int, 10000, 3000, 65536, 6, "", SettingEffect::None},
     {"BLECMDTIMEOUT", "BLE Command timeout in ms (min 3000, max 65536)", preference_ble_command_timeout, SettingType::Int, 3000, 3000, 65536, 6, "", SettingEffect::None},
-    {"ALMAX", "Max auth log entries (min 1, max 100)", preference_authlog_max_entries, SettingType::Int, MAX_AUTHLOG, 1, 100, 3, "id=\"inputmaxauthlog\"", SettingEffect::None},
-    {"KPMAX", "Max keypad entries (min 1, max 200)", preference_keypad_max_entries, SettingType::Int, MAX_KEYPAD, 1, 200, 3, "id=\"inputmaxkeypad\"", SettingEffect::None},
-    {"TCMAX", "Max timecontrol entries (min 1, max 100)", preference_timecontrol_max_entries, SettingType::Int, MAX_TIMECONTROL, 1, 100, 3, "id=\"inputmaxtimecontrol\"", SettingEffect::None},
-    {"AUTHMAX", "Max authorization entries (min 1, max 100)", preference_auth_max_entries, SettingType::Int, MAX_AUTH, 1, 100, 3, "id=\"inputmaxauth\"", SettingEffect::None},
     {"BUFFSIZE", "Char buffer size (min 4096, max 65536)", preference_buffer_size, SettingType::Int, CHAR_BUFFER_SIZE, 4096, 65536, 6, "", SettingEffect::ConfigChanged},
     {"BTLPRST", "Enable Bootloop prevention (Try to reset these settings to default on bootloop)", preference_enable_bootloop_reset, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
     {"DISNTWNOCON", "Disable Network if not connected within 60s", preference_disable_network_not_connected, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
@@ -31,11 +27,6 @@ static const Setting advancedSettings[] =
     {"DBGREAD", "Enable Nuki readable data debug logging", preference_debug_readable_data, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
     {"DBGHEX", "Enable Nuki hex data debug logging", preference_debug_hex_data, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
     {"DBGCOMM", "Enable Nuki command debug logging", preference_debug_command, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
-    {"LCKFORCEID", "", preference_lock_force_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
-    {"LCKFORCEKP", "Force Lock Keypad connected", preference_lock_force_keypad, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
-    {"LCKFORCEDS", "Force Lock Doorsensor connected", preference_lock_force_doorsensor, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
-    {"OPFORCEID", "", preference_opener_force_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
-    {"OPFORCEKP", "Force Opener Keypad", preference_opener_force_keypad, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
 };
 
 static const size_t advancedSettingsCount = sizeof(advancedSettings) / sizeof(advancedSettings[0]);
@@ -68,10 +59,6 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     response.print("</td></tr>");
     printSetting(&response, advancedSettings, advancedSettingsCount, "BLEGENTIMEOUT");
     printSetting(&response, advancedSettings, advancedSettingsCount, "BLECMDTIMEOUT");
-    printSetting(&response, advancedSettings, advancedSettingsCount, "ALMAX");
-    printSetting(&response, advancedSettings, advancedSettingsCount, "KPMAX");
-    printSetting(&response, advancedSettings, advancedSettingsCount, "TCMAX");
-    printSetting(&response, advancedSettings, advancedSettingsCount, "AUTHMAX");
     printSetting(&response, advancedSettings, advancedSettingsCount, "SHOWSECRETS");
     if(_preferences->getBool(preference_lock_enabled, true))
     {
@@ -90,23 +77,6 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     }
     printSetting(&response, advancedSettings, advancedSettingsCount, "OTAUPD");
     printSetting(&response, advancedSettings, advancedSettingsCount, "OTAMAIN");
-
-    if(_nuki != nullptr)
-    {
-        char uidString[20];
-        itoa(_preferences->getUInt(preference_nuki_id_lock, 0), uidString, 16);
-        printCheckBox(&response, "LCKFORCEID", ((String)"Force Lock ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_lock_force_id, false), "");
-        printSetting(&response, advancedSettings, advancedSettingsCount, "LCKFORCEKP");
-        printSetting(&response, advancedSettings, advancedSettingsCount, "LCKFORCEDS");
-    }
-
-    if(_nukiOpener != nullptr)
-    {
-        char uidString[20];
-        itoa(_preferences->getUInt(preference_nuki_id_opener, 0), uidString, 16);
-        printCheckBox(&response, "OPFORCEID", ((String)"Force Opener ID to current ID (" + uidString + ")").c_str(), _preferences->getBool(preference_opener_force_id, false), "");
-        printSetting(&response, advancedSettings, advancedSettingsCount, "OPFORCEKP");
-    }
 
     printSetting(&response, advancedSettings, advancedSettingsCount, "DBGCONN");
     printSetting(&response, advancedSettings, advancedSettingsCount, "DBGCOMMU");

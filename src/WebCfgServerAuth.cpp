@@ -11,8 +11,8 @@ static const Setting credentialsSettings[] =
     {"DUOBYPASSHIGH", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO High", preference_cred_bypass_gpio_high, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect},
     {"DUOBYPASSLOW", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low", preference_cred_bypass_gpio_low, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect},
     {"DUOAPPROVAL", "Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)", preference_cred_duo_approval, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
-    {"CREDLFTM", "Session validity (in seconds)", preference_cred_session_lifetime, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
-    {"CREDLFTMRMBR", "Session validity remember (in hours)", preference_cred_session_lifetime_remember, SettingType::Int, 720, 0, 0, 12, "", SettingEffect::ClearSession},
+    {"CREDLFTM", "Session validity (seconds, applies to all login methods)", preference_cred_session_lifetime, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
+    {"CREDLFTMRMBR", "Session validity with remember me (hours, applies to all login methods)", preference_cred_session_lifetime_remember, SettingType::Int, 720, 0, 0, 12, "", SettingEffect::ClearSession},
     {"CREDDUOLFTM", "Duo Session validity (in seconds)", preference_cred_session_lifetime_duo, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
     {"CREDDUOLFTMRMBR", "Duo Session validity remember (in hours)", preference_cred_session_lifetime_duo_remember, SettingType::Int, 720, 0, 0, 12, "", SettingEffect::ClearSession},
     {"CREDTOTPLFTM", "TOTP Session validity (in seconds)", preference_cred_session_lifetime_totp, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
@@ -640,45 +640,64 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     buildHtmlHeader(&response);
     response.print("<form id=\"credfrm\" method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
-    response.print("<h3>Credentials</h3>");
+    response.print("<h3>Login</h3>");
     response.print("<table>");
-    printInputField(&response, "CREDUSER", "User (# to clear)", _preferences->getString(preference_cred_user).c_str(), 30, "id=\"inputuser\"", false, true);
+    printInputField(&response, "CREDUSER", "User", _preferences->getString(preference_cred_user).c_str(), 30, "id=\"inputuser\"", false, true);
     printInputField(&response, "CREDPASS", "Password", "*", 30, "id=\"inputpass\"", true, true);
     printInputField(&response, "CREDPASSRE", "Retype password", "*", 30, "id=\"inputpass2\"", true);
+    response.print("<tr><td>Remove login</td><td><button type=\"button\" data-set-value=\"CREDUSER\" data-value=\"#\">Remove on save</button></td></tr>");
     std::vector<std::pair<String, String>> httpAuthOptions;
     httpAuthOptions.push_back(std::make_pair("0", "Basic"));
     httpAuthOptions.push_back(std::make_pair("1", "Digest"));
     httpAuthOptions.push_back(std::make_pair("2", "Form"));
     printDropDown(&response, "CREDDIGEST", "HTTP Authentication type", String(_preferences->getInt(preference_http_auth_type, 0)), httpAuthOptions, "");
     printInputField(&response, "CREDTRUSTPROXY", "Bypass authentication for reverse proxy with IP", _preferences->getString(preference_bypass_proxy, "").c_str(), 255, "");
-    printCheckBox(&response, "DUOENA", "Duo Push authentication enabled", _preferences->getBool(preference_cred_duo_enabled, false), "");
+    response.print("</table>");
+
+    response.print("<h3>Second factor</h3>");
+    response.print("<table>");
+    bool totpEnabled = _preferences->getBool(preference_totp_enabled, false);
+    bool duoEnabled = _preferences->getBool(preference_cred_duo_enabled, false);
+    std::vector<std::pair<String, String>> mfaOptions;
+    mfaOptions.push_back(std::make_pair("none", "None"));
+    mfaOptions.push_back(std::make_pair("totp", "Authenticator app (TOTP)"));
+    mfaOptions.push_back(std::make_pair("duo", "Duo Push"));
+    printDropDown(&response, "MFAMODE", "Second factor for login", duoEnabled ? "duo" : totpEnabled ? "totp" : "none", mfaOptions, "mfa");
+    response.print("<input type=\"hidden\" name=\"TOTPENA\" id=\"totpena\" value=\"");
+    response.print(totpEnabled ? "1" : "0");
+    response.print("\"><input type=\"hidden\" name=\"DUOENA\" id=\"duoena\" value=\"");
+    response.print(duoEnabled ? "1" : "0");
+    response.print("\">");
+    printInputField(&response, "CREDTOTP", "TOTP Secret Key", "*", 16, "class=\"mfa-totp\"", true, false);
+    response.print("<tr id=\"totpgentr\" class=\"mfa-totp\"><td colspan=\"2\"><button type=\"button\" data-gen=\"CREDTOTP\" data-value=\"");
+    response.print(randomstr);
+    response.print("\">Generate new TOTP key</button></td></tr>");
+    printInputField(&response, "DUOHOST", "Duo API hostname", "*", 255, "class=\"mfa-duo\"", true, false);
+    printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "class=\"mfa-duo\"", true, false);
+    printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "class=\"mfa-duo\"", true, false);
+    printInputField(&response, "DUOUSER", "Duo user", "*", 255, "class=\"mfa-duo\"", true, false);
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOAPPROVAL");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOBYPASS");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOBYPASSHIGH");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "DUOBYPASSLOW");
-    printInputField(&response, "DUOHOST", "Duo API hostname", "*", 255, "", true, false);
-    printInputField(&response, "DUOIKEY", "Duo integration key", "*", 255, "", true, false);
-    printInputField(&response, "DUOSKEY", "Duo secret key", "*", 255, "", true, false);
-    printInputField(&response, "DUOUSER", "Duo user", "*", 255, "", true, false);
-    printCheckBox(&response, "TOTPENA", "TOTP authentication enabled", _preferences->getBool(preference_totp_enabled, false), "");
-    printInputField(&response, "CREDTOTP", "TOTP Secret Key", "*", 16, "", true, false);
-    response.print("<tr id=\"totpgentr\"><td colspan=\"2\"><button type=\"button\" data-gen=\"CREDTOTP\" data-value=\"");
-    response.print(randomstr);
-    response.print("\">Generate new TOTP key</button></td></tr>");
     printInputField(&response, "CREDBYPASS", "One-time MFA Bypass", "*", 32, "", true, false);
     response.print("<tr id=\"bypassgentr\"><td colspan=\"2\"><button type=\"button\" data-gen=\"CREDBYPASS\" data-value=\"");
     response.print(randomstr2);
     response.print("\">Generate new Bypass</button></td></tr>");
+    response.print("</table>");
+
+    response.print("<h3>Admin key</h3>");
+    response.print("<table>");
     printInputField(&response, "CREDADMIN", "Admin key", "*", 32, "", true, false);
     response.print("<tr id=\"admingentr\"><td colspan=\"2\"><button type=\"button\" data-gen=\"CREDADMIN\" data-value=\"");
     response.print(randomstr3);
     response.print("\">Generate new Admin key</button></td></tr>");
+    response.print("</table>");
+
+    response.print("<h3>Sessions</h3>");
+    response.print("<table>");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDLFTM");
     printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDLFTMRMBR");
-    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDDUOLFTM");
-    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDDUOLFTMRMBR");
-    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDTOTPLFTM");
-    printSetting(&response, credentialsSettings, credentialsSettingsCount, "CREDTOTPLFTMRMBR");
     response.print("</table>");
     response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
@@ -837,6 +856,19 @@ void WebCfgServer::processCredentialsArgs(PsychicRequest *request, ProcessArgsSt
     }
 
     applySettings(request, credentialsSettings, credentialsSettingsCount, state);
+
+    if(request->hasParam("CREDLFTM"))
+    {
+        int lifetime = _preferences->getInt(preference_cred_session_lifetime, 3600);
+        _preferences->putInt(preference_cred_session_lifetime_duo, lifetime);
+        _preferences->putInt(preference_cred_session_lifetime_totp, lifetime);
+    }
+    if(request->hasParam("CREDLFTMRMBR"))
+    {
+        int lifetime = _preferences->getInt(preference_cred_session_lifetime_remember, 720);
+        _preferences->putInt(preference_cred_session_lifetime_duo_remember, lifetime);
+        _preferences->putInt(preference_cred_session_lifetime_totp_remember, lifetime);
+    }
 
     if(request->hasParam("CREDDIGEST"))
     {

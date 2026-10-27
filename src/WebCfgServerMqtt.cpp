@@ -30,37 +30,49 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     buildHtmlHeader(&response);
     response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
-    response.print("<h3>Basic MQTT Configuration</h3>");
+    response.print("<h3>Broker</h3>");
     response.print("<table>");
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTSERVER");
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTPORT");
-    printInputField(&response, "MQTTUSER", "MQTT User (# to clear)", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
+    printInputField(&response, "MQTTUSER", "MQTT User", _preferences->getString(preference_mqtt_user).c_str(), 30, "", false, true);
     printInputField(&response, "MQTTPASS", "MQTT Password", "*", 40, "", true, true);
+    response.print("<tr><td>Remove user and password</td><td><button type=\"button\" data-set-value=\"MQTTUSER\" data-value=\"#\">Remove on save</button></td></tr>");
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTPATH");
-    printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "NETTIMEOUT");
     response.print("</table>");
 
-    response.print("<h3>Advanced MQTT Configuration</h3>");
+    response.print("<h3>Home Assistant</h3>");
     response.print("<table>");
+    printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
     printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (usually \"homeassistant\")", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "class=\"chkHass\"");
-    //printCheckBox(&response, "HADEVDISC", "Use Home Assistant device based discovery (2024.11+)", _preferences->getBool(preference_hass_device_discovery), "");
     if(_preferences->getBool(preference_opener_enabled, false))
     {
         printSetting(&response, mqttSettings, mqttSettingsCount, "OPENERCONT");
     }
+    response.print("</table>");
+
+    response.print("<h3>Remote configuration over MQTT</h3>");
+    response.print("<table>");
+    printCheckBox(&response, "CONFNHPUB", "Publish Nuki Hub configuration information", _preferences->getBool(preference_publish_config, false), "");
+    printCheckBox(&response, "CONFNHCTRL", "Modify Nuki Hub configuration over MQTT", _preferences->getBool(preference_config_from_mqtt, false), "");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "UPDATEMQTT");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTLOG");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "DISNONJSON");
+    response.print("</table>");
+
+    response.print("<h3>Hybrid mode (official Nuki MQTT)</h3>");
+    response.print("<table>");
+    printCheckBox(&response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid_enabled), "");
+    printCheckBox(&response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "HYBRIDTIMER");
+    response.print("</table>");
+
+    response.print("<h3>TLS</h3>");
+    response.print("<table>");
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTSENA");
     response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><a class=\"btn\" href=\"/get?page=mqttcaconfig\">Change</a></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><a class=\"btn\" href=\"/get?page=mqttcrtconfig\">Change</a></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Key</td><td><a class=\"btn\" href=\"/get?page=mqttkeyconfig\">Change</a></td></tr>");
-    printSetting(&response, mqttSettings, mqttSettingsCount, "NETTIMEOUT");
-    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTLOG");
-    printSetting(&response, mqttSettings, mqttSettingsCount, "UPDATEMQTT");
-    printSetting(&response, mqttSettings, mqttSettingsCount, "DISNONJSON");
-    printCheckBox(&response, "OFFHYBRID", "Enable hybrid official MQTT and Nuki Hub setup", _preferences->getBool(preference_official_hybrid_enabled), "");
-    printCheckBox(&response, "HYBRIDACT", "Enable sending actions through official MQTT", _preferences->getBool(preference_official_hybrid_actions), "");
-    printSetting(&response, mqttSettings, mqttSettingsCount, "HYBRIDTIMER");
-    printCheckBox(&response, "HYBRIDRETRY", "Retry command sent using official MQTT over BLE if failed", _preferences->getBool(preference_official_hybrid_retry), "");
-    printCheckBox(&response, "HYBRIDREBOOT", "Reboot Nuki lock on official MQTT failure", _preferences->getBool(preference_hybrid_reboot_on_disconnect, false), "");
     response.print("</table>");
     response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
