@@ -97,6 +97,7 @@ private:
     esp_err_t processFactoryReset(PsychicRequest *request, PsychicResponse* resp);
     void printTextarea(PsychicStreamResponse *response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(PsychicStreamResponse *response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options, const String className);
+    void printSetupStep(PsychicStreamResponse *response, const char *title, const char *targetPath, bool done);
     void buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
@@ -177,6 +178,7 @@ private:
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;
     bool _isSSL = false;
+    char _assetVersion[9] = "0";
     uint8_t _partitionType = 0;
     size_t _otaContentLen = 0;
     String _hostname;

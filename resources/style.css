@@ -84,26 +84,30 @@ header.top .brand {
     text-decoration: none;
 }
 
-header.top .brand::before {
-    content: "";
-    display: inline-block;
-    width: .7rem;
-    height: .7rem;
-    margin-right: .5rem;
-    border-radius: 50%;
-    background: var(--accent);
-    vertical-align: baseline;
+header.top .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    line-height: 1;
+}
+
+header.top .brand img {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
 }
 
 header.top .host {
     color: var(--tx-2);
     font-family: var(--mono);
     font-size: .85rem;
+    line-height: 1;
 }
 
 header.top .version {
     color: var(--tx-2);
     font-size: .85rem;
+    line-height: 1;
 }
 
 header.top nav {
@@ -421,6 +425,74 @@ nav.menu a span {
     font-size: .85rem;
     font-weight: 400;
     color: var(--warn);
+}
+
+nav.menu a .state {
+    float: right;
+    margin: 0 0 0 .5rem;
+    padding: 1px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--warn);
+    font-size: .75rem;
+    font-weight: 600;
+}
+
+nav.menu a .state.done {
+    color: var(--ok);
+    border-color: var(--ok);
+}
+
+.wizard {
+    max-width: 640px;
+}
+
+.steps {
+    display: flex;
+    gap: .5rem;
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    counter-reset: step;
+}
+
+.steps li {
+    flex: 1 1 0;
+    padding: .5rem 0 .4rem;
+    border-top: 3px solid var(--line);
+    color: var(--tx-2);
+    font-size: .85rem;
+    font-weight: 600;
+    counter-increment: step;
+}
+
+.steps li::before {
+    content: counter(step) " · ";
+    color: var(--tx-2);
+    font-weight: 400;
+}
+
+.steps li[aria-current] {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.steps li.done {
+    border-color: var(--ok);
+    color: var(--ok);
+}
+
+.wizard .card h4 {
+    margin-top: 0;
+}
+
+.wizard .card .actions {
+    margin-bottom: 0;
+}
+
+.wizard-foot {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .auth-card {

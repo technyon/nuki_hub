@@ -68,7 +68,26 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
     PsychicStreamResponse response(resp, "text/html");
     response.beginSend();
     buildHtmlHeader(&response);
-    response.print("<h3>Available WiFi networks</h3>");
+    response.print("<div class=\"wizard\" data-wizard>");
+    response.print("<ol class=\"steps\"><li>Start</li><li>Network</li><li>Connect</li></ol>");
+
+    response.print("<section data-step=\"1\">");
+    response.print("<h3>Welcome</h3>");
+    response.print("<p>Nuki Hub connects your Nuki devices to your network. First it needs to join your Wi-Fi; everything else is configured afterwards from the network.</p>");
+    response.print("<div class=\"card\"><h4>Set up a new hub</h4><p>Pick your Wi-Fi and enter its password. The hub reboots and is then reachable on your network.</p><div class=\"actions\"><button type=\"button\" class=\"primary\" data-next>Continue</button></div></div>");
+#ifndef NUKI_HUB_UPDATER
+    response.print("<div class=\"card\"><h4>Restore a backup</h4><p>Upload a settings export from another Nuki Hub. Wi-Fi settings and pairing data in the export are restored too.</p>");
+    response.print("<form method=\"post\" action=\"post\"><table><tr><td>Configuration file</td><td><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" data-fill=\"#importjson\"></td></tr></table>");
+    response.print("<textarea id=\"importjson\" name=\"importjson\" hidden></textarea>");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Restore\"></div></form></div>");
+#endif
+    response.print("</section>");
+
+    response.print("<form method=\"post\" action=\"savewifi\">");
+    response.print("<section data-step=\"2\" hidden>");
+    response.print("<h3>Choose your network</h3>");
+    response.print("<p>The list refreshes every few seconds. Click a network to select it, or type a hidden network's name.</p>");
     response.print("<table id=\"aplist\">");
     createSsidList();
     for (int i = 0; i < _ssidList.size(); i++)
@@ -76,35 +95,35 @@ esp_err_t WebCfgServer::buildWifiConnectHtml(PsychicRequest *request, PsychicRes
         response.print("<tr class=\"trssid\" data-ssid=\"" + htmlEscape(_ssidList[i].c_str()) + "\"><td>" + htmlEscape(_ssidList[i].c_str()) + " (" + String(_rssiList[i]) + " %)</td></tr>");
     }
     response.print("</table>");
-    response.print("<form method=\"post\" action=\"savewifi\">");
-    response.print("<h3>WiFi credentials</h3>");
     response.print("<table>");
-    printInputField(&response, "WIFISSID", "SSID", "", 32, "id=\"inputssid\"", false, true);
-    printInputField(&response, "WIFIPASS", "Secret key", "", 63, "id=\"inputpass\"", false, true);
-    printCheckBox(&response, "FINDBESTRSSI", "Find AP with best signal (disable for hidden SSID)", _preferences->getBool(preference_find_best_rssi, true), "");
-    printCheckBox(&response, "WIFIPSDIS", "Disable Wi-Fi power save (improves weak connections)", _preferences->getBool(preference_wifi_power_save_disabled, false), "");
-    printInputField(&response, "WIFIBSSID", "Preferred access point MAC address (BSSID, e.g. aa:bb:cc:dd:ee:ff, falls back to any access point after two failed attempts)", _preferences->getString(preference_wifi_preferred_bssid).c_str(), 17, "");
+    printInputField(&response, "WIFISSID", "Network name (SSID)", "", 32, "id=\"inputssid\"", false, true);
+    printCheckBox(&response, "FINDBESTRSSI", "Connect to the access point with the strongest signal (disable for hidden networks)", _preferences->getBool(preference_find_best_rssi, true), "");
+    printInputField(&response, "WIFIBSSID", "Preferred access point MAC address (optional, e.g. aa:bb:cc:dd:ee:ff)", _preferences->getString(preference_wifi_preferred_bssid).c_str(), 17, "");
     response.print("</table>");
-    response.print("<h3>IP Address assignment</h3>");
+    response.print("<div class=\"actions\"><button type=\"button\" data-back>Back</button><button type=\"button\" class=\"primary\" data-next>Continue</button></div>");
+    response.print("</section>");
+
+    response.print("<section data-step=\"3\" hidden>");
+    response.print("<h3>Connect</h3>");
     response.print("<table>");
-    printCheckBox(&response, "DHCPENA", "Enable DHCP", _preferences->getBool(preference_ip_dhcp_enabled), "");
+    printInputField(&response, "WIFIPASS", "Wi-Fi password", "", 63, "id=\"inputpass\"", false, true);
+    printCheckBox(&response, "WIFIPSDIS", "Disable Wi-Fi power save (improves weak connections)", _preferences->getBool(preference_wifi_power_save_disabled, false), "");
+    response.print("</table>");
+    response.print("<h3>IP address</h3>");
+    response.print("<table>");
+    printCheckBox(&response, "DHCPENA", "Get an IP address automatically (DHCP)", _preferences->getBool(preference_ip_dhcp_enabled), "");
     printInputField(&response, "IPADDR", "Static IP address", _preferences->getString(preference_ip_address).c_str(), 15, "");
     printInputField(&response, "IPSUB", "Subnet", _preferences->getString(preference_ip_subnet).c_str(), 15, "");
     printInputField(&response, "IPGTW", "Default gateway", _preferences->getString(preference_ip_gateway).c_str(), 15, "");
     printInputField(&response, "DNSSRV", "DNS Server", _preferences->getString(preference_ip_dns_server).c_str(), 15, "");
     response.print("</table>");
-    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
+    response.print("<div class=\"actions\"><button type=\"button\" data-back>Back</button><input type=\"submit\" name=\"submit\" value=\"Connect\"></div>");
+    response.print("</section>");
     response.print("</form>");
-#ifndef NUKI_HUB_UPDATER
-    response.print("<h3>Import configuration</h3>");
-    response.print("<form method=\"post\" action=\"post\"><table><tr><td>Configuration file</td><td><input type=\"file\" id=\"importfile\" accept=\".json,application/json\" data-fill=\"#importjson\"></td></tr></table>");
-    response.print("<textarea id=\"importjson\" name=\"importjson\" hidden></textarea>");
-    response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
-    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Import\"></div></form>");
-#endif
-    response.print("<h3>Reboot</h3>");
-    response.print("<form action=\"/reboot\" method=\"get\">");
-    response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><div class=\"actions\"><input type=\"submit\" value=\"Reboot\"></div></form>");
+
+    response.print("<form action=\"/reboot\" method=\"get\" class=\"wizard-foot\">");
+    response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><button type=\"submit\" class=\"small\">Reboot the hub</button></form>");
+    response.print("</div>");
     buildHtmlFooter(&response);
     return response.endSend();
 }
