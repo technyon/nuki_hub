@@ -8,6 +8,7 @@
 #include "FS.h"
 #include "SPIFFS.h"
 #include "esp_random.h"
+#include "esp_rom_crc.h"
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
@@ -78,6 +79,9 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
     String str = _preferences->getString(preference_cred_user, "");
     str = _preferences->getString(preference_cred_user, "");
     _isSSL = (psychicServer->getPort() == 443);
+    uint32_t assetCrc = esp_rom_crc32_le(0, stylecss, sizeof(stylecss));
+    assetCrc = esp_rom_crc32_le(assetCrc, appjs, sizeof(appjs));
+    snprintf(_assetVersion, sizeof(_assetVersion), "%08lx", (unsigned long)assetCrc);
 
     _duoEnabled = _importExport->getDuoEnabled();
     _bypassGPIO = _importExport->getBypassGPIOEnabled();
@@ -1245,14 +1249,18 @@ void WebCfgServer::buildHtmlHeader(PsychicStreamResponse *response, const String
     {
         response->print(additionalHeader);
     }
-    response->print("<link rel=\"stylesheet\" href=\"/style.css\"><script src=\"/app.js\" defer></script>");
+    response->print("<link rel=\"stylesheet\" href=\"/style.css?v=");
+    response->print(_assetVersion);
+    response->print("\"><script src=\"/app.js?v=");
+    response->print(_assetVersion);
+    response->print("\" defer></script>");
     response->print("<title>Nuki Hub</title></head><body");
     if(bodyAttributes.length() > 0)
     {
         response->print(" ");
         response->print(bodyAttributes);
     }
-    response->print("><header class=\"top\"><a class=\"brand\" href=\"/\">Nuki Hub</a>");
+    response->print("><header class=\"top\"><a class=\"brand\" href=\"/\"><img src=\"/favicon.ico\" alt=\"\" width=\"22\" height=\"22\">Nuki Hub</a>");
     if(_hostname.length() > 0)
     {
         response->print("<span class=\"host\">");
@@ -1474,6 +1482,21 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
 #ifdef DEBUG_NUKIHUB
     response.print("<div class=\"banner danger\">Running debug build, switch to release build as soon as possible</div>");
 #endif
+#ifndef NUKI_HUB_UPDATER
+    bool deviceEnabled = _preferences->getBool(preference_lock_enabled, true) || _preferences->getBool(preference_opener_enabled, false);
+    bool devicePaired = (_nuki != nullptr && _nuki->isPaired()) || (_nukiOpener != nullptr && _nukiOpener->isPaired());
+    bool loginSet = _preferences->getString(preference_cred_user, "").length() > 0;
+    if(!_brokerConfigured || !deviceEnabled || !devicePaired || !loginSet)
+    {
+        response.print("<h3>Setup</h3>");
+        response.print("<nav class=\"menu\">");
+        printSetupStep(&response, "Connect an MQTT broker", "/get?page=mqttconfig", _brokerConfigured);
+        printSetupStep(&response, "Enable your lock or opener", "/get?page=nukicfg", deviceEnabled);
+        printSetupStep(&response, "Pair the device (hold its button until the ring lights up)", "/get?page=nukicfg", devicePaired);
+        printSetupStep(&response, "Protect this configurator with a login", "/get?page=cred", loginSet);
+        response.print("</nav>");
+    }
+#endif
     response.print("<h3>Status</h3>");
     response.print("<table>");
     printParameter(&response, "Hostname", _hostname.c_str(), "", "hostname");
@@ -1638,6 +1661,17 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
 
     response->print("</select>");
     response->print("</td></tr>");
+}
+
+void WebCfgServer::printSetupStep(PsychicStreamResponse *response, const char *title, const char *targetPath, bool done)
+{
+    response->print("<a href=\"");
+    response->print(targetPath);
+    response->print("\"><span class=\"state");
+    response->print(done ? " done\">Done" : "\">To do");
+    response->print("</span>");
+    response->print(title);
+    response->print("</a>");
 }
 
 void WebCfgServer::buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage)

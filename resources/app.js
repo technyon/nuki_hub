@@ -53,6 +53,37 @@
         });
     }
 
+    const wizard = $('[data-wizard]');
+    if (wizard) {
+        let step = 1;
+        const show = () => {
+            $$('[data-step]', wizard).forEach(section => { section.hidden = Number(section.dataset.step) !== step; });
+            $$('.steps li', wizard).forEach((item, index) => {
+                if (index + 1 === step) {
+                    item.setAttribute('aria-current', 'step');
+                } else {
+                    item.removeAttribute('aria-current');
+                }
+                item.classList.toggle('done', index + 1 < step);
+            });
+        };
+        wizard.addEventListener('click', event => {
+            if (event.target.closest('[data-next]')) {
+                if (step === 2 && !$('#inputssid').value.trim()) {
+                    alert('Choose a network or enter its name first');
+                    return;
+                }
+                step = Math.min(3, step + 1);
+                show();
+            }
+            if (event.target.closest('[data-back]')) {
+                step = Math.max(1, step - 1);
+                show();
+            }
+        });
+        show();
+    }
+
     const aplist = $('#aplist');
     if (aplist) {
         poll('/ssidlist', 3000, html => { aplist.innerHTML = html; });

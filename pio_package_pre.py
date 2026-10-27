@@ -14,7 +14,7 @@ def embed_gzipped(source, output):
     with open(source, 'rb') as readfile:
         content = readfile.read()
     with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as compressed:
-        with gzip.GzipFile(fileobj=compressed, mode='wb', mtime=0) as gz:
+        with gzip.GzipFile(filename='', fileobj=compressed, mode='wb', mtime=0) as gz:
             gz.write(content)
         compressed_path = compressed.name
     os.system("python resources/bin2array/bin2array.py " + compressed_path + " -O " + output + " -l 16")
