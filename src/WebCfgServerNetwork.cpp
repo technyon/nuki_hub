@@ -38,27 +38,33 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     buildHtmlHeader(&response);
     response.print("<form method=\"post\" action=\"post\">");
     response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
-    response.print("<h3>Network Configuration</h3>");
+    response.print("<h3>General</h3>");
     response.print("<table>");
     printSetting(&response, networkSettings, networkSettingsCount, "HOSTNAME");
     printDropDown(&response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions(), "");
     printSetting(&response, networkSettings, networkSettingsCount, "HASSCUURL");
+    printSetting(&response, networkSettings, networkSettingsCount, "CHECKUPDATE");
+    response.print("</table>");
+    response.print("<h3>Wi-Fi and connection</h3>");
+    response.print("<table>");
+    printSetting(&response, networkSettings, networkSettingsCount, "FINDBESTRSSI");
+    printSetting(&response, networkSettings, networkSettingsCount, "WIFIPSDIS");
+    printSetting(&response, networkSettings, networkSettingsCount, "WIFIBSSID");
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     printSetting(&response, networkSettings, networkSettingsCount, "RSSI");
 #endif
     printSetting(&response, networkSettings, networkSettingsCount, "RSTDISC");
-    printSetting(&response, networkSettings, networkSettingsCount, "CHECKUPDATE");
-    printSetting(&response, networkSettings, networkSettingsCount, "FINDBESTRSSI");
-    printSetting(&response, networkSettings, networkSettingsCount, "WIFIPSDIS");
-    printSetting(&response, networkSettings, networkSettingsCount, "WIFIBSSID");
+    response.print("</table>");
     if(nuki_hub_https_server_enabled)
     {
+        response.print("<h3>HTTPS</h3>");
+        response.print("<table>");
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><a class=\"btn\" href=\"/get?page=httpcrtconfig\">Change</a></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><a class=\"btn\" href=\"/get?page=httpkeyconfig\">Change</a></td></tr>");
         response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><a class=\"btn\" href=\"/get?page=selfsignhttps\">Generate</a></td></tr>");
         printSetting(&response, networkSettings, networkSettingsCount, "HTTPSFQDN");
+        response.print("</table>");
     }
-    response.print("</table>");
     response.print("<h3>IP Address assignment</h3>");
     response.print("<table>");
     printSetting(&response, networkSettings, networkSettingsCount, "DHCPENA");

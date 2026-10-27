@@ -85,6 +85,18 @@
         apply();
     }
 
+    const mfa = $('select.mfa');
+    if (mfa) {
+        const apply = () => {
+            $('#totpena').value = mfa.value === 'totp' ? '1' : '0';
+            $('#duoena').value = mfa.value === 'duo' ? '1' : '0';
+            $$('.mfa-totp').forEach(el => { (el.closest('tr') || el).hidden = mfa.value !== 'totp'; });
+            $$('.mfa-duo').forEach(el => { (el.closest('tr') || el).hidden = mfa.value !== 'duo'; });
+        };
+        mfa.addEventListener('change', apply);
+        apply();
+    }
+
     const credentials = $('#credfrm');
     if (credentials) {
         credentials.addEventListener('submit', event => {
@@ -178,6 +190,13 @@
         const ssid = event.target.closest('tr[data-ssid]');
         if (ssid) {
             $('#inputssid').value = ssid.dataset.ssid;
+        }
+
+        const setValue = event.target.closest('[data-set-value]');
+        if (setValue) {
+            const field = document.getElementsByName(setValue.dataset.setValue)[0];
+            field.value = setValue.dataset.value;
+            field.focus();
         }
 
         const generate = event.target.closest('[data-gen]');

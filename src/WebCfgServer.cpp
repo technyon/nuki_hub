@@ -1855,16 +1855,26 @@ void WebCfgServer::printSetting(PsychicStreamResponse* response, const Setting* 
             continue;
         }
 
+        String label = setting.label;
+        if(setting.effect == SettingEffect::ConfigChanged || setting.effect == SettingEffect::RestartReconnect || setting.effect == SettingEffect::RestartNoReconnect)
+        {
+            label += " <span class=\"tag\">reboot</span>";
+        }
+        else if(setting.effect == SettingEffect::ClearSession)
+        {
+            label += " <span class=\"tag\">re-login</span>";
+        }
+
         switch(setting.type)
         {
         case SettingType::Bool:
-            printCheckBox(response, setting.token, setting.label, _preferences->getBool(setting.preference, setting.defaultValue != 0), setting.args);
+            printCheckBox(response, setting.token, label.c_str(), _preferences->getBool(setting.preference, setting.defaultValue != 0), setting.args);
             break;
         case SettingType::Int:
-            printInputField(response, setting.token, setting.label, _preferences->getInt(setting.preference, setting.defaultValue), setting.maxLength, setting.args);
+            printInputField(response, setting.token, label.c_str(), _preferences->getInt(setting.preference, setting.defaultValue), setting.maxLength, setting.args);
             break;
         case SettingType::String:
-            printInputField(response, setting.token, setting.label, _preferences->getString(setting.preference).c_str(), setting.maxLength, setting.args);
+            printInputField(response, setting.token, label.c_str(), _preferences->getString(setting.preference).c_str(), setting.maxLength, setting.args);
             break;
         }
         return;

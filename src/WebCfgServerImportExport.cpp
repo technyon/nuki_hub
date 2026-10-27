@@ -18,10 +18,12 @@ esp_err_t WebCfgServer::buildImportExportHtml(PsychicRequest *request, PsychicRe
     response.print("<input type=\"hidden\" name=\"page\" value=\"import\">");
     response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Import\"></div></form>");
     response.print("<h3>Export configuration</h3>");
-    response.print("<div class=\"actions stack\">");
-    response.print("<a class=\"btn\" href=\"/get?page=export\">Export without sensitive settings</a>");
-    response.print("<a class=\"btn\" href=\"/get?page=export&redacted=1\">Export including sensitive settings</a>");
-    response.print("<a class=\"btn\" href=\"/get?page=export&redacted=1&pairing=1\">Export including sensitive settings and pairing data</a>");
+    response.print("<form method=\"get\" action=\"/get\"><input type=\"hidden\" name=\"page\" value=\"export\"><table>");
+    response.print("<tr><td>Include sensitive settings (passwords, keys, tokens)</td><td><input type=\"checkbox\" name=\"redacted\" value=\"1\"></td></tr>");
+    response.print("<tr><td>Include pairing data (lets another hub take over the paired devices)</td><td><input type=\"checkbox\" name=\"pairing\" value=\"1\"></td></tr>");
+    response.print("</table><div class=\"actions\"><input type=\"submit\" value=\"Export\"></div></form>");
+    response.print("<h3>Certificates and diagnostics</h3>");
+    response.print("<div class=\"actions\">");
     if(nuki_hub_https_server_enabled)
     {
         response.print("<a class=\"btn\" href=\"/get?page=export&type=https\">Export HTTP SSL certificate and key</a>");

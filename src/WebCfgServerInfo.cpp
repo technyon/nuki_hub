@@ -392,8 +392,6 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getInt(preference_keypad_max_entries, MAX_KEYPAD));
     response.print("\nPublish timecontrol info: ");
     response.print(_preferences->getBool(preference_timecontrol_info_enabled, false) ? "Yes" : "No");
-    response.print("\nKeypad query interval (s): ");
-    response.print(_preferences->getInt(preference_query_interval_keypad, 1800));
     response.print("\nEnable timecontrol control: ");
     response.print(_preferences->getBool(preference_timecontrol_control_enabled, false) ? "Yes" : "No");
     response.print("\nPublish timecontrol topic per entry: ");
