@@ -2,8 +2,8 @@
 
 #include "sdkconfig.h"
 
-#define NUKI_HUB_VERSION "9.20"
-#define NUKI_HUB_VERSION_INT (uint32_t)920
+#define NUKI_HUB_VERSION "10.00"
+#define NUKI_HUB_VERSION_INT (uint32_t)1000
 #define NUKI_HUB_BUILD "unknownbuildnr"
 #define NUKI_HUB_DATE "2026-10-24"
 #define NUKI_HUB_DATE "2026-10-24"
@@ -258,8 +258,8 @@
 #define NUKI_TASK_SIZE 8192
 #define MAX_AUTHLOG 5
 #define MAX_KEYPAD 10
-#define KEYPAD_JSON_QUEUE_SIZE 10
-#define KEYPAD_JSON_MAX_LENGTH 512
+#define NUKI_COMMAND_QUEUE_SIZE 10
+#define NUKI_COMMAND_MAX_LENGTH 512
 #define MAX_TIMECONTROL 10
 #define MAX_AUTH 10
 #endif

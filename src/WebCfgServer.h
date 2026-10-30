@@ -4,6 +4,7 @@
 #include <PsychicHttp.h>
 #include "enums/NukiPinState.h"
 #include "WebSessionProvider.h"
+#include "WebCfgSettings.h"
 
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
 #include <PsychicHttpsServer.h>
@@ -58,6 +59,21 @@ private:
     bool processImport(PsychicRequest *request, PsychicResponse* resp, String& message);
     esp_err_t sendSettings(PsychicRequest *request, PsychicResponse* resp, bool adminKey = false);
     bool processArgs(PsychicRequest *request, PsychicResponse* resp, String& message);
+    struct ProcessArgsState
+    {
+        bool configChanged = false;
+        bool clearSession = false;
+        bool newMFA = false;
+        bool restartServicesNoReconnect = false;
+        bool restartServicesReconnect = false;
+    };
+    void applySettings(PsychicRequest *request, const Setting* settings, size_t count, ProcessArgsState& state);
+    void printSetting(PsychicStreamResponse* response, const Setting* settings, size_t count, const char* token);
+    void processMqttArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processNetworkArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processCredentialsArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processNukiArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
+    void processAdvancedArgs(PsychicRequest *request, ProcessArgsState& state, String& message);
     void processGpioArgs(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildAccLvlHtml(PsychicRequest *request, PsychicResponse* resp);
@@ -81,6 +97,7 @@ private:
     esp_err_t processFactoryReset(PsychicRequest *request, PsychicResponse* resp);
     void printTextarea(PsychicStreamResponse *response, const char *token, const char *description, const char *value, const size_t& maxLength, const bool& enabled = true, const bool& showLengthRestriction = false);
     void printDropDown(PsychicStreamResponse *response, const char *token, const char *description, const String preselectedValue, std::vector<std::pair<String, String>> options, const String className);
+    void printSetupStep(PsychicStreamResponse *response, const char *title, const char *targetPath, bool done);
     void buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage = "");
 
     const std::vector<std::pair<String, String>> getNetworkDetectionOptions() const;
@@ -128,11 +145,18 @@ private:
     esp_err_t buildSSIDListHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildConfirmHtml(PsychicRequest *request, PsychicResponse* resp, const String &message, uint32_t redirectDelay = 5, bool redirect = false, String redirectTo = "/");
     esp_err_t buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug = false);
+#ifndef NUKI_HUB_UPDATER
+    void printOtaForm(PsychicStreamResponse* response, const char* channel, const char* compareTo, const char* sameBuild, const char* confirmMessage, const char* buttonClass, const char* label, const char* channelValue);
+#endif
     esp_err_t sendCss(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendJs(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendStatic(PsychicResponse* resp, const char* contentType, const uint8_t* content, size_t length);
     esp_err_t sendWebSerial(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t sendFavicon(PsychicRequest *request, PsychicResponse* resp);
     void createSsidList();
-    void buildHtmlHeader(PsychicStreamResponse *response, String additionalHeader = "");
+    void buildHtmlHeader(PsychicStreamResponse *response, const String& additionalHeader = "", const String& bodyAttributes = "");
+    void buildHtmlFooter(PsychicStreamResponse *response);
+    static String htmlEscape(const char* value);
     void waitAndProcess(const bool blocking, const uint32_t duration);
     esp_err_t handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final);
     void printCheckBox(PsychicStreamResponse *response, const char* token, const char* description, const bool value, const char* htmlClass);
@@ -154,6 +178,7 @@ private:
     char _credPassword[31] = {0};
     bool _allowRestartToPortal = false;
     bool _isSSL = false;
+    char _assetVersion[9] = "0";
     uint8_t _partitionType = 0;
     size_t _otaContentLen = 0;
     String _hostname;

@@ -1,4 +1,6 @@
+#include <algorithm>
 #include "NukiNetworkOpener.h"
+#include "NukiJson.h"
 #include "PsramJsonAllocator.h"
 #include "Arduino.h"
 #include "MqttTopics.h"
@@ -467,6 +469,18 @@ void NukiNetworkOpener::publishRing(const bool locked)
 
     _nukiPublisher->publishString(mqtt_topic_lock_binary_ring, "ring", true);
     _resetRingStateTs = espMillis() + 2000;
+    _lastRingTs = espMillis();
+    time(&_lastRingTime);
+}
+
+const int64_t NukiNetworkOpener::lastRingTs() const
+{
+    return _lastRingTs;
+}
+
+const time_t NukiNetworkOpener::lastRingTime() const
+{
+    return _lastRingTime;
 }
 
 void NukiNetworkOpener::publishState(NukiOpener::OpenerState lockState)
@@ -960,85 +974,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
         publishKeypadEntry(basePath, entry);
 
         auto jsonEntry = json.add<JsonVariant>();
-
-        jsonEntry["codeId"] = entry.codeId;
-
-        if(publishCode)
-        {
-            jsonEntry["code"] = entry.code;
-        }
-        jsonEntry["enabled"] = entry.enabled;
-        jsonEntry["name"] = entry.name;
-        char createdDT[20];
-        sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateCreatedYear, entry.dateCreatedMonth, entry.dateCreatedDay, entry.dateCreatedHour, entry.dateCreatedMin, entry.dateCreatedSec);
-        jsonEntry["dateCreated"] = createdDT;
-        jsonEntry["lockCount"] = entry.lockCount;
-        char lastActiveDT[20];
-        sprintf(lastActiveDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.dateLastActiveYear, entry.dateLastActiveMonth, entry.dateLastActiveDay, entry.dateLastActiveHour, entry.dateLastActiveMin, entry.dateLastActiveSec);
-        jsonEntry["dateLastActive"] = lastActiveDT;
-        jsonEntry["timeLimited"] = entry.timeLimited;
-        char allowedFromDT[20];
-        sprintf(allowedFromDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedFromYear, entry.allowedFromMonth, entry.allowedFromDay, entry.allowedFromHour, entry.allowedFromMin, entry.allowedFromSec);
-        jsonEntry["allowedFrom"] = allowedFromDT;
-        char allowedUntilDT[20];
-        sprintf(allowedUntilDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedUntilYear, entry.allowedUntilMonth, entry.allowedUntilDay, entry.allowedUntilHour, entry.allowedUntilMin, entry.allowedUntilSec);
-        jsonEntry["allowedUntil"] = allowedUntilDT;
-
-        uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
-        JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
-
-        while(allowedWeekdaysInt > 0)
-        {
-            if(allowedWeekdaysInt >= 64)
-            {
-                weekdays.add("mon");
-                allowedWeekdaysInt -= 64;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 32)
-            {
-                weekdays.add("tue");
-                allowedWeekdaysInt -= 32;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 16)
-            {
-                weekdays.add("wed");
-                allowedWeekdaysInt -= 16;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 8)
-            {
-                weekdays.add("thu");
-                allowedWeekdaysInt -= 8;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 4)
-            {
-                weekdays.add("fri");
-                allowedWeekdaysInt -= 4;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 2)
-            {
-                weekdays.add("sat");
-                allowedWeekdaysInt -= 2;
-                continue;
-            }
-            if(allowedWeekdaysInt >= 1)
-            {
-                weekdays.add("sun");
-                allowedWeekdaysInt -= 1;
-                continue;
-            }
-        }
-
-        char allowedFromTimeT[6];
-        sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
-        jsonEntry["allowedFromTime"] = allowedFromTimeT;
-        char allowedUntilTimeT[6];
-        sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
-        jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
+        NukiJson::keypadEntry(entry, jsonEntry, publishCode);
 
         if(topicPerEntry)
         {
@@ -1158,16 +1094,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
     {
         for(const auto& slot : _keypadHaSlots)
         {
-            bool stillThere = false;
-            for(const auto& current : haSlots)
-            {
-                if(current == slot)
-                {
-                    stillThere = true;
-                    break;
-                }
-            }
-            if(!stillThere)
+            if(std::find(haSlots.begin(), haSlots.end(), slot) == haSlots.end())
             {
                 String codesTopic = _mqttPath;
                 codesTopic.concat(mqtt_topic_keypad_codes);
@@ -1212,65 +1139,7 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
     for(const auto& entry : timeControlEntries)
     {
         auto jsonEntry = json.add<JsonVariant>();
-
-        jsonEntry["entryId"] = entry.entryId;
-        jsonEntry["enabled"] = entry.enabled;
-        uint8_t weekdaysInt = entry.weekdays;
-        JsonArray weekdays = jsonEntry["weekdays"].to<JsonArray>();
-
-        while(weekdaysInt > 0)
-        {
-            if(weekdaysInt >= 64)
-            {
-                weekdays.add("mon");
-                weekdaysInt -= 64;
-                continue;
-            }
-            if(weekdaysInt >= 32)
-            {
-                weekdays.add("tue");
-                weekdaysInt -= 32;
-                continue;
-            }
-            if(weekdaysInt >= 16)
-            {
-                weekdays.add("wed");
-                weekdaysInt -= 16;
-                continue;
-            }
-            if(weekdaysInt >= 8)
-            {
-                weekdays.add("thu");
-                weekdaysInt -= 8;
-                continue;
-            }
-            if(weekdaysInt >= 4)
-            {
-                weekdays.add("fri");
-                weekdaysInt -= 4;
-                continue;
-            }
-            if(weekdaysInt >= 2)
-            {
-                weekdays.add("sat");
-                weekdaysInt -= 2;
-                continue;
-            }
-            if(weekdaysInt >= 1)
-            {
-                weekdays.add("sun");
-                weekdaysInt -= 1;
-                continue;
-            }
-        }
-
-        char timeT[6];
-        sprintf(timeT, "%02d:%02d", entry.timeHour, entry.timeMin);
-        jsonEntry["time"] = timeT;
-
-        memset(str, 0, sizeof(str));
-        NukiOpener::lockactionToString(entry.lockAction, str);
-        jsonEntry["lockAction"] = str;
+        NukiJson::timeControlEntry(entry, jsonEntry, NukiOpener::lockactionToString);
 
         if(topicPerEntry)
         {
@@ -1348,39 +1217,8 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
     for(const auto& entry : authEntries)
     {
         auto jsonEntry = json.add<JsonVariant>();
-
-        jsonEntry["authId"] = entry.authId;
-        jsonEntry["idType"] = entry.idType;
-        jsonEntry["enabled"] = entry.enabled;
-        jsonEntry["name"] = entry.name;
-        _authEntries[jsonEntry["authId"]] = jsonEntry["name"].as<String>();
-        jsonEntry["remoteAllowed"] = entry.remoteAllowed;
-        char createdDT[20];
-        sprintf(createdDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.createdYear, entry.createdMonth, entry.createdDay, entry.createdHour, entry.createdMinute, entry.createdSecond);
-        jsonEntry["dateCreated"] = createdDT;
-        jsonEntry["lockCount"] = entry.lockCount;
-        char lastActiveDT[20];
-        sprintf(lastActiveDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.lastActYear, entry.lastActMonth, entry.lastActDay, entry.lastActHour, entry.lastActMinute, entry.lastActSecond);
-        jsonEntry["dateLastActive"] = lastActiveDT;
-        jsonEntry["timeLimited"] = entry.timeLimited;
-        char allowedFromDT[20];
-        sprintf(allowedFromDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedFromYear, entry.allowedFromMonth, entry.allowedFromDay, entry.allowedFromHour, entry.allowedFromMinute, entry.allowedFromSecond);
-        jsonEntry["allowedFrom"] = allowedFromDT;
-        char allowedUntilDT[20];
-        sprintf(allowedUntilDT, "%04d-%02d-%02d %02d:%02d:%02d", entry.allowedUntilYear, entry.allowedUntilMonth, entry.allowedUntilDay, entry.allowedUntilHour, entry.allowedUntilMinute, entry.allowedUntilSecond);
-        jsonEntry["allowedUntil"] = allowedUntilDT;
-
-        uint8_t allowedWeekdaysInt = entry.allowedWeekdays;
-        JsonArray weekdays = jsonEntry["allowedWeekdays"].to<JsonArray>();
-
-        NukiHelper::weekdaysToJsonArray(allowedWeekdaysInt, weekdays);
-
-        char allowedFromTimeT[6];
-        sprintf(allowedFromTimeT, "%02d:%02d", entry.allowedFromTimeHour, entry.allowedFromTimeMin);
-        jsonEntry["allowedFromTime"] = allowedFromTimeT;
-        char allowedUntilTimeT[6];
-        sprintf(allowedUntilTimeT, "%02d:%02d", entry.allowedUntilTimeHour, entry.allowedUntilTimeMin);
-        jsonEntry["allowedUntilTime"] = allowedUntilTimeT;
+        NukiJson::authEntry(entry, jsonEntry);
+        _authEntries[entry.authId] = jsonEntry["name"].as<String>();
 
         if(topicPerEntry)
         {
@@ -1492,6 +1330,7 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
 
 void NukiNetworkOpener::publishConfigCommandResult(const char* result)
 {
+    recordCommandResult(result);
     _nukiPublisher->publishString(mqtt_topic_config_action_command_result, result, true);
 }
 
@@ -1506,16 +1345,35 @@ void NukiNetworkOpener::publishKeypadCommandResult(const char* result)
 
 void NukiNetworkOpener::publishKeypadJsonCommandResult(const char* result)
 {
+    recordCommandResult(result);
     _nukiPublisher->publishString(mqtt_topic_keypad_json_command_result, result, true);
 }
 
 void NukiNetworkOpener::publishTimeControlCommandResult(const char* result)
 {
+    recordCommandResult(result);
     _nukiPublisher->publishString(mqtt_topic_timecontrol_command_result, result, true);
+}
+
+void NukiNetworkOpener::recordCommandResult(const char* result)
+{
+    _lastCommandResult = result;
+    ++_commandResultCounter;
+}
+
+const String& NukiNetworkOpener::lastCommandResult() const
+{
+    return _lastCommandResult;
+}
+
+uint32_t NukiNetworkOpener::commandResultCounter() const
+{
+    return _commandResultCounter;
 }
 
 void NukiNetworkOpener::publishAuthCommandResult(const char* result)
 {
+    recordCommandResult(result);
     _nukiPublisher->publishString(mqtt_topic_auth_command_result, result, true);
 }
 
@@ -1589,24 +1447,8 @@ void NukiNetworkOpener::publishKeypadEntry(const String topic, NukiLock::KeypadE
 
 void NukiNetworkOpener::buildMqttPath(const char* path, char* outPath)
 {
-    int offset = 0;
-    for(const char& c : _mqttPath)
-    {
-        if(c == 0x00)
-        {
-            break;
-        }
-        outPath[offset] = c;
-        ++offset;
-    }
-    int i=0;
-    while(path[i] != 0x00)
-    {
-        outPath[offset] = path[i];
-        ++i;
-        ++offset;
-    }
-    outPath[offset] = 0x00;
+    strcpy(outPath, _mqttPath);
+    strcat(outPath, path);
 }
 
 void NukiNetworkOpener::subscribe(const char *path)
@@ -1618,10 +1460,8 @@ void NukiNetworkOpener::subscribe(const char *path)
 
 bool NukiNetworkOpener::comparePrefixedPath(const char *fullPath, const char *subPath)
 {
-    char prefixedPath[500];
-    buildMqttPath(subPath, prefixedPath);
-
-    return strcmp(fullPath, prefixedPath) == 0;
+    const size_t prefixLength = strlen(_mqttPath);
+    return strncmp(fullPath, _mqttPath, prefixLength) == 0 && strcmp(fullPath + prefixLength, subPath) == 0;
 }
 
 String NukiNetworkOpener::concat(String a, String b)

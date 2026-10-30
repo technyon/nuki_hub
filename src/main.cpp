@@ -45,6 +45,9 @@ bool nuki_hub_https_server_enabled = false;
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 #include "WebCfgServer.h"
+#ifndef NUKI_HUB_UPDATER
+#include "BridgeApi.h"
+#endif
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
@@ -100,6 +103,9 @@ PsychicWebSocketHandler* websocketHandler = nullptr;
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
 WebCfgServer* webCfgServerSSL = nullptr;
+#ifndef NUKI_HUB_UPDATER
+BridgeApi* bridgeApi = nullptr;
+#endif
 Preferences* preferences = nullptr;
 ImportExport* importExport = nullptr;
 
@@ -590,7 +596,6 @@ void cbSyncTime(struct timeval *tv)
     timeSynced = true;
 }
 
-#ifndef NUKI_HUB_UPDATER
 void startWebServer()
 {
     bool failed = true;
@@ -658,8 +663,22 @@ void startWebServer()
                     psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
                     psychicSSLServer->setCertificate(cert, key);
                     psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
+#ifndef NUKI_HUB_UPDATER
                     webCfgServerSSL = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
+#else
+                    webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
+#endif
                     webCfgServerSSL->initialize();
+                    if(preferences->getBool(preference_bridge_api_enabled, false))
+                    {
+#ifndef NUKI_HUB_UPDATER
+                    if(preferences->getBool(preference_bridge_api_enabled, false))
+                    {
+                        bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkLock, networkOpener, preferences, importExport);
+                        bridgeApi->initialize(psychicSSLServer);
+                    }
+#endif
+                    }
                     psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
                     {
                         return response->redirect("/");
@@ -676,8 +695,19 @@ void startWebServer()
     {
         psychicServer = new PsychicHttpServer;
         psychicServer->config.stack_size = HTTPD_TASK_SIZE;
+#ifndef NUKI_HUB_UPDATER
         webCfgServer = new WebCfgServer(nuki, nukiOpener, network, gpio, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
+#else
+        webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
+#endif
         webCfgServer->initialize();
+#ifndef NUKI_HUB_UPDATER
+        if(preferences->getBool(preference_bridge_api_enabled, false))
+        {
+            bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkLock, networkOpener, preferences, importExport);
+            bridgeApi->initialize(psychicServer);
+        }
+#endif
         psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
         {
             return response->redirect("/");
@@ -687,6 +717,7 @@ void startWebServer()
     }
 }
 
+#ifndef NUKI_HUB_UPDATER
 void startNuki(bool lock)
 {
     if (lock)
@@ -1048,6 +1079,10 @@ void processNetworkTask(const bool& firstRun)
     }
 
     updateWebSerial(connected);
+    if(connected && bridgeApi != nullptr)
+    {
+        bridgeApi->update();
+    }
     updateNukiNetwork(connected);
 #endif
 }
@@ -1599,96 +1634,7 @@ void setup()
 
     if(!doOta)
     {
-        bool failed = true;
-
-        if (!nuki_hub_https_server_enabled)
-        {
-            Log->println("Not running on HTTPS server enabled device");
-        }
-        else
-        {
-            if (!SPIFFS.begin(true))
-            {
-                Log->println("SPIFFS Mount Failed");
-            }
-            else
-            {
-                File file = SPIFFS.open("/http_ssl.crt");
-                if (!file || file.isDirectory())
-                {
-                    Log->println("http_ssl.crt not found");
-                }
-                else
-                {
-                    Log->println("Reading http_ssl.crt");
-                    size_t filesize = file.size();
-                    char* cert = new char[filesize + 1];
-
-                    file.read((uint8_t *)cert, filesize);
-                    file.close();
-                    cert[filesize] = '\0';
-
-                    File file2 = SPIFFS.open("/http_ssl.key");
-                    if (!file2 || file2.isDirectory())
-                    {
-                        Log->println("http_ssl.key not found");
-                    }
-                    else
-                    {
-                        Log->println("Reading http_ssl.key");
-                        size_t filesize2 = file2.size();
-                        char* key = new char[filesize2 + 1];
-
-                        file2.read((uint8_t *)key, filesize2);
-                        file2.close();
-                        key[filesize2] = '\0';
-
-                        psychicServer = new PsychicHttpServer();
-                        psychicServer->config.ctrl_port = 20424;
-                        psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
-                        {
-                            String url = "https://" + request->host() + request->url();
-                            if (preferences->getString(preference_https_fqdn, "") != "")
-                            {
-                                url = "https://" + preferences->getString(preference_https_fqdn) + request->url();
-                            }
-
-                            response->setCode(301);
-                            response->addHeader("Cache-Control", "no-cache");
-                            return response->redirect(url.c_str());
-                        });
-                        psychicServer->begin();
-                        psychicSSLServer = new PsychicHttpsServer;
-                        psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
-                        psychicSSLServer->setCertificate(cert, key);
-                        psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
-                        webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
-                        webCfgServerSSL->initialize();
-                        psychicSSLServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
-                        {
-                            return response->redirect("/");
-                        });
-                        psychicSSLServer->begin();
-                        webSSLStarted = true;
-                        failed = false;
-                    }
-                }
-            }
-        }
-
-        if (failed)
-        {
-            psychicServer = new PsychicHttpServer;
-            psychicServer->config.stack_size = HTTPD_TASK_SIZE;
-            webCfgServer = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicServer, importExport);
-            webCfgServer->initialize();
-            psychicServer->onNotFound([](PsychicRequest* request, PsychicResponse* response)
-            {
-                return response->redirect("/");
-            });
-            psychicServer->begin();
-            webStarted = true;
-        }
+        startWebServer();
     }
 #else
     bootloopDetection();

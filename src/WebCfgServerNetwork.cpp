@@ -1,0 +1,600 @@
+#include "WebCfgServer.h"
+#include "WebCfgServerConstants.h"
+#include "PreferencesKeys.h"
+#include "Logger.h"
+#include "RestartReason.h"
+#include "util/CertUtil.h"
+#include "FS.h"
+#include "SPIFFS.h"
+#ifdef NUKI_HUB_HTTPS_SERVER
+#include "util/SSLCert.hpp"
+#endif
+
+#ifndef NUKI_HUB_UPDATER
+static const Setting networkSettings[] =
+{
+    {"RSSI", "RSSI Publish interval (seconds; -1 to disable)", preference_rssi_publish_interval, SettingType::Int, 60, 0, 0, 6, "", SettingEffect::None},
+    {"HTTPSFQDN", "Nuki Hub FQDN for HTTP redirect", preference_https_fqdn, SettingType::String, 0, 0, 0, 255, "", SettingEffect::RestartNoReconnect},
+    {"HASSCUURL", "Home Assistant device configuration URL (empty to use http://LOCALIP; fill when using a reverse proxy for example)", preference_mqtt_hass_cu_url, SettingType::String, 0, 0, 0, 261, "", SettingEffect::None},
+    {"HOSTNAME", "Hostname (needs to be unique)", preference_hostname, SettingType::String, 0, 0, 0, 100, "", SettingEffect::ConfigChanged},
+    {"FINDBESTRSSI", "Find WiFi AP with strongest signal", preference_find_best_rssi, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"WIFIPSDIS", "Disable Wi-Fi power save (improves weak connections)", preference_wifi_power_save_disabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"WIFIBSSID", "Preferred access point MAC address (BSSID, e.g. aa:bb:cc:dd:ee:ff, falls back to any access point after two failed attempts)", preference_wifi_preferred_bssid, SettingType::String, 0, 0, 0, 17, "", SettingEffect::ConfigChanged},
+    {"RSTDISC", "Restart on disconnect", preference_restart_on_disconnect, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"CHECKUPDATE", "Check for Firmware Updates every 24h", preference_check_updates, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
+    {"DHCPENA", "Enable DHCP", preference_ip_dhcp_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::ConfigChanged},
+    {"IPADDR", "Static IP address", preference_ip_address, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+    {"IPSUB", "Subnet", preference_ip_subnet, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+    {"IPGTW", "Default gateway", preference_ip_gateway, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+    {"DNSSRV", "DNS Server", preference_ip_dns_server, SettingType::String, 0, 0, 0, 15, "", SettingEffect::ConfigChanged},
+};
+
+static const size_t networkSettingsCount = sizeof(networkSettings) / sizeof(networkSettings[0]);
+
+esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    buildHtmlHeader(&response);
+    response.print("<form method=\"post\" action=\"post\">");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
+    response.print("<h3>General</h3>");
+    response.print("<table>");
+    printSetting(&response, networkSettings, networkSettingsCount, "HOSTNAME");
+    printDropDown(&response, "NWHW", "Network hardware", String(_preferences->getInt(preference_network_hardware)), getNetworkDetectionOptions(), "");
+    printSetting(&response, networkSettings, networkSettingsCount, "HASSCUURL");
+    printSetting(&response, networkSettings, networkSettingsCount, "CHECKUPDATE");
+    response.print("</table>");
+    response.print("<h3>Wi-Fi and connection</h3>");
+    response.print("<table>");
+    printSetting(&response, networkSettings, networkSettingsCount, "FINDBESTRSSI");
+    printSetting(&response, networkSettings, networkSettingsCount, "WIFIPSDIS");
+    printSetting(&response, networkSettings, networkSettingsCount, "WIFIBSSID");
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+    printSetting(&response, networkSettings, networkSettingsCount, "RSSI");
+#endif
+    printSetting(&response, networkSettings, networkSettingsCount, "RSTDISC");
+    response.print("</table>");
+    if(nuki_hub_https_server_enabled)
+    {
+        response.print("<h3>HTTPS</h3>");
+        response.print("<table>");
+        response.print("<tr><td>Set HTTP SSL Certificate</td><td><a class=\"btn\" href=\"/get?page=httpcrtconfig\">Change</a></td></tr>");
+        response.print("<tr><td>Set HTTP SSL Key</td><td><a class=\"btn\" href=\"/get?page=httpkeyconfig\">Change</a></td></tr>");
+        response.print("<tr><td>Generate self-signed HTTP SSL Certificate and key</td><td><a class=\"btn\" href=\"/get?page=selfsignhttps\">Generate</a></td></tr>");
+        printSetting(&response, networkSettings, networkSettingsCount, "HTTPSFQDN");
+        response.print("</table>");
+    }
+    response.print("<h3>IP Address assignment</h3>");
+    response.print("<table>");
+    printSetting(&response, networkSettings, networkSettingsCount, "DHCPENA");
+    printSetting(&response, networkSettings, networkSettingsCount, "IPADDR");
+    printSetting(&response, networkSettings, networkSettingsCount, "IPSUB");
+    printSetting(&response, networkSettings, networkSettingsCount, "IPGTW");
+    printSetting(&response, networkSettings, networkSettingsCount, "DNSSRV");
+    response.print("</table>");
+    response.print("<h3>Nuki Bridge HTTP API</h3>");
+    response.print("<table>");
+    printCheckBox(&response, "BRIDGEAPI", "Enable Nuki Bridge HTTP API (/list, /lockState, /lockAction, callbacks)", _preferences->getBool(preference_bridge_api_enabled, false), "");
+    printInputField(&response, "BRIDGETOKEN", "Nuki Bridge HTTP API token (6-20 characters)", _preferences->getString(preference_bridge_api_token, "").c_str(), 20, "");
+    response.print("</table>");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
+    response.print("</form>");
+    buildHtmlFooter(&response);
+    return response.endSend();
+}
+
+esp_err_t WebCfgServer::buildCustomNetworkConfigHtml(PsychicRequest *request, PsychicResponse* resp)
+{
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    buildHtmlHeader(&response);
+    response.print("<form method=\"post\" action=\"post\">");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
+    response.print("<h3>Custom Ethernet Configuration</h3>");
+    response.print("<table>");
+    printDropDown(&response, "NWCUSTPHY", "PHY", String(_preferences->getInt(preference_network_custom_phy)), getNetworkCustomPHYOptions(), "");
+    printInputField(&response, "NWCUSTADDR", "ADDR", _preferences->getInt(preference_network_custom_addr, 1), 6, "");
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
+    printDropDown(&response, "NWCUSTCLK", "CLK", String(_preferences->getInt(preference_network_custom_clk, 0)), getNetworkCustomCLKOptions(), "internalopt");
+    printInputField(&response, "NWCUSTPWR", "PWR", _preferences->getInt(preference_network_custom_pwr, 12), 6, "class=\"internalopt\"");
+    printInputField(&response, "NWCUSTMDIO", "MDIO", _preferences->getInt(preference_network_custom_mdio), 6, "class=\"internalopt\"");
+    printInputField(&response, "NWCUSTMDC", "MDC", _preferences->getInt(preference_network_custom_mdc), 6, "class=\"internalopt\"");
+#endif
+    printInputField(&response, "NWCUSTIRQ", "IRQ", _preferences->getInt(preference_network_custom_irq, -1), 6, "class=\"externalopt\"");
+    printInputField(&response, "NWCUSTRST", "RST", _preferences->getInt(preference_network_custom_rst, -1), 6, "class=\"externalopt\"");
+    printInputField(&response, "NWCUSTCS", "CS", _preferences->getInt(preference_network_custom_cs, -1), 6, "class=\"externalopt\"");
+    printInputField(&response, "NWCUSTSCK", "SCK", _preferences->getInt(preference_network_custom_sck, -1), 6, "class=\"externalopt\"");
+    printInputField(&response, "NWCUSTMISO", "MISO", _preferences->getInt(preference_network_custom_miso, -1), 6, "class=\"externalopt\"");
+    printInputField(&response, "NWCUSTMOSI", "MOSI", _preferences->getInt(preference_network_custom_mosi, -1), 6, "class=\"externalopt\"");
+    response.print("</table>");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
+    response.print("</form>");
+    buildHtmlFooter(&response);
+    return response.endSend();
+}
+
+const std::vector<std::pair<String, String>> WebCfgServer::getNetworkDetectionOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+
+    options.push_back(std::make_pair("1", "Wi-Fi"));
+    options.push_back(std::make_pair("2", "Generic W5500"));
+    options.push_back(std::make_pair("3", "M5Stack Atom POE (W5500)"));
+    options.push_back(std::make_pair("10", "M5Stack Atom POE S3 (W5500)"));
+    options.push_back(std::make_pair("4", "Olimex ESP32-POE / ESP-POE-ISO"));
+    options.push_back(std::make_pair("5", "WT32-ETH01"));
+    options.push_back(std::make_pair("6", "M5STACK PoESP32 Unit"));
+    options.push_back(std::make_pair("7", "LilyGO T-ETH-POE"));
+    options.push_back(std::make_pair("12", "LilyGO T-ETH ELite"));
+    options.push_back(std::make_pair("8", "GL-S10"));
+    options.push_back(std::make_pair("9", "ETH01-Evo"));
+    options.push_back(std::make_pair("13", "Waveshare ESP32-S3-ETH / ESP32-S3-ETH-POE"));
+    options.push_back(std::make_pair("14", "LilyGO T-ETH-Lite-ESP32S3"));
+    options.push_back(std::make_pair("15", "Waveshare ESP32-P4-NANO"));
+    options.push_back(std::make_pair("16", "Waveshare ESP32-P4-Module-DEV-KIT"));
+    options.push_back(std::make_pair("17", "ESP32-P4-Function-EV-Board"));
+    options.push_back(std::make_pair("11", "Custom LAN module"));
+
+    return options;
+}
+
+const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomPHYOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+    options.push_back(std::make_pair("0", "Disabled"));
+    options.push_back(std::make_pair("1", "W5500"));
+    options.push_back(std::make_pair("2", "DN9051"));
+    options.push_back(std::make_pair("3", "KSZ8851SNL"));
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
+    options.push_back(std::make_pair("4", "LAN8720"));
+    options.push_back(std::make_pair("5", "RTL8201"));
+    options.push_back(std::make_pair("6", "TLK110/IP101"));
+    options.push_back(std::make_pair("7", "DP83848"));
+    options.push_back(std::make_pair("8", "KSZ8041"));
+    options.push_back(std::make_pair("9", "KSZ8081"));
+#endif
+
+    return options;
+}
+
+#endif
+#ifndef NUKI_HUB_UPDATER
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
+const std::vector<std::pair<String, String>> WebCfgServer::getNetworkCustomCLKOptions() const
+{
+    std::vector<std::pair<String, String>> options;
+    options.push_back(std::make_pair("0", "GPIO0 IN"));
+    options.push_back(std::make_pair("1", "GPIO0 OUT"));
+    options.push_back(std::make_pair("2", "GPIO16 OUT"));
+    options.push_back(std::make_pair("3", "GPIO17 OUT"));
+    return options;
+}
+
+#endif
+#endif
+#ifndef NUKI_HUB_UPDATER
+esp_err_t WebCfgServer::buildHttpSSLConfigHtml(PsychicRequest *request, PsychicResponse* resp, int type)
+{
+    PsychicStreamResponse response(resp, "text/html");
+    response.beginSend();
+    buildHtmlHeader(&response);
+    response.print("<form method=\"post\" action=\"post\">");
+    response.print("<input type=\"hidden\" name=\"page\" value=\"savecfg\">");
+    response.print("<input type=\"hidden\" name=\"httpssl\" value=\"1\">");
+    response.print("<h3>HTTP SSL Configuration</h3>");
+    response.print("<table>");
+
+    if (type == 1)
+    {
+        bool found = false;
+
+        if (!SPIFFS.begin(true))
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt");
+            if (!file || file.isDirectory())
+            {
+                Log->println("http_ssl.crt not found");
+            }
+            else
+            {
+                Log->println("Reading http_ssl.crt");
+                file.close();
+
+                printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate", "*", 4400, true, true);
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            printTextarea(&response, "HTTPCRT", "HTTP SSL Certificate", "", 4400, true, true);
+        }
+    }
+    else if (type == 2)
+    {
+        bool found = false;
+
+        if (!SPIFFS.begin(true))
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.key");
+            if (!file || file.isDirectory())
+            {
+                Log->println("http_ssl.key not found");
+            }
+            else
+            {
+                Log->println("Reading http_ssl.key");
+                file.close();
+
+                printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "*", certSize(), true, true);
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            printTextarea(&response, "HTTPKEY", "HTTP SSL Key", "", certSize(), true, true);
+        }
+    }
+    else
+    {
+        response.print("<input type=\"hidden\" name=\"HTTPGEN\" value=\"1\">");
+        response.print("<tr><td>Click save to generate a HTTPS SSL Certificate and key</td></tr>");
+    }
+    response.print("</table>");
+    response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
+    response.print("</form>");
+    buildHtmlFooter(&response);
+    return response.endSend();
+}
+
+#endif
+#ifndef NUKI_HUB_UPDATER
+#ifdef NUKI_HUB_HTTPS_SERVER
+void WebCfgServer::createSSLCertificate()
+{
+    SSLCert* cert;
+    cert = new SSLCert();
+    int createCertResult = createSelfSignedCert(
+                               *cert,
+                               KEYSIZE_2048,
+                               "CN=nukihub.local,O=NukiHub,C=DE",
+                               "20250101000000",
+                               "20350101000000"
+                           );
+
+    if (createCertResult == 0)
+    {
+        if (!SPIFFS.begin(true))
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+            if (!file)
+            {
+                Log->println("Failed to open /http_ssl.crt for writing");
+            }
+            else
+            {
+                if (!file.print(cert->getCertPEM()))
+                {
+                    Log->println("Failed to write /http_ssl.crt");
+                }
+                file.close();
+            }
+
+            File file2 = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+            if (!file2)
+            {
+                Log->println("Failed to open /http_ssl.key for writing");
+            }
+            else
+            {
+                if (!file2.print(cert->getKeyPEM()))
+                {
+                    Log->println("Failed to write /http_ssl.key");
+                }
+                file2.close();
+            }
+        }
+    }
+    else
+    {
+        Log->print("SSL Self sign failed: ");
+        Log->println(createCertResult);
+    }
+}
+
+#endif
+void WebCfgServer::processNetworkArgs(PsychicRequest *request, ProcessArgsState& state, String& message)
+{
+    bool networkReconfigure = false;
+    String value;
+
+    if(request->hasParam("HTTPCRT") && nuki_hub_https_server_enabled)
+    {
+        value = request->getParam("HTTPCRT")->value();
+        if (!SPIFFS.begin(true))
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            if(value != "*")
+            {
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/http_ssl.crt", FILE_WRITE);
+                    if (!file)
+                    {
+                        Log->println("Failed to open /http_ssl.crt for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /http_ssl.crt");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/http_ssl.crt"))
+                    {
+                        Log->println("Failed to delete /http_ssl.crt");
+                    }
+                }
+                state.restartServicesNoReconnect = true;
+            }
+        }
+    }
+
+    if(request->hasParam("HTTPKEY") && nuki_hub_https_server_enabled)
+    {
+        value = request->getParam("HTTPKEY")->value();
+        if (!SPIFFS.begin(true))
+        {
+            Log->println("SPIFFS Mount Failed");
+        }
+        else
+        {
+            if(value != "*")
+            {
+                if(value != "")
+                {
+                    File file = SPIFFS.open("/http_ssl.key", FILE_WRITE);
+                    if (!file)
+                    {
+                        Log->println("Failed to open /http_ssl.key for writing");
+                    }
+                    else
+                    {
+                        if (!file.print(value))
+                        {
+                            Log->println("Failed to write /http_ssl.key");
+                        }
+                        file.close();
+                    }
+                }
+                else
+                {
+                    if (!SPIFFS.remove("/http_ssl.key"))
+                    {
+                        Log->println("Failed to delete /http_ssl.key");
+                    }
+                }
+                state.restartServicesNoReconnect = true;
+            }
+        }
+    }
+
+    if(request->hasParam("HTTPGEN") && nuki_hub_https_server_enabled)
+    {
+#ifdef NUKI_HUB_HTTPS_SERVER
+        createSSLCertificate();
+#endif
+        state.configChanged = true;
+    }
+
+    if(request->hasParam("BRIDGEAPI"))
+    {
+        bool v = isParameterTrue(request, "BRIDGEAPI");
+        if(_preferences->getBool(preference_bridge_api_enabled, false) != v)
+        {
+            _preferences->putBool(preference_bridge_api_enabled, v);
+            state.configChanged = true;
+        }
+    }
+    if(request->hasParam("BRIDGETOKEN"))
+    {
+        String value = request->getParam("BRIDGETOKEN")->value();
+        if(value.length() >= 6 && value.length() <= 20 && _preferences->getString(preference_bridge_api_token, "") != value)
+        {
+            _preferences->putString(preference_bridge_api_token, value);
+            state.configChanged = true;
+        }
+    }
+    if(request->hasParam("NWHW"))
+    {
+        value = request->getParam("NWHW")->value();
+        if(_preferences->getInt(preference_network_hardware, 0) != value.toInt())
+        {
+            if(value.toInt() > 1)
+            {
+                networkReconfigure = true;
+                if(value.toInt() != 11)
+                {
+                    _preferences->putInt(preference_network_custom_phy, 0);
+                }
+            }
+            _preferences->putInt(preference_network_hardware, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTPHY"))
+    {
+        value = request->getParam("NWCUSTPHY")->value();
+        if(_preferences->getInt(preference_network_custom_phy, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_phy, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTADDR"))
+    {
+        value = request->getParam("NWCUSTADDR")->value();
+        if(_preferences->getInt(preference_network_custom_addr, -1) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_addr, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTIRQ"))
+    {
+        value = request->getParam("NWCUSTIRQ")->value();
+        if(_preferences->getInt(preference_network_custom_irq, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_irq, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTRST"))
+    {
+        value = request->getParam("NWCUSTRST")->value();
+        if(_preferences->getInt(preference_network_custom_rst, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_rst, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTCS"))
+    {
+        value = request->getParam("NWCUSTCS")->value();
+        if(_preferences->getInt(preference_network_custom_cs, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_cs, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTSCK"))
+    {
+        value = request->getParam("NWCUSTSCK")->value();
+        if(_preferences->getInt(preference_network_custom_sck, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_sck, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTMISO"))
+    {
+        value = request->getParam("NWCUSTMISO")->value();
+        if(_preferences->getInt(preference_network_custom_miso, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_miso, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTMOSI"))
+    {
+        value = request->getParam("NWCUSTMOSI")->value();
+        if(_preferences->getInt(preference_network_custom_mosi, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_mosi, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTPWR"))
+    {
+        value = request->getParam("NWCUSTPWR")->value();
+        if(_preferences->getInt(preference_network_custom_pwr, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_pwr, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTMDIO"))
+    {
+        value = request->getParam("NWCUSTMDIO")->value();
+        if(_preferences->getInt(preference_network_custom_mdio, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_mdio, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTMDC"))
+    {
+        value = request->getParam("NWCUSTMDC")->value();
+        if(_preferences->getInt(preference_network_custom_mdc, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_mdc, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    if(request->hasParam("NWCUSTCLK"))
+    {
+        value = request->getParam("NWCUSTCLK")->value();
+        if(_preferences->getInt(preference_network_custom_clk, 0) != value.toInt())
+        {
+            networkReconfigure = true;
+            _preferences->putInt(preference_network_custom_clk, value.toInt());
+
+            state.configChanged = true;
+        }
+    }
+
+    applySettings(request, networkSettings, networkSettingsCount, state);
+
+    if(networkReconfigure)
+    {
+        _preferences->putBool(preference_ntw_reconfigure, true);
+    }
+}
+
+#endif

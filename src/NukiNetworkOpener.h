@@ -20,6 +20,8 @@ public:
     void publishKeyTurnerState(const NukiOpener::OpenerState& keyTurnerState, const NukiOpener::OpenerState& lastKeyTurnerState);
     void publishAvailability(const bool available);
     void publishRing(const bool locked);
+    const int64_t lastRingTs() const;
+    const time_t lastRingTime() const;
     void publishState(NukiOpener::OpenerState lockState);
     void publishAuthorizationInfo(const std::list<NukiOpener::LogEntry>& logEntries, bool latest);
     uint32_t getLastRollingLog() const;
@@ -41,6 +43,8 @@ public:
     void publishKeypadJsonCommandResult(const char* result);
     void publishTimeControlCommandResult(const char* result);
     void publishAuthCommandResult(const char* result);
+    const String& lastCommandResult() const;
+    uint32_t commandResultCounter() const;
 
     void setLockActionReceivedCallback(LockActionResult (*lockActionReceivedCallback)(const char* value));
     void setConfigUpdateReceivedCallback(void (*configUpdateReceivedCallback)(const char* value));
@@ -70,7 +74,11 @@ private:
     NukiNetwork* _network = nullptr;
     NukiPublisher* _nukiPublisher = nullptr;
 
+    void recordCommandResult(const char* result);
+
     std::map<uint32_t, String> _authEntries;
+    String _lastCommandResult;
+    uint32_t _commandResultCounter = 0;
     char _mqttPath[200] = {0};
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
@@ -89,6 +97,8 @@ private:
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
     int64_t _resetRingStateTs = 0;
+    int64_t _lastRingTs = 0;
+    time_t _lastRingTime = 0;
     uint8_t _queryCommands = 0;
     uint32_t _authId = 0;
     char _authName[33];

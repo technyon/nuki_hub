@@ -149,13 +149,18 @@ Unpack the zip archive and read the included how-to-flash.txt for installation i
 Power up the ESP32 and a new Wi-Fi access point named "NukiHub" should appear.<br>
 The password of the access point is "NukiHubESP32".<br>
 Connect a client device to this access point and in a browser navigate to "http://192.168.4.1".<br>
-Use the web interface to connect the ESP to your preferred Wi-Fi network.<br>
+<br>
+The setup wizard guides you through three steps:<br>
+1. Start: choose "Set up a new hub", or restore a settings export from another Nuki Hub under "Restore a backup". A restored export that includes Wi-Fi settings and pairing data makes the remaining steps unnecessary.<br>
+2. Network: pick your Wi-Fi network from the list (it refreshes every few seconds) or type the name of a hidden network. Optionally let the hub always connect to the access point with the strongest signal or to a preferred access point by MAC address.<br>
+3. Connect: enter the Wi-Fi password and, if needed, disable Wi-Fi power save or configure a static IP address. Click "Connect".<br>
 <br>
 After configuring Wi-Fi, the ESP should automatically connect to your network.<br>
 <br>
 To configure the connection to the MQTT broker, first connect your client device to the same Wi-Fi network the ESP32 is connected to.<br>
 In a browser navigate to the IP address assigned to the ESP32 via DHCP (often found in the web interface of your internet router) or static IP.<br><br>
-Next click on "MQTT Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and password if required by your MQTT broker.<br>
+The start page shows a "Setup" checklist until the hub is fully configured: connect an MQTT broker, enable your lock or opener, pair the device and protect the configurator with a login. Each item links to the page where it is configured.<br>
+Click on "MQTT Configuration" and enter the address and port (usually 1883) of your MQTT broker and a username and password if required by your MQTT broker.<br>
 <br>
 The firmware supports SSL encryption for MQTT.<br>
 See the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
@@ -179,7 +184,7 @@ Enable "Register as app" before pairing to allow this. Otherwise the Bridge will
 Make sure "Bluetooth pairing" is enabled for the Nuki device by enabling this setting in the official Nuki App in "Settings" > "Features & Configuration" > "Button and LED".
 
 Before enabling pairing mode using the button on the Nuki Lock Ultra / Nuki Lock Go / Nuki Lock 5th gen Pro first setup Nuki Hub as follows:
-- Enable both "Nuki Smartlock enabled" and "Nuki Smartlock Ultra/Go/5th gen enabled" settings on the "Basic Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra/Go/5th gen enabled" will change multiple other NukiHub settings.
+- Enable both "Nuki Lock enabled" and "Nuki Smartlock Ultra/Go/5th gen enabled" in the "Devices and pairing" section of the "Nuki Configuration" page and Save. Setting the "Nuki Smartlock Ultra/Go/5th gen enabled" will change multiple other NukiHub settings.
 - Input your 6-digit Nuki Lock Ultra/Go/5th gen PIN on the "Credentials" page and Save
 - Press the button on the Nuki device for a few seconds until the LED ring lights up and remains lit.
 - It is **strongly** recommended(/mandatory) to setup and enable Hybrid mode over Thread/WiFi + official MQTT as Nuki Hub works best in Hybrid or Bridge mode and the Ultra/Go/5th gen Pro does not support Bridge mode
@@ -232,22 +237,38 @@ Note that there are also is a separate build of Nuki Hub available for the GL-S1
 
 ## Configuration
 
-In a browser navigate to the IP address assigned to the ESP32.
+In a browser navigate to the IP address assigned to the ESP32.<br>
+<br>
+Settings that need a reboot of the Nuki Hub to take effect are marked with a "reboot" tag; the hub reboots automatically after saving them. Settings marked "re-login" end the current web session.
 
 ### Network Configuration
 
-#### Network Configuration
+#### General
 
 - Hostname (needs to be unique): Set the hostname for the Nuki Hub ESP, will also be used as the MQTT client ID. Needs to be unique.
 - Network hardware: "Wi-Fi only" by default, set to one of the specified ethernet modules if available, see the "Supported Ethernet devices" and "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section of this README.
 - Home Assistant device configuration URL: When using Home Assistant discovery the link to the Nuki Hub Web Configuration will be published to Home Assistant. By default when this setting is left empty this will link to the current IP of the Nuki Hub. When using a reverse proxy to access the Web Configuration you can set a custom URL here.
+- Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
+
+#### Wi-Fi and connection
+
+- Find WiFi AP with strongest signal: Enable to always connect to the access point of your network with the strongest signal.
+- Disable Wi-Fi power save: Enable to disable Wi-Fi power save, improves weak connections.
+- Preferred access point MAC address (BSSID): Optionally set to the MAC address of the access point the Nuki Hub should connect to. Falls back to any access point after two failed attempts.
 - RSSI Publish interval: Set to a positive integer to set the amount of seconds between updates to the maintenance/wifiRssi MQTT topic with the current Wi-Fi RSSI, set to -1 to disable, default 60.
 - Restart on disconnect: Enable to restart the Nuki Hub when disconnected from the network.
-- Check for Firmware Updates every 24h: Enable to allow the Nuki Hub to check the latest release of the Nuki Hub firmware on boot and every 24 hours. Requires the Nuki Hub to be able to connect to github.com. The latest version will be published to MQTT and will be visible on the main page of the Web Configurator.
-- Set HTTP SSL Certificate (PSRAM enabled devices only): Optionally set to the SSL certificate of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
-- Set HTTP SSL Key (PSRAM enabled devices only): Optionally set to the SSL key of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
+
+#### HTTPS (PSRAM enabled devices only)
+
+- Set HTTP SSL Certificate: Optionally set to the SSL certificate of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
+- Set HTTP SSL Key: Optionally set to the SSL key of the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
 - Generate self-signed HTTP SSL Certificate and key: Optionally generate a self-signed SSL certificate and key for the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
-- Nuki Hub FQDN for HTTP redirect (PSRAM enabled devices only): FQDN hostname of the Nuki Hub device used for redirecting from HTTP to HTTPS.
+- Nuki Hub FQDN for HTTP redirect: FQDN hostname of the Nuki Hub device used for redirecting from HTTP to HTTPS.
+
+#### Nuki Bridge HTTP API
+
+- Enable Nuki Bridge HTTP API: Enable to let Nuki Hub answer the HTTP API of the official Nuki Bridge on the Web Configurator port, see the "[Nuki Bridge HTTP API](#nuki-bridge-http-api-optional)" section of this README.
+- Nuki Bridge HTTP API token: The token clients have to send with every request (6-20 characters).
 
 #### IP Address assignment
 
@@ -259,41 +280,55 @@ In a browser navigate to the IP address assigned to the ESP32.
 
 ### MQTT Configuration
 
-#### Basic MQTT Configuration
+#### Broker
 
 - MQTT Broker: Set to the IP address of the MQTT broker
 - MQTT Broker port: Set to the Port of the MQTT broker (usually 1883)
-- MQTT User: If using authentication on the MQTT broker set to a username with read/write rights on the MQTT broker, set to # to clear
-- MQTT Password : If using authentication on the MQTT broker set to the password belonging to a username with read/write rights on the MQTT broker, set to # to clear
+- MQTT User / MQTT Password: If using authentication on the MQTT broker set to a username and password with read/write rights on the MQTT broker. Use "Remove on save" to clear both.
 - MQTT Nuki Hub Path: Set to the preferred MQTT root topic for Nuki Hub, defaults to "nukihub". Make sure this topic is unique when using multiple ESP32 Nuki Hub devices
+- MQTT Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
+
+#### Home Assistant
+
 - Enable Home Assistant auto discovery: Enable Home Assistant MQTT auto discovery. Will automatically create entities in Home Assistant for Nuki Hub and connected Nuki Lock and/or Opener when enabled.
-
-#### Advanced MQTT Configuration
-
 - Home Assistant discovery topic: Set to the Home Assistant auto discovery topic. Usually "homeassistant" unless you manually changed this setting on the Home Assistant side.
 - Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode (Opener only): By default the lock entity in Home Assistant will enable Ring-to-Open (RTO) when unlocking and disable RTO when locking. By enabling this setting this behaviour will change and now unlocking will enable Continuous Mode and locking will disable Continuous Mode, for more information see the "[Home Assistant Discovery](#home-assistant-discovery-optional)" section of this README.
-- MQTT SSL CA Certificate: Optionally set to the CA SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
-- MQTT SSL Client Certificate: Optionally set to the Client SSL certificate of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
-- MQTT SSL Client Key: Optionally set to the Client SSL key of the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
-- MQTT Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
-- Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
+
+#### Remote configuration over MQTT
+
+- Publish Nuki Hub configuration information: Publish Nuki Hub settings over MQTT, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt-beta)"
+- Modify Nuki Hub configuration over MQTT: Allow changing Nuki Hub settings using MQTT, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt-beta)"
 - Allow updating using MQTT: Enable to allow starting the Nuki Hub update process using MQTT. Will also enable the Home Assistant update functionality if auto discovery is enabled.
-- Disable some extraneous non-JSON topics: Enable to not publish non-JSON keypad and config MQTT topics.
+- Enable MQTT logging: Enable to fill the maintenance/log MQTT topic with debug log information.
+- Disable some extraneous non-JSON topics: Enable to not publish non-JSON keypad and config MQTT topics. Enabled by default on new installations.
+
+#### Hybrid mode (official Nuki MQTT)
+
 - Enable hybrid official MQTT and Nuki Hub setup: Enable to combine the official MQTT over Thread/Wi-Fi with BLE. Improves speed of state changes. Needs the official MQTT to be setup first. Also requires Nuki Hub to be paired as app and unregistered as a bridge using the Nuki app. See [hybrid mode](/HYBRID.md)
 - Enable sending actions through official MQTT: Enable to sent lock actions through the official MQTT topics (e.g. over Thread/Wi-Fi) instead of using BLE. Needs "Enable hybrid official MQTT and Nuki Hub setup" to be enabled. See [hybrid mode](/HYBRID.md)
 - Time between status updates when official MQTT is offline (seconds): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki lock for the current lock state when the official MQTT is offline, default 600.
-- Retry command sent using official MQTT over BLE if failed: Enable to publish lock commands over BLE if Nuki Hub fails to use Hybrid mode to execute the command over MQTT
-- Reboot Nuki lock on official MQTT failure: Enable to reboot the Nuki Lock if official MQTT over WiFi/Thread is offline for more than 180 seconds
+
+The former options "Retry command sent using official MQTT over BLE if failed" (on by default on new installations) and "Reboot Nuki lock on official MQTT failure" are no longer shown in the web configurator. Their current values are listed on the Info page and they can still be changed through a settings import (keys "hybridRtry" and "hybridRbtLck").
+
+#### TLS
+
+- Enable MQTT SSL: Enable to connect to the MQTT broker over TLS.
+- MQTT SSL CA Certificate / Client Certificate / Client Key: Optionally set the CA certificate and the client certificate and key for the MQTT broker, see the "[MQTT Encryption](#mqtt-encryption-optional)" section of this README.
 
 ### Nuki Configuration
 
-#### Basic Nuki Configuration
+#### Devices and pairing
 
-- Nuki Smartlock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (All versions)
+- Nuki Lock enabled: Enable if you want Nuki Hub to connect to a Nuki Lock (All versions)
 - Nuki Smartlock Ultra/Go/5th gen enabled: Enable if you want Nuki Hub to connect to a Nuki Lock Ultra/Go/5th gen Pro
 - Nuki Opener enabled: Enable if you want Nuki Hub to connect to a Nuki Opener
+- Lock: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-10-40-or-opener)" section of this README, ***unless when used in [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance)***
+- Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-10-40-or-opener)" section of this README
+- Force Lock ID to current ID / Force Opener ID to current ID: Enable to force the current device ID, irrespective of the config received from the device.
+- Force Lock Keypad connected / Force Opener Keypad: Enable to force Nuki Hub to function as if a keypad was connected, irrespective of the config received from the device.
+- Force Lock Doorsensor connected: Enable to force Nuki Hub to function as if a doorsensor was connected, irrespective of the config received from the lock.
 
-#### Advanced Nuki Configuration
+#### Polling and Bluetooth
 
 - Query interval lock state: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current lock state, default 1800.
 - Query interval configuration: Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current configuration, default 3600.
@@ -301,32 +336,52 @@ In a browser navigate to the IP address assigned to the ESP32.
 - Query interval keypad (Only available when a Keypad is detected): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current keypad state, default 1800.
 - Number of retries if command failed: Set to a positive integer to define the amount of times the Nuki Hub retries sending commands to the Nuki Lock or Opener when commands are not acknowledged by the device, default 3.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
-- Lock: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README, ***unless when used in [Hybrid mode](/HYBRID.md) (Official MQTT / Nuki Hub co-existance)***
-- Opener: Nuki Bridge is running alongside Nuki Hub: Enable to allow Nuki Hub to co-exist with a Nuki Bridge by registering Nuki Hub as an (smartphone) app instead of a bridge. Changing this setting will require re-pairing. Enabling this setting is strongly discouraged as described in the "[Pairing with a Nuki Lock or Opener](#pairing-with-a-nuki-lock-or-opener)" section of this README
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 - BLE transmit power in dB: Set to a integer between -12 and 9 (ESP32) or -12 and 20 (All newer ESP32 variants) to set the Bluetooth transmit power, default 9.
+
+#### Time
+
 - Update Nuki Hub and Lock/Opener time using NTP: Enable to update the ESP32 time and Nuki Lock and/or Nuki Opener time every 12 hours using a NTP time server. Updating the Nuki device time requires the Nuki security code / PIN to be set, see "[Nuki Lock PIN / Nuki Opener PIN](#nuki-lock-pin--nuki-opener-pin)" below.
 - NTP server: Set to the NTP server you want to use, defaults to "pool.ntp.org". If DHCP is used and NTP servers are provided using DHCP these will take precedence over the specified NTP server.
 
-### Access Level Configuration
+#### Nuki configuration
 
-#### Nuki General Access Control
-- Publish Nuki Hub configuration information: Publish Nuki Hub settings over MQTT, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
-- Modify Nuki Hub configuration over MQTT: Allow changing Nuki Hub settings using MQTT, see "[Import and Export Nuki Hub settings over MQTT](#import-and-export-nuki-hub-settings-over-mqtt)"
 - Publish Nuki configuration information: Enable to publish information about the configuration of the connected Nuki device(s) through MQTT.
 
-Note: All of the following requires the Nuki security code / PIN to be set, see "[Nuki Lock PIN / Nuki Opener PIN](#nuki-lock-pin--nuki-opener-pin)"
+Note: All of the following sections require the Nuki security code / PIN to be set, see "[Nuki Lock PIN / Nuki Opener PIN](#nuki-lock-pin--nuki-opener-pin)"
 
-- Publish keypad entries information (Only available when a Keypad is detected): Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
-- Also publish keypad codes (Only available when a Keypad is detected): Enable to publish the actual keypad codes through MQTT, note that is could be considered a security risk
-- Add, modify and delete keypad codes (Only available when a Keypad is detected): Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-optional)" section of this README
-- Allow checking if keypad codes are valid (Only available when a Keypad is detected): Enable to allow checking if a given codeId and code combination is valid through MQTT, note that is could be considered a security risk
-- Publish timecontrol information: Enable to publish information about timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol)" section of this README
-- Add, modify and delete timecontrol entries: Enable to allow configuration of timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol)" section of this README
-- Publish authorization information: Enable to publish information about authorization entries through MQTT, see the "[Authorization](#authorization)" section of this README
-- Modify and delete authorization entries: Enable to allow configuration of authorization entries through MQTT, see the "[Authorization](#authorization)" section of this README
+#### Keypad (Only shown when a Keypad is detected)
+
+- Publish keypad entries information: Enable to publish information about keypad codes through MQTT, see the "[Keypad control](#keypad-control-using-json-optional)" section of this README
+- Add, modify and delete keypad codes: Enable to allow configuration of keypad codes through MQTT, see the "[Keypad control](#keypad-control-using-json-optional)" section of this README
+- Also publish keypad codes: Enable to publish the actual keypad codes through MQTT, note that is could be considered a security risk
+- Allow checking if keypad codes are valid: Enable to allow checking if a given codeId and code combination is valid through MQTT, note that is could be considered a security risk
+- Publish a topic per keypad entry and create HA sensor: Enable to publish every keypad code to its own topic and create Home Assistant entities for it.
+- Identify the HA keypad entities by code id instead of list position: Enable to keep the Home Assistant entities stable when codes are added or removed.
+- Max keypad entries (min 1, max 200): The maximum amount of keypad codes that will be requested from the lock/opener, default 10.
+
+#### Time control
+
+- Publish time control entries information: Enable to publish information about timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol-using-json-optional)" section of this README
+- Add, modify and delete time control entries: Enable to allow configuration of timecontrol entries through MQTT, see the "[Timecontrol](#timecontrol-using-json-optional)" section of this README
+- Publish a topic per time control entry and create HA sensor: Enable to publish every entry to its own topic and create Home Assistant entities for it.
+- Max timecontrol entries (min 1, max 100): The maximum amount of timecontrol entries that will be requested from the lock/opener, default 10.
+
+#### Authorizations
+
+- Publish authorization entries information: Enable to publish information about authorization entries through MQTT, see the "[Authorization](#authorization-entries-control-using-json-optional)" section of this README
+- Modify and delete authorization entries: Enable to allow configuration of authorization entries through MQTT, see the "[Authorization](#authorization-entries-control-using-json-optional)" section of this README
+- Publish a topic per authorization entry and create HA sensor: Enable to publish every authorization to its own topic and create Home Assistant entities for it.
+- Identify the HA authorization entities by authorization id instead of list position: Enable to keep the Home Assistant entities stable when authorizations are added or removed.
+- Max authorization entries (min 1, max 100): The maximum amount of authorization entries that will be requested from the lock/opener, default 10.
+
+#### Authorization log
+
 - Publish authorization log: Enable to publish authorization data to the MQTT topic lock/log
 - Save auth log number to flash: Enable to save the highest Nuki lock and/or opener auth log number to flash on change. Prevents duplicates in the rolling log but slightly increases flash wear.
+- Max auth log entries (min 1, max 100): The maximum amount of log entries that will be requested from the lock/opener, default 5.
+
+### Access Level Configuration
 
 #### Nuki Lock/Opener Access Control
 - Enable or disable executing each available lock action for the Nuki Lock and Nuki Opener through MQTT. Note: GPIO control is not restricted through this setting.
@@ -337,30 +392,30 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 
 ### Credentials
 
-#### Credentials
+#### Login
 
-- User: Pick a username to enable HTTP authentication for the Web Configuration, Set to "#" to disable authentication.
-- Password/Retype password: Pick a password to enable HTTP authentication for the Web Configuration.
+- User / Password / Retype password: Pick a username and password to enable authentication for the Web Configuration. Use "Remove on save" to disable authentication.
 - HTTP Authentication type: Select from Basic, Digest or Form based authentication. Digest authentication is more secure than Basic or Form based authentication, especially over unencrypted (HTTP) connections. Form based authentication works best with password managers. Note: Firefox seems to have issues with basic authentication.
 - Bypass authentication for reverse proxy with IP: IP for which authentication is bypassed. Use in conjunction with a reverse proxy server with separate authentication.
-- Duo Push authentication enabled: Enable to use Duo Push Multi Factor Authentication (MFA). See [Duo Push authentication](/DUOAUTH.md) for instructions on how to setup Duo Push authentication.
+
+#### Second factor
+
+- Second factor for login: Select "None", "Authenticator app (TOTP)" or "Duo Push". The fields for the selected method are shown below the selection.
+- TOTP Secret Key: Set or generate a TOTP secret key. Enter the TOTP secret key in an authenticator application (Password manager, Microsoft/Google Authenticator etc.) to generate TOTP codes.
+- Duo API hostname / Duo integration key / Duo secret key / Duo user: Set to the values of your Duo integration and the Duo user that should receive the push notification. See [Duo Push authentication](/DUOAUTH.md) for instructions on how to setup Duo Push authentication.
 - Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings): Enable to require MFA approval on all sensitive operations.
-- Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button during login: Enable to allow bypassing MFA authentication by pressing the BOOT button on the ESP during login. Note that this does not work on all ESP's (nor do all ESP's have a boot button to begin with). Test before relying on this function.
-- Bypass MFA (Duo/TOTP) authentication by pulling GPIO High: Set to a GPIO pin to allow bypassing MFA authentication by pulling the GPIO high during login.
-- Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low: Set to a GPIO pin to allow bypassing MFA authentication by pulling the GPIO low during login.
-- Duo API hostname: Set to the Duo API hostname
-- Duo integration key: Set to the Duo integration key
-- Duo secret key: Set to the Duo secret key
-- Duo user: Set to the Duo user that you want to receive the push notification
-- TOTP Secret Key: Set a TOTP secret key to enable TOTP MFA. Enter the TOTP secret key in an authenticator application (Password manager, Microsoft/Google Authenticator etc.) to generate TOTP codes.
-- One-time MFA Bypass: Set a 32 character long alphanumeric string that can be used as a one-time MFA bypass when the ESP32 is unable to sync it's time and TOTP and Duo are unavailable as a result.
-- Admin key: Set a 32 character long alphanumeric string that can be used in combination with a TOTP code to export and import settings without needing to log in (for use with automated systems).
-- Session validity (in seconds): Session validity to use with form authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
-- Session validity remember (in hours): Session validity to use with form authentication when the "Remember me" checkbox is enabled, default 720 hours.
-- Duo Session validity (in seconds): Session validity to use with Duo authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
-- Duo Session validity remember (in hours): Session validity to use with Duo authentication when the "Remember me" checkbox is enabled, default 720 hours.
-- TOTP Session validity (in seconds): Session validity to use with TOTP authentication when the "Remember me" checkbox is disabled, default 3600 seconds.
-- TOTP Session validity remember (in hours): Session validity to use with TOTP authentication when the "Remember me" checkbox is enabled, default 720 hours.
+- Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button while logging in: Enable to allow bypassing MFA authentication by pressing the BOOT button on the ESP during login. Note that this does not work on all ESP's (nor do all ESP's have a boot button to begin with). Test before relying on this function.
+- Bypass MFA (Duo/TOTP) authentication by pulling GPIO High / Low: Set to a GPIO pin to allow bypassing MFA authentication by pulling the GPIO high or low during login.
+- One-time MFA Bypass: Set or generate a 32 character long alphanumeric string that can be used as a one-time MFA bypass when the ESP32 is unable to sync it's time and TOTP and Duo are unavailable as a result.
+
+#### Admin key
+
+- Admin key: Set or generate a 32 character long alphanumeric string that can be used in combination with a TOTP code to export and import settings without needing to log in (for use with automated systems).
+
+#### Sessions
+
+- Session validity (seconds): Session validity when the "Remember me" checkbox is disabled, default 3600 seconds. Applies to all login methods.
+- Session validity with remember me (hours): Session validity when the "Remember me" checkbox is enabled, default 720 hours. Applies to all login methods.
 
 #### Nuki Lock PIN / Nuki Opener PIN
 
@@ -383,21 +438,18 @@ Note: All of the following requires the Nuki security code / PIN to be set, see 
 
 The "Import/Export Configuration" menu option allows the importing and exporting of the Nuki Hub settings in JSON format.<br>
 <br>
-Create a (partial) backup of the current Nuki Hub settings by selecting any of the following:<br>
-- Basic export: Will backup all settings that are not considered confidential (as such passwords and pincodes are not included in this export).
-- Export with redacted settings: Will backup basic settings and redacted settings such as passwords and pincodes.
+Export configuration creates a backup of the current Nuki Hub settings. By default the export contains all settings that are not considered confidential (passwords, keys, tokens and pincodes are not included). Two options extend the export:<br>
+- Include sensitive settings (passwords, keys, tokens): Also backup passwords, keys, tokens and pincodes.
+- Include pairing data: Also backup the pairing data of the Nuki Lock and/or Opener. Lets another hub take over the paired devices, so (re)pairing is not needed when importing this export on a factory reset or new device. Without this option you will have to manually pair Nuki devices after importing.
 
-Both of the above options will not backup pairing data, so you will have to manually pair Nuki devices when importing this export on a factory reset or new device.
-
-- Export with redacted settings and pairing data: Will backup all settings and pairing data. Can be used to completely restore a factory reset or new device based on the settings of this device. (Re)pairing Nuki devices will not be needed when importing this export.
-
+Under "Certificates and diagnostics":
 - Export HTTP SSL certificate and key (PSRAM devices only): Export your HTTP server SSL certificate and key
 - Export MQTT SSL CA, client certificate and client key: Export your MQTT SSL CA and client certificate and client key
 - Export Coredump: Export the complete log gathered from the last ESP crash
 
 <br>
-To import settings copy and paste the contents of the JSON file that is created by any of the above export options and select "Import".
-After importing the device will reboot.
+To import settings choose the JSON file created by an export, or paste its contents into the text field, and select "Import".
+After importing the device will reboot. The same import is available in the setup wizard of a new or factory reset device under "Restore a backup".
 
 ### Advanced Configuration
 
@@ -407,32 +459,27 @@ You can reach the menu directly by browsing to http://NUKIHUBIP/get?page=advance
 Note that the following options can break Nuki Hub and cause bootloops that will require you to erase your ESP and reflash following the instructions for first-time flashing.
 
 - Disable Network if not connected within 60s: Enable to allow Nuki Hub to function without a network connection (for example when only using Nuki Hub with GPIO)
-- Enable Bootloop prevention: Enable to reset the following stack size and max entry settings to default if Nuki Hub detects a bootloop.
+- Enable WebSerial logging: Enable the WebSerial log page.
+- Force slave Hosted update on next boot: Enable to force an update of the Wi-Fi co-processor firmware on devices that use ESP-Hosted.
+- Enable Bootloop prevention: Enable to reset the following stack size and buffer settings to default if Nuki Hub detects a bootloop.
 - Char buffer size (min 4096, max 65536): Set the character buffer size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 4096.
-- Task size Network (min 12288, max 65536): Set the Network task stack size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 12288.
-- Task size Nuki (min 8192, max 65536): Set the Nuki task stack size. Default 8192.
-- BLE General timeout in ms (min 3000, max 65536): General timeout for communication with Nuki devices, default 10000ms. Mainly used when retrieving Nuki keypad authorizations
+- Task size Network (min 12288, max 65536): Set the Network task stack size, needs to be enlarged to support large amounts of auth/keypad/timecontrol/authorization entries. Default 12288. The measured peak stack usage since boot is shown below the setting.
+- Task size Nuki (min 8192, max 65536): Set the Nuki task stack size. Default 8192. The measured peak stack usage since boot is shown below the setting.
+- BLE General timeout in ms (min 10000, max 65536): General timeout for communication with Nuki devices, default 10000ms. Mainly used when retrieving Nuki keypad authorizations
 - BLE Command timeout in ms (min 3000, max 65536): Command timeout for communication with Nuki devices, default 3000ms.
-- Max auth log entries (min 1, max 100): The maximum amount of log entries that will be requested from the lock/opener, default 5.
-- Max keypad entries (min 1, max 200): The maximum amount of keypad codes that will be requested from the lock/opener, default 10.
-- Max timecontrol entries (min 1, max 100): The maximum amount of timecontrol entries that will be requested from the lock/opener, default 10.
-- Max authorization entries (min 1, max 100): The maximum amount of authorization entries that will be requested from the lock/opener, default 10.
 - Show Pairing secrets on Info page: Enable to show the pairing secrets on the info page. Will be disabled on reboot.
 - Manually set lock pairing data: Enable to save the pairing data fields and manually set pairing info for the lock.
 - Manually set opener pairing data: Enable to save the pairing data fields and manually set pairing info for the opener.
 - Custom URL to update Nuki Hub updater: Set to a HTTPS address to update to a custom Nuki Hub updater binary on next boot of the Nuki Hub partition.
 - Custom URL to update Nuki Hub: Set to a HTTPS address to update to a custom Nuki Hub binary on next boot of the Nuki Hub updater partition.
-- Force Lock ID to current ID: Enable to force the current Lock ID, irrespective of the config received from the lock.
-- Force Lock Keypad connected: Enable to force Nuki Hub to function as if a keypad was connected, irrespective of the config received from the lock.
-- Force Lock Doorsensor connected: Enable to force Nuki Hub to function as if a doorsensor was connected, irrespective of the config received from the lock.
-- Force Opener ID to current ID: Enable to force the current Opener ID, irrespective of the config received from the opener.
-- Force Opener Keypad: Enable to force Nuki Hub to function as if a keypad was connected, irrespective of the config received from the opener.
 - Enable Nuki connect debug logging: Enable to log debug information regarding Nuki BLE connection to MQTT and/or Serial.
 - Enable Nuki communication debug logging: Enable to log debug information regarding Nuki BLE communication to MQTT and/or Serial.
 - Enable Nuki readable data debug logging: Enable to log human readable debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki hex data debug logging: Enable to log hex debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki command debug logging: Enable to log debug information regarding Nuki BLE commands to MQTT and/or Serial.
 - Publish free heap over MQTT: Enable to publish free heap to MQTT.
+
+The maximum entry counts for keypad codes, time control, authorizations and the authorization log and the "Force ..." device options have moved to the "Nuki Configuration" page.
 
 ## Exposed MQTT Topics
 
@@ -702,6 +749,22 @@ Example:
 ### Home Assistant discovery
 
 If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings.
+
+## Nuki Bridge HTTP API (Optional)
+
+Nuki Hub can answer the HTTP API of the official Nuki Bridge, so integrations written for the Nuki Bridge can be used without MQTT, for example the Nuki integration that is part of Home Assistant core.<br>
+Enable the API and set a token on the Network Configuration page. The API is served on the same port as the Web Configurator (80, or 443 when the HTTPS server is enabled), so use that port instead of 8080 when adding the bridge to an integration.<br>
+<br>
+Supported endpoints: `/info`, `/list`, `/lockState`, `/lockAction`, `/lock`, `/unlock`, `/callback/add`, `/callback/list`, `/callback/remove`, `/reboot`, `/log` (always empty) and `/fwupdate` (always unsuccessful, use the Web Configurator to update). The opener state includes `ringactionState` and `ringactionTimestamp` of the last detected ring.<br>
+The token can be sent in plain text (`token=`) or hashed (`ts=`, `rnr=`, `hash=`) as described in the Nuki Bridge API documentation. Lock actions use the Nuki Bridge numbering (lock: 1 unlock, 2 lock, 3 unlatch, 4 lock 'n' go, 5 lock 'n' go with unlatch; opener: 1 activate RTO, 2 deactivate RTO, 3 electric strike actuation, 4 activate continuous mode, 5 deactivate continuous mode).<br>
+Up to three callback URLs can be registered; Nuki Hub posts the lock state JSON to all of them whenever the state of the lock or opener changes.<br>
+Pairing, unpairing, the authorization log and firmware updates are not available through this API, use the Web Configurator or MQTT for those.<br>
+<br>
+On top of the Nuki Bridge endpoints, Nuki Hub adds a REST API with the same token and the same `nukiId`/`deviceType` selection:<br>
+- `/keypad`, `/timecontrol`, `/authorization`: return the entries last read from the device as `{"success": true, "entries": [...]}`. Keypad codes are only included when "Publish keypad codes" is enabled.<br>
+- `/keypad/add`, `/keypad/update`, `/keypad/delete`, `/keypad/check`, `/timecontrol/add`, `/timecontrol/update`, `/timecontrol/delete`, `/authorization/update`, `/authorization/delete` and `/config/update`: the query parameters of the matching MQTT JSON command are passed on (for example `/keypad/add?name=Guest&code=482913&enabled=1`, `/timecontrol/add?weekdays=mon,tue&time=08:00&lockAction=lock`); a complete command object can be sent as `json=` instead, which is how `/config/update?json={"ledBrightness":3}` works, the call waits for the device and returns `{"success": true|false, "result": "<command result>"}`. Keypad, time control and authorization control have to be enabled on the Access Level Configuration page, as for MQTT.<br>
+- `/refresh?what=state,config,keypad,timecontrol,auth`: asks the hub to read the given data from the device again.<br>
+- `/settings` (GET): the configuration export, with `sensitive=1` and `pairing=1` as on the Import/Export page. `/settings` (POST, JSON body): imports a configuration export, a reboot applies it.
 
 ## Upgrading using Over-the-air Update (OTA)
 

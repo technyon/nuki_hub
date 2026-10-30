@@ -1,5 +1,5 @@
 Import("env")
-import re, shutil, os
+import re, shutil, os, gzip, tempfile
 from datetime import datetime, timezone
 
 def recursive_purge(dir, pattern):
@@ -10,8 +10,19 @@ def recursive_purge(dir, pattern):
             elif re.search(pattern, os.path.join(dir, f)):
                 os.remove(os.path.join(dir, f))
 
-os.system("python resources/bin2array/bin2array.py icon/favicon-32x32.png -O src/webServerConstants/favicon-32x32.h -l 16")  
-os.system("python resources/bin2array/bin2array.py resources/style.css -O src/webServerConstants/style.h -l 16")
+def embed_gzipped(source, output):
+    with open(source, 'rb') as readfile:
+        content = readfile.read()
+    with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as compressed:
+        with gzip.GzipFile(filename='', fileobj=compressed, mode='wb', mtime=0) as gz:
+            gz.write(content)
+        compressed_path = compressed.name
+    os.system("python resources/bin2array/bin2array.py " + compressed_path + " -O " + output + " -l 16")
+    os.remove(compressed_path)
+
+os.system("python resources/bin2array/bin2array.py icon/favicon-32x32.png -O src/webServerConstants/favicon-32x32.h -l 16")
+embed_gzipped("resources/style.css", "src/webServerConstants/style.h")
+embed_gzipped("resources/app.js", "src/webServerConstants/app.h")
 os.system("python resources/bin2array/bin2array.py resources/AsyncWebSerial/frontend/index.html -O src/webServerConstants/webSerial.h -l 16")
 
 regex = r"\#define NUKI_HUB_DATE \"(.*)\""
