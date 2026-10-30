@@ -7,16 +7,180 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "EspMillis.h"
+#include "Config.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+
+enum class NukiCommandType : uint8_t
+{
+    KeypadJson,
+    Keypad,
+    Config,
+    TimeControl,
+    Auth
+};
+
+struct NukiQueuedCommand
+{
+    NukiCommandType type;
+    char payload[NUKI_COMMAND_MAX_LENGTH];
+};
 
 template<typename TDerived, typename TTraits>
 class NukiCommandHandler
 {
 public:
     void onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
-    void executeKeypadJsonCommand(const char* value);
+    void onKeypadJsonCommandReceived(const char* value);
+    void onConfigUpdateReceived(const char* value);
     void onTimeControlCommandReceived(const char* value);
     void onAuthCommandReceived(const char* value);
+    void processCommandQueue();
+    bool hasQueuedCommands();
+
+protected:
+    void executeKeypadCommand(const char* command, const uint& id, const String& name, const String& code, const int& enabled);
+    void executeKeypadJsonCommand(const char* value);
+    void executeTimeControlCommand(const char* value);
+    void executeAuthCommand(const char* value);
+
+private:
+    void enqueueCommand(NukiCommandType type, const char* payload);
+    void publishBusy(NukiCommandType type, const char* result);
 };
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::publishBusy(NukiCommandType type, const char* result)
+{
+    TDerived& d = static_cast<TDerived&>(*this);
+
+    switch(type)
+    {
+    case NukiCommandType::KeypadJson:
+        d._network->publishKeypadJsonCommandResult(result);
+        break;
+    case NukiCommandType::Keypad:
+        d._network->publishKeypadCommandResult(result);
+        break;
+    case NukiCommandType::Config:
+        d._network->publishConfigCommandResult(result);
+        break;
+    case NukiCommandType::TimeControl:
+        d._network->publishTimeControlCommandResult(result);
+        break;
+    case NukiCommandType::Auth:
+        d._network->publishAuthCommandResult(result);
+        break;
+    }
+}
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::enqueueCommand(NukiCommandType type, const char* payload)
+{
+    TDerived& d = static_cast<TDerived&>(*this);
+    NukiQueuedCommand cmd;
+
+    if(strlen(payload) >= sizeof(cmd.payload))
+    {
+        publishBusy(type, "invalidJson");
+        return;
+    }
+
+    cmd.type = type;
+    strcpy(cmd.payload, payload);
+
+    if(xQueueSend(d._commandQueue, &cmd, 0) != pdTRUE)
+    {
+        publishBusy(type, "busy");
+    }
+}
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::onKeypadJsonCommandReceived(const char* value)
+{
+    enqueueCommand(NukiCommandType::KeypadJson, value);
+}
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::onConfigUpdateReceived(const char* value)
+{
+    enqueueCommand(NukiCommandType::Config, value);
+}
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::onTimeControlCommandReceived(const char* value)
+{
+    enqueueCommand(NukiCommandType::TimeControl, value);
+}
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::onAuthCommandReceived(const char* value)
+{
+    enqueueCommand(NukiCommandType::Auth, value);
+}
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::onKeypadCommandReceived(const char* command, const uint& id, const String& name, const String& code, const int& enabled)
+{
+    char payload[NUKI_COMMAND_MAX_LENGTH];
+    snprintf(payload, sizeof(payload), "%s\x1f%u\x1f%s\x1f%s\x1f%d", command, id, name.c_str(), code.c_str(), enabled);
+    enqueueCommand(NukiCommandType::Keypad, payload);
+}
+
+template<typename TDerived, typename TTraits>
+bool NukiCommandHandler<TDerived, TTraits>::hasQueuedCommands()
+{
+    TDerived& d = static_cast<TDerived&>(*this);
+    return uxQueueMessagesWaiting(d._commandQueue) > 0;
+}
+
+template<typename TDerived, typename TTraits>
+void NukiCommandHandler<TDerived, TTraits>::processCommandQueue()
+{
+    TDerived& d = static_cast<TDerived&>(*this);
+    NukiQueuedCommand cmd;
+
+    if(xQueueReceive(d._commandQueue, &cmd, 0) != pdTRUE)
+    {
+        return;
+    }
+
+    switch(cmd.type)
+    {
+    case NukiCommandType::KeypadJson:
+        executeKeypadJsonCommand(cmd.payload);
+        break;
+    case NukiCommandType::Config:
+        d.executeConfigUpdate(cmd.payload);
+        break;
+    case NukiCommandType::TimeControl:
+        executeTimeControlCommand(cmd.payload);
+        break;
+    case NukiCommandType::Auth:
+        executeAuthCommand(cmd.payload);
+        break;
+    case NukiCommandType::Keypad:
+    {
+        char* fields[5] = {cmd.payload, nullptr, nullptr, nullptr, nullptr};
+        int n = 1;
+        for(char* p = cmd.payload; *p != '\0' && n < 5; p++)
+        {
+            if(*p == '\x1f')
+            {
+                *p = '\0';
+                fields[n++] = p + 1;
+            }
+        }
+        if(n == 5)
+        {
+            executeKeypadCommand(fields[0], (uint)strtoul(fields[1], nullptr, 10), String(fields[2]), String(fields[3]), atoi(fields[4]));
+        }
+        break;
+    }
+    }
+
+    d.postponeBleWatchdog();
+}
 
 template<typename TDerived, typename TTraits>
 void NukiCommandHandler<TDerived, TTraits>::executeKeypadJsonCommand(const char *value)
@@ -682,7 +846,7 @@ void NukiCommandHandler<TDerived, TTraits>::executeKeypadJsonCommand(const char 
     }
 }
 template<typename TDerived, typename TTraits>
-void NukiCommandHandler<TDerived, TTraits>::onAuthCommandReceived(const char *value)
+void NukiCommandHandler<TDerived, TTraits>::executeAuthCommand(const char *value)
 {
     TDerived& d = static_cast<TDerived&>(*this);
 
@@ -1223,7 +1387,7 @@ void NukiCommandHandler<TDerived, TTraits>::onAuthCommandReceived(const char *va
     }
 }
 template<typename TDerived, typename TTraits>
-void NukiCommandHandler<TDerived, TTraits>::onTimeControlCommandReceived(const char *value)
+void NukiCommandHandler<TDerived, TTraits>::executeTimeControlCommand(const char *value)
 {
     TDerived& d = static_cast<TDerived&>(*this);
 
@@ -1510,7 +1674,7 @@ void NukiCommandHandler<TDerived, TTraits>::onTimeControlCommandReceived(const c
     }
 }
 template<typename TDerived, typename TTraits>
-void NukiCommandHandler<TDerived, TTraits>::onKeypadCommandReceived(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
+void NukiCommandHandler<TDerived, TTraits>::executeKeypadCommand(const char *command, const uint &id, const String &name, const String &code, const int& enabled)
 {
     TDerived& d = static_cast<TDerived&>(*this);
 

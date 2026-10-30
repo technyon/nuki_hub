@@ -48,7 +48,7 @@ void NukiWrapper::updateConfigInt(JsonDocument& jsonResult, const char* key, con
     cmdResult = setter(keyvalue);
 }
 
-void NukiWrapper::onConfigUpdateReceived(const char *value)
+void NukiWrapper::executeConfigUpdate(const char *value)
 {
     JsonDocument jsonResult;
 
@@ -672,20 +672,3 @@ void NukiWrapper::onConfigUpdateReceived(const char *value)
     return;
 }
 
-void NukiWrapper::onKeypadJsonCommandReceived(const char *value)
-{
-    char cmd[KEYPAD_JSON_MAX_LENGTH];
-
-    if(strlen(value) >= sizeof(cmd))
-    {
-        _network->publishKeypadJsonCommandResult("invalidJson");
-        return;
-    }
-
-    strcpy(cmd, value);
-
-    if(xQueueSend(_keypadJsonQueue, cmd, 0) != pdTRUE)
-    {
-        _network->publishKeypadJsonCommandResult("busy");
-    }
-}

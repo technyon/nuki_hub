@@ -83,8 +83,6 @@ public:
     NukiLock::NukiLock& nukiDevice();
     const std::string name() const;
     LockActionResult onLockActionReceived(const char* value);
-    void onConfigUpdateReceived(const char* value);
-    void onKeypadJsonCommandReceived(const char* value);
     void requestUpdate(uint8_t updates);
     const std::list<NukiLock::KeypadEntry>& keypadEntries() const;
     const std::list<NukiLock::TimeControlEntry>& timeControlEntries() const;
@@ -114,7 +112,7 @@ private:
     void onOfficialUpdateReceived(const char* topic, const char* value);
     void updateConfigBool(JsonDocument& jsonResult, const char* key, const char* value, uint8_t current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(bool)> setter);
     void updateConfigInt(JsonDocument& jsonResult, const char* key, const char* value, int min, int max, int current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(int)> setter);
-    void checkKeypadJsonCommand();
+    void executeConfigUpdate(const char* value);
     void publishKeypadCache();
     void onGpioActionReceived(const GpioAction& action);
     void checkGpioAction();
@@ -228,7 +226,7 @@ private:
     std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;
-    QueueHandle_t _keypadJsonQueue = nullptr;
+    QueueHandle_t _commandQueue = nullptr;
     GpioAction gpioAction = GpioAction::None;
     std::vector<uint8_t> _pinsHighWhenDoorOpen;
     std::vector<uint8_t> _pinsHighWhenDoorClosed;

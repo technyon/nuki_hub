@@ -62,7 +62,7 @@ NukiWrapper::~NukiWrapper()
 
 void NukiWrapper::initialize()
 {
-    _keypadJsonQueue = xQueueCreate(KEYPAD_JSON_QUEUE_SIZE, KEYPAD_JSON_MAX_LENGTH);
+    _commandQueue = xQueueCreate(NUKI_COMMAND_QUEUE_SIZE, sizeof(NukiQueuedCommand));
     _nukiLock.setDebugConnect(_preferences->getBool(preference_debug_connect, false));
     _nukiLock.setDebugCommunication(_preferences->getBool(preference_debug_communication, false));
     _nukiLock.setDebugReadableData(_preferences->getBool(preference_debug_readable_data, false));
@@ -498,7 +498,7 @@ void NukiWrapper::update(bool reboot)
     checkRestartByBeacon(ts);
     _nukiLock.updateConnectionState();
     checkLockAction(ts);
-    checkKeypadJsonCommand();
+    processCommandQueue();
     if(_keypadCacheDirty && ts > _nextCachePublishTs)
     {
         _keypadCacheDirty = false;
@@ -1575,18 +1575,6 @@ void NukiWrapper::checkGpioAction()
     gpioAction = GpioAction::None;
 }
 
-void NukiWrapper::checkKeypadJsonCommand()
-{
-    char cmd[KEYPAD_JSON_MAX_LENGTH];
-
-    if(xQueueReceive(_keypadJsonQueue, cmd, 0) != pdTRUE)
-    {
-        return;
-    }
-
-    executeKeypadJsonCommand(cmd);
-    postponeBleWatchdog();
-}
 
 const NukiLock::KeyTurnerState &NukiWrapper::keyTurnerState()
 {

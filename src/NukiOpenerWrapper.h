@@ -80,8 +80,6 @@ public:
     const std::string hardwareVersion() const;
     const std::string name() const;
     static LockActionResult onLockActionReceivedCallback(const char* value);
-    void onConfigUpdateReceived(const char* value);
-    void onKeypadJsonCommandReceived(const char* value);
     void requestUpdate(uint8_t updates);
     const std::list<NukiOpener::KeypadEntry>& keypadEntries() const;
     const std::list<NukiOpener::TimeControlEntry>& timeControlEntries() const;
@@ -106,7 +104,7 @@ private:
 
     void updateConfigBool(JsonDocument& jsonResult, const char* key, const char* value, uint8_t current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(bool)> setter);
     void updateConfigInt(JsonDocument& jsonResult, const char* key, const char* value, int min, int max, int current, Nuki::CmdResult& cmdResult, std::function<Nuki::CmdResult(int)> setter);
-    void checkKeypadJsonCommand();
+    void executeConfigUpdate(const char* value);
     void publishKeypadCache();
 
     bool updateKeyTurnerState();
@@ -211,7 +209,7 @@ private:
     std::vector<std::pair<uint16_t, int64_t>> _keypadDeleted;
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;
-    QueueHandle_t _keypadJsonQueue = nullptr;
+    QueueHandle_t _commandQueue = nullptr;
 
     char* _buffer;
     const size_t _bufferSize;

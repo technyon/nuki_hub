@@ -49,7 +49,7 @@ void NukiOpenerWrapper::updateConfigInt(JsonDocument& jsonResult, const char* ke
     cmdResult = setter(keyvalue);
 }
 
-void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
+void NukiOpenerWrapper::executeConfigUpdate(const char *value)
 {
     JsonDocument jsonResult;
 
@@ -677,20 +677,3 @@ void NukiOpenerWrapper::onConfigUpdateReceived(const char *value)
     return;
 }
 
-void NukiOpenerWrapper::onKeypadJsonCommandReceived(const char *value)
-{
-    char cmd[KEYPAD_JSON_MAX_LENGTH];
-
-    if(strlen(value) >= sizeof(cmd))
-    {
-        _network->publishKeypadJsonCommandResult("invalidJson");
-        return;
-    }
-
-    strcpy(cmd, value);
-
-    if(xQueueSend(_keypadJsonQueue, cmd, 0) != pdTRUE)
-    {
-        _network->publishKeypadJsonCommandResult("busy");
-    }
-}
