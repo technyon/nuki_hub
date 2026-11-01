@@ -41,7 +41,6 @@ bool nuki_hub_https_server_enabled = false;
 #include "NukiNetworkLock.h"
 #include "NukiOpenerWrapper.h"
 #include "Gpio.h"
-#include "Gpio.h"
 #include "CharBuffer.h"
 #include "NukiDeviceId.h"
 #include "WebCfgServer.h"
