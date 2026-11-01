@@ -1203,7 +1203,10 @@ void NukiCommandHandler<TDerived, TTraits>::executeAuthCommand(const char *value
                         return;
                     }
 
-                    Nuki::CmdResult resultAuth = d.nukiDevice().retrieveAuthorizationEntries(0, d._preferences->getInt(preference_auth_max_entries, MAX_AUTH));
+                    Nuki::CmdResult resultAuth = d._nukiRetryHandler->retryComm([&]()
+                    {
+                        return d.nukiDevice().retrieveAuthorizationEntries(0, d._preferences->getInt(preference_auth_max_entries, MAX_AUTH));
+                    });
                     bool foundExisting = false;
 
                     if(resultAuth == Nuki::CmdResult::Success)
@@ -1287,6 +1290,8 @@ void NukiCommandHandler<TDerived, TTraits>::executeAuthCommand(const char *value
                     }
                     else
                     {
+                        Log->print("Update authorization: failed to retrieve existing entries: ");
+                        TTraits::printCommandResult(resultAuth);
                         d._network->publishAuthCommandResult("failedToRetrieveExistingAuthorizationEntry");
                         return;
                     }
@@ -1569,7 +1574,10 @@ void NukiCommandHandler<TDerived, TTraits>::executeTimeControlCommand(const char
                         return;
                     }
 
-                    Nuki::CmdResult resultTc = d.nukiDevice().retrieveTimeControlEntries();
+                    Nuki::CmdResult resultTc = d._nukiRetryHandler->retryComm([&]()
+                    {
+                        return d.nukiDevice().retrieveTimeControlEntries();
+                    });
                     bool foundExisting = false;
 
                     if(resultTc == Nuki::CmdResult::Success)
@@ -1617,6 +1625,8 @@ void NukiCommandHandler<TDerived, TTraits>::executeTimeControlCommand(const char
                     }
                     else
                     {
+                        Log->print("Update timecontrol: failed to retrieve existing entries: ");
+                        TTraits::printCommandResult(resultTc);
                         d._network->publishTimeControlCommandResult("failedToRetrieveExistingTimeControlEntry");
                         return;
                     }
