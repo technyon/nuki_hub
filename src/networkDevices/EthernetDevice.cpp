@@ -12,8 +12,8 @@
 #include "esp32-hal.h"
 #endif
 
-extern bool ethCriticalFailure;
-extern bool wifiFallback;
+extern bool& ethCriticalFailure;
+extern bool& wifiFallback;
 
 EthernetDevice::EthernetDevice(const String& hostname, Preferences* preferences, const IPConfiguration* ipConfiguration, const std::string& deviceName, uint8_t phy_addr, int power, int mdc, int mdio, eth_phy_type_t ethtype, eth_clock_mode_t clock_mode)
     : NetworkDevice(hostname, preferences, ipConfiguration),

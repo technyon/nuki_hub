@@ -13,7 +13,7 @@
 #include "hal/wdt_hal.h"
 #include "util/NukiHelper.h"
 
-extern bool forceEnableWebServer;
+extern bool& forceEnableWebServer;
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
