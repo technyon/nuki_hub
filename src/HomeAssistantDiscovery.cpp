@@ -63,11 +63,12 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
         Log->print("Saved ID: ");
         Log->println(savedDevId);
         Log->println("Efuse ID and Nuki Hub device ID do not match, removing HomeAssistant setup for incorrect Nuki Hub device ID.");
-        char uidString[20];
+        char uidString[21];
         itoa(_preferences->getUInt(preference_device_id_lock, 0), uidString, 10);
         removeHASSConfig(uidString);
         espDelayAck(3000);
-        itoa(savedDevId, uidString, 10);
+        // Same format as _nukiHubUidString: the ID is 64 bit, itoa() truncated it to int.
+        snprintf(uidString, sizeof(uidString), "%" PRIu64, savedDevId);
         removeHASSConfig(uidString);
         espDelayAck(3000);
     }
