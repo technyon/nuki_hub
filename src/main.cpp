@@ -6,6 +6,8 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "esp_task_wdt.h"
+#include <freertos/queue.h>
+#include <atomic>
 #ifdef CONFIG_HEAP_TASK_TRACKING
 #include "esp_heap_task_info.h"
 #include "esp_heap_caps.h"
@@ -99,6 +101,8 @@ PsychicHttpServer* psychicServer = nullptr;
 PsychicHttpServer* psychicServerRedirect = nullptr;
 PsychicHttpsServer* psychicSSLServer = nullptr;
 PsychicWebSocketHandler* websocketHandler = nullptr;
+QueueHandle_t wsMessages = nullptr;
+std::atomic<uint8_t> webSerialClientCount{0};
 
 NukiNetwork* network = nullptr;
 WebCfgServer* webCfgServer = nullptr;
@@ -991,7 +995,12 @@ void updateWebSerial(const bool& connected)
 #ifndef NUKI_HUB_UPDATER
     if(connected && webSerialEnabled && (webSSLStarted || webStarted))
     {
-        webCfgServerSSL->updateWebSerial();
+        // Only one of the two servers exists: webCfgServerSSL is null on plain HTTP.
+        WebCfgServer* activeServer = webSSLStarted ? webCfgServerSSL : webCfgServer;
+        if(activeServer != nullptr)
+        {
+            activeServer->updateWebSerial();
+        }
         espDelayAck(50);
     }
 #endif

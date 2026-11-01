@@ -88,9 +88,26 @@ void MqttLogger::sendBuffer()
             Serial.write(this->buffer, this->bufferCnt);
             Serial.println();
         }
-        if (doWebSerial && websocketHandler != nullptr)
+        if (doWebSerial && wsMessages != nullptr && webSerialClientCount > 0)
         {
-            websocketHandler->sendAll(HTTPD_WS_TYPE_TEXT, this->buffer, this->bufferCnt);
+            // Do NOT send from here: sendBuffer() runs in whatever task is logging
+            // (BLE, WiFi, httpd, ...), while sendAll() walks the websocket client
+            // list that the httpd task modifies (and frees entries of) on
+            // connect/disconnect. Enqueue the line instead; it is broadcast from
+            // the httpd task (WebCfgServer::updateWebSerial()). Non-blocking: the
+            // line is dropped if the queue is full.
+            WebsocketMessage wm;
+            wm.socket = -1; // broadcast
+            wm.len = this->bufferCnt;
+            wm.buffer = (char *)malloc(this->bufferCnt);
+            if (wm.buffer != NULL)
+            {
+                memcpy(wm.buffer, this->buffer, this->bufferCnt);
+                if (xQueueSend(wsMessages, &wm, 0) != pdTRUE)
+                {
+                    free(wm.buffer);
+                }
+            }
         }
         this->bufferCnt=0;
     }

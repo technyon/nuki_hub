@@ -13,11 +13,30 @@
 #include <Print.h>
 #include <espMqttClient.h>
 #include "PsychicWebSocket.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <atomic>
 
 #define MQTT_MAX_PACKET_SIZE 1024
 
 extern PsychicWebSocketHandler* websocketHandler;
 extern bool coredumpPrinted;
+
+// A single line of log output handed from the logging path (any task) to the
+// web server task via a queue. socket == -1 means "broadcast to all WebSerial
+// clients"; a real socket number is used for point-to-point replies (ping/pong).
+typedef struct
+{
+    int socket;
+    char *buffer;
+    size_t len;
+} WebsocketMessage;
+
+extern QueueHandle_t wsMessages;
+// Number of connected WebSerial clients. Updated by the web server on
+// connect/close and read (best-effort) from the logging path to skip work when
+// nobody is listening.
+extern std::atomic<uint8_t> webSerialClientCount;
 
 enum MqttLoggerMode {
     MqttAndSerialFallback = 0,

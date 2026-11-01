@@ -2,6 +2,7 @@
 
 #include <Preferences.h>
 #include <PsychicHttp.h>
+#include <atomic>
 #include "enums/NukiPinState.h"
 #include "WebSessionProvider.h"
 #include "WebCfgSettings.h"
@@ -47,6 +48,11 @@ public:
 #ifndef NUKI_HUB_UPDATER
     WebCfgServer(NukiWrapper* nuki, NukiOpenerWrapper* nukiOpener, NukiNetwork* network, Gpio* gpio, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
     void updateWebSerial();
+private:
+    static void drainWebSerialWork(void* arg);
+    void drainWebSerialQueue();
+    std::atomic<bool> _webSerialDrainQueued{false};
+public:
 #else
     WebCfgServer(NukiNetwork* network, Preferences* preferences, bool allowRestartToPortal, uint8_t partitionType, PsychicHttpServer* psychicServer, ImportExport* importExport);
 #endif
