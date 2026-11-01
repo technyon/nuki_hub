@@ -6,6 +6,7 @@
 #include <HTTPClient.h>
 #include <NetworkClientSecure.h>
 #include "util/NetworkDeviceInstantiator.h"
+#include "util/StringUtil.h"
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include "networkDevices/WifiDevice.h"
 #endif
@@ -207,7 +208,7 @@ void NukiNetwork::initialize()
         _preferences->putString(preference_hostname, _hostname);
     }
 
-    strcpy(_hostnameArr, _hostname.c_str());
+    copyBounded(_hostnameArr, _hostname, sizeof(_hostnameArr), "Hostname");
     _device->initialize();
 
     Log->print("Host name: ");
@@ -250,7 +251,7 @@ void NukiNetwork::initialize()
             _preferences->putString(preference_hostname, _hostname);
         }
 
-        strcpy(_hostnameArr, _hostname.c_str());
+        copyBounded(_hostnameArr, _hostname, sizeof(_hostnameArr), "Hostname");
         _device->initialize();
 
         Log->print("Host name: ");
@@ -328,30 +329,14 @@ void NukiNetwork::readSettings()
 void NukiNetwork::setMQTTConnectionSettings()
 {
     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
-    memset(_nukiHubPath, 0, sizeof(_nukiHubPath));
-    size_t len = mqttPath.length();
-    for(int i=0; i < len; i++)
-    {
-        _nukiHubPath[i] = mqttPath.charAt(i);
-    }
+    copyBounded(_nukiHubPath, mqttPath, sizeof(_nukiHubPath), "MQTT path");
 
     String maintenancePathPrefix = _preferences->getString(preference_mqtt_lock_path);
-    memset(_maintenancePathPrefix, 0, sizeof(_maintenancePathPrefix));
-    len = maintenancePathPrefix.length();
-    for(int i=0; i < len; i++)
-    {
-        _maintenancePathPrefix[i] = maintenancePathPrefix.charAt(i);
-    }
+    copyBounded(_maintenancePathPrefix, maintenancePathPrefix, sizeof(_maintenancePathPrefix), "MQTT maintenance path");
 
     _lockPath = _preferences->getString(preference_mqtt_lock_path);
     String connectionStateTopic = _lockPath + mqtt_topic_mqtt_connection_state;
-
-    memset(_mqttConnectionStateTopic, 0, sizeof(_mqttConnectionStateTopic));
-    len = connectionStateTopic.length();
-    for(int i=0; i < len; i++)
-    {
-        _mqttConnectionStateTopic[i] = connectionStateTopic.charAt(i);
-    }
+    copyBounded(_mqttConnectionStateTopic, connectionStateTopic, sizeof(_mqttConnectionStateTopic), "MQTT connection state topic");
 
     if(_preferences->getString(preference_mqtt_hass_discovery, "") != "" && !_preferences->getBool(preference_mqtt_hass_enabled, false))
     {
@@ -362,8 +347,10 @@ void NukiNetwork::setMQTTConnectionSettings()
     memset(_mqttUser, 0, sizeof(_mqttUser));
     memset(_mqttPass, 0, sizeof(_mqttPass));
 
+    // Bounded copies: the web form limits these lengths only client-side and a
+    // config import not at all; an overflow here would corrupt memory on every boot.
     String brokerAddr = _preferences->getString(preference_mqtt_broker);
-    strcpy(_mqttBrokerAddr, brokerAddr.c_str());
+    copyBounded(_mqttBrokerAddr, brokerAddr, sizeof(_mqttBrokerAddr), "MQTT broker");
 
     _mqttPort = _preferences->getInt(preference_mqtt_broker_port, 0);
 
@@ -373,25 +360,8 @@ void NukiNetwork::setMQTTConnectionSettings()
         _preferences->putInt(preference_mqtt_broker_port, _mqttPort);
     }
 
-    String mqttUser = _preferences->getString(preference_mqtt_user);
-    if(mqttUser.length() > 0)
-    {
-        len = mqttUser.length();
-        for(int i=0; i < len; i++)
-        {
-            _mqttUser[i] = mqttUser.charAt(i);
-        }
-    }
-
-    String mqttPass = _preferences->getString(preference_mqtt_password);
-    if(mqttPass.length() > 0)
-    {
-        len = mqttPass.length();
-        for(int i=0; i < len; i++)
-        {
-            _mqttPass[i] = mqttPass.charAt(i);
-        }
-    }
+    copyBounded(_mqttUser, _preferences->getString(preference_mqtt_user), sizeof(_mqttUser), "MQTT user");
+    copyBounded(_mqttPass, _preferences->getString(preference_mqtt_password), sizeof(_mqttPass), "MQTT password");
 
     Log->print("MQTT Broker: ");
     Log->print(_mqttBrokerAddr);
@@ -793,38 +763,18 @@ bool NukiNetwork::reconnect(bool force)
                     char mqttOldOpenerPath2[200] = {0};
                     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
                     mqttPath.concat("/lock");
-
-                    size_t len = mqttPath.length();
-                    for(int i=0; i < len; i++)
-                    {
-                        mqttLockPath[i] = mqttPath.charAt(i);
-                    }
+                    copyBounded(mqttLockPath, mqttPath, sizeof(mqttLockPath), "MQTT lock path");
 
                     mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
                     mqttPath.concat("/opener");
-
-                    len = mqttPath.length();
-                    for(int i=0; i < len; i++)
-                    {
-                        mqttOpenerPath[i] = mqttPath.charAt(i);
-                    }
+                    copyBounded(mqttOpenerPath, mqttPath, sizeof(mqttOpenerPath), "MQTT opener path");
 
                     mqttPath = _preferences->getString(preference_mqtt_opener_path, "");
-
-                    len = mqttPath.length();
-                    for(int i=0; i < len; i++)
-                    {
-                        mqttOldOpenerPath[i] = mqttPath.charAt(i);
-                    }
+                    copyBounded(mqttOldOpenerPath, mqttPath, sizeof(mqttOldOpenerPath), "MQTT old opener path");
 
                     mqttPath = _preferences->getString(preference_mqtt_opener_path, "");
                     mqttPath.concat("/lock");
-
-                    len = mqttPath.length();
-                    for(int i=0; i < len; i++)
-                    {
-                        mqttOldOpenerPath2[i] = mqttPath.charAt(i);
-                    }
+                    copyBounded(mqttOldOpenerPath2, mqttPath, sizeof(mqttOldOpenerPath2), "MQTT old opener path");
 
                     MqttTopics mqttTopics;
 
@@ -835,7 +785,7 @@ bool NukiNetwork::reconnect(bool force)
                         removeTopic(_maintenancePathPrefix, topic);
                         removeTopic(mqttLockPath, topic);
                         removeTopic(mqttOpenerPath, topic);
-                        if (len > 5)
+                        if (strlen(mqttOldOpenerPath2) > 5) // an old opener path is configured (beyond "/lock")
                         {
                             removeTopic(mqttOldOpenerPath, topic);
                             removeTopic(mqttOldOpenerPath2, topic);

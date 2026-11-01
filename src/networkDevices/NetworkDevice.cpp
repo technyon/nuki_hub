@@ -7,6 +7,7 @@
 #include "SPIFFS.h"
 #include "../MqttTopics.h"
 #include "PreferencesKeys.h"
+#include "../util/StringUtil.h"
 
 void NetworkDevice::init()
 {
@@ -110,12 +111,12 @@ void NetworkDevice::init()
             mode = MqttLoggerMode::MqttAndSerial;
         }
 
-        _path = new char[200];
-        memset(_path, 0, sizeof(_path));
+        const size_t pathSize = 200;
+        _path = new char[pathSize]; // sizeof(_path) would be the pointer size, not 200
 
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
-        strcpy(_path, pathStr.c_str());
+        copyBounded(_path, pathStr, pathSize, "MQTT log path");
         Log = new MqttLogger(*getMqttClient(), _path, mode);
     }
 }

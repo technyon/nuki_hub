@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include "hal/wdt_hal.h"
 #include "util/NukiHelper.h"
+#include "util/StringUtil.h"
 
 extern bool& forceEnableWebServer;
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
@@ -46,12 +47,7 @@ void NukiNetworkLock::initialize()
 
     String mqttPath = _preferences->getString(preference_mqtt_lock_path, "");
     mqttPath.concat("/lock");
-
-    size_t len = mqttPath.length();
-    for(int i=0; i < len; i++)
-    {
-        _mqttPath[i] = mqttPath.charAt(i);
-    }
+    copyBounded(_mqttPath, mqttPath, sizeof(_mqttPath), "MQTT lock path");
 
     _haEnabled = _preferences->getString(preference_mqtt_hass_discovery, "") != "";
     _disableNonJSON = _preferences->getBool(preference_disable_non_json, false);
