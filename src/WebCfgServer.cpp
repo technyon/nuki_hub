@@ -1134,6 +1134,16 @@ void WebCfgServer::initialize()
                 break;
             }
 
+            if (_otaRejected)
+            {
+                // Nothing was written, so there is no reason to restart.
+                _otaRejected = false;
+                resp->setCode(400);
+                resp->setContentType("text/plain");
+                resp->setContent("Wrong file: Nuki Hub is uploaded from the updater, the updater from Nuki Hub. Nothing was written.");
+                return resp->send();
+            }
+
             String result;
             if (!Update.hasError())
             {
@@ -1144,6 +1154,7 @@ void WebCfgServer::initialize()
                 resp->setContentType("text/html");
                 resp->setContent(result.c_str());
                 esp_err_t res = resp->send();
+                waitAndProcess(true, 500); // let the response reach the browser
                 restartEsp(RestartReason::OTACompleted);
                 return res;
             }
@@ -1156,6 +1167,7 @@ void WebCfgServer::initialize()
                 resp->setContentType("text/html");
                 resp->setContent(result.c_str());
                 esp_err_t res = resp->send();
+                waitAndProcess(true, 500); // let the response reach the browser
                 restartEsp(RestartReason::OTAAborted);
                 return res;
             }
