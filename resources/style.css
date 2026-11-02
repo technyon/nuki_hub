@@ -384,6 +384,13 @@ button[disabled], input[type=submit][disabled], input[type=button][disabled] {
     cursor: not-allowed;
 }
 
+progress {
+    display: block;
+    width: 100%;
+    margin-top: .5rem;
+    accent-color: var(--accent);
+}
+
 .actions {
     display: flex;
     flex-wrap: wrap;

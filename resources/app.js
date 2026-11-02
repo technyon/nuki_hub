@@ -163,16 +163,81 @@
         }
     }));
 
-    const upload = $('#submitbtn');
+    const upload = $('form[data-upload]');
     if (upload) {
-        upload.addEventListener('click', () => {
-            ['autoupdform', 'rebootform', 'upform', 'gitdiv'].forEach(id => {
+        const status = $('#uploadstatus');
+        const bar = $('#uploadprogress');
+        const setBusy = busy => {
+            ['autoupdform', 'manualtitle', 'rebootform', 'upform', 'gitdiv'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
-                    el.hidden = true;
+                    el.hidden = busy;
                 }
             });
-            $('#msgdiv').hidden = false;
+            $('#msgdiv').hidden = !busy;
+        };
+        const fail = message => {
+            setBusy(false);
+            alert(message);
+        };
+        const waitForRestart = () => {
+            bar.hidden = true;
+            status.textContent = 'Update uploaded, rebooting. You will be forwarded automatically.';
+            setTimeout(() => poll('/', 2000, () => {
+                location.href = '/';
+                return false;
+            }), 5000);
+            setTimeout(() => {
+                status.textContent = 'Nuki Hub has not come back yet, try opening it manually.';
+            }, 120000);
+        };
+
+        upload.addEventListener('submit', event => {
+            event.preventDefault();
+            const file = $('input[type=file]', upload).files[0];
+            if (!file) {
+                alert('Choose a file first');
+                return;
+            }
+            const min = Number(upload.dataset.minSize || 0);
+            const max = Number(upload.dataset.maxSize || Infinity);
+            if (file.size < min || file.size > max) {
+                alert(upload.dataset.sizeError);
+                return;
+            }
+
+            setBusy(true);
+            let sent = false;
+            const request = new XMLHttpRequest();
+            request.open('POST', upload.getAttribute('action'));
+            request.upload.onprogress = progress => {
+                if (progress.lengthComputable) {
+                    const percent = Math.round(progress.loaded * 100 / progress.total);
+                    bar.value = percent;
+                    status.textContent = 'Uploading: ' + percent + '%';
+                }
+            };
+            request.upload.onload = () => {
+                sent = true;
+                bar.value = 100;
+                status.textContent = 'Upload complete, verifying the update...';
+            };
+            request.onload = () => {
+                if (request.status === 200) {
+                    waitForRestart();
+                } else {
+                    fail(request.responseText || 'Update failed');
+                }
+            };
+            // The device restarting can cut the connection before the response arrives.
+            request.onerror = () => {
+                if (sent) {
+                    waitForRestart();
+                } else {
+                    fail('Upload failed, connection lost');
+                }
+            };
+            request.send(new FormData(upload));
         });
     }
 

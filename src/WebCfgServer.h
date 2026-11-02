@@ -187,6 +187,7 @@ private:
     char _assetVersion[9] = "0";
     uint8_t _partitionType = 0;
     size_t _otaContentLen = 0;
+    bool _otaRejected = false;
     String _hostname;
     bool _duoEnabled = false;
     bool _bypassGPIO = false;

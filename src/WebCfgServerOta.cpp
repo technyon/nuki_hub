@@ -12,6 +12,9 @@
 #include <NetworkClientSecure.h>
 #endif
 
+// The updater binary is always below this size, the Nuki Hub binary above it.
+static constexpr size_t otaBinarySizeLimit = 1600000;
+
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
@@ -82,6 +85,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         return response.endSend();
     }
 
+    response.print("<div id=\"msgdiv\" class=\"banner warn\" hidden><span id=\"uploadstatus\">Initiating Over-the-air update. This will take about two minutes, please be patient. You will be forwarded automatically when the update is complete.</span><progress id=\"uploadprogress\" max=\"100\" value=\"0\"></progress></div>");
 #ifndef NUKI_HUB_UPDATER
     bool manifestSuccess = false;
     JsonDocument doc;
@@ -117,7 +121,6 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         }
     }
 
-    response.print("<div id=\"msgdiv\" class=\"banner warn\" hidden>Initiating Over-the-air update. This will take about two minutes, please be patient. You will be forwarded automatically when the update is complete.</div>");
     response.print("<div id=\"autoupdform\"><h3>Update Nuki Hub</h3>");
     response.print("<p>Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub</p>");
     response.print("<div class=\"actions\">");
@@ -243,7 +246,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 
     if(_partitionType == 1)
     {
-        response.print("<h3><a href=\"#manualupdate\" data-toggle=\"#manualupdate\">Manually update Nuki Hub</a></h3><div id=\"manualupdate\" hidden>");
+        response.print("<h3 id=\"manualtitle\"><a href=\"#manualupdate\" data-toggle=\"#manualupdate\">Manually update Nuki Hub</a></h3><div id=\"manualupdate\" hidden>");
         response.print("<div id=\"rebootform\"><h4>Reboot to Nuki Hub Updater</h4>");
         response.print("<p>Click on the button to reboot to the Nuki Hub updater, where you can select the latest Nuki Hub binary to update</p>");
         response.print("<form action=\"/get\" method=\"get\">");
@@ -251,7 +254,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><div class=\"actions\"><input type=\"submit\" value=\"Reboot to Nuki Hub Updater\"></div></form></div>");
         response.print("<div id=\"upform\"><h4>Update Nuki Hub Updater</h4>");
         response.print("<p>Select the latest Nuki Hub updater binary to update the Nuki Hub updater</p>");
-        response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><table><tr><td>nuki_hub_updater.bin file</td><td><input name=\"uploadedfile\" type=\"file\" accept=\".bin\"></td></tr></table>");
+        response.print(String("<form data-upload data-max-size=\"") + otaBinarySizeLimit + "\" data-size-error=\"This file is too large for the updater slot. Upload nuki_hub_updater.bin here; nuki_hub.bin must be uploaded from the Nuki Hub updater.\" enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><table><tr><td>nuki_hub_updater.bin file</td><td><input name=\"uploadedfile\" type=\"file\" accept=\".bin\"></td></tr></table>");
     }
     else
     {
@@ -263,7 +266,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         response.print("<input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"" + _confirmCode + "\"><div class=\"actions\"><input type=\"submit\" value=\"Reboot to Nuki Hub\"></div></form></div>");
         response.print("<div id=\"upform\"><h3>Update Nuki Hub</h3>");
         response.print("<p>Select the latest Nuki Hub binary to update Nuki Hub</p>");
-        response.print("<form enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><table><tr><td>nuki_hub.bin file</td><td><input name=\"uploadedfile\" type=\"file\" accept=\".bin\"></td></tr></table>");
+        response.print(String("<form data-upload") + (_partitionType == 2 ? String(" data-min-size=\"") + otaBinarySizeLimit + "\" data-size-error=\"This file is too small to be Nuki Hub. Upload nuki_hub.bin here; nuki_hub_updater.bin must be uploaded from Nuki Hub.\"" : String()) + " enctype=\"multipart/form-data\" action=\"/uploadota\" method=\"post\"><table><tr><td>nuki_hub.bin file</td><td><input name=\"uploadedfile\" type=\"file\" accept=\".bin\"></td></tr></table>");
     }
     response.print("<div class=\"actions\"><input id=\"submitbtn\" type=\"submit\" value=\"Upload File\"></div></form></div>");
     response.print("<div id=\"gitdiv\">");
@@ -294,6 +297,16 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
         return(ESP_FAIL);
     }
 
+    // The multipart parser ignores the return value and keeps delivering chunks.
+    if (!index)
+    {
+        _otaRejected = false;
+    }
+    else if (_otaRejected)
+    {
+        return(ESP_FAIL);
+    }
+
     if (!Update.hasError())
     {
         if (!index)
@@ -303,13 +316,15 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
             Log->println("Starting manual OTA update");
             _otaContentLen = request->contentLength();
 
-            if(_partitionType == 1 && _otaContentLen > 1600000)
+            if(_partitionType == 1 && _otaContentLen > otaBinarySizeLimit)
             {
+                _otaRejected = true;
                 Log->println("Uploaded OTA file too large, are you trying to upload a Nuki Hub binary instead of a Nuki Hub updater binary?");
                 return(ESP_FAIL);
             }
-            else if(_partitionType == 2 && _otaContentLen < 1600000)
+            else if(_partitionType == 2 && _otaContentLen < otaBinarySizeLimit)
             {
+                _otaRejected = true;
                 Log->println("Uploaded OTA file is too small, are you trying to upload a Nuki Hub updater binary instead of a Nuki Hub binary?");
                 return(ESP_FAIL);
             }
