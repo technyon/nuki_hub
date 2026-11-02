@@ -11,6 +11,8 @@
 // reading and writing the same variable at different addresses. A struct has
 // one fixed layout in both builds. Keep it free of #ifdefs for that reason, and
 // only append new fields at the end.
+#define RTC_STATE_RUNNING_DETECT 0x6e756b69
+
 struct RtcNoInitState
 {
     uint64_t restartReasonValidDetect;
