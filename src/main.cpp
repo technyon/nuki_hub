@@ -1604,9 +1604,9 @@ void setup()
     partitionType = checkPartition();
 
     //default disableNetwork RTC_ATTR to false on power-on
-    if(espRunning != 1)
+    if(espRunning != RTC_STATE_RUNNING_DETECT)
     {
-        espRunning = 1;
+        espRunning = RTC_STATE_RUNNING_DETECT;
         forceEnableWebServer = false;
         disableNetwork = false;
         wifiFallback = false;
