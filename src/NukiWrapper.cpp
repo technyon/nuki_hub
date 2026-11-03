@@ -1637,7 +1637,12 @@ void NukiWrapper::readConfig()
 
     result = _nukiRetryHandler->retryComm([&]()
     {
-        return _nukiLock.requestConfig(&_nukiConfig);
+        Nuki::CmdResult res = _nukiLock.requestConfig(&_nukiConfig);
+        if(res == Nuki::CmdResult::Success && _nukiConfig.nukiId == 0)
+        {
+            return Nuki::CmdResult::Failed;
+        }
+        return res;
     });
 
     _nukiConfigValid = result == Nuki::CmdResult::Success;
