@@ -265,10 +265,10 @@ Settings that need a reboot of the Nuki Hub to take effect are marked with a "re
 - Generate self-signed HTTP SSL Certificate and key: Optionally generate a self-signed SSL certificate and key for the HTTPS server, see the "[HTTPS Server](#https-server-optional-psram-enabled-devices-only)" section of this README.
 - Nuki Hub FQDN for HTTP redirect: FQDN hostname of the Nuki Hub device used for redirecting from HTTP to HTTPS.
 
-#### Nuki Bridge HTTP API
+#### Nuki HTTP API
 
-- Enable Nuki Bridge HTTP API: Enable to let Nuki Hub answer the HTTP API of the official Nuki Bridge on the Web Configurator port, see the "[Nuki Bridge HTTP API](#nuki-bridge-http-api-optional)" section of this README.
-- Nuki Bridge HTTP API token: The token clients have to send with every request (6-20 characters).
+- Enable Nuki HTTP API: Enable to let Nuki Hub answer the Nuki HTTP API on the Web Configurator port, see the "[Nuki HTTP API](#nuki-bridge-http-api-optional)" section of this README.
+- Nuki HTTP API token: The token clients have to send with every request (6-20 characters).
 
 #### IP Address assignment
 
@@ -750,7 +750,7 @@ Example:
 
 If Home Assistant discovery is enabled (see the [Home  Assistant Discovery](#home-assistant-discovery-optional) section of this README) Nuki Hub will create entities for almost all of the above settings.
 
-## Nuki Bridge HTTP API (Optional)
+## Nuki HTTP API (Optional)
 
 Nuki Hub can answer the HTTP API of the official Nuki Bridge, so integrations written for the Nuki Bridge can be used without MQTT, for example the Nuki integration that is part of Home Assistant core.<br>
 Enable the API and set a token on the Network Configuration page. The API is served on the same port as the Web Configurator (80, or 443 when the HTTPS server is enabled), so use that port instead of 8080 when adding the bridge to an integration.<br>

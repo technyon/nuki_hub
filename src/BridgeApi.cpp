@@ -315,7 +315,7 @@ void BridgeApi::initialize(PsychicHttpServer* server)
 
     initializeRestApi(server);
 
-    Log->println("Nuki Bridge HTTP API enabled");
+    Log->println("Nuki HTTP API enabled");
 }
 
 void BridgeApi::initializeRestApi(PsychicHttpServer* server)

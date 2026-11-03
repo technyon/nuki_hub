@@ -73,10 +73,10 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     printSetting(&response, networkSettings, networkSettingsCount, "IPGTW");
     printSetting(&response, networkSettings, networkSettingsCount, "DNSSRV");
     response.print("</table>");
-    response.print("<h3>Nuki Bridge HTTP API</h3>");
+    response.print("<h3>Nuki HTTP API</h3>");
     response.print("<table>");
-    printCheckBox(&response, "BRIDGEAPI", "Enable Nuki Bridge HTTP API (/list, /lockState, /lockAction, callbacks)", _preferences->getBool(preference_bridge_api_enabled, false), "");
-    printInputField(&response, "BRIDGETOKEN", "Nuki Bridge HTTP API token (6-20 characters)", _preferences->getString(preference_bridge_api_token, "").c_str(), 20, "");
+    printCheckBox(&response, "BRIDGEAPI", "Enable Nuki HTTP API (/list, /lockState, /lockAction, callbacks)", _preferences->getBool(preference_bridge_api_enabled, false), "");
+    printInputField(&response, "BRIDGETOKEN", "Nuki HTTP API token (6-20 characters)", _preferences->getString(preference_bridge_api_token, "").c_str(), 20, "");
     response.print("</table>");
     response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
     response.print("</form>");
