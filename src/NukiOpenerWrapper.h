@@ -72,6 +72,8 @@ public:
     const NukiOpener::OpenerState& keyTurnerState();
     const bool isPaired() const;
     const bool hasKeypad() const;
+    uint8_t configUnknownBytes(unsigned char* dst, uint8_t maxLen) const;
+    uint8_t advancedConfigUnknownBytes(unsigned char* dst, uint8_t maxLen) const;
     const BLEAddress getBleAddress() const;
     const uint8_t restartController() const;
 

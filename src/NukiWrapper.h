@@ -74,6 +74,8 @@ public:
     const NukiLock::KeyTurnerState& keyTurnerState();
     const bool isPaired() const;
     const bool hasKeypad() const;
+    uint8_t configUnknownBytes(unsigned char* dst, uint8_t maxLen) const;
+    uint8_t advancedConfigUnknownBytes(unsigned char* dst, uint8_t maxLen) const;
     bool hasDoorSensor() const;
     const bool offConnected();
     const BLEAddress getBleAddress() const;

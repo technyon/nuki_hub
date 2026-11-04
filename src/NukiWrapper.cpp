@@ -1586,6 +1586,16 @@ const bool NukiWrapper::isPaired() const
     return _paired;
 }
 
+uint8_t NukiWrapper::configUnknownBytes(unsigned char* dst, uint8_t maxLen) const
+{
+    return _nukiLock.getConfigUnknownBytes(dst, maxLen);
+}
+
+uint8_t NukiWrapper::advancedConfigUnknownBytes(unsigned char* dst, uint8_t maxLen) const
+{
+    return _nukiLock.getAdvancedConfigUnknownBytes(dst, maxLen);
+}
+
 const bool NukiWrapper::hasKeypad() const
 {
     return (_forceKeypad || _hasKeypad);

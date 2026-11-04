@@ -29,6 +29,21 @@ static esp_hosted_coprocessor_fwver_t host_version_struct = {
 #endif
 
 #ifndef NUKI_HUB_UPDATER
+static void printUnknownBytes(PsychicStreamResponse& response, const char* label, const unsigned char* bytes, uint8_t len)
+{
+    if(len == 0)
+    {
+        return;
+    }
+    response.print(label);
+    for(uint8_t i = 0; i < len; i++)
+    {
+        char hex[4];
+        snprintf(hex, sizeof(hex), " %02x", bytes[i]);
+        response.print(hex);
+    }
+}
+
 esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* resp)
 {
     uint32_t aclPrefs[17];
@@ -454,6 +469,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print(_nuki->hasDoorSensor() ? "Yes" : "No");
         response.print("\nHas keypad: ");
         response.print(_nuki->hasKeypad() ? "Yes" : "No");
+        if(_preferences->getBool(preference_enable_debug_mode, false))
+        {
+            unsigned char unknownBytes[32];
+            printUnknownBytes(response, "\nConfig bytes unknown to Nuki Hub:", unknownBytes, _nuki->configUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            printUnknownBytes(response, "\nAdvanced config bytes unknown to Nuki Hub:", unknownBytes, _nuki->advancedConfigUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+        }
         if(_nuki->hasKeypad())
         {
             response.print("\nKeypad highest entries count: ");
@@ -667,6 +688,12 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print(_nukiOpener->isPaired() ? _nukiOpener->isPinValid() ? "Yes" : "No" : "-");
         response.print("\nOpener has keypad: ");
         response.print(_nukiOpener->hasKeypad() ? "Yes" : "No");
+        if(_preferences->getBool(preference_enable_debug_mode, false))
+        {
+            unsigned char unknownBytes[32];
+            printUnknownBytes(response, "\nOpener config bytes unknown to Nuki Hub:", unknownBytes, _nukiOpener->configUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            printUnknownBytes(response, "\nOpener advanced config bytes unknown to Nuki Hub:", unknownBytes, _nukiOpener->advancedConfigUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+        }
         if(_nukiOpener->hasKeypad())
         {
             response.print("\nKeypad highest entries count: ");
