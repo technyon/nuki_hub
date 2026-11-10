@@ -64,6 +64,7 @@ public:
     void publishLongLong(const char* prefix, const char* topic, int64_t value, bool retain);
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain);
     void publishString(const char* prefix, const char* topic, const char* value, bool retain);
+    void publishLatestVersion(const char* version);
     void publish(const char* prefix, const char *topic, const char *value, bool retain);
     void publish(const char* path, const char *value, bool retain);
     void removeTopic(const String& mqttPath, const String& mqttTopic);
@@ -101,8 +102,6 @@ private:
     void setMQTTConnectionSettings();
 
     static NukiNetwork* _inst;
-
-    const char* _latestVersion;
 
     Preferences* _preferences;
     IPConfiguration* _ipConfiguration = nullptr;
@@ -169,7 +168,8 @@ private:
     std::map<String, String> _initTopics;
     int64_t _lastConnectedTs = 0;
     int64_t _lastMaintenanceTs = 0;
-    int64_t _lastUpdateCheckTs = 0;
+    int64_t _nextUpdateCheckTs = 60000;
+    uint8_t _updateCheckFailures = 0;
     int64_t _lastRssiTs = 0;
     bool _mqttEnabled = true;
     int _rssiPublishInterval = 0;

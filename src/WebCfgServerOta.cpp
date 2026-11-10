@@ -240,6 +240,8 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         {
             _preferences->putString(preference_latest_version, latestVersion);
         }
+
+        _network->publishLatestVersion(latestVersion);
     }
 #endif
     response.print("</div>");
