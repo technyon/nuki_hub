@@ -7,16 +7,8 @@
 #include <Update.h>
 #include "FS.h"
 #include "SPIFFS.h"
-#ifndef NUKI_HUB_UPDATER
-#include <HTTPClient.h>
-#include <NetworkClientSecure.h>
-#endif
-
 // The updater binary is always below this size, the Nuki Hub binary above it.
 static constexpr size_t otaBinarySizeLimit = 1600000;
-
-extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
-extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
 #ifndef NUKI_HUB_UPDATER
 void WebCfgServer::printOtaForm(PsychicStreamResponse* response, const char* channel, const char* compareTo, const char* sameBuild, const char* confirmMessage, const char* buttonClass, const char* label, const char* channelValue)
@@ -92,33 +84,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 
     if(_network->isInternetConnected())
     {
-        NetworkClientSecure *clientOTAUpdate = new NetworkClientSecure;
-        if (clientOTAUpdate)
-        {
-            clientOTAUpdate->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
-            {
-                HTTPClient httpsOTAClient;
-                httpsOTAClient.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-                httpsOTAClient.setTimeout(2500);
-                httpsOTAClient.useHTTP10(true);
-
-                if (httpsOTAClient.begin(*clientOTAUpdate, GITHUB_OTA_MANIFEST_URL))
-                {
-                    int httpResponseCodeOTA = httpsOTAClient.GET();
-
-                    if (httpResponseCodeOTA == HTTP_CODE_OK || httpResponseCodeOTA == HTTP_CODE_MOVED_PERMANENTLY)
-                    {
-                        DeserializationError jsonError = deserializeJson(doc, httpsOTAClient.getStream());
-                        if (!jsonError)
-                        {
-                            manifestSuccess = true;
-                        }
-                    }
-                    httpsOTAClient.end();
-                }
-            }
-            delete clientOTAUpdate;
-        }
+        manifestSuccess = NukiNetwork::fetchOtaManifest(doc, 2500);
     }
 
     response.print("<div id=\"autoupdform\"><h3>Update Nuki Hub</h3>");
@@ -216,25 +182,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         response.print(doc["master"]["time"].as<const char*>());
         response.print("</td></tr></table>");
 
-        String currentVersion = NUKI_HUB_VERSION;
-        const char* latestVersion;
-
-        if(atof(doc["release"]["version_int"]) >= NUKI_HUB_VERSION_INT)
-        {
-            latestVersion = doc["release"]["fullversion"];
-        }
-        else if(currentVersion.indexOf("beta") > 0)
-        {
-            latestVersion = doc["beta"]["fullversion"];
-        }
-        else if(currentVersion.indexOf("master") > 0)
-        {
-            latestVersion = doc["master"]["fullversion"];
-        }
-        else
-        {
-            latestVersion = doc["release"]["fullversion"];
-        }
+        const char* latestVersion = doc[NukiNetwork::otaChannel(doc)]["fullversion"];
 
         if(strcmp(latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0)
         {

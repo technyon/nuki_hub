@@ -544,77 +544,11 @@ bool NukiNetwork::update()
     {
         if(ts > _nextUpdateCheckTs)
         {
-            bool otaManifestSuccess = false;
             JsonDocument doc;
 
-            NetworkClientSecure *client = new NetworkClientSecure;
-            if (client)
+            if (fetchOtaManifest(doc, 5000))
             {
-                client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
-                {
-                    HTTPClient https;
-                    https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-                    https.setTimeout(5000);
-                    https.useHTTP10(true);
-
-                    if (https.begin(*client, GITHUB_OTA_MANIFEST_URL))
-                    {
-                        int httpResponseCode = https.GET();
-
-                        if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
-                        {
-                            DeserializationError jsonError = deserializeJson(doc, https.getStream());
-
-                            if (!jsonError)
-                            {
-                                otaManifestSuccess = true;
-                            }
-                            else
-                            {
-                                Log->print("Update check: failed to parse OTA manifest: ");
-                                Log->println(jsonError.c_str());
-                            }
-                        }
-                        else
-                        {
-                            Log->print("Update check: failed to retrieve OTA manifest, HTTP code ");
-                            Log->println(httpResponseCode);
-                        }
-                    }
-                    else
-                    {
-                        Log->println("Update check: failed to connect to GitHub");
-                    }
-                    https.end();
-                }
-                delete client;
-            }
-            else
-            {
-                Log->println("Update check: failed to allocate secure client");
-            }
-
-            if (otaManifestSuccess)
-            {
-                String currentVersion = NUKI_HUB_VERSION;
-                const char* latestVersion;
-
-                if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str()))
-                {
-                    latestVersion = doc["release"]["fullversion"];
-                }
-                else if(currentVersion.indexOf("beta") > 0)
-                {
-                    latestVersion = doc["beta"]["fullversion"];
-                }
-                else if(currentVersion.indexOf("master") > 0)
-                {
-                    latestVersion = doc["master"]["fullversion"];
-                }
-                else
-                {
-                    latestVersion = doc["release"]["fullversion"];
-                }
+                const char* latestVersion = doc[otaChannel(doc)]["fullversion"];
 
                 Log->print("Update check: latest version is ");
                 Log->println(latestVersion);
@@ -1015,100 +949,43 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
     {
         Log->println("Update requested via MQTT.");
 
-        bool otaManifestSuccess = false;
         JsonDocument doc;
 
-        NetworkClientSecure *client = new NetworkClientSecure;
-        if (client)
+        if (fetchOtaManifest(doc, 5000))
         {
-            client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+            const char* channel = otaChannel(doc);
+            const char* channelName = "release";
+            const char* updaterUrl = GITHUB_LATEST_UPDATER_BINARY_URL;
+            const char* mainUrl = GITHUB_LATEST_RELEASE_BINARY_URL;
+
+            if(strcmp(channel, "beta") == 0)
             {
-                HTTPClient https;
-                https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-                https.useHTTP10(true);
-
-                if (https.begin(*client, GITHUB_OTA_MANIFEST_URL))
-                {
-                    int httpResponseCode = https.GET();
-
-                    if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
-                    {
-                        DeserializationError jsonError = deserializeJson(doc, https.getStream());
-
-                        if (!jsonError)
-                        {
-                            otaManifestSuccess = true;
-                        }
-                    }
-                }
-                https.end();
+                channelName = "beta";
+                updaterUrl = GITHUB_BETA_UPDATER_BINARY_URL;
+                mainUrl = GITHUB_BETA_RELEASE_BINARY_URL;
             }
-            delete client;
-        }
-
-        if (otaManifestSuccess)
-        {
-            String currentVersion = NUKI_HUB_VERSION;
-
-            if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str()))
+            else if(strcmp(channel, "master") == 0)
             {
-                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println("Nuki Hub is already on the latest release version, OTA update aborted.");
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-                    Log->println("Updating to latest release version.");
-                    espDelayAck(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
+                channelName = "development";
+                updaterUrl = GITHUB_MASTER_UPDATER_BINARY_URL;
+                mainUrl = GITHUB_MASTER_RELEASE_BINARY_URL;
             }
-            else if(currentVersion.indexOf("beta") > 0)
+
+            if(strcmp(NUKI_HUB_VERSION, doc[channel]["fullversion"] | "") == 0 && strcmp(NUKI_HUB_BUILD, doc[channel]["build"] | "") == 0 && strcmp(NUKI_HUB_DATE, doc[channel]["time"] | "") == 0)
             {
-                if(strcmp(NUKI_HUB_VERSION, doc["beta"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["beta"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["beta"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println("Nuki Hub is already on the latest beta version, OTA update aborted.");
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
-                    Log->println("Updating to latest beta version.");
-                    espDelayAck(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
-            }
-            else if(currentVersion.indexOf("master") > 0)
-            {
-                if(strcmp(NUKI_HUB_VERSION, doc["master"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["master"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["master"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println("Nuki Hub is already on the latest development version, OTA update aborted.");
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-                    Log->println("Updating to latest developmemt version.");
-                    espDelayAck(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
+                Log->print("Nuki Hub is already on the latest ");
+                Log->print(channelName);
+                Log->println(" version, OTA update aborted.");
             }
             else
             {
-                if(strcmp(NUKI_HUB_VERSION, doc["release"]["fullversion"].as<const char*>()) == 0 && strcmp(NUKI_HUB_BUILD, doc["release"]["build"].as<const char*>()) == 0 && strcmp(NUKI_HUB_DATE, doc["release"]["time"].as<const char*>()) == 0)
-                {
-                    Log->println("Nuki Hub is already on the latest release version, OTA update aborted.");
-                }
-                else
-                {
-                    _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-                    _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-                    Log->println("Updating to latest release version.");
-                    espDelayAck(200);
-                    restartEsp(RestartReason::OTAReboot);
-                }
+                _preferences->putString(preference_ota_updater_url, updaterUrl);
+                _preferences->putString(preference_ota_main_url, mainUrl);
+                Log->print("Updating to latest ");
+                Log->print(channelName);
+                Log->println(" version.");
+                espDelayAck(200);
+                restartEsp(RestartReason::OTAReboot);
             }
         }
         else
@@ -1432,6 +1309,78 @@ void NukiNetwork::publishLatestVersion(const char* version)
     {
         publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, version, true);
     }
+}
+
+bool NukiNetwork::fetchOtaManifest(JsonDocument& doc, uint16_t timeout)
+{
+    bool success = false;
+
+    NetworkClientSecure *client = new NetworkClientSecure;
+    if (client)
+    {
+        client->setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+        {
+            HTTPClient https;
+            https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+            https.setTimeout(timeout);
+            https.useHTTP10(true);
+
+            if (https.begin(*client, GITHUB_OTA_MANIFEST_URL))
+            {
+                int httpResponseCode = https.GET();
+
+                if (httpResponseCode == HTTP_CODE_OK || httpResponseCode == HTTP_CODE_MOVED_PERMANENTLY)
+                {
+                    DeserializationError jsonError = deserializeJson(doc, https.getStream());
+
+                    if (!jsonError)
+                    {
+                        success = true;
+                    }
+                    else
+                    {
+                        Log->print("OTA manifest: failed to parse, ");
+                        Log->println(jsonError.c_str());
+                    }
+                }
+                else
+                {
+                    Log->print("OTA manifest: failed to retrieve, HTTP code ");
+                    Log->println(httpResponseCode);
+                }
+            }
+            else
+            {
+                Log->println("OTA manifest: failed to connect to GitHub");
+            }
+            https.end();
+        }
+        delete client;
+    }
+    else
+    {
+        Log->println("OTA manifest: failed to allocate secure client");
+    }
+
+    return success;
+}
+
+const char* NukiNetwork::otaChannel(JsonDocument& doc)
+{
+    if(strtoul(doc["release"]["version_int"] | "0", nullptr, 10) >= NUKI_HUB_VERSION_INT)
+    {
+        return "release";
+    }
+    else if(strstr(NUKI_HUB_VERSION, "beta") != nullptr)
+    {
+        return "beta";
+    }
+    else if(strstr(NUKI_HUB_VERSION, "master") != nullptr)
+    {
+        return "master";
+    }
+
+    return "release";
 }
 
 void NukiNetwork::publish(const char* prefix, const char *topic, const char *value, bool retain)

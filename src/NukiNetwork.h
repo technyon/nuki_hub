@@ -65,6 +65,8 @@ public:
     void publishBool(const char* prefix, const char* topic, const bool value, bool retain);
     void publishString(const char* prefix, const char* topic, const char* value, bool retain);
     void publishLatestVersion(const char* version);
+    static bool fetchOtaManifest(JsonDocument& doc, uint16_t timeout);
+    static const char* otaChannel(JsonDocument& doc);
     void publish(const char* prefix, const char *topic, const char *value, bool retain);
     void publish(const char* path, const char *value, bool retain);
     void removeTopic(const String& mqttPath, const String& mqttTopic);
