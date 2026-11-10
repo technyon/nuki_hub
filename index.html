@@ -22,7 +22,7 @@
                 const button = document.querySelector("esp-web-install-button");
                 const selectEl = document.querySelector("#pick-variant-selector");
 
-                fetch("https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/dummy.bin").then(function(response) {
+                fetch("https://raw.githubusercontent.com/technyon/nuki_hub/binary/ota/beta/dummy.bin", { cache: "no-store" }).then(function(response) {
                     if (!response.ok) {
                         throw new Error("Not 2xx response", {cause: response});
                     }
