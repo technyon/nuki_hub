@@ -542,9 +542,8 @@ bool NukiNetwork::update()
 
     if(_checkUpdates && (!_haEnabled || (_haEnabled && _haSetupDone)) && _hasInternet)
     {
-        if(_lastUpdateCheckTs == 0 || (ts - _lastUpdateCheckTs) > 86400000)
+        if(ts > _nextUpdateCheckTs)
         {
-            _lastUpdateCheckTs = ts;
             bool otaManifestSuccess = false;
             JsonDocument doc;
 
@@ -555,6 +554,7 @@ bool NukiNetwork::update()
                 {
                     HTTPClient https;
                     https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+                    https.setTimeout(5000);
                     https.useHTTP10(true);
 
                     if (https.begin(*client, GITHUB_OTA_MANIFEST_URL))
@@ -569,40 +569,84 @@ bool NukiNetwork::update()
                             {
                                 otaManifestSuccess = true;
                             }
+                            else
+                            {
+                                Log->print("Update check: failed to parse OTA manifest: ");
+                                Log->println(jsonError.c_str());
+                            }
                         }
+                        else
+                        {
+                            Log->print("Update check: failed to retrieve OTA manifest, HTTP code ");
+                            Log->println(httpResponseCode);
+                        }
+                    }
+                    else
+                    {
+                        Log->println("Update check: failed to connect to GitHub");
                     }
                     https.end();
                 }
                 delete client;
             }
+            else
+            {
+                Log->println("Update check: failed to allocate secure client");
+            }
 
             if (otaManifestSuccess)
             {
                 String currentVersion = NUKI_HUB_VERSION;
+                const char* latestVersion;
 
                 if(atof(doc["release"]["version"]) >= atof(currentVersion.c_str()))
                 {
-                    _latestVersion = doc["release"]["fullversion"];
+                    latestVersion = doc["release"]["fullversion"];
                 }
                 else if(currentVersion.indexOf("beta") > 0)
                 {
-                    _latestVersion = doc["beta"]["fullversion"];
+                    latestVersion = doc["beta"]["fullversion"];
                 }
                 else if(currentVersion.indexOf("master") > 0)
                 {
-                    _latestVersion = doc["master"]["fullversion"];
+                    latestVersion = doc["master"]["fullversion"];
                 }
                 else
                 {
-                    _latestVersion = doc["release"]["fullversion"];
+                    latestVersion = doc["release"]["fullversion"];
                 }
 
-                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, _latestVersion, true);
+                Log->print("Update check: latest version is ");
+                Log->println(latestVersion);
 
-                if(strcmp(_latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0)
+                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, latestVersion, true);
+
+                if(strcmp(latestVersion, _preferences->getString(preference_latest_version).c_str()) != 0)
                 {
-                    _preferences->putString(preference_latest_version, _latestVersion);
+                    _preferences->putString(preference_latest_version, latestVersion);
                 }
+
+                _updateCheckFailures = 0;
+                _nextUpdateCheckTs = ts + 86400000;
+            }
+            else
+            {
+                int64_t retryDelay = 300000LL << _updateCheckFailures;
+
+                if(retryDelay < 86400000)
+                {
+                    _updateCheckFailures++;
+                }
+                else
+                {
+                    retryDelay = 86400000;
+                }
+
+                Log->print("Update check failed, retrying in ");
+                Log->print((int)(retryDelay / 60000));
+                Log->println(" minutes");
+
+                _nextUpdateCheckTs = ts + retryDelay;
             }
         }
     }
@@ -1380,6 +1424,14 @@ void NukiNetwork::publishBool(const char* prefix, const char *topic, const bool 
 void NukiNetwork::publishString(const char* prefix, const char *topic, const char *value, bool retain)
 {
     publish(prefix, topic, value, retain);
+}
+
+void NukiNetwork::publishLatestVersion(const char* version)
+{
+    if(_device->mqttConnected())
+    {
+        publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, version, true);
+    }
 }
 
 void NukiNetwork::publish(const char* prefix, const char *topic, const char *value, bool retain)
