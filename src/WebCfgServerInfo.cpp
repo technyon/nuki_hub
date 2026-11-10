@@ -3,6 +3,7 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "RestartReason.h"
+#include "util/PsramInit.h"
 #include "FS.h"
 #include "SPIFFS.h"
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
@@ -55,6 +56,10 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print("------------ NUKI HUB ------------");
     response.print("\nDevice: ");
     response.print(NUKI_HUB_HW);
+    response.print("\nChip: ");
+    response.print(ESP.getChipModel());
+    response.print(" rev ");
+    response.print(ESP.getChipRevision());
     response.print("\nVersion: ");
     response.print(NUKI_HUB_VERSION);
     response.print("\nBuild: ");
@@ -111,10 +116,16 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print(esp_psram_get_size());
         response.print("\nTotal free heap: ");
         response.print(esp_get_free_heap_size());
+        if(psramInitState() == PsramInitState::InitialisedLate)
+        {
+            response.print("\nPSRAM initialised: Late (not available at boot)");
+        }
     }
     else
     {
         response.print("\nPSRAM Available: No");
+        response.print("\nPSRAM init error: ");
+        response.print(esp_err_to_name(psramLateInitError()));
     }
 #else
     response.print("\nPSRAM Available: No");

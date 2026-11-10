@@ -29,6 +29,7 @@ list(APPEND app_sources ../../src/networkDevices/EthernetDevice.h)
 list(APPEND app_sources ../../src/networkDevices/IPConfiguration.h)
 list(APPEND app_sources ../../src/networkDevices/NetworkDevice.h)
 list(APPEND app_sources ../../src/util/NetworkUtil.cpp)
+list(APPEND app_sources ../../src/util/PsramInit.cpp)
 list(APPEND app_sources ../../src/util/NetworkDeviceInstantiator.cpp)
 
 if(NOT DEFINED NUKI_TARGET_H2)

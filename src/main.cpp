@@ -53,6 +53,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
 #include "EspMillis.h"
+#include "util/PsramInit.h"
 #include "NimBLEDevice.h"
 #include "ImportExport.h"
 
@@ -88,6 +89,7 @@ int64_t restartTs = (pow(2,63) - (5 * 1000 * 60000)) / 1000;
 #include "../../src/RestartReason.h"
 #include "../../src/NukiNetwork.h"
 #include "../../src/EspMillis.h"
+#include "../../src/util/PsramInit.h"
 #include "../../src/ImportExport.h"
 
 int64_t restartTs = 10 * 60 * 1000;
@@ -1556,6 +1558,8 @@ void logCoreDump()
 
 void setup()
 {
+    psramLateInit();
+
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #ifndef FORCE_NUKI_HUB_HTTPS_SERVER
     if(esp_psram_get_size() <= 0)
@@ -1572,6 +1576,16 @@ void setup()
     //Start Serial and setup Log class
     Serial.begin(115200);
     Log = &Serial;
+
+    if(psramInitState() == PsramInitState::InitialisedLate)
+    {
+        Log->println("PSRAM was not available at boot and was initialised late");
+    }
+    else if(psramInitState() == PsramInitState::Failed)
+    {
+        Log->print("PSRAM is configured but could not be initialised: ");
+        Log->println(esp_err_to_name(psramLateInitError()));
+    }
 
 #if !defined(NUKI_HUB_UPDATER) && !defined(CONFIG_IDF_TARGET_ESP32C5)
     stdout = funopen(NULL, NULL, &write_fn, NULL, NULL);
