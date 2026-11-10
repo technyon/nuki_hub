@@ -589,7 +589,7 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
             Serial.println(file.size());
         }
 
-        if (file.size() > (int)(SPIFFS.totalBytes() * 0.4))
+        if (file.size() > (int)(SPIFFS.totalBytes() * 0.4) && strcmp(file.name(), "coredump.hex") != 0)
         {
             SPIFFS.remove((String)"/" + file.name());
         }
