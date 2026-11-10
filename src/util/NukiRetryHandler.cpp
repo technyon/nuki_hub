@@ -35,6 +35,7 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
                 break;
             }
 
+            ++_totalRetries;
             Log->print(_reference.c_str());
             Log->print(": Last command failed, retrying after ");
             Log->print(_retryDelay);
@@ -49,7 +50,37 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
     setCommPins(LOW);
     setCommErrorPins(LOW);
 
+    _lastResult = cmdResult;
+    if(cmdResult == Nuki::CmdResult::Success)
+    {
+        ++_successCount;
+    }
+    else
+    {
+        ++_failedCount;
+    }
+
     return cmdResult;
+}
+
+uint32_t NukiRetryHandler::successCount() const
+{
+    return _successCount;
+}
+
+uint32_t NukiRetryHandler::failedCount() const
+{
+    return _failedCount;
+}
+
+uint32_t NukiRetryHandler::totalRetries() const
+{
+    return _totalRetries;
+}
+
+Nuki::CmdResult NukiRetryHandler::lastResult() const
+{
+    return _lastResult;
 }
 
 void NukiRetryHandler::setCommPins(const uint8_t& value)

@@ -613,6 +613,11 @@ bool NukiWrapper::updateKeyTurnerState()
         return _nukiLock.requestKeyTurnerState(&_keyTurnerState);
     });
 
+    if(result == Nuki::CmdResult::Success)
+    {
+        _lastStateQueryOkTs = espMillis();
+    }
+
     char resultStr[15];
     memset(&resultStr, 0, sizeof(resultStr));
     NukiLock::cmdResultToString(result, resultStr);
@@ -1317,6 +1322,13 @@ void NukiWrapper::updateAuth(bool retrieved)
         std::list<NukiLock::AuthorizationEntry> authEntries;
         _nukiLock.getAuthorizationEntries(&authEntries);
 
+        memset(_authCountByType, 0, sizeof(_authCountByType));
+        for(const auto& entry : authEntries)
+        {
+            ++_authCountByType[entry.idType < 6 ? entry.idType : 6];
+        }
+        _authEntriesRead = true;
+
         Log->print("Lock authorization entries: ");
         Log->println(authEntries.size());
 
@@ -1594,6 +1606,55 @@ uint8_t NukiWrapper::configUnknownBytes(unsigned char* dst, uint8_t maxLen) cons
 uint8_t NukiWrapper::advancedConfigUnknownBytes(unsigned char* dst, uint8_t maxLen) const
 {
     return _nukiLock.getAdvancedConfigUnknownBytes(dst, maxLen);
+}
+
+uint16_t NukiWrapper::configPayloadLength() const
+{
+    return _nukiLock.getConfigPayloadLength();
+}
+
+uint16_t NukiWrapper::advancedConfigPayloadLength() const
+{
+    return _nukiLock.getAdvancedConfigPayloadLength();
+}
+
+size_t NukiWrapper::configBytes(unsigned char* dst, size_t maxLen) const
+{
+    size_t len = sizeof(_nukiConfig) < maxLen ? sizeof(_nukiConfig) : maxLen;
+    memcpy(dst, &_nukiConfig, len);
+    return len;
+}
+
+const NukiRetryHandler* NukiWrapper::retryHandler() const
+{
+    return _nukiRetryHandler;
+}
+
+int64_t NukiWrapper::lastStateQueryOkTs() const
+{
+    return _lastStateQueryOkTs;
+}
+
+int NukiWrapper::rssi() const
+{
+    return _nukiLock.getRssi();
+}
+
+bool NukiWrapper::authEntriesRead() const
+{
+    return _authEntriesRead;
+}
+
+uint16_t NukiWrapper::authEntryCount(uint8_t idType) const
+{
+    return idType < 7 ? _authCountByType[idType] : 0;
+}
+
+size_t NukiWrapper::advancedConfigBytes(unsigned char* dst, size_t maxLen) const
+{
+    size_t len = sizeof(_nukiAdvancedConfig) < maxLen ? sizeof(_nukiAdvancedConfig) : maxLen;
+    memcpy(dst, &_nukiAdvancedConfig, len);
+    return len;
 }
 
 const bool NukiWrapper::hasKeypad() const

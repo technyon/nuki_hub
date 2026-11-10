@@ -69,9 +69,9 @@ inline static void initializeRestartReason()
     }
 }
 
-inline static String getRestartReason()
+inline static String restartReasonToString(RestartReason reason)
 {
-    switch(currentRestartReason)
+    switch(reason)
     {
     case RestartReason::RequestedViaMqtt:
         return "RequestedViaMqtt";
@@ -130,13 +130,17 @@ inline static String getRestartReason()
     case RestartReason::RestartServices:
         return "RestartServices";
     default:
-        return "Unknown: " + restartReason;
+        return "Unknown: " + String((int)reason);
     }
 }
 
-inline static String getEspRestartReason()
+inline static String getRestartReason()
 {
-    esp_reset_reason_t reason = esp_reset_reason();
+    return restartReasonToString(currentRestartReason);
+}
+
+inline static String espResetReasonToString(esp_reset_reason_t reason)
+{
     switch(reason)
     {
     case esp_reset_reason_t::ESP_RST_UNKNOWN:
@@ -162,8 +166,31 @@ inline static String getEspRestartReason()
     case esp_reset_reason_t::ESP_RST_SDIO:
         return "ESP_RST_SDIO: Reset over SDIO.";
     default:
-        return "Unknown: " + (int)reason;
+        return "Unknown: " + String((int)reason);
     }
+}
+
+inline static String getEspRestartReason()
+{
+    return espResetReasonToString(esp_reset_reason());
+}
+
+inline static void recordRestartHistory()
+{
+    if(rtcState.restartHistoryValidDetect != RESTART_HISTORY_VALID_DETECT)
+    {
+        memset(rtcState.restartHistory, 0, sizeof(rtcState.restartHistory));
+        rtcState.currentUptimeMinutes = 0;
+        rtcState.restartHistoryValidDetect = RESTART_HISTORY_VALID_DETECT;
+    }
+    for(int i = RESTART_HISTORY_SIZE - 1; i > 0; i--)
+    {
+        rtcState.restartHistory[i] = rtcState.restartHistory[i - 1];
+    }
+    rtcState.restartHistory[0].fwReason = (uint8_t)(restartReason_isValid ? currentRestartReason : RestartReason::NotApplicable);
+    rtcState.restartHistory[0].espReason = (uint8_t)esp_reset_reason();
+    rtcState.restartHistory[0].uptimeMinutes = rtcState.currentUptimeMinutes;
+    rtcState.currentUptimeMinutes = 0;
 }
 
 #ifndef NUKI_HUB_UPDATER
