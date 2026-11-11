@@ -96,6 +96,7 @@
 #define preference_opener_continuous_mode (char*)"openercont"
 #define preference_rssi_publish_interval (char*)"rssipb"
 #define preference_network_timeout (char*)"nettmout"
+#define preference_mqtt_keepalive (char*)"mqttka"
 #define preference_restart_on_disconnect (char*)"restdisc"
 #define preference_publish_debug_info (char*)"pubdbg"
 #define preference_enable_debug_mode (char*)"enadbg"
@@ -290,6 +291,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putInt(preference_query_interval_hybrid_lockstate, 600);
         preferences->putInt(preference_rssi_publish_interval, 60);
         preferences->putInt(preference_network_timeout, 60);
+        preferences->putInt(preference_mqtt_keepalive, 60);
         preferences->putInt(preference_command_nr_of_retries, 3);
         preferences->putInt(preference_command_retry_delay, 100);
         preferences->putInt(preference_restart_ble_beacon_lost, 60);
@@ -564,7 +566,7 @@ private:
         preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_enable_bootloop_reset,
         preference_mqtt_hass_discovery, preference_mqtt_hass_cu_url, preference_buffer_size, preference_ip_dhcp_enabled, preference_ip_address,
         preference_ip_subnet, preference_ip_gateway, preference_ip_dns_server, preference_network_hardware, preference_http_auth_type, preference_lock_gemini_pin,
-        preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_restart_on_disconnect, preference_hybrid_reboot_on_disconnect,
+        preference_rssi_publish_interval, preference_hostname, preference_network_timeout, preference_mqtt_keepalive, preference_restart_on_disconnect, preference_hybrid_reboot_on_disconnect,
         preference_restart_ble_beacon_lost, preference_query_interval_lockstate, preference_timecontrol_topic_per_entry, preference_keypad_topic_per_entry, preference_keypad_ha_by_code_id,
         preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_keypad_control_enabled,
         preference_keypad_info_enabled, preference_keypad_publish_code, preference_timecontrol_control_enabled, preference_timecontrol_info_enabled, preference_conf_info_enabled,
@@ -617,7 +619,7 @@ private:
         preference_config_version, preference_mqtt_broker_port, preference_command_retry_delay, preference_query_interval_hybrid_lockstate,
         preference_lock_pin_status, preference_opener_pin_status, preference_lock_max_keypad_code_count, preference_opener_max_keypad_code_count,
         preference_lock_max_timecontrol_entry_count, preference_opener_max_timecontrol_entry_count, preference_buffer_size, preference_network_hardware,
-        preference_rssi_publish_interval, preference_network_timeout, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
+        preference_rssi_publish_interval, preference_network_timeout, preference_mqtt_keepalive, preference_restart_ble_beacon_lost, preference_query_interval_lockstate,
         preference_query_interval_configuration, preference_query_interval_battery, preference_query_interval_keypad, preference_command_nr_of_retries,
         preference_task_size_network, preference_task_size_nuki, preference_authlog_max_entries, preference_keypad_max_entries, preference_timecontrol_max_entries,
         preference_ble_tx_power, preference_network_custom_mdc, preference_network_custom_clk, preference_network_custom_phy, preference_network_custom_addr,

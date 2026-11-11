@@ -330,6 +330,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print(_preferences->getInt(preference_network_timeout, 60));
     }
     response.print("\n\n------------ MQTT ------------");
+    response.print("\nMQTT keepalive (s): ");
+    response.print(_preferences->getInt(preference_mqtt_keepalive, 60));
     response.print("\nMQTT connected: ");
     response.print(_network->mqttConnectionState() > 0 ? "Yes" : "No");
     response.print("\nMQTT broker address: <span class=\"redact\">");
