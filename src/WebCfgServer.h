@@ -165,6 +165,7 @@ private:
     static String htmlEscape(const char* value);
     void waitAndProcess(const bool blocking, const uint32_t duration);
     esp_err_t handleOtaUpload(PsychicRequest *request, const String& filename, uint64_t index, uint8_t *data, size_t len, bool final);
+    void printDisabledCheckBox(PsychicStreamResponse *response, const char *description);
     void printCheckBox(PsychicStreamResponse *response, const char* token, const char* description, const bool value, const char* htmlClass);
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     esp_err_t buildWifiConnectHtml(PsychicRequest *request, PsychicResponse* resp);

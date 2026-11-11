@@ -9,7 +9,7 @@
 #ifndef NUKI_HUB_UPDATER
 static const Setting advancedSettings[] =
 {
-    {"WEBLOG", "Enable WebSerial logging", preference_webserial_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"WEBLOG", "Enable WebSerial logging", preference_webserial_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect, true},
     {"FRCHSTUPD", "Force slave Hosted update on next boot", preference_force_hosted_update, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::ConfigChanged},
     {"TSKNTWK", "Task size Network (min 12288, max 65536)", preference_task_size_network, SettingType::Int, NETWORK_TASK_SIZE, 12288, 65536, 6, "", SettingEffect::ConfigChanged},
     {"TSKNUKI", "Task size Nuki (min 8192, max 65536)", preference_task_size_nuki, SettingType::Int, NUKI_TASK_SIZE, 8192, 65536, 6, "", SettingEffect::ConfigChanged},

@@ -12,6 +12,7 @@
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
+#include "util/LowMemory.h"
 #ifdef NUKI_HUB_HTTPS_SERVER
 #include "util/SSLCert.hpp"
 #endif
@@ -132,7 +133,7 @@ void WebCfgServer::initialize()
         return sendJs(request, resp);
     });
 
-    if(_preferences->getBool(preference_webserial_enabled, false))
+    if(_preferences->getBool(preference_webserial_enabled, false) && !lowMemoryMode())
     {
 #ifndef NUKI_HUB_UPDATER
         if (websocketHandler == nullptr)
@@ -1229,6 +1230,13 @@ void WebCfgServer::initialize()
 
 }
 
+void WebCfgServer::printDisabledCheckBox(PsychicStreamResponse *response, const char *description)
+{
+    response->print("<tr><td>");
+    response->print(description);
+    response->print("</td><td><input type=\"checkbox\" disabled></td></tr>");
+}
+
 void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *token, const char *description, const bool value, const char *htmlClass)
 {
     response->print("<tr><td>");
@@ -1609,7 +1617,7 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     {
         buildNavigationMenuEntry(&response, "Advanced Configuration", "/get?page=advanced");
     }
-    if(_preferences->getBool(preference_webserial_enabled, false))
+    if(_preferences->getBool(preference_webserial_enabled, false) && !lowMemoryMode())
     {
         buildNavigationMenuEntry(&response, "Open Webserial", "/webserial");
     }
@@ -1863,6 +1871,10 @@ void WebCfgServer::applySettings(PsychicRequest *request, const Setting* setting
         case SettingType::Bool:
         {
             bool v = isParameterTrue(request, setting.token);
+            if(setting.needsPsram && lowMemoryMode())
+            {
+                v = false;
+            }
             if(_preferences->getBool(setting.preference, setting.defaultValue != 0) != v)
             {
                 _preferences->putBool(setting.preference, v);
@@ -1876,6 +1888,10 @@ void WebCfgServer::applySettings(PsychicRequest *request, const Setting* setting
             if((setting.minValue != 0 || setting.maxValue != 0) && (v < setting.minValue || v > setting.maxValue))
             {
                 break;
+            }
+            if(setting.lowMemoryMax > 0 && lowMemoryMode() && v > setting.lowMemoryMax)
+            {
+                v = setting.lowMemoryMax;
             }
             if(_preferences->getInt(setting.preference, setting.defaultValue) != v)
             {
@@ -1941,6 +1957,20 @@ void WebCfgServer::printSetting(PsychicStreamResponse* response, const Setting* 
         else if(setting.effect == SettingEffect::ClearSession)
         {
             label += " <span class=\"tag\">re-login</span>";
+        }
+
+        if(setting.needsPsram && lowMemoryMode())
+        {
+            label += " <span class=\"tag\">needs PSRAM</span>";
+            printDisabledCheckBox(response, label.c_str());
+            return;
+        }
+
+        if(setting.lowMemoryMax > 0 && lowMemoryMode())
+        {
+            label += " (max ";
+            label += setting.lowMemoryMax;
+            label += " without PSRAM)";
         }
 
         switch(setting.type)

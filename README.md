@@ -90,6 +90,8 @@ Recommended devices ranked best-to-worst:
 - ESP32-C61 without PSRAM
 - ESP32-C6
 
+Devices without PSRAM (or where PSRAM was not detected, see "PSRAM Available" on the info page) run in low memory mode: WebSerial, Duo Push, the Nuki HTTP API and the per-entry keypad/timecontrol/authorization topics are disabled, the maximum number of keypad/timecontrol/authorization entries is limited to 20/10/10, the HTTPS server accepts fewer connections and the background update check is postponed while there is not enough contiguous memory for it. MQTT SSL and HTTPS remain available but are not recommended without PSRAM.
+
 Not recommended devices ranked least-worst-to-worst:
 - ESP32 with PSRAM
 - ESP32 without PSRAM

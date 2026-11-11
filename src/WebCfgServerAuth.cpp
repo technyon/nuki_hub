@@ -1,6 +1,7 @@
 #include "WebCfgServer.h"
 #include "WebCfgServerConstants.h"
 #include "PreferencesKeys.h"
+#include "util/LowMemory.h"
 #include "Logger.h"
 #include "RestartReason.h"
 extern bool timeSynced;
@@ -661,7 +662,10 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     std::vector<std::pair<String, String>> mfaOptions;
     mfaOptions.push_back(std::make_pair("none", "None"));
     mfaOptions.push_back(std::make_pair("totp", "Authenticator app (TOTP)"));
-    mfaOptions.push_back(std::make_pair("duo", "Duo Push"));
+    if(!lowMemoryMode())
+    {
+        mfaOptions.push_back(std::make_pair("duo", "Duo Push"));
+    }
     printDropDown(&response, "MFAMODE", "Second factor for login", duoEnabled ? "duo" : totpEnabled ? "totp" : "none", mfaOptions, "mfa");
     response.print("<input type=\"hidden\" name=\"TOTPENA\" id=\"totpena\" value=\"");
     response.print(totpEnabled ? "1" : "0");
@@ -840,7 +844,7 @@ void WebCfgServer::processCredentialsArgs(PsychicRequest *request, ProcessArgsSt
 
     if(request->hasParam("DUOENA"))
     {
-        bool v = isParameterTrue(request, "DUOENA");
+        bool v = isParameterTrue(request, "DUOENA") && !lowMemoryMode();
         if(_preferences->getBool(preference_cred_duo_enabled, false) != v)
         {
             _preferences->putBool(preference_cred_duo_enabled, v);

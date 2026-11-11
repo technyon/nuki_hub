@@ -1,6 +1,7 @@
 #include "WebCfgServer.h"
 #include "WebCfgServerConstants.h"
 #include "PreferencesKeys.h"
+#include "util/LowMemory.h"
 #include "Logger.h"
 #include "RestartReason.h"
 #include "util/CertUtil.h"
@@ -57,7 +58,12 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     response.print("</table>");
     if(nuki_hub_https_server_enabled)
     {
-        response.print("<h3>HTTPS</h3>");
+        response.print("<h3>HTTPS");
+        if(lowMemoryMode())
+        {
+            response.print(" <span class=\"tag\">not recommended without PSRAM</span>");
+        }
+        response.print("</h3>");
         response.print("<table>");
         response.print("<tr><td>Set HTTP SSL Certificate</td><td><a class=\"btn\" href=\"/get?page=httpcrtconfig\">Change</a></td></tr>");
         response.print("<tr><td>Set HTTP SSL Key</td><td><a class=\"btn\" href=\"/get?page=httpkeyconfig\">Change</a></td></tr>");
@@ -75,7 +81,14 @@ esp_err_t WebCfgServer::buildNetworkConfigHtml(PsychicRequest *request, PsychicR
     response.print("</table>");
     response.print("<h3>Nuki HTTP API</h3>");
     response.print("<table>");
-    printCheckBox(&response, "BRIDGEAPI", "Enable Nuki HTTP API (/list, /lockState, /lockAction, callbacks)", _preferences->getBool(preference_bridge_api_enabled, false), "");
+    if(lowMemoryMode())
+    {
+        printDisabledCheckBox(&response, "Enable Nuki HTTP API (/list, /lockState, /lockAction, callbacks) <span class=\"tag\">needs PSRAM</span>");
+    }
+    else
+    {
+        printCheckBox(&response, "BRIDGEAPI", "Enable Nuki HTTP API (/list, /lockState, /lockAction, callbacks)", _preferences->getBool(preference_bridge_api_enabled, false), "");
+    }
     printInputField(&response, "BRIDGETOKEN", "Nuki HTTP API token (6-20 characters)", _preferences->getString(preference_bridge_api_token, "").c_str(), 20, "");
     response.print("</table>");
     response.print("<div class=\"actions\"><input type=\"submit\" name=\"submit\" value=\"Save\"></div>");
@@ -410,7 +423,7 @@ void WebCfgServer::processNetworkArgs(PsychicRequest *request, ProcessArgsState&
 
     if(request->hasParam("BRIDGEAPI"))
     {
-        bool v = isParameterTrue(request, "BRIDGEAPI");
+        bool v = isParameterTrue(request, "BRIDGEAPI") && !lowMemoryMode();
         if(_preferences->getBool(preference_bridge_api_enabled, false) != v)
         {
             _preferences->putBool(preference_bridge_api_enabled, v);

@@ -28,4 +28,6 @@ struct Setting
     int maxLength;
     const char* args;
     SettingEffect effect;
+    bool needsPsram = false;
+    int lowMemoryMax = 0;
 };

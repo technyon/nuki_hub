@@ -54,6 +54,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "RestartReason.h"
 #include "EspMillis.h"
 #include "util/PsramInit.h"
+#include "util/LowMemory.h"
 #include "NimBLEDevice.h"
 #include "ImportExport.h"
 
@@ -90,6 +91,7 @@ int64_t restartTs = (pow(2,63) - (5 * 1000 * 60000)) / 1000;
 #include "../../src/NukiNetwork.h"
 #include "../../src/EspMillis.h"
 #include "../../src/util/PsramInit.h"
+#include "../../src/util/LowMemory.h"
 #include "../../src/ImportExport.h"
 
 int64_t restartTs = 10 * 60 * 1000;
@@ -608,7 +610,7 @@ void startWebServer()
 {
     bool failed = true;
 
-    webSerialEnabled = preferences->getBool(preference_webserial_enabled, false);
+    webSerialEnabled = preferences->getBool(preference_webserial_enabled, false) && !lowMemoryMode();
 
     if (!nuki_hub_https_server_enabled)
     {
@@ -668,7 +670,7 @@ void startWebServer()
                     });
                     psychicServerRedirect->begin();
                     psychicSSLServer = new PsychicHttpsServer;
-                    psychicSSLServer->ssl_config.httpd.max_open_sockets = 8;
+                    psychicSSLServer->ssl_config.httpd.max_open_sockets = lowMemoryMode() ? LOW_MEMORY_HTTPS_MAX_SOCKETS : 8;
                     psychicSSLServer->setCertificate(cert, key);
                     psychicSSLServer->config.stack_size = HTTPD_TASK_SIZE;
 #ifndef NUKI_HUB_UPDATER
@@ -677,7 +679,7 @@ void startWebServer()
                     webCfgServerSSL = new WebCfgServer(network, preferences, network->networkDeviceType() == NetworkDeviceType::WiFi, partitionType, psychicSSLServer, importExport);
 #endif
                     webCfgServerSSL->initialize();
-                    if(preferences->getBool(preference_bridge_api_enabled, false))
+                    if(preferences->getBool(preference_bridge_api_enabled, false) && !lowMemoryMode())
                     {
 #ifndef NUKI_HUB_UPDATER
                     if(preferences->getBool(preference_bridge_api_enabled, false))
@@ -710,7 +712,7 @@ void startWebServer()
 #endif
         webCfgServer->initialize();
 #ifndef NUKI_HUB_UPDATER
-        if(preferences->getBool(preference_bridge_api_enabled, false))
+        if(preferences->getBool(preference_bridge_api_enabled, false) && !lowMemoryMode())
         {
             bridgeApi = new BridgeApi(nuki, nukiOpener, network, networkLock, networkOpener, preferences, importExport);
             bridgeApi->initialize(psychicServer);
@@ -1561,15 +1563,6 @@ void setup()
 {
     psramLateInit();
 
-#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
-#ifndef FORCE_NUKI_HUB_HTTPS_SERVER
-    if(esp_psram_get_size() <= 0)
-    {
-        nuki_hub_https_server_enabled = false;
-    }
-#endif
-#endif
-
     //Set Log level to error for all TAGS
     esp_log_level_set("*", ESP_LOG_ERROR);
     //Set Log level to none for mqtt TAG
@@ -1599,6 +1592,7 @@ void setup()
     preferences = new Preferences();
     preferences->begin("nukihub", false);
     initPreferences(preferences);
+    applyLowMemoryLimits(preferences);
     initializeRestartReason();
     recordRestartHistory();
 

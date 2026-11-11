@@ -1,6 +1,7 @@
 #include "WebCfgServer.h"
 #include "WebCfgServerConstants.h"
 #include "PreferencesKeys.h"
+#include "util/LowMemory.h"
 #include "Logger.h"
 #include "RestartReason.h"
 
@@ -21,11 +22,11 @@ static const Setting nukiSettings[] =
     {"KPENA", "Add, modify and delete keypad codes", preference_keypad_control_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
     {"TCPUB", "Publish time control entries information", preference_timecontrol_info_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
     {"AUTHPUB", "Publish authorization entries information", preference_auth_info_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
-    {"KPPER", "Publish a topic per keypad entry and create HA sensor", preference_keypad_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"KPPER", "Publish a topic per keypad entry and create HA sensor", preference_keypad_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None, true},
     {"KPHAID", "Identify the HA keypad entities by code id instead of list position", preference_keypad_ha_by_code_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
-    {"TCPER", "Publish a topic per time control entry and create HA sensor", preference_timecontrol_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"TCPER", "Publish a topic per time control entry and create HA sensor", preference_timecontrol_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None, true},
     {"TCENA", "Add, modify and delete time control entries", preference_timecontrol_control_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
-    {"AUTHPER", "Publish a topic per authorization entry and create HA sensor", preference_auth_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
+    {"AUTHPER", "Publish a topic per authorization entry and create HA sensor", preference_auth_topic_per_entry, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None, true},
     {"AUTHHAID", "Identify the HA authorization entities by authorization id instead of list position", preference_auth_ha_by_auth_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
     {"AUTHENA", "Modify and delete authorization entries", preference_auth_control_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
     {"PUBAUTH", "Publish authorization log", preference_publish_authdata, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
@@ -35,9 +36,9 @@ static const Setting nukiSettings[] =
     {"LOCKENA", "Nuki Lock enabled", preference_lock_enabled, SettingType::Bool, 1, 0, 0, 0, "", SettingEffect::RestartReconnect},
     {"OPENA", "Nuki Opener enabled", preference_opener_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
     {"ALMAX", "Max auth log entries (min 1, max 100)", preference_authlog_max_entries, SettingType::Int, MAX_AUTHLOG, 1, 100, 3, "id=\"inputmaxauthlog\"", SettingEffect::None},
-    {"KPMAX", "Max keypad entries (min 1, max 200)", preference_keypad_max_entries, SettingType::Int, MAX_KEYPAD, 1, 200, 3, "id=\"inputmaxkeypad\"", SettingEffect::None},
-    {"TCMAX", "Max timecontrol entries (min 1, max 100)", preference_timecontrol_max_entries, SettingType::Int, MAX_TIMECONTROL, 1, 100, 3, "id=\"inputmaxtimecontrol\"", SettingEffect::None},
-    {"AUTHMAX", "Max authorization entries (min 1, max 100)", preference_auth_max_entries, SettingType::Int, MAX_AUTH, 1, 100, 3, "id=\"inputmaxauth\"", SettingEffect::None},
+    {"KPMAX", "Max keypad entries (min 1, max 200)", preference_keypad_max_entries, SettingType::Int, MAX_KEYPAD, 1, 200, 3, "id=\"inputmaxkeypad\"", SettingEffect::None, false, LOW_MEMORY_MAX_KEYPAD},
+    {"TCMAX", "Max timecontrol entries (min 1, max 100)", preference_timecontrol_max_entries, SettingType::Int, MAX_TIMECONTROL, 1, 100, 3, "id=\"inputmaxtimecontrol\"", SettingEffect::None, false, LOW_MEMORY_MAX_TIMECONTROL},
+    {"AUTHMAX", "Max authorization entries (min 1, max 100)", preference_auth_max_entries, SettingType::Int, MAX_AUTH, 1, 100, 3, "id=\"inputmaxauth\"", SettingEffect::None, false, LOW_MEMORY_MAX_AUTH},
     {"LCKFORCEID", "", preference_lock_force_id, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
     {"LCKFORCEKP", "Force Lock Keypad connected", preference_lock_force_keypad, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
     {"LCKFORCEDS", "Force Lock Doorsensor connected", preference_lock_force_doorsensor, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
