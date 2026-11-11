@@ -55,6 +55,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "EspMillis.h"
 #include "util/PsramInit.h"
 #include "util/LowMemory.h"
+#include "RuntimeLog.h"
 #include "NimBLEDevice.h"
 #include "ImportExport.h"
 
@@ -138,6 +139,9 @@ bool lockStarted = false;
 bool openerStarted = false;
 bool bleScannerStarted = false;
 bool webSerialEnabled = false;
+#define EMC_LOG_LINE_LEN 160
+#define EMC_LOG_QUEUE_LEN 32
+QueueHandle_t emcLogQueue = nullptr;
 bool forceHostedUpdate = false;
 uint8_t partitionType = -1;
 
@@ -993,6 +997,21 @@ void initNetworkTask(const bool& connected, const bool& firstRun)
     setReroute();
 }
 
+void drainMqttClientLog()
+{
+    if(emcLogQueue == nullptr)
+    {
+        return;
+    }
+    char item[EMC_LOG_LINE_LEN];
+    int drained = 0;
+    while(drained < EMC_LOG_QUEUE_LEN && xQueueReceive(emcLogQueue, item, 0) == pdTRUE)
+    {
+        Log->println(item);
+        drained++;
+    }
+}
+
 void updateWebSerial(const bool& connected)
 {
 #ifndef NUKI_HUB_UPDATER
@@ -1093,6 +1112,7 @@ void processNetworkTask(const bool& firstRun)
         return;
     }
 
+    drainMqttClientLog();
     updateWebSerial(connected);
     if(connected && bridgeApi != nullptr)
     {
@@ -1593,6 +1613,23 @@ void setup()
     preferences->begin("nukihub", false);
     initPreferences(preferences);
     applyLowMemoryLimits(preferences);
+
+    emcLogEnabled = preferences->getBool(preference_debug_mqtt_client, false);
+    if(emcLogEnabled)
+    {
+        emcLogQueue = xQueueCreate(EMC_LOG_QUEUE_LEN, EMC_LOG_LINE_LEN);
+        emcLogHandler = [](const char* line)
+        {
+            if(emcLogQueue == nullptr)
+            {
+                return;
+            }
+            char item[EMC_LOG_LINE_LEN];
+            strncpy(item, line, sizeof(item) - 1);
+            item[sizeof(item) - 1] = '\0';
+            xQueueSend(emcLogQueue, item, 0);
+        };
+    }
     initializeRestartReason();
     recordRestartHistory();
 

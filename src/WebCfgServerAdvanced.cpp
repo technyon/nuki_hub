@@ -27,6 +27,7 @@ static const Setting advancedSettings[] =
     {"DBGREAD", "Enable Nuki readable data debug logging", preference_debug_readable_data, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
     {"DBGHEX", "Enable Nuki hex data debug logging", preference_debug_hex_data, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
     {"DBGCOMM", "Enable Nuki command debug logging", preference_debug_command, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
+    {"DBGNET", "Enable MQTT client debug logging", preference_debug_mqtt_client, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
 };
 
 static const size_t advancedSettingsCount = sizeof(advancedSettings) / sizeof(advancedSettings[0]);
@@ -83,6 +84,7 @@ esp_err_t WebCfgServer::buildAdvancedConfigHtml(PsychicRequest *request, Psychic
     printSetting(&response, advancedSettings, advancedSettingsCount, "DBGREAD");
     printSetting(&response, advancedSettings, advancedSettingsCount, "DBGHEX");
     printSetting(&response, advancedSettings, advancedSettingsCount, "DBGCOMM");
+    printSetting(&response, advancedSettings, advancedSettingsCount, "DBGNET");
     printSetting(&response, advancedSettings, advancedSettingsCount, "DBGHEAP");
     response.print("</table>");
 

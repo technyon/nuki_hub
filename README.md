@@ -480,6 +480,7 @@ Note that the following options can break Nuki Hub and cause bootloops that will
 - Enable Nuki readable data debug logging: Enable to log human readable debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki hex data debug logging: Enable to log hex debug information regarding Nuki BLE to MQTT and/or Serial.
 - Enable Nuki command debug logging: Enable to log debug information regarding Nuki BLE commands to MQTT and/or Serial.
+- Enable MQTT client debug logging: Enable to log the MQTT client library messages (connection state, keepalive and ping, packet and acknowledgement timeouts) to MQTT, WebSerial and/or Serial. Useful when the MQTT connection is unstable; the lines are lost on the MQTT log while the connection is down, use WebSerial or Serial for those.
 - Publish free heap over MQTT: Enable to publish free heap to MQTT.
 
 The maximum entry counts for keypad codes, time control, authorizations and the authorization log and the "Force ..." device options have moved to the "Nuki Configuration" page.

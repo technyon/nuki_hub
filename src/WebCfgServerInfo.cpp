@@ -254,6 +254,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getBool(preference_debug_hex_data, false) ? "Yes" : "No");
     response.print("\nNuki command debug logging enabled: ");
     response.print(_preferences->getBool(preference_debug_command, false) ? "Yes" : "No");
+    response.print("\nMQTT client debug logging enabled: ");
+    response.print(_preferences->getBool(preference_debug_mqtt_client, false) ? "Yes" : "No");
     response.print("\nMQTT log enabled: ");
     response.print(_preferences->getBool(preference_mqtt_log_enabled, false) ? "Yes" : "No");
     response.print("\nWebserial enabled: ");
