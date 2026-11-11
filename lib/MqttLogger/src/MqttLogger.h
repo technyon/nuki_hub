@@ -18,6 +18,7 @@
 #include <atomic>
 
 #define MQTT_MAX_PACKET_SIZE 1024
+#define MQTT_LOGGER_BACKLOG_LINE_LEN 160
 
 extern PsychicWebSocketHandler* websocketHandler;
 extern bool coredumpPrinted;
@@ -57,7 +58,15 @@ private:
     uint16_t bufferSize = 0;
     MqttClient* client;
     MqttLoggerMode mode;
+    char* backlog = nullptr;
+    uint16_t backlogLines = 0;
+    uint16_t backlogHead = 0;
+    uint16_t backlogCount = 0;
+    bool backlogDropped = false;
+    bool backlogWasDisconnected = false;
+    portMUX_TYPE backlogMux = portMUX_INITIALIZER_UNLOCKED;
     void sendBuffer();
+    void storeBacklog();
 
 public:
     MqttLogger(MqttLoggerMode mode=MqttLoggerMode::MqttAndSerialFallback);
@@ -75,6 +84,14 @@ public:
 
     uint16_t getBufferSize();
     boolean setBufferSize(uint16_t size);
+
+    // Keep the last lines logged while the MQTT client is disconnected and
+    // publish them once it is connected again, so the log of an outage is not lost.
+    boolean enableBacklog(uint16_t lines, bool psram);
+    void noteDisconnect();
+    void flushBacklog();
 };
+
+extern MqttLogger* mqttLogger;
 
 #endif

@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include "NetworkDevice.h"
+#include "esp_heap_caps.h"
 #include "../Logger.h"
+
+MqttLogger* mqttLogger = nullptr;
 
 #ifndef NUKI_HUB_UPDATER
 #include "FS.h"
@@ -117,7 +120,10 @@ void NetworkDevice::init()
         String pathStr = _preferences->getString(preference_mqtt_lock_path);
         pathStr.concat(mqtt_topic_log);
         copyBounded(_path, pathStr, pathSize, "MQTT log path");
-        Log = new MqttLogger(*getMqttClient(), _path, mode);
+        mqttLogger = new MqttLogger(*getMqttClient(), _path, mode);
+        bool psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM) > 0;
+        mqttLogger->enableBacklog(psram ? 128 : 16, psram);
+        Log = mqttLogger;
     }
 }
 void NetworkDevice::update()

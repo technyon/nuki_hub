@@ -1113,6 +1113,10 @@ void processNetworkTask(const bool& firstRun)
     }
 
     drainMqttClientLog();
+    if(mqttLogger != nullptr)
+    {
+        mqttLogger->flushBacklog();
+    }
     updateWebSerial(connected);
     if(connected && bridgeApi != nullptr)
     {
