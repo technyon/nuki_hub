@@ -11,6 +11,7 @@
 #include <ArduinoJson.h>
 #include <ctype.h>
 #include "hal/wdt_hal.h"
+#include "esp_heap_caps.h"
 #include "util/NukiHelper.h"
 #include "util/StringUtil.h"
 
@@ -816,16 +817,30 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
         }
     }
 
+    size_t jsonSize = measureJson(json) + 1;
     std::string jsonString;
-    serializeJson(json, jsonString);
+    const char* payload = _buffer;
 
-    if(latest)
+    if(jsonSize <= _bufferSize)
     {
-        _nukiPublisher->publishString(mqtt_topic_lock_log_latest, jsonString, true);
+        serializeJson(json, _buffer, _bufferSize);
+    }
+    else if(jsonSize > heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
+    {
+        Log->print("Not enough free heap to publish the authorization log, needs ");
+        Log->println(jsonSize);
+        payload = nullptr;
     }
     else
     {
-        _nukiPublisher->publishString(mqtt_topic_lock_log, jsonString, true);
+        jsonString.reserve(jsonSize);
+        serializeJson(json, jsonString);
+        payload = jsonString.c_str();
+    }
+
+    if(payload != nullptr)
+    {
+        _nukiPublisher->publishString(latest ? mqtt_topic_lock_log_latest : mqtt_topic_lock_log, payload, true);
     }
 
     if(authIndex > 0 || (_nukiOfficial->getOffConnected() && _nukiOfficial->hasAuthId()))
