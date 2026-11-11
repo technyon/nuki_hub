@@ -4,6 +4,7 @@
 #include "SPIFFS.h"
 #include "Logger.h"
 #include "PreferencesKeys.h"
+#include "util/LowMemory.h"
 #include <DuoAuthLib.h>
 #include <TOTP-RC6236-generator.hpp>
 
@@ -15,7 +16,7 @@ ImportExport::ImportExport(Preferences *preferences)
 
 void ImportExport::readSettings()
 {
-    if (_preferences->getBool(preference_cred_duo_enabled, false))
+    if (_preferences->getBool(preference_cred_duo_enabled, false) && !lowMemoryMode())
     {
         _duoEnabled = true;
         _duoHost = _preferences->getString(preference_cred_duo_host, "");

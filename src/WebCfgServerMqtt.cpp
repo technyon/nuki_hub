@@ -1,6 +1,7 @@
 #include "WebCfgServer.h"
 #include "WebCfgServerConstants.h"
 #include "PreferencesKeys.h"
+#include "util/LowMemory.h"
 #include "Logger.h"
 #include "RestartReason.h"
 #include "FS.h"
@@ -69,7 +70,14 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
 
     response.print("<h3>TLS</h3>");
     response.print("<table>");
-    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTSENA");
+    if(lowMemoryMode())
+    {
+        printCheckBox(&response, "MQTTSENA", "Enable MQTT SSL <span class=\"tag\">reboot</span> <span class=\"tag\">not recommended without PSRAM</span>", _preferences->getBool(preference_mqtt_ssl_enabled, false), "");
+    }
+    else
+    {
+        printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTSENA");
+    }
     response.print("<tr><td>Set MQTT SSL CA Certificate</td><td><a class=\"btn\" href=\"/get?page=mqttcaconfig\">Change</a></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Certificate</td><td><a class=\"btn\" href=\"/get?page=mqttcrtconfig\">Change</a></td></tr>");
     response.print("<tr><td>Set MQTT SSL Client Key</td><td><a class=\"btn\" href=\"/get?page=mqttkeyconfig\">Change</a></td></tr>");

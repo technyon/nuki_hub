@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include "RestartReason.h"
 #include "util/PsramInit.h"
+#include "util/LowMemory.h"
 #include "FS.h"
 #include "SPIFFS.h"
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
@@ -104,6 +105,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(ESP.getMinFreeHeap());
     response.print("\nTotal internal heap: ");
     response.print(ESP.getHeapSize());
+    response.print("\nLow memory mode: ");
+    response.print(lowMemoryMode() ? "Active (no PSRAM: WebSerial, Duo push, Nuki HTTP API and per-entry topics disabled, entry limits and HTTPS sockets reduced)" : "Inactive");
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
     if(esp_psram_get_size() > 0)
     {

@@ -13,6 +13,8 @@
 #include "networkDevices/EthernetDevice.h"
 #include "hal/wdt_hal.h"
 #include "esp_mac.h"
+#include "esp_heap_caps.h"
+#include "util/LowMemory.h"
 #include <ESP32Ping.h>
 
 NukiNetwork* NukiNetwork::_inst = nullptr;
@@ -542,7 +544,12 @@ bool NukiNetwork::update()
 
     if(_checkUpdates && (!_haEnabled || (_haEnabled && _haSetupDone)) && _hasInternet)
     {
-        if(ts > _nextUpdateCheckTs)
+        if(ts > _nextUpdateCheckTs && lowMemoryMode() && heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) < LOW_MEMORY_UPDATE_CHECK_MIN_BLOCK)
+        {
+            Log->println("Update check postponed, not enough contiguous memory for the HTTPS request");
+            _nextUpdateCheckTs = ts + 3600000;
+        }
+        else if(ts > _nextUpdateCheckTs)
         {
             JsonDocument doc;
 
