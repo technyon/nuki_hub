@@ -13,6 +13,16 @@
 // only append new fields at the end.
 #define RTC_STATE_RUNNING_DETECT 0x6e756b69
 
+#define RESTART_HISTORY_SIZE 4
+#define RESTART_HISTORY_VALID_DETECT 0x72737468
+
+struct RestartHistoryEntry
+{
+    uint8_t fwReason;
+    uint8_t espReason;
+    uint32_t uptimeMinutes;
+};
+
 struct RtcNoInitState
 {
     uint64_t restartReasonValidDetect;
@@ -25,6 +35,9 @@ struct RtcNoInitState
     bool disableNetwork;
     bool wifiFallback;
     bool ethCriticalFailure;
+    uint32_t restartHistoryValidDetect;
+    uint32_t currentUptimeMinutes;
+    RestartHistoryEntry restartHistory[RESTART_HISTORY_SIZE];
 };
 
 extern RtcNoInitState rtcState;

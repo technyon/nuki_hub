@@ -1115,6 +1115,7 @@ void networkTask(void *pvParameters)
         processNetworkTask(firstRun);
         checkRestartEsp();
 
+        rtcState.currentUptimeMinutes = espMillis() / 60000;
         if(espMillis() - networkLoopTs > 120000)
         {
             Log->println("networkTask is running");
@@ -1599,6 +1600,7 @@ void setup()
     preferences->begin("nukihub", false);
     initPreferences(preferences);
     initializeRestartReason();
+    recordRestartHistory();
 
     if(esp_reset_reason() == esp_reset_reason_t::ESP_RST_PANIC ||
             esp_reset_reason() == esp_reset_reason_t::ESP_RST_INT_WDT ||

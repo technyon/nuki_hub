@@ -542,6 +542,11 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
         return _nukiOpener.requestOpenerState(&_keyTurnerState);
     });
 
+    if(result == Nuki::CmdResult::Success)
+    {
+        _lastStateQueryOkTs = espMillis();
+    }
+
     char resultStr[15];
     memset(&resultStr, 0, sizeof(resultStr));
     NukiOpener::cmdResultToString(result, resultStr);
@@ -1144,6 +1149,13 @@ void NukiOpenerWrapper::updateAuth(bool retrieved)
         std::list<NukiOpener::AuthorizationEntry> authEntries;
         _nukiOpener.getAuthorizationEntries(&authEntries);
 
+        memset(_authCountByType, 0, sizeof(_authCountByType));
+        for(const auto& entry : authEntries)
+        {
+            ++_authCountByType[entry.idType < 6 ? entry.idType : 6];
+        }
+        _authEntriesRead = true;
+
         Log->print("Opener authorization entries: ");
         Log->println(authEntries.size());
 
@@ -1307,6 +1319,55 @@ uint8_t NukiOpenerWrapper::configUnknownBytes(unsigned char* dst, uint8_t maxLen
 uint8_t NukiOpenerWrapper::advancedConfigUnknownBytes(unsigned char* dst, uint8_t maxLen) const
 {
     return _nukiOpener.getAdvancedConfigUnknownBytes(dst, maxLen);
+}
+
+uint16_t NukiOpenerWrapper::configPayloadLength() const
+{
+    return _nukiOpener.getConfigPayloadLength();
+}
+
+uint16_t NukiOpenerWrapper::advancedConfigPayloadLength() const
+{
+    return _nukiOpener.getAdvancedConfigPayloadLength();
+}
+
+size_t NukiOpenerWrapper::configBytes(unsigned char* dst, size_t maxLen) const
+{
+    size_t len = sizeof(_nukiConfig) < maxLen ? sizeof(_nukiConfig) : maxLen;
+    memcpy(dst, &_nukiConfig, len);
+    return len;
+}
+
+const NukiRetryHandler* NukiOpenerWrapper::retryHandler() const
+{
+    return _nukiRetryHandler;
+}
+
+int64_t NukiOpenerWrapper::lastStateQueryOkTs() const
+{
+    return _lastStateQueryOkTs;
+}
+
+int NukiOpenerWrapper::rssi() const
+{
+    return _nukiOpener.getRssi();
+}
+
+bool NukiOpenerWrapper::authEntriesRead() const
+{
+    return _authEntriesRead;
+}
+
+uint16_t NukiOpenerWrapper::authEntryCount(uint8_t idType) const
+{
+    return idType < 7 ? _authCountByType[idType] : 0;
+}
+
+size_t NukiOpenerWrapper::advancedConfigBytes(unsigned char* dst, size_t maxLen) const
+{
+    size_t len = sizeof(_nukiAdvancedConfig) < maxLen ? sizeof(_nukiAdvancedConfig) : maxLen;
+    memcpy(dst, &_nukiAdvancedConfig, len);
+    return len;
 }
 
 const bool NukiOpenerWrapper::hasKeypad() const

@@ -74,6 +74,15 @@ public:
     const bool hasKeypad() const;
     uint8_t configUnknownBytes(unsigned char* dst, uint8_t maxLen) const;
     uint8_t advancedConfigUnknownBytes(unsigned char* dst, uint8_t maxLen) const;
+    uint16_t configPayloadLength() const;
+    uint16_t advancedConfigPayloadLength() const;
+    size_t configBytes(unsigned char* dst, size_t maxLen) const;
+    size_t advancedConfigBytes(unsigned char* dst, size_t maxLen) const;
+    const NukiRetryHandler* retryHandler() const;
+    int64_t lastStateQueryOkTs() const;
+    int rssi() const;
+    bool authEntriesRead() const;
+    uint16_t authEntryCount(uint8_t idType) const;
     const BLEAddress getBleAddress() const;
     const uint8_t restartController() const;
 
@@ -134,6 +143,9 @@ private:
     Preferences* _preferences = nullptr;
     Gpio* _gpio = nullptr;
     NukiRetryHandler* _nukiRetryHandler = nullptr;
+    int64_t _lastStateQueryOkTs = 0;
+    bool _authEntriesRead = false;
+    uint16_t _authCountByType[7] = {0};
 
     int _intervalLockstate = 0; // seconds
     int _intervalBattery = 0; // seconds

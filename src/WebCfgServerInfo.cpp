@@ -30,14 +30,14 @@ static esp_hosted_coprocessor_fwver_t host_version_struct = {
 #endif
 
 #ifndef NUKI_HUB_UPDATER
-static void printUnknownBytes(PsychicStreamResponse& response, const char* label, const unsigned char* bytes, uint8_t len)
+static void printHexBytes(PsychicStreamResponse& response, const char* label, const unsigned char* bytes, size_t len)
 {
     if(len == 0)
     {
         return;
     }
     response.print(label);
-    for(uint8_t i = 0; i < len; i++)
+    for(size_t i = 0; i < len; i++)
     {
         char hex[4];
         snprintf(hex, sizeof(hex), " %02x", bytes[i]);
@@ -96,6 +96,25 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(getRestartReason());
     response.print("\nLast restart reason ESP: ");
     response.print(getEspRestartReason());
+    if(_preferences->getBool(preference_enable_debug_mode, false))
+    {
+        response.print("\nRestart history (newest first):");
+        for(int i = 0; i < RESTART_HISTORY_SIZE; i++)
+        {
+            const RestartHistoryEntry& entry = rtcState.restartHistory[i];
+            if(i > 0 && entry.fwReason == 0 && entry.espReason == 0 && entry.uptimeMinutes == 0)
+            {
+                break;
+            }
+            response.print("\n  ");
+            response.print(restartReasonToString((RestartReason)entry.fwReason));
+            response.print(" / ");
+            response.print(espResetReasonToString((esp_reset_reason_t)entry.espReason));
+            response.print(" after ");
+            response.print(entry.uptimeMinutes);
+            response.print(" min");
+        }
+    }
     response.print("\nFree internal heap: ");
     response.print(ESP.getFreeHeap());
     response.print("\nLargest free internal block: ");
@@ -483,8 +502,61 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         if(_preferences->getBool(preference_enable_debug_mode, false))
         {
             unsigned char unknownBytes[32];
-            printUnknownBytes(response, "\nConfig bytes unknown to Nuki Hub:", unknownBytes, _nuki->configUnknownBytes(unknownBytes, sizeof(unknownBytes)));
-            printUnknownBytes(response, "\nAdvanced config bytes unknown to Nuki Hub:", unknownBytes, _nuki->advancedConfigUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            printHexBytes(response, "\nConfig bytes unknown to Nuki Hub:", unknownBytes, _nuki->configUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            printHexBytes(response, "\nAdvanced config bytes unknown to Nuki Hub:", unknownBytes, _nuki->advancedConfigUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            unsigned char configBytes[256];
+            response.print("\nConfig payload length: ");
+            response.print(_nuki->configPayloadLength());
+            response.print(" (known layout: ");
+            response.print(_nuki->configBytes(configBytes, sizeof(configBytes)));
+            response.print(")");
+            printHexBytes(response, "\nConfig as parsed by Nuki Hub:", configBytes, _nuki->configBytes(configBytes, sizeof(configBytes)));
+            response.print("\nAdvanced config payload length: ");
+            response.print(_nuki->advancedConfigPayloadLength());
+            response.print(" (known layout: ");
+            response.print(_nuki->advancedConfigBytes(configBytes, sizeof(configBytes)));
+            response.print(")");
+            printHexBytes(response, "\nAdvanced config as parsed by Nuki Hub:", configBytes, _nuki->advancedConfigBytes(configBytes, sizeof(configBytes)));
+            response.print("\nBLE address: ");
+            response.print(_nuki->getBleAddress().toString().c_str());
+            response.print("\nBLE RSSI: ");
+            response.print(_nuki->rssi());
+            response.print("\nBLE commands since boot: ");
+            response.print(_nuki->retryHandler()->successCount());
+            response.print(" ok, ");
+            response.print(_nuki->retryHandler()->failedCount());
+            response.print(" failed, ");
+            response.print(_nuki->retryHandler()->totalRetries());
+            response.print(" retries");
+            response.print("\nLast successful state query: ");
+            if(_nuki->lastStateQueryOkTs() == 0)
+            {
+                response.print("never");
+            }
+            else
+            {
+                response.print((espMillis() - _nuki->lastStateQueryOkTs()) / 1000);
+                response.print(" s ago");
+            }
+            response.print("\nAuthorization entries by type: ");
+            if(!_nuki->authEntriesRead())
+            {
+                response.print("not read (enable authorization info)");
+            }
+            else
+            {
+                const char* typeNames[7] = {"app", "bridge", "fob", "keypad", "door sensor", "keypad 2", "other"};
+                for(uint8_t t = 0; t < 7; t++)
+                {
+                    if(t > 0)
+                    {
+                        response.print(", ");
+                    }
+                    response.print(typeNames[t]);
+                    response.print(" ");
+                    response.print(_nuki->authEntryCount(t));
+                }
+            }
         }
         if(_nuki->hasKeypad())
         {
@@ -702,8 +774,61 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         if(_preferences->getBool(preference_enable_debug_mode, false))
         {
             unsigned char unknownBytes[32];
-            printUnknownBytes(response, "\nOpener config bytes unknown to Nuki Hub:", unknownBytes, _nukiOpener->configUnknownBytes(unknownBytes, sizeof(unknownBytes)));
-            printUnknownBytes(response, "\nOpener advanced config bytes unknown to Nuki Hub:", unknownBytes, _nukiOpener->advancedConfigUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            printHexBytes(response, "\nOpener config bytes unknown to Nuki Hub:", unknownBytes, _nukiOpener->configUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            printHexBytes(response, "\nOpener advanced config bytes unknown to Nuki Hub:", unknownBytes, _nukiOpener->advancedConfigUnknownBytes(unknownBytes, sizeof(unknownBytes)));
+            unsigned char configBytes[256];
+            response.print("\nOpener config payload length: ");
+            response.print(_nukiOpener->configPayloadLength());
+            response.print(" (known layout: ");
+            response.print(_nukiOpener->configBytes(configBytes, sizeof(configBytes)));
+            response.print(")");
+            printHexBytes(response, "\nOpener config as parsed by Nuki Hub:", configBytes, _nukiOpener->configBytes(configBytes, sizeof(configBytes)));
+            response.print("\nOpener advanced config payload length: ");
+            response.print(_nukiOpener->advancedConfigPayloadLength());
+            response.print(" (known layout: ");
+            response.print(_nukiOpener->advancedConfigBytes(configBytes, sizeof(configBytes)));
+            response.print(")");
+            printHexBytes(response, "\nOpener advanced config as parsed by Nuki Hub:", configBytes, _nukiOpener->advancedConfigBytes(configBytes, sizeof(configBytes)));
+            response.print("\nBLE address: ");
+            response.print(_nukiOpener->getBleAddress().toString().c_str());
+            response.print("\nBLE RSSI: ");
+            response.print(_nukiOpener->rssi());
+            response.print("\nBLE commands since boot: ");
+            response.print(_nukiOpener->retryHandler()->successCount());
+            response.print(" ok, ");
+            response.print(_nukiOpener->retryHandler()->failedCount());
+            response.print(" failed, ");
+            response.print(_nukiOpener->retryHandler()->totalRetries());
+            response.print(" retries");
+            response.print("\nLast successful state query: ");
+            if(_nukiOpener->lastStateQueryOkTs() == 0)
+            {
+                response.print("never");
+            }
+            else
+            {
+                response.print((espMillis() - _nukiOpener->lastStateQueryOkTs()) / 1000);
+                response.print(" s ago");
+            }
+            response.print("\nAuthorization entries by type: ");
+            if(!_nukiOpener->authEntriesRead())
+            {
+                response.print("not read (enable authorization info)");
+            }
+            else
+            {
+                const char* typeNames[7] = {"app", "bridge", "fob", "keypad", "door sensor", "keypad 2", "other"};
+                for(uint8_t t = 0; t < 7; t++)
+                {
+                    if(t > 0)
+                    {
+                        response.print(", ");
+                    }
+                    response.print(typeNames[t]);
+                    response.print(" ");
+                    response.print(_nukiOpener->authEntryCount(t));
+                }
+            }
         }
         if(_nukiOpener->hasKeypad())
         {
