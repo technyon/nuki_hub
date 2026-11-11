@@ -85,6 +85,12 @@ jobs:
           echo "$command" | tee ${FILES}/flash.sh
           chmod a+x ${FILES}/flash.sh
 
+      - name: Add build info
+        env:
+          FILES: ${{ format('{0}/{1}', env.BUILD, env.VARIANT) }}
+        run: |
+          echo "BUILD=$(grep -oP '(?<=#define NUKI_HUB_BUILD ")[^"]*' src/Config.h) DATE=$(grep -oP '(?<=#define NUKI_HUB_DATE ")[^"]*' src/Config.h)" | tee ${FILES}/build-info.txt
+
       - name: Upload Artifact ${{ matrix.board }}-${{ matrix.build }}
         uses: actions/upload-artifact@v7
         with:

@@ -1,4 +1,4 @@
-name: NukiHub Release OTA
+name: NukiHub Publish Release
 on:
   release:
     types: [published]
@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   ota:
@@ -20,24 +19,6 @@ jobs:
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
-      - name: Find the release build
-        id: build
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          SHA=`gh api "repos/${{ github.repository }}/commits/${TAG}" --jq '.sha'`
-          RUN=`gh api "repos/${{ github.repository }}/actions/workflows/release.yml/runs?head_sha=${SHA}&event=workflow_dispatch&per_page=1" --jq '.workflow_runs[0] | "\(.id) \(.run_number) \(.run_attempt) \(.created_at[0:10])"'`
-
-          if [ -z "$RUN" ] || [ "$RUN" = "null null null null" ]; then
-            echo "::error::No release workflow run found for ${TAG} (${SHA})"
-            exit 1
-          fi
-
-          read ID NUMBER ATTEMPT DATE <<< "$RUN"
-          echo "Release ${TAG} was built by run ${ID} on ${DATE}"
-          echo "id=${ID}" >> $GITHUB_OUTPUT
-          echo "version=${ID}.${NUMBER}.${ATTEMPT}" >> $GITHUB_OUTPUT
-          echo "date=${DATE}" >> $GITHUB_OUTPUT
       - name: Git Checkout
         uses: actions/checkout@v6
         with:
@@ -58,12 +39,32 @@ jobs:
           git branch -M binary
           git rm --cached --ignore-unmatch -r *
       - name: Download release assets
-        uses: actions/download-artifact@v8
-        with:
-          path: release
-          pattern: '*-release-assets'
-          run-id: ${{ steps.build.outputs.id }}
-          github-token: ${{ github.token }}
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${TAG}" --repo ${{ github.repository }} --pattern 'NukiHub-*.zip' --dir release-zips
+
+          mkdir -p release
+          for ZIP in release-zips/*.zip; do
+            unzip -q "${ZIP}" -d "release/$(basename "${ZIP}" .zip)"
+          done
+
+          INFO=`cat release/*/build-info.txt 2>/dev/null | sort -u`
+
+          if [ -z "${INFO}" ]; then
+            echo "::error::No build-info.txt in the assets of release ${TAG}"
+            exit 1
+          fi
+
+          if [ `echo "${INFO}" | wc -l` -ne 1 ]; then
+            echo "::warning::The release assets of ${TAG} have different build info, using the first one"
+            echo "${INFO}"
+          fi
+
+          INFO=`echo "${INFO}" | head -n1`
+          echo "Release ${TAG}: ${INFO}"
+          echo "${INFO}" | tr ' ' '\n' | sed 's/^BUILD=/version=/; s/^DATE=/date=/' >> $GITHUB_OUTPUT
       - name: Copy binaries to ota and remove beta
         env:
           Version: ${{ steps.build.outputs.version }}
