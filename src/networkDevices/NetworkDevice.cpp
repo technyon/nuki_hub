@@ -206,6 +206,15 @@ void NetworkDevice::mqttSetServer(const char *host, uint16_t port)
     }
 }
 
+bool NetworkDevice::mqttDisconnected() const
+{
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return true;
+    }
+    return client->disconnected();
+}
+
 bool NetworkDevice::mqttConnect()
 {
     MqttClient* client = getMqttClient();
