@@ -994,7 +994,7 @@ void initNetworkTask(const bool& connected, const bool& firstRun)
 void updateWebSerial(const bool& connected)
 {
 #ifndef NUKI_HUB_UPDATER
-    if(connected && webSerialEnabled && (webSSLStarted || webStarted))
+    if(webSerialEnabled && (webSSLStarted || webStarted))
     {
         // Only one of the two servers exists: webCfgServerSSL is null on plain HTTP.
         WebCfgServer* activeServer = webSSLStarted ? webCfgServerSSL : webCfgServer;
