@@ -14,6 +14,7 @@ static const Setting mqttSettings[] =
     {"MQTTPATH", "MQTT Nuki Hub Path", preference_mqtt_lock_path, SettingType::String, 0, 0, 0, 180, "", SettingEffect::RestartReconnect},
     {"OPENERCONT", "Set Nuki Opener Lock/Unlock action in Home Assistant to Continuous mode", preference_opener_continuous_mode, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
     {"NETTIMEOUT", "MQTT Timeout until restart (seconds; -1 to disable)", preference_network_timeout, SettingType::Int, 60, 0, 0, 5, "", SettingEffect::None},
+    {"MQTTKEEPAL", "MQTT keepalive in seconds (min 10, max 600)", preference_mqtt_keepalive, SettingType::Int, 60, 10, 600, 3, "", SettingEffect::RestartReconnect},
     {"MQTTLOG", "Enable MQTT logging", preference_mqtt_log_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::ConfigChanged},
     {"MQTTSENA", "Enable MQTT SSL", preference_mqtt_ssl_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
     {"UPDATEMQTT", "Allow updating using MQTT", preference_update_from_mqtt, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
@@ -39,6 +40,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<tr><td>Remove user and password</td><td><button type=\"button\" data-set-value=\"MQTTUSER\" data-value=\"#\">Remove on save</button></td></tr>");
     printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTPATH");
     printSetting(&response, mqttSettings, mqttSettingsCount, "NETTIMEOUT");
+    printSetting(&response, mqttSettings, mqttSettingsCount, "MQTTKEEPAL");
     response.print("</table>");
 
     response.print("<h3>Home Assistant</h3>");

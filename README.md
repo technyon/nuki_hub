@@ -287,6 +287,7 @@ Settings that need a reboot of the Nuki Hub to take effect are marked with a "re
 - MQTT User / MQTT Password: If using authentication on the MQTT broker set to a username and password with read/write rights on the MQTT broker. Use "Remove on save" to clear both.
 - MQTT Nuki Hub Path: Set to the preferred MQTT root topic for Nuki Hub, defaults to "nukihub". Make sure this topic is unique when using multiple ESP32 Nuki Hub devices
 - MQTT Timeout until restart: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without an active connection to the MQTT broker, set to -1 to disable, default 60.
+- MQTT keepalive: The keepalive interval in seconds sent to the MQTT broker, 10 to 600, default 60. Nuki Hub pings the broker after half this interval without traffic and the broker drops the connection after 1.5 times this interval without traffic. Increase on networks where the Nuki Hub is regularly disconnected by the broker with "exceeded timeout".
 
 #### Home Assistant
 

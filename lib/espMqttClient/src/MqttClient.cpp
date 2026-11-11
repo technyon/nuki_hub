@@ -473,11 +473,11 @@ void MqttClient::_checkPing() {
     return;
   }
 
-  // send ping when client was inactive during the keepalive time
-  // or when server hasn't responded within keepalive time (typically due to QOS 0)
+  // send ping when client was inactive during half the keepalive time
+  // or when server hasn't responded within half the keepalive time (typically due to QOS 0)
   if (!_pingSent &&
-      ((currentMillis - _lastClientActivity > _keepAlive) ||
-       (currentMillis - _lastServerActivity > _keepAlive))) {
+      ((currentMillis - _lastClientActivity > _keepAlive / 2) ||
+       (currentMillis - _lastServerActivity > _keepAlive / 2))) {
     if (!_addPacket(PacketType.PINGREQ)) {
       emc_log_e("Could not create PING packet");
       return;
