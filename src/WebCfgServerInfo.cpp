@@ -126,6 +126,11 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("\nPSRAM Available: No");
         response.print("\nPSRAM init error: ");
         response.print(esp_err_to_name(psramLateInitError()));
+#if defined(CONFIG_IDF_TARGET_ESP32S3) && defined(CONFIG_SPIRAM_MODE_OCT)
+        response.print("\nPSRAM hint: This is the Octal PSRAM build, boards with 2 MB PSRAM need the Quad PSRAM build (esp32-s3)");
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+        response.print("\nPSRAM hint: This is the Quad PSRAM build, boards with 8 MB PSRAM need the Octal PSRAM build (esp32-s3-oct)");
+#endif
     }
 #else
     response.print("\nPSRAM Available: No");

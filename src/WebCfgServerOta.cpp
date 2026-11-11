@@ -114,7 +114,11 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 #if defined(CONFIG_IDF_TARGET_ESP32S3) && defined(CONFIG_SPIRAM)
     if(esp_psram_get_size() <= 0)
     {
-        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to other PSRAM release version", "1");
+#if defined(CONFIG_SPIRAM_MODE_OCT)
+        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Quad PSRAM release version (PSRAM was not detected by this Octal PSRAM build)", "1");
+#else
+        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Octal PSRAM release version (PSRAM was not detected by this Quad PSRAM build, ESP32-S3 boards with 8 MB PSRAM are Octal)", "1");
+#endif
         printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to No PSRAM release version", "2");
     }
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
