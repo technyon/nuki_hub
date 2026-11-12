@@ -274,6 +274,7 @@ void MqttClient::loop() {
         _checkTimeout();
         EMC_SEMAPHORE_GIVE();
       } else {
+        emc_log_w("Disconnecting, tcp connection lost");
         _setState(State::disconnectingTcp1);
         _disconnectReason = DisconnectReason::TCP_DISCONNECTED;
       }
@@ -372,7 +373,7 @@ int MqttClient::_sendPacket() {
     packet->timeSent = millis();
     _lastClientActivity = millis();
     _bytesSent += written;
-    emc_log_i("tx %zu/%zu (%02x)", _bytesSent, packet->packet.size(), packet->packet.packetType());
+    emc_log_t("tx %zu/%zu (%02x)", _bytesSent, packet->packet.size(), packet->packet.packetType());
   }
   return written;
 }
@@ -401,7 +402,7 @@ void MqttClient::_checkIncoming() {
   int32_t remainingBufferLength = _transport->read(_rxBuffer, EMC_RX_BUFFER_SIZE);
   if (remainingBufferLength > 0) {
     _lastServerActivity = millis();
-    emc_log_i("rx len %i", remainingBufferLength);
+    emc_log_t("rx len %i", remainingBufferLength);
     size_t bytesParsed = 0;
     size_t index = 0;
     while (remainingBufferLength > 0) {
@@ -444,6 +445,7 @@ void MqttClient::_checkIncoming() {
             break;
           case PacketType.PINGRESP:
             _pingSent = false;
+            emc_log_i("pong received");
             break;
         }
       } else if (result ==  espMqttClientInternals::ParserResult::protocolError) {
@@ -454,7 +456,7 @@ void MqttClient::_checkIncoming() {
       }
       remainingBufferLength -= bytesParsed;
       index += bytesParsed;
-      emc_log_i("Parsed %zu - remaining %i", bytesParsed, remainingBufferLength);
+      emc_log_t("Parsed %zu - remaining %i", bytesParsed, remainingBufferLength);
       bytesParsed = 0;
     }
   }
@@ -483,6 +485,7 @@ void MqttClient::_checkPing() {
       return;
     }
     _pingSent = true;
+    emc_log_i("ping sent");
   }
 }
 

@@ -637,6 +637,10 @@ void NukiNetwork::onMqttConnect(const bool &sessionPresent)
 void NukiNetwork::onMqttDisconnect(const espMqttClientTypes::DisconnectReason &reason)
 {
     _connectReplyReceived = false;
+    if(mqttLogger != nullptr)
+    {
+        mqttLogger->noteDisconnect();
+    }
     Log->print("MQTT disconnected. Reason: ");
     switch(reason)
     {

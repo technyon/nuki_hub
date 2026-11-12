@@ -328,7 +328,7 @@ bool Packet::_allocate(size_t remainingLength, bool check) {
     emc_log_w("Alloc failed (l:%zu)", _size);
     return false;
   }
-  emc_log_i("Alloc (l:%zu)", _size);
+  emc_log_t("Alloc (l:%zu)", _size);
   memset(_data, 0, _size);
   return true;
 }
