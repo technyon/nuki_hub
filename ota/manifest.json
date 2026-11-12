@@ -1,19 +1,19 @@
 {
     "release": {
-        "time": "2026-11-11",
-        "version": "10.00",
-        "version_int": "1000",
-        "fullversion": "10.00",
-        "build": "43016219843.25.1",
+        "time": "2026-10-28",
+        "version": "9.19",
+        "version_int": "919",
+        "fullversion": "9.19",
+        "build": "40687520572.24.1",
         "number": 1
     },
     "beta": {
-        "time": "0000-00-00",
-        "version": "No beta available",
-        "version_int": "No beta available",
-        "fullversion": "No beta available",
-        "build": "",
-        "number": "0"
+        "time": "2026-11-09",
+        "version": "10.00",
+        "version_int": "1000",
+        "fullversion": "10.00-beta1",
+        "build": "42605718677.52.1",
+        "number": 1
     },
     "master": {
         "time": "2026-11-12",
