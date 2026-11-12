@@ -1,3 +1,4 @@
+#include "util/OtaImage.h"
 #include "NukiNetwork.h"
 #include "PreferencesKeys.h"
 #include "Logger.h"
@@ -988,22 +989,10 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
         if (fetchOtaManifest(doc, 5000))
         {
             const char* channel = otaChannel(doc);
-            const char* channelName = "release";
-            const char* updaterUrl = GITHUB_LATEST_UPDATER_BINARY_URL;
-            const char* mainUrl = GITHUB_LATEST_RELEASE_BINARY_URL;
-
-            if(strcmp(channel, "beta") == 0)
-            {
-                channelName = "beta";
-                updaterUrl = GITHUB_BETA_UPDATER_BINARY_URL;
-                mainUrl = GITHUB_BETA_RELEASE_BINARY_URL;
-            }
-            else if(strcmp(channel, "master") == 0)
-            {
-                channelName = "development";
-                updaterUrl = GITHUB_MASTER_UPDATER_BINARY_URL;
-                mainUrl = GITHUB_MASTER_RELEASE_BINARY_URL;
-            }
+            const char* channelName = strcmp(channel, "beta") == 0 ? "beta" : strcmp(channel, "master") == 0 ? "development" : "release";
+            OtaImage target = OtaImages::updateTarget(_preferences, _networkDeviceType == NetworkDeviceType::GL_S10);
+            String updaterUrl = OtaImages::url(channel, target, true);
+            String mainUrl = OtaImages::url(channel, target, false);
 
             if(strcmp(NUKI_HUB_VERSION, doc[channel]["fullversion"] | "") == 0 && strcmp(NUKI_HUB_BUILD, doc[channel]["build"] | "") == 0 && strcmp(NUKI_HUB_DATE, doc[channel]["time"] | "") == 0)
             {
@@ -1018,6 +1007,12 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
                 Log->print("Updating to latest ");
                 Log->print(channelName);
                 Log->println(" version.");
+                if(target != OtaImages::current())
+                {
+                    Log->print("Switching to the ");
+                    Log->print(OtaImages::label(target));
+                    Log->println(" image.");
+                }
                 espDelayAck(200);
                 restartEsp(RestartReason::OTAReboot);
             }

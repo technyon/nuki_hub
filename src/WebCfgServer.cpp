@@ -653,6 +653,25 @@ void WebCfgServer::initialize()
                 resp->addHeader("Cache-Control", "no-cache");
                 return resp->redirect("/");
             }
+            else if (value == "otaimage")
+            {
+                if(request->hasParam("CONFIRMTOKEN") && request->getParam("CONFIRMTOKEN")->value() == _confirmCode && request->hasParam("keep"))
+                {
+                    if(request->getParam("keep")->value() == "1")
+                    {
+                        String reason;
+                        OtaImage recommendedImage = OtaImages::recommended(_network->networkDeviceType() == NetworkDeviceType::GL_S10, reason);
+                        _preferences->putString(preference_ota_image_keep, OtaImages::name(recommendedImage));
+                    }
+                    else
+                    {
+                        _preferences->remove(preference_ota_image_keep);
+                    }
+                }
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/get?page=ota");
+            }
             else if (value == "export")
             {
                 if(!_preferences->getBool(preference_cred_duo_approval, false) || (!_importExport->getTOTPEnabled() && !_duoEnabled))
