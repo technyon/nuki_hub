@@ -1,0 +1,104 @@
+name: NukiHub Publish Release
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish to OTA'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  ota:
+    name: Publish release to OTA
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: binary
+      - name: Git Checkout release
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+          path: master
+          sparse-checkout: |
+              resources/ota_manifest.py
+              resources/old_manifest.py
+              src/Config.h
+      - name: Git Commands
+        run: |
+          git checkout --orphan newBinary
+          git branch -D binary
+          git branch -M binary
+          git rm --cached --ignore-unmatch -r *
+      - name: Download release assets
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${TAG}" --repo ${{ github.repository }} --pattern 'NukiHub-*.zip' --dir release-zips
+
+          mkdir -p release
+          for ZIP in release-zips/*.zip; do
+            unzip -q "${ZIP}" -d "release/$(basename "${ZIP}" .zip)"
+          done
+
+          INFO=`cat release/*/build-info.txt 2>/dev/null | sort -u`
+
+          if [ -z "${INFO}" ]; then
+            echo "::error::No build-info.txt in the assets of release ${TAG}"
+            exit 1
+          fi
+
+          if [ `echo "${INFO}" | wc -l` -ne 1 ]; then
+            echo "::warning::The release assets of ${TAG} have different build info, using the first one"
+            echo "${INFO}"
+          fi
+
+          INFO=`echo "${INFO}" | head -n1`
+          echo "Release ${TAG}: ${INFO}"
+          echo "${INFO}" | tr ' ' '\n' | sed 's/^BUILD=/version=/; s/^DATE=/date=/' >> $GITHUB_OUTPUT
+      - name: Copy binaries to ota and remove beta
+        env:
+          Version: ${{ steps.build.outputs.version }}
+          BuildDate: ${{ steps.build.outputs.date }}
+        run: |
+          mkdir -p ota/beta/
+          mkdir -p ota/master/
+          mkdir -p ota/old/
+          mkdir -p resources/
+          mkdir -p src/
+          cp -vf release/*/nuki_hub_*.bin ota/
+          cp -vf release/*/nuki_hub_*.elf ota/
+          cp -vf master/resources/ota_manifest.py resources/ota_manifest.py
+          cp -vf master/resources/old_manifest.py resources/old_manifest.py
+          cp -vf master/src/Config.h src/Config.h
+          echo release/*/nuki_hub_*.bin | tr ' ' '\n' | xargs -n1 -I{} bash -c 'cp {} ota/old/${TAG}.$(basename "{}")'
+          python3 resources/ota_manifest.py release $Version $BuildDate
+          python3 resources/ota_manifest.py beta none
+          python3 resources/old_manifest.py ${TAG}
+          find * -not -path "ota*" -delete
+          rm -rf ota/beta/*.bin
+          rm -rf ota/beta/*.elf
+          rm -rf .github .gitignore .gitmodules
+          touch ota/beta/empty
+          touch ota/master/empty
+      - name: Commit binaries to binary
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "Update binaries"
+          file_pattern: 'ota/* ota/master/* ota/beta/* ota/old/*'
+          branch: binary
+          skip_dirty_check: true
+          skip_fetch: true
+          skip_checkout: true
+          disable_globbing: true
+          add_options: '-f'
+          push_options: '-f'

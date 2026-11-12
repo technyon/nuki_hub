@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('ota_type', type=str)
 parser.add_argument('build', type=str)
+parser.add_argument('date', type=str, nargs='?', default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
 args = parser.parse_args()
 
 with open('ota/manifest.json', 'r+') as json_file:
@@ -36,7 +37,7 @@ with open('ota/manifest.json', 'r+') as json_file:
         else:
             data[args.ota_type]['number'] = 1
 
-        data[args.ota_type]['time'] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        data[args.ota_type]['time'] = args.date
         data[args.ota_type]['version'] = str(version)
         data[args.ota_type]['version_int'] = str(int((float(version)*100)+0.1))
 

@@ -8,7 +8,7 @@ args = parser.parse_args()
 with open('ota/old/manifest.json', 'r+') as json_file:
     data = json.load(json_file)
     data[str(int((float(args.version)*100)+0.1))] = args.version
-    data2 = sorted(data.items(), reverse=True)
+    data2 = sorted(data.items(), key=lambda item: int(item[0]), reverse=True)
     sorted_dict = {}
     k = 6
     for key, value in data2:
