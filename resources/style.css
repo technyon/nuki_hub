@@ -449,6 +449,36 @@ nav.menu a .state.done {
     border-color: var(--ok);
 }
 
+.setup-step {
+    position: relative;
+}
+
+nav.menu .setup-step a {
+    height: 100%;
+    box-sizing: border-box;
+    padding-right: 2.2rem;
+}
+
+.setup-step form {
+    margin: 0;
+}
+
+.setup-step .dismiss {
+    position: absolute;
+    top: .3rem;
+    right: .3rem;
+    padding: 0 .35rem;
+    border: 0;
+    background: none;
+    color: var(--tx-2);
+    font-size: 1.1rem;
+    line-height: 1.2;
+}
+
+.setup-step .dismiss:hover {
+    color: var(--danger);
+}
+
 .wizard {
     max-width: 640px;
 }

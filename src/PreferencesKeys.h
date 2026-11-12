@@ -100,6 +100,7 @@
 #define preference_restart_on_disconnect (char*)"restdisc"
 #define preference_publish_debug_info (char*)"pubdbg"
 #define preference_enable_debug_mode (char*)"enadbg"
+#define preference_setup_hidden (char*)"stphid"
 #define preference_official_hybrid_actions (char*)"hybridAct"
 #define preference_official_hybrid_retry (char*)"hybridRtry"
 #define preference_keypad_check_code_enabled (char*)"kpChkEna"
@@ -282,6 +283,7 @@ inline void initPreferences(Preferences* preferences)
         preferences->putBool(preference_force_hosted_update, false);
 
         preferences->putInt(preference_mqtt_broker_port, 1883);
+        preferences->putInt(preference_setup_hidden, 0);
         preferences->putInt(preference_buffer_size, CHAR_BUFFER_SIZE);
         preferences->putInt(preference_task_size_network, NETWORK_TASK_SIZE);
         preferences->putInt(preference_task_size_nuki, NUKI_TASK_SIZE);
@@ -588,7 +590,7 @@ private:
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_publish_config,
         preference_config_from_mqtt, preference_totp_secret, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember, preference_bypass_secret,
-        preference_admin_secret, preference_ble_general_timeout, preference_ble_command_timeout, preference_force_hosted_update
+        preference_admin_secret, preference_ble_general_timeout, preference_ble_command_timeout, preference_force_hosted_update, preference_setup_hidden
     };
     std::vector<char*> _redact =
     {
@@ -629,7 +631,7 @@ private:
         preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio, preference_http_auth_type,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember,
-        preference_ble_general_timeout, preference_ble_command_timeout
+        preference_ble_general_timeout, preference_ble_command_timeout, preference_setup_hidden
     };
     std::vector<char*> _uintPrefs =
     {
