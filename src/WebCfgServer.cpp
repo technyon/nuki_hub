@@ -639,6 +639,20 @@ void WebCfgServer::initialize()
                 _preferences->putBool(preference_enable_debug_mode, false);
                 return buildConfirmHtml(request, resp, "Debug Off", 3, true);
             }
+            else if (value == "hidestep")
+            {
+                if(request->hasParam("CONFIRMTOKEN") && request->getParam("CONFIRMTOKEN")->value() == _confirmCode && request->hasParam("step"))
+                {
+                    int step = request->getParam("step")->value().toInt();
+                    if(step >= 0 && step < 4)
+                    {
+                        _preferences->putInt(preference_setup_hidden, _preferences->getInt(preference_setup_hidden, 0) | (1 << step));
+                    }
+                }
+                resp->setCode(302);
+                resp->addHeader("Cache-Control", "no-cache");
+                return resp->redirect("/");
+            }
             else if (value == "export")
             {
                 if(!_preferences->getBool(preference_cred_duo_approval, false) || (!_importExport->getTOTPEnabled() && !_duoEnabled))
@@ -1538,14 +1552,29 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     bool deviceEnabled = _preferences->getBool(preference_lock_enabled, true) || _preferences->getBool(preference_opener_enabled, false);
     bool devicePaired = (_nuki != nullptr && _nuki->isPaired()) || (_nukiOpener != nullptr && _nukiOpener->isPaired());
     bool loginSet = _preferences->getString(preference_cred_user, "").length() > 0;
-    if(!_brokerConfigured || !deviceEnabled || !devicePaired || !loginSet)
+    const char* stepTitles[] = {"Connect an MQTT broker", "Enable your lock or opener", "Pair the device (hold its button until the ring lights up)", "Protect this configurator with a login"};
+    const char* stepPaths[] = {"/get?page=mqttconfig", "/get?page=nukicfg", "/get?page=nukicfg", "/get?page=cred"};
+    bool stepDone[] = {_brokerConfigured, deviceEnabled, devicePaired, loginSet};
+    int hiddenSteps = _preferences->getInt(preference_setup_hidden, 0);
+    bool showSetup = false;
+    for(int i = 0; i < 4; i++)
+    {
+        if(!stepDone[i] && !(hiddenSteps & (1 << i)))
+        {
+            showSetup = true;
+        }
+    }
+    if(showSetup)
     {
         response.print("<h3>Setup</h3>");
         response.print("<nav class=\"menu\">");
-        printSetupStep(&response, "Connect an MQTT broker", "/get?page=mqttconfig", _brokerConfigured);
-        printSetupStep(&response, "Enable your lock or opener", "/get?page=nukicfg", deviceEnabled);
-        printSetupStep(&response, "Pair the device (hold its button until the ring lights up)", "/get?page=nukicfg", devicePaired);
-        printSetupStep(&response, "Protect this configurator with a login", "/get?page=cred", loginSet);
+        for(int i = 0; i < 4; i++)
+        {
+            if(!(hiddenSteps & (1 << i)))
+            {
+                printSetupStep(&response, stepTitles[i], stepPaths[i], stepDone[i], i);
+            }
+        }
         response.print("</nav>");
     }
 #endif
@@ -1715,15 +1744,21 @@ void WebCfgServer::printDropDown(PsychicStreamResponse *response, const char *to
     response->print("</td></tr>");
 }
 
-void WebCfgServer::printSetupStep(PsychicStreamResponse *response, const char *title, const char *targetPath, bool done)
+void WebCfgServer::printSetupStep(PsychicStreamResponse *response, const char *title, const char *targetPath, bool done, int index)
 {
-    response->print("<a href=\"");
+    response->print("<div class=\"setup-step\"><a href=\"");
     response->print(targetPath);
     response->print("\"><span class=\"state");
     response->print(done ? " done\">Done" : "\">To do");
     response->print("</span>");
     response->print(title);
     response->print("</a>");
+    response->print("<form method=\"get\" action=\"/get\" data-confirm=\"Hide this setup step for good? It will not be shown again.\">");
+    response->print("<input type=\"hidden\" name=\"page\" value=\"hidestep\"><input type=\"hidden\" name=\"step\" value=\"");
+    response->print(index);
+    response->print("\"><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"");
+    response->print(_confirmCode);
+    response->print("\"><button type=\"submit\" class=\"dismiss\" title=\"Hide this step\" aria-label=\"Hide this step\">&times;</button></form></div>");
 }
 
 void WebCfgServer::buildNavigationMenuEntry(PsychicStreamResponse *response, const char *title, const char *targetPath, const char* warningMessage)
