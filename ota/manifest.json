@@ -1,0 +1,26 @@
+{
+    "release": {
+        "time": "2026-11-11",
+        "version": "10.00",
+        "version_int": "1000",
+        "fullversion": "10.00",
+        "build": "43016219843.25.1",
+        "number": 1
+    },
+    "beta": {
+        "time": "0000-00-00",
+        "version": "No beta available",
+        "version_int": "No beta available",
+        "fullversion": "No beta available",
+        "build": "",
+        "number": "0"
+    },
+    "master": {
+        "time": "2026-11-12",
+        "version": "10.01",
+        "version_int": "1001",
+        "fullversion": "10.01-master2",
+        "build": "43220273964.938.1",
+        "number": 2
+    }
+}
