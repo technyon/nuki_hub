@@ -125,7 +125,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
     printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Quad PSRAM release version", "1");
     printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Octal PSRAM release version", "2");
 #elif defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_SPIRAM) && !defined(NUKI_TARGET_GL_S10)
-    if(_preferences->getInt(preference_network_hardware) == 8)
+    if(_network->networkDeviceType() == NetworkDeviceType::GL_S10)
     {
         printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to specific GL-S10 release version", "1");
     }
@@ -134,7 +134,7 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to No PSRAM release version", "2");
     }
 #elif defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
-    if(_preferences->getInt(preference_network_hardware) == 8)
+    if(_network->networkDeviceType() == NetworkDeviceType::GL_S10)
     {
         printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to specific GL-S10 release version", "1");
     }
@@ -421,9 +421,10 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
 #if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32)) && !defined(CONFIG_FREERTOS_UNICORE)
     else if(request->hasParam("other"))
     {
+        bool secondVariant = request->getParam("other")->value() == "2";
         res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
-        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_OTHER);
-        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL_OTHER);
+        _preferences->putString(preference_ota_updater_url, secondVariant ? GITHUB_LATEST_UPDATER_BINARY_URL_OTHER2 : GITHUB_LATEST_UPDATER_BINARY_URL_OTHER);
+        _preferences->putString(preference_ota_main_url, secondVariant ? GITHUB_LATEST_RELEASE_BINARY_URL_OTHER2 : GITHUB_LATEST_RELEASE_BINARY_URL_OTHER);
     }
 #endif
     else
