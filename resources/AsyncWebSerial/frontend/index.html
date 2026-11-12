@@ -292,7 +292,7 @@
     let enableScroll = true;
     let enableTimestamp = true;
 
-    let url = `ws://${window.location.hostname}/ws`;
+    let url = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
     let websocket;
     let contentArea = document.querySelector('.content');
     let connectionStatus = document.querySelector('.connection-status');
