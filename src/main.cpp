@@ -1618,6 +1618,7 @@ void setup()
     initPreferences(preferences);
     applyLowMemoryLimits(preferences);
 
+#if !defined(NUKI_HUB_UPDATER)
     emcLogEnabled = preferences->getBool(preference_debug_mqtt_client, false);
     if(emcLogEnabled)
     {
@@ -1634,6 +1635,8 @@ void setup()
             xQueueSend(emcLogQueue, item, 0);
         };
     }
+#endif
+
     initializeRestartReason();
     recordRestartHistory();
 
