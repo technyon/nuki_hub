@@ -714,9 +714,27 @@ bool NukiNetwork::reconnect(bool force)
 
         _device->mqttSetWill(_mqttConnectionStateTopic, 1, true, _lastWillPayload);
         _device->mqttSetServer(_mqttBrokerAddr, _mqttPort);
+
+        int64_t teardownTimeout = espMillis() + 5000;
+
+        while(!_device->mqttDisconnected() && espMillis() < teardownTimeout)
+        {
+            espDelayAck(50);
+            _device->update();
+        }
+
+        if(!_device->mqttDisconnected())
+        {
+            Log->println("MQTT client still shutting down the previous connection, forcing it");
+            _device->mqttDisconnect(true);
+            espDelayAck(100);
+            _device->update();
+        }
+
+        int64_t connectTs = espMillis();
         _device->mqttConnect();
 
-        int64_t timeout = espMillis() + 60000;
+        int64_t timeout = connectTs + 60000;
 
         while(!_connectReplyReceived && espMillis() < timeout)
         {
@@ -725,6 +743,11 @@ bool NukiNetwork::reconnect(bool force)
             if(_keepAliveCallback != nullptr)
             {
                 _keepAliveCallback();
+            }
+            if(espMillis() > connectTs + 1000 && _device->mqttDisconnected())
+            {
+                Log->println("MQTT connect attempt ended without a reply");
+                break;
             }
         }
 
