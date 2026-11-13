@@ -213,6 +213,28 @@ p {
     color: var(--warn);
 }
 
+.banner.image {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem 1rem;
+}
+
+.banner.image .text {
+    flex: 1 1 320px;
+}
+
+.banner.image .text small {
+    display: block;
+    margin-top: .2rem;
+    font-weight: 400;
+    color: var(--tx-2);
+}
+
+.banner.image form {
+    margin: 0;
+}
+
 .card {
     background: var(--card);
     border: 1px solid var(--line);

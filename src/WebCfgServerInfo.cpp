@@ -57,6 +57,35 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print("------------ NUKI HUB ------------");
     response.print("\nDevice: ");
     response.print(NUKI_HUB_HW);
+    response.print("\nImage: ");
+    response.print(OtaImages::label(OtaImages::current()));
+    response.print(" (");
+    response.print(OtaImages::name(OtaImages::current()));
+    response.print(")\nRecommended image: ");
+    {
+        String reason;
+        OtaImage recommendedImage = OtaImages::recommended(_network->networkDeviceType() == NetworkDeviceType::GL_S10, reason);
+        if(recommendedImage == OtaImage::Unknown)
+        {
+            response.print("Could not be determined");
+        }
+        else
+        {
+            response.print(OtaImages::label(recommendedImage));
+            response.print(" (");
+            response.print(OtaImages::name(recommendedImage));
+            response.print(")");
+            if(reason.length() > 0)
+            {
+                response.print(", ");
+                response.print(reason);
+            }
+            if(OtaImages::keepingCurrent(_preferences, recommendedImage))
+            {
+                response.print(", staying on the current image by choice");
+            }
+        }
+    }
     response.print("\nChip: ");
     response.print(ESP.getChipModel());
     response.print(" rev ");

@@ -43,6 +43,24 @@ void WebCfgServer::printOtaForm(PsychicStreamResponse* response, const char* cha
     response->print(label);
     response->print("\"></form>");
 }
+
+void WebCfgServer::printOtaImageForm(PsychicStreamResponse* response, bool keep, const char* label, const char* confirmMessage)
+{
+    response->print("<form action=\"/get\" method=\"get\"");
+    if(strcmp(confirmMessage, "") != 0)
+    {
+        response->print(" data-confirm=\"");
+        response->print(confirmMessage);
+        response->print("\"");
+    }
+    response->print("><input type=\"hidden\" name=\"page\" value=\"otaimage\"><input type=\"hidden\" name=\"keep\" value=\"");
+    response->print(keep ? "1" : "0");
+    response->print("\"><input type=\"hidden\" name=\"CONFIRMTOKEN\" value=\"");
+    response->print(_confirmCode);
+    response->print("\"><input type=\"submit\" value=\"");
+    response->print(label);
+    response->print("\"></form>");
+}
 #endif
 
 esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug)
@@ -89,6 +107,37 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
 
     response.print("<div id=\"autoupdform\"><h3>Update Nuki Hub</h3>");
     response.print("<p>Click on the button to reboot and automatically update Nuki Hub and the Nuki Hub updater to the latest versions from GitHub</p>");
+
+    OtaImage currentImage = OtaImages::current();
+    String imageReason;
+    OtaImage recommendedImage = OtaImages::recommended(_network->networkDeviceType() == NetworkDeviceType::GL_S10, imageReason);
+    bool keepImage = OtaImages::keepingCurrent(_preferences, recommendedImage);
+    if(recommendedImage != OtaImage::Unknown && recommendedImage != currentImage)
+    {
+        if(keepImage)
+        {
+            response.print("<div class=\"banner image\"><div class=\"text\">Staying on the <b>");
+            response.print(OtaImages::label(currentImage));
+            response.print("</b> image although ");
+            response.print(OtaImages::label(recommendedImage));
+            response.print(" is recommended for this chip.</div>");
+            printOtaImageForm(&response, false, "Switch to the recommended image on next update", "");
+        }
+        else
+        {
+            response.print("<div class=\"banner warn image\"><div class=\"text\">Updates will switch this hub to the <b>");
+            response.print(OtaImages::label(recommendedImage));
+            response.print("</b> image.<small>You are running the ");
+            response.print(OtaImages::label(currentImage));
+            response.print(" image, but ");
+            response.print(imageReason);
+            response.print(".</small></div>");
+            String confirm = String("Keep updating the ") + OtaImages::label(currentImage) + " image although " + OtaImages::label(recommendedImage) + " is recommended?";
+            printOtaImageForm(&response, true, "Keep the current image type", confirm.c_str());
+        }
+        response.print("</div>");
+    }
+
     response.print("<div class=\"actions\">");
 
     String release_type;
@@ -111,34 +160,11 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
     printOtaForm(&response, "release", "latestver", sameBuild.c_str(), "Do you really want to update to the latest release?", "ok", "Update to latest release", release_type.c_str());
     printOtaForm(&response, "beta", "betaver", sameBuild.c_str(), "Do you really want to update to the latest beta? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial", "warn", "Update to latest beta", release_type.c_str());
     printOtaForm(&response, "master", "devver", sameBuild.c_str(), "Do you really want to update to the latest development version? This version could contain breaking bugs and necessitate downgrading to the latest release version using USB/Serial", "danger", "Update to latest development version", release_type.c_str());
-#if defined(CONFIG_IDF_TARGET_ESP32S3) && defined(CONFIG_SPIRAM)
-    if(esp_psram_get_size() <= 0)
+#if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM) && !defined(CONFIG_FREERTOS_UNICORE)
+    if(recommendedImage == OtaImage::Unknown)
     {
-#if defined(CONFIG_SPIRAM_MODE_OCT)
-        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Quad PSRAM release version (PSRAM was not detected by this Octal PSRAM build)", "1");
-#else
-        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Octal PSRAM release version (PSRAM was not detected by this Quad PSRAM build, ESP32-S3 boards with 8 MB PSRAM are Octal)", "1");
-#endif
-        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to No PSRAM release version", "2");
+        printOtaForm(&response, "other", "", "0", "Only continue if your board has PSRAM. Do you really want to update to the ESP32 with PSRAM image?", "", "Update to the ESP32 with PSRAM image (only if your board has PSRAM)", "1");
     }
-#elif defined(CONFIG_IDF_TARGET_ESP32S3)
-    printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Quad PSRAM release version", "1");
-    printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Octal PSRAM release version", "2");
-#elif defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_SPIRAM) && !defined(NUKI_TARGET_GL_S10)
-    if(_preferences->getInt(preference_network_hardware) == 8)
-    {
-        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to specific GL-S10 release version", "1");
-    }
-    if(esp_psram_get_size() <= 0)
-    {
-        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to No PSRAM release version", "2");
-    }
-#elif defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
-    if(_preferences->getInt(preference_network_hardware) == 8)
-    {
-        printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to specific GL-S10 release version", "1");
-    }
-    printOtaForm(&response, "other", "", "0", "Do you really want to update to the latest release?", "", "Update to Quad PSRAM release version", "2");
 #endif
     response.print("</div>");
 
@@ -150,6 +176,25 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
     response.print(NUKI_HUB_DATE);
     response.print("</td></tr>");
 
+    response.print("<tr><td>Current image</td><td>");
+    response.print(OtaImages::label(currentImage));
+    response.print(" (");
+    response.print(OtaImages::name(currentImage));
+    response.print(")</td></tr>");
+    if(recommendedImage != OtaImage::Unknown && recommendedImage != currentImage)
+    {
+        response.print("<tr><td>Recommended image</td><td>");
+        response.print(OtaImages::label(recommendedImage));
+        response.print(" (");
+        response.print(OtaImages::name(recommendedImage));
+        response.print("), ");
+        response.print(imageReason);
+        if(keepImage)
+        {
+            response.print(", staying on the current image by choice");
+        }
+        response.print("</td></tr>");
+    }
     if(!manifestSuccess)
     {
         response.print("<tr><td>Latest versions</td><td>Could not be retrieved from GitHub<span id=\"latestver\" hidden>latestver</span><span id=\"devver\" hidden>devver</span><span id=\"betaver\" hidden>betaver</span></td></tr></table>");
@@ -229,10 +274,10 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
     response.print(GITHUB_LATEST_RELEASE_URL);
     response.print("\">Open latest release on GitHub</a>");
     response.print("<a class=\"btn\" href=\"");
-    response.print(GITHUB_LATEST_RELEASE_BINARY_URL);
+    response.print(OtaImages::url("release", OtaImages::current(), false));
     response.print("\">Download latest binary from GitHub</a>");
     response.print("<a class=\"btn\" href=\"");
-    response.print(GITHUB_LATEST_UPDATER_BINARY_URL);
+    response.print(OtaImages::url("release", OtaImages::current(), true));
     response.print("\">Download latest updater binary from GitHub</a></div></div></div>");
     buildHtmlFooter(&response);
     return response.endSend();
@@ -384,65 +429,35 @@ esp_err_t WebCfgServer::processUpdate(PsychicRequest *request, PsychicResponse* 
         return buildConfirmHtml(request, resp, "Confirm code is invalid.", 3, true);
     }
 
+    OtaImage target = OtaImages::updateTarget(_preferences, _network->networkDeviceType() == NetworkDeviceType::GL_S10);
+    const char* channel = "release";
+    const char* channelName = "RELEASE";
     if(request->hasParam("beta"))
     {
-        /*
-        if(request->hasParam("debug"))
-        {
-            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG BETA version", 2, true);
-            _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL_DBG);
-            _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL_DBG);
-        }
-        else
-        {
-        */
-        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest BETA version", 2, true);
-        _preferences->putString(preference_ota_updater_url, GITHUB_BETA_UPDATER_BINARY_URL);
-        _preferences->putString(preference_ota_main_url, GITHUB_BETA_RELEASE_BINARY_URL);
-        //}
+        channel = "beta";
+        channelName = "BETA";
     }
     else if(request->hasParam("master"))
     {
-        /*
-        if(request->hasParam("debug"))
-        {
-            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG DEVELOPMENT version", 2, true);
-            _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL_DBG);
-            _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL_DBG);
-        }
-        else
-        {
-        */
-        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEVELOPMENT version", 2, true);
-        _preferences->putString(preference_ota_updater_url, GITHUB_MASTER_UPDATER_BINARY_URL);
-        _preferences->putString(preference_ota_main_url, GITHUB_MASTER_RELEASE_BINARY_URL);
-        //}
+        channel = "master";
+        channelName = "DEVELOPMENT";
     }
-#if (defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32)) && !defined(CONFIG_FREERTOS_UNICORE)
+#if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM) && !defined(CONFIG_FREERTOS_UNICORE)
     else if(request->hasParam("other"))
     {
-        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
-        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_OTHER);
-        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL_OTHER);
+        target = OtaImage::Esp32;
     }
 #endif
-    else
+    String message = String("Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest ") + channelName + " version";
+    if(target != OtaImages::current())
     {
-        /*
-        if(request->hasParam("debug"))
-        {
-            res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest DEBUG RELEASE version", 2, true);
-            _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
-            _preferences->putString(preference_ota_main_url, GITHUB_LATEST_UPDATER_BINARY_URL_DBG);
-        }
-        else
-        {
-        */
-        res = buildConfirmHtml(request, resp, "Rebooting to update Nuki Hub and Nuki Hub updater<br/>Updating to latest RELEASE version", 2, true);
-        _preferences->putString(preference_ota_updater_url, GITHUB_LATEST_UPDATER_BINARY_URL);
-        _preferences->putString(preference_ota_main_url, GITHUB_LATEST_RELEASE_BINARY_URL);
-        //}
+        message += "<br/>Switching to the ";
+        message += OtaImages::label(target);
+        message += " image";
     }
+    res = buildConfirmHtml(request, resp, message, 2, true);
+    _preferences->putString(preference_ota_updater_url, OtaImages::url(channel, target, true));
+    _preferences->putString(preference_ota_main_url, OtaImages::url(channel, target, false));
     waitAndProcess(true, 1000);
     restartEsp(RestartReason::OTAReboot);
     return res;
