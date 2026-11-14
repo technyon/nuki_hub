@@ -17,6 +17,7 @@ public:
     void publishString(const char* topic, const String& value, bool retain);
     void publishString(const char* topic, const std::string& value, bool retain);
     void publishString(const char* topic, const char* value, bool retain);
+    void publishJson(const char* topic, JsonDocument& json, char* buffer, size_t bufferSize, bool retain);
 
 private:
     NukiNetwork* _network;

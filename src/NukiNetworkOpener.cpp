@@ -750,17 +750,7 @@ void NukiNetworkOpener::publishAuthorizationInfo(const std::list<NukiOpener::Log
         return;
     }
 
-    std::string jsonString;
-    serializeJson(json, jsonString);
-
-    if(latest)
-    {
-        _nukiPublisher->publishString(mqtt_topic_lock_log_latest, jsonString, true);
-    }
-    else
-    {
-        _nukiPublisher->publishString(mqtt_topic_lock_log, jsonString, true);
-    }
+    _nukiPublisher->publishJson(latest ? mqtt_topic_lock_log_latest : mqtt_topic_lock_log, json, _buffer, _bufferSize, true);
 
     if(authIndex > 0)
     {
@@ -1024,9 +1014,7 @@ void NukiNetworkOpener::publishKeypad(const std::list<NukiLock::KeypadEntry>& en
         ++index;
     }
 
-    std::string jsonString;
-    serializeJson(json, jsonString);
-    _nukiPublisher->publishString(mqtt_topic_keypad_json, jsonString, true);
+    _nukiPublisher->publishJson(mqtt_topic_keypad_json, json, _buffer, _bufferSize, true);
 
     if(!_disableNonJSON)
     {
@@ -1181,9 +1169,7 @@ void NukiNetworkOpener::publishTimeControl(const std::list<NukiOpener::TimeContr
         ++index;
     }
 
-    std::string jsonString;
-    serializeJson(json, jsonString);
-    _nukiPublisher->publishString(mqtt_topic_timecontrol_json, jsonString, true);
+    _nukiPublisher->publishJson(mqtt_topic_timecontrol_json, json, _buffer, _bufferSize, true);
 
     for(int j=timeControlEntries.size(); j<maxTimeControlEntryCount; j++)
     {
@@ -1267,9 +1253,7 @@ void NukiNetworkOpener::publishAuth(const std::list<NukiOpener::AuthorizationEnt
         ++index;
     }
 
-    std::string jsonString;
-    serializeJson(json, jsonString);
-    _nukiPublisher->publishString(mqtt_topic_auth_json, jsonString, true);
+    _nukiPublisher->publishJson(mqtt_topic_auth_json, json, _buffer, _bufferSize, true);
 
     if(topicPerEntry)
     {
