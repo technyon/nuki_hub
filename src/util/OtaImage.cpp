@@ -3,6 +3,8 @@
 #include "../PreferencesKeys.h"
 #include "esp_chip_info.h"
 #include "esp_efuse.h"
+#include "driver/gpio.h"
+#include "esp_rom_sys.h"
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
@@ -134,6 +136,7 @@ OtaImage OtaImages::recommended(bool glS10EthernetInUse, String& reason)
         reason = String("the chip's eFuse reports ") + (psramCap == 1 ? "8" : "16") + " MB octal PSRAM, which the current image cannot use";
         return OtaImage::Esp32S3Oct;
     default:
+        reason = "the chip's eFuse reports an unknown PSRAM size";
         return OtaImage::Unknown;
     }
 #elif defined(CONFIG_IDF_TARGET_ESP32)
@@ -168,6 +171,7 @@ OtaImage OtaImages::recommended(bool glS10EthernetInUse, String& reason)
         reason = "the chip package has embedded PSRAM, which the current image cannot use";
         return OtaImage::Esp32;
     }
+    reason = "this image cannot check for external PSRAM";
     return OtaImage::Unknown;
 #endif
 #elif defined(CONFIG_IDF_TARGET_ESP32P4)
@@ -180,6 +184,33 @@ OtaImage OtaImages::recommended(bool glS10EthernetInUse, String& reason)
     return v3 ? OtaImage::Esp32P4V3 : OtaImage::Esp32P4;
 #else
     return cur;
+#endif
+}
+
+bool OtaImages::psramChipSelectPulledHigh()
+{
+#if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
+    static int pulledHigh = -1;
+    if(pulledHigh < 0)
+    {
+        uint32_t package = bootloader_common_get_chip_ver_pkg();
+        if(package != EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6 && package != EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5)
+        {
+            pulledHigh = 0;
+        }
+        else
+        {
+            gpio_set_direction(GPIO_NUM_16, GPIO_MODE_INPUT);
+            gpio_set_pull_mode(GPIO_NUM_16, GPIO_PULLDOWN_ONLY);
+            esp_rom_delay_us(1000);
+            pulledHigh = gpio_get_level(GPIO_NUM_16) == 1 ? 1 : 0;
+            gpio_set_pull_mode(GPIO_NUM_16, GPIO_FLOATING);
+            gpio_set_direction(GPIO_NUM_16, GPIO_MODE_DISABLE);
+        }
+    }
+    return pulledHigh == 1;
+#else
+    return false;
 #endif
 }
 
