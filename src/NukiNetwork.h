@@ -2,6 +2,7 @@
 
 #include <Preferences.h>
 #include <vector>
+#include <atomic>
 #include <map>
 #include "networkDevices/NetworkDevice.h"
 #include "networkDevices/IPConfiguration.h"
@@ -75,6 +76,7 @@ public:
     void timeZoneIdToString(const Nuki::TimeZoneId timeZoneId, char* str);
 
     void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
+    bool takeHassRefresh(int type);
     void disableHASS();
     void publishHassTopic(const String& mqttDeviceType,
                           const String& mqttDeviceName,
@@ -166,6 +168,11 @@ private:
     bool _retainGpio = false;
     bool _haEnabled = false;
     bool _haSetupDone = false;
+    std::atomic<uint8_t> _hassPending{0};
+    std::atomic<int64_t> _hassRefreshTs{0};
+    std::atomic<uint32_t> _hassRetryDelay{10000};
+    String _hassStatusTopic;
+    String _hassStatusTopicDefault;
     std::vector<String> _subscribedTopics;
     std::map<String, String> _initTopics;
     int64_t _lastConnectedTs = 0;

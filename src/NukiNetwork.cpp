@@ -543,6 +543,14 @@ bool NukiNetwork::update()
         _lastMaintenanceTs = ts;
     }
 
+    if((_hassPending & 1) && ts >= _hassRefreshTs && _device->mqttConnected() && _hadiscovery->tryBegin())
+    {
+        _hassPending &= ~1;
+        setupHASS(0, 0, {0}, {0}, {0}, false, false);
+        _hadiscovery->end();
+        _haSetupDone = true;
+    }
+
     if(_checkUpdates && (!_haEnabled || (_haEnabled && _haSetupDone)) && _hasInternet)
     {
         if(ts > _nextUpdateCheckTs && lowMemoryMode() && heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) < LOW_MEMORY_UPDATE_CHECK_MIN_BLOCK)
@@ -812,8 +820,17 @@ bool NukiNetwork::reconnect(bool force)
 
                 if(_preferences->getBool(preference_mqtt_hass_enabled, false))
                 {
-                    setupHASS(0, 0, {0}, {0}, {0}, false, false);
-                    _haSetupDone = true;
+                    _hassStatusTopicDefault = "homeassistant/status";
+                    _subscribedTopics.push_back(_hassStatusTopicDefault);
+                    _hassStatusTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+                    if(_hassStatusTopic.length() > 0)
+                    {
+                        _hassStatusTopic.concat("/status");
+                    }
+                    if(_hassStatusTopic.length() > 0 && _hassStatusTopic != _hassStatusTopicDefault)
+                    {
+                        _subscribedTopics.push_back(_hassStatusTopic);
+                    }
                 }
 
                 initTopic(_maintenancePathPrefix, mqtt_topic_reset, "0");
@@ -853,6 +870,11 @@ bool NukiNetwork::reconnect(bool force)
             for(const String& topic : _subscribedTopics)
             {
                 subscribe(topic.c_str(), MQTT_QOS_LEVEL);
+            }
+
+            if(_haEnabled)
+            {
+                _hassPending |= 7;
             }
 
             publishString(_maintenancePathPrefix, mqtt_topic_mqtt_connection_state, "online", true);
@@ -972,6 +994,18 @@ void NukiNetwork::onMqttDataReceived(const espMqttClientTypes::MessageProperties
 void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* data = (char*)payload;
+
+    if((_hassStatusTopicDefault.length() > 0 && strcmp(topic, _hassStatusTopicDefault.c_str()) == 0) || (_hassStatusTopic.length() > 0 && strcmp(topic, _hassStatusTopic.c_str()) == 0))
+    {
+        if(strcmp(data, "online") == 0 && !mqttRecentlyConnected())
+        {
+            Log->println("Home Assistant came online, publishing the discovery again.");
+            _hadiscovery->requestRefresh();
+            _hassRefreshTs = espMillis() + 5000 + (esp_random() % 10000);
+            _hassPending |= 7;
+        }
+        return;
+    }
 
     if(comparePrefixedPath(topic, mqtt_topic_reset) && strcmp(data, "1") == 0 && !mqttRecentlyConnected())
     {
@@ -1436,9 +1470,36 @@ void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)
 #endif
 }
 
+bool NukiNetwork::takeHassRefresh(int type)
+{
+    uint8_t bit = 1 << type;
+    if(!(_hassPending & bit) || espMillis() < _hassRefreshTs || !_device->mqttConnected())
+    {
+        return false;
+    }
+    _hassPending &= ~bit;
+    return true;
+}
+
 void NukiNetwork::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
 {
-    _hadiscovery->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);
+    if(!_device->mqttConnected())
+    {
+        _hassPending |= (1 << type);
+        return;
+    }
+
+    if(_hadiscovery->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad))
+    {
+        _hassRetryDelay = 10000;
+    }
+    else
+    {
+        uint32_t delay = _hassRetryDelay;
+        _hassRefreshTs = espMillis() + delay;
+        _hassRetryDelay = delay < 300000 ? delay * 2 : 600000;
+        _hassPending |= (1 << type);
+    }
 }
 
 void NukiNetwork::disableHASS()

@@ -47,6 +47,7 @@ public:
     virtual void mqttDisable();
     virtual void mqttRestart();
     virtual bool mqttConnected() const;
+    virtual size_t mqttQueueSize();
     virtual bool mqttDisconnected() const;
 
     virtual uint16_t mqttPublish(const char* topic, uint8_t qos, bool retain, const char* payload);

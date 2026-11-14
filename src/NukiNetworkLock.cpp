@@ -1599,6 +1599,11 @@ const uint8_t NukiNetworkLock::queryCommands()
     return qc;
 }
 
+bool NukiNetworkLock::hassRefreshRequested()
+{
+    return _network->takeHassRefresh(1);
+}
+
 void NukiNetworkLock::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
 {
     _network->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);
