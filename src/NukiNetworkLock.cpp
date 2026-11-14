@@ -11,7 +11,6 @@
 #include <ArduinoJson.h>
 #include <ctype.h>
 #include "hal/wdt_hal.h"
-#include "esp_heap_caps.h"
 #include "util/NukiHelper.h"
 #include "util/StringUtil.h"
 
@@ -817,31 +816,7 @@ void NukiNetworkLock::publishAuthorizationInfo(const std::list<NukiLock::LogEntr
         }
     }
 
-    size_t jsonSize = measureJson(json) + 1;
-    std::string jsonString;
-    const char* payload = _buffer;
-
-    if(jsonSize <= _bufferSize)
-    {
-        serializeJson(json, _buffer, _bufferSize);
-    }
-    else if(jsonSize > heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
-    {
-        Log->print("Not enough free heap to publish the authorization log, needs ");
-        Log->println(jsonSize);
-        payload = nullptr;
-    }
-    else
-    {
-        jsonString.reserve(jsonSize);
-        serializeJson(json, jsonString);
-        payload = jsonString.c_str();
-    }
-
-    if(payload != nullptr)
-    {
-        _nukiPublisher->publishString(latest ? mqtt_topic_lock_log_latest : mqtt_topic_lock_log, payload, true);
-    }
+    _nukiPublisher->publishJson(latest ? mqtt_topic_lock_log_latest : mqtt_topic_lock_log, json, _buffer, _bufferSize, true);
 
     if(authIndex > 0 || (_nukiOfficial->getOffConnected() && _nukiOfficial->hasAuthId()))
     {
@@ -1127,9 +1102,7 @@ void NukiNetworkLock::publishKeypad(const std::list<NukiLock::KeypadEntry>& entr
         ++index;
     }
 
-    std::string jsonString;
-    serializeJson(json, jsonString);
-    _nukiPublisher->publishString(mqtt_topic_keypad_json, jsonString, true);
+    _nukiPublisher->publishJson(mqtt_topic_keypad_json, json, _buffer, _bufferSize, true);
 
     if(!_disableNonJSON)
     {
@@ -1315,9 +1288,7 @@ void NukiNetworkLock::publishTimeControl(const std::list<NukiLock::TimeControlEn
         ++index;
     }
 
-    std::string jsonString;
-    serializeJson(json, jsonString);
-    _nukiPublisher->publishString(mqtt_topic_timecontrol_json, jsonString, true);
+    _nukiPublisher->publishJson(mqtt_topic_timecontrol_json, json, _buffer, _bufferSize, true);
 
     for(int j=timeControlEntries.size(); j<maxTimeControlEntryCount; j++)
     {
@@ -1401,9 +1372,7 @@ void NukiNetworkLock::publishAuth(const std::list<NukiLock::AuthorizationEntry>&
         ++index;
     }
 
-    std::string jsonString;
-    serializeJson(json, jsonString);
-    _nukiPublisher->publishString(mqtt_topic_auth_json, jsonString, true);
+    _nukiPublisher->publishJson(mqtt_topic_auth_json, json, _buffer, _bufferSize, true);
 
     if(topicPerEntry)
     {
