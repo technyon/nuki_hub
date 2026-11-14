@@ -155,6 +155,7 @@ private:
 #ifndef NUKI_HUB_UPDATER
     void printOtaForm(PsychicStreamResponse* response, const char* channel, const char* compareTo, const char* sameBuild, const char* confirmMessage, const char* buttonClass, const char* label, const char* channelValue);
     void printOtaImageForm(PsychicStreamResponse* response, bool keep, const char* label, const char* confirmMessage);
+    bool psramModuleSuspected(OtaImage recommendedImage);
 #endif
     esp_err_t sendCss(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t sendJs(PsychicRequest *request, PsychicResponse* resp);

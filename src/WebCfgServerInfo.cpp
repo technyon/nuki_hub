@@ -67,7 +67,15 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         OtaImage recommendedImage = OtaImages::recommended(_network->networkDeviceType() == NetworkDeviceType::GL_S10, reason);
         if(recommendedImage == OtaImage::Unknown)
         {
-            response.print("Could not be determined");
+            response.print(OtaImages::label(OtaImages::current()));
+            response.print(" (");
+            response.print(OtaImages::name(OtaImages::current()));
+            response.print("), ");
+            response.print(reason);
+            if(psramModuleSuspected(recommendedImage))
+            {
+                response.print(", GPIO16 is pulled high which suggests a module with PSRAM");
+            }
         }
         else
         {
