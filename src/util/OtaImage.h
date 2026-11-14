@@ -30,6 +30,7 @@ namespace OtaImages
     const char* name(OtaImage image);
     const char* label(OtaImage image);
     OtaImage recommended(bool glS10EthernetInUse, String& reason);
+    bool psramChipSelectPulledHigh();
     bool keepingCurrent(Preferences* preferences, OtaImage recommendedImage);
     OtaImage updateTarget(Preferences* preferences, bool glS10EthernetInUse);
     String url(const char* channel, OtaImage image, bool updater);

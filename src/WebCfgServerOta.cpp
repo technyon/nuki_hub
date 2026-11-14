@@ -63,6 +63,24 @@ void WebCfgServer::printOtaImageForm(PsychicStreamResponse* response, bool keep,
 }
 #endif
 
+#ifndef NUKI_HUB_UPDATER
+bool WebCfgServer::psramModuleSuspected(OtaImage recommendedImage)
+{
+    if(recommendedImage != OtaImage::Unknown || OtaImages::current() != OtaImage::Esp32NoPsram || _network->networkDeviceType() != NetworkDeviceType::WiFi)
+    {
+        return false;
+    }
+    for(const auto& entry : _gpio->pinConfiguration())
+    {
+        if(entry.pin == 16 || entry.pin == 17)
+        {
+            return false;
+        }
+    }
+    return OtaImages::psramChipSelectPulledHigh();
+}
+#endif
+
 esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* resp, bool debug)
 {
     PsychicStreamResponse response(resp, "text/html");
@@ -137,6 +155,11 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         }
         response.print("</div>");
     }
+    bool psramSuspected = psramModuleSuspected(recommendedImage);
+    if(psramSuspected)
+    {
+        response.print("<div class=\"banner image\"><div class=\"text\">GPIO16 is pulled high, which suggests a module with PSRAM (ESP32-WROVER).<small>This image cannot check for external PSRAM. If your board has PSRAM, the ESP32 with PSRAM image can use it.</small></div></div>");
+    }
 
     response.print("<div class=\"actions\">");
 
@@ -192,6 +215,20 @@ esp_err_t WebCfgServer::buildOtaHtml(PsychicRequest *request, PsychicResponse* r
         if(keepImage)
         {
             response.print(", staying on the current image by choice");
+        }
+        response.print("</td></tr>");
+    }
+    else if(recommendedImage == OtaImage::Unknown)
+    {
+        response.print("<tr><td>Recommended image</td><td>");
+        response.print(OtaImages::label(currentImage));
+        response.print(" (");
+        response.print(OtaImages::name(currentImage));
+        response.print("), ");
+        response.print(imageReason);
+        if(psramSuspected)
+        {
+            response.print(", GPIO16 is pulled high which suggests a module with PSRAM");
         }
         response.print("</td></tr>");
     }
