@@ -54,6 +54,7 @@ public:
     void setAuthCommandReceivedCallback(void (*authCommandReceivedReceivedCallback)(const char* value));
     void onMqttDataReceived(const char* topic, byte* payload, const unsigned int length) override;
     void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
+    bool hassRefreshRequested();
 
     int mqttConnectionState();
     uint8_t queryCommands();

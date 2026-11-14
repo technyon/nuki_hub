@@ -355,8 +355,13 @@ void NukiOpenerWrapper::checkQueries(const int64_t& ts, const uint8_t& queryComm
         _waitAuthUpdateTs = 0;
         updateAuth(true);
     }
+    if(_hassEnabled && _hassSetupCompleted && _network->hassRefreshRequested())
+    {
+        _hassSetupCompleted = false;
+    }
     if(_hassEnabled && _nukiConfigValid && _nukiAdvancedConfigValid && !_hassSetupCompleted)
     {
+        _network->hassRefreshRequested();
         _network->setupHASS(2, _nukiConfig.nukiId, (char*)_nukiConfig.name, _firmwareVersion.c_str(), _hardwareVersion.c_str(), false, hasKeypad());
         _hassSetupCompleted = true;
     }
