@@ -656,15 +656,24 @@ esp_err_t WebCfgServer::buildCredHtml(PsychicRequest *request, PsychicResponse* 
     response.print("</table>");
 
     response.print("<h3>Second factor</h3>");
+
+    if (!timeSynced)
+    {
+        response.print("<h4 class=\"warning\">TOTP and Duo Push authentication methods are not available due to NTP time synchronization not configured or working.");
+    }
+
     response.print("<table>");
     bool totpEnabled = _preferences->getBool(preference_totp_enabled, false);
     bool duoEnabled = _preferences->getBool(preference_cred_duo_enabled, false);
     std::vector<std::pair<String, String>> mfaOptions;
     mfaOptions.push_back(std::make_pair("none", "None"));
-    mfaOptions.push_back(std::make_pair("totp", "Authenticator app (TOTP)"));
-    if(!lowMemoryMode())
+    if (timeSynced)
     {
-        mfaOptions.push_back(std::make_pair("duo", "Duo Push"));
+        mfaOptions.push_back(std::make_pair("totp", "Authenticator app (TOTP)"));
+        if(!lowMemoryMode())
+        {
+            mfaOptions.push_back(std::make_pair("duo", "Duo Push"));
+        }
     }
     printDropDown(&response, "MFAMODE", "Second factor for login", duoEnabled ? "duo" : totpEnabled ? "totp" : "none", mfaOptions, "mfa");
     response.print("<input type=\"hidden\" name=\"TOTPENA\" id=\"totpena\" value=\"");
