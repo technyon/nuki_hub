@@ -503,6 +503,8 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
         response.print("Yes");
         response.print("\nHome Assistant auto discovery topic: ");
         response.print(_preferences->getString(preference_mqtt_hass_discovery, "") + "/");
+        response.print("\nHome Assistant device discovery: ");
+        response.print(_preferences->getBool(preference_hass_device_discovery, false) ? "Yes" : "No");
         response.print("\nNuki Hub configuration URL for HA: <span class=\"redact\">");
         response.print(_preferences->getString(preference_mqtt_hass_cu_url, "").length() > 0 ? _preferences->getString(preference_mqtt_hass_cu_url, "") : "http://" + _network->localIP());
         response.print("</span>");

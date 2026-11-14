@@ -1479,6 +1479,11 @@ uint8_t NukiNetworkOpener::queryCommands()
     return qc;
 }
 
+bool NukiNetworkOpener::hassRefreshRequested()
+{
+    return _network->takeHassRefresh(2);
+}
+
 void NukiNetworkOpener::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
 {
     _network->setupHASS(type, nukiId, nukiName, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad);

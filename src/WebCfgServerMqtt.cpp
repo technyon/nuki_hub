@@ -48,6 +48,7 @@ esp_err_t WebCfgServer::buildMqttConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<table>");
     printCheckBox(&response, "ENHADISC", "Enable Home Assistant auto discovery", _preferences->getBool(preference_mqtt_hass_enabled), "chkHass");
     printInputField(&response, "HASSDISCOVERY", "Home Assistant discovery topic (usually \"homeassistant\")", _preferences->getString(preference_mqtt_hass_discovery).c_str(), 30, "class=\"chkHass\"");
+    printCheckBox(&response, "HADEVDISC", "Use Home Assistant device discovery (fewer and smaller discovery messages, requires Home Assistant 2024.11 or newer)", _preferences->getBool(preference_hass_device_discovery, false), "chkHass");
     if(_preferences->getBool(preference_opener_enabled, false))
     {
         printSetting(&response, mqttSettings, mqttSettingsCount, "OPENERCONT");
@@ -355,10 +356,9 @@ void WebCfgServer::processMqttArgs(PsychicRequest *request, ProcessArgsState& st
 
     if(request->hasParam("HADEVDISC"))
     {
-        bool v = isParameterTrue(request, "DUOAPPROVAL");
+        bool v = isParameterTrue(request, "HADEVDISC");
         if(_preferences->getBool(preference_hass_device_discovery, false) != v)
         {
-            _network->disableHASS();
             _preferences->putBool(preference_hass_device_discovery, v);
             state.restartServicesReconnect = true;
         }
