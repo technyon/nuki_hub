@@ -177,6 +177,15 @@ void NetworkDevice::mqttSetKeepAlive(uint16_t keepAlive)
     }
 }
 
+size_t NetworkDevice::mqttQueueSize()
+{
+    MqttClient* client = getMqttClient();
+    if (client == nullptr) {
+        return 0;
+    }
+    return client->queueSize();
+}
+
 uint16_t NetworkDevice::mqttPublish(const char *topic, uint8_t qos, bool retain, const char *payload)
 {
     MqttClient* client = getMqttClient();

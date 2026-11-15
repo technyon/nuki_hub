@@ -1,6 +1,10 @@
 #pragma once
 #include <Preferences.h>
 #include <ArduinoJson.h>
+#include <functional>
+#include <map>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "networkDevices/NetworkDevice.h"
 
 enum class HassAcl
@@ -9,6 +13,17 @@ enum class HassAcl
     Action,
     Basic,
     Advanced
+};
+
+enum class HassRun
+{
+    Direct,
+    Hash,
+    Publish,
+    Refresh,
+    Collect,
+    Migrate,
+    Cleanup
 };
 
 struct HassEntity
@@ -32,8 +47,11 @@ class HomeAssistantDiscovery
 {
 public:
     explicit HomeAssistantDiscovery(NetworkDevice* device, Preferences* preferences, char* buffer, size_t bufferSize);
-    void setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
+    bool setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad);
     void disableHASS();
+    bool tryBegin();
+    void end();
+    void requestRefresh();
     void removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString);
     void publishHassTopic(const String& mqttDeviceType,
                           const String& mqttDeviceName,
@@ -65,6 +83,17 @@ private:
     void publishHASSConfigWifiRssi(char* deviceType, const char* baseTopic, char* name, char* uidString);
 
 
+    bool runDiscovery(int type, const char* uidString, const std::function<void()>& generate);
+    bool needsPayload(const String& path);
+    void publishConfig(const String& path, JsonDocument& json);
+    void removeConfig(const String& path);
+    bool send(const char* path, const char* payload, bool retain);
+    bool waitForSlot();
+    bool publishNow(const char* path, const char* payload, bool retain);
+    bool foreignPath(const String& path);
+    void flushChunk(const char* uidString, int bucket);
+    String chunkTopic(const char* uidString, int bucket);
+
     void removeHASSConfig(char* uidString);
     void removeHASSConfigTopic(char* deviceType, char* name, char* uidString);
 
@@ -94,4 +123,19 @@ private:
 
     char* _buffer;
     const size_t _bufferSize;
+
+    String _discoveryTopic;
+    String _discoveryTopicOrDefault;
+    HassRun _run = HassRun::Direct;
+    uint32_t _crc = 0;
+    int _bucket = 0;
+    int _buckets = 0;
+    bool _sendFailed = false;
+    bool _refreshRequested[3] = {};
+    bool _publishedSinceBoot[3] = {};
+    String _runUid;
+    JsonDocument _chunk;
+    JsonDocument _deviceInfo;
+    std::map<uint32_t, uint32_t> _sent;
+    SemaphoreHandle_t _mutex = nullptr;
 };

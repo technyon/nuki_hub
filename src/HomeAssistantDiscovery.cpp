@@ -4,11 +4,58 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "MqttTopics.h"
+#include "esp_rom_crc.h"
+#include "esp_heap_caps.h"
 #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
 #include "WiFi.h"
 #else
 #include "esp_mac.h"
 #endif
+
+#define HASS_MAX_QUEUED 6
+#define HASS_QUEUE_WAIT_MS 3000
+#define HASS_DEVICE_BUCKETS_HUB 4
+#define HASS_DEVICE_BUCKETS_NUKI 16
+#define HASS_SENT_CACHE_SIZE 128
+
+extern TaskHandle_t networkTaskHandle;
+
+namespace
+{
+struct HassLock
+{
+    explicit HassLock(SemaphoreHandle_t mutex) : _mutex(mutex)
+    {
+        xSemaphoreTakeRecursive(_mutex, portMAX_DELAY);
+    }
+    ~HassLock()
+    {
+        xSemaphoreGiveRecursive(_mutex);
+    }
+    SemaphoreHandle_t _mutex;
+};
+
+uint32_t hassCrc(uint32_t crc, const char* value)
+{
+    return esp_rom_crc32_le(crc, (const uint8_t*)value, strlen(value));
+}
+
+bool splitHassPath(const String& path, String& component, String& uid, String& name)
+{
+    int end = path.lastIndexOf('/');
+    int nameStart = path.lastIndexOf('/', end - 1);
+    int uidStart = path.lastIndexOf('/', nameStart - 1);
+    int componentStart = path.lastIndexOf('/', uidStart - 1);
+    if(end < 0 || nameStart < 0 || uidStart < 0 || componentStart < 0)
+    {
+        return false;
+    }
+    component = path.substring(componentStart + 1, uidStart);
+    uid = path.substring(uidStart + 1, nameStart);
+    name = path.substring(nameStart + 1, end);
+    return true;
+}
+}
 
 HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preferences *preferences, char* buffer, size_t bufferSize)
     : _device(device),
@@ -18,10 +65,388 @@ HomeAssistantDiscovery::HomeAssistantDiscovery(NetworkDevice* device, Preference
 {
     _baseTopic = _preferences->getString(preference_mqtt_lock_path);
     _hostname = _preferences->getString(preference_hostname, "");
+    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+    _discoveryTopicOrDefault = _preferences->getString(preference_mqtt_hass_discovery, "homeassistant");
+    _mutex = xSemaphoreCreateRecursiveMutex();
 }
 
-void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
+bool HomeAssistantDiscovery::tryBegin()
 {
+    return xSemaphoreTakeRecursive(_mutex, 0) == pdTRUE;
+}
+
+void HomeAssistantDiscovery::end()
+{
+    xSemaphoreGiveRecursive(_mutex);
+}
+
+void HomeAssistantDiscovery::requestRefresh()
+{
+    HassLock lock(_mutex);
+    _refreshRequested[0] = true;
+    _refreshRequested[1] = true;
+    _refreshRequested[2] = true;
+    _sent.clear();
+}
+
+bool HomeAssistantDiscovery::runDiscovery(int type, const char* uidString, const std::function<void()>& generate)
+{
+    char signatureKey[] = "hasig0";
+    char bucketsKey[] = "habkt0";
+    signatureKey[5] = '0' + type;
+    bucketsKey[5] = '0' + type;
+
+    if(!_device->mqttConnected())
+    {
+        return false;
+    }
+
+    int buckets = 0;
+    if(_discoveryTopic != "" && _preferences->getBool(preference_hass_device_discovery, false))
+    {
+        buckets = type == 0 ? HASS_DEVICE_BUCKETS_HUB : HASS_DEVICE_BUCKETS_NUKI;
+    }
+    int lastBuckets = _preferences->getInt(bucketsKey, 0);
+
+    _runUid = uidString;
+    _buckets = buckets;
+    _run = HassRun::Hash;
+    _crc = buckets;
+    generate();
+    uint32_t signature = _crc;
+
+    bool changed = _preferences->getUInt(signatureKey, 0) != signature || lastBuckets != buckets;
+    bool refresh = _refreshRequested[type] || !_publishedSinceBoot[type];
+
+    if(!changed && !refresh)
+    {
+        _run = HassRun::Direct;
+        Log->println("HomeAssistant discovery is unchanged, nothing published.");
+        return true;
+    }
+
+    _sendFailed = false;
+
+    if(lastBuckets > 0 && buckets == 0)
+    {
+        for(int i = 0; i < lastBuckets; i++)
+        {
+            send(chunkTopic(uidString, i).c_str(), "{\"migrate_discovery\":true}", false);
+        }
+    }
+    else if(lastBuckets == 0 && buckets > 0)
+    {
+        _run = HassRun::Migrate;
+        generate();
+    }
+
+    if(buckets == 0)
+    {
+        _run = changed ? HassRun::Publish : HassRun::Refresh;
+        generate();
+    }
+    else
+    {
+        for(int i = 0; i < buckets; i++)
+        {
+            _run = HassRun::Collect;
+            _bucket = i;
+            _chunk.clear();
+            generate();
+            flushChunk(uidString, i);
+        }
+    }
+
+    if(lastBuckets > 0 && buckets == 0)
+    {
+        for(int i = 0; i < lastBuckets; i++)
+        {
+            send(chunkTopic(uidString, i).c_str(), "", true);
+        }
+    }
+    else if(lastBuckets == 0 && buckets > 0)
+    {
+        _run = HassRun::Cleanup;
+        generate();
+    }
+
+    _run = HassRun::Direct;
+    _chunk.clear();
+
+    if(_sendFailed)
+    {
+        Log->println("HomeAssistant discovery was not published completely, it will be repeated.");
+        return false;
+    }
+
+    _refreshRequested[type] = false;
+    _publishedSinceBoot[type] = true;
+    if(changed)
+    {
+        _preferences->putUInt(signatureKey, signature);
+        _preferences->putInt(bucketsKey, buckets);
+    }
+    return true;
+}
+
+bool HomeAssistantDiscovery::needsPayload(const String& path)
+{
+    if(_run == HassRun::Migrate || _run == HassRun::Cleanup)
+    {
+        return false;
+    }
+    if(_run == HassRun::Collect)
+    {
+        String component, uid, name;
+        if(!splitHassPath(path, component, uid, name))
+        {
+            return false;
+        }
+        if(uid != _runUid)
+        {
+            return _bucket == 0;
+        }
+        return (int)(hassCrc(0, (component + "_" + name).c_str()) % _buckets) == _bucket;
+    }
+    return true;
+}
+
+void HomeAssistantDiscovery::publishConfig(const String& path, JsonDocument& json)
+{
+    if(_run == HassRun::Migrate)
+    {
+        if(!foreignPath(path))
+        {
+            send(path.c_str(), "{\"migrate_discovery\":true}", false);
+        }
+        return;
+    }
+    if(_run == HassRun::Cleanup)
+    {
+        if(!foreignPath(path))
+        {
+            send(path.c_str(), "", true);
+        }
+        return;
+    }
+    if(_run == HassRun::Collect)
+    {
+        String component, uid, name;
+        if(!needsPayload(path) || !splitHassPath(path, component, uid, name))
+        {
+            return;
+        }
+        if(uid == _runUid)
+        {
+            JsonObject entry = _chunk["cmps"][component + "_" + name].to<JsonObject>();
+            entry.set(json.as<JsonObjectConst>());
+            entry.remove("dev");
+            entry["p"] = component;
+            return;
+        }
+    }
+
+    if(_run == HassRun::Hash)
+    {
+        serializeJson(json, _buffer, _bufferSize);
+        String component, uid, name;
+        if(json["dev"]["mf"].is<const char*>() && splitHassPath(path, component, uid, name))
+        {
+            _deviceInfo[uid] = json["dev"];
+        }
+        _crc = hassCrc(hassCrc(_crc, path.c_str()), _buffer);
+        return;
+    }
+
+    uint32_t key = 0;
+    uint32_t value = 0;
+    if(_run == HassRun::Direct)
+    {
+        serializeJson(json, _buffer, _bufferSize);
+        key = hassCrc(0, path.c_str());
+        value = hassCrc(1, _buffer);
+        auto it = _sent.find(key);
+        if(it != _sent.end() && it->second == value)
+        {
+            return;
+        }
+    }
+
+    if(!waitForSlot())
+    {
+        return;
+    }
+    serializeJson(json, _buffer, _bufferSize);
+    if(publishNow(path.c_str(), _buffer, true) && _run == HassRun::Direct)
+    {
+        if(_sent.size() >= HASS_SENT_CACHE_SIZE)
+        {
+            _sent.clear();
+        }
+        _sent[key] = value;
+    }
+}
+
+void HomeAssistantDiscovery::removeConfig(const String& path)
+{
+    if(_run == HassRun::Hash)
+    {
+        _crc = hassCrc(hassCrc(_crc, path.c_str()), "-");
+        return;
+    }
+    if(_run == HassRun::Collect)
+    {
+        String component, uid, name;
+        if(needsPayload(path) && splitHassPath(path, component, uid, name) && uid == _runUid)
+        {
+            _chunk["cmps"][component + "_" + name].to<JsonObject>()["p"] = component;
+        }
+        return;
+    }
+    if(_run == HassRun::Migrate || _run == HassRun::Refresh)
+    {
+        return;
+    }
+    if(_run == HassRun::Cleanup && foreignPath(path))
+    {
+        return;
+    }
+    if(_run == HassRun::Direct)
+    {
+        uint32_t key = hassCrc(0, path.c_str());
+        auto it = _sent.find(key);
+        if(it != _sent.end() && it->second == 0)
+        {
+            return;
+        }
+        if(send(path.c_str(), "", true))
+        {
+            if(_sent.size() >= HASS_SENT_CACHE_SIZE)
+            {
+                _sent.clear();
+            }
+            _sent[key] = 0;
+        }
+        return;
+    }
+
+    send(path.c_str(), "", true);
+}
+
+bool HomeAssistantDiscovery::foreignPath(const String& path)
+{
+    String component, uid, name;
+    return !splitHassPath(path, component, uid, name) || uid != _runUid;
+}
+
+bool HomeAssistantDiscovery::waitForSlot()
+{
+    if(_run != HassRun::Direct && _sendFailed)
+    {
+        return false;
+    }
+
+    int64_t start = espMillis();
+    while(_device->mqttConnected() && _device->mqttQueueSize() >= HASS_MAX_QUEUED && espMillis() - start < HASS_QUEUE_WAIT_MS)
+    {
+        if(xTaskGetCurrentTaskHandle() == networkTaskHandle)
+        {
+            _device->update();
+        }
+        espDelayAck(5);
+    }
+
+    if(!_device->mqttConnected() || _device->mqttQueueSize() >= HASS_MAX_QUEUED)
+    {
+        _sendFailed = true;
+        return false;
+    }
+    return true;
+}
+
+bool HomeAssistantDiscovery::publishNow(const char* path, const char* payload, bool retain)
+{
+    if(_device->mqttPublish(path, MQTT_QOS_LEVEL, retain, payload) == 0)
+    {
+        _sendFailed = true;
+        return false;
+    }
+    return true;
+}
+
+bool HomeAssistantDiscovery::send(const char* path, const char* payload, bool retain)
+{
+    return waitForSlot() && publishNow(path, payload, retain);
+}
+
+String HomeAssistantDiscovery::chunkTopic(const char* uidString, int bucket)
+{
+    String path = _discoveryTopic;
+    path.concat("/device/");
+    path.concat(uidString);
+    path.concat("/part");
+    path.concat(bucket);
+    path.concat("/config");
+    return path;
+}
+
+void HomeAssistantDiscovery::flushChunk(const char* uidString, int bucket)
+{
+    String topic = chunkTopic(uidString, bucket);
+
+    if(_chunk["cmps"].size() == 0)
+    {
+        send(topic.c_str(), "", true);
+        return;
+    }
+
+    if(_deviceInfo[uidString].is<JsonObject>())
+    {
+        _chunk["dev"] = _deviceInfo[uidString];
+    }
+    else
+    {
+        _chunk["dev"]["ids"][0] = String("nuki_") + uidString;
+    }
+    _chunk["o"]["name"] = "Nuki Hub";
+    _chunk["o"]["sw"] = NUKI_HUB_VERSION;
+    _chunk["o"]["url"] = "https://github.com/technyon/nuki_hub";
+
+    size_t size = measureJson(_chunk) + 1;
+
+    if(size <= _bufferSize)
+    {
+        if(waitForSlot())
+        {
+            serializeJson(_chunk, _buffer, _bufferSize);
+            publishNow(topic.c_str(), _buffer, true);
+        }
+    }
+    else if(size >= heap_caps_get_largest_free_block(MALLOC_CAP_8BIT))
+    {
+        Log->print("Not enough free heap to publish ");
+        Log->print(topic);
+        Log->print(", needs ");
+        Log->println(size);
+        _sendFailed = true;
+    }
+    else
+    {
+        std::string payload;
+        payload.reserve(size);
+        serializeJson(_chunk, payload);
+        send(topic.c_str(), payload.c_str(), true);
+    }
+    _chunk.clear();
+}
+
+bool HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName, const char* firmwareVersion, const char* hardwareVersion, bool hasDoorSensor, bool hasKeypad)
+{
+    bool published = true;
+    HassLock lock(_mutex);
+    _discoveryTopic = _preferences->getString(preference_mqtt_hass_discovery, "");
+    _discoveryTopicOrDefault = _preferences->getString(preference_mqtt_hass_discovery, "homeassistant");
+
     uint64_t savedDevId = _preferences->getULong64(preference_nukihub_id, 0);
     uint64_t curDevId;
 
@@ -83,43 +508,61 @@ void HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
 
     if(type == 0)
     {
-        publishHASSNukiHubConfig();
-        Log->println("HomeAssistant setup for Nuki Hub completed.");
+        published = runDiscovery(0, _nukiHubUidString, [&]()
+        {
+            publishHASSNukiHubConfig();
+        });
+        if(published)
+        {
+            Log->println("HomeAssistant setup for Nuki Hub completed.");
+        }
     }
     else if(type == 1)
     {
         if(_preferences->getUInt(preference_nuki_id_lock, 0) != nukiId)
         {
-            return;
+            return true;
         }
         String lockTopic = _baseTopic;
         lockTopic.concat("/lock");
-        publishHASSConfig((char*)"SmartLock", lockTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
-        Log->println("HomeAssistant setup for lock completed.");
+        published = runDiscovery(1, uidString, [&]()
+        {
+            publishHASSConfig((char*)"SmartLock", lockTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"lock", (char*)"unlock", (char*)"unlatch");
+        });
+        if(published)
+        {
+            Log->println("HomeAssistant setup for lock completed.");
+        }
     }
     else if(type == 2)
     {
         if(_preferences->getUInt(preference_nuki_id_opener, 0) != nukiId)
         {
-            return;
+            return true;
         }
         String openerTopic = _baseTopic;
         openerTopic.concat("/opener");
-        if(_preferences->getBool(preference_opener_continuous_mode, false))
+        bool continuousMode = _preferences->getBool(preference_opener_continuous_mode, false);
+        published = runDiscovery(2, uidString, [&]()
         {
-            publishHASSConfig((char*)"Opener", openerTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"deactivateCM", (char*)"activateCM", (char*)"electricStrikeActuation");
-        }
-        else
-        {
-            publishHASSConfig((char*)"Opener", openerTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, (char*)"deactivateRTO", (char*)"activateRTO", (char*)"electricStrikeActuation");
-        }
+            publishHASSConfig((char*)"Opener", openerTopic.c_str(), nukiName, uidString, firmwareVersion, hardwareVersion, hasDoorSensor, hasKeypad, publishAuthData, continuousMode ? (char*)"deactivateCM" : (char*)"deactivateRTO", continuousMode ? (char*)"activateCM" : (char*)"activateRTO", (char*)"electricStrikeActuation");
+        });
 
-        Log->println("HomeAssistant setup for opener completed.");
+        if(published)
+        {
+            Log->println("HomeAssistant setup for opener completed.");
+        }
     }
+    return published;
 }
 
 void HomeAssistantDiscovery::disableHASS()
 {
+    HassLock lock(_mutex);
+    _preferences->remove("hasig0");
+    _preferences->remove("hasig1");
+    _preferences->remove("hasig2");
+    _sent.clear();
     removeHASSConfig(_nukiHubUidString);
     espDelayAck(3000);
 
@@ -178,14 +621,12 @@ void HomeAssistantDiscovery::publishHASSNukiHubConfig()
     json["stat_on"] = "1";
     json["stat_off"] = "0";
 
-    serializeJson(json, _buffer, _bufferSize);
-
-    String path = _preferences->getString(preference_mqtt_hass_discovery, "homeassistant");
+    String path = _discoveryTopicOrDefault;
     path.concat("/switch/");
     path.concat(_nukiHubUidString);
     path.concat("/reset/config");
 
-    _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    publishConfig(path, json);
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     publishHassTopic("sensor",
@@ -568,14 +1009,12 @@ void HomeAssistantDiscovery::publishHASSDeviceConfig(char* deviceType, const cha
     json["stat_opening"] = "opening";
     json["opt"] = "false";
 
-    serializeJson(json, _buffer, _bufferSize);
-
-    String path = _preferences->getString(preference_mqtt_hass_discovery, "homeassistant");
+    String path = _discoveryTopicOrDefault;
     path.concat("/lock/");
     path.concat(uidString);
     path.concat("/smartlock/config");
 
-    _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    publishConfig(path, json);
 
 
     // Firmware version
@@ -941,9 +1380,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][2] = "Lock";
         json["options"][3] = "Lock n Go";
         json["options"][4] = "Intelligent";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "fob_action_1", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -959,9 +1397,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][2] = "Lock";
         json["options"][3] = "Lock n Go";
         json["options"][4] = "Intelligent";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "fob_action_2", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -977,9 +1414,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][2] = "Lock";
         json["options"][3] = "Lock n Go";
         json["options"][4] = "Intelligent";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "fob_action_3", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -994,9 +1430,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][1] = "Normal";
         json["options"][2] = "Slow";
         json["options"][3] = "Slowest";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "advertising_mode", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1055,9 +1490,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][45] = "Pacific/Pago_Pago";
         json["options"][46] = "None";
 
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "timezone", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1075,9 +1509,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][4] = "Unlatch";
         json["options"][5] = "Lock n Go";
         json["options"][6] = "Show Status";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "single_button_press_action", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1095,9 +1528,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][4] = "Unlatch";
         json["options"][5] = "Lock n Go";
         json["options"][6] = "Show Status";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "double_button_press_action", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1112,9 +1544,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
         json["options"][3] = "No Warnings";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "battery_type", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1128,9 +1559,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalLockEntities(char *devic
         json["options"][0] = "Standard";
         json["options"][1] = "Insane";
         json["options"][2] = "Gentle";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "motor_speed", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1186,11 +1616,9 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
 
     json["event_types"][2] = "standby";
 
-    serializeJson(json, _buffer, _bufferSize);
-
     String path = createHassTopicPath("event", "ring", uidString);
 
-    _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+    publishConfig(path, json);
 
     if((int)basicOpenerConfigAclPrefs[8] == 1)
     {
@@ -1202,9 +1630,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][3] = "Deactivate RTO";
         json["options"][4] = "Open";
         json["options"][5] = "Ring";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "fob_action_1", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1221,9 +1648,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][3] = "Deactivate RTO";
         json["options"][4] = "Open";
         json["options"][5] = "Ring";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "fob_action_2", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1240,9 +1666,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][3] = "Deactivate RTO";
         json["options"][4] = "Open";
         json["options"][5] = "Ring";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "fob_action_3", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1257,9 +1682,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][1] = "Normal";
         json["options"][2] = "Slow";
         json["options"][3] = "Slowest";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "advertising_mode", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1318,9 +1742,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][45] = "Pacific/Pago_Pago";
         json["options"][46] = "None";
 
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "timezone", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1347,9 +1770,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][13] = "Golmar";
         json["options"][14] = "SKS";
         json["options"][15] = "Spare";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "operating_mode", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1368,9 +1790,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][5] = "CM & Ring";
         json["options"][6] = "RTO & Ring";
         json["options"][7] = "CM & RTO & Ring";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "doorbell_suppression", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1385,9 +1806,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
         json["options"][3] = "Sound 3";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "sound_ring", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1402,9 +1822,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
         json["options"][3] = "Sound 3";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "sound_open", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1419,9 +1838,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
         json["options"][3] = "Sound 3";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "sound_rto", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1436,9 +1854,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][1] = "Sound 1";
         json["options"][2] = "Sound 2";
         json["options"][3] = "Sound 3";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "sound_cm", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1457,9 +1874,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][5] = "Activate CM";
         json["options"][6] = "Deactivate CM";
         json["options"][7] = "Open";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "single_button_press_action", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1478,9 +1894,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][5] = "Activate CM";
         json["options"][6] = "Deactivate CM";
         json["options"][7] = "Open";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "double_button_press_action", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1495,9 +1910,8 @@ void HomeAssistantDiscovery::publishHASSConfigAdditionalOpenerEntities(char *dev
         json["options"][1] = "Accumulators";
         json["options"][2] = "Lithium";
         json["options"][3] = "No Warnings";
-        serializeJson(json, _buffer, _bufferSize);
         String path = createHassTopicPath("select", "battery_type", uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        publishConfig(path, json);
     }
     else
     {
@@ -1588,19 +2002,22 @@ void HomeAssistantDiscovery::publishHassTopic(const String& mqttDeviceType,
         const std::vector<std::pair<const char*, const char*>>& additionalEntries
                                              )
 {
-    if (_preferences->getString(preference_mqtt_hass_discovery, "") != "")
+    if (_discoveryTopic != "")
     {
-        JsonDocument json;
-        json = createHassJson(uidString, uidStringPostfix, displayName, name, baseTopic, stateTopic, deviceType, deviceClass, stateClass, entityCat, commandTopic, additionalEntries);
-        serializeJson(json, _buffer, _bufferSize);
+        HassLock lock(_mutex);
         String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, _buffer);
+        JsonDocument json;
+        if(needsPayload(path))
+        {
+            json = createHassJson(uidString, uidStringPostfix, displayName, name, baseTopic, stateTopic, deviceType, deviceClass, stateClass, entityCat, commandTopic, additionalEntries);
+        }
+        publishConfig(path, json);
     }
 }
 
 String HomeAssistantDiscovery::createHassTopicPath(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
-    String path = _preferences->getString(preference_mqtt_hass_discovery, "");
+    String path = _discoveryTopic;
     path.concat("/");
     path.concat(mqttDeviceType);
     path.concat("/");
@@ -1614,10 +2031,11 @@ String HomeAssistantDiscovery::createHassTopicPath(const String& mqttDeviceType,
 
 void HomeAssistantDiscovery::removeHassTopic(const String& mqttDeviceType, const String& mqttDeviceName, const String& uidString)
 {
-    if (_preferences->getString(preference_mqtt_hass_discovery, "") != "")
+    if (_discoveryTopic != "")
     {
+        HassLock lock(_mutex);
         String path = createHassTopicPath(mqttDeviceType, mqttDeviceName, uidString);
-        _device->mqttPublish(path.c_str(), MQTT_QOS_LEVEL, true, "");
+        removeConfig(path);
     }
 }
 
@@ -1681,6 +2099,14 @@ void HomeAssistantDiscovery::removeHASSConfig(char* uidString)
     for(const HassEntity& entity : openerEntities)
     {
         removeHassTopic(entity.component, entity.name, uidString);
+    }
+
+    if (_discoveryTopic != "")
+    {
+        for(int i = 0; i < HASS_DEVICE_BUCKETS_NUKI; i++)
+        {
+            removeConfig(chunkTopic(uidString, i));
+        }
     }
 }
 
