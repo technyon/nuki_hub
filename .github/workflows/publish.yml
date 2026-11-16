@@ -19,6 +19,22 @@ jobs:
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
+      - name: Check release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DRAFT=`gh release view "${TAG}" --repo ${{ github.repository }} --json isDraft --jq .isDraft` || DRAFT=""
+
+          if [ -z "${DRAFT}" ]; then
+            echo "::error::No release with tag ${TAG}, use the exact tag name (for example 10.00)"
+            exit 1
+          fi
+
+          if [ "${DRAFT}" = "true" ]; then
+            echo "::error::Release ${TAG} is still a draft and has no tag yet. Publish the release instead, this workflow then runs automatically"
+            exit 1
+          fi
       - name: Git Checkout
         uses: actions/checkout@v6
         with:
