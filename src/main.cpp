@@ -1828,6 +1828,9 @@ void setup()
 
     if(doOta)
     {
+#ifndef NUKI_HUB_UPDATER
+        gpio->statusLed().setUpdating();
+#endif
         setupTasks(true);
     }
     else

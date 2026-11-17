@@ -15,6 +15,20 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request, PsychicResp
     response.print("<h3>GPIO Configuration</h3>");
     response.print("<table>");
     printCheckBox(&response, "RETGPIO", "Retain Input GPIO MQTT state", _preferences->getBool(preference_retain_gpio, false), "");
+#if SOC_RMT_SUPPORTED
+    printInputField(&response, "LEDBRI", "WS2812 status LED brightness (1-100 %)", _preferences->getInt(preference_status_led_brightness, 20), 3, "");
+    std::vector<std::pair<String, String>> ledOrderOptions =
+    {
+        { "0", "GRB (most boards)" },
+        { "1", "RGB" },
+        { "2", "BRG" },
+        { "3", "RBG" },
+        { "4", "GBR" },
+        { "5", "BGR" }
+    };
+    printDropDown(&response, "LEDORD", "WS2812 status LED color order", String(_preferences->getInt(preference_status_led_order, 0)), ledOrderOptions, "");
+    printCheckBox(&response, "LEDQUIET", "WS2812 status LED off while everything is OK", _preferences->getBool(preference_status_led_quiet, false), "");
+#endif
 
     const auto& availablePins = _gpio->availablePins();
     const auto& disabledPins = _gpio->getDisabledPins();
@@ -22,8 +36,15 @@ esp_err_t WebCfgServer::buildGpioConfigHtml(PsychicRequest *request, PsychicResp
     for(const auto& pin : availablePins)
     {
         String pinStr = String(pin);
+        String pinLabel = "Gpio " + pinStr;
+#if SOC_RMT_SUPPORTED && defined(PIN_RGB_LED)
+        if(pin == PIN_RGB_LED)
+        {
+            pinLabel += " (RGB LED on many dev boards)";
+        }
+#endif
         bool disabled = std::find(disabledPins.begin(), disabledPins.end(), pin) != disabledPins.end();
-        response.print("<tr><td>Gpio " + pinStr + "</td><td><select class=\"gpioselect\" name=\"" + pinStr + "\" data-value=\"" + (disabled ? String("21") : getPreselectionForGpio(pin)) + "\"></select></td></tr>");
+        response.print("<tr><td>" + pinLabel + "</td><td><select class=\"gpioselect\" name=\"" + pinStr + "\" data-value=\"" + (disabled ? String("21") : getPreselectionForGpio(pin)) + "\"></select></td></tr>");
     }
 
     response.print("</table>");
@@ -61,6 +82,50 @@ void WebCfgServer::processGpioArgs(PsychicRequest *request, PsychicResponse* res
         }
     }
 
+#if SOC_RMT_SUPPORTED
+    if(request->hasParam("LEDBRI"))
+    {
+        const PsychicWebParameter* p = request->getParam("LEDBRI");
+
+        if(p->value().length() > 0)
+        {
+            const int brightness = constrain(p->value().toInt(), 1, 100);
+
+            if(_preferences->getInt(preference_status_led_brightness, 20) != brightness)
+            {
+                _preferences->putInt(preference_status_led_brightness, brightness);
+            }
+        }
+    }
+
+    if(request->hasParam("LEDORD"))
+    {
+        const PsychicWebParameter* p = request->getParam("LEDORD");
+        int order = p->value().toInt();
+
+        if(order < 0 || order > 5)
+        {
+            order = 0;
+        }
+        if(_preferences->getInt(preference_status_led_order, 0) != order)
+        {
+            _preferences->putInt(preference_status_led_order, order);
+        }
+    }
+
+    if(request->hasParam("LEDQUIET"))
+    {
+        const bool quiet = isParameterTrue(request, "LEDQUIET");
+
+        if(_preferences->getBool(preference_status_led_quiet, false) != quiet)
+        {
+            _preferences->putBool(preference_status_led_quiet, quiet);
+        }
+    }
+#endif
+
+    bool statusLedAssigned = false;
+
     for (int i=0; i < 100; i++)
     {
         String gpio = String(i);
@@ -68,6 +133,16 @@ void WebCfgServer::processGpioArgs(PsychicRequest *request, PsychicResponse* res
         const PsychicWebParameter* p = request->getParam(gpio.c_str());
 
         PinRole role = (PinRole)p->value().toInt();
+        if(role == PinRole::OutputWs2812StatusLed)
+        {
+            if(statusLedAssigned)
+            {
+                Log->print("Only one WS2812 status LED is supported, ignoring GPIO ");
+                Log->println(i);
+                continue;
+            }
+            statusLedAssigned = true;
+        }
         if(role != PinRole::Disabled)
         {
             PinEntry entry;

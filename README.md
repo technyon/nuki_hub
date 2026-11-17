@@ -443,6 +443,10 @@ Note: All of the following sections require the Nuki security code / PIN to be s
 ### GPIO Configuration
 
 - Gpio [2-33]: See the "[GPIO lock control](#gpio-lock-control-optional)" section of this README.
+- WS2812 status LED brightness (1-100 %): Brightness of the status LED, defaults to 20 %. See the "[Status LED](#status-led-ws2812-optional)" section of this README.
+- WS2812 status LED color order: The order in which the LED expects the colors. GRB fits most boards. If the self-test after saving doesn't start with red, choose another order (usually RGB).
+- WS2812 status LED off while everything is OK: Keep the status LED dark unless something needs attention.
+- The GPIO marked "(RGB LED on many dev boards)" is the pin most Espressif dev kits use for their built-in RGB LED. Some boards use another pin, for example the ESP32-S3-DevKitC-1 v1.1 uses GPIO 38, see the table in the "[Status LED](#status-led-ws2812-optional)" section. The WS2812 settings are not available on the ESP32-C61, which has no RMT peripheral to drive the LED.
 
 ### Import/Export Configuration
 
@@ -1022,10 +1026,66 @@ To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can
 - Output: High when MQTT connected: Output a high signal when the device is connected to the MQTT broker 
 - Output: High when network connected: Output a high signal when the device is connected to the network
 - Output: High on bluetooth communication error: Output a high signal when bluetooth communication has failed and the device is retrying to send the command
+- Output: WS2812 RGB status LED: Drives one WS2812/SK6812 RGB LED, such as the LED built into many ESP32-S3 dev boards, as a status light. See the "[Status LED](#status-led-ws2812-optional)" section of this README.
 
 - General input (pull-down): The pin is configured in pull-down configuration and its state is published to the "gpio/pin_x/state" topic
 - General input (pull-up): The pin is configured in pull-up configuration and its state is published to the "gpio/pin_x/state" topic
 - Genral output: The pin is set to high or low depending on the "gpio/pin_x/state" topic
+
+## Status LED (WS2812, optional)
+
+Many ESP32 boards, including most ESP32-S3 N16R8 boards, have a built-in WS2812 RGB LED. Nuki Hub can use this LED, or one external WS2812/SK6812 LED, as a status light.<br>
+Only one LED is supported. In a chain of LEDs only the first LED lights up.
+
+To set up the status LED:
+1. Go to the "GPIO Configuration" page.
+2. Select "Output: WS2812 RGB status LED" for the GPIO the LED is connected to. For a built-in LED, see the table below or use the GPIO marked "(RGB LED on many dev boards)".
+3. Optionally change the brightness, the color order and whether the LED stays off while everything is OK.
+4. Save. Nuki Hub restarts and the LED shows red, green and blue once.
+5. If the first color isn't red, change the color order (usually to RGB) and save again.
+
+When more than one of the following applies, the LED shows the one listed first:
+
+| LED | Meaning | What to do |
+|---|---|---|
+| Red, green, blue once | Self-test after saving the GPIO configuration | If the first color isn't red, change the color order |
+| White | Downloading the Nuki Hub updater, the first part of a firmware update | Wait |
+| Blue, slow blink | The Wi-Fi configuration access point is open | Connect to the "NukiHub" access point and configure Wi-Fi |
+| Red, single flash | No network connection (Wi-Fi or Ethernet) for at least 5 seconds. Shown only once starting has finished, at most 60 seconds after a restart | Check Wi-Fi or Ethernet |
+| Magenta, slow blink | A Nuki Lock or Opener is enabled but not paired | Pair the lock or opener |
+| White | Starting, until the network and MQTT are connected (at most 60 seconds) | Wait |
+| Amber, double flash | No connection to the MQTT broker for at least 5 seconds | Check the MQTT broker and the MQTT settings |
+| Magenta, triple flash | The lock or opener didn't respond, even after retrying | Check the distance to the lock or opener and its batteries |
+| Cyan | Bluetooth communication with the lock or opener | - |
+| Green | Everything is OK | - |
+
+A slow blink is 1 second on and 1 second off. Flashes repeat every 2 to 3 seconds.<br>
+With "WS2812 status LED off while everything is OK" enabled the LED stays dark while starting, while downloading an update, during Bluetooth communication and while everything is OK. It still shows the self-test and every state that needs attention. Like in normal mode, a missing network connection only shows once starting has finished.
+
+Built-in LEDs of common boards (taken from the board vendors' documentation and the Arduino board definitions, not tested on every board):
+
+| Board | GPIO | Notes |
+|---|---|---|
+| ESP32-S3-DevKitC-1 v1.0, ESP32-S3-DevKitM-1, most ESP32-S3 N16R8 boards | 48 | Some boards need their "RGB" solder jumper closed, a few use GPIO 47 |
+| ESP32-S3-DevKitC-1 v1.1, LOLIN S3 | 38 | |
+| LOLIN S3 Mini | 47 | Color order RGB |
+| Waveshare ESP32-S3-Zero | 21 | Color order RGB |
+| Waveshare ESP32-S3-ETH | 21 | |
+| M5Stack AtomS3 Lite | 35 | GPIO 35 is not offered on chips with octal PSRAM (for example N8R8 and N16R8) or octal flash |
+| M5Stack Atom Lite | 27 | |
+| ESP32-C3-DevKitM-1, ESP32-C6-DevKitC-1 | 8 | Not available when the selected Ethernet hardware uses GPIO 8, for example "Generic W5500" |
+| ESP32-H2-DevKitM-1 | 8 | The H2's default Ethernet setup (W5500 as "Custom LAN module") uses GPIO 8 as CS. To use the LED, first open "Custom Ethernet Configuration" from the menu, select PHY "W5500" (this shows the pin fields and keeps the same setup), change "CS" to a free GPIO and save. Don't restart Nuki Hub yet: switch it off, move the W5500's CS wire from GPIO 8 to that GPIO and switch it on again. If Nuki Hub restarts before the wire is moved, it has no network until the wire is moved, and it can take a few restarts to come back. Then select "Output: WS2812 RGB status LED" for GPIO 8 on the "GPIO Configuration" page |
+| Waveshare ESP32-C6-Zero | 8 | Color order RGB |
+| ESP32-C5-DevKitC-1 | 27 | |
+| ESP32-C61 boards | - | Not supported, the ESP32-C61 has no RMT peripheral |
+
+Notes:
+- ESP32-S3 modules with a "V" at the end of their name (1.8 V flash/PSRAM, for example N16R16V) run GPIO 47 and 48 at 1.8 V, which is too low for a WS2812. Use another GPIO on these modules.
+- GPIOs used by the selected Ethernet hardware show "Ethernet" and can't be used for the LED (the LilyGO T-ETH-Elite for example uses GPIO 47 and 48).
+- The LED is dark while Nuki Hub restarts and during the second part of a firmware update, while the updater downloads and installs the new Nuki Hub firmware. After a crash it can keep its last color until Nuki Hub has started again.
+- Changed LED settings take effect after the restart that saving the GPIO configuration triggers.
+- The Info page shows the status LED's GPIO, settings, current state and write errors.
+- To connect an external LED: VDD to 3.3 V (or 5 V), GND to GND and DIN to the GPIO through a resistor of about 330 Ω. A WS2812B powered by 5 V may need a level shifter on DIN. Put a 100 nF capacitor between VDD and GND close to the LED.
 
 ## Connecting via Ethernet (Optional)
 

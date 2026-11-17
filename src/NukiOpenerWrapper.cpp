@@ -396,6 +396,7 @@ void NukiOpenerWrapper::update()
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     _paired = checkPaired();
+    _gpio->statusLed().reportPaired(StatusLed::Device::Opener, _paired);
     if (!_paired) return;
 
     int64_t ts = espMillis();
@@ -596,6 +597,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
         {
             _nextLockStateUpdateTs = espMillis() + (_retryLockstateCount * 333);
             _network->publishAvailability(false);
+            _gpio->statusLed().reportReachable(StatusLed::Device::Opener, false);
         }
         if(_hasConnected)
         {
@@ -610,6 +612,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 
     _retryLockstateCount = 0;
     _network->publishAvailability(true);
+    _gpio->statusLed().reportReachable(StatusLed::Device::Opener, true);
 
     const NukiOpener::LockState& lockState = _keyTurnerState.lockState;
 

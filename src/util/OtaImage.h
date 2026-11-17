@@ -30,6 +30,11 @@ namespace OtaImages
     const char* name(OtaImage image);
     const char* label(OtaImage image);
     OtaImage recommended(bool glS10EthernetInUse, String& reason);
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+    // Embedded PSRAM according to the eFuse: 0 none, 1 8 MB octal, 2 2 MB quad, 3 16 MB octal, 4 4 MB quad
+    int psramCapability();
+    bool hasOctalPsram();
+#endif
     bool psramChipSelectPulledHigh();
     bool keepingCurrent(Preferences* preferences, OtaImage recommendedImage);
     OtaImage updateTarget(Preferences* preferences, bool glS10EthernetInUse);

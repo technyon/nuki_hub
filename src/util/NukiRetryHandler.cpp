@@ -18,6 +18,7 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
     int retryCount = 0;
 
     setCommPins(HIGH);
+    _gpio->statusLed().reportBleActivity(true);
 
     while(retryCount < _nrOfRetries + 1 && cmdResult != Nuki::CmdResult::Success)
     {
@@ -49,6 +50,7 @@ const Nuki::CmdResult NukiRetryHandler::retryComm(std::function<Nuki::CmdResult(
     }
     setCommPins(LOW);
     setCommErrorPins(LOW);
+    _gpio->statusLed().reportBleActivity(false);
 
     _lastResult = cmdResult;
     if(cmdResult == Nuki::CmdResult::Success)

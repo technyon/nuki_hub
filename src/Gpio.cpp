@@ -6,6 +6,10 @@
 #include "Logger.h"
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
+#include <ETH.h>
+#include "util/NetworkUtil.h"
+#endif
 #include "networkDevices/LAN8720Definitions.h"
 #include "networkDevices/DM9051Definitions.h"
 #include "networkDevices/W5500Definitions.h"
@@ -17,6 +21,47 @@
 #if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
 #include "esp_psram.h"
 #endif
+#include "networkDevices/Tlk110Definitions.h"
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+#include "bootloader_flash.h"
+#include "util/OtaImage.h"
+#endif
+#if defined(CONFIG_IDF_TARGET_ESP32H2)
+extern bool& wifiFallback;
+#endif
+
+namespace
+{
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
+// ETH.begin() takes the RMII data pins and the RMII clock pin for every PHY on the internal EMAC
+void addEmacPins(std::vector<int>& disabledPins, int clockPin)
+{
+    disabledPins.push_back(ETH_RMII_TX_EN);
+    disabledPins.push_back(ETH_RMII_TX0);
+    disabledPins.push_back(ETH_RMII_TX1);
+    disabledPins.push_back(ETH_RMII_RX0);
+    disabledPins.push_back(ETH_RMII_RX1_EN);
+    disabledPins.push_back(ETH_RMII_CRS_DV);
+    disabledPins.push_back(clockPin);
+}
+#endif
+
+#if defined(CONFIG_IDF_TARGET_ESP32)
+// Same mapping as ETH.begin(): the clock is an input on GPIO 0 or an output on GPIO 0, 16 or 17
+int emacClockPin(eth_clock_mode_t clockMode)
+{
+    switch(clockMode)
+    {
+    case ETH_CLOCK_GPIO16_OUT:
+        return 16;
+    case ETH_CLOCK_GPIO17_OUT:
+        return 17;
+    default:
+        return 0;
+    }
+}
+#endif
+}
 
 Gpio* Gpio::_inst = nullptr;
 
@@ -53,6 +98,13 @@ Gpio::Gpio(Preferences* preferences)
     if(esp_psram_is_initialized())
     {
         _availablePins.erase(std::remove(_availablePins.begin(), _availablePins.end(), 15), _availablePins.end());
+    }
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+    // GPIO 35 is a flash data line on modules with octal flash (for example ESP32-S3-WROOM-2) and a PSRAM data line
+    // on chips with octal PSRAM (for example N8R8 and N16R8), which the next update moves to the esp32-s3-oct firmware
+    if(bootloader_flash_is_octal_mode_enabled() || OtaImages::hasOctalPsram())
+    {
+        _availablePins.erase(std::remove(_availablePins.begin(), _availablePins.end(), 35), _availablePins.end());
     }
 #endif
     _inst = this;
@@ -237,10 +289,25 @@ void Gpio::setPins()
             case PinRole::OutputHighDoorClosed:
                 pinMode(entry.pin, OUTPUT);
                 break;
+            case PinRole::OutputWs2812StatusLed:
+                // Driven by StatusLed through RMT. pinMode() or digitalWrite() would detach the pin from RMT.
+                break;
             case PinRole::Ethernet:
             default:
                 break;
         }
+    }
+
+    const std::vector<uint8_t> statusLedPins = getPinsWithRole(PinRole::OutputWs2812StatusLed);
+    if(!statusLedPins.empty())
+    {
+        if(statusLedPins.size() > 1)
+        {
+            Log->print("Only one WS2812 status LED is supported, using GPIO ");
+            Log->println(statusLedPins[0]);
+        }
+        const bool selfTest = restartReason_isValid && currentRestartReason == RestartReason::GpioConfigurationUpdated;
+        _statusLed.begin(statusLedPins[0], _preferences, selfTest);
     }
 
     if(hasInputPin && _first)
@@ -344,6 +411,24 @@ const std::vector<int> Gpio::getDisabledPins() const
         disabledPins.push_back(_preferences->getInt(preference_cred_bypass_gpio_low, -1));
     }
 
+#if defined(CONFIG_IDF_TARGET_ESP32H2)
+    // The H2 has no Wi-Fi. NukiNetwork::setupDevice() starts the custom W5500 for every selection without its own
+    // Ethernet setup and on every Wi-Fi fallback boot, whatever hardware is selected (see NetworkDeviceInstantiator).
+    const auto addCustomW5500Pins = [this, &disabledPins]()
+    {
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_cs, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_irq, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_rst, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_sck, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_miso, -1));
+        disabledPins.push_back(_preferences->getInt(preference_network_custom_mosi, -1));
+    };
+    if(wifiFallback)
+    {
+        addCustomW5500Pins();
+    }
+#endif
+
     switch(_preferences->getInt(preference_network_hardware, 0))
     {
     case 2:
@@ -378,14 +463,6 @@ const std::vector<int> Gpio::getDisabledPins() const
         disabledPins.push_back(ETH_PHY_SPI_MISO_ETH01EVO);
         disabledPins.push_back(ETH_PHY_SPI_MOSI_ETH01EVO);
         break;
-    case 6:
-        disabledPins.push_back(ETH_PHY_CS_M5_W5500);
-        disabledPins.push_back(ETH_PHY_IRQ_M5_W5500);
-        disabledPins.push_back(ETH_PHY_RST_M5_W5500);
-        disabledPins.push_back(ETH_PHY_SPI_SCK_M5_W5500);
-        disabledPins.push_back(ETH_PHY_SPI_MISO_M5_W5500);
-        disabledPins.push_back(ETH_PHY_SPI_MOSI_M5_W5500);
-        break;
     case 12:
         disabledPins.push_back(ETH_PHY_CS_ELITE_W5500);
         disabledPins.push_back(ETH_PHY_IRQ_ELITE_W5500);
@@ -394,7 +471,24 @@ const std::vector<int> Gpio::getDisabledPins() const
         disabledPins.push_back(ETH_PHY_SPI_MISO_ELITE_W5500);
         disabledPins.push_back(ETH_PHY_SPI_MOSI_ELITE_W5500);
         break;
+    case 13:
+        disabledPins.push_back(ETH_PHY_SPI_CS_WAVESHARE_ESP32_S3_ETH);
+        disabledPins.push_back(ETH_PHY_SPI_IRQ_WAVESHARE_ESP32_S3_ETH);
+        disabledPins.push_back(ETH_PHY_SPI_RST_WAVESHARE_ESP32_S3_ETH);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_WAVESHARE_ESP32_S3_ETH);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_WAVESHARE_ESP32_S3_ETH);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_WAVESHARE_ESP32_S3_ETH);
+        break;
+    case 14:
+        disabledPins.push_back(ETH_PHY_CS_ETHLITES3_W5500);
+        disabledPins.push_back(ETH_PHY_IRQ_ETHLITES3_W5500);
+        disabledPins.push_back(ETH_PHY_RST_ETHLITES3_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_SCK_ETHLITES3_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MISO_ETHLITES3_W5500);
+        disabledPins.push_back(ETH_PHY_SPI_MOSI_ETHLITES3_W5500);
+        break;
     case 11:
+    {
         disabledPins.push_back(_preferences->getInt(preference_network_custom_cs, -1));
         disabledPins.push_back(_preferences->getInt(preference_network_custom_irq, -1));
         disabledPins.push_back(_preferences->getInt(preference_network_custom_rst, -1));
@@ -404,36 +498,73 @@ const std::vector<int> Gpio::getDisabledPins() const
         disabledPins.push_back(_preferences->getInt(preference_network_custom_pwr, -1));
         disabledPins.push_back(_preferences->getInt(preference_network_custom_mdc, -1));
         disabledPins.push_back(_preferences->getInt(preference_network_custom_mdio, -1));
-        break;
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32P4)
+        const int customPhy = _preferences->getInt(preference_network_custom_phy, 0);
+        if(customPhy >= 4 && customPhy <= 9)
+        {
 #if defined(CONFIG_IDF_TARGET_ESP32)
-    // ESP32 boards only, NetworkDeviceInstantiator starts Wi-Fi for these selections on other chips
+            addEmacPins(disabledPins, emacClockPin(NetworkUtil::GetCustomClock(_preferences->getInt(preference_network_custom_clk, 0))));
+#else
+            addEmacPins(disabledPins, ETH_RMII_CLK);
+#endif
+        }
+#endif
+        break;
+    }
+#if defined(CONFIG_IDF_TARGET_ESP32)
     case 4:
         disabledPins.push_back(12);
         disabledPins.push_back(ETH_RESET_PIN_LAN8720);
         disabledPins.push_back(ETH_PHY_MDC_LAN8720);
         disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        addEmacPins(disabledPins, emacClockPin(ETH_CLOCK_GPIO17_OUT));
         break;
     case 5:
         disabledPins.push_back(16);
         disabledPins.push_back(ETH_RESET_PIN_LAN8720);
         disabledPins.push_back(ETH_PHY_MDC_LAN8720);
         disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        addEmacPins(disabledPins, emacClockPin(ETH_CLK_MODE_LAN8720));
+        break;
+    case 6:
+        disabledPins.push_back(ETH_PHY_POWER_M5_POESP32);
+        disabledPins.push_back(ETH_PHY_MDC_M5_POESP32);
+        disabledPins.push_back(ETH_PHY_MDIO_M5_POESP32);
+        addEmacPins(disabledPins, emacClockPin(ETH_CLK_MODE_M5_POESP32));
         break;
     case 8:
         disabledPins.push_back(5);
         disabledPins.push_back(ETH_RESET_PIN_LAN8720);
         disabledPins.push_back(ETH_PHY_MDC_LAN8720);
         disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        addEmacPins(disabledPins, emacClockPin(ETH_CLOCK_GPIO0_IN));
         break;
     case 7:
         disabledPins.push_back(-1);
         disabledPins.push_back(ETH_RESET_PIN_LAN8720);
         disabledPins.push_back(ETH_PHY_MDC_LAN8720);
         disabledPins.push_back(ETH_PHY_MDIO_LAN8720);
+        addEmacPins(disabledPins, emacClockPin(ETH_CLOCK_GPIO17_OUT));
+        break;
+#elif defined(CONFIG_IDF_TARGET_ESP32P4)
+    case 15:
+    case 16:
+    case 17:
+        // Waveshare ESP32-P4-NANO, Waveshare ESP32-P4-Module-DEV-KIT and ESP32-P4-Function-EV-Board (IP101)
+        disabledPins.push_back(51);
+        disabledPins.push_back(31);
+        disabledPins.push_back(52);
+        addEmacPins(disabledPins, ETH_RMII_CLK);
         break;
 #endif
+#if defined(CONFIG_IDF_TARGET_ESP32H2)
+    default:
+        addCustomW5500Pins();
+        break;
+#else
     default:
         break;
+#endif
     }
 
     Log->print("GPIO Boot button and Ethernet disabled pins:");
@@ -583,6 +714,8 @@ String Gpio::getRoleDescription(const PinRole& role) const
         return "Output: High when door is open";
     case PinRole::OutputHighDoorClosed:
         return "Output: High when door is closed";
+    case PinRole::OutputWs2812StatusLed:
+        return "Output: WS2812 RGB status LED";
     default:
         return "Unknown";
     }
@@ -638,6 +771,7 @@ GpioAction Gpio::getGpioAction(const PinEntry& entry) const
         case PinRole::OutputHighBluetoothCommError:
         case PinRole::OutputHighDoorOpen:
         case PinRole::OutputHighDoorClosed:
+        case PinRole::OutputWs2812StatusLed:
         default:
             return GpioAction::None;
     }

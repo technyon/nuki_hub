@@ -493,6 +493,7 @@ void NukiWrapper::update(bool reboot)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     _paired = checkPaired();
+    _gpio->statusLed().reportPaired(StatusLed::Device::Lock, _paired);
     if (!_paired) return;
 
     int64_t ts = espMillis();
@@ -667,6 +668,7 @@ bool NukiWrapper::updateKeyTurnerState()
         {
             _nextLockStateUpdateTs = espMillis() + (_retryLockstateCount * 333);
             _network->publishAvailability(false);
+            _gpio->statusLed().reportReachable(StatusLed::Device::Lock, false);
         }
         if(_hasConnected)
         {
@@ -679,6 +681,7 @@ bool NukiWrapper::updateKeyTurnerState()
 
     _retryLockstateCount = 0;
     _network->publishAvailability(true);
+    _gpio->statusLed().reportReachable(StatusLed::Device::Lock, true);
 
     const NukiLock::LockState& lockState = _keyTurnerState.lockState;
 

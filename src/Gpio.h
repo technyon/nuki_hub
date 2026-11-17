@@ -4,7 +4,9 @@
 #include <functional>
 #include <Preferences.h>
 #include <vector>
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "StatusLed.h"
 
 class String;
 
@@ -40,6 +42,7 @@ enum class PinRole
     DoorSensorDoorClosedOnConnected,
     OutputHighDoorOpen,
     OutputHighDoorClosed,
+    OutputWs2812StatusLed,
 };
 
 enum class GpioAction
@@ -95,6 +98,15 @@ public:
     void setPinOutput(const std::vector<uint8_t>& pins, const uint8_t& state);
     void setPins();
 
+    StatusLed& statusLed()
+    {
+        return _statusLed;
+    }
+    const StatusLed& statusLed() const
+    {
+        return _statusLed;
+    }
+
 private:
     void IRAM_ATTR notify(const GpioAction& action, const int& pin);
     void IRAM_ATTR onTimer();
@@ -107,11 +119,18 @@ private:
     const std::vector<uint8_t> _availablePins = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21 };
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
     //Based on https://github.com/atomic14/esp32-s3-pinouts?tab=readme-ov-file and https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf
-    const std::vector<uint8_t> _availablePins = { 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 38, 39, 40, 41, 42 };
+    //GPIO 33-37 carry octal PSRAM and octal flash data. GPIO 35 is removed in the constructor on modules with octal flash.
+    //GPIO 47 and 48 drive the RGB LED on many dev boards.
+    std::vector<uint8_t> _availablePins = { 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21,
+#if !defined(CONFIG_SPIRAM_MODE_OCT)
+                                            35,
+#endif
+                                            38, 39, 40, 41, 42, 47, 48
+                                          };
 #elif defined(CONFIG_IDF_TARGET_ESP32C5)
     //Based on https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-c5_datasheet_en.pdf
     //GPIO 15 is the PSRAM chip select and is removed in the constructor when the PSRAM runs.
-    std::vector<uint8_t> _availablePins = { 0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 12, 15, 23, 24, 26 };
+    std::vector<uint8_t> _availablePins = { 0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 12, 15, 23, 24, 26, 27 };
 #elif defined(CONFIG_IDF_TARGET_ESP32C6)
     //Based on https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/peripherals/gpio.html and https://www.espressif.com/sites/default/files/documentation/esp32-c6_datasheet_en.pdf
     const std::vector<uint8_t> _availablePins = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 };
@@ -148,6 +167,9 @@ private:
         PinRole::OutputHighNetworkConnected,
         PinRole::OutputHighBluetoothComm,
         PinRole::OutputHighBluetoothCommError,
+#if SOC_RMT_SUPPORTED
+        PinRole::OutputWs2812StatusLed,
+#endif
         PinRole::OutputHighLocked,
         PinRole::OutputHighUnlocked,
         PinRole::OutputHighMotorBlocked,
@@ -176,4 +198,6 @@ private:
     bool _first = true;
 
     Preferences* _preferences = nullptr;
+
+    StatusLed _statusLed;
 };
