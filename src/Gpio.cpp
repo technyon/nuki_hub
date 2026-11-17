@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <esp32-hal.h>
 #include "Gpio.h"
 #include "Config.h"
@@ -8,12 +9,52 @@
 #include "networkDevices/LAN8720Definitions.h"
 #include "networkDevices/DM9051Definitions.h"
 #include "networkDevices/W5500Definitions.h"
+#if defined(CONFIG_IDF_TARGET_ESP32)
+#include "bootloader_common.h"
+#include "soc/efuse_reg.h"
+#include "hal/efuse_hal.h"
+#endif
+#if defined(CONFIG_SOC_SPIRAM_SUPPORTED) && defined(CONFIG_SPIRAM)
+#include "esp_psram.h"
+#endif
 
 Gpio* Gpio::_inst = nullptr;
 
 Gpio::Gpio(Preferences* preferences)
     : _preferences(preferences)
 {
+#if defined(CONFIG_IDF_TARGET_ESP32)
+    // ESP32-PICO-V3 has the package ID of ESP32-PICO-D4 and is told apart by the chip revision, as in ESP-IDF
+    const uint32_t package = bootloader_common_get_chip_ver_pkg();
+    if(package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302 || (package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && efuse_hal_get_major_chip_version() >= 3))
+    {
+        _availablePins.insert(std::lower_bound(_availablePins.begin(), _availablePins.end(), 20), 20);
+    }
+#if defined(CONFIG_SPIRAM)
+    if(esp_psram_is_initialized())
+    {
+        // PSRAM chip select and clock as in esp_psram_impl_quad.c of ESP-IDF, the other packages use pins that are not listed
+        std::vector<uint8_t> psramPins;
+        if(package == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6 || package == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5)
+        {
+            psramPins = { CONFIG_D0WD_PSRAM_CS_IO, CONFIG_D0WD_PSRAM_CLK_IO };
+        }
+        else if(package == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3)
+        {
+            psramPins = { 16 };
+        }
+        for(const uint8_t pin : psramPins)
+        {
+            _availablePins.erase(std::remove(_availablePins.begin(), _availablePins.end(), pin), _availablePins.end());
+        }
+    }
+#endif
+#elif defined(CONFIG_IDF_TARGET_ESP32C5) && defined(CONFIG_SPIRAM)
+    if(esp_psram_is_initialized())
+    {
+        _availablePins.erase(std::remove(_availablePins.begin(), _availablePins.end(), 15), _availablePins.end());
+    }
+#endif
     _inst = this;
     _inst->init();
 }
@@ -240,6 +281,13 @@ void Gpio::loadPinConfiguration()
         entry.pin = serialized[i * 2];
         Log->print("Pin ");
         Log->println(entry.pin);
+
+        if(std::find(_availablePins.begin(), _availablePins.end(), entry.pin) == _availablePins.end())
+        {
+            // For example from a configuration imported from another chip. Leaving it out keeps the GPIO timer from reading it.
+            Log->println("Not available on this device, ignored");
+            continue;
+        }
 
         if(std::find(disabledPins.begin(), disabledPins.end(), entry.pin) == disabledPins.end())
         {
