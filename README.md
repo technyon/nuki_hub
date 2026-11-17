@@ -788,6 +788,7 @@ You can only update Nuki Hub from the Nuki Hub updater and update the updater on
 You can reboot from Nuki Hub to the updater and vice versa by selecting the reboot option from the "Firmware update" page<br>
 When you are on the right application you can upload the new binary by clicking on "Browse" and select the new "nuki_hub\[board\].bin" or "nuki_hub_updater\[board\].bin" file and select "Upload file".<br>
 After about a minute the new firmware should be installed afterwhich the ESP will reboot automatically to the updated binary.<br>
+If an upload is interrupted while Nuki Hub is running, for example because the browser was closed or lost its connection, Nuki Hub restarts by itself once no upload data has arrived for 5 minutes, with the restart reason "OTATimeout". MQTT stays off until then.<br>
 Selecting the wrong binary will lead to an unsuccessfull update<br>
 <br>
 <b> Note for users upgrading from Nuki Hub 9.09 or lower:</b><br>

@@ -337,18 +337,34 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
     if (!index)
     {
         _otaRejected = false;
+
+        // An upload whose client went away never reached Update.end() or the restart in the request handler.
+        // Discard what it left behind, Update.begin() refuses to start while an update is running.
+        if (Update.isRunning())
+        {
+            Log->println("Discarding the unfinished previous OTA upload");
+            Update.abort();
+        }
+        Update.clearError();
     }
     else if (_otaRejected)
     {
         return(ESP_FAIL);
     }
 
+#ifndef NUKI_HUB_UPDATER
+    // Every chunk tells the network task that the upload is still progressing, so it doesn't restart the device.
+    // The first chunk does this below, once the upload has passed the size checks.
+    if (index)
+    {
+        _network->otaUploadActivity();
+    }
+#endif
+
     if (!Update.hasError())
     {
         if (!index)
         {
-            Update.clearError();
-
             Log->println("Starting manual OTA update");
             _otaContentLen = request->contentLength();
 
@@ -374,6 +390,8 @@ esp_err_t WebCfgServer::handleOtaUpload(PsychicRequest *request, const String& f
             esp_task_wdt_reconfigure(&twdt_config);
 
 #ifndef NUKI_HUB_UPDATER
+            // From here on the network task restarts the device once the upload stalls
+            _network->otaUploadActivity();
             _network->disableAutoRestarts();
             _network->disableMqtt();
             if(_nuki != nullptr)
