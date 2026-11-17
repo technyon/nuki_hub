@@ -18,6 +18,7 @@
 #include "NukiConstants.h"
 #include "HomeAssistantDiscovery.h"
 #include "ImportExport.h"
+#include "soc/soc_caps.h"
 #endif
 
 class NukiNetwork
@@ -183,7 +184,9 @@ private:
     bool _mqttEnabled = true;
     int _rssiPublishInterval = 0;
 
-    std::map<uint8_t, int64_t> _gpioTs;
+    // set from Gpio's timer interrupt in gpioActionCallback(), read and cleared in update(), guarded by _gpioTsMux
+    int64_t _gpioTs[SOC_GPIO_PIN_COUNT] = {};
+    portMUX_TYPE _gpioTsMux = portMUX_INITIALIZER_UNLOCKED;
     std::vector<uint8_t> _pinsMqttConnected;
     std::vector<uint8_t> _pinsNetworkConnected;
 

@@ -601,14 +601,19 @@ bool NukiNetwork::update()
         }
     }
 
-    for(const auto& gpioTs : _gpioTs)
+    for(uint8_t pin = 0; pin < SOC_GPIO_PIN_COUNT; pin++)
     {
-        uint8_t pin = gpioTs.first;
-        int64_t ts = gpioTs.second;
-        if(ts != 0 && ((espMillis() - ts) >= GPIO_DEBOUNCE_TIME))
+        portENTER_CRITICAL(&_gpioTsMux);
+        int64_t ts = _gpioTs[pin];
+        bool publishPin = ts != 0 && ((espMillis() - ts) >= GPIO_DEBOUNCE_TIME);
+        if(publishPin)
         {
             _gpioTs[pin] = 0;
+        }
+        portEXIT_CRITICAL(&_gpioTsMux);
 
+        if(publishPin)
+        {
             uint8_t pinState = digitalRead(pin) == HIGH ? 1 : 0;
             char gpioPath[250];
             buildMqttPath(gpioPath, {mqtt_topic_gpio_prefix, (mqtt_topic_gpio_pin + std::to_string(pin)).c_str(), mqtt_topic_gpio_state});
@@ -1293,7 +1298,15 @@ void NukiNetwork::parseGpioTopics(const espMqttClientTypes::MessageProperties &p
 
 void NukiNetwork::gpioActionCallback(const GpioAction &action, const int &pin)
 {
+    // runs in the interrupt of Gpio's timer, update() publishes the pin state
+    if(pin < 0 || pin >= SOC_GPIO_PIN_COUNT)
+    {
+        return;
+    }
+
+    portENTER_CRITICAL_ISR(&_gpioTsMux);
     _gpioTs[pin] = espMillis();
+    portEXIT_CRITICAL_ISR(&_gpioTsMux);
 }
 
 void NukiNetwork::disableAutoRestarts()
