@@ -1939,6 +1939,18 @@ void WebCfgServer::applySettings(PsychicRequest *request, const Setting* setting
         case SettingType::Int:
         {
             int v = value.toInt();
+            if(setting.isGpio)
+            {
+                // toInt() turns an empty field and any other text into GPIO 0, an empty field disables the GPIO instead
+                value.trim();
+                char* end = nullptr;
+                v = value.length() == 0 ? -1 : strtol(value.c_str(), &end, 10);
+                if(end != nullptr && *end != '\0')
+                {
+                    Log->printf("Setting %s not changed, \"%s\" is not a GPIO number\n", setting.token, value.c_str());
+                    break;
+                }
+            }
             if((setting.minValue != 0 || setting.maxValue != 0) && (v < setting.minValue || v > setting.maxValue))
             {
                 break;
