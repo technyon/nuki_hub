@@ -44,6 +44,11 @@ enum HTTPAuthMethod {
 
 String urlDecode(const char* encoded);
 
+// Whether a result <= 0 of httpd_req_recv() is a receive timeout: the client has sent nothing for
+// recv_wait_timeout but may still send more. Anything else, 0 included, means the connection is closed
+// or broken, and every further call fails right away.
+bool psychicRecvTimedOut(int received);
+
 class PsychicHttpServer;
 class PsychicRequest;
 class PsychicResponse;

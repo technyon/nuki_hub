@@ -80,15 +80,13 @@ esp_err_t PsychicUploadHandler::_basicUploadHandler(PsychicRequest* request)
     if ((received = httpd_req_recv(request->request(), buf, min(remaining, FILE_CHUNK_SIZE))) <= 0)
     {
       /* Retry if timeout occurred */
-      if (received == HTTPD_SOCK_ERR_TIMEOUT)
+      if (psychicRecvTimedOut(received))
         continue;
-      // bail if we got an error
-      else if (received == HTTPD_SOCK_ERR_FAIL)
-      {
-        ESP_LOGE(PH_TAG, "Socket error");
-        err = ESP_FAIL;
-        break;
-      }
+      // bail on anything else, retrying a closed connection would spin here forever and a
+      // negative length must not reach the upload callback
+      ESP_LOGE(PH_TAG, "Socket error %d", received);
+      err = ESP_FAIL;
+      break;
     }
 
     // call our upload callback here.

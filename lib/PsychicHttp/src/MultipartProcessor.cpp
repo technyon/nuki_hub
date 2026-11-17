@@ -70,15 +70,12 @@ esp_err_t MultipartProcessor::process()
     if ((received = httpd_req_recv(_request->request(), buf, min(remaining, FILE_CHUNK_SIZE))) <= 0)
     {
       /* Retry if timeout occurred */
-      if (received == HTTPD_SOCK_ERR_TIMEOUT)
+      if (psychicRecvTimedOut(received))
         continue;
-      // bail if we got an error
-      else if (received == HTTPD_SOCK_ERR_FAIL)
-      {
-        ESP_LOGE(PH_TAG, "Socket error");
-        err = ESP_FAIL;
-        break;
-      }
+      // bail on anything else, retrying a closed connection would spin here forever
+      ESP_LOGE(PH_TAG, "Socket error %d", received);
+      err = ESP_FAIL;
+      break;
     }
 
     // parse it 1 byte at a time.

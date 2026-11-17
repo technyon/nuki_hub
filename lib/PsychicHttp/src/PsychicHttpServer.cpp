@@ -8,6 +8,9 @@
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include "WiFi.h"
 #endif
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+#include <esp_tls_errors.h>
+#endif
 PsychicHttpServer::PsychicHttpServer(uint16_t port)
 {
   maxRequestBodySize = MAX_REQUEST_BODY_SIZE;
@@ -621,6 +624,16 @@ bool ON_AP_FILTER(PsychicRequest* request)
   #else
   return WiFi.softAPIP() == request->client()->localIP();
   #endif
+}
+
+bool psychicRecvTimedOut(int received)
+{
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+  // The HTTPS server passes on the result of esp_tls_conn_read() instead of HTTPD_SOCK_ERR_TIMEOUT.
+  if (received == ESP_TLS_ERR_SSL_WANT_READ || received == ESP_TLS_ERR_SSL_WANT_WRITE || received == ESP_TLS_ERR_SSL_TIMEOUT)
+    return true;
+#endif
+  return received == HTTPD_SOCK_ERR_TIMEOUT;
 }
 
 String urlDecode(const char* encoded)
