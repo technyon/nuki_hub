@@ -52,11 +52,12 @@ void WebCfgServer::processGpioArgs(PsychicRequest *request, PsychicResponse* res
 
     if(request->hasParam("RETGPIO"))
     {
-        const PsychicWebParameter* p = request->getParam("RETGPIO");
+        // The checkbox posts a hidden "0" before the checked "1"
+        const bool retain = isParameterTrue(request, "RETGPIO");
 
-        if(_preferences->getBool(preference_retain_gpio, false) != (p->value() == "1"))
+        if(_preferences->getBool(preference_retain_gpio, false) != retain)
         {
-            _preferences->putBool(preference_retain_gpio, (p->value() == "1"));
+            _preferences->putBool(preference_retain_gpio, retain);
         }
     }
 
