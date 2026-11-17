@@ -25,6 +25,7 @@ public:
     int getBypassGPIOHigh();
     int getBypassGPIOLow();
     void readSettings();
+    void setAvailablePins(const std::vector<uint8_t>* availablePins);
     void setDuoCheckIP(String duoCheckIP);
     void setDuoCheckId(String duoCheckId);
     JsonDocument _duoSessions;
@@ -38,6 +39,7 @@ public:
 private:
     void saveSessions();
     Preferences* _preferences;
+    const std::vector<uint8_t>* _availablePins = nullptr;
     struct tm timeinfo;
     bool _totpEnabled = false;
     bool _bypassEnabled = false;

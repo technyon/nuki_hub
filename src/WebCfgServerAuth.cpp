@@ -9,8 +9,8 @@ extern bool timeSynced;
 static const Setting credentialsSettings[] =
 {
     {"DUOBYPASS", "Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button while logging in", preference_cred_bypass_boot_btn_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
-    {"DUOBYPASSHIGH", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO High", preference_cred_bypass_gpio_high, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect},
-    {"DUOBYPASSLOW", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low", preference_cred_bypass_gpio_low, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect},
+    {"DUOBYPASSHIGH", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO High", preference_cred_bypass_gpio_high, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect, false, 0, true},
+    {"DUOBYPASSLOW", "Bypass MFA (Duo/TOTP) authentication by pulling GPIO Low", preference_cred_bypass_gpio_low, SettingType::Int, -1, 0, 0, 2, "", SettingEffect::RestartNoReconnect, false, 0, true},
     {"DUOAPPROVAL", "Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings)", preference_cred_duo_approval, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartNoReconnect},
     {"CREDLFTM", "Session validity (seconds, applies to all login methods)", preference_cred_session_lifetime, SettingType::Int, 3600, 0, 0, 12, "", SettingEffect::ClearSession},
     {"CREDLFTMRMBR", "Session validity with remember me (hours, applies to all login methods)", preference_cred_session_lifetime_remember, SettingType::Int, 720, 0, 0, 12, "", SettingEffect::ClearSession},

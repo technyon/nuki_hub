@@ -78,6 +78,7 @@ public:
     void savePinConfiguration(const std::vector<PinEntry>& pinConfiguration);
 
     const std::vector<uint8_t>& availablePins() const;
+    bool isPinAvailable(int pin) const;
     const std::vector<PinEntry>& pinConfiguration() const;
     const std::vector<int> getDisabledPins() const;
     const PinRole getPinRole(const int& pin) const;

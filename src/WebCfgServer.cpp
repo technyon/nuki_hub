@@ -1943,6 +1943,11 @@ void WebCfgServer::applySettings(PsychicRequest *request, const Setting* setting
             {
                 break;
             }
+            if(setting.isGpio && v > -1 && !_gpio->isPinAvailable(v))
+            {
+                Log->printf("Setting %s not changed, GPIO %d is not available on this chip\n", setting.token, v);
+                break;
+            }
             if(setting.lowMemoryMax > 0 && lowMemoryMode() && v > setting.lowMemoryMax)
             {
                 v = setting.lowMemoryMax;

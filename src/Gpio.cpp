@@ -132,6 +132,15 @@ void Gpio::setPins()
     {
         pinMode(BOOT_BUTTON_GPIO, INPUT);
     }
+    for(const char* key : { preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low })
+    {
+        const int pin = _inst->_preferences->getInt(key, -1);
+        if(pin > -1 && !_inst->isPinAvailable(pin))
+        {
+            Log->printf("GPIO %d is not available on this chip, disabling MFA bypass setting %s\n", pin, key);
+            _inst->_preferences->putInt(key, -1);
+        }
+    }
     if (_inst->_preferences->getInt(preference_cred_bypass_gpio_high, -1) > -1)
     {
         pinMode(_inst->_preferences->getInt(preference_cred_bypass_gpio_high, -1), INPUT);
@@ -206,6 +215,11 @@ void Gpio::setPins()
 const std::vector<uint8_t>& Gpio::availablePins() const
 {
     return _availablePins;
+}
+
+bool Gpio::isPinAvailable(int pin) const
+{
+    return std::find(_availablePins.begin(), _availablePins.end(), pin) != _availablePins.end();
 }
 
 void Gpio::loadPinConfiguration()

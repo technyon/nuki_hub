@@ -75,6 +75,11 @@ int ImportExport::getBypassGPIOLow()
     return _bypassGPIOLow;
 }
 
+void ImportExport::setAvailablePins(const std::vector<uint8_t>* availablePins)
+{
+    _availablePins = availablePins;
+}
+
 bool ImportExport::startDuoAuth(char* pushType)
 {
     int64_t timeout = esp_timer_get_time() - (30 * 1000 * 1000L);
@@ -682,6 +687,12 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
         {
             if (doc[key].as<String>().length() > 0)
             {
+                if((strcmp(key, preference_cred_bypass_gpio_high) == 0 || strcmp(key, preference_cred_bypass_gpio_low) == 0) && doc[key].as<int>() > -1 && _availablePins != nullptr &&
+                        std::find(_availablePins->begin(), _availablePins->end(), doc[key].as<int>()) == _availablePins->end())
+                {
+                    json[key] = "error";
+                    continue;
+                }
                 json[key] = "changed";
                 _preferences->putInt(key, doc[key].as<int>());
             }
