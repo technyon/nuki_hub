@@ -145,6 +145,7 @@ private:
         PinRole::OutputHighBluetoothCommError,
         PinRole::OutputHighLocked,
         PinRole::OutputHighUnlocked,
+        PinRole::OutputHighMotorBlocked,
         PinRole::OutputHighRtoActive,
         PinRole::OutputHighCmActive,
         PinRole::OutputHighRtoOrCmActive,
