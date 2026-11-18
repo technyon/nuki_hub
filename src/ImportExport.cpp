@@ -737,7 +737,13 @@ JsonDocument ImportExport::importJson(JsonDocument &doc)
         if(!doc[key].isNull() && doc[key].is<JsonVariant>())
         {
             String value = doc[key].as<String>();
-            unsigned char tmpchar[32];
+            // exportNukiHubJson writes at most 127 bytes per key (254 hex characters)
+            unsigned char tmpchar[127];
+            if(value.length() > sizeof(tmpchar) * 2)
+            {
+                json[key] = "error";
+                continue;
+            }
             for(int i=0; i<value.length(); i+=2)
             {
                 tmpchar[(i/2)] = std::stoi(value.substring(i, i+2).c_str(), nullptr, 16);
