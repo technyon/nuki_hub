@@ -54,6 +54,7 @@ public:
     void registerMqttReceiver(MqttReceiver* receiver);
     void disableAutoRestarts(); // disable on OTA start
     void disableMqtt();
+    void otaUploadActivity(); // web server task, for every chunk of a firmware upload
 
     bool reconnect(bool force = false);
     void subscribe(const char* prefix, const char* path);
@@ -133,6 +134,7 @@ private:
     void buildMqttPath(const char *path, char *outPath);
     void buildMqttPath(char* outPath, std::initializer_list<const char*> paths);
     void checkInternetConnectivity();
+    void restartIfOtaUploadStalled();
 
     const char* _lastWillPayload = "offline";
     char _mqttConnectionStateTopic[211] = {0};
@@ -181,6 +183,7 @@ private:
     uint8_t _updateCheckFailures = 0;
     int64_t _lastRssiTs = 0;
     bool _mqttEnabled = true;
+    std::atomic<int64_t> _otaUploadActivityMs{0};
     int _rssiPublishInterval = 0;
 
     std::map<uint8_t, int64_t> _gpioTs;

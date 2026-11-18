@@ -176,12 +176,15 @@ esp_err_t PsychicRequest::loadBody()
   while (remaining > 0) {
     int received = httpd_req_recv(this->_req, buf + actuallyReceived, remaining);
 
-    if (received == HTTPD_SOCK_ERR_TIMEOUT) {
-      continue;
-    } else if (received == HTTPD_SOCK_ERR_FAIL) {
-      ESP_LOGE(PH_TAG, "Failed to receive data.");
-      _bodyParsed = ESP_FAIL;
-      break;
+    if (received <= 0) {
+      /* Retry if timeout occurred */
+      if (psychicRecvTimedOut(received))
+        continue;
+      // bail on anything else: a negative result taken as a length would move the write position
+      // out of the buffer, and retrying a closed connection would spin here forever
+      ESP_LOGE(PH_TAG, "Failed to receive data: %d", received);
+      free(buf);
+      return _bodyParsed = ESP_FAIL;
     }
 
     remaining -= received;
@@ -192,9 +195,7 @@ esp_err_t PsychicRequest::loadBody()
   this->_body = String(buf);
   free(buf);
 
-  _bodyParsed = ESP_OK;
-
-  return _bodyParsed;
+  return _bodyParsed = ESP_OK;
 }
 
 http_method PsychicRequest::method()

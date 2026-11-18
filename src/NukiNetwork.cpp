@@ -412,6 +412,8 @@ bool NukiNetwork::update()
     _device->update();
 
     updateNetworkStatusLeds();
+    // Ahead of the early return below, which a firmware upload triggers by switching MQTT off
+    restartIfOtaUploadStalled();
 
     if(_importExport->getTOTPEnabled() && _importExport->_invalidCount > 0 && (ts - (120000 * _importExport->_invalidCount)) > _importExport->_lastCodeCheck)
     {
@@ -1748,5 +1750,28 @@ void NukiNetwork::disableMqtt()
 {
     _device->mqttDisable();
     _mqttEnabled = false;
+}
+
+void NukiNetwork::otaUploadActivity()
+{
+    _otaUploadActivityMs.store(espMillis());
+}
+
+void NukiNetwork::restartIfOtaUploadStalled()
+{
+    // A firmware upload switches MQTT, the auto-restarts and the Nuki watchdogs off and leaves the restart to the upload's
+    // request handler, which never runs if the client goes away mid-upload. Every chunk refreshes the timestamp, so a slow
+    // upload that still progresses is never cut off, and a finished or failed upload restarts the device long before.
+    static constexpr int64_t stallTimeoutMs = 5 * 60 * 1000;
+    const int64_t lastUploadActivityMs = _otaUploadActivityMs.load();
+
+    if(lastUploadActivityMs != 0 && espMillis() - lastUploadActivityMs > stallTimeoutMs)
+    {
+        Log->print("No firmware upload data received for ");
+        Log->print((int)(stallTimeoutMs / 60000));
+        Log->println(" minutes, restarting");
+        espDelayAck(200);
+        restartEsp(RestartReason::OTATimeout);
+    }
 }
 #endif
