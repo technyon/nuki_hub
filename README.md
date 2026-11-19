@@ -15,7 +15,7 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 ## Supported devices
 
 <b>Supported ESP32 devices:</b>
-- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooh Low Energy (BLE) which are supported by ESP-IDF 5.5.1 and Arduino Core 3.3.5.
+- Nuki Hub is compiled against all ESP32 models with Wi-Fi and Bluetooth Low Energy (BLE) which are supported by ESP-IDF 5.5.5 and Arduino Core 3.3.11.
 - Tested stable builds are provided for the ESP32, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-C61 module and ESP32-H2.
 - A build for ESP32-P4 with the ESP32-C6 is provided but has stability issues, and is not recommended
 - Untested builds are provided for the ESP32-Solo1 and ESP32-P4 with the ESP32-C5 module (as the developers don't own these devices).
@@ -36,12 +36,14 @@ Feel free to join us on Discord: https://discord.gg/9nPq85bP4p
 - Nuki Opener
 - Nuki Keypad 1.0
 - Nuki Keypad 2.0
+- Nuki Keypad 2.0 NFC (codes and fingerprints, NFC keys are managed in the Nuki app)
 
 <b>Supported Ethernet devices:</b><br>
 As an alternative to Wi-Fi (which is available on any supported ESP32), the following ESP32 modules with built-in wired ethernet are supported:
 - [Olimex ESP32-POE](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE/open-source-hardware)
 - [Olimex ESP32-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/open-source-hardware)
 - [WT32-ETH01](http://en.wireless-tag.com/product-item-2.html)
+- [ETH01-Evo (WT32-ETH01-EVO)](https://download.kamami.pl/p1198861-wt32-eth01_evo_datasheet_v2.0en.pdf)
 - [M5Stack Atom POE](https://docs.m5stack.com/en/atom/atom_poe)
 - [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32)
 - [LilyGO-T-ETH-POE](https://github.com/Xinyuan-LilyGO/LilyGO-T-ETH-POE)
@@ -62,9 +64,9 @@ See the "[Connecting via Ethernet](#connecting-via-ethernet-optional)" section f
 We don't recommend using the original ESP32 or ESP32-Solo1 devices because these devices experience unexpected crashes related to the (closed-source) BLE controller.<br>
 In newer models (e.g. ESP32-S3, ESP32-P4, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-C61, ESP32-H2) these unexpected crashed are seen a lot less.
 
-When buying a new device in 2025 we recommend the ESP32-P4 or ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
+When buying a new device we recommend the ESP32-P4 or ESP32-S3 with PSRAM (look for an ESP32-S3 with the designation N>=4 and R>=2 such as an ESP32-S3 N16R8).<br>
 
-The ESP32-P4 with ESP32-C6 or ESP32-C5 module for BLE/WiFi is the most powerfull ESP32 in 2025. 
+The ESP32-P4 with ESP32-C6 or ESP32-C5 module for BLE/WiFi is currently the most powerful ESP32. 
 It supports anything the ESP32 range has to offer with the highest CPU clocks, largest flash and PSRAM, Ethernet, PoE and WiFi6 (and 5 GHZ WiFi with the C5 as co-processor).
 
 The ESP32-S3 is a dual-core CPU with many GPIO's, ability to enlarge RAM using PSRAM, ability to connect Ethernet modules over SPI and optionally power the device with a PoE splitter.<br>
@@ -111,7 +113,7 @@ Not recommended devices ranked least-worst-to-worst:
 | Smart Home (e.g. Home Assistant) integration | :white_check_mark: | :white_check_mark: (limited) |
 | Cloud support | :white_check_mark: (optional through smarthome solution) | :white_check_mark: |
 | Cloud-less operation | :white_check_mark: | :white_check_mark: |
-| Nuki Keypad (1.0 and 2.0) support | :white_check_mark: | :white_check_mark: |
+| Nuki Keypad (1.0, 2.0 and 2.0 NFC) support | :white_check_mark: | :white_check_mark: |
 | Control via GPIO | :white_check_mark: | :no_entry: |
 | Hybrid mode for WiFI and Thread connected locks | :white_check_mark: | :no_entry: |
 
@@ -126,7 +128,7 @@ Not recommended devices ranked least-worst-to-worst:
 | Smart Home (e.g. Home Assistant) integration | :white_check_mark: | :white_check_mark: (limited) |
 | Cloud support | :white_check_mark: (optional through smarthome solution) | :white_check_mark: (optional through smarthome solution) |
 | Cloud-less operation | :white_check_mark: | :white_check_mark: (limited) |
-| Nuki Keypad (1.0 and 2.0) support | :white_check_mark: | :white_check_mark: (limited) |
+| Nuki Keypad (1.0, 2.0 and 2.0 NFC) support | :white_check_mark: | :white_check_mark: (limited) |
 | Control via GPIO | :white_check_mark: | :no_entry: |
 | Hybrid mode combining Bluetooth and WiFi/Thread | :white_check_mark: | :no_entry: |
 | Feature parity with the Nuki app (e.g. changing device settings, keypad codes, authorizations etc.) | :white_check_mark: | :no_entry: |
@@ -179,7 +181,7 @@ MQTT nodes like lock state and battery level should now reflect the reported val
 <br>
 <b>Note: It is possible to run Nuki Hub alongside a Nuki Bridge.
 This is not recommended (unless when using [hybrid mode](/HYBRID.md)) and will lead to excessive battery drain and can lead to either device missing updates.
-Enable "Register as app" before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
+Enable "Nuki Bridge is running alongside Nuki Hub" on the "Nuki Configuration" page before pairing to allow this. Otherwise the Bridge will be unregistered when pairing the Nuki Hub.</b>
 
 ## Pairing with a Nuki Lock Ultra / Nuki Lock Go / Nuki Lock 5th gen Pro
 
@@ -202,17 +204,17 @@ See [hybrid mode](/HYBRID.md) for more information.
 
 ESP32 devices have a limited amount of free RAM available.<br>
 <br>
-On version >=9.10 of Nuki Hub with only a Nuki Lock connected the expected free amount of RAM/Heap available is around:
+With one Nuki device connected the expected free amount of internal RAM/Heap available is around:
 
-- ESP32: 105.000 bytes
+- ESP32: 73.000 bytes
 - ESP32 with PSRAM: 120.000 bytes + PSRAM
 - ESP32-C3: 70.000 bytes
 - ESP32-C5 with PSRAM: 130.000 bytes + PSRAM
 - ESP32-C6: 200.000 bytes
 - ESP32-C61 with PSRAM: TBD + PSRAM
 - ESP32-P4: 450.000 bytes
-- ESP32-S3 135.000 bytes
-- ESP32-S3 with PSRAM: 185.000 bytes + PSRAM
+- ESP32-S3: 135.000 bytes
+- ESP32-S3 with PSRAM: 125.000 bytes + PSRAM
 
 This free amount of RAM can be reduced (temporarily) by certain actions (such as changing Nuki device config) or continuously when enabling the following:
 - Connecting both a Nuki opener and a Nuki lock to Nuki Hub
@@ -221,21 +223,22 @@ This free amount of RAM can be reduced (temporarily) by certain actions (such as
 - HTTP SSL (Costs about 30k RAM)
 - Developing/debugging Nuki devices and/or Nuki Hub, using WebSerial (Costs about 30k RAM)
 
-The currently available RAM/Heap can be found on the info page of the Web configurator of Nuki Hub.<br>
+The currently available RAM/Heap, the largest free block and the lowest amount since boot can be found on the info page of the Web configurator of Nuki Hub.<br>
 <br>
 When the ESP32 runs out of available RAM the device can crash or otherwise unexpected behaviour can occur.<br>
+Devices without PSRAM therefore run in low memory mode, see "[Recommended ESP32 devices](#recommended-esp32-devices)" for what that disables.<br>
 <br>
-Nuki Hub does allow for the use of embedded PSRAM on the regular binaries whenever it is available.<br>
-PSRAM is usually 2, 4 or 8MB in size and thus greatly enlarges the 320kb of internal RAM that is available.<br>
+Nuki Hub uses PSRAM whenever it is available.<br>
+PSRAM is usually 2, 4, 8 or 16MB in size and thus greatly enlarges the 320kb of internal RAM that is available.<br>
 It is basically impossible to run out of RAM when PSRAM is available.
 You can check on the info page of the Web configurator if PSRAM is available.
 
-Note that there are two builds of Nuki Hub for the ESP32-S3 available.<br>
-One for devices with no or Quad SPI PSRAM and one for devices with Octal SPI PSRAM.<br>
-If your ESP32-S3 device has PSRAM but it is not detected please switch to the other S3 binary.<br>
-You can do this by flashing the correct binaries manually or by selecting the option to switch S3 binary build from the Firmware Update page of the Web Configurator.
+There are separate images of Nuki Hub per chip and type of PSRAM:<br>
+- ESP32-S3: one without PSRAM, one for Quad SPI PSRAM and one for Octal SPI PSRAM (ESP32-S3 devices with 8 or 16MB PSRAM are Octal).
+- ESP32: one with PSRAM, one without PSRAM and one for the GL-S10, which is needed to enable PSRAM on that device.
 
-Note that there are also is a separate build of Nuki Hub available for the GL-S10 ESP32 which is needed to enable PSRAM on this device.<br>
+Nuki Hub checks which image fits the chip it runs on. The running and the recommended image are shown on the info page and on the "Firmware update" page; when they differ the next update switches to the recommended image unless you choose to keep the current one.
+See the "[Upgrading using Over-the-air Update (OTA)](#upgrading-using-over-the-air-update-ota)" section of this README.<br>
 
 ## Configuration
 
@@ -583,21 +586,24 @@ The maximum entry counts for keypad codes, time control, authorizations and the 
 ### Info
 
 - info/nukiHubVersion: Set to the current version number of the Nuki Hub firmware.
+- info/nukiHubBuild: Set to the build number of the Nuki Hub firmware.
 - [lock/opener/]info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware.
 - [lock/opener/]info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener.
 - info/nukiHubIp: Set to the IP of the Nuki Hub.
 - info/nukiHubLatest: Set to the latest available Nuki Hub firmware version number (if update checking is enabled in the settings).
 
-### Maintanence
+### Maintenance
 
-- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using Wi-Fi will be set to "Built-in Wi-Fi". If using Ethernet will be set to "Wiznet W5500", "ETH01-Evo", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit", "LilyGO T-ETH-POE" or "GL-S10".
+- maintenance/networkDevice: Set to the name of the network device that is used by the ESP. When using Wi-Fi will be set to "Built-in Wi-Fi". If using Ethernet will be set to the name of the selected network hardware, for example "Wiznet W5500", "ETH01-Evo", "Olimex (LAN8720)", "WT32-ETH01", "M5STACK PoESP32 Unit", "LilyGO T-ETH-POE" or "GL-S10".
 - maintenance/reset: Set to 1 to trigger a reboot of the ESP. Auto-resets to 0.
 - maintenance/update: Set to 1 to auto update Nuki Hub to the latest version from GitHub. Requires the setting "Allow updating using MQTT" to be enabled. Auto-resets to 0.
 - maintenance/mqttConnectionState: Last Will and Testament (LWT) topic. "online" when Nuki Hub is connected to the MQTT broker, "offline" if Nuki Hub is not connected to the MQTT broker.
 - maintenance/uptime: Uptime in minutes.
 - maintenance/wifiRssi: The Wi-Fi signal strength of the Wi-Fi Access Point as measured by the ESP32 and expressed by the RSSI Value in dBm.
 - maintenance/log: If "Enable MQTT logging" is enabled in the web interface, this topic will be filled with debug log information.
-- maintenance/freeHeap: Only available when debug mode is enabled. Set to the current size of free heap memory in bytes.
+- maintenance/freeHeap: Only available when "Publish free heap over MQTT" is enabled on the Advanced Configuration page. Set to the current size of free heap memory in bytes.
+- maintenance/webserver/state: 1 if the Web Configurator is enabled, otherwise 0.
+- maintenance/webserver/enable: Set to 1 to enable or to 0 to disable the Web Configurator. Nuki Hub restarts its services to apply the change.
 - maintenance/restartReasonNukiHub: Set to the last reason Nuki Hub was restarted. See [RestartReason.h](/src/RestartReason.h) for possible values
 - maintenance/restartReasonNukiEsp: Set to the last reason the ESP was restarted. See [RestartReason.h](/src/RestartReason.h) for possible values
 
@@ -777,10 +783,11 @@ On top of the Nuki Bridge endpoints, Nuki Hub adds a REST API with the same toke
 After the initial installation of the Nuki Hub firmware via serial connection, further updates can be deployed via OTA update from a browser.<br>
 In the configuration portal, select "Firmware update" from the main page.<br>
 <br>
-The easiest way to upgrade Nuki Hub, if Nuki Hub is connected to the internet, is to select "Update to latest version".<br>
+The easiest way to upgrade Nuki Hub, if Nuki Hub is connected to the internet, is to select "Update to latest release" (or the latest beta or development version).<br>
 This will download the latest Nuki Hub and Nuki Hub updater and automatically upgrade both applications.<br>
 Nuki Hub will reboot 3 times during this process, which will take about 5 minutes.<br>
-If you have enabled "Allow updating using MQTT" you can also use the Home Assistant updater or write "1" to the `nukihub/maintanance/update` topic to start the update process.<br>
+If you have enabled "Allow updating using MQTT" you can also use the Home Assistant updater or write "1" to the `maintenance/update` topic below the MQTT Nuki Hub Path to start the update process.<br>
+Nuki Hub looks for a new version once after boot and then every 24 hours, so a new release can take up to a day to show up on the hub and in Home Assistant. Opening the "Firmware update" page checks right away.<br>
 Nuki Hub checks which image fits the chip it runs on (PSRAM reported by the ESP32-S3 eFuse, PSRAM found at boot, the chip package, core count, chip revision and whether the GL-S10 Ethernet interface is in use). When a different image is recommended the "Firmware update" page says so and every update, including updates started over MQTT, switches to the recommended image. Choose "Keep the current image type" to stay on the image you are running; the choice is remembered until the recommendation changes. The running and recommended image are also listed on the Info page. The ESP32 image without PSRAM cannot check for an external PSRAM chip; it stays on its own image and, when Wi-Fi is used and GPIO16 and GPIO17 are unassigned, mentions it when GPIO16 is pulled high, which suggests a module with PSRAM (ESP32-WROVER). GPIO16 is only read on chip packages without embedded flash, once per boot.<br>
 <br>
 Alternatively you can select a binary file from your file system to update Nuki Hub or the Nuki Hub updator manually<br>
@@ -1044,6 +1051,9 @@ Note: LAN8720 modules are only supported on the ESP32, ESP32-P4 and ESP32-Solo1,
 If you are running a pre-compiled version of NukiHub (latest release, beta or nightly) you can use https://technyon.github.io/nuki_hub/stacktrace/ to debug crashes.
 You will need to collect a stack trace of the crash while connected to the serial logger (over USB).
 
+Nuki Hub also stores the last crash as a core dump, so no serial connection is needed to report one.
+Download it with "Export Coredump" on the "Import/Export Configuration" page and attach it to a GitHub issue together with the output of the info page, which lists the reasons of the last restarts.
+
 A stack trace usually starts with `Guru Mediation Error` and ends with `ELF file SHA256: ......`
 Copy the entire stack trace to the box in our online decoder and select the correct binary you are using.
 Click Run and check the output to find in which function the crash occurs and consider creating an issue on GitHub.
@@ -1054,7 +1064,7 @@ Click Run and check the output to find in which function the crash occurs and co
 
 First, make sure the firmware version of the Nuki device is up-to-date, older versions have issues pairing.<br>
 
-Check that pairing is allowed. In the Nuki smartphone app, go to "Settings" --> "Features & Configuration" --> "Button & LED" and make sure "Bluetooh Pairing" is enabled.<br>
+Check that pairing is allowed. In the Nuki smartphone app, go to "Settings" --> "Features & Configuration" --> "Button & LED" and make sure "Bluetooth Pairing" is enabled.<br>
 Next press the button for several seconds untill the LED light remains lit.
 
 On some devices, such as the [M5Stack PoESP32 Unit](https://docs.m5stack.com/en/unit/poesp32) the Bluetooth reception is very poor (range less than one meter).<br>
@@ -1108,7 +1118,7 @@ This button is disabled by default, but can be enabled in the Home Assistant UI.
 ### When controlling two locks (or openers) connected to two ESPs, both devices react to the same command. When using Home Asistant, the same status is display for both locks.
 
 When using multiple Nuki devices, different paths for each device have to be configured.<br>
-Navigate to "MQTT Configuration" and change the "MQTT Nuki Hub Path" under "Basic MQTT Configuration" for at least one of the devices.<br>
+Navigate to "MQTT Configuration" and change the "MQTT Nuki Hub Path" in the "Broker" section for at least one of the devices.<br>
 
 ### The Nuki battery is draining quickly.
 
