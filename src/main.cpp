@@ -1732,6 +1732,7 @@ void setup()
     Log->print(gpioDesc.c_str());
 
     importExport = new ImportExport(preferences);
+    importExport->setAvailablePins(&gpio->availablePins());
 
     network = new NukiNetwork(preferences, gpio, CharBuffer::get(), buffer_size, importExport);
     network->initialize();

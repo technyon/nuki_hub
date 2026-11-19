@@ -30,4 +30,5 @@ struct Setting
     SettingEffect effect;
     bool needsPsram = false;
     int lowMemoryMax = 0;
+    bool isGpio = false; // value is a GPIO number that must be available on this chip, -1 disables it
 };

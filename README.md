@@ -410,7 +410,7 @@ Note: All of the following sections require the Nuki security code / PIN to be s
 - Duo API hostname / Duo integration key / Duo secret key / Duo user: Set to the values of your Duo integration and the Duo user that should receive the push notification. See [Duo Push authentication](/DUOAUTH.md) for instructions on how to setup Duo Push authentication.
 - Require MFA (Duo/TOTP) authentication for all sensitive Nuki Hub operations (changing/exporting settings): Enable to require MFA approval on all sensitive operations.
 - Bypass MFA (Duo/TOTP) authentication by pressing the BOOT button while logging in: Enable to allow bypassing MFA authentication by pressing the BOOT button on the ESP during login. Note that this does not work on all ESP's (nor do all ESP's have a boot button to begin with). Test before relying on this function.
-- Bypass MFA (Duo/TOTP) authentication by pulling GPIO High / Low: Set to a GPIO pin to allow bypassing MFA authentication by pulling the GPIO high or low during login.
+- Bypass MFA (Duo/TOTP) authentication by pulling GPIO High / Low: Set to a GPIO pin to allow bypassing MFA authentication by pulling the GPIO high or low during login. Only GPIOs listed on the GPIO configuration page can be used, leave empty or set to -1 to disable.
 - One-time MFA Bypass: Set or generate a 32 character long alphanumeric string that can be used as a one-time MFA bypass when the ESP32 is unable to sync it's time and TOTP and Duo are unavailable as a result.
 
 #### Admin key
