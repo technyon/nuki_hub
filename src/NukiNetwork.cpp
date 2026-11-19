@@ -553,7 +553,7 @@ bool NukiNetwork::update()
         _haSetupDone = true;
     }
 
-    if(_checkUpdates && (!_haEnabled || (_haEnabled && _haSetupDone)) && _hasInternet)
+    if(_checkUpdates && (!_haEnabled || (_haEnabled && _haSetupDone)))
     {
         if(ts > _nextUpdateCheckTs && lowMemoryMode() && heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) < LOW_MEMORY_UPDATE_CHECK_MIN_BLOCK)
         {
@@ -578,6 +578,7 @@ bool NukiNetwork::update()
                     _preferences->putString(preference_latest_version, latestVersion);
                 }
 
+                _hasInternet = true;
                 _updateCheckFailures = 0;
                 _nextUpdateCheckTs = ts + 86400000;
             }
@@ -1021,46 +1022,54 @@ void NukiNetwork::onMqttDataReceived(const char* topic, byte* payload, const uns
         espDelayAck(200);
         restartEsp(RestartReason::RequestedViaMqtt);
     }
-    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false) && !mqttRecentlyConnected() && _hasInternet)
+    else if(comparePrefixedPath(topic, mqtt_topic_update) && strcmp(data, "1") == 0 && _preferences->getBool(preference_update_from_mqtt, false))
     {
-        Log->println("Update requested via MQTT.");
-
-        JsonDocument doc;
-
-        if (fetchOtaManifest(doc, 5000))
+        if(mqttRecentlyConnected())
         {
-            const char* channel = otaChannel(doc);
-            const char* channelName = strcmp(channel, "beta") == 0 ? "beta" : strcmp(channel, "master") == 0 ? "development" : "release";
-            OtaImage target = OtaImages::updateTarget(_preferences, _networkDeviceType == NetworkDeviceType::GL_S10);
-            String updaterUrl = OtaImages::url(channel, target, true);
-            String mainUrl = OtaImages::url(channel, target, false);
-
-            if(strcmp(NUKI_HUB_VERSION, doc[channel]["fullversion"] | "") == 0 && strcmp(NUKI_HUB_BUILD, doc[channel]["build"] | "") == 0 && strcmp(NUKI_HUB_DATE, doc[channel]["time"] | "") == 0)
-            {
-                Log->print("Nuki Hub is already on the latest ");
-                Log->print(channelName);
-                Log->println(" version, OTA update aborted.");
-            }
-            else
-            {
-                _preferences->putString(preference_ota_updater_url, updaterUrl);
-                _preferences->putString(preference_ota_main_url, mainUrl);
-                Log->print("Updating to latest ");
-                Log->print(channelName);
-                Log->println(" version.");
-                if(target != OtaImages::current())
-                {
-                    Log->print("Switching to the ");
-                    Log->print(OtaImages::label(target));
-                    Log->println(" image.");
-                }
-                espDelayAck(200);
-                restartEsp(RestartReason::OTAReboot);
-            }
+            Log->println("Update request via MQTT ignored, MQTT connected less than 6 seconds ago.");
         }
         else
         {
-            Log->println("Failed to retrieve OTA manifest, OTA update aborted.");
+            Log->println("Update requested via MQTT.");
+
+            JsonDocument doc;
+
+            if (fetchOtaManifest(doc, 5000))
+            {
+                const char* channel = otaChannel(doc);
+                const char* channelName = strcmp(channel, "beta") == 0 ? "beta" : strcmp(channel, "master") == 0 ? "development" : "release";
+                OtaImage target = OtaImages::updateTarget(_preferences, _networkDeviceType == NetworkDeviceType::GL_S10);
+                String updaterUrl = OtaImages::url(channel, target, true);
+                String mainUrl = OtaImages::url(channel, target, false);
+
+                if(strcmp(NUKI_HUB_VERSION, doc[channel]["fullversion"] | "") == 0 && strcmp(NUKI_HUB_BUILD, doc[channel]["build"] | "") == 0 && strcmp(NUKI_HUB_DATE, doc[channel]["time"] | "") == 0)
+                {
+                    Log->print("Nuki Hub is already on the latest ");
+                    Log->print(channelName);
+                    Log->println(" version, OTA update aborted.");
+                }
+                else
+                {
+                    _preferences->putString(preference_ota_updater_url, updaterUrl);
+                    _preferences->putString(preference_ota_main_url, mainUrl);
+                    Log->print("Updating to latest ");
+                    Log->print(channelName);
+                    Log->println(" version.");
+                    if(target != OtaImages::current())
+                    {
+                        Log->print("Switching to the ");
+                        Log->print(OtaImages::label(target));
+                        Log->println(" image.");
+                    }
+                    espDelayAck(200);
+                    restartEsp(RestartReason::OTAReboot);
+                }
+            }
+            else
+            {
+                Log->println("Failed to retrieve OTA manifest, OTA update aborted.");
+            }
+    
         }
     }
     else if(comparePrefixedPath(topic, mqtt_topic_webserver_action) && !mqttRecentlyConnected())
