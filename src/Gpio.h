@@ -4,6 +4,7 @@
 #include <functional>
 #include <Preferences.h>
 #include <vector>
+#include "soc/soc_caps.h"
 
 class String;
 
@@ -165,7 +166,7 @@ private:
 
     static Gpio* _inst;
 
-    std::vector<uint8_t> _triggerState;
+    uint8_t _triggerState[SOC_GPIO_PIN_COUNT] = {};
     hw_timer_t* timer = nullptr;
 
     bool _first = true;

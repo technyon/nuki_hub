@@ -23,6 +23,11 @@ bool Gpio::isTriggered(const PinEntry& entry)
 {
 //    Log->println(" ------------ ");
 
+    if(entry.pin >= SOC_GPIO_PIN_COUNT)
+    {
+        return false;
+    }
+
     uint8_t state = digitalRead(entry.pin);
     uint8_t lastState = (_triggerState[entry.pin] & 0x80) >> 7;
 
@@ -113,12 +118,6 @@ void Gpio::isrOnTimer()
 
 void Gpio::init()
 {
-    _inst->_triggerState.reserve(_inst->availablePins().size());
-    for(int i=0; i<_inst->availablePins().size(); i++)
-    {
-        _inst->_triggerState.push_back(0);
-    }
-
     _inst->setPins();
 }
 
