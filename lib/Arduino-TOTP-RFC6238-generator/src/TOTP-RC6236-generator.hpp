@@ -20,7 +20,7 @@
 
 // Needed for the SHA1
 //
-#include <mbedtls/md.h>
+#include <psa/crypto.h>
 
 // Needed for base32 decode - origin 
 // https://github.com/dirkx/Arduino-Base32-Decode/releases
@@ -86,10 +86,18 @@ class TOTP {
 #endif
 
       unsigned char digest[20];
-      if (mbedtls_md_hmac(mbedtls_md_info_from_type(MBEDTLS_MD_SHA1),
-                          buff, n, // key
+      psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+      psa_key_id_t key = 0;
+      size_t digestLength = 0;
+      psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+      psa_set_key_algorithm(&attributes, PSA_ALG_HMAC(PSA_ALG_SHA_1));
+      psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+      if (psa_crypto_init() != PSA_SUCCESS || psa_import_key(&attributes, buff, n, &key) != PSA_SUCCESS) return NULL;
+      psa_status_t status = psa_mac_compute(key, PSA_ALG_HMAC(PSA_ALG_SHA_1),
                           (unsigned char*) &v, sizeof(v), // input
-                          digest)) return NULL;
+                          digest, sizeof(digest), &digestLength);
+      psa_destroy_key(key);
+      if (status != PSA_SUCCESS || digestLength != sizeof(digest)) return NULL;
 
       uint8_t offst   = digest[19] & 0x0f;
       uint32_t bin_code =   (digest[offst + 0] & 0x7f) << 24

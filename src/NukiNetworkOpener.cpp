@@ -397,7 +397,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
 
     json["ringToOpenTimer"] = keyTurnerState.ringToOpenTimer != 255 ? keyTurnerState.ringToOpenTimer : 0;
     char curTime[20];
-    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
+    snprintf(curTime, sizeof(curTime), "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
     json["currentTime"] = curTime;
     json["timeZoneOffset"] = keyTurnerState.timeZoneOffset;
 
@@ -809,7 +809,7 @@ void NukiNetworkOpener::publishConfig(const NukiOpener::Config &config)
 {
     char str[50];
     char curTime[20];
-    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", config.currentTimeYear, config.currentTimeMonth, config.currentTimeDay, config.currentTimeHour, config.currentTimeMinute, config.currentTimeSecond);
+    snprintf(curTime, sizeof(curTime), "%04d-%02d-%02d %02d:%02d:%02d", config.currentTimeYear, config.currentTimeMonth, config.currentTimeDay, config.currentTimeHour, config.currentTimeMinute, config.currentTimeSecond);
     char uidString[20];
     itoa(config.nukiId, uidString, 16);
 

@@ -180,7 +180,7 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
 #ifndef CONFIG_IDF_TARGET_ESP32H2
         else
         {
-            #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+            #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
             if (!hostedIsWiFiActive())
             {
                 hostedInitWiFi();
@@ -216,7 +216,7 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
 #endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     case NetworkDeviceType::WiFi:
-        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
         if (!hostedIsWiFiActive())
         {
             hostedInitWiFi();
@@ -225,7 +225,7 @@ NetworkDevice *NetworkDeviceInstantiator::Create(NetworkDeviceType networkDevice
         device = new WifiDevice(hostname, preferences, ipConfiguration);
         break;
     default:
-        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
         if (!hostedIsWiFiActive())
         {
             hostedInitWiFi();

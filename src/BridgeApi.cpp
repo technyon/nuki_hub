@@ -5,7 +5,7 @@
 #include "EspMillis.h"
 #include "RestartReason.h"
 #include "esp_http_client.h"
-#include "mbedtls/sha256.h"
+#include "psa/crypto.h"
 #include "NukiJson.h"
 #include "PsramJsonAllocator.h"
 #include "UpdateRequest.h"
@@ -744,7 +744,11 @@ bool BridgeApi::checkToken(PsychicRequest* request)
     {
         String data = request->getParam("ts")->value() + "," + request->getParam("rnr")->value() + "," + token;
         unsigned char digest[32];
-        mbedtls_sha256((const unsigned char*)data.c_str(), data.length(), digest, 0);
+        size_t digestLength = 0;
+        if(psa_crypto_init() != PSA_SUCCESS || psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char*)data.c_str(), data.length(), digest, sizeof(digest), &digestLength) != PSA_SUCCESS || digestLength != sizeof(digest))
+        {
+            return false;
+        }
         char hex[65];
         for(int i = 0; i < 32; i++)
         {

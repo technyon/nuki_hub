@@ -478,7 +478,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
     }
 
     char curTime[20];
-    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
+    snprintf(curTime, sizeof(curTime), "%04d-%02d-%02d %02d:%02d:%02d", keyTurnerState.currentTimeYear, keyTurnerState.currentTimeMonth, keyTurnerState.currentTimeDay, keyTurnerState.currentTimeHour, keyTurnerState.currentTimeMinute, keyTurnerState.currentTimeSecond);
     json["currentTime"] = curTime;
     json["timeZoneOffset"] = keyTurnerState.timeZoneOffset;
     json["nightModeActive"] = keyTurnerState.nightModeActive != 255 ? keyTurnerState.nightModeActive : 0;
@@ -882,7 +882,7 @@ void NukiNetworkLock::publishConfig(const NukiLock::Config &config)
 {
     char str[50];
     char curTime[20];
-    sprintf(curTime, "%04d-%02d-%02d %02d:%02d:%02d", config.currentTimeYear, config.currentTimeMonth, config.currentTimeDay, config.currentTimeHour, config.currentTimeMinute, config.currentTimeSecond);
+    snprintf(curTime, sizeof(curTime), "%04d-%02d-%02d %02d:%02d:%02d", config.currentTimeYear, config.currentTimeMonth, config.currentTimeDay, config.currentTimeHour, config.currentTimeMinute, config.currentTimeSecond);
     char uidString[20];
     itoa(config.nukiId, uidString, 16);
 
@@ -952,9 +952,9 @@ void NukiNetworkLock::publishAdvancedConfig(const NukiLock::AdvancedConfig &conf
 {
     char str[50];
     char nmst[6];
-    sprintf(nmst, "%02d:%02d", config.nightModeStartTime[0], config.nightModeStartTime[1]);
+    snprintf(nmst, sizeof(nmst), "%02d:%02d", config.nightModeStartTime[0], config.nightModeStartTime[1]);
     char nmet[6];
-    sprintf(nmet, "%02d:%02d", config.nightModeEndTime[0], config.nightModeEndTime[1]);
+    snprintf(nmet, sizeof(nmet), "%02d:%02d", config.nightModeEndTime[0], config.nightModeEndTime[1]);
 
     JsonDocument json;
 

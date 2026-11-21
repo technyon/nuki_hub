@@ -144,53 +144,33 @@ static int add_subject_alt_name(mbedtls_x509write_cert *crt, std::string &cn)
 static int gen_key(SSLCert &certCtx, SSLKeySize keySize)
 {
 
-    // Initialize the entropy source
-    mbedtls_entropy_context entropy;
-    mbedtls_entropy_init( &entropy );
-
-    // Initialize the RNG
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_ctr_drbg_init( &ctr_drbg );
-    int rngRes = mbedtls_ctr_drbg_seed(
-                     &ctr_drbg, mbedtls_entropy_func, &entropy,
-                     NULL, 0
-                 );
-    if (rngRes != 0)
+    if (psa_crypto_init() != PSA_SUCCESS)
     {
-        mbedtls_entropy_free( &entropy );
         return HTTPS_SERVER_ERROR_KEYGEN_RNG;
     }
 
-    // Initialize the private key
-    mbedtls_pk_context key;
-    mbedtls_pk_init( &key );
-    int resPkSetup = mbedtls_pk_setup( &key, mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) );
-    if ( resPkSetup != 0)
-    {
-        mbedtls_ctr_drbg_free( &ctr_drbg );
-        mbedtls_entropy_free( &entropy );
-        return HTTPS_SERVER_ERROR_KEYGEN_SETUP_PK;
-    }
-
     // Actual key generation
-    int resPkGen = mbedtls_rsa_gen_key(
-                       mbedtls_pk_rsa( key ),
-                       mbedtls_ctr_drbg_random,
-                       &ctr_drbg,
-                       keySize,
-                       65537
-                   );
-    if ( resPkGen != 0)
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t keyId = 0;
+    psa_set_key_type( &attributes, PSA_KEY_TYPE_RSA_KEY_PAIR );
+    psa_set_key_bits( &attributes, keySize );
+    psa_set_key_algorithm( &attributes, PSA_ALG_RSA_PKCS1V15_SIGN( PSA_ALG_ANY_HASH ) );
+    psa_set_key_usage_flags( &attributes, PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_VERIFY_HASH );
+    if (psa_generate_key( &attributes, &keyId ) != PSA_SUCCESS)
     {
-        mbedtls_pk_free( &key );
-        mbedtls_ctr_drbg_free( &ctr_drbg );
-        mbedtls_entropy_free( &entropy );
         return HTTPS_SERVER_ERROR_KEYGEN_GEN_PK;
     }
 
-    // Free the entropy source and the RNG as they are no longer needed
-    mbedtls_ctr_drbg_free( &ctr_drbg );
-    mbedtls_entropy_free( &entropy );
+    // Copy the generated key into a private key context
+    mbedtls_pk_context key;
+    mbedtls_pk_init( &key );
+    int resPkSetup = mbedtls_pk_copy_from_psa( keyId, &key );
+    psa_destroy_key( keyId );
+    if ( resPkSetup != 0)
+    {
+        mbedtls_pk_free( &key );
+        return HTTPS_SERVER_ERROR_KEYGEN_SETUP_PK;
+    }
 
     // Allocate the space on the heap, as stack size is quite limited
     unsigned char * output_buf = new unsigned char[4096];
@@ -276,8 +256,6 @@ static int cert_write(SSLCert &certCtx, std::string dn, std::string validityFrom
     int funcRes = 0;
     int stepRes = 0;
 
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_pk_context key;
     mbedtls_x509write_cert crt;
     unsigned char * primary_buffer;
@@ -297,21 +275,14 @@ static int cert_write(SSLCert &certCtx, std::string dn, std::string validityFrom
         return HTTPS_SERVER_ERROR_CERTGEN_CN;
     }
 
-    // Initialize the entropy source
-    mbedtls_entropy_init( &entropy );
-
-    // Initialize the RNG
-    mbedtls_ctr_drbg_init( &ctr_drbg );
-    stepRes = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0 );
-    if (stepRes != 0)
+    if (psa_crypto_init() != PSA_SUCCESS)
     {
-        funcRes = HTTPS_SERVER_ERROR_CERTGEN_RNG;
-        goto error_after_entropy;
+        return HTTPS_SERVER_ERROR_CERTGEN_RNG;
     }
 
     mbedtls_pk_init( &key );
 
-    stepRes = mbedtls_pk_parse_key( &key, (const unsigned char *)certCtx.getKeyPEM().c_str(), certCtx.getPKLength() + 1, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
+    stepRes = mbedtls_pk_parse_key( &key, (const unsigned char *)certCtx.getKeyPEM().c_str(), certCtx.getPKLength() + 1, NULL, 0);
     if (stepRes != 0)
     {
         funcRes = HTTPS_SERVER_ERROR_CERTGEN_READKEY;
@@ -382,7 +353,7 @@ static int cert_write(SSLCert &certCtx, std::string dn, std::string validityFrom
     }
 
     // Write the actual certificate
-    stepRes = mbedtls_x509write_crt_pem(&crt, primary_buffer, 4096, mbedtls_ctr_drbg_random, &ctr_drbg );
+    stepRes = mbedtls_x509write_crt_pem(&crt, primary_buffer, 4096 );
     if (stepRes < 0)
     {
         funcRes = HTTPS_SERVER_ERROR_CERTGEN_WRITE;
@@ -403,10 +374,6 @@ error_after_cert:
 
 error_after_key:
     mbedtls_pk_free(&key);
-
-error_after_entropy:
-    mbedtls_ctr_drbg_free( &ctr_drbg );
-    mbedtls_entropy_free( &entropy );
     return funcRes;
 }
 

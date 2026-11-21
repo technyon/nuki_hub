@@ -6,7 +6,7 @@
 #include "MqttTopics.h"
 #include "esp_rom_crc.h"
 #include "esp_heap_caps.h"
-#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
 #include "WiFi.h"
 #else
 #include "esp_mac.h"
@@ -450,7 +450,7 @@ bool HomeAssistantDiscovery::setupHASS(int type, uint32_t nukiId, char* nukiName
     uint64_t savedDevId = _preferences->getULong64(preference_nukihub_id, 0);
     uint64_t curDevId;
 
-    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
     curDevId = 0;
     std::string macString = std::string(WiFi.macAddress().c_str());
     std::string::iterator i;
