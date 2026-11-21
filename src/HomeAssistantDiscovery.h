@@ -2,6 +2,7 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include <functional>
+#include <initializer_list>
 #include <map>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -26,6 +27,8 @@ enum class HassRun
     Cleanup
 };
 
+typedef std::pair<const char*, const char*> HassKv;
+
 struct HassEntity
 {
     const char* component;
@@ -40,7 +43,9 @@ struct HassEntity
     int aclIndex;
     int aclIndex2;
     int gemini;
-    std::vector<std::pair<const char*, const char*>> additionalEntries;
+    std::initializer_list<HassKv> additionalEntries;
+    const char* const* options = nullptr;
+    const char* preference = nullptr;
 };
 
 class HomeAssistantDiscovery
@@ -66,7 +71,7 @@ public:
                           const String& stateClass = "",
                           const String& entityCat = "",
                           const String& commandTopic = "",
-                          const std::vector<std::pair<const char*, const char*>>& additionalEntries = {}
+                          std::initializer_list<HassKv> additionalEntries = {}
                          );
 private:
     void publishHASSConfig(char *deviceType, const char *baseTopic, char *name, char *uidString, const char *softwareVersion, const char *hardwareVersion, const bool& hasDoorSensor, const bool& hasKeypad, const bool& publishAuthData, char *lockAction, char *unlockAction, char *openAction);
@@ -75,7 +80,8 @@ private:
 
     void publishHASSConfigAdditionalLockEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
 
-    void publishHassEntities(const HassEntity* entities, size_t count, char* deviceType, const char* baseTopic, char* name, char* uidString, const uint32_t* aclPrefs, const uint32_t* basicAclPrefs, const uint32_t* advancedAclPrefs);
+    void publishHassEntities(const HassEntity* entities, size_t count, const char* deviceType, const char* baseTopic, const char* name, const char* uidString, const uint32_t* aclPrefs = nullptr, const uint32_t* basicAclPrefs = nullptr, const uint32_t* advancedAclPrefs = nullptr);
+    void publishHassEntity(const HassEntity& entity, const char* deviceType, const char* baseTopic, const char* name, const char* uidString);
     void publishHASSConfigDoorSensor(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAdditionalOpenerEntities(char* deviceType, const char* baseTopic, char* name, char* uidString);
     void publishHASSConfigAccessLog(char* deviceType, const char* baseTopic, char* name, char* uidString);
@@ -109,7 +115,7 @@ private:
                                 const String& stateClass = "",
                                 const String& entityCat = "",
                                 const String& commandTopic = "",
-                                const std::vector<std::pair<const char*, const char*>>& additionalEntries = {}
+                                std::initializer_list<HassKv> additionalEntries = {}
                                );
 
     NetworkDevice* _device = nullptr;
