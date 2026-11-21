@@ -28,9 +28,7 @@ SOFTWARE.
 #include <Arduino.h>
 
 #include <string>
-#include <mbedtls/rsa.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
+#include <psa/crypto.h>
 #include <mbedtls/pk.h>
 #include <mbedtls/x509.h>
 #include <mbedtls/x509_crt.h>
