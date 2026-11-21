@@ -14,11 +14,13 @@
 #endif
 #include "Config.h"
 #include "esp32-hal-log.h"
-#include "esp32-hal-bt-mem.h"
+#include "esp32-hal-alloc-ble-mem.h"
 #include "hal/wdt_hal.h"
 #include "esp_chip_info.h"
 #include "esp_netif_sntp.h"
+#ifdef CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
+#endif
 #include "FS.h"
 #include "SPIFFS.h"
 //#include <ESPmDNS.h>
@@ -31,7 +33,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "esp_psram.h"
 #endif
 
-#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
 #include "esp_hosted.h"
 #include "esp_hosted_ota.h"
 #include "esp_hosted_api_types.h"
@@ -119,7 +121,11 @@ ImportExport* importExport = nullptr;
 
 // One RTC object with a fixed layout, see RtcState.h. The names below are
 // aliases for its fields so the rest of the code is unchanged.
+#if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
 RTC_NOINIT_ATTR RtcNoInitState rtcState;
+#else
+__NOINIT_ATTR RtcNoInitState rtcState;
+#endif
 int& espRunning = rtcState.espRunning;
 int& restartReason = rtcState.restartReason;
 uint64_t& restartReasonValidDetect = rtcState.restartReasonValidDetect;
@@ -205,7 +211,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
-#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
 static esp_err_t parse_image_header_from_buffer(const uint8_t* buffer, size_t buffer_size, size_t* firmware_size, char* app_version_str, size_t version_str_len)
 {
     esp_image_header_t image_header;
@@ -851,7 +857,7 @@ void restartServices(bool reconnect)
         BLEDevice::deinit(false);
         Log->println("Deinit BLE device done");
 
-        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
         if (hostedIsBLEActive())
         {
             hostedDeinitBLE();
@@ -867,7 +873,7 @@ void restartServices(bool reconnect)
 
     if(lockEnabled || openerEnabled)
     {
-        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+        #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
         hostedInitBLE();
         #endif
 		Log->println("Restarting BLE Scanner");
@@ -945,7 +951,7 @@ void initNetworkTask(const bool& connected, const bool& firstRun)
     }
     initialised = true;
 
-#if !defined(NUKI_HUB_UPDATER) && (defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED))
+#if !defined(NUKI_HUB_UPDATER) && (defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED))
     //if (hostedHasUpdate() || forceHostedUpdate)
     if (forceHostedUpdate)
     {
@@ -1492,6 +1498,7 @@ void setupTasks(bool ota)
 
 void logCoreDump()
 {
+#ifdef CONFIG_ESP_COREDUMP_ENABLE
     coredumpPrinted = false;
     espDelayAck(500);
     Log->println("Printing coredump and saving to coredump.hex on SPIFFS");
@@ -1544,7 +1551,7 @@ void logCoreDump()
 
                 for (int16_t j = 0; j < 256; j++)
                 {
-                    char str_tmp[2];
+                    char str_tmp[3];
                     if (bf[j] <= 0x0F)
                     {
                         sprintf(str_tmp, "0%x", bf[j]);
@@ -1580,6 +1587,7 @@ void logCoreDump()
     {
         Serial.println("esp_core_dump_image_get() FAIL");
     }
+#endif
     coredumpPrinted = true;
 }
 
@@ -1704,7 +1712,7 @@ void setup()
 #else
     bootloopDetection();
 
-#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
     hostedInitBLE();
 #endif
 

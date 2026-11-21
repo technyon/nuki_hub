@@ -27,19 +27,6 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 extern bool timeSynced;
 
-#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
-#include "esp_hosted.h"
-static esp_hosted_coprocessor_fwver_t slave_version_struct = {
-  .major1 = 0,
-  .minor1 = 0,
-  .patch1 = 0
-};
-static esp_hosted_coprocessor_fwver_t host_version_struct = {
-  .major1 = ESP_HOSTED_VERSION_MAJOR_1,
-  .minor1 = ESP_HOSTED_VERSION_MINOR_1,
-  .patch1 = ESP_HOSTED_VERSION_PATCH_1
-};
-#endif
 
 #ifndef NUKI_HUB_UPDATER
 #include <HTTPClient.h>
@@ -178,7 +165,7 @@ void WebCfgServer::initialize()
         websocketHandler->onOpen([](PsychicWebSocketClient *client)
         {
             webSerialClientCount++;
-            Log->printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString());
+            Log->printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString().c_str());
             client->sendMessage("NukiHub WebSerial started");
         });
         websocketHandler->onFrame([](PsychicWebSocketRequest *request, httpd_ws_frame *frame)
@@ -221,7 +208,7 @@ void WebCfgServer::initialize()
             {
                 webSerialClientCount--;
             }
-            Log->printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString());
+            Log->printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString().c_str());
         });
 
         _psychicServer->on("/ws", websocketHandler);
@@ -1497,6 +1484,7 @@ esp_err_t WebCfgServer::sendWebSerial(PsychicRequest* request, PsychicResponse* 
 {
     // escaped by https://www.cescaper.com/
     resp->addHeader("Cache-Control", "public, max-age=3600");
+    resp->addHeader("Content-Encoding", "gzip");
     resp->setCode(200);
     resp->setContentType("text/html");
     resp->setContent((const uint8_t *)WEBSERIAL_HTML, sizeof(WEBSERIAL_HTML));

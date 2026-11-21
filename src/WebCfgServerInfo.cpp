@@ -16,7 +16,7 @@
 #endif
 #include "driver/gpio.h"
 
-#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
 #include "esp_hosted.h"
 static esp_hosted_coprocessor_fwver_t slave_version_struct = {
   .major1 = 0,
@@ -115,7 +115,7 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print(_preferences->getString(preference_updater_build, ""));
     response.print("\nUpdater build date: ");
     response.print(_preferences->getString(preference_updater_date, ""));
-    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+    #if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
     response.printf("\nHost hosted firmware version: %u.%u.%u", host_version_struct.major1, host_version_struct.minor1, host_version_struct.patch1);
     if(esp_hosted_get_coprocessor_fwversion(&slave_version_struct) == ESP_OK)
     {
