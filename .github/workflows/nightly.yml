@@ -63,7 +63,7 @@ jobs:
 
       - name: Install PlatformIO Core
         run: |
-          uv pip install --system -U https://github.com/pioarduino/platformio-core/archive/refs/tags/v6.1.19.zip
+          uv pip install --system -U https://github.com/pioarduino/platformio-core/archive/refs/tags/v6.2.0.post1.zip
           # platform-espressif32's builder/main.py imports these unconditionally; its own
           # penv bootstrap (builder/penv_setup.py) is supposed to install them automatically
           # but isn't picking them up reliably in this runner image, so pin them explicitly.
@@ -86,9 +86,19 @@ jobs:
             BOARD="${BOARD}_dbg"
           fi
           echo "::group::Building with PlatformIO"
-            make updater_${ORIGBOARD}
-            make $BOARD
+            set -o pipefail
+            make updater_${ORIGBOARD} 2>&1 | tee build.log
+            make $BOARD 2>&1 | tee -a build.log
           echo "::endgroup::"
+
+      - name: Warn when an image nearly fills its partition
+        run: |
+          grep '^Flash:' build.log | while read -r line; do
+            used=$(echo "$line" | sed -E 's/.*\] +([0-9]+)\..*/\1/')
+            if [ "$used" -ge 95 ]; then
+              echo "::warning::${BOARD} (${BUILD}): ${line#*] }"
+            fi
+          done
 
       - name: Add flash script
         env:

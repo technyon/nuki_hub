@@ -515,7 +515,7 @@ void NukiWrapper::executeConfigUpdate(const char *value)
                         keyvalue[1] = (uint8_t)keystr.substring(3, 5).toInt();
                         if(keyvalue[0] >= 0 && keyvalue[0] <= 23 && keyvalue[1] >= 0 && keyvalue[1] <= 59)
                         {
-                            if(_nukiAdvancedConfig.nightModeStartTime == keyvalue)
+                            if(memcmp(_nukiAdvancedConfig.nightModeStartTime, keyvalue, sizeof(keyvalue)) == 0)
                             {
                                 jsonResult[advancedKeys[j]] = "unchanged";
                             }
@@ -537,7 +537,7 @@ void NukiWrapper::executeConfigUpdate(const char *value)
                         keyvalue[1] = (uint8_t)keystr.substring(3, 5).toInt();
                         if(keyvalue[0] >= 0 && keyvalue[0] <= 23 && keyvalue[1] >= 0 && keyvalue[1] <= 59)
                         {
-                            if(_nukiAdvancedConfig.nightModeEndTime == keyvalue)
+                            if(memcmp(_nukiAdvancedConfig.nightModeEndTime, keyvalue, sizeof(keyvalue)) == 0)
                             {
                                 jsonResult[advancedKeys[j]] = "unchanged";
                             }
