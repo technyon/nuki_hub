@@ -1,0 +1,16 @@
+{
+  "name": "NukiHub - ESP32-Solo1",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "nuki_hub_bootloader_esp32solo1.bin", "offset": 4096 },
+        { "path": "nuki_hub_partitions_esp32solo1.bin", "offset": 32768 },
+        { "path": "boot_app0.bin", "offset": 57344 },
+        { "path": "nuki_hub_esp32solo1.bin", "offset": 65536 },
+        { "path": "nuki_hub_updater_esp32solo1.bin", "offset": 2621440 }
+      ]
+    }
+  ]
+}
