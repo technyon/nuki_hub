@@ -133,6 +133,7 @@ bool& ethCriticalFailure = rtcState.ethCriticalFailure;
 
 bool coredumpPrinted = true;
 bool timeSynced = false;
+std::atomic<bool> timeSyncedLogPending{false};
 bool webStarted = false;
 bool webSSLStarted = false;
 bool lockStarted = false;
@@ -606,8 +607,8 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 
 void cbSyncTime(struct timeval *tv)
 {
-    Log->println("NTP time synced");
     timeSynced = true;
+    timeSyncedLogPending = true;
 }
 
 void startWebServer()
@@ -1090,6 +1091,11 @@ void processNetworkTask(const bool& firstRun)
 
     checkBootLoopCounter(ts);
     updateSerialReader();
+
+    if(timeSyncedLogPending.exchange(false))
+    {
+        Log->println("NTP time synced");
+    }
 
     network->update();
     espDelayAck(50);
