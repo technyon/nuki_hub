@@ -27,7 +27,7 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 extern bool timeSynced;
 
-#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_WIFI_REMOTE_ENABLED)
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE) || defined(CONFIG_ESP_HOSTED_ENABLED)
 #include "esp_hosted.h"
 static esp_hosted_coprocessor_fwver_t slave_version_struct = {
   .major1 = 0,
@@ -178,7 +178,7 @@ void WebCfgServer::initialize()
         websocketHandler->onOpen([](PsychicWebSocketClient *client)
         {
             webSerialClientCount++;
-            Log->printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString());
+            Log->printf("[socket] connection #%u connected from %s\n", client->socket(), client->remoteIP().toString().c_str());
             client->sendMessage("NukiHub WebSerial started");
         });
         websocketHandler->onFrame([](PsychicWebSocketRequest *request, httpd_ws_frame *frame)
@@ -221,7 +221,7 @@ void WebCfgServer::initialize()
             {
                 webSerialClientCount--;
             }
-            Log->printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString());
+            Log->printf("[socket] connection #%u closed from %s\n", client->socket(), client->remoteIP().toString().c_str());
         });
 
         _psychicServer->on("/ws", websocketHandler);

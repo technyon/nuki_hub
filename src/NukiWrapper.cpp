@@ -33,10 +33,6 @@ NukiWrapper::NukiWrapper(const std::string& deviceName, NukiDeviceId* deviceId, 
 
     nukiInst = this;
 
-    memset(&_lastKeyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
-    memset(&_lastBatteryReport, sizeof(NukiLock::BatteryReport), 0);
-    memset(&_batteryReport, sizeof(NukiLock::BatteryReport), 0);
-    memset(&_keyTurnerState, sizeof(NukiLock::KeyTurnerState), 0);
     _keyTurnerState.lockState = NukiLock::LockState::Undefined;
 
 #ifndef NUKI_HUB_UPDATER

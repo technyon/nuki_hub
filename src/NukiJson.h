@@ -7,12 +7,12 @@ namespace NukiJson
 {
 inline void dateTime(char* out, int year, int month, int day, int hour, int minute, int second)
 {
-    sprintf(out, "%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, minute, second);
+    snprintf(out, 20, "%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, minute, second);
 }
 
 inline void timeOfDay(char* out, int hour, int minute)
 {
-    sprintf(out, "%02d:%02d", hour, minute);
+    snprintf(out, 6, "%02d:%02d", hour, minute);
 }
 
 template<typename TEntry>
