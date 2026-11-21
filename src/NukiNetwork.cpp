@@ -1544,7 +1544,7 @@ void NukiNetwork::publishHassTopic(const String& mqttDeviceType,
                                    const String& stateClass,
                                    const String& entityCat,
                                    const String& commandTopic,
-                                   const std::vector<std::pair<const char*, const char*>>& additionalEntries
+                                   std::initializer_list<std::pair<const char*, const char*>> additionalEntries
                                   )
 {
     _hadiscovery->publishHassTopic(mqttDeviceType, mqttDeviceName, uidString, uidStringPostfix, displayName, name, baseTopic, stateTopic, deviceType, deviceClass, stateClass, entityCat, commandTopic, additionalEntries);

@@ -14,10 +14,11 @@
 #include "LockActionResult.h"
 #include "NukiOfficial.h"
 #include "NukiPublisher.h"
+#include "NukiNetworkEntries.h"
 #include "EspMillis.h"
 #include "DoorSensorOverride.h"
 
-class NukiNetworkLock : public MqttReceiver
+class NukiNetworkLock : public MqttReceiver, public NukiNetworkEntries
 {
 public:
     explicit NukiNetworkLock(NukiNetwork* network, NukiOfficial* nukiOfficial, Preferences* preferences, char* buffer, size_t bufferSize);
@@ -39,9 +40,7 @@ public:
     void publishRssi(const int& rssi);
     void publishRetry(const std::string& message);
     void publishBleAddress(const std::string& address);
-    void publishKeypad(const std::list<NukiLock::KeypadEntry>& entries, uint maxKeypadCodeCount);
     void publishTimeControl(const std::list<NukiLock::TimeControlEntry>& timeControlEntries, uint maxTimeControlEntryCount);
-    void publishAuth(const std::list<NukiLock::AuthorizationEntry>& authEntries, uint maxAuthEntryCount);
     void publishStatusUpdated(const bool statusUpdated);
     void publishConfigCommandResult(const char* result);
     void publishKeypadCommandResult(const char* result);
@@ -75,36 +74,22 @@ public:
 private:
     const bool comparePrefixedPath(const char* fullPath, const char* subPath);
 
-    void publishKeypadEntry(const String topic, NukiLock::KeypadEntry entry);
 
     void (*_officialUpdateReceivedCallback)(const char* path, const char* value) = nullptr;
 
-    String concat(String a, String b);
 
     void buildMqttPath(const char* path, char* outPath);
 
-    NukiNetwork* _network = nullptr;
-    NukiPublisher* _nukiPublisher = nullptr;
     NukiOfficial* _nukiOfficial = nullptr;
-    Preferences* _preferences = nullptr;
 
     void recordCommandResult(const char* result);
 
-    std::map<uint32_t, String> _authEntries;
     String _lastCommandResult;
     uint32_t _commandResultCounter = 0;
-    char _mqttPath[200] = {0};
 
     bool _firstTunerStatePublish = true;
     bool _haEnabled = false;
     bool _saveLogEnabled = false;
-    bool _disableNonJSON = false;
-    bool _clearNonJsonKeypad = true;
-    bool _clearKeypadSlotEntities = true;
-    uint _publishedKeypadCount = 0;
-    std::vector<std::string> _keypadHaSlots;
-    bool _clearAuthSlotEntities = true;
-    std::vector<std::string> _authHaSlots;
     bool _offConnected = false;
     bool _hybridRebootOnDisconnect = false;
     bool _isUltra = false;
@@ -120,11 +105,8 @@ private:
     int64_t _offLastConnected = 0;
     DoorSensorOverride _requestDoorSensorOverride = DoorSensorOverride::NoOverride;
 
-    char _nukiName[33];
     char _authName[33];
 
-    char* _buffer;
-    size_t _bufferSize;
 
     LockActionResult (*_lockActionReceivedCallback)(const char* value) = nullptr;
     void (*_configUpdateReceivedCallback)(const char* value) = nullptr;
