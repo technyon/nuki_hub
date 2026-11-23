@@ -36,7 +36,7 @@
 #include "DuoAuthLib.h"
 
 // Include ESP32 MDEDTLS Library
-#include "mbedtls/md.h"
+#include "psa/crypto.h"
 
 // Load CA CRT BUNDLE
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
@@ -632,23 +632,26 @@ void DuoAuthLib::calculateHmacSha1(char *signingKey, char *dataPayload, char *hm
 	byte hmacSignature[20];
 	hmacSignatureChar[0] = 0;
 
-	mbedtls_md_context_t mbedTlsContext;
-	
-	//Select the SHA1 Hashtype
-	mbedtls_md_type_t mbedTlsHashType = MBEDTLS_MD_SHA1;
-
 	const size_t payloadLength = strlen(dataPayload);
-	const size_t keyLength = strlen(signingKey);            
+	const size_t keyLength = strlen(signingKey);
 
-	mbedtls_md_init(&mbedTlsContext);
-	
-	mbedtls_md_setup(&mbedTlsContext, mbedtls_md_info_from_type(mbedTlsHashType), 1);
-	
-	mbedtls_md_hmac_starts(&mbedTlsContext, (const unsigned char *) signingKey, keyLength);
-	mbedtls_md_hmac_update(&mbedTlsContext, (const unsigned char *) dataPayload, payloadLength);
-	mbedtls_md_hmac_finish(&mbedTlsContext, hmacSignature);
-	
-	mbedtls_md_free(&mbedTlsContext);
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key = 0;
+	size_t signatureLength = 0;
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+	psa_set_key_algorithm(&attributes, PSA_ALG_HMAC(PSA_ALG_SHA_1));
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+
+	if(psa_crypto_init() != PSA_SUCCESS || psa_import_key(&attributes, (const unsigned char *) signingKey, keyLength, &key) != PSA_SUCCESS){
+		return;
+	}
+
+	psa_status_t status = psa_mac_compute(key, PSA_ALG_HMAC(PSA_ALG_SHA_1), (const unsigned char *) dataPayload, payloadLength, hmacSignature, sizeof(hmacSignature), &signatureLength);
+	psa_destroy_key(key);
+
+	if(status != PSA_SUCCESS || signatureLength != sizeof(hmacSignature)){
+		return;
+	}
 
 	for(int i= 0; i< sizeof(hmacSignature); i++){
 		char str[3];

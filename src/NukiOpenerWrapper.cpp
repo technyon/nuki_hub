@@ -32,10 +32,6 @@ NukiOpenerWrapper::NukiOpenerWrapper(const std::string& deviceName, NukiDeviceId
 
     nukiOpenerInst = this;
 
-    memset(&_lastKeyTurnerState, sizeof(NukiOpener::OpenerState), 0);
-    memset(&_lastBatteryReport, sizeof(NukiOpener::BatteryReport), 0);
-    memset(&_batteryReport, sizeof(NukiOpener::BatteryReport), 0);
-    memset(&_keyTurnerState, sizeof(NukiOpener::OpenerState), 0);
     _keyTurnerState.lockState = NukiOpener::LockState::Undefined;
 
     network->setLockActionReceivedCallback(nukiOpenerInst->onLockActionReceivedCallback);
