@@ -360,3 +360,61 @@ String NukiNetworkEntries::concat(String a, String b)
     c.concat(b);
     return c;
 }
+
+void NukiNetworkEntries::beginKeypadRequest(const char* requestId, const char* action, uint32_t codeId)
+{
+    _keypadRequestId[0] = 0;
+    if(requestId == nullptr || strlen(requestId) == 0 || strlen(requestId) >= sizeof(_keypadRequestId))
+    {
+        return;
+    }
+    for(const char* c = requestId; *c != 0; c++)
+    {
+        // Goes into a JSON string as it is
+        if(!isalnum((unsigned char)*c) && *c != '_' && *c != '-' && *c != '.' && *c != ':')
+        {
+            return;
+        }
+    }
+    strcpy(_keypadRequestId, requestId);
+    _keypadRequestAction[0] = 0;
+    if(action != nullptr && (strcmp(action, "add") == 0 || strcmp(action, "update") == 0 || strcmp(action, "delete") == 0 || strcmp(action, "check") == 0))
+    {
+        strcpy(_keypadRequestAction, action);
+    }
+    _keypadRequestCodeId = codeId;
+    _keypadRequestTs = espMillis();
+    _keypadRequestTask = xTaskGetCurrentTaskHandle();
+}
+
+void NukiNetworkEntries::setKeypadRequestCodeId(uint32_t codeId)
+{
+    _keypadRequestCodeId = codeId;
+}
+
+void NukiNetworkEntries::publishKeypadRequestResult(const char* result)
+{
+    // "busy" for a command that did not fit the queue comes from the task that received it,
+    // while the command this id belongs to is still running: not its answer
+    if(_keypadRequestId[0] == 0 || xTaskGetCurrentTaskHandle() != _keypadRequestTask)
+    {
+        return;
+    }
+    char json[200];
+    int length = snprintf(json, sizeof(json), "{\"requestId\":\"%s\",\"action\":\"%s\",\"result\":\"", _keypadRequestId, _keypadRequestAction);
+    for(const char* c = result; c != nullptr && *c != 0 && length < (int)sizeof(json) - 60; c++)
+    {
+        if(isalnum((unsigned char)*c) || *c == '_')
+        {
+            json[length++] = *c;
+        }
+    }
+    length += snprintf(json + length, sizeof(json) - length, "\",\"durationMs\":%d", (int)(espMillis() - _keypadRequestTs));
+    if(_keypadRequestCodeId != 0)
+    {
+        length += snprintf(json + length, sizeof(json) - length, ",\"codeId\":%u", (unsigned int)_keypadRequestCodeId);
+    }
+    snprintf(json + length, sizeof(json) - length, "}");
+    _keypadRequestId[0] = 0;
+    _nukiPublisher->publishString(mqtt_topic_keypad_json_result, json, false);
+}

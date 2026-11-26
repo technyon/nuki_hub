@@ -2,6 +2,7 @@
 #include "NukiNetwork.h"
 #include "PreferencesKeys.h"
 #include "Logger.h"
+#include "TaskWake.h"
 #include "Config.h"
 #include "RestartReason.h"
 #include <HTTPClient.h>
@@ -1475,11 +1476,14 @@ void NukiNetwork::publish(const char* prefix, const char *topic, const char *val
     char path[500] = {0};
     buildMqttPath(path, { prefix, topic });
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value);
+    // The client sends from the network task: not at its next look, now
+    networkTaskWake.wake();
 }
 
 void NukiNetwork::publish(const char* path, const char *value, bool retain)
 {
     _device->mqttPublish(path, MQTT_QOS_LEVEL, retain, value);
+    networkTaskWake.wake();
 }
 
 void NukiNetwork::removeTopic(const String& mqttPath, const String& mqttTopic)

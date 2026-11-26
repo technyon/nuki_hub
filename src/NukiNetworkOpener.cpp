@@ -7,6 +7,7 @@
 #include "PreferencesKeys.h"
 #include "util/StringUtil.h"
 #include "Logger.h"
+#include "TaskWake.h"
 #include "Config.h"
 #include <ArduinoJson.h>
 #include "hal/wdt_hal.h"
@@ -47,11 +48,13 @@ void NukiNetworkOpener::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
+    _network->initTopic(_mqttPath, mqtt_topic_connection_hold, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
     _network->initTopic(_mqttPath, mqtt_topic_lock_binary_ring, "standby");
     _network->initTopic(_mqttPath, mqtt_topic_lock_ring, "standby");
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
+    _network->subscribe(_mqttPath, mqtt_topic_connection_hold);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
 
     _network->initTopic(_mqttPath, mqtt_topic_keypad_json_action, "--");
@@ -150,6 +153,8 @@ void NukiNetworkOpener::update()
 void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* data = (char*)payload;
+    // Whatever arrived (an action, a query, a command): the nuki task takes it up now
+    nukiTaskWake.wake();
 
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
@@ -265,6 +270,18 @@ void NukiNetworkOpener::onMqttDataReceived(const char* topic, byte* payload, con
         {
             _keypadCommandEnabled = atoi(data);
         }
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_connection_hold) && strcmp(data, "0") != 0 && strcmp(data, "") != 0)
+    {
+        // Seconds to keep the bluetooth connection open from now on; answered with 0 like a query
+        char* end = nullptr;
+        const long seconds = strtol(data, &end, 10);
+        if(end != data && seconds > 0)
+        {
+            _connectionHoldSeconds = seconds > 3600 ? 3600 : (int)seconds;
+        }
+        _nukiPublisher->publishInt(mqtt_topic_connection_hold, 0, true);
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_query_config) && strcmp(data, "1") == 0)
@@ -1026,6 +1043,7 @@ void NukiNetworkOpener::publishKeypadCommandResult(const char* result)
 void NukiNetworkOpener::publishKeypadJsonCommandResult(const char* result)
 {
     recordCommandResult(result);
+    publishKeypadRequestResult(result);
     _nukiPublisher->publishString(mqtt_topic_keypad_json_command_result, result, true);
 }
 
@@ -1118,6 +1136,11 @@ bool NukiNetworkOpener::comparePrefixedPath(const char *fullPath, const char *su
 int NukiNetworkOpener::mqttConnectionState()
 {
     return _network->mqttConnectionState();
+}
+
+int NukiNetworkOpener::takeConnectionHold()
+{
+    return _connectionHoldSeconds.exchange(0);
 }
 
 uint8_t NukiNetworkOpener::queryCommands()

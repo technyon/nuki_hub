@@ -26,7 +26,17 @@ public:
     virtual void publishKeypadJsonCommandResult(const char* result) = 0;
     virtual void publishAuthCommandResult(const char* result) = 0;
 
+    // A keypad command that carries a "requestId": its result also goes out on keypad/result,
+    // not retained, as {"requestId":..,"action":..,"result":..,"durationMs":..,"codeId":..}.
+    // A client that sends several commands can tell their answers apart, and learns the id
+    // of a code it added without reading the list. No requestId, no message.
+    void beginKeypadRequest(const char* requestId, const char* action, uint32_t codeId);
+    void setKeypadRequestCodeId(uint32_t codeId);
+
 protected:
+    // To be called by publishKeypadJsonCommandResult()
+    void publishKeypadRequestResult(const char* result);
+
     explicit NukiNetworkEntries(NukiNetwork* network, Preferences* preferences, char* buffer, size_t bufferSize, const char* idPreference, const char* topicSuffix, const char* deviceType);
 
     void publishKeypadEntry(const String topic, Nuki::KeypadEntry entry);
@@ -53,6 +63,11 @@ protected:
     size_t _bufferSize;
 
 private:
+    char _keypadRequestId[41] = {0};
+    char _keypadRequestAction[12] = {0};
+    uint32_t _keypadRequestCodeId = 0;
+    int64_t _keypadRequestTs = 0;
+    TaskHandle_t _keypadRequestTask = nullptr;
     const char* _idPreference;
     const char* _topicSuffix;
     const char* _deviceType;

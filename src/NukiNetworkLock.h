@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include "networkDevices/NetworkDevice.h"
 #ifndef CONFIG_IDF_TARGET_ESP32H2
 #include "networkDevices/WifiDevice.h"
@@ -70,6 +71,8 @@ public:
     const char* getAuthName();
     const int mqttConnectionState();
     const uint8_t queryCommands();
+    // Seconds a client asked the bluetooth connection to be kept open for, once; 0 when none
+    int takeConnectionHold();
 
 private:
     const bool comparePrefixedPath(const char* fullPath, const char* subPath);
@@ -99,6 +102,7 @@ private:
     uint _keypadCommandId = 0;
     int _keypadCommandEnabled = 1;
     uint8_t _queryCommands = 0;
+    std::atomic<int> _connectionHoldSeconds{0};
     uint32_t _lastRollingLog = 0;
     bool _lastRollingLogReceived = false;
     uint32_t _authId = 0;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include "networkDevices/NetworkDevice.h"
 #include <Preferences.h>
 #include <vector>
@@ -56,6 +57,8 @@ public:
 
     int mqttConnectionState();
     uint8_t queryCommands();
+    // Seconds a client asked the bluetooth connection to be kept open for, once; 0 when none
+    int takeConnectionHold();
 
 private:
     bool comparePrefixedPath(const char* fullPath, const char* subPath);
@@ -84,6 +87,7 @@ private:
     int64_t _lastRingTs = 0;
     time_t _lastRingTime = 0;
     uint8_t _queryCommands = 0;
+    std::atomic<int> _connectionHoldSeconds{0};
     uint32_t _authId = 0;
     char _authName[33];
     uint32_t _lastRollingLog = 0;

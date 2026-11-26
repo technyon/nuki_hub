@@ -55,6 +55,7 @@
 
 #define mqtt_topic_query_config (char*)"/query/config"
 #define mqtt_topic_query_lockstate (char*)"/query/lockstate"
+#define mqtt_topic_connection_hold (char*)"/connection/hold"
 #define mqtt_topic_query_keypad (char*)"/query/keypad"
 #define mqtt_topic_query_battery (char*)"/query/battery"
 #define mqtt_topic_query_lockstate_command_result (char*)"/query/lockstateCommandResult"
@@ -82,6 +83,7 @@
 #define mqtt_topic_keypad_json (char*)"/keypad/json"
 #define mqtt_topic_keypad_json_action (char*)"/keypad/actionJson"
 #define mqtt_topic_keypad_json_command_result (char*)"/keypad/commandResultJson"
+#define mqtt_topic_keypad_json_result (char*)"/keypad/result"
 
 #define mqtt_topic_timecontrol (char*)"/timecontrol"
 #define mqtt_topic_timecontrol_entries (char*)"/timecontrol/entries"
@@ -137,7 +139,7 @@ private:
         mqtt_topic_lock_action_command_result, mqtt_topic_lock_door_sensor_state, mqtt_topic_lock_rssi, mqtt_topic_lock_address, mqtt_topic_lock_retry, mqtt_topic_config_action,
         mqtt_topic_config_action_command_result, mqtt_topic_config_basic_json, mqtt_topic_config_advanced_json, mqtt_topic_config_button_enabled, mqtt_topic_config_led_enabled,
         mqtt_topic_config_led_brightness, mqtt_topic_config_auto_unlock, mqtt_topic_config_auto_lock, mqtt_topic_config_single_lock, mqtt_topic_config_sound_level,
-        mqtt_topic_query_config, mqtt_topic_query_lockstate, mqtt_topic_query_keypad, mqtt_topic_query_battery, mqtt_topic_query_lockstate_command_result,
+        mqtt_topic_query_config, mqtt_topic_query_lockstate, mqtt_topic_connection_hold, mqtt_topic_query_keypad, mqtt_topic_query_battery, mqtt_topic_query_lockstate_command_result,
         mqtt_topic_battery_level, mqtt_topic_battery_critical, mqtt_topic_battery_charging, mqtt_topic_battery_voltage, mqtt_topic_battery_drain,
         mqtt_topic_battery_max_turn_current, mqtt_topic_battery_lock_distance, mqtt_topic_battery_keypad_critical, mqtt_topic_battery_doorsensor_critical,
         mqtt_topic_battery_basic_json,mqtt_topic_battery_advanced_json, mqtt_topic_keypad, mqtt_topic_keypad_codes, mqtt_topic_keypad_command_action,

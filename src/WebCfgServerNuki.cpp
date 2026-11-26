@@ -14,6 +14,8 @@ static const Setting nukiSettings[] =
     {"KPINT", "Query interval keypad (seconds)", preference_query_interval_keypad, SettingType::Int, 1800, 0, 0, 10, "", SettingEffect::None},
     {"NRTRY", "Number of retries if command failed", preference_command_nr_of_retries, SettingType::Int, 3, 0, 0, 10, "", SettingEffect::None},
     {"TRYDLY", "Delay between retries (milliseconds)", preference_command_retry_delay, SettingType::Int, 100, 0, 0, 10, "", SettingEffect::None},
+    {"BLELNG", "Keep the bluetooth connection open after a command (seconds; 0 closes it right away, uses more battery of the Nuki device)", preference_ble_connection_linger, SettingType::Int, 0, 0, 0, 10, "", SettingEffect::RestartReconnect},
+    {"BLECHAL", "Ask the Nuki device for the challenge of the next command ahead (faster commands; tried on an Opener only)", preference_ble_challenge_ahead, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::RestartReconnect},
     {"RSBC", "Restart if bluetooth beacons not received (seconds; -1 to disable)", preference_restart_ble_beacon_lost, SettingType::Int, 60, 0, 0, 10, "", SettingEffect::None},
     {"CONFPUB", "Publish Nuki configuration information", preference_conf_info_enabled, SettingType::Bool, 1, 0, 0, 0, "", SettingEffect::None},
     {"KPPUB", "Publish keypad entries information", preference_keypad_info_enabled, SettingType::Bool, 0, 0, 0, 0, "", SettingEffect::None},
@@ -98,6 +100,8 @@ esp_err_t WebCfgServer::buildNukiConfigHtml(PsychicRequest *request, PsychicResp
     }
     printSetting(&response, nukiSettings, nukiSettingsCount, "NRTRY");
     printSetting(&response, nukiSettings, nukiSettingsCount, "TRYDLY");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "BLELNG");
+    printSetting(&response, nukiSettings, nukiSettingsCount, "BLECHAL");
     printSetting(&response, nukiSettings, nukiSettingsCount, "RSBC");
 #if defined(CONFIG_IDF_TARGET_ESP32)
     printInputField(&response, "TXPWR", "BLE transmit power in dB (minimum -12, maximum 9)", _preferences->getInt(preference_ble_tx_power, 9), 10, "");

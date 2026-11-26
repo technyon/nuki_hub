@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/NukiConnectionHold.h"
 #include <functional>
 #include "NukiOpener.h"
 #include "NukiNetworkOpener.h"
@@ -224,6 +225,7 @@ private:
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;
     QueueHandle_t _commandQueue = nullptr;
+    NukiConnectionHold _connectionHold;
 
     char* _buffer;
     const size_t _bufferSize;

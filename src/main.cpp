@@ -55,6 +55,7 @@ bool nuki_hub_https_server_enabled = false;
 #include "PreferencesKeys.h"
 #include "RestartReason.h"
 #include "EspMillis.h"
+#include "TaskWake.h"
 #include "util/PsramInit.h"
 #include "util/LowMemory.h"
 #include "RuntimeLog.h"
@@ -93,6 +94,7 @@ int64_t restartTs = (pow(2,63) - (5 * 1000 * 60000)) / 1000;
 #include "../../src/RestartReason.h"
 #include "../../src/NukiNetwork.h"
 #include "../../src/EspMillis.h"
+#include "../../src/TaskWake.h"
 #include "../../src/util/PsramInit.h"
 #include "../../src/util/LowMemory.h"
 #include "../../src/ImportExport.h"
@@ -1160,7 +1162,7 @@ void networkTask(void *pvParameters)
             networkLoopTs = espMillis();
         }
 
-        espDelayAck(50);
+        networkTaskWake.wait(50);
 
         firstRun = false;
     }
@@ -1313,7 +1315,7 @@ void processNukiTask()
     if(bleScannerStarted)
     {
         bleScanner->update();
-        espDelayAck(20);
+        nukiTaskWake.wait(20);
     }
 
     checkPairing();
@@ -1349,7 +1351,7 @@ void nukiTask(void *pvParameters)
             Log->println("nukiTask is running");
             nukiLoopTs = espMillis();
         }
-        espDelayAck(50);
+        nukiTaskWake.wait(50);
     }
 }
 
@@ -1468,6 +1470,8 @@ void otaTask(void *pvParameter)
 
 void setupTasks(bool ota)
 {
+    nukiTaskWake.begin();
+    networkTaskWake.begin();
     // configMAX_PRIORITIES is 25
     esp_task_wdt_config_t twdt_config =
     {
