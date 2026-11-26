@@ -76,6 +76,8 @@ void NukiWrapper::initialize()
     _nukiLock.setEventHandler(this);
     _nukiLock.setConnectTimeout(3);
     _nukiLock.setDisconnectTimeout(2000);
+    _nukiLock.setChallengePrefetch(_preferences->getBool(preference_ble_challenge_ahead, false));
+    _connectionHold.setLinger(_preferences->getInt(preference_ble_connection_linger, 0));
     _nukiLock.setGeneralTimeout(_preferences->getInt(preference_ble_general_timeout, 10000));
     _nukiLock.setCommandTimeout(_preferences->getInt(preference_ble_command_timeout, 3000));
 
@@ -498,8 +500,33 @@ void NukiWrapper::update(bool reboot)
 
     checkRestartByBeacon(ts);
     _nukiLock.updateConnectionState();
+    // A command of a client keeps the connection open for the next one. Not a lock action:
+    // what follows it (the state it leads to) is read the way it always was.
+    if((int)_nextLockAction != 0xff)
+    {
+        _connectionHold.endLinger();
+    }
+    else if(hasQueuedCommands())
+    {
+        _connectionHold.touch(ts);
+    }
+    const int holdSeconds = _network->takeConnectionHold();
+    if(holdSeconds > 0)
+    {
+        _connectionHold.hold(ts, holdSeconds);
+    }
     checkLockAction(ts);
     processCommandQueue();
+    bool connectionKept = false;
+    if(_connectionHold.service(_nukiLock, espMillis(), connectionKept))
+    {
+        _nextLockStateUpdateTs = 0;
+    }
+    if(connectionKept)
+    {
+        // The device answered: it is there, also when it is not heard advertising meanwhile
+        postponeBleWatchdog();
+    }
     if(_keypadCacheDirty && ts > _nextCachePublishTs)
     {
         _keypadCacheDirty = false;

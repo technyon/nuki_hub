@@ -344,6 +344,8 @@ The former options "Retry command sent using official MQTT over BLE if failed" (
 - Query interval keypad (Only available when a Keypad is detected): Set to a positive integer to set the maximum amount of seconds between actively querying the Nuki device for the current keypad state, default 1800.
 - Number of retries if command failed: Set to a positive integer to define the amount of times the Nuki Hub retries sending commands to the Nuki Lock or Opener when commands are not acknowledged by the device, default 3.
 - Delay between retries: Set to the amount of milliseconds the Nuki Hub waits between resending not acknowledged commands, default 100.
+- Keep the bluetooth connection open after a command: Set to the amount of seconds the connection to the Nuki device stays open after a command that was sent to Nuki Hub (keypad, configuration, time control or authorization; not a lock action). The next command then does not have to wait for the device to advertise first, which is most of the time a command after a pause takes. 0 (the default) closes the connection right away. While the connection is open the Nuki device uses more battery.
+- Ask the Nuki device for the challenge of the next command ahead: Every command but a plain read starts by asking the device for a challenge. When enabled this is done when the previous command is finished, so the next command goes out at once. Tried on an Opener only; it switches itself off until the restart when the device refuses two commands sent this way. Disabled by default.
 - Restart if bluetooth beacons not received: Set to a positive integer to restart the Nuki Hub after the set amount of seconds has passed without receiving a bluetooth beacon from the Nuki device, set to -1 to disable, default 60. Because the bluetooth stack of the ESP32 can silently fail it is not recommended to disable this setting.
 - BLE transmit power in dB: Set to a integer between -12 and 9 (ESP32) or -12 and 20 (All newer ESP32 variants) to set the Bluetooth transmit power, default 9.
 
@@ -556,6 +558,7 @@ The maximum entry counts for keypad codes, time control, authorizations and the 
 ### Query
 
 - [lock/opener/]query/lockstate: Set to 1 to trigger query lockstate. Auto-resets to 0.
+- [lock/opener/]connection/hold: Set to a number of seconds (at most 3600) to keep the bluetooth connection to the Nuki device open from now on, for commands that are about to follow. Auto-resets to 0. Uses more battery of the Nuki device while it lasts.
 - [lock/opener/]query/config: Set to 1 to trigger query config. Auto-resets to 0.
 - [lock/opener/]query/keypad: Set to 1 to trigger query keypad. Auto-resets to 0.
 - [lock/opener/]query/battery: Set to 1 to trigger query battery. Auto-resets to 0.
@@ -902,6 +905,8 @@ Examples:
 
 The result of the last keypad change action will be published to the `[lock/opener]/configuration/commandResultJson` MQTT topic.<br>
 Possible values are "noValidPinSet", "keypadControlDisabled", "keypadNotAvailable", "keypadDisabled", "invalidConfig", "invalidJson", "noActionSet", "invalidAction", "noExistingCodeIdSet", "noNameSet", "noValidCodeSet", "noCodeSet", "invalidAllowedFrom", "invalidAllowedUntil", "invalidAllowedFromTime", "invalidAllowedUntilTime", "success", "failed", "timeOut", "working", "notPaired", "error" and "undefined".<br>
+
+A command that also contains a `requestId` (up to 40 letters, digits and `_-.:`) is answered a second time on the `[lock/opener]/keypad/result` MQTT topic, not retained, as JSON: `{"requestId":"a1","action":"add","result":"success","durationMs":140,"codeId":12}`. A client that sends several commands can tell their answers apart this way, and learns the `codeId` the Nuki device gave a code it added without reading the list.<br>
 
 ## Keypad control (alternative, optional)
 

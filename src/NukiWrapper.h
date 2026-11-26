@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/NukiConnectionHold.h"
 #include <functional>
 #include "NukiNetworkLock.h"
 #include "NukiConstants.h"
@@ -241,6 +242,7 @@ private:
     bool _keypadCacheDirty = false;
     int64_t _nextCachePublishTs = 0;
     QueueHandle_t _commandQueue = nullptr;
+    NukiConnectionHold _connectionHold;
     GpioAction gpioAction = GpioAction::None;
     std::vector<uint8_t> _pinsHighWhenDoorOpen;
     std::vector<uint8_t> _pinsHighWhenDoorClosed;

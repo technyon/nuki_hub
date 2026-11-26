@@ -7,6 +7,7 @@
 #include "PreferencesKeys.h"
 #include "Logger.h"
 #include "EspMillis.h"
+#include "TaskWake.h"
 #include "Config.h"
 #include "NukiCommandCore.h"
 #include <freertos/FreeRTOS.h>
@@ -94,7 +95,9 @@ void NukiCommandHandler<TDerived, TTraits>::enqueueCommand(NukiCommandType type,
     if(xQueueSend(d._commandQueue, &cmd, 0) != pdTRUE)
     {
         publishBusy(type, "busy");
+        return;
     }
+    nukiTaskWake.wake();
 }
 
 template<typename TDerived, typename TTraits>

@@ -7,6 +7,7 @@
 #include "MqttTopics.h"
 #include "PreferencesKeys.h"
 #include "Logger.h"
+#include "TaskWake.h"
 #include "RestartReason.h"
 #include <ArduinoJson.h>
 #include <ctype.h>
@@ -59,9 +60,11 @@ void NukiNetworkLock::initialize()
     _network->initTopic(_mqttPath, mqtt_topic_query_keypad, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_config, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_lockstate, "0");
+    _network->initTopic(_mqttPath, mqtt_topic_connection_hold, "0");
     _network->initTopic(_mqttPath, mqtt_topic_query_battery, "0");
     _network->subscribe(_mqttPath, mqtt_topic_query_config);
     _network->subscribe(_mqttPath, mqtt_topic_query_lockstate);
+    _network->subscribe(_mqttPath, mqtt_topic_connection_hold);
     _network->subscribe(_mqttPath, mqtt_topic_query_battery);
 
     _network->initTopic(_mqttPath, mqtt_topic_doorsensorOverride, "--");
@@ -202,6 +205,8 @@ bool NukiNetworkLock::update()
 void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const unsigned int length)
 {
     char* data = (char*)payload;
+    // Whatever arrived (an action, a query, a command): the nuki task takes it up now
+    nukiTaskWake.wake();
 
     if(_network->mqttRecentlyConnected() && _network->pathEquals(_mqttPath, mqtt_topic_lock_action, topic))
     {
@@ -343,6 +348,18 @@ void NukiNetworkLock::onMqttDataReceived(const char* topic, byte* payload, const
         {
             _keypadCommandEnabled = atoi(data);
         }
+    }
+
+    if(comparePrefixedPath(topic, mqtt_topic_connection_hold) && strcmp(data, "0") != 0 && strcmp(data, "") != 0)
+    {
+        // Seconds to keep the bluetooth connection open from now on; answered with 0 like a query
+        char* end = nullptr;
+        const long seconds = strtol(data, &end, 10);
+        if(end != data && seconds > 0)
+        {
+            _connectionHoldSeconds = seconds > 3600 ? 3600 : (int)seconds;
+        }
+        _nukiPublisher->publishInt(mqtt_topic_connection_hold, 0, true);
     }
 
     if(comparePrefixedPath(topic, mqtt_topic_query_config) && strcmp(data, "1") == 0)
@@ -1117,6 +1134,7 @@ void NukiNetworkLock::publishKeypadCommandResult(const char* result)
 void NukiNetworkLock::publishKeypadJsonCommandResult(const char* result)
 {
     recordCommandResult(result);
+    publishKeypadRequestResult(result);
     _nukiPublisher->publishString(mqtt_topic_keypad_json_command_result, result, true);
 }
 
@@ -1224,6 +1242,11 @@ void NukiNetworkLock::publishOverrideDoorSensorOverrideResult(const char* result
 const int NukiNetworkLock::mqttConnectionState()
 {
     return _network->mqttConnectionState();
+}
+
+int NukiNetworkLock::takeConnectionHold()
+{
+    return _connectionHoldSeconds.exchange(0);
 }
 
 const uint8_t NukiNetworkLock::queryCommands()

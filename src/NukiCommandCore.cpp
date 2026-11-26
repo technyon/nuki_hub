@@ -8,6 +8,23 @@
 
 void NukiCommandCore::executeKeypadJsonCommand(NukiCommandContext& d, const char *value)
 {
+    {
+        // Before anything can refuse the command: the answer names the request it belongs to
+        JsonDocument filter;
+        filter["requestId"] = true;
+        filter["action"] = true;
+        filter["codeId"] = true;
+        JsonDocument head;
+        if(deserializeJson(head, value, DeserializationOption::Filter(filter)))
+        {
+            d._network->beginKeypadRequest("", "", 0);
+        }
+        else
+        {
+            d._network->beginKeypadRequest(head["requestId"] | "", head["action"] | "", head["codeId"] | 0);
+        }
+    }
+
     if(!d.isPinValid())
     {
         d._network->publishKeypadJsonCommandResult("noValidPinSet");
@@ -412,6 +429,10 @@ void NukiCommandCore::executeKeypadJsonCommand(NukiCommandContext& d, const char
                         {
                             return d.nukiDevice().addKeypadEntry(entry);
                         });
+                        if(result == Nuki::CmdResult::Success)
+                        {
+                            d._network->setKeypadRequestCodeId(d.nukiDevice().getLastKeypadCodeId());
+                        }
                         Log->print("Add keypad code: ");
                         NukiHelper::printCommandResult(result);
                     }
