@@ -3,17 +3,37 @@
     const $$ = (selector, root) => Array.from((root || document).querySelectorAll(selector));
     const body = document.body;
 
-    function poll(url, interval, handle) {
+    function poll(url, interval, handle, onSilent) {
         let timer = 0;
-        const tick = () => fetch(url, { cache: 'no-store' })
-            .then(response => response.text())
-            .then(text => { if (handle(text) === false) { clearInterval(timer); } })
-            .catch(() => {});
+        let unanswered = 0;
+        let loggedOut = false;
+        const tick = () => {
+            // Counted per poll, because a request that hangs never fails
+            unanswered++;
+            if (onSilent && unanswered > 2) {
+                onSilent(loggedOut);
+            }
+            return fetch(url, { cache: 'no-store' })
+                .then(response => {
+                    // An expired login answers with a redirect to the login page, which fetch follows
+                    loggedOut = response.redirected;
+                    return response.text();
+                })
+                .then(text => {
+                    const result = handle(text);
+                    unanswered = 0;
+                    if (result === false) {
+                        clearInterval(timer);
+                    }
+                })
+                .catch(() => {});
+        };
         tick();
         timer = setInterval(tick, interval);
     }
 
     if (body.dataset.status) {
+        const report = detail => document.dispatchEvent(new CustomEvent('hubstatus', { detail }));
         poll(body.dataset.status, 3000, text => {
             const status = JSON.parse(text);
             for (const key of Object.keys(status)) {
@@ -22,8 +42,9 @@
                     (el.querySelector('a') || el).textContent = status[key];
                 }
             }
+            report(status);
             return status.stop != 1;
-        });
+        }, loggedOut => report(loggedOut ? 'login' : null));
     }
 
     if (body.dataset.duo) {

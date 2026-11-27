@@ -438,7 +438,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
 
     json["lock_completion_status"] = str;
 
-    bool critical = (keyTurnerState.criticalBatteryState & 1);
+    bool critical = NukiHelper::batteryCritical(keyTurnerState.criticalBatteryState);
     jsonBattery["critical"] = critical ? "1" : "0";
 
     if((_firstTunerStatePublish || keyTurnerState.criticalBatteryState != lastKeyTurnerState.criticalBatteryState) && !_disableNonJSON)
@@ -446,7 +446,7 @@ void NukiNetworkOpener::publishKeyTurnerState(const NukiOpener::OpenerState& key
         _nukiPublisher->publishBool(mqtt_topic_battery_critical, critical, true);
     }
 
-    bool keypadCritical = keyTurnerState.accessoryBatteryState != 255 ? ((keyTurnerState.accessoryBatteryState & 1) == 1 ? (keyTurnerState.accessoryBatteryState & 3) == 3 : false) : false;
+    bool keypadCritical = NukiHelper::keypadBatteryCritical(keyTurnerState.accessoryBatteryState);
     jsonBattery["keypadCritical"] = keypadCritical ? "1" : "0";
 
     if((_firstTunerStatePublish || keyTurnerState.accessoryBatteryState != lastKeyTurnerState.accessoryBatteryState) && !_disableNonJSON)

@@ -1049,10 +1049,11 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
             response.print(statusLed.orderName());
             response.print(", ");
             response.print(statusLed.brightness());
-            response.print(" %, off while OK: ");
-            response.print(statusLed.quiet() ? "Yes" : "No");
-            response.print(", showing: ");
-            response.print(statusLed.stateName());
+            response.print(" %, ");
+            const uint8_t ruleCount = statusLed.rules().count;
+            response.print(ruleCount);
+            response.print(ruleCount == 1 ? " rule, showing: " : " rules, showing: ");
+            response.print(htmlEscape(statusLed.shownText().c_str()));
             response.print(", write errors: ");
             response.print(statusLed.writeErrors());
             response.print("\n");

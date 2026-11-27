@@ -720,6 +720,7 @@ bool NukiWrapper::updateKeyTurnerState()
     _network->publishKeyTurnerState(_keyTurnerState, _lastKeyTurnerState);
     _gpio->setPinOutput(_pinsHighWhenDoorOpen, _keyTurnerState.doorSensorState == NukiLock::DoorSensorState::DoorOpened ? HIGH : LOW);
     _gpio->setPinOutput(_pinsHighWhenDoorClosed, _keyTurnerState.doorSensorState == NukiLock::DoorSensorState::DoorClosed ? HIGH : LOW);
+    reportStatusLed();
 
     char lockStateStr[20];
     lockstateToString(lockState, lockStateStr);
@@ -1798,6 +1799,24 @@ const std::string NukiWrapper::hardwareVersion() const
 void NukiWrapper::disableWatchdog()
 {
     _restartBeaconTimeout = -1;
+}
+
+void NukiWrapper::reportStatusLed()
+{
+    using namespace NukiLock;
+
+    const LockState lockState = _keyTurnerState.lockState;
+    StatusLed::LockStatus status;
+    status.known = lockState != LockState::Undefined;
+    status.locked = lockState == LockState::Locked;
+    status.unlocked = lockState == LockState::Unlocked || lockState == LockState::Unlatched || lockState == LockState::UnlockedLnga;
+    status.motorRunning = lockState == LockState::Unlocking || lockState == LockState::Locking || lockState == LockState::Unlatching;
+    status.motorBlocked = lockState == LockState::MotorBlocked;
+    status.doorOpen = _keyTurnerState.doorSensorState == DoorSensorState::DoorOpened;
+    status.batteryCritical = NukiHelper::batteryCritical(_keyTurnerState.criticalBatteryState);
+    status.accessoryBatteryCritical = NukiHelper::keypadBatteryCritical(_keyTurnerState.accessoryBatteryState) ||
+                                      NukiHelper::doorSensorBatteryCritical(_keyTurnerState.accessoryBatteryState);
+    _gpio->statusLed().reportLockStatus(status);
 }
 
 void NukiWrapper::updateGpioOutputs()

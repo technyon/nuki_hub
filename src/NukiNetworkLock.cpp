@@ -542,10 +542,10 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
 
         json["door_sensor_state"] = str;
 
-        bool critical = (keyTurnerState.criticalBatteryState & 1) == 1;
+        bool critical = NukiHelper::batteryCritical(keyTurnerState.criticalBatteryState);
         bool charging = (keyTurnerState.criticalBatteryState & 2) == 2;
         uint8_t level = ((keyTurnerState.criticalBatteryState & 0b11111100) >> 1);
-        bool keypadCritical = keyTurnerState.accessoryBatteryState != 255 ? ((keyTurnerState.accessoryBatteryState & 1) == 1 ? (keyTurnerState.accessoryBatteryState & 3) == 3 : false) : false;
+        bool keypadCritical = NukiHelper::keypadBatteryCritical(keyTurnerState.accessoryBatteryState);
 
         jsonBattery["critical"] = critical ? "1" : "0";
         jsonBattery["charging"] = charging ? "1" : "0";
@@ -564,7 +564,7 @@ void NukiNetworkLock::publishKeyTurnerState(const NukiLock::KeyTurnerState& keyT
             _nukiPublisher->publishBool(mqtt_topic_battery_keypad_critical, keypadCritical, true);
         }
 
-        bool doorSensorCritical = keyTurnerState.accessoryBatteryState != 255 ? ((keyTurnerState.accessoryBatteryState & 4) == 4 ? (keyTurnerState.accessoryBatteryState & 12) == 12 : false) : false;
+        bool doorSensorCritical = NukiHelper::doorSensorBatteryCritical(keyTurnerState.accessoryBatteryState);
 
         jsonBattery["doorSensorCritical"] = doorSensorCritical ? "1" : "0";
 
