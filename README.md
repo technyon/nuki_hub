@@ -593,7 +593,7 @@ The maximum entry counts for keypad codes, time control, authorizations and the 
 - [lock/opener/]info/firmwareVersion: Set to the current version number of the Nuki Lock/Opener firmware.
 - [lock/opener/]info/hardwareVersion: Set to the hardware version number of the Nuki Lock/Opener.
 - info/nukiHubIp: Set to the IP of the Nuki Hub.
-- info/nukiHubLatest: Set to the latest available Nuki Hub firmware version number (if update checking is enabled in the settings).
+- info/nukiHubLatest: Set to the latest available Nuki Hub firmware version number of the channel the running firmware belongs to (release, beta or development; beta firmware gets the release once the beta channel is empty), if update checking is enabled in the settings.
 
 ### Maintenance
 

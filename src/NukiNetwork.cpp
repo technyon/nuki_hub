@@ -229,6 +229,34 @@ bool NukiNetwork::update()
     return true;
 }
 #else
+static const char* versionChannel(const char* version)
+{
+    if(strstr(version, "beta") != nullptr)
+    {
+        return "beta";
+    }
+    else if(strstr(version, "master") != nullptr)
+    {
+        return "master";
+    }
+
+    return "release";
+}
+
+static bool latestVersionFitsChannel(const char* latestVersion)
+{
+    const char* channel = versionChannel(NUKI_HUB_VERSION);
+    const char* latestChannel = versionChannel(latestVersion);
+
+    if(strcmp(latestChannel, channel) == 0)
+    {
+        return true;
+    }
+
+    // A beta build is offered the release once the beta channel is empty
+    return strcmp(channel, "beta") == 0 && strcmp(latestChannel, "release") == 0 && (uint32_t)(atof(latestVersion) * 100 + 0.1) >= NUKI_HUB_VERSION_INT;
+}
+
 void NukiNetwork::initialize()
 {
     readSettings();
@@ -538,6 +566,13 @@ bool NukiNetwork::update()
             publishString(_maintenancePathPrefix, mqtt_topic_restart_reason_esp, getEspRestartReason().c_str(), true);
             publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_version, NUKI_HUB_VERSION, true);
             publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_build, NUKI_HUB_BUILD, true);
+
+            // A latest version from another channel is left from the build before a channel switch, report the running version until the update check runs
+            if(_checkUpdates && !latestVersionFitsChannel(_preferences->getString(preference_latest_version).c_str()))
+            {
+                _preferences->putString(preference_latest_version, NUKI_HUB_VERSION);
+                publishString(_maintenancePathPrefix, mqtt_topic_info_nuki_hub_latest, NUKI_HUB_VERSION, true);
+            }
         }
         if(_publishDebugInfo)
         {
@@ -1455,20 +1490,15 @@ bool NukiNetwork::fetchOtaManifest(JsonDocument& doc, uint16_t timeout)
 
 const char* NukiNetwork::otaChannel(JsonDocument& doc)
 {
-    if(strtoul(doc["release"]["version_int"] | "0", nullptr, 10) >= NUKI_HUB_VERSION_INT)
+    const char* channel = versionChannel(NUKI_HUB_VERSION);
+
+    // The beta channel is emptied when a release is published, its builds then get the release
+    if(strtoul(doc[channel]["version_int"] | "0", nullptr, 10) == 0)
     {
         return "release";
     }
-    else if(strstr(NUKI_HUB_VERSION, "beta") != nullptr)
-    {
-        return "beta";
-    }
-    else if(strstr(NUKI_HUB_VERSION, "master") != nullptr)
-    {
-        return "master";
-    }
 
-    return "release";
+    return channel;
 }
 
 void NukiNetwork::publish(const char* prefix, const char *topic, const char *value, bool retain)
