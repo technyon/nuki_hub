@@ -143,6 +143,7 @@ private:
     bool updateTime();
 
     void updateGpioOutputs();
+    void reportStatusLed();
 
     void readConfig();
     void readAdvancedConfig();

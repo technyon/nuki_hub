@@ -94,6 +94,12 @@ private:
     esp_err_t buildAdvancedConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildNukiConfigHtml(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t buildGpioConfigHtml(PsychicRequest *request, PsychicResponse* resp);
+#if SOC_RMT_SUPPORTED
+    esp_err_t buildStatusLedConfigHtml(PsychicRequest *request, PsychicResponse* resp);
+    void processStatusLedArgs(PsychicRequest *request);
+    esp_err_t processStatusLedTest(PsychicRequest *request, PsychicResponse* resp);
+    esp_err_t sendStatusLedState(PsychicRequest *request, PsychicResponse* resp);
+#endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
     esp_err_t buildConfigureWifiHtml(PsychicRequest *request, PsychicResponse* resp);
 #endif
@@ -163,7 +169,7 @@ private:
     esp_err_t sendWebSerial(PsychicRequest *request, PsychicResponse* resp);
     esp_err_t sendFavicon(PsychicRequest *request, PsychicResponse* resp);
     void createSsidList();
-    void buildHtmlHeader(PsychicStreamResponse *response, const String& additionalHeader = "", const String& bodyAttributes = "");
+    void buildHtmlHeader(PsychicStreamResponse *response, const String& additionalHeader = "", const String& bodyAttributes = "", const char* pageAssets = nullptr);
     void buildHtmlFooter(PsychicStreamResponse *response);
     static String htmlEscape(const char* value);
     void waitAndProcess(const bool blocking, const uint32_t duration);

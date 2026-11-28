@@ -64,6 +64,11 @@ WebCfgServer::WebCfgServer(NukiNetwork* network, Preferences* preferences, bool 
     _isSSL = (psychicServer->getPort() == 443);
     uint32_t assetCrc = esp_rom_crc32_le(0, stylecss, sizeof(stylecss));
     assetCrc = esp_rom_crc32_le(assetCrc, appjs, sizeof(appjs));
+    // Only chips with an RMT peripheral have the Status LED page and its files
+#if !defined(NUKI_HUB_UPDATER) && SOC_RMT_SUPPORTED
+    assetCrc = esp_rom_crc32_le(assetCrc, ledcss, sizeof(ledcss));
+    assetCrc = esp_rom_crc32_le(assetCrc, ledjs, sizeof(ledjs));
+#endif
     snprintf(_assetVersion, sizeof(_assetVersion), "%08lx", (unsigned long)assetCrc);
 
     _duoEnabled = _importExport->getDuoEnabled();
@@ -119,6 +124,18 @@ void WebCfgServer::initialize()
     {
         return sendJs(request, resp);
     });
+
+#if !defined(NUKI_HUB_UPDATER) && SOC_RMT_SUPPORTED
+    _psychicServer->on("/led.css", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return sendStatic(resp, "text/css", ledcss, sizeof(ledcss));
+    });
+
+    _psychicServer->on("/led.js", HTTP_GET, [&](PsychicRequest *request, PsychicResponse* resp)
+    {
+        return sendStatic(resp, "application/javascript", ledjs, sizeof(ledjs));
+    });
+#endif
 
     if(_preferences->getBool(preference_webserial_enabled, false) && !lowMemoryMode())
     {
@@ -763,6 +780,20 @@ void WebCfgServer::initialize()
             {
                 return buildGpioConfigHtml(request, resp);
             }
+#if SOC_RMT_SUPPORTED
+            else if (value == "ledcfg")
+            {
+                return buildStatusLedConfigHtml(request, resp);
+            }
+            else if (value == "ledtest")
+            {
+                return processStatusLedTest(request, resp);
+            }
+            else if (value == "ledstatus")
+            {
+                return sendStatusLedState(request, resp);
+            }
+#endif
 #ifndef CONFIG_IDF_TARGET_ESP32H2
             else if (value == "wifi")
             {
@@ -1045,6 +1076,13 @@ void WebCfgServer::initialize()
                 restartEsp(RestartReason::GpioConfigurationUpdated);
                 return res;
             }
+#if SOC_RMT_SUPPORTED
+            if (value == "saveledcfg")
+            {
+                processStatusLedArgs(request);
+                return buildConfirmHtml(request, resp, "Status LED settings saved.", 2, true, "/get?page=ledcfg");
+            }
+#endif
             if (value == "unpairlock")
             {
                 return processUnpair(request, resp, false);
@@ -1281,7 +1319,7 @@ void WebCfgServer::printCheckBox(PsychicStreamResponse *response, const char *to
     response->print("></td></tr>");
 }
 
-void WebCfgServer::buildHtmlHeader(PsychicStreamResponse *response, const String& additionalHeader, const String& bodyAttributes)
+void WebCfgServer::buildHtmlHeader(PsychicStreamResponse *response, const String& additionalHeader, const String& bodyAttributes, const char* pageAssets)
 {
     response->print("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
     response->print("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
@@ -1291,7 +1329,21 @@ void WebCfgServer::buildHtmlHeader(PsychicStreamResponse *response, const String
     }
     response->print("<link rel=\"stylesheet\" href=\"/style.css?v=");
     response->print(_assetVersion);
-    response->print("\"><script src=\"/app.js?v=");
+    response->print("\">");
+    if(pageAssets != nullptr)
+    {
+        // The page's own styles after style.css, and its script before app.js, so that it hears the first status poll
+        response->print("<link rel=\"stylesheet\" href=\"/");
+        response->print(pageAssets);
+        response->print(".css?v=");
+        response->print(_assetVersion);
+        response->print("\"><script src=\"/");
+        response->print(pageAssets);
+        response->print(".js?v=");
+        response->print(_assetVersion);
+        response->print("\" defer></script>");
+    }
+    response->print("<script src=\"/app.js?v=");
     response->print(_assetVersion);
     response->print("\" defer></script>");
     response->print("<title>Nuki Hub</title></head><body");
@@ -1643,6 +1695,12 @@ esp_err_t WebCfgServer::buildHtml(PsychicRequest *request, PsychicResponse* resp
     buildNavigationMenuEntry(&response, "Access Level Configuration", "/get?page=acclvl");
     buildNavigationMenuEntry(&response, "Credentials", "/get?page=cred");
     buildNavigationMenuEntry(&response, "GPIO Configuration", "/get?page=gpiocfg");
+#if SOC_RMT_SUPPORTED
+    if(_gpio->statusLed().configured())
+    {
+        buildNavigationMenuEntry(&response, "Status LED", "/get?page=ledcfg");
+    }
+#endif
     buildNavigationMenuEntry(&response, "Firmware update", "/get?page=ota");
     buildNavigationMenuEntry(&response, "Import/Export Configuration", "/get?page=impexpcfg");
     if(_preferences->getInt(preference_network_hardware, 0) == 11)

@@ -1,0 +1,1109 @@
+/* The Status LED page. Served only with that page, and not in the updater. It loads after style.css. */
+
+.ledorder {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.ledorder select {
+    flex: 1 1 10rem;
+    min-width: 0;
+}
+
+.ledmsg, .ledorderhint {
+    color: var(--tx-2);
+    font-size: .85rem;
+}
+
+/* Under the color order, which a first visit doesn't know is worth checking */
+.ledorderhint {
+    margin-top: .35rem;
+    text-wrap: pretty;
+}
+
+.ledmsg a {
+    color: var(--accent);
+}
+
+.ledmsg.error {
+    color: var(--danger);
+}
+
+.ledmsg button {
+    margin-top: .45rem;
+    padding: .3rem .8rem;
+}
+
+/* What the LED showed in the color check, as answers with the colors in front of their names,
+   in at most three columns, so that the six form even rows */
+.ledseen {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(max(9.75rem, calc((100% - .8rem) / 3)), 1fr));
+    gap: .4rem;
+    margin: .35rem 0 .45rem;
+}
+
+.ledmsg .ledseen button {
+    margin-top: 0;
+    padding: .3rem .55rem;
+    font-weight: 400;
+    text-align: left;
+}
+
+.ledseen .leddot {
+    margin-right: .1rem;
+}
+
+.ledseen .leddot:nth-child(3) {
+    margin-right: .45rem;
+}
+
+.ledmsg p {
+    margin: 0;
+}
+
+/* The last row on screen while the row for the color check is hidden */
+tr:has(+ #ledcheckrow[hidden]) > td {
+    border-bottom: 0;
+}
+
+#ledshown, #ledshowncolor {
+    color: var(--tx);
+    font-weight: 600;
+}
+
+.ledstale {
+    color: var(--danger);
+}
+
+/* While the list differs from the saved one, which the LED still follows. Its line is kept free otherwise. */
+.ledshownsaved {
+    display: block;
+    margin-top: .15rem;
+    color: var(--tx-2);
+    font-size: .85rem;
+}
+
+/* On the line of what is shown, and not halfway down to the free line */
+tr:has(#ledshown) > td {
+    vertical-align: baseline;
+}
+
+/* With an edge that holds up against the card, so that white or a light cyan doesn't melt into it */
+.leddot {
+    display: inline-block;
+    width: .85rem;
+    height: .85rem;
+    margin-right: .4rem;
+    border: 1px solid var(--tx-2);
+    border-radius: 50%;
+    vertical-align: -.1rem;
+}
+
+/* In the caption of Show, after the word */
+.ledpreview {
+    margin: 0 0 0 .4rem;
+}
+
+/* After that dot, while a test of the rule plays on the LED */
+.ledplaying:not(:empty) {
+    margin-left: .4rem;
+    color: var(--led-accent);
+}
+
+/* The rhythm of the effect as the firmware plays it (effectLevel in StatusLed.cpp), on the dot of Now showing and in
+   the open rule. A dark phase keeps a trace of the dot, so that it doesn't seem to leave the page. */
+@media (prefers-reduced-motion: no-preference) {
+    #ledshowndot[data-effect=pulse], .ledpreview[data-effect=pulse] {
+        animation: ledpulse 3s ease-in-out infinite;
+    }
+
+    #ledshowndot[data-effect=blink], .ledpreview[data-effect=blink] {
+        animation: ledblink 2s step-end infinite;
+    }
+
+    #ledshowndot[data-effect=fastblink], .ledpreview[data-effect=fastblink] {
+        animation: ledblink .5s step-end infinite;
+    }
+
+    #ledshowndot[data-effect=flash1], .ledpreview[data-effect=flash1] {
+        animation: ledflash1 2s step-end infinite;
+    }
+
+    #ledshowndot[data-effect=flash2], .ledpreview[data-effect=flash2] {
+        animation: ledflash2 2.5s step-end infinite;
+    }
+
+    #ledshowndot[data-effect=flash3], .ledpreview[data-effect=flash3] {
+        animation: ledflash3 3s step-end infinite;
+    }
+}
+
+@keyframes ledpulse {
+    0%, 100% {
+        opacity: .2;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes ledblink {
+    50% {
+        opacity: .15;
+    }
+}
+
+/* Each flash 150 ms, 500 ms apart, then 1.5 s dark */
+@keyframes ledflash1 {
+    7.5% {
+        opacity: .15;
+    }
+}
+
+@keyframes ledflash2 {
+    6%, 26% {
+        opacity: .15;
+    }
+
+    20% {
+        opacity: 1;
+    }
+}
+
+@keyframes ledflash3 {
+    5%, 21.667%, 38.333% {
+        opacity: .15;
+    }
+
+    16.667%, 33.333% {
+        opacity: 1;
+    }
+}
+
+/* The plain red and blue are a little too light for text on the tinted row of the current rule */
+#ledform {
+    --led-danger: color-mix(in srgb, var(--danger) 85%, var(--tx));
+    --led-accent: color-mix(in srgb, var(--accent) 85%, var(--tx));
+}
+
+.ledrules {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.ledhint {
+    padding: .7rem .9rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--tx-2);
+    font-size: .9rem;
+}
+
+.ledhint p {
+    margin: 0;
+    color: var(--tx);
+    text-wrap: pretty;
+}
+
+.ledhint summary, .ledpresetbox > summary {
+    width: fit-content;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.ledhint summary {
+    margin-top: .25rem;
+}
+
+.ledhint summary:hover, .ledpresetbox > summary:hover {
+    color: var(--accent);
+}
+
+.ledhint summary:focus-visible, .ledpresetbox > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.ledhint ul {
+    margin: .3rem 0 0;
+    padding-left: 1.2rem;
+}
+
+.ledhint li {
+    text-wrap: pretty;
+}
+
+.ledhint li + li {
+    margin-top: .2rem;
+}
+
+.ledhint b {
+    color: var(--tx);
+    font-weight: 600;
+}
+
+.ledlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    /* Otherwise the browser shifts the page with every swap while dragging, and the rule races to the top */
+    overflow-anchor: none;
+}
+
+.ledempty {
+    margin: 0;
+    padding: .7rem .9rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--tx-2);
+}
+
+.ledlive {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.ledundo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem .75rem;
+    padding: .5rem .9rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    color: var(--tx-2);
+}
+
+.ledundo button {
+    padding: .3rem .8rem;
+}
+
+/* After Discard: in the Save bar, where the Discard button was */
+.ledsave > .ledundo {
+    margin-left: auto;
+    padding: 0;
+    background: none;
+    border: 0;
+}
+
+.ledrule {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.75rem 2.1rem minmax(0, 1.6fr) minmax(11.5rem, 1fr) 3rem 3.6rem;
+    grid-template-areas: "h n s s s x";
+    gap: .4rem .5rem;
+    align-items: center;
+    padding: .55rem .6rem;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+}
+
+/* One rule at a time shows its fields */
+.ledrule.open {
+    grid-template-areas:
+        "h n s s s x"
+        ". . w t t t"
+        ". . e c c c"
+        ". . m m m m"
+        ". . r r r r";
+}
+
+.ledrule:not(.open) > :is(.ledfield, .ledruleactions) {
+    display: none;
+}
+
+/* Keeps a focused control clear of the sticky header and the Save bar */
+#ledform input, #ledform select, #ledform button, #ledform summary, .ledrule {
+    scroll-margin: 5rem 0 5.5rem;
+}
+
+.ledrule.ledotherwise {
+    grid-template-areas: ". n s s s x";
+    border-bottom: 0;
+}
+
+.ledrule.ledotherwise.open {
+    grid-template-areas:
+        ". n s s s x"
+        ". . e c c c"
+        ". . m m m m";
+}
+
+/* The rule the LED follows right now */
+.ledrule.ledshowing {
+    background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}
+
+.ledrule.dragging {
+    background: var(--bg);
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+}
+
+.ledhandle {
+    grid-area: h;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Up to the edges of the rule, so that it is easy to grab */
+    margin: -.55rem 0 -.4rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--tx-2);
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Six dots, drawn so they don't depend on the font. On a touch screen they are the part that drags. */
+.ledgrip {
+    position: relative;
+    display: block;
+    width: 10px;
+    height: 16px;
+    background-image: radial-gradient(circle, currentColor 1.5px, transparent 1.75px);
+    background-size: 5px 5.33px;
+    touch-action: none;
+}
+
+/* A touch-sized target. The rest of the handle's column stays free for scrolling. */
+.ledgrip::after {
+    content: "";
+    position: absolute;
+    inset: -14px;
+}
+
+/* Inside the handle, because on a phone the card would clip a ring around it. One ring: the outline only shows in
+   forced colors, which drop the shadow. */
+.ledhandle:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* The keys, for a keyboard on the handle, across the line under the rule, where it covers no text. It goes for the
+   visit once the keys or Escape were used. An open rule has its Move buttons instead. */
+.ledlist:not(.ledkeysknown) .ledrule:not(.open, .dragging) > .ledhandle:focus-visible::after {
+    content: "Arrow keys, Home or End move this rule";
+    position: absolute;
+    top: calc(100% - .55rem);
+    left: .5rem;
+    z-index: 1;
+    padding: .1rem .45rem;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--tx);
+    font-size: .8rem;
+    font-weight: 400;
+    line-height: 1.3;
+    pointer-events: none;
+}
+
+/* Room for it above the Save bar */
+#ledform .ledlist:not(.ledkeysknown) .ledrule:not(.open) > .ledhandle:focus-visible {
+    scroll-margin-bottom: 8rem;
+}
+
+.ledhandle:hover, .dragging .ledhandle {
+    color: var(--accent);
+}
+
+.dragging .ledhandle {
+    cursor: grabbing;
+}
+
+.lednum {
+    grid-area: n;
+    color: var(--tx-2);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    text-align: right;
+}
+
+.ledno {
+    display: block;
+}
+
+.lednow {
+    display: none;
+    padding: 0 .2rem;
+    border-radius: 3px;
+    background: var(--accent);
+    color: var(--accent-tx);
+    font-size: .8rem;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.ledshowing .lednow {
+    display: inline-block;
+}
+
+/* The line of a closed rule, in two columns when there is room, so that the list reads like a legend */
+.ledsum {
+    grid-area: s;
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .1rem 1rem;
+    min-width: 0;
+    min-height: 2.4rem;
+    padding: .3rem 1.7rem .3rem .45rem;
+    border-color: transparent;
+    background: none;
+    font-weight: 400;
+    text-align: left;
+    white-space: normal;
+}
+
+.ledsum::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: .6rem;
+    width: .45rem;
+    height: .45rem;
+    border-right: 2px solid var(--tx-2);
+    border-bottom: 2px solid var(--tx-2);
+    transform: translateY(-70%) rotate(45deg);
+}
+
+.ledrule.open .ledsum::after {
+    transform: translateY(-30%) rotate(225deg);
+}
+
+.ledsumtitle {
+    flex: 1 1 13rem;
+    min-width: 0;
+    color: var(--tx);
+    font-weight: 600;
+}
+
+.ledsum:hover .ledsumname {
+    color: var(--accent);
+}
+
+.ledsumwhen {
+    color: var(--tx-2);
+    font-size: .9rem;
+    font-weight: 400;
+}
+
+.ledsumdetail {
+    flex: 1 1 13rem;
+    min-width: 0;
+    color: var(--tx-2);
+    font-size: .9rem;
+}
+
+.ledsumlook, .ledsumrhythm {
+    white-space: nowrap;
+}
+
+/* An open rule shows the same in its fields */
+.ledrule.open .ledsumdetail {
+    display: none;
+}
+
+.ledfield {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+}
+
+.ledcaption {
+    color: var(--tx-2);
+    font-size: .8rem;
+}
+
+/* Under When, Timing and Show in the open rule: what the trigger covers, what the timing does and what Dark does */
+.ledfieldhint {
+    color: var(--tx-2);
+    font-size: .8rem;
+}
+
+/* A value that isn't taken, and what to do about it */
+#ledform .ledfieldhint.ledwrong {
+    color: var(--led-danger);
+}
+
+#ledform input[aria-invalid=true] {
+    border-color: var(--danger);
+}
+
+/* Under the brightness field */
+#ledform td > .ledfieldhint {
+    margin-top: .3rem;
+}
+
+/* Side by side on a wide screen: the hints can differ in length, and the controls stay in line */
+.ledfieldwhen, .ledfieldtiming, .ledfieldshow, .ledfieldcolor {
+    align-self: start;
+}
+
+.ledfieldwhen {
+    grid-area: w;
+}
+
+.ledfieldtiming {
+    grid-area: t;
+}
+
+.ledfieldshow {
+    grid-area: e;
+}
+
+.ledfieldcolor {
+    grid-area: c;
+}
+
+.ledtiming {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    min-width: 0;
+}
+
+.ledtiming select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ledtiming input[type=number] {
+    flex: 0 0 4rem;
+    width: 4rem;
+    padding-left: .45rem;
+    padding-right: .45rem;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.ledtiming input[type=number]::-webkit-inner-spin-button,
+.ledtiming input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.ledunit {
+    color: var(--tx-2);
+}
+
+input[type=color].ledcolor {
+    width: 100%;
+    max-width: 5rem;
+    height: 2.25rem;
+    padding: .15rem;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* A Dark rule has no color */
+input[type=color].ledcolor[disabled], .ledfieldcolor:has(.ledcolor[disabled]) {
+    visibility: hidden;
+}
+
+/* Quiet at rest, because what a row is about is the look of the LED */
+.ledrule .ledtest {
+    grid-area: x;
+    min-width: 3.4rem;
+    padding: .45rem .6rem;
+    background: none;
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+}
+
+/* On the last line of an open rule, with Remove rule away from the two buttons a finger presses again and again */
+.ledruleactions {
+    grid-area: r;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .5rem;
+}
+
+.ledrule .ledmove {
+    padding: .3rem .7rem;
+    font-weight: 400;
+}
+
+.ledrule .ledmove:disabled {
+    border-color: var(--line);
+    color: var(--tx);
+}
+
+.ledrule .ledremove {
+    margin-left: auto;
+    padding: .3rem .5rem;
+    border-color: transparent;
+    background: none;
+    color: var(--led-danger);
+    font-weight: 400;
+}
+
+.ledrule .ledremove:hover {
+    border-color: var(--danger);
+    color: var(--led-danger);
+}
+
+.lednote {
+    grid-column: 3 / -1;
+    font-size: .85rem;
+}
+
+/* In line with the name of a closed rule, and with the fields of an open one */
+.ledrule:not(.open) .lednote {
+    padding-left: .45rem;
+}
+
+.ledrule.open .lednote {
+    grid-area: m;
+}
+
+/* The amber alone is too light for small text on a white card */
+.lednote::before, .lednotewarn::before {
+    content: "";
+    display: inline-block;
+    width: .5rem;
+    height: .5rem;
+    margin-right: .4rem;
+    border-radius: 50%;
+    background: var(--warn);
+}
+
+.lednoteerror {
+    color: var(--led-danger);
+}
+
+.lednote.error::before {
+    background: var(--danger);
+}
+
+/* What the order does to a rule whose test failed, under the error with a dot of its own */
+.lednotewarn {
+    display: block;
+    margin-top: .2rem;
+}
+
+/* A rule that can't show at all, unlike one that only waits */
+.lednote.never::before, .lednotewarn.never::before {
+    background: var(--danger);
+}
+
+.ledrule.lednever .ledsumlook .leddot {
+    opacity: .35;
+}
+
+/* How much it matters, so that the list can be scanned */
+.lednotelead {
+    font-weight: 600;
+}
+
+/* What only matters to the rule being looked at, and the button that changes the order: the list only says what's wrong */
+.ledrule:not(.open) .lednote.onlyopen, .ledrule:not(.open) .lednotemore, .ledrule:not(.open) .lednotefix {
+    display: none;
+}
+
+/* How many rules the list says, where the open rule names them instead */
+.ledrule.open .lednoteshut {
+    display: none;
+}
+
+/* In the open rule, what keeps it from showing, its look and its timing each on a line */
+.lednoteline {
+    display: block;
+    margin-top: .2rem;
+}
+
+/* With the dot in the margin, so that every line, a wrapped one too, starts where the text does */
+.ledrule.open .lednote:not(.quiet) {
+    padding-left: .9rem;
+}
+
+.ledrule.open .lednote:not(.quiet)::before, .ledrule.open .lednotewarn::before {
+    margin-left: -.9rem;
+}
+
+/* A remark about the order, not a problem: a whole note, or a line after the problems and their button */
+.lednote.quiet, .lednoteremark {
+    color: var(--tx-2);
+}
+
+.lednote.quiet::before {
+    display: none;
+}
+
+.ledrule .lednotefix {
+    display: block;
+    max-width: 100%;
+    margin-top: .3rem;
+    padding: .3rem .7rem;
+    font-weight: 400;
+    text-align: left;
+    white-space: normal;
+}
+
+/* Add rule next to the heading, where the sticky Save bar never covers it, and the presets folded at the end of
+   that line: easy to find, and it leaves a rule on the first screen of a phone */
+.ledruleshead {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 1rem;
+    align-items: baseline;
+    margin-top: 1.75rem;
+}
+
+/* The presets span the line, so that they open under all of it */
+.ledruleshead > * {
+    grid-area: 1 / 1 / 2 / -1;
+}
+
+.ledruleshead h3 {
+    grid-column: 1;
+    margin-top: 0;
+}
+
+/* Above the presets, which span its place */
+.ledruleshead > .ledadd {
+    position: relative;
+    z-index: 1;
+    grid-column: 2;
+    display: flex;
+    align-items: baseline;
+    gap: .6rem;
+    width: fit-content;
+    margin-bottom: .6rem;
+}
+
+.ledcount {
+    color: var(--tx-2);
+    font-size: .9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* As tall as Add rule beside it, so that the presets open under both */
+.ledpresetbox > summary {
+    margin-left: auto;
+    padding: .5rem 0;
+    color: var(--tx-2);
+    font-size: .9rem;
+}
+
+.ledpresets {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .35rem 1.25rem;
+    margin: .5rem 0 .6rem;
+    padding: .6rem .9rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--tx-2);
+    font-size: .9rem;
+}
+
+.ledpresetslabel {
+    grid-column: 1 / -1;
+}
+
+.ledpreset {
+    display: flex;
+    align-items: center;
+    gap: .25rem .6rem;
+    min-width: 0;
+}
+
+.ledpreset span {
+    min-width: 0;
+    text-wrap: pretty;
+}
+
+.ledpreset button {
+    flex: none;
+    padding: .35rem .7rem;
+    background: none;
+    font-weight: 400;
+}
+
+/* Save stays in reach however long the list is. Sticky from the start, because a bar that appears on the first
+   edit can land under the pointer and take the next click. */
+.ledsave {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    align-items: center;
+    margin-bottom: 0;
+    padding: .6rem 0;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+}
+
+.ledunsaved {
+    font-weight: 600;
+}
+
+.ledunsaved:not(:empty)::before {
+    content: "";
+    display: inline-block;
+    width: .55rem;
+    height: .55rem;
+    margin-right: .4rem;
+    border-radius: 50%;
+    background: var(--warn);
+}
+
+.ledunsaved.ledsaved::before {
+    background: var(--ok);
+}
+
+.ledunsaved small {
+    display: block;
+    padding-left: .95rem;
+    color: var(--tx-2);
+    font-size: .8rem;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+/* Goes to the rules that got a warning since the last Save, one after the other: the line itself, with a touch-sized
+   target that takes no room */
+.ledunsaved small button, .ledunsaved small button:hover {
+    position: relative;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--led-accent);
+    font: inherit;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: .15em;
+    white-space: normal;
+}
+
+.ledunsaved small button::after {
+    content: "";
+    position: absolute;
+    inset: -.75rem -.5rem;
+}
+
+.ledunsaved small button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+#leddiscard {
+    margin-left: auto;
+}
+
+/* On phones and small tablets each control gets a touch-sized line, with the long texts in the widest cells */
+@media (max-width: 760px) {
+    /* A touch-sized target, without the space around it. Add rule is on the next line here. */
+    .ledhint summary, .ledpresetbox > summary {
+        position: relative;
+        padding: 0;
+    }
+
+    .ledhint summary::after, .ledpresetbox > summary::after {
+        content: "";
+        position: absolute;
+        inset: -.8rem -.5rem;
+    }
+
+    .ledundo button {
+        min-height: 44px;
+    }
+
+    .ledrule {
+        grid-template-columns: 1.5rem 2.1rem minmax(0, 1fr) 44px 44px;
+        grid-template-areas: "h n s s x";
+        column-gap: .4rem;
+        padding: .55rem .5rem;
+    }
+
+    /* The list says what a rule shows. Its rhythm is in the open rule, the options of Show and the moving dot. */
+    .ledrule:not(.open) .ledsumrhythm {
+        display: none;
+    }
+
+    .ledrule.open {
+        grid-template-areas:
+            "h n s s x"
+            "w w w w w"
+            "t t t t t"
+            "e e e e c"
+            "m m m m m"
+            "r r r r r";
+    }
+
+    .ledrule.ledotherwise {
+        grid-template-areas: ". n s s x";
+    }
+
+    .ledrule.ledotherwise.open {
+        grid-template-areas:
+            ". n s s x"
+            "e e e e c"
+            "m m m m m";
+    }
+
+    /* What a choice means shows once its field is used, so that an open rule starts short. A value that isn't taken
+       says so at once. */
+    .ledfield:not(.ledused) > .ledfieldhint:not(.ledwrong) {
+        display: none;
+    }
+
+    .ledrule select, .ledrule input[type=number], input[type=color].ledcolor, .ledrule .ledtest, .ledrule .ledremove, .ledrule .ledmove, .ledrule .lednotefix, .ledsum,
+    #ledform td input[type=text], .ledorder select, .ledmsg button {
+        min-height: 44px;
+    }
+
+    input[type=color].ledcolor {
+        max-width: none;
+    }
+
+    /* The color field is narrow here: its caption is the name of the color alone */
+    .ledcaptionprefix {
+        display: none;
+    }
+
+    .ledfieldcolor .ledcaption {
+        white-space: nowrap;
+    }
+
+    /* A word in the accent color, so that the column of buttons doesn't outweigh the rules */
+    .ledrule .ledtest, .ledrule .ledtest:hover {
+        min-width: 44px;
+        padding-left: .2rem;
+        padding-right: .2rem;
+        border-color: transparent;
+        color: var(--led-accent);
+    }
+
+    /* The same for the button that puts the order right, in line with the text of its note */
+    .ledrule .lednotefix, .ledrule .lednotefix:hover {
+        margin-top: 0;
+        padding-left: 0;
+        border-color: transparent;
+        background: none;
+        color: var(--led-accent);
+    }
+
+    /* Out to the edge of the rule and into the gap, so that the grip's touch target fits in the list */
+    .ledhandle {
+        width: calc(100% + .9rem);
+        margin-left: -.5rem;
+        margin-right: -.4rem;
+    }
+
+    .ledrule select {
+        padding-left: .5rem;
+        padding-right: .2rem;
+    }
+
+    .ledtiming input[type=number] {
+        flex-basis: 3.9rem;
+        width: 3.9rem;
+    }
+
+    /* On a line of its own, under the heading and the presets */
+    .ledruleshead > .ledadd {
+        grid-row: 2;
+        grid-column: 1 / -1;
+    }
+
+    .ledadd > button {
+        min-height: 44px;
+    }
+
+    /* The description under its button, so that both presets fit side by side */
+    .ledpreset {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ledpreset button {
+        min-height: 44px;
+    }
+
+    /* One size in every state, so that Discard never lands under a finger aimed at Save */
+    .ledsave > input[type=submit] {
+        width: auto;
+        min-width: 7rem;
+        min-height: 44px;
+        flex: 0 0 auto;
+    }
+
+    .ledsave > .ledunsaved {
+        width: auto;
+        min-width: 0;
+        flex: 1 1 0;
+        font-size: .85rem;
+        text-align: left;
+    }
+
+    .ledsave > .ledunsaved:empty {
+        display: none;
+    }
+
+    .ledsave > button {
+        width: auto;
+        min-height: 44px;
+        flex: 0 0 auto;
+    }
+
+    .ledsave > .ledundo {
+        width: auto;
+        min-width: 0;
+        flex: 1 1 0;
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+        font-size: .85rem;
+        text-align: left;
+    }
+
+    .ledorder button {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 359px) {
+    .ledsave > input[type=submit] {
+        min-width: 5.5rem;
+    }
+
+    .ledunsaved small {
+        padding-left: 0;
+    }
+
+    /* The three buttons of an open rule still fit on one line */
+    .ledruleactions {
+        column-gap: .3rem;
+    }
+
+    .ledrule .ledmove {
+        padding-left: .5rem;
+        padding-right: .5rem;
+    }
+
+    .ledrule .ledremove {
+        padding-left: .3rem;
+        padding-right: .3rem;
+    }
+}

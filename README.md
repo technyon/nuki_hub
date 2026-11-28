@@ -443,6 +443,16 @@ Note: All of the following sections require the Nuki security code / PIN to be s
 ### GPIO Configuration
 
 - Gpio [2-33]: See the "[GPIO lock control](#gpio-lock-control-optional)" section of this README.
+- The GPIO marked "(RGB LED on many dev boards)" is the pin most Espressif dev kits use for their built-in RGB LED. GPIOs marked "(RGB LED on some boards)" have it on other boards, for example GPIO 38 on the ESP32-S3-DevKitC-1 v1.1, see the table in the "[Status LED](#status-led-ws2812-optional)" section. The ESP32-C61 can't drive the LED, it has no RMT peripheral.
+
+### Status LED
+
+Shown in the menu once a GPIO has the role "Output: WS2812 RGB status LED". Saving this page takes effect right away, without a restart. See the "[Status LED](#status-led-ws2812-optional)" section of this README.
+
+- Now showing: What the LED shows right now. The rule it follows is marked "now" in the list. Until you save, the LED follows the saved rules, and the page says so while the list differs from them. During a test it shows "Test" with the effect and color on the LED, and that the LED goes back to the saved rules after it.
+- Brightness (1-100 %): Brightness of the status LED, defaults to 20 %.
+- Color order: The order in which the LED expects the colors. GRB fits most boards. "Check colors" shows red, green and blue on the LED, one after the other, without saving anything. If the LED shows the colors in another order, pick that order: the page selects the matching color order and checks again. If the LED stays dark, color order can't fix that: the page names the GPIOs other boards have their LED on.
+- Rules: What the LED shows, see "[Status LED rules](#status-led-rules)".
 
 ### Import/Export Configuration
 
@@ -1022,10 +1032,137 @@ To enable GPIO control, go the the "GPIO Configuration" page where each GPIO can
 - Output: High when MQTT connected: Output a high signal when the device is connected to the MQTT broker 
 - Output: High when network connected: Output a high signal when the device is connected to the network
 - Output: High on bluetooth communication error: Output a high signal when bluetooth communication has failed and the device is retrying to send the command
+- Output: WS2812 RGB status LED: Drives one WS2812/SK6812 RGB LED, such as the LED built into many ESP32-S3 dev boards, as a status light. See the "[Status LED](#status-led-ws2812-optional)" section of this README.
 
 - General input (pull-down): The pin is configured in pull-down configuration and its state is published to the "gpio/pin_x/state" topic
 - General input (pull-up): The pin is configured in pull-up configuration and its state is published to the "gpio/pin_x/state" topic
 - Genral output: The pin is set to high or low depending on the "gpio/pin_x/state" topic
+
+## Status LED (WS2812, optional)
+
+Many ESP32 boards, including most ESP32-S3 N16R8 boards, have a built-in WS2812 RGB LED. Nuki Hub can use this LED, or one external WS2812/SK6812 LED, as a status light. What the LED shows is set by rules: by default it shows the state of Nuki Hub, but it can also show the state of the lock or opener, for example pulse yellow while Ring to Open is active and flash red while the lock is unlocked.<br>
+Only one LED is supported. In a chain of LEDs only the first LED lights up.
+
+To set up the status LED:
+1. Go to the "GPIO Configuration" page.
+2. Select "Output: WS2812 RGB status LED" for the GPIO the LED is connected to. For a built-in LED, see the table below or use the GPIO marked "(RGB LED on many dev boards)".
+3. Save. Nuki Hub restarts and the LED shows red, green and blue once.
+4. Open "Status LED" from the menu and click "Check colors". If the LED shows the colors in another order than red, green and blue, pick the order it showed them in: the page selects the matching color order and checks again. Then save. If it stays dark, the LED is probably on another GPIO: the page names the GPIOs other boards have their LED on, see also the table below.
+5. Optionally change the brightness and the rules. The LED shows a new brightness for a few seconds, so that you can judge it. Saving the "Status LED" page takes effect right away, without a restart.
+
+### Status LED rules
+
+The LED shows the first rule that applies, going from top to bottom. If no rule applies, it shows "Otherwise". Each rule is one line in the list, click or tap it to change it. To change the order, drag a rule by its handle, use "Move up" and "Move down" in the open rule, or focus the handle and press the up and down arrow keys, Home or End. Escape closes an open rule. Up to 16 rules are possible.
+
+While a rule applies, the rules below it wait. A "for the first N s" rule below it, such as the doorbell, and a state that is over in seconds, such as "Lock: motor running", are missed instead: they are over before their turn. A rule that can't show when you might expect gets a short line in the list, with a red dot if it never shows and an orange one if it only waits or can be missed:
+- "Never shows": a rule above it with the same trigger always applies first, or the lock or opener it reacts to isn't enabled. Its color dot in the list is faded.
+- "Can wait for hours": a problem, such as "no network" or a critical battery, is below a lock or opener state, which can last for hours. Or a rule is below a rule set to "Dark", on a state that isn't over in seconds: that rule still counts and keeps the LED off. To ignore a state, remove its rule instead. A "for the first N s" rule there, such as the doorbell, or a state that is over in seconds gets "Can be missed" instead.
+- "Rarely shows": it waits, or is missed, while the lock is locked or unlocked, which is nearly always, or it is "Lock: door open" below "Lock: unlocked", because an open door is nearly always unlocked. A "for the first N s" rule below a rule with the same trigger rarely shows too, or is cut short by it.
+
+The line is the same whether the order is saved or not. Open the rule to see which rules hold it back, and to move it above all of them with one button. The rule that holds them back names them too when you open it, with a button that moves it below all of them. Undo puts the rule back. Until you save, "Go to N new warnings" under "Not saved yet" opens, one after the other, every rule with a line that the saved rules don't have. A screen reader hears which other rules an edit made worse, and which rule causes it.
+
+An open rule also says when another rule looks the same on the LED, and under "When", "Timing" and "Show", what the chosen trigger covers, what the timing does and that "Dark" isn't the same as no rule (on a phone once you use the field, so that an open rule fits on the screen). The dot next to "Show", and the one of "Now showing", play the rhythm of the effect, unless your system asks for reduced motion. While a test of the open rule plays on the LED, it says "on the LED now" after that dot, with "not saved" when the rule, the brightness or the color order differs from the saved ones.
+
+Each rule has:
+- When: what the rule reacts to, see the table below.
+- Timing:
+  - while it applies: for as long as the trigger applies.
+  - after N s: once the trigger has applied for N seconds without a break, for as long as it keeps applying. Short drops, for example of the network connection, don't show.
+  - for the first N s: for N seconds from the moment the trigger starts to apply, even if it stops sooner. This suits short events, for example a few flashes when the lock was unlocked. A state that already applies when Nuki Hub starts, or when the lock or opener state is first read, doesn't count as a start.
+- Show: the effect, see the table below.
+- Color: the list shows it as a dot and names the nearest LED color, such as "red" or "cyan".
+
+"Test" shows a rule's effect and color on the LED for 3 seconds, or for two full rounds of a flash effect (4 to 6 seconds), with the brightness and color order chosen on the page, without saving anything. Changing a rule's "Show" or "Color" does the same a moment later. "Start from a preset", above the rules, offers "Default rules" and "Problems only", which replace all rules on the page with one of the presets below.
+
+Changes are stored when you click "Save", or press Enter in "Brightness" (in the seconds of a rule, Enter closes the rule). The page then comes back with the rule you had open, at the same place, and says "Saved" for a few seconds. Until you save, the page marks the changes as not saved and asks before you leave it, and "Discard" goes back to the saved settings. A removed rule can be brought back with "Undo" until the next removal or until you save, a replaced list or discarded edits until the next change. If your login expires while the page is open, it says so with a link that opens the login in a new tab, so that your edits stay on the page. If your edits don't reach Nuki Hub, because a save failed after a lost connection or an expired login, or because the browser reloaded the page before you saved, as a phone can while you are in another app, the page brings them back the next time it opens in the same browser tab.
+
+| When | Applies |
+|---|---|
+| Hub: firmware update | While Nuki Hub downloads the updater, the first part of a firmware update |
+| Hub: Wi-Fi setup access point open | While the Wi-Fi configuration access point is open |
+| Hub: no network | While there is no network connection (Wi-Fi or Ethernet), but only once starting has finished, at most 60 seconds after a restart. The seconds of "after N s" count from the moment the connection was lost |
+| Hub: lock or opener not paired | While an enabled Nuki Lock or Opener isn't paired |
+| Hub: starting | After a restart, until the network and MQTT are connected (at most 60 seconds) |
+| Hub: no MQTT connection | While the network is connected but the MQTT broker isn't |
+| Hub: lock or opener not responding | While the lock or opener doesn't respond, even after retrying |
+| Hub: Bluetooth communication | During Bluetooth communication with the lock or opener, for at least 0.25 seconds |
+| Lock: locked | Lock state "locked" |
+| Lock: unlocked | Lock state "unlocked", "unlatched" or "unlocked (Lock 'n' Go)" |
+| Lock: motor running | Lock state "locking", "unlocking" or "unlatching" |
+| Lock: motor blocked | Lock state "motor blocked" |
+| Lock: door open | The door sensor reports the door as open |
+| Lock: battery critical | The lock reports its battery as critical |
+| Keypad or sensor: battery critical | The lock or opener reports the battery of its keypad or door sensor as critical |
+| Opener: Ring to Open active | Opener state "Ring to Open active" |
+| Opener: continuous mode | The opener is in continuous mode |
+| Opener: opening the door | Opener state "open" or "opening" |
+| Opener: doorbell rang | The opener detected a ring. This is a moment, not a state, so it only works with "for the first N s" |
+| Opener: battery critical | The opener reports its battery as critical |
+
+The lock and opener triggers follow the state Nuki Hub last read from the device, the same state the GPIO outputs follow. They don't apply while that state is unknown, for example right after a restart or while the device isn't paired.
+
+| Show | Pattern |
+|---|---|
+| Dark | LED off. The rule still counts: the LED stays dark and the rules below it wait. To stop using a rule, remove it |
+| Solid | On |
+| Pulse | Fades in and out every 3 seconds |
+| Blink slow | 1 second on, 1 second off |
+| Blink fast | 0.25 seconds on, 0.25 seconds off |
+| Flash 1×, Flash 2×, Flash 3× | 1, 2 or 3 short flashes of 0.15 seconds, repeated every 2, 2.5 or 3 seconds |
+
+A blink is on as long as it is off. Flashes are short with a long pause after them, which makes them easy to count.
+
+The default rules show the state of Nuki Hub:
+
+| LED | Rule | What to do |
+|---|---|---|
+| White | Hub: firmware update | Wait |
+| Blue, slow blink | Hub: Wi-Fi setup access point open | Connect to the "NukiHub" access point and configure Wi-Fi |
+| Red, single flash | Hub: no network, after 5 seconds | Check Wi-Fi or Ethernet |
+| Magenta, slow blink | Hub: lock or opener not paired | Pair the lock or opener |
+| White | Hub: starting | Wait |
+| Orange, double flash | Hub: no MQTT connection, after 5 seconds | Check the MQTT broker and the MQTT settings |
+| Magenta, triple flash | Hub: lock or opener not responding | Check the distance to the lock or opener and its batteries |
+| Cyan | Hub: Bluetooth communication | - |
+| Green | Otherwise: everything is OK | - |
+
+"Problems only" has the same rules, but the LED stays dark during a firmware update, while starting, during Bluetooth communication and while everything is OK. It also shows a blocked lock motor (fast red blink) and critical batteries (yellow flashes: one for the lock, two for a keypad or door sensor, three for the opener). Rules for a device that isn't enabled are left out.
+
+For example, to keep the LED dark unless Ring to Open is active or the lock is unlocked:
+
+| # | When | Timing | Show | Color |
+|---|---|---|---|---|
+| 1 | Opener: Ring to Open active | while it applies | Pulse | Yellow |
+| 2 | Lock: unlocked | while it applies | Flash 1× | Red |
+| | Otherwise | | Dark | |
+
+When both apply, the LED pulses yellow, because that rule comes first.
+
+Built-in LEDs of common boards (taken from the board vendors' documentation and the Arduino board definitions, not tested on every board):
+
+| Board | GPIO | Notes |
+|---|---|---|
+| ESP32-S3-DevKitC-1 v1.0, ESP32-S3-DevKitM-1, most ESP32-S3 N16R8 boards | 48 | Some boards need their "RGB" solder jumper closed, a few use GPIO 47 |
+| ESP32-S3-DevKitC-1 v1.1, LOLIN S3 | 38 | |
+| LOLIN S3 Mini | 47 | Color order RGB |
+| Waveshare ESP32-S3-Zero | 21 | Color order RGB |
+| Waveshare ESP32-S3-ETH | 21 | |
+| M5Stack AtomS3 Lite | 35 | GPIO 35 is not offered on chips with octal PSRAM (for example N8R8 and N16R8) or octal flash |
+| M5Stack Atom Lite | 27 | |
+| ESP32-C3-DevKitM-1, ESP32-C6-DevKitC-1 | 8 | Not available when the selected Ethernet hardware uses GPIO 8, for example "Generic W5500" |
+| ESP32-H2-DevKitM-1 | 8 | The H2's default Ethernet setup (W5500 as "Custom LAN module") uses GPIO 8 as CS. To use the LED, first open "Custom Ethernet Configuration" from the menu, select PHY "W5500" (this shows the pin fields and keeps the same setup), change "CS" to a free GPIO and save. Don't restart Nuki Hub yet: switch it off, move the W5500's CS wire from GPIO 8 to that GPIO and switch it on again. If Nuki Hub restarts before the wire is moved, it has no network until the wire is moved, and it can take a few restarts to come back. Then select "Output: WS2812 RGB status LED" for GPIO 8 on the "GPIO Configuration" page |
+| Waveshare ESP32-C6-Zero | 8 | Color order RGB |
+| ESP32-C5-DevKitC-1 | 27 | |
+| ESP32-C61 boards | - | Not supported, the ESP32-C61 has no RMT peripheral |
+
+Notes:
+- ESP32-S3 modules with a "V" at the end of their name (1.8 V flash/PSRAM, for example N16R16V) run GPIO 47 and 48 at 1.8 V, which is too low for a WS2812. Use another GPIO on these modules.
+- GPIOs used by the selected Ethernet hardware show "Ethernet" and can't be used for the LED (the LilyGO T-ETH-Elite for example uses GPIO 47 and 48).
+- The LED is dark while Nuki Hub restarts and during the second part of a firmware update, while the updater downloads and installs the new Nuki Hub firmware. After a crash it can keep its last color until Nuki Hub has started again.
+- Changing which GPIO has the LED role takes effect after the restart that saving the GPIO configuration triggers. Everything on the "Status LED" page takes effect when you save it.
+- The "Status LED" page and the Info page show the rule the LED shows right now. The Info page also shows the LED's GPIO, color order, brightness, number of rules and write errors.
+- Brightness, color order and rules are part of the JSON export and import (keys "ledBright", "ledOrder" and "ledRules"). The rules are stored as text, one "trigger,timing,seconds,effect,color" entry per rule separated by ";", with "*" as the trigger of "Otherwise". Entries Nuki Hub doesn't know are skipped. The default rules aren't stored ("ledRules" is empty), so they follow later versions of Nuki Hub that change them.
+- To connect an external LED: VDD to 3.3 V (or 5 V), GND to GND and DIN to the GPIO through a resistor of about 330 Ω. A WS2812B powered by 5 V may need a level shifter on DIN. Put a 100 nF capacitor between VDD and GND close to the LED.
 
 ## Connecting via Ethernet (Optional)
 

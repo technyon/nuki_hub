@@ -1036,6 +1036,36 @@ esp_err_t WebCfgServer::buildInfoHtml(PsychicRequest *request, PsychicResponse* 
     response.print("\n\n------------ GPIO ------------\n");
     response.print("\nRetain Input GPIO MQTT state: ");
     response.print(_preferences->getBool(preference_retain_gpio, false) ? "Yes\n" : "No\n");
+    const StatusLed& statusLed = _gpio->statusLed();
+    if(statusLed.configured())
+    {
+        response.print("WS2812 status LED: ");
+#if SOC_RMT_SUPPORTED
+        response.print("GPIO ");
+        response.print(statusLed.pin());
+        if(statusLed.running())
+        {
+            response.print(", ");
+            response.print(statusLed.orderName());
+            response.print(", ");
+            response.print(statusLed.brightness());
+            response.print(" %, ");
+            const uint8_t ruleCount = statusLed.rules().count;
+            response.print(ruleCount);
+            response.print(ruleCount == 1 ? " rule, showing: " : " rules, showing: ");
+            response.print(htmlEscape(statusLed.shownText().c_str()));
+            response.print(", write errors: ");
+            response.print(statusLed.writeErrors());
+            response.print("\n");
+        }
+        else
+        {
+            response.print(", failed to start\n");
+        }
+#else
+        response.print("not supported on this chip\n");
+#endif
+    }
     String gpioStr = "";
     _gpio->getConfigurationText(gpioStr, _gpio->pinConfiguration());
     response.print(gpioStr);

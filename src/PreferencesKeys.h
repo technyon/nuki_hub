@@ -40,6 +40,9 @@
 //MQTT RELATED
 #define preference_mqtt_log_enabled (char*)"mqttlog"
 #define preference_gpio_configuration (char*)"gpiocfg"
+#define preference_status_led_brightness (char*)"ledBright"
+#define preference_status_led_order (char*)"ledOrder"
+#define preference_status_led_rules (char*)"ledRules"
 
 //TASKS RELATED
 #define preference_task_size_network (char*)"tsksznetw"
@@ -593,7 +596,8 @@ private:
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_duo_approval, preference_cred_bypass_boot_btn_enabled, preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_publish_config,
         preference_config_from_mqtt, preference_totp_secret, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember, preference_bypass_secret,
-        preference_admin_secret, preference_ble_general_timeout, preference_ble_command_timeout, preference_force_hosted_update, preference_setup_hidden, preference_ota_image_keep
+        preference_admin_secret, preference_ble_general_timeout, preference_ble_command_timeout, preference_force_hosted_update, preference_setup_hidden, preference_ota_image_keep,
+        preference_status_led_brightness, preference_status_led_order, preference_status_led_rules
     };
     std::vector<char*> _redact =
     {
@@ -636,7 +640,8 @@ private:
         preference_network_custom_mosi, preference_network_custom_pwr, preference_network_custom_mdio, preference_http_auth_type,
         preference_cred_session_lifetime, preference_cred_session_lifetime_remember, preference_cred_session_lifetime_duo, preference_cred_session_lifetime_duo_remember,
         preference_cred_bypass_gpio_high, preference_cred_bypass_gpio_low, preference_cred_session_lifetime_totp, preference_cred_session_lifetime_totp_remember,
-        preference_ble_general_timeout, preference_ble_command_timeout, preference_setup_hidden
+        preference_ble_general_timeout, preference_ble_command_timeout, preference_setup_hidden, preference_status_led_brightness,
+        preference_status_led_order
     };
     std::vector<char*> _uintPrefs =
     {

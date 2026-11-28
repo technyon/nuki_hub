@@ -23,6 +23,8 @@ def embed_gzipped(source, output):
 os.system("python resources/bin2array/bin2array.py icon/favicon-32x32.png -O src/webServerConstants/favicon-32x32.h -l 16")
 embed_gzipped("resources/style.css", "src/webServerConstants/style.h")
 embed_gzipped("resources/app.js", "src/webServerConstants/app.h")
+embed_gzipped("resources/led.css", "src/webServerConstants/ledcss.h")
+embed_gzipped("resources/led.js", "src/webServerConstants/ledjs.h")
 embed_gzipped("resources/AsyncWebSerial/frontend/index.html", "src/webServerConstants/webSerial.h")
 
 regex = r"\#define NUKI_HUB_DATE \"(.*)\""

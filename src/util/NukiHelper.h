@@ -23,4 +23,20 @@ public:
     static void weekdaysToJsonArray(int weekdaysInt, JsonArray& weekdays);
 
     static void printCommandResult(Nuki::CmdResult result);
+
+    // Bits of the key turner state's criticalBatteryState and accessoryBatteryState (255: no accessory)
+    static bool batteryCritical(uint8_t criticalBatteryState)
+    {
+        return (criticalBatteryState & 1) == 1;
+    }
+
+    static bool keypadBatteryCritical(uint8_t accessoryBatteryState)
+    {
+        return accessoryBatteryState != 255 && (accessoryBatteryState & 3) == 3;
+    }
+
+    static bool doorSensorBatteryCritical(uint8_t accessoryBatteryState)
+    {
+        return accessoryBatteryState != 255 && (accessoryBatteryState & 12) == 12;
+    }
 };

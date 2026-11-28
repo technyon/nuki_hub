@@ -675,6 +675,10 @@ void NukiNetwork::updateNetworkStatusLeds()
 
     _gpio->setPinOutput(_pinsMqttConnected, mqttConnected ? HIGH : LOW);
     _gpio->setPinOutput(_pinsNetworkConnected, networkConnected ? HIGH : LOW);
+
+    // A firmware upload switches MQTT off until the device restarts, which it does once the upload finishes or stalls
+    const bool mqttExpected = _mqttBrokerAddr[0] != '\0' && _mqttEnabled;
+    _gpio->statusLed().reportNetwork(_device->isApOpen(), networkConnected, mqttConnected, mqttExpected);
 }
 
 void NukiNetwork::checkInternetConnectivity()

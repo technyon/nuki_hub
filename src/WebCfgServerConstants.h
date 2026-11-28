@@ -23,4 +23,16 @@ const uint8_t WEBSERIAL_HTML[] =
 {
 #include "webServerConstants/webSerial.h"
 };
+
+// converted to char array by bin2array, only for the Status LED page
+const uint8_t ledcss[] =
+{
+#include "webServerConstants/ledcss.h"
+};
+
+// converted to char array by bin2array, only for the Status LED page
+const uint8_t ledjs[] =
+{
+#include "webServerConstants/ledjs.h"
+};
 #endif

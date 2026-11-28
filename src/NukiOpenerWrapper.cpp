@@ -396,6 +396,7 @@ void NukiOpenerWrapper::update()
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     _paired = checkPaired();
+    _gpio->statusLed().reportPaired(StatusLed::Device::Opener, _paired);
     if (!_paired) return;
 
     int64_t ts = espMillis();
@@ -486,6 +487,13 @@ void NukiOpenerWrapper::update()
         {
             _invalidCount--;
         }
+    }
+
+    const int64_t ringTs = _network->lastRingTs();
+    if(ringTs != _ringTsReported)
+    {
+        _ringTsReported = ringTs;
+        _gpio->statusLed().reportRing();
     }
 
     memcpy(&_lastKeyTurnerState, &_keyTurnerState, sizeof(NukiOpener::OpenerState));
@@ -596,6 +604,7 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
         {
             _nextLockStateUpdateTs = espMillis() + (_retryLockstateCount * 333);
             _network->publishAvailability(false);
+            _gpio->statusLed().reportReachable(StatusLed::Device::Opener, false);
         }
         if(_hasConnected)
         {
@@ -610,6 +619,8 @@ bool NukiOpenerWrapper::updateKeyTurnerState()
 
     _retryLockstateCount = 0;
     _network->publishAvailability(true);
+    _gpio->statusLed().reportReachable(StatusLed::Device::Opener, true);
+    reportStatusLed();
 
     const NukiOpener::LockState& lockState = _keyTurnerState.lockState;
 
@@ -1507,6 +1518,21 @@ const std::string NukiOpenerWrapper::hardwareVersion() const
 void NukiOpenerWrapper::disableWatchdog()
 {
     _restartBeaconTimeout = -1;
+}
+
+void NukiOpenerWrapper::reportStatusLed()
+{
+    using namespace NukiOpener;
+
+    const LockState lockState = _keyTurnerState.lockState;
+    StatusLed::OpenerStatus status;
+    status.known = lockState != LockState::Undefined;
+    status.ringToOpen = lockState == LockState::RTOactive;
+    status.continuousMode = _keyTurnerState.nukiState == State::ContinuousMode;
+    status.opening = lockState == LockState::Open || lockState == LockState::Opening;
+    status.batteryCritical = NukiHelper::batteryCritical(_keyTurnerState.criticalBatteryState);
+    status.accessoryBatteryCritical = NukiHelper::keypadBatteryCritical(_keyTurnerState.accessoryBatteryState);
+    _gpio->statusLed().reportOpenerStatus(status);
 }
 
 void NukiOpenerWrapper::updateGpioOutputs()

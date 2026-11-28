@@ -104,6 +104,21 @@ const char* OtaImages::label(OtaImage image)
     }
 }
 
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+int OtaImages::psramCapability()
+{
+    uint32_t word4 = esp_efuse_read_reg(EFUSE_BLK1, 4);
+    uint32_t word5 = esp_efuse_read_reg(EFUSE_BLK1, 5);
+    return (((word5 >> 19) & 1) << 2) | ((word4 >> 3) & 3);
+}
+
+bool OtaImages::hasOctalPsram()
+{
+    const int psramCap = psramCapability();
+    return psramCap == 1 || psramCap == 3;
+}
+#endif
+
 OtaImage OtaImages::recommended(bool glS10EthernetInUse, String& reason)
 {
     OtaImage cur = current();
@@ -119,9 +134,7 @@ OtaImage OtaImages::recommended(bool glS10EthernetInUse, String& reason)
         return cur;
     }
 #endif
-    uint32_t word4 = esp_efuse_read_reg(EFUSE_BLK1, 4);
-    uint32_t word5 = esp_efuse_read_reg(EFUSE_BLK1, 5);
-    int psramCap = (((word5 >> 19) & 1) << 2) | ((word4 >> 3) & 3);
+    int psramCap = psramCapability();
     switch(psramCap)
     {
     case 0:
